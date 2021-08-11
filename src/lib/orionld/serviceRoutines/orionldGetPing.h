@@ -1,6 +1,9 @@
+#ifndef SRC_LIB_ORIONLD_SERVICEROUTINES_ORIONLDGETPING_H_
+#define SRC_LIB_ORIONLD_SERVICEROUTINES_ORIONLDGETPING_H_
+
 /*
 *
-* Copyright 2019 FIWARE Foundation e.V.
+* Copyright 2018 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -22,26 +25,14 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
-
-
-#include "orionld/mongoCppLegacy/mongoCppLegacyTenantsGet.h"     // mongoCppLegacyTenantsGet
-#include "orionld/mongoCppLegacy/mongoCppLegacyGeoIndexInit.h"   // mongoCppLegacyGeoIndexInit
-#include "orionld/mongoCppLegacy/mongoCppLegacyInit.h"           // Own interface
+#include "rest/ConnectionInfo.h"
 
 
 
-// -----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 //
-// mongoCppLegacyInit -
+// orionldGetPing -
 //
-void mongoCppLegacyInit(const char* dbHost, const char* dbName)
-{
-  // Most of everything is already done by mongoInit/mongoBackend
+extern bool orionldGetPing(ConnectionInfo* ciP);
 
-  if (mongoCppLegacyTenantsGet() == false)
-    LM_X(1, ("Unable to extract tenants from the database - fatal error"));
-
-  mongoCppLegacyGeoIndexInit();
-}
+#endif  // SRC_LIB_ORIONLD_SERVICEROUTINES_ORIONLDGETPING_H_
