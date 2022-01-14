@@ -76,9 +76,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Test
-        run: cat src/lib/orionld/common/orionldState.h
-
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
 
@@ -196,7 +193,7 @@ jobs:
           dockerfiles: |
             ./docker/Dockerfile-gdb
           build-args: |
-            BASE_VERSION=${{ env.IMAGE_TAG_PRE }}
+            BASE_VERSION=${{ needs.generate-version.outputs.version }}
 
       - name: Push To quay.io
         id: push-gdb-to-quay
