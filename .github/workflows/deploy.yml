@@ -1,53 +1,77 @@
 name: Deploy
 
 on:
-  push:
-    branches:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - labeled
+      - unlabeled
 
 env:
   IMAGE_ORG: fiware
   IMAGE_NAME: orion-ld
-  IMAGE_TAG_LATEST:  latest
   IMAGE_TAG_DEBUG: debug
-  IMAGE_TAG_PRE: 1.0.0-PRE-${{ github.run_number }}
+  IMAGE_TAG_PRE: PRE-${{ github.run_number }}
+
+concurrency: ci-${{ github.ref }}
 
 jobs:
 
-  # push to redhat's certification scan registry
-  deploy-to-redhat-scan:
-    runs-on: ubuntu-20.04
-    if: ${{ github.event_name == 'push' && github.repository == 'FIWARE/context.Orion-LD' }}
+  # generate pre-release version, based on the last release
+  generate-version:
+
+    if: github.event.pull_request.user.name != 'github-actions[bot]'
+
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.out.outputs.version }}
+
+    steps:
+
+      - name: Get latest Github release
+        id: latest-release
+        uses: InsonusK/get-latest-release@v1.0.1
+        with:
+          myToken: ${{ secrets.GITHUB_TOKEN }}
+          exclude_types: draft|prerelease
+
+      - name: Set version output
+        id: out
+        run: echo "::set-output name=version::$(echo ${{ steps.latest-release.outputs.tag_name }}-${{ env.IMAGE_TAG_PRE }})"
+
+  prepare-release:
+    needs: [ "generate-version" ]
+    runs-on: ubuntu-18.04
+
+    outputs:
+      release-notes: ${{ steps.release-notes.outputs.notes }}
 
     steps:
       - uses: actions/checkout@v2
-
-      - name: Login to podman
-        uses: redhat-actions/podman-login@v1
         with:
-          registry: scan.connect.redhat.com
-          username: unused
-          password: ${{ secrets.CERTIFICATION_PUSH_SECRET }}
+          persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal token
+          fetch-depth: 0 # otherwise, you will failed to push refs to dest repo
 
-      - name: Build image
-        uses: redhat-actions/buildah-build@v2
-        id: build-image
-        with:
-          image: ${{ env.IMAGE_NAME }}
-          tags: ${{ env.IMAGE_TAG_PRE }}
-          containerfiles: |
-            ./docker/Dockerfile-ubi
-            
-      - name: Push To certification registry
-        id: push-to-cert
+      - name: set version in header file
         run: |
-          podman tag ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_PRE }} scan.connect.redhat.com/ospid-61aa0f57e87c1ebf3e3a4d15/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_PRE }}
-          podman push scan.connect.redhat.com/ospid-61aa0f57e87c1ebf3e3a4d15/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_PRE }}
+          cd src/lib/orionld/common/
+          sed -i '/#define ORIONLD_VERSION/s/.*/#define ORIONLD_VERSION ${{ needs.generate-version.outputs.version }}/' orionldState.h
+
+      - name: Commit & Push changes
+        uses: actions-js/push@v1.3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          force: true
+          branch: ${{ github.event.pull_request.head.ref }}
+
 
   # push to dockerhub
   deploy-release-dockerhub:
+    needs: [ "generate-version", "prepare-release" ]
 
     runs-on: ubuntu-18.04
-    if: ${{ github.event_name == 'push' && github.repository == 'FIWARE/context.Orion-LD' }}
 
     steps:
       - uses: actions/checkout@v2
@@ -70,8 +94,7 @@ jobs:
         with:
           push: true
           tags: |
-            ${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_LATEST }}
-            ${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_PRE }}
+            ${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}:${{ needs.generate-version.outputs.version }}
           file: docker/Dockerfile-ubi
           no-cache: true
 
@@ -81,16 +104,31 @@ jobs:
         with:
           push: true
           tags: |
-            ${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_PRE }}-GDB
+            ${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}:${{ needs.generate-version.outputs.version }}-GDB
           build-args: |
-            BASE_VERSION=${{ env.IMAGE_TAG_PRE }}
+            BASE_VERSION=${{ needs.generate-version.outputs.version }}
           file: docker/Dockerfile-gdb
           no-cache: true
 
+
+      - name: Run Snyk to check Docker image for vulnerabilities
+        uses: snyk/actions/docker@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          image: ${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}:${{ needs.generate-version.outputs.version }}
+          args: --file=docker/Dockerfile-ubi
+
+      - name: Upload result to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: snyk.sarif
+
   deploy-debug-dockerhub:
+    needs: [ "generate-version", "prepare-release" ]
 
     runs-on: ubuntu-18.04
-    if: ${{ github.event_name == 'push' && github.repository == 'FIWARE/context.Orion-LD' }}
 
     steps:
       - uses: actions/checkout@v2
@@ -112,16 +150,15 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: ${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_PRE }}-${{ env.IMAGE_TAG_DEBUG }}
+          tags: ${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}:${{ needs.generate-version.outputs.version }}-${{ env.IMAGE_TAG_DEBUG }}
           file: docker/Dockerfile-debug
           no-cache: true
 
   # quay.io
-
   deploy-release-quay:
+    needs: [ "generate-version", "prepare-release" ]
 
     runs-on: ubuntu-18.04
-    if: ${{ github.event_name == 'push' && github.repository == 'FIWARE/context.Orion-LD' }}
 
     steps:
       - uses: actions/checkout@v2
@@ -132,7 +169,7 @@ jobs:
         with:
           image: ${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}
           oci: true
-          tags: ${{ env.IMAGE_TAG_LATEST }} ${{ env.IMAGE_TAG_PRE }} ${{ github.sha }}
+          tags: ${{ needs.generate-version.outputs.version }} ${{ github.sha }}
           dockerfiles: |
             ./docker/Dockerfile-ubi
 
@@ -151,7 +188,7 @@ jobs:
         uses: redhat-actions/buildah-build@v2
         with:
           image: ${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}
-          tags: ${{ env.IMAGE_TAG_PRE }}-GDB
+          tags: ${{ needs.generate-version.outputs.version }}-GDB
           oci: true
           dockerfiles: |
             ./docker/Dockerfile-gdb
@@ -170,9 +207,9 @@ jobs:
 
 
   deploy-debug-quay:
+    needs: [ "generate-version", "prepare-release" ]
 
     runs-on: ubuntu-18.04
-    if: ${{ github.event_name == 'push' && github.repository == 'FIWARE/context.Orion-LD' }}
 
     steps:
       - uses: actions/checkout@v2
@@ -182,7 +219,7 @@ jobs:
         uses: redhat-actions/buildah-build@v2
         with:
           image: ${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}
-          tags: ${{ env.IMAGE_TAG_PRE }}-${{ env.IMAGE_TAG_DEBUG }}
+          tags: ${{ needs.generate-version.outputs.version }}-${{ env.IMAGE_TAG_DEBUG }}
           oci: true
           dockerfiles: |
             ./docker/Dockerfile-debug
@@ -196,3 +233,19 @@ jobs:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
+
+
+  github-pre-release:
+    needs: [ "generate-version", "prepare-release", "deploy-debug-quay", "deploy-release-quay", "deploy-debug-dockerhub", "deploy-release-dockerhub"]
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - uses: actions/checkout@v2
+
+      - uses: "softprops/action-gh-release@v0.1.14"
+        with:
+          tag_name: ${{ needs.generate-version.outputs.version }}
+          name: ${{ needs.generate-version.outputs.version }}
+          prerelease: true
+          body: ${{ github.event.pull_request.body }}
