@@ -59,7 +59,7 @@ jobs:
       - name: set version in header file
         run: |
           cd src/lib/orionld/common/
-          sed -i '/#define ORIONLD_VERSION/s/.*/#define ORIONLD_VERSION ${{ needs.generate-version.outputs.version }}/' orionldState.h
+          sed -i '/#define ORIONLD_VERSION/s/.*/#define ORIONLD_VERSION "${{ needs.generate-version.outputs.version }}"/' orionldState.h
 
       - name: Commit & Push changes
         uses: actions-js/push@master
