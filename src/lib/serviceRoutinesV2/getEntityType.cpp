@@ -62,12 +62,12 @@ std::string getEntityType
   EntityTypeResponse  response;
   std::string         entityTypeName = compV[2];
   std::string         answer;
-  bool                noAttrDetail   = ciP->uriParamOptions[OPT_NO_ATTR_DETAIL];
+  bool                noAttrDetail = orionldState.uriParamOptions.noAttrDetail;
 
   if (entityTypeName == "")
   {
     OrionError oe(SccBadRequest, ERROR_DESC_BAD_REQUEST_EMPTY_ENTITY_TYPE, ERROR_BAD_REQUEST);
-    ciP->httpStatusCode = oe.code;
+    orionldState.httpStatusCode = oe.code;
     return oe.toJson();
   }
 
@@ -75,15 +75,14 @@ std::string getEntityType
                                            &response,
                                            orionldState.tenantP,
                                            ciP->servicePathV,
-                                           ciP->uriParam,
                                            noAttrDetail,
-                                           ciP->apiVersion));
+                                           orionldState.apiVersion));
 
   if (response.entityType.count == 0)
   {
     OrionError oe(SccContextElementNotFound, ERROR_DESC_NOT_FOUND_ENTITY_TYPE, ERROR_NOT_FOUND);
     TIMED_RENDER(answer = oe.toJson());
-    ciP->httpStatusCode = oe.code;
+    orionldState.httpStatusCode = oe.code;
   }
   else
   {

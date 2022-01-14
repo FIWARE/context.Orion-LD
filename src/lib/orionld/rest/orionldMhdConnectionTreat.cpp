@@ -101,7 +101,7 @@ extern "C"
 //
 static bool contentTypeCheck(ConnectionInfo* ciP)
 {
-  if ((ciP->verb != POST) && (ciP->verb != PATCH))
+  if ((orionldState.verb != POST) && (orionldState.verb != PATCH))
     return true;
 
   if (orionldState.requestTree == NULL)
@@ -174,9 +174,9 @@ static bool acceptHeaderExtractAndCheck(ConnectionInfo* ciP)
 
   if (ciP->httpHeaders.acceptHeaderV.size() == 0)
   {
-    orionldState.acceptJson   = true;   // Default Accepted MIME-type is application/json
-    orionldState.acceptJsonld = false;
-    ciP->outMimeType          = JSON;
+    orionldState.acceptJson       = true;   // Default Accepted MIME-type is application/json
+    orionldState.acceptJsonld     = false;
+    orionldState.out.contentType  = JSON;
   }
 
   for (unsigned int ix = 0; ix < ciP->httpHeaders.acceptHeaderV.size(); ix++)
@@ -236,7 +236,7 @@ static bool acceptHeaderExtractAndCheck(ConnectionInfo* ciP)
   }
 
   if (orionldState.acceptJsonld == true)
-    ciP->outMimeType = JSONLD;
+    orionldState.out.contentType = JSONLD;
 
   return true;
 }
@@ -250,7 +250,7 @@ static bool acceptHeaderExtractAndCheck(ConnectionInfo* ciP)
 static bool payloadEmptyCheck(ConnectionInfo* ciP)
 {
   // No payload?
-  if (ciP->payload == NULL)
+  if (orionldState.in.payload == NULL)
   {
     orionldErrorResponseCreate(OrionldInvalidRequest, "payload missing", NULL);
     orionldState.httpStatusCode = 400;
@@ -258,7 +258,7 @@ static bool payloadEmptyCheck(ConnectionInfo* ciP)
   }
 
   // Empty payload?
-  if (ciP->payload[0] == 0)
+  if (orionldState.in.payload[0] == 0)
   {
     orionldErrorResponseCreate(OrionldInvalidRequest, "payload missing", NULL);
     orionldState.httpStatusCode = 400;
@@ -298,7 +298,7 @@ static bool payloadParseAndExtractSpecialFields(ConnectionInfo* ciP, bool* conte
   // Parse the payload
   //
   PERFORMANCE(parseStart);
-  orionldState.requestTree = kjParse(orionldState.kjsonP, ciP->payload);
+  orionldState.requestTree = kjParse(orionldState.kjsonP, orionldState.in.payload);
   PERFORMANCE(parseEnd);
 
   //
@@ -697,6 +697,7 @@ MHD_Result orionldMhdConnectionTreat(ConnectionInfo* ciP)
   bool     contextToBeCashed    = false;
   bool     serviceRoutineResult = false;
 
+  LM_TMP(("KZ: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
   //
   // Predetected Error from orionldMhdConnectionInit?
   //
@@ -759,7 +760,7 @@ MHD_Result orionldMhdConnectionTreat(ConnectionInfo* ciP)
   //
   // 03. Check for empty payload for POST/PATCH/PUT
   //
-  if (((ciP->verb == POST) || (ciP->verb == PATCH) || (ciP->verb == PUT)) && (payloadEmptyCheck(ciP) == false))
+  if (((orionldState.verb == POST) || (orionldState.verb == PATCH) || (orionldState.verb == PUT)) && (payloadEmptyCheck(ciP) == false))
     goto respond;
 
 
@@ -767,12 +768,10 @@ MHD_Result orionldMhdConnectionTreat(ConnectionInfo* ciP)
   // Save a copy of the incoming payload before it is destroyed during kjParse AND
   // parse the payload, and check for empty payload, also, find @context in payload and check it's OK
   //
-  if (ciP->payload != NULL)
+  if (orionldState.in.payload != NULL)
   {
-    if ((orionldState.serviceP->options & ORIONLD_SERVICE_OPTION_CLONE_PAYLOAD) == 0)
-      orionldState.requestPayload = ciP->payload;
-    else
-      orionldState.requestPayload = kaStrdup(&orionldState.kalloc, ciP->payload);
+    if ((orionldState.serviceP->options & ORIONLD_SERVICE_OPTION_CLONE_PAYLOAD) == ORIONLD_SERVICE_OPTION_CLONE_PAYLOAD)
+      orionldState.in.payloadCopy = kaStrdup(&orionldState.kalloc, orionldState.in.payload);
 
     if (payloadParseAndExtractSpecialFields(ciP, &contextToBeCashed) == false)
       goto respond;
@@ -858,7 +857,9 @@ MHD_Result orionldMhdConnectionTreat(ConnectionInfo* ciP)
   // Call the SERVICE ROUTINE
   //
   PERFORMANCE(serviceRoutineStart);
+  LM_TMP(("KZ: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
   serviceRoutineResult = orionldState.serviceP->serviceRoutine(ciP);
+  LM_TMP(("KZ: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
   PERFORMANCE(serviceRoutineEnd);
 
   //
@@ -886,6 +887,7 @@ MHD_Result orionldMhdConnectionTreat(ConnectionInfo* ciP)
   //
   if ((orionldState.httpStatusCode >= 400) && (orionldState.responseTree == NULL) && (orionldState.httpStatusCode != 405))
   {
+    LM_TMP(("KZ: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
     orionldErrorResponseCreate(OrionldInternalError, "Unknown Error", "The reason for this error is unknown");
     orionldState.httpStatusCode = 500;
   }
@@ -1013,12 +1015,6 @@ MHD_Result orionldMhdConnectionTreat(ConnectionInfo* ciP)
     PERFORMANCE(renderEnd);
   }
 
-  //
-  // restReply assumes that the HTTP Status Code for the response is in 'ciP->httpStatusCode'
-  // FIXME: make the HTTP Status Code a parameter for restReply
-  //
-  ciP->httpStatusCode = (HttpStatusCode) orionldState.httpStatusCode;
-
   PERFORMANCE(restReplyStart);
 
   if (orionldState.responsePayload != NULL)
@@ -1054,7 +1050,7 @@ MHD_Result orionldMhdConnectionTreat(ConnectionInfo* ciP)
         // If the incoming request an empty array/object, then don't call the TRoE routine
         //
         if ((orionldState.verb == DELETE) || ((orionldState.requestTree != NULL) && (orionldState.requestTree->value.firstChildP != NULL)))
-          orionldState.serviceP->troeRoutine(ciP);
+          orionldState.serviceP->troeRoutine();
 
         PERFORMANCE(troeEnd);
       }

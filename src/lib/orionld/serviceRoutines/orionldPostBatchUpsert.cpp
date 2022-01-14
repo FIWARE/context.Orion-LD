@@ -22,6 +22,9 @@
 *
 * Author: Gabriel Quaresma and Ken Zangelin
 */
+#include <string>                                              // std::string
+#include <vector>                                              // std::vector
+
 extern "C"
 {
 #include "kbase/kMacros.h"                                     // K_FT
@@ -36,7 +39,6 @@ extern "C"
 
 #include "common/globals.h"                                    // parse8601Time
 #include "rest/ConnectionInfo.h"                               // ConnectionInfo
-#include "rest/httpHeaderAdd.h"                                // httpHeaderLocationAdd
 #include "orionTypes/OrionValueType.h"                         // orion::ValueType
 #include "orionTypes/UpdateActionType.h"                       // ActionType
 #include "parse/CompoundValueNode.h"                           // CompoundValueNode
@@ -177,6 +179,9 @@ bool orionldPostBatchUpsert(ConnectionInfo* ciP)
 {
   // Error or not, the Link header should never be present in the reponse
   orionldState.noLinkHeader = true;
+
+  // The response is never JSON-LD
+  orionldState.out.contentType = JSON;
 
   //
   // Prerequisites for URI params:
@@ -380,17 +385,18 @@ bool orionldPostBatchUpsert(ConnectionInfo* ciP)
   // 08. Call mongoBackend - to create/modify the entities
   //     In case of REPLACE, all entities have been removed from the DB prior to this call, so, they will all be created.
   //
-  UpdateContextResponse mongoResponse;
+  UpdateContextResponse    mongoResponse;
+  std::vector<std::string> servicePathV;
+  servicePathV.push_back("/");
 
   orionldState.httpStatusCode = mongoUpdateContext(&mongoRequest,
                                                    &mongoResponse,
                                                    orionldState.tenantP,
-                                                   ciP->servicePathV,
-                                                   ciP->uriParam,
-                                                   ciP->httpHeaders.xauthToken.c_str(),
-                                                   ciP->httpHeaders.correlator.c_str(),
-                                                   ciP->httpHeaders.ngsiv2AttrsFormat.c_str(),
-                                                   ciP->apiVersion,
+                                                   servicePathV,
+                                                   orionldState.xAuthToken,
+                                                   orionldState.correlator,
+                                                   orionldState.attrsFormat,
+                                                   orionldState.apiVersion,
                                                    NGSIV2_NO_FLAVOUR);
 
   //

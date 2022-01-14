@@ -35,6 +35,7 @@
 
 #include "logMsg/logMsg.h"
 
+#include "rest/uriParamNames.h"                // Default values for URI parameters
 #include "common/RenderFormat.h"
 #include "ngsi/EntityId.h"
 #include "ngsi/ContextRegistrationAttribute.h"
@@ -49,7 +50,6 @@
 #include "ngsi9/RegisterContextRequest.h"
 #include "ngsi9/RegisterContextResponse.h"
 #include "ngsiNotify/Notifier.h"
-#include "rest/uriParamNames.h"
 #include "apiTypesV2/Subscription.h"
 #include "apiTypesV2/HttpInfo.h"
 #include "mongoBackend/TriggeredSubscription.h"
@@ -277,7 +277,7 @@ extern bool entitiesQuery
   int                              limit          = DEFAULT_PAGINATION_LIMIT_INT,
   bool*                            limitReached   = NULL,
   long long*                       countP         = NULL,
-  const std::string&               sortOrderList  = "",
+  char*                            sortOrderList  = NULL,
   ApiVersion                       apiVersion     = V1
 );
 
@@ -357,7 +357,7 @@ extern mongo::BSONArray processConditionVector
   bool*                              notificationDone,
   RenderFormat                       renderFormat,
   OrionldTenant*                     tenantP,
-  const std::string&                 xauthToken,
+  const char*                        xauthToken,
   const std::vector<std::string>&    servicePathV,
   const Restriction*                 resP,
   const std::string&                 status,

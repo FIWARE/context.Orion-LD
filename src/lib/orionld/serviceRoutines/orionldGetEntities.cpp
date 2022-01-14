@@ -144,11 +144,15 @@ bool orionldGetEntities(ConnectionInfo* ciP)
   QueryContextRequest   mongoRequest;
   QueryContextResponse  mongoResponse;
 
+  LM_TMP(("KZ2: geometry:    '%s'", geometry));
+  LM_TMP(("KZ2: georel:      '%s'", georel));
+  LM_TMP(("KZ2: coordinates: '%s'", orionldState.uriParams.coordinates));
+
   //
   // FIXME: Move all this to orionldMhdConnectionInit()
   //
   if ((id          != NULL) && (*id          == 0)) id          = NULL;
-  if ((coordinates != NULL) && (*coordinates == 0)) coordinates = NULL;
+//  if ((coordinates != NULL) && (*coordinates == 0)) coordinates = NULL;
 
   //
   // If URI param 'id' is given AND only one identifier in the list, then let the service routine for
@@ -289,7 +293,7 @@ bool orionldGetEntities(ConnectionInfo* ciP)
         coordinates[len - 1] = 0;
     }
 
-    if (scopeP->fill(ciP->apiVersion, geometry, coordinates, georel, &errorString) != 0)
+    if (scopeP->fill(orionldState.apiVersion, geometry, coordinates, georel, &errorString) != 0)
     {
       scopeP->release();
       delete scopeP;
@@ -462,14 +466,13 @@ bool orionldGetEntities(ConnectionInfo* ciP)
     orionldState.onlyCount = true;
 
   PERFORMANCE(mongoBackendStart);
+  std::vector<std::string>  servicePathV;
   orionldState.httpStatusCode = mongoQueryContext(&mongoRequest,
                                                   &mongoResponse,
                                                   orionldState.tenantP,
-                                                  ciP->servicePathV,
-                                                  ciP->uriParam,
-                                                  ciP->uriParamOptions,
+                                                  servicePathV,
                                                   countP,
-                                                  ciP->apiVersion);
+                                                  orionldState.apiVersion);
   PERFORMANCE(mongoBackendEnd);
 
   //

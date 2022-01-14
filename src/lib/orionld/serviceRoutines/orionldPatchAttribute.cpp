@@ -22,6 +22,9 @@
 *
 * Author: Ken Zangelin
 */
+#include <string>                                                // std::string
+#include <vector>                                                // std::vector
+
 extern "C"
 {
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
@@ -347,7 +350,6 @@ static bool kjTreeToMetadataValue(Metadata* metadataP, KjNode* valueP)
 //
 static bool orionldForwardPatchAttribute
 (
-  ConnectionInfo*  ciP,
   KjNode*          registrationP,
   const char*      entityId,
   const char*      attrName,
@@ -366,7 +368,7 @@ static bool orionldForwardPatchAttribute
     return false;
 
   const char*  contentType = (orionldState.ngsildContent == true)? "application/ld+json" : "application/json";
-  int          payloadLen  = strlen(orionldState.requestPayload);
+  int          payloadLen  = strlen(orionldState.in.payloadCopy);
   bool         tryAgain;
   bool         downloadFailed;
   bool         reqOk;
@@ -443,10 +445,10 @@ static bool orionldForwardPatchAttribute
     char link[512];
 
     snprintf(link, sizeof(link), "<%s>; rel=\"http://www.w3.org/ns/json-ld#context\"; type=\"application/ld+json\"", orionldState.link);
-    reqOk = orionldRequestSend(&orionldState.httpResponse, protocol, host, port, "PATCH", uriPath, 5000, link, &detail, &tryAgain, &downloadFailed, NULL, contentType, orionldState.requestPayload, payloadLen, headerV);
+    reqOk = orionldRequestSend(&orionldState.httpResponse, protocol, host, port, "PATCH", uriPath, 5000, link, &detail, &tryAgain, &downloadFailed, NULL, contentType, orionldState.in.payloadCopy, payloadLen, headerV);
   }
   else
-    reqOk = orionldRequestSend(&orionldState.httpResponse, protocol, host, port, "PATCH", uriPath, 5000, NULL, &detail, &tryAgain, &downloadFailed, NULL, contentType, orionldState.requestPayload, payloadLen, headerV);
+    reqOk = orionldRequestSend(&orionldState.httpResponse, protocol, host, port, "PATCH", uriPath, 5000, NULL, &detail, &tryAgain, &downloadFailed, NULL, contentType, orionldState.in.payloadCopy, payloadLen, headerV);
 
   if (reqOk == false)
   {
@@ -682,7 +684,7 @@ bool orionldPatchAttribute(ConnectionInfo* ciP)
         dbRegistrationsOnlyOneAllowed(regArray, matchingRegs, entityId, attrName);
 
       orionldState.noDbUpdate = true;  // No TRoE for data that is not local in the broker
-      return orionldForwardPatchAttribute(ciP, regArray->value.firstChildP, entityId, attrName, inAttribute);
+      return orionldForwardPatchAttribute(regArray->value.firstChildP, entityId, attrName, inAttribute);
     }
   }
 
@@ -841,18 +843,19 @@ bool orionldPatchAttribute(ConnectionInfo* ciP)
   //
   // 11. Call mongoBackend
   //
-  UpdateContextResponse  mongoResponse;
+  UpdateContextResponse    mongoResponse;
+  std::vector<std::string> servicePathV;
+  servicePathV.push_back("/");
 
   ucr.updateActionType        = ActionTypeUpdate;
   orionldState.httpStatusCode = mongoUpdateContext(&ucr,
                                                    &mongoResponse,
                                                    orionldState.tenantP,
-                                                   ciP->servicePathV,
-                                                   ciP->uriParam,
-                                                   ciP->httpHeaders.xauthToken.c_str(),
-                                                   ciP->httpHeaders.correlator.c_str(),
-                                                   ciP->httpHeaders.ngsiv2AttrsFormat.c_str(),
-                                                   ciP->apiVersion,
+                                                   servicePathV,
+                                                   orionldState.xAuthToken,
+                                                   orionldState.correlator,
+                                                   orionldState.attrsFormat,
+                                                   orionldState.apiVersion,
                                                    NGSIV2_NO_FLAVOUR);
 
   if (orionldState.httpStatusCode == 200)

@@ -28,6 +28,7 @@
 #include <time.h>                                                // struct timespec
 #include <semaphore.h>                                           // sem_t
 #include <mongoc/mongoc.h>                                       // MongoDB C Client Driver
+#include <microhttpd.h>                                          // MHD_Connection
 
 #include "orionld/db/dbDriver.h"                                 // database driver header
 #include "orionld/db/dbConfiguration.h"                          // DB_DRIVER_MONGOC
@@ -99,6 +100,13 @@ typedef struct OrionldUriParamOptions
   bool update;
   bool replace;
   bool keyValues;
+  bool values;         // Only NGSIv2
+  bool uniqueValues;   // Only NGSIv2
+  bool dateCreated;    // Only NGSIv2
+  bool dateModified;   // Only NGSIv2
+  bool append;         // Only NGSIv2
+  bool noAttrDetail;   // Only NGSIv2
+  bool upsert;         // Only NGSIv2
   bool sysAttrs;
 } OrionldUriParamOptions;
 
@@ -112,6 +120,7 @@ typedef struct OrionldUriParams
 {
   char*     id;
   char*     type;
+  char*     typePattern;
   char*     idPattern;
   char*     attrs;
   char*     options;
@@ -119,6 +128,7 @@ typedef struct OrionldUriParams
   int       limit;
   bool      count;
   char*     q;
+  char*     mq;
   char*     geometry;
   char*     coordinates;
   char*     georel;
@@ -139,6 +149,14 @@ typedef struct OrionldUriParams
   bool      location;
   char*     url;
   bool      reload;
+  char*     exists;
+  char*     notExists;
+  char*     metadata;
+  char*     orderBy;
+  bool      collapse;
+  bool      reset;
+  char*     attributeFormat;
+  char*     level;
 } OrionldUriParams;
 
 
@@ -169,6 +187,42 @@ typedef enum OrionldPhase
 
 // -----------------------------------------------------------------------------
 //
+// OrionldStateOut - data for the response
+//
+typedef struct OrionldStateOut
+{
+  // Outgoing HTTP headers
+  MimeType  contentType;
+
+#if 0
+  char*     httpHeaderV[10];    // Buffer to be used if less than 10 headers
+  char**    httpHeader;         // Points to httpHeaderV, reallocated if necessary
+  int       httpHeaderSize;     // Max number of headers (reallocation if necessary)
+  int       httpHeaderIx;       // Current index of 'httpHeader'
+#endif
+} OrionldStateOut;
+
+
+
+// -----------------------------------------------------------------------------
+//
+// OrionldStateIn - data of the request
+//
+typedef struct OrionldStateIn
+{
+  // Incoming HTTP headers
+  MimeType  contentType;
+
+  // Incoming payload
+  char*     payload;
+  int       payloadSize;
+  char*     payloadCopy;
+} OrionldStateIn;
+
+
+
+// -----------------------------------------------------------------------------
+//
 // OrionldConnectionState - the state of the connection
 //
 // This struct contains all the state of a connection, like the Kjson pointer, the pointer to
@@ -181,7 +235,8 @@ typedef enum OrionldPhase
 typedef struct OrionldConnectionState
 {
   OrionldPhase            phase;
-  ConnectionInfo*         ciP;
+  MHD_Connection*         mhdConnection;
+  ConnectionInfo*         ciP;                    // To Be Removed
   struct timespec         timestamp;              // The time when the request entered
   double                  requestTime;            // Same same, but at a floating point
   char                    requestTimeString[64];  // ISO8601 representation of 'requestTime'
@@ -190,7 +245,6 @@ typedef struct OrionldConnectionState
   Kjson*                  kjsonP;
   KAlloc                  kalloc;
   char                    kallocBuffer[8 * 1024];
-  char*                   requestPayload;
   KjNode*                 requestTree;
   KjNode*                 responseTree;
   char*                   responsePayload;
@@ -203,7 +257,6 @@ typedef struct OrionldConnectionState
   bool                    linkHeaderAdded;
   bool                    noLinkHeader;
   char*                   preferHeader;
-  char*                   xauthHeader;
   char*                   authorizationHeader;
   OrionldContext*         contextP;
   ApiVersion              apiVersion;
@@ -226,7 +279,9 @@ typedef struct OrionldConnectionState
   OrionLdRestService*     serviceP;
   char*                   wildcard[2];
   char*                   urlPath;
+  char*                   httpVersion;
   Verb                    verb;
+  bool                    badVerb;     // ToDo: verb == NOVERB should cover this
   char*                   verbString;
   bool                    acceptJson;
   bool                    acceptJsonld;
@@ -311,7 +366,25 @@ typedef struct OrionldConnectionState
   KjNode*                 geoPropertyNodes;    // object with "entityId": { <GeoProperty value> }, one per entity (for Query Entities
 
 
+  OrionldStateOut out;
+  OrionldStateIn  in;
+
+  // NGSI-LD Scope (or NGSIv2 ServicePath)
+  char* scopeV[10];
+  int   scopes;
+
+  // Attribute Format
+  char* attrsFormat;
+
+  // X-Auth-Token
+  char* xAuthToken;
+
+  // FIWARE Correlator
+  char* correlator;
+
+  //
   // Error Handling
+  //
   OrionldProblemDetails   pd;
 } OrionldConnectionState;
 
@@ -425,7 +498,7 @@ extern sem_t                 mongoContextsSem;
 //
 // orionldStateInit - initialize the thread-local variable orionldState
 //
-extern void orionldStateInit(void);
+extern void orionldStateInit(MHD_Connection* connection);
 
 
 

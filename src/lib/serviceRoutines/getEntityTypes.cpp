@@ -62,7 +62,7 @@ std::string getEntityTypes
   unsigned int              totalTypes   = 0;
   unsigned int*             totalTypesP  = NULL;
 
-  bool asJsonObject = (ciP->uriParam[URI_PARAM_ATTRIBUTE_FORMAT] == "object" && ciP->outMimeType == JSON);
+  bool asJsonObject = (ciP->uriParam[URI_PARAM_ATTRIBUTE_FORMAT] == "object") && (orionldState.out.contentType == JSON);
 
   response.statusCode.fill(SccOk);
 
@@ -78,12 +78,12 @@ std::string getEntityTypes
   //   set to true (meaning to skip the attribute detail) for NGSIv1 requests.
   //   The parameter is only used for NGSIv2
   //
-  TIMED_MONGO(mongoEntityTypes(&response, orionldState.tenantP, ciP->servicePathV, ciP->uriParam, ciP->apiVersion, totalTypesP, true));
+  TIMED_MONGO(mongoEntityTypes(&response, orionldState.tenantP, ciP->servicePathV, orionldState.apiVersion, totalTypesP, true));
 
   std::string rendered;
-  TIMED_RENDER(rendered = response.render(ciP->apiVersion,
+  TIMED_RENDER(rendered = response.render(orionldState.apiVersion,
                                           asJsonObject,
-                                          ciP->outMimeType == JSON,
+                                          orionldState.out.contentType == JSON,
                                           ciP->uriParam[URI_PARAM_COLLAPSE] == "true"));
 
   response.release();

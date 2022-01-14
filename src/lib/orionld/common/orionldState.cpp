@@ -119,7 +119,7 @@ sem_t                 mongoContextsSem;
 //
 // orionldStateInit - initialize the thread-local variable orionldState
 //
-void orionldStateInit(void)
+void orionldStateInit(MHD_Connection* connection)
 {
   //
   // NOTE
@@ -134,6 +134,7 @@ void orionldStateInit(void)
   kaBufferInit(&orionldState.kalloc, orionldState.kallocBuffer, sizeof(orionldState.kallocBuffer), 64 * 1024, NULL, "Thread KAlloc buffer");
 
   kTimeGet(&orionldState.timestamp);
+  orionldState.mhdConnection           = connection;
   orionldState.requestTime             = orionldState.timestamp.tv_sec + ((double) orionldState.timestamp.tv_nsec) / 1000000000;
   orionldState.kjsonP                  = kjBufferCreate(&orionldState.kjson, &orionldState.kalloc);
   orionldState.requestNo               = requestNo;
@@ -158,8 +159,71 @@ void orionldStateInit(void)
   // GeoProperty array
   orionldState.geoAttrMax = K_VEC_SIZE(orionldState.geoAttr);
   orionldState.geoAttrV   = orionldState.geoAttr;
+
+  //  Default values for HTTP headers
+  orionldState.attrsFormat = (char*) "normalized";
+  orionldState.correlator  = (char*) "";
+
+  // Outgoing HTTP headers
+#if 0
+  orionldState.out.httpHeader     = orionldState.out.httpHeaderV;
+  orionldState.out.httpHeaderSize = K_VEC_SIZE(orionldState.out.httpHeaderV);
+  orionldState.out.httpHeaderIx   = 0;
+#endif
+
+  orionldState.out.contentType    = JSON;  // Default outgoing Content-Type
+
+  // Incoming HTTP headers
+  orionldState.in.contentType    = JSON;  // Default incoming Content-Type
+
+
+  // Default response status code is 200 OK
+  orionldState.httpStatusCode = 200;
 }
 
+
+#if 0
+// -----------------------------------------------------------------------------
+//
+// orionldOutHeaderAdd -
+//
+void orionldOutHeaderAdd(char* key, char* sValue, int iValue)
+{
+  if (orionldState.out.httpHeaderIx >= orionldState.out.httpHeaderSize)
+  {
+    char** oldArray = orionldState.out.httpHeader;
+
+    orionldState.out.httpHeaderSize += 5;
+    orionldState.out.httpHeader      = (char**) kaAlloc(&orionldState.kalloc, sizeof(char*) * orionldState.out.httpHeaderSize);
+    if (orionldState.out.httpHeader == NULL)
+      LM_X(1, ("Out of memory trying to allocate room for %d outgoing HTTP headers", orionldState.out.httpHeaderSize));
+
+    // Copying the already existing header pointers to the new buffer
+    memcpy(orionldState.out.httpHeader, oldArray, orionldState.out.httpHeaderSize - 5);
+  }
+
+  int size = strlen(key) + 2;  // 2: colon + end-of-string
+
+  if (sValue != NULL)
+    size += strlen(sValue);
+  else
+    size += 16;  // 16: plenty of room for an integer
+
+  char* header = kaAlloc(&orionldState.kalloc, size);
+
+  if (header == NULL)
+    LM_X(1, ("Out of memory trying to allocate %d bytes for an outgoing HTTP header", size));
+
+  orionldState.out.httpHeader[orionldState.out.httpHeaderIx] = header;
+
+  if (sValue != NULL)
+    snprintf(header, size - 1, "%s:%s", key, sValue);
+  else
+    snprintf(header, size - 1, "%s:%d", key, iValue);
+
+  ++orionldState.out.httpHeaderIx;
+}
+#endif
 
 
 // -----------------------------------------------------------------------------

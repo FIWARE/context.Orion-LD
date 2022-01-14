@@ -28,6 +28,8 @@
 #include "logMsg/logMsg.h"
 #include "logMsg/traceLevels.h"
 
+#include "orionld/common/orionldState.h"             // orionldState
+
 #include "common/statistics.h"
 #include "common/clockFunctions.h"
 
@@ -79,7 +81,7 @@ std::string getIndividualContextEntity
   EntityTypeInfo          typeInfo    = EntityTypeEmptyOrNotEmpty;
   ContextElementResponse  response;
 
-  bool asJsonObject = (ciP->uriParam[URI_PARAM_ATTRIBUTE_FORMAT] == "object" && ciP->outMimeType == JSON);
+  bool asJsonObject = (ciP->uriParam[URI_PARAM_ATTRIBUTE_FORMAT] == "object") && (orionldState.out.contentType == JSON);
 
   // 0. Take care of URI params
   if (ciP->uriParam[URI_PARAM_NOT_EXIST] == URI_PARAM_ENTITY_TYPE)
@@ -115,7 +117,7 @@ std::string getIndividualContextEntity
 
 
   // 5. Render the ContextElementResponse
-  TIMED_RENDER(answer = response.render(ciP->apiVersion, asJsonObject, IndividualContextEntity));
+  TIMED_RENDER(answer = response.render(orionldState.apiVersion, asJsonObject, IndividualContextEntity));
 
 
   // 6. Cleanup and return result

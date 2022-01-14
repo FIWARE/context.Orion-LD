@@ -27,18 +27,19 @@
 
 extern "C"
 {
-#include "kbase/kMacros.h"                                       // K_FT
+#include "kbase/kMacros.h"                                       // K_FT, K_VEC_SIZE
 #include "kbase/kTime.h"                                         // kTimeGet, kTimeDiff
 }
 
 #include "logMsg/logMsg.h"                                       // LM_*
 #include "logMsg/traceLevels.h"                                  // Lmt*
 
+#include "common/wsStrip.h"                                      // wsStrip
+#include "common/MimeType.h"                                     // mimeTypeParse
 #include "rest/Verb.h"                                           // Verb
 #include "rest/ConnectionInfo.h"                                 // ConnectionInfo
 #include "orionld/common/orionldErrorResponse.h"                 // OrionldBadRequestData, ...
 #include "orionld/common/orionldState.h"                         // orionldState, orionldStateInit
-#include "orionld/common/SCOMPARE.h"                             // SCOMPARE
 #include "orionld/common/performance.h"                          // REQUEST_PERFORMANCE
 #include "orionld/common/tenantList.h"                           // tenant0
 #include "orionld/serviceRoutines/orionldBadVerb.h"              // orionldBadVerb
@@ -53,7 +54,7 @@ extern "C"
 
 // -----------------------------------------------------------------------------
 //
-// clientIp - from src/lib/rest.cpp
+// clientIp - move to orionldState
 //
 extern __thread char  clientIp[IP_LENGTH_MAX + 1];
 
@@ -87,7 +88,7 @@ extern MHD_Result uriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
 //
 // verbGet
 //
-static Verb verbGet(const char* method)
+Verb verbGet(const char* method)
 {
   int sLen = strlen(method);
 
@@ -150,15 +151,14 @@ static Verb verbGet(const char* method)
 //
 // ipAddressAndPort -
 //
-static void ipAddressAndPort(ConnectionInfo* ciP)
+static void ipAddressAndPort(void)
 {
-  const union MHD_ConnectionInfo* mciP = MHD_get_connection_info(ciP->connection, MHD_CONNECTION_INFO_CLIENT_ADDRESS);
+  const union MHD_ConnectionInfo* mciP = MHD_get_connection_info(orionldState.mhdConnection, MHD_CONNECTION_INFO_CLIENT_ADDRESS);
 
   if (mciP != NULL)
   {
     struct sockaddr* addr = (struct sockaddr*) mciP->client_addr;
 
-    ciP->port = (addr->sa_data[0] << 8) + addr->sa_data[1];
     snprintf(clientIp, sizeof(clientIp), "%d.%d.%d.%d",
              addr->sa_data[2] & 0xFF,
              addr->sa_data[3] & 0xFF,
@@ -166,10 +166,7 @@ static void ipAddressAndPort(ConnectionInfo* ciP)
              addr->sa_data[5] & 0xFF);
   }
   else
-  {
-    ciP->port = 0;
     strncpy(clientIp, "IP unknown", sizeof(clientIp) - 1);
-  }
 }
 
 
@@ -192,12 +189,19 @@ static void optionsParse(const char* options)
 
       *cP = 0;  // Zero-terminate
 
-      if      (strcmp(optionStart, "update")      == 0)  orionldState.uriParamOptions.update      = true;
-      else if (strcmp(optionStart, "replace")     == 0)  orionldState.uriParamOptions.replace     = true;
-      else if (strcmp(optionStart, "noOverwrite") == 0)  orionldState.uriParamOptions.noOverwrite = true;
-      else if (strcmp(optionStart, "keyValues")   == 0)  orionldState.uriParamOptions.keyValues   = true;
-      else if (strcmp(optionStart, "sysAttrs")    == 0)  orionldState.uriParamOptions.sysAttrs    = true;
-      else if (strcmp(optionStart, "count")       == 0)  orionldState.uriParams.count             = true;  // NGSIv2 compatibility
+      if      (strcmp(optionStart, "update")        == 0)  orionldState.uriParamOptions.update        = true;
+      else if (strcmp(optionStart, "replace")       == 0)  orionldState.uriParamOptions.replace       = true;
+      else if (strcmp(optionStart, "noOverwrite")   == 0)  orionldState.uriParamOptions.noOverwrite   = true;
+      else if (strcmp(optionStart, "keyValues")     == 0)  orionldState.uriParamOptions.keyValues     = true;
+      else if (strcmp(optionStart, "sysAttrs")      == 0)  orionldState.uriParamOptions.sysAttrs      = true;
+      else if (strcmp(optionStart, "append")        == 0)  orionldState.uriParamOptions.append        = true;  // NGSIv2 compatibility
+      else if (strcmp(optionStart, "count")         == 0)  orionldState.uriParams.count               = true;  // NGSIv2 compatibility
+      else if (strcmp(optionStart, "values")        == 0)  orionldState.uriParamOptions.values        = true;  // NGSIv2 compatibility
+      else if (strcmp(optionStart, "unique")        == 0)  orionldState.uriParamOptions.uniqueValues  = true;  // NGSIv2 compatibility
+      else if (strcmp(optionStart, "dateCreated")   == 0)  orionldState.uriParamOptions.dateCreated   = true;  // NGSIv2 compatibility
+      else if (strcmp(optionStart, "dateModified")  == 0)  orionldState.uriParamOptions.dateModified  = true;  // NGSIv2 compatibility
+      else if (strcmp(optionStart, "noAttrDetail")  == 0)  orionldState.uriParamOptions.noAttrDetail  = true;  // NGSIv2 compatibility
+      else if (strcmp(optionStart, "upsert")        == 0)  orionldState.uriParamOptions.upsert        = true;  // NGSIv2 compatibility
       else
       {
         LM_W(("Unknown 'options' value: %s", optionStart));
@@ -218,17 +222,127 @@ static void optionsParse(const char* options)
 }
 
 
-#if 0
+
+// -----------------------------------------------------------------------------
+//
+// strSplit -
+//
+static int strSplit(char* s, char delimiter, char** outV, int outMaxItems)
+{
+  if (s == NULL)
+    return 0;
+
+  if (*s == 0)
+    return 0;
+
+  int   outIx = 0;
+  char* start = s;
+
+  //
+  // Loop over 's':
+  // - Search for the delimiter
+  // - zero-terminate
+  // - assign and
+  // - continue
+  //
+  while (*s != 0)
+  {
+    if (*s == delimiter)
+    {
+      *s = 0;
+      outV[outIx] = wsStrip(start);
+      start = &s[1];
+
+      // Check that the scope starts with a slash, etc ...
+      // if (scopeCheck(outV[outIx]) == false) ...
+
+      if (++outIx > outMaxItems)
+        return -1;
+    }
+
+    ++s;
+  }
+
+  outV[outIx] = wsStrip(start);
+
+  ++outIx;
+
+  return outIx;
+}
+
+
+
+/* ****************************************************************************
+*
+* contentTypeParse -
+*/
+MimeType contentTypeParse(const char* contentType, char** charsetP)
+{
+  char* s;
+  char* cP = (char*) contentType;
+
+  if ((s = strstr(cP, ";")) != NULL)
+  {
+    *s = 0;
+    ++s;
+    s = wsStrip(s);
+
+    if ((charsetP != NULL) && (strncmp(s, "charset=", 8) == 0))
+      *charsetP = &s[8];
+  }
+
+  cP = wsStrip(cP);
+
+  if      (strcmp(cP, "*/*") == 0)                  return JSON;
+  else if (strcmp(cP, "text/json") == 0)            return JSON;
+  else if (strcmp(cP, "application/json") == 0)     return JSON;
+  else if (strcmp(cP, "application/ld+json") == 0)  return JSONLD;
+  else if (strcmp(cP, "application/geo+json") == 0) return GEOJSON;
+  else if (strcmp(cP, "application/html") == 0)     return HTML;
+  else if (strcmp(cP, "text/plain") == 0)           return TEXT;
+
+  return JSON;
+}
+
+
+
 // -----------------------------------------------------------------------------
 //
 // orionldHttpHeaderGet -
 //
-static int orionldHttpHeaderGet(void* cbDataP, MHD_ValueKind kind, const char* key, const char* value)
+static MHD_Result orionldHttpHeaderGet(void* cbDataP, MHD_ValueKind kind, const char* key, const char* value)
 {
-  if (strcmp(key, "NGSILD-Tenant") == 0)
-    orionldState.httpHeaders.tenant = value;
+  LM_TMP(("KZ: Header '%s' = '%s', orionldState.httpStatusCode == %d", key, value, orionldState.httpStatusCode));
+  if (strcmp(key, "NGSILD-Scope") == 0)
+  {
+    orionldState.scopes = strSplit((char*) value, ',', orionldState.scopeV, K_VEC_SIZE(orionldState.scopeV));
+    if (orionldState.scopes == -1)
+    {
+      LM_W(("Bad Input (too many scopes)"));
+      orionldErrorResponseCreate(OrionldBadRequestData, "Bad value for HTTP header /NGSILD-Scope/", value);
+      orionldState.httpStatusCode = 400;
+    }
+  }
+  else if (strcmp(key, "Ngsiv2-AttrsFormat") == 0)  // FIXME: This header name needs to change for NGSI-LD
+  {
+    orionldState.attrsFormat = (char*) value;
+  }
+  else if (strcmp(key, "X-Auth-Token") == 0)
+  {
+    orionldState.xAuthToken = (char*) value;
+  }
+  else if (strcmp(key, "Fiware-Correlator") == 0)
+  {
+    orionldState.correlator = (char*) value;
+  }
+  else if (strcmp(key, "Content-Type") == 0)
+  {
+    orionldState.in.contentType = contentTypeParse(value, NULL);
+  }
+  LM_TMP(("KZ: Header '%s' = '%s', orionldState.httpStatusCode == %d", key, value, orionldState.httpStatusCode));
+
+  return MHD_YES;
 }
-#endif
 
 
 
@@ -236,29 +350,46 @@ static int orionldHttpHeaderGet(void* cbDataP, MHD_ValueKind kind, const char* k
 //
 // orionldUriArgumentGet -
 //
-static MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* key, const char* value)
+MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* key, const char* value)
 {
-  if (SCOMPARE3(key, 'i', 'd', 0))
+  LM_TMP(("KZ: key: '%s', value: '%s'", key, value));
+  if ((value == NULL) || (*value == 0))
+  {
+    char errorString[256];
+
+    LM_TMP(("KZ: Setting  orionldState.httpStatusCode  to 400"));
+    snprintf(errorString, sizeof(errorString) - 1, "Empty right-hand-side for URI param /%s/", key);
+    orionldErrorResponseCreate(OrionldBadRequestData, "Error in URI param", errorString);
+    orionldState.httpStatusCode = 400;
+
+    return MHD_YES;
+  }
+
+  if (strcmp(key, "id") == 0)
   {
     orionldState.uriParams.id = (char*) value;
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_IDLIST;
   }
-  else if (SCOMPARE5(key, 't', 'y', 'p', 'e', 0))
+  else if (strcmp(key, "type") == 0)
   {
     orionldState.uriParams.type = (char*) value;
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_TYPELIST;
   }
-  else if (SCOMPARE10(key, 'i', 'd', 'P', 'a', 't', 't', 'e', 'r', 'n', 0))
+  else if (strcmp(key, "typePattern") == 0)
+  {
+    orionldState.uriParams.typePattern = (char*) value;
+  }
+  else if (strcmp(key, "idPattern") == 0)
   {
     orionldState.uriParams.idPattern = (char*) value;
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_IDPATTERN;
   }
-  else if (SCOMPARE6(key, 'a', 't', 't', 'r', 's', 0))
+  else if (strcmp(key, "attrs") == 0)
   {
     orionldState.uriParams.attrs = (char*) value;
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_ATTRS;
   }
-  else if (SCOMPARE7(key, 'o', 'f', 'f', 's', 'e', 't', 0))
+  else if (strcmp(key, "offset") == 0)
   {
     if (value[0] == '-')
     {
@@ -272,7 +403,7 @@ static MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const
 
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_OFFSET;
   }
-  else if (SCOMPARE6(key, 'l', 'i', 'm', 'i', 't', 0))
+  else if (strcmp(key, "limit") == 0)
   {
     if (value[0] == '-')
     {
@@ -294,38 +425,42 @@ static MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const
 
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_LIMIT;
   }
-  else if (SCOMPARE8(key, 'o', 'p', 't', 'i', 'o', 'n', 's', 0))
+  else if (strcmp(key, "options") == 0)
   {
     orionldState.uriParams.options = (char*) value;
     optionsParse(value);
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_OPTIONS;
   }
-  else if (SCOMPARE9(key, 'g', 'e', 'o', 'm', 'e', 't', 'r', 'y', 0))
+  else if (strcmp(key, "geometry") == 0)
   {
     orionldState.uriParams.geometry = (char*) value;
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_GEOMETRY;
   }
-  else if (SCOMPARE12(key, 'c', 'o', 'o', 'r', 'd', 'i', 'n', 'a', 't', 'e', 's', 0))
+  else if (strcmp(key, "coordinates") == 0)
   {
     orionldState.uriParams.coordinates = (char*) value;
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_COORDINATES;
   }
-  else if (SCOMPARE7(key, 'g', 'e', 'o', 'r', 'e', 'l', 0))
+  else if (strcmp(key, "coords") == 0)  // Only NGSIv1/v2
+  {
+    orionldState.uriParams.coordinates = (char*) value;
+  }
+  else if (strcmp(key, "georel") == 0)
   {
     orionldState.uriParams.georel = (char*) value;
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_GEOREL;
   }
-  else if (SCOMPARE12(key, 'g', 'e', 'o', 'p', 'r', 'o', 'p', 'e', 'r', 't', 'y', 0))
+  else if (strcmp(key, "geoproperty") == 0)
   {
     orionldState.uriParams.geoproperty = (char*) value;
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_GEOPROPERTY;
   }
-  else if (SCOMPARE17(key, 'g', 'e', 'o', 'm', 'e', 't', 'r', 'y', 'P', 'r', 'o', 'p', 'e', 'r', 't', 'y', 0))
+  else if (strcmp(key, "geometryProperty") == 0)
   {
     orionldState.uriParams.geometryProperty = (char*) value;
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_GEOMETRYPROPERTY;
   }
-  else if (SCOMPARE6(key, 'c', 'o', 'u', 'n', 't', 0))
+  else if (strcmp(key, "count") == 0)
   {
     if (strcmp(value, "true") == 0)
       orionldState.uriParams.count = true;
@@ -339,12 +474,16 @@ static MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const
 
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_COUNT;
   }
-  else if (SCOMPARE2(key, 'q', 0))
+  else if (strcmp(key, "q") == 0)
   {
     orionldState.uriParams.q = (char*) value;
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_Q;
   }
-  else if (SCOMPARE10(key, 'd', 'a', 't', 'a', 's', 'e', 't', 'I', 'd', 0))
+  else if (strcmp(key, "mq") == 0)
+  {
+    orionldState.uriParams.mq = (char*) value;
+  }
+  else if (strcmp(key, "datasetId") == 0)
   {
     char* detail;
 
@@ -358,7 +497,7 @@ static MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const
     orionldState.uriParams.datasetId = (char*) value;
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_DATASETID;
   }
-  else if (SCOMPARE10(key, 'd', 'e', 'l', 'e', 't', 'e', 'A', 'l', 'l', 0))
+  else if (strcmp(key, "deleteAll") == 0)
   {
     if (strcmp(value, "true") == 0)
       orionldState.uriParams.deleteAll = true;
@@ -373,35 +512,37 @@ static MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const
 
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_DELETEALL;
   }
-  else if (SCOMPARE13(key, 't', 'i', 'm', 'e', 'p', 'r', 'o', 'p', 'e', 'r', 't', 'y', 0))
+  else if (strcmp(key, "timeproperty") == 0)
   {
     orionldState.uriParams.timeproperty = (char*) value;
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_TIMEPROPERTY;
   }
-  else if (SCOMPARE8(key, 't', 'i', 'm', 'e', 'r', 'e', 'l', 0))
+  else if (strcmp(key, "timerel") == 0)
   {
     // FIXME: Check the value of timerel
     orionldState.uriParams.timerel = (char*) value;
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_TIMEREL;
   }
-  else if (SCOMPARE7(key, 't', 'i', 'm', 'e', 'A', 't', 0))
+  else if (strcmp(key, "timeAt") == 0)
   {
     // FIXME: Check the value
     orionldState.uriParams.timeAt = (char*) value;
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_TIMEAT;
   }
-  else if (SCOMPARE10(key, 'e', 'n', 'd', 'T', 'i', 'm', 'e', 'A', 't', 0))
+  else if (strcmp(key, "endTimeAt") == 0)
   {
     // FIXME: Check the value
     orionldState.uriParams.endTimeAt = (char*) value;
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_ENDTIMEAT;
   }
-  else if (SCOMPARE8(key, 'd', 'e', 't', 'a', 'i', 'l', 's', 0))
+  else if (strcmp(key, "details") == 0)
   {
     if (strcmp(value, "true") == 0)
       orionldState.uriParams.details = true;
     else if (strcmp(value, "false") == 0)
       orionldState.uriParams.details = false;
+    else if (strcmp(value, "on") == 0)
+      orionldState.uriParams.details = true;
     else
     {
       orionldErrorResponseCreate(OrionldBadRequestData, "Invalid value for uri parameter 'details'", value);
@@ -411,7 +552,7 @@ static MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const
 
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_DETAILS;
   }
-  else if (SCOMPARE12(key, 'p', 'r', 'e', 't', 't', 'y', 'P', 'r', 'i', 'n', 't', 0))
+  else if (strcmp(key, "prettyPrint") == 0)
   {
     if (strcmp(value, "yes") == 0)
       orionldState.uriParams.prettyPrint = true;
@@ -426,17 +567,17 @@ static MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const
 
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_PRETTYPRINT;
   }
-  else if (SCOMPARE7(key, 's', 'p', 'a', 'c', 'e', 's', 0))
+  else if (strcmp(key, "spaces") == 0)
   {
     orionldState.uriParams.spaces = atoi(value);
     orionldState.uriParams.mask  |= ORIONLD_URIPARAM_SPACES;
   }
-  else if (SCOMPARE15(key, 's', 'u', 'b', 's', 'c', 'r', 'i', 'p', 't', 'i', 'o', 'n', 'I', 'd', 0))
+  else if (strcmp(key, "subscriptionId") == 0)
   {
     orionldState.uriParams.subscriptionId  = (char*) value;
     orionldState.uriParams.mask           |= ORIONLD_URIPARAM_SUBSCRIPTION_ID;
   }
-  else if (SCOMPARE9(key, 'l', 'o', 'c', 'a', 't', 'i', 'o', 'n', 0))
+  else if (strcmp(key, "location") == 0)
   {
     if (strcmp(value, "true") == 0)
       orionldState.uriParams.location = true;
@@ -451,15 +592,61 @@ static MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const
 
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_LOCATION;
   }
-  else if (SCOMPARE4(key, 'u', 'r', 'l', 0))
+  else if (strcmp(key, "url") == 0)
   {
     orionldState.uriParams.url   = (char*) value;
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_URL;
   }
-  else if (SCOMPARE7(key, 'r', 'e', 'l', 'o', 'a', 'd', 0))
+  else if (strcmp(key, "reload") == 0)
   {
     orionldState.uriParams.reload = true;
     orionldState.uriParams.mask  |= ORIONLD_URIPARAM_RELOAD;
+  }
+  else if (strcmp(key, "exist") == 0)
+  {
+    orionldState.uriParams.exists = (char*) value;
+  }
+  else if (strcmp(key, "!exist") == 0)
+  {
+    orionldState.uriParams.notExists = (char*) value;
+    orionldState.uriParams.mask  |= ORIONLD_URIPARAM_NOTEXISTS;
+  }
+  else if (strcmp(key, "metadata") == 0)
+  {
+    orionldState.uriParams.metadata = (char*) value;
+  }
+  else if (strcmp(key, "orderBy") == 0)
+  {
+    orionldState.uriParams.orderBy = (char*) value;
+  }
+  else if (strcmp(key, "collapse") == 0)
+  {
+    if (strcmp(value, "true") == 0)
+      orionldState.uriParams.collapse = true;
+  }
+  //
+  // FIXME: attributeFormat AND attributesFormat ???
+  //
+  else if (strcmp(key, "attributeFormat") == 0)
+  {
+    orionldState.uriParams.attributeFormat = (char*) value;
+  }
+  else if (strcmp(key, "attributesFormat") == 0)
+  {
+    orionldState.uriParams.attributeFormat = (char*) value;
+  }
+  else if (strcmp(key, "reset") == 0)
+  {
+    if (strcmp(value, "true") == 0)
+      orionldState.uriParams.reset = true;
+  }
+  else if (strcmp(key, "level") == 0)
+  {
+    orionldState.uriParams.level = (char*) value;
+  }
+  else if (strcmp(key, "entity::type") == 0)
+  {
+    orionldState.uriParams.type = (char*) value;
   }
   else
   {
@@ -549,7 +736,7 @@ MHD_Result orionldMhdConnectionInit
 {
   ++requestNo;
 
-  if (requestNo % 1000 == 0)
+//  if (requestNo % 1000 == 0)
     LM_TMP(("------------------------- Servicing NGSI-LD request %03d: %s %s --------------------------", requestNo, method, url));  // if not REQUEST_PERFORMANCE
 
   //
@@ -557,25 +744,19 @@ MHD_Result orionldMhdConnectionInit
   //
   ConnectionInfo* ciP = new ConnectionInfo();
 
-  // Mark connection as NGSI-LD V1
-  ciP->apiVersion = NGSI_LD_V1;
-
   // Remember ciP for consequent connection callbacks from MHD
   *con_cls = ciP;
-
-  // The 'connection', as given by MHD is very important. No responses can be sent without it
-  ciP->connection = connection;
-
-
-  // IP Address and port of caller
-  ipAddressAndPort(ciP);
 
   //
   // 2. Prepare orionldState
   //
-  orionldStateInit();
-  orionldState.ciP = ciP;
+  orionldStateInit(connection);
+  orionldState.ciP         = ciP;
+  orionldState.httpVersion = (char*) version;
 
+  LM_TMP(("KZ: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
+  // IP Address and port of caller
+  ipAddressAndPort();
 
   // By default, no whitespace in output
   orionldState.kjsonP->spacesPerIndent   = 0;
@@ -613,9 +794,11 @@ MHD_Result orionldMhdConnectionInit
     }
   }
 
+  LM_TMP(("KZ: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
   // 3. Check invalid verb
-  orionldState.verb = verbGet(method);
-  ciP->verb = orionldState.verb;  // FIXME: to be removed
+  orionldState.verbString = (char*) method;
+  orionldState.verb       = verbGet(method);
+
   if (orionldState.verb == NOVERB)
   {
     orionldErrorResponseCreate(OrionldBadRequestData, "not a valid verb", method);  // FIXME: do this after setting prettyPrint
@@ -623,20 +806,17 @@ MHD_Result orionldMhdConnectionInit
     return MHD_YES;
   }
 
+  LM_TMP(("KZ: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
   // 4. GET Service Pointer from VERB and URL-PATH
   orionldState.serviceP = serviceLookup(ciP);
 
+  LM_TMP(("KZ: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
   if (orionldState.serviceP == NULL)  // 405 or 404 - no need to continue - prettyPrint not possible here
     return MHD_YES;
 
   //
   // 5. GET URI params
-  //    Those Service Routines that DON'T USE mongoBackend don't need to call uriArgumentGet
-  //    [ mongoBackend needs stuff in ciP->uriParams ]
   //
-  if ((orionldState.serviceP->options & ORIONLD_SERVICE_OPTION_NO_V2_URI_PARAMS) == 0)
-    MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, uriArgumentGet, ciP);
-
   MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, orionldUriArgumentGet, NULL);
 
   //
@@ -662,6 +842,7 @@ MHD_Result orionldMhdConnectionInit
     orionldState.httpStatusCode = 400;
   }
 
+  LM_TMP(("KZ: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
   //
   // Check validity of URI parameters
   //
@@ -672,6 +853,7 @@ MHD_Result orionldMhdConnectionInit
     orionldState.httpStatusCode = 400;
   }
 
+  LM_TMP(("KZ: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
   if (orionldState.uriParams.limit > 1000)
   {
     LM_E(("Invalid value for URI parameter 'limit': %d", orionldState.uriParams.limit));
@@ -679,14 +861,25 @@ MHD_Result orionldMhdConnectionInit
     orionldState.httpStatusCode = 400;
   }
 
+  LM_TMP(("KZ: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
+  //
   // Get HTTP Headers
-  MHD_get_connection_values(connection, MHD_HEADER_KIND, httpHeaderGet, ciP);  // FIXME: implement orionldHttpHeaderGet in C !!!
+  // First we call the Orion-LD function 'orionldHttpHeaderGet' and then the Orion/NGSIv2 function 'httpHeaderGet'
+  // Any header cannot be part of both functions.
+  // The idea is to move all headers from httpHeaderGet to orionldHttpHeaderGet
+  //
+  LM_TMP(("KZ: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
+  MHD_get_connection_values(connection, MHD_HEADER_KIND, orionldHttpHeaderGet, NULL);
+  LM_TMP(("KZ: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
+  MHD_get_connection_values(connection, MHD_HEADER_KIND, httpHeaderGet, ciP);
+  LM_TMP(("KZ: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
 
   //
   // Any error detected during httpHeaderGet calls?
   //
   if (orionldState.httpStatusCode != 200)
     return MHD_YES;  // httpHeaderGet stes the error
+  LM_TMP(("KZ: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
 
   if (orionldState.tenantP == NULL)
     orionldState.tenantP = &tenant0;
@@ -695,6 +888,7 @@ MHD_Result orionldMhdConnectionInit
     char title[80];
     char detail[256];
 
+  LM_TMP(("KZ: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
     if (tenantCheck(orionldState.tenantName, title, sizeof(title), detail, sizeof(detail)) == false)
     {
       LM_E(("Invalid value for tenant: '%s'", orionldState.tenantName));
@@ -702,8 +896,10 @@ MHD_Result orionldMhdConnectionInit
       orionldState.httpStatusCode = 400;
       return MHD_YES;
     }
+  LM_TMP(("KZ: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
   }
 
+  LM_TMP(("KZ: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
   if ((orionldState.ngsildContent == true) && (orionldState.linkHttpHeaderPresent == true))
   {
     orionldErrorResponseCreate(OrionldBadRequestData, "invalid combination of HTTP headers Content-Type and Link", "Content-Type is 'application/ld+json' AND Link header is present - not allowed");
@@ -711,6 +907,7 @@ MHD_Result orionldMhdConnectionInit
     return MHD_YES;
   }
 
+  LM_TMP(("KZ: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
   // Check payload too big
   if (ciP->httpHeaders.contentLength > 2000000)
   {
@@ -719,8 +916,10 @@ MHD_Result orionldMhdConnectionInit
     return MHD_YES;
   }
 
+  LM_TMP(("KZ: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
   // Set servicePath: "/#" for GET requests, "/" for all others (ehmmm ... creation of subscriptions ...)
   ciP->servicePathV.push_back((orionldState.verb == GET)? "/#" : "/");
+  LM_TMP(("KZ: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
 
 
   // Check that GET/DELETE has no payload
@@ -737,6 +936,7 @@ MHD_Result orionldMhdConnectionInit
     //
     // FIXME: Instead of multiple strcmps, save an enum constant in ciP about content-type
     //
+  LM_TMP(("KZ: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
     if ((strcmp(ciP->httpHeaders.contentType.c_str(), "application/json") != 0) && (strcmp(ciP->httpHeaders.contentType.c_str(), "application/ld+json") != 0))
     {
       LM_W(("Bad Input (invalid Content-Type: '%s'", ciP->httpHeaders.contentType.c_str()));
@@ -746,7 +946,9 @@ MHD_Result orionldMhdConnectionInit
       orionldState.httpStatusCode = 415;  // Unsupported Media Type
       return MHD_YES;
     }
+  LM_TMP(("KZ: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
   }
 
+  LM_TMP(("KZ: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
   return MHD_YES;
 }

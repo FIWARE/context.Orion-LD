@@ -25,6 +25,8 @@
 #include <string>
 #include <vector>
 
+#include "orionld/common/orionldState.h"             // orionldState
+
 #include "common/string.h"
 #include "common/globals.h"
 #include "common/statistics.h"
@@ -129,7 +131,7 @@ static bool queryForward(ConnectionInfo* ciP, QueryContextRequest* qcrP, QueryCo
                       verb,
                       orionldState.tenantP->tenant,
                       servicePath,
-                      ciP->httpHeaders.xauthToken,
+                      orionldState.xAuthToken,
                       resource,
                       mimeType,
                       payload,
@@ -177,18 +179,21 @@ static bool queryForward(ConnectionInfo* ciP, QueryContextRequest* qcrP, QueryCo
   //
   ParseData parseData;
 
-  ciP->verb   = POST;
-  ciP->method = "POST";
+  // Overriding original verb to be a POST, now that this service routine has been invoked
+  orionldState.verb = POST;
 
-  // Note that jsonTreat() is thought for client-to-CB interactions, thus it modifies ciP->httpStatusCode
+
+  //
+  // Note that jsonTreat() is thought for client-to-CB interactions, thus it modifies orionldState.httpStatusCode
   // Thus, we need to preserve it before (and recover after) in order a fail in the CB-to-CPr interaction doesn't
   // "corrupt" the status code in the client-to-CB interaction.
   // FIXME P5: not sure if I like this approach... very "hacking-style". Probably it would be better
   // to make JSON parsing logic (internal to jsonTreat()) independent of ciP (in fact, parsing process
   // hasn't anything to do with connection).
-  HttpStatusCode sc = ciP->httpStatusCode;
+  //
+  int saved = orionldState.httpStatusCode;
   s = jsonTreat(cleanPayload, ciP, &parseData, RtQueryContextResponse, NULL);
-  ciP->httpStatusCode = sc;
+  orionldState.httpStatusCode = saved;
 
   if (s != "OK")
   {
@@ -280,7 +285,7 @@ std::string postQueryContext
   long long                   count = 0;
   long long*                  countP = NULL;
 
-  bool asJsonObject = (ciP->uriParam[URI_PARAM_ATTRIBUTE_FORMAT] == "object" && ciP->outMimeType == JSON);
+  bool asJsonObject = (ciP->uriParam[URI_PARAM_ATTRIBUTE_FORMAT] == "object") && (orionldState.out.contentType == JSON);
 
   //
   // 00. Count or not count? That is the question ...
@@ -291,15 +296,15 @@ std::string postQueryContext
   // In API version 2, this has changed completely. Here, the total count of local entities is returned
   // if the URI parameter 'count' is set to 'true', and it is returned in the HTTP header Fiware-Total-Count.
   //
-  if ((ciP->apiVersion == V2) && (ciP->uriParamOptions["count"]))
+  if ((orionldState.apiVersion == V2) && (orionldState.uriParams.count == true))
   {
     countP = &count;
   }
-  else if ((ciP->apiVersion == V1) && (ciP->uriParam["details"] == "on"))
+  else if ((orionldState.apiVersion == V1) && (orionldState.uriParams.details == true))
   {
     countP = &count;
   }
-  else if ((ciP->apiVersion == NGSI_LD_V1) && (ciP->uriParamOptions["count"]))
+  else if ((orionldState.apiVersion == NGSI_LD_V1) && (orionldState.uriParams.count == true))
     countP = &count;
 
 
@@ -308,14 +313,12 @@ std::string postQueryContext
   //
   qcrsP->errorCode.fill(SccOk);
 
-  TIMED_MONGO(ciP->httpStatusCode = mongoQueryContext(qcrP,
-                                                      qcrsP,
-                                                      orionldState.tenantP,
-                                                      ciP->servicePathV,
-                                                      ciP->uriParam,
-                                                      ciP->uriParamOptions,
-                                                      countP,
-                                                      ciP->apiVersion));
+  TIMED_MONGO(orionldState.httpStatusCode = mongoQueryContext(qcrP,
+                                                              qcrsP,
+                                                              orionldState.tenantP,
+                                                              ciP->servicePathV,
+                                                              countP,
+                                                              orionldState.apiVersion));
 
   if (qcrsP->errorCode.code == SccBadRequest)
   {
@@ -331,7 +334,7 @@ std::string postQueryContext
   //
   // If API version 2, add count, if asked for, in HTTP header Fiware-Total-Count
   //
-  if (((ciP->apiVersion == V2) || (ciP->apiVersion == NGSI_LD_V1)) && (countP != NULL))
+  if (((orionldState.apiVersion == V2) || (orionldState.apiVersion == NGSI_LD_V1)) && (countP != NULL))
   {
     char cV[32];
 
@@ -354,7 +357,7 @@ std::string postQueryContext
   //
   if (forwardsPending(qcrsP) == false)
   {
-    TIMED_RENDER(answer = qcrsP->render(ciP->apiVersion, asJsonObject));
+    TIMED_RENDER(answer = qcrsP->render(orionldState.apiVersion, asJsonObject));
 
     qcrP->release();
     return answer;
@@ -527,10 +530,7 @@ std::string postQueryContext
     }
   }
 
-  std::string detailsString  = ciP->uriParam[URI_PARAM_PAGINATION_DETAILS];
-  bool        details        = (strcasecmp("on", detailsString.c_str()) == 0)? true : false;
-
-  TIMED_RENDER(answer = responseV.render(ciP->apiVersion, asJsonObject, details, qcrsP->errorCode.details));
+  TIMED_RENDER(answer = responseV.render(orionldState.apiVersion, asJsonObject, orionldState.uriParams.details, qcrsP->errorCode.details));
 
 
   //

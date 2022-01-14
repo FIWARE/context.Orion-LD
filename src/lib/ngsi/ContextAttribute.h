@@ -106,8 +106,8 @@ public:
                              bool             acceptedTextPlain,
                              bool             acceptedJson,
                              MimeType         outFormatSelection,
-                             MimeType*        outMimeTypeP,
-                             HttpStatusCode*  scP);
+                             MimeType*        outContentTypeP,
+                             int*             scP);
   void         release(void);
   std::string  getName(void);
 

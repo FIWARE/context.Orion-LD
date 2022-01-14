@@ -41,7 +41,7 @@ typedef bool (*OrionldServiceRoutine)(ConnectionInfo* ciP);
 //
 // OrionldTroeRoutine -
 //
-typedef bool (*OrionldTroeRoutine)(ConnectionInfo* ciP);
+typedef bool (*OrionldTroeRoutine)(void);
 
 
 
@@ -102,7 +102,6 @@ typedef struct OrionLdRestServiceSimplifiedVector
 #define ORIONLD_SERVICE_OPTION_DONT_ADD_CONTEXT_TO_RESPONSE_PAYLOAD  (1 << 2)
 #define ORIONLD_SERVICE_OPTION_MAKE_SURE_TENANT_EXISTS               (1 << 3)
 #define ORIONLD_SERVICE_OPTION_CLONE_PAYLOAD                         (1 << 4)
-#define ORIONLD_SERVICE_OPTION_NO_V2_URI_PARAMS                      (1 << 5)
 #define ORIONLD_SERVICE_OPTION_NO_CONTEXT_NEEDED                     (1 << 6)
 #define ORIONLD_SERVICE_OPTION_NO_CONTEXT_TYPE_CHECK                 (1 << 7)
 
@@ -140,7 +139,7 @@ typedef struct OrionLdRestServiceSimplifiedVector
 #define ORIONLD_URIPARAM_LOCATION             (1 << 25)
 #define ORIONLD_URIPARAM_URL                  (1 << 27)
 #define ORIONLD_URIPARAM_RELOAD               (1 << 28)
-
+#define ORIONLD_URIPARAM_NOTEXISTS            (1 << 29)
 
 
 // -----------------------------------------------------------------------------

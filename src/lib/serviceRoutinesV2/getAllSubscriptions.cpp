@@ -65,7 +65,6 @@ std::string getAllSubscriptions
 
   TIMED_MONGO(mongoListSubscriptions(&subs,
                                      &oe,
-                                     ciP->uriParam,
                                      orionldState.tenantP,
                                      ciP->servicePathV[0],
                                      limit,
@@ -77,7 +76,7 @@ std::string getAllSubscriptions
     std::string out;
 
     TIMED_RENDER(out = oe.toJson());
-    ciP->httpStatusCode = oe.code;
+    orionldState.httpStatusCode = oe.code;
 
     return out;
   }

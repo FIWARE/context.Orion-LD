@@ -152,30 +152,28 @@ MHD_Result uriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* ckey, c
 {
   ConnectionInfo*  ciP   = (ConnectionInfo*) cbDataP;
 
+  LM_TMP(("orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
   if ((val == NULL) || (*val == 0))
   {
     std::string  errorString = std::string("Empty right-hand-side for URI param /") + ckey + "/";
 
-    if (ciP->apiVersion == V2)
+    if (orionldState.apiVersion == V2)
     {
       OrionError error(SccBadRequest, errorString);
-      ciP->httpStatusCode = error.code;
-      ciP->answer         = error.smartRender(ciP->apiVersion);
+      orionldState.httpStatusCode = error.code;
+      ciP->answer                 = error.smartRender(orionldState.apiVersion);
 
-#ifdef ORIONLD
       orionldErrorResponseCreate(OrionldBadRequestData, "Empty right-hand-side for URI param", ckey);
-#endif
     }
-    else if (ciP->apiVersion == ADMIN_API)
+    else if (orionldState.apiVersion == ADMIN_API)
     {
-      ciP->httpStatusCode = SccBadRequest;
-      ciP->answer         = "{" + JSON_STR("error") + ":" + JSON_STR(errorString) + "}";
+      orionldState.httpStatusCode = SccBadRequest;
+      ciP->answer                 = "{" + JSON_STR("error") + ":" + JSON_STR(errorString) + "}";
 
-#ifdef ORIONLD
       orionldErrorResponseCreate(OrionldBadRequestData, "Error in URI param", errorString.c_str());
-#endif
     }
 
+    LM_TMP(("orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
     return MHD_YES;
   }
 
@@ -191,12 +189,12 @@ MHD_Result uriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* ckey, c
       if ((*cP < '0') || (*cP > '9'))
       {
         OrionError error(SccBadRequest, std::string("Bad pagination offset: /") + value + "/ [must be a decimal number]");
-        ciP->httpStatusCode = error.code;
-        ciP->answer         = error.smartRender(ciP->apiVersion);
+        orionldState.httpStatusCode = error.code;
+        ciP->answer                 = error.smartRender(orionldState.apiVersion);
 
-#ifdef ORIONLD
         orionldErrorResponseCreate(OrionldBadRequestData, "Invalid value for URI parameter /offset/", "must be an integer value >= 0");
-#endif
+
+        LM_TMP(("orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
         return MHD_YES;
       }
 
@@ -213,14 +211,14 @@ MHD_Result uriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* ckey, c
       if ((*cP < '0') || (*cP > '9'))
       {
         OrionError error(SccBadRequest, std::string("Bad pagination limit: /") + value + "/ [must be a decimal number]");
-        ciP->httpStatusCode = error.code;
-        ciP->answer         = error.smartRender(ciP->apiVersion);
+        orionldState.httpStatusCode = error.code;
+        ciP->answer                 = error.smartRender(orionldState.apiVersion);
 
-#ifdef ORIONLD
         LM_E(("Invalid value for URI parameter 'limit': '%s'", val));
         orionldErrorResponseCreate(OrionldBadRequestData, "Invalid value for URI parameter /limit/", "must be an integer value >= 1");
         orionldState.httpStatusCode = SccBadRequest;
-#endif
+        LM_TMP(("orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
+
         return MHD_YES;
       }
 
@@ -231,14 +229,14 @@ MHD_Result uriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* ckey, c
     if (limit > atoi(MAX_PAGINATION_LIMIT))
     {
       OrionError error(SccBadRequest, std::string("Bad pagination limit: /") + value + "/ [max: " + MAX_PAGINATION_LIMIT + "]");
-      ciP->httpStatusCode = error.code;
-      ciP->answer         = error.smartRender(ciP->apiVersion);
+      orionldState.httpStatusCode = error.code;
+      ciP->answer                 = error.smartRender(orionldState.apiVersion);
 
-#ifdef ORIONLD
         LM_E(("Invalid value for URI parameter 'limit': '%s'", val));
         orionldErrorResponseCreate(OrionldBadRequestData, "Invalid value for URI parameter /limit/", "must be an integer value <= 1000");
         orionldState.httpStatusCode = SccBadRequest;
-#endif
+        LM_TMP(("orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
+
       return MHD_YES;
     }
     else if (limit == 0)
@@ -246,8 +244,9 @@ MHD_Result uriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* ckey, c
       if (orionldState.apiVersion != NGSI_LD_V1)
       {
         OrionError error(SccBadRequest, std::string("Bad pagination limit: /") + value + "/ [a value of ZERO is unacceptable]");
-        ciP->httpStatusCode = error.code;
-        ciP->answer         = error.smartRender(ciP->apiVersion);
+        orionldState.httpStatusCode = error.code;
+        ciP->answer                 = error.smartRender(orionldState.apiVersion);
+        LM_TMP(("orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
       }
       return MHD_YES;
     }
@@ -259,12 +258,12 @@ MHD_Result uriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* ckey, c
     if ((strcasecmp(value.c_str(), "on") != 0) && (strcasecmp(value.c_str(), "off") != 0))
     {
       OrionError error(SccBadRequest, std::string("Bad value for /details/: /") + value + "/ [accepted: /on/, /ON/, /off/, /OFF/. Default is /off/]");
-      ciP->httpStatusCode = error.code;
-      ciP->answer         = error.smartRender(ciP->apiVersion);
+      orionldState.httpStatusCode = error.code;
+      ciP->answer                 = error.smartRender(orionldState.apiVersion);
 
-#ifdef ORIONLD
       orionldErrorResponseCreate(OrionldBadRequestData, "Bad value for /details/ - accepted: /on/, /ON/, /off/, /OFF/. Default is /off/", val);
-#endif
+      LM_TMP(("orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
+
       return MHD_YES;
     }
   }
@@ -287,12 +286,11 @@ MHD_Result uriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* ckey, c
       OrionError error(SccBadRequest, "Invalid value for URI param /options/");
 
       LM_W(("Bad Input (Invalid value for URI param /options/)"));
-      ciP->httpStatusCode = error.code;
-      ciP->answer         = error.smartRender(ciP->apiVersion);
+      orionldState.httpStatusCode = error.code;
+      ciP->answer                 = error.smartRender(orionldState.apiVersion);
 
-#ifdef ORIONLD
       orionldErrorResponseCreate(OrionldBadRequestData, "Invalid value for URI parameter /options/", val);
-#endif
+      LM_TMP(("orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
     }
   }
   else if (key == URI_PARAM_TYPE)
@@ -308,7 +306,6 @@ MHD_Result uriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* ckey, c
       ciP->uriParamTypes.push_back(val);
     }
   }
-#ifdef ORIONLD
   else if (key == URI_PARAM_PRETTY_PRINT)
   {
     if (strcmp(val, "yes") == 0)
@@ -320,7 +317,6 @@ MHD_Result uriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* ckey, c
   {
     orionldState.uriParams.spaces = atoi(val);
   }
-#endif
   else if ((key != URI_PARAM_Q)       &&
            (key != URI_PARAM_MQ)      &&
            (key != URI_PARAM_LEVEL))  // FIXME P1: possibly more known options here ...
@@ -366,12 +362,13 @@ MHD_Result uriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* ckey, c
     std::string details = std::string("found a forbidden character in URI param '") + key + "'";
     OrionError error(SccBadRequest, "invalid character in URI parameter");
 
-#ifdef ORIONLD
     orionldErrorResponseCreate(OrionldBadRequestData, "found a forbidden character in URI param", key.c_str());
-#endif
+
     alarmMgr.badInput(clientIp, details);
-    ciP->httpStatusCode = error.code;
-    ciP->answer         = error.smartRender(ciP->apiVersion);
+    orionldState.httpStatusCode = error.code;
+    ciP->answer                 = error.smartRender(orionldState.apiVersion);
+    LM_W(("Bad Input (forbidden character in URI parameter value: %s=%s)", key.c_str(), val));
+    LM_TMP(("orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
   }
 
   return MHD_YES;
@@ -441,10 +438,8 @@ static bool acceptItemParse(ConnectionInfo* ciP, char* value)
   //
   if ((strcmp(cP, "*/*")                  != 0) &&
       (strcmp(cP, "application/*")        != 0) &&
-#ifdef ORIONLD
       (strcmp(cP, "application/ld+json")  != 0) &&
       (strcmp(cP, "application/geo+json") != 0) &&
-#endif
       (strcmp(cP, "application/json")     != 0) &&
       (strcmp(cP, "text/*")               != 0) &&
       (strcmp(cP, "text/plain")           != 0))
@@ -483,8 +478,8 @@ static bool acceptItemParse(ConnectionInfo* ciP, char* value)
 
   if (*rest != 'q')
   {
-    ciP->acceptHeaderError = "q missing in accept header";
-    ciP->httpStatusCode    = SccBadRequest;
+    ciP->acceptHeaderError      = "q missing in accept header";
+    orionldState.httpStatusCode = SccBadRequest;
     delete acceptHeaderP;
     return false;
   }
@@ -493,8 +488,8 @@ static bool acceptItemParse(ConnectionInfo* ciP, char* value)
   ++rest;
   if (*rest != '=')
   {
-    ciP->acceptHeaderError = "missing equal-sign after q in accept header";
-    ciP->httpStatusCode    = SccBadRequest;
+    ciP->acceptHeaderError      = "missing equal-sign after q in accept header";
+    orionldState.httpStatusCode = SccBadRequest;
     delete acceptHeaderP;
     return false;
   }
@@ -510,8 +505,8 @@ static bool acceptItemParse(ConnectionInfo* ciP, char* value)
   // qvalue there?
   if (*rest == 0)
   {
-    ciP->acceptHeaderError = "qvalue in accept header is missing";
-    ciP->httpStatusCode    = SccBadRequest;
+    ciP->acceptHeaderError      = "qvalue in accept header is missing";
+    orionldState.httpStatusCode = SccBadRequest;
     delete acceptHeaderP;
     return false;
   }
@@ -519,9 +514,11 @@ static bool acceptItemParse(ConnectionInfo* ciP, char* value)
   // qvalue a number?
   if (str2double(rest, &acceptHeaderP->qvalue) == false)
   {
-    ciP->acceptHeaderError = "qvalue in accept header is not a number";
-    ciP->httpStatusCode    = SccBadRequest;
-    ciP->outMimeType       = mimeTypeSelect(ciP);
+    ciP->acceptHeaderError      = "qvalue in accept header is not a number";
+    orionldState.httpStatusCode = SccBadRequest;
+
+    orionldState.out.contentType = mimeTypeSelect(ciP);
+
     delete acceptHeaderP;
     return false;
   }
@@ -551,8 +548,8 @@ static void acceptParse(ConnectionInfo* ciP, const char* value)
 
   if (value[0] == 0)
   {
-    ciP->acceptHeaderError = "empty accept header";
-    ciP->httpStatusCode    = SccBadRequest;
+    ciP->acceptHeaderError      = "empty accept header";
+    orionldState.httpStatusCode = SccBadRequest;
     return;
   }
 
@@ -584,20 +581,21 @@ static void acceptParse(ConnectionInfo* ciP, const char* value)
 
   if ((ciP->httpHeaders.acceptHeaderV.size() == 0) && (ciP->acceptHeaderError == ""))
   {
-    ciP->httpStatusCode    = SccNotAcceptable;
-    ciP->acceptHeaderError = "no acceptable mime-type in accept header";
+    orionldState.httpStatusCode = SccNotAcceptable;
+    ciP->acceptHeaderError      = "no acceptable mime-type in accept header";
   }
 
-  if ((ciP->httpStatusCode == SccNotAcceptable) || (ciP->httpStatusCode == SccBadRequest))
+  if ((orionldState.httpStatusCode == SccNotAcceptable) || (orionldState.httpStatusCode == SccBadRequest))
   {
-    OrionError oe(ciP->httpStatusCode, ciP->acceptHeaderError);
+    OrionError oe((HttpStatusCode) orionldState.httpStatusCode, ciP->acceptHeaderError);
 
-    ciP->answer = oe.smartRender(ciP->apiVersion);
+    ciP->answer = oe.smartRender(orionldState.apiVersion);
   }
 }
 
 
 
+extern MimeType contentTypeParse(const char* contentType, char** charsetP);
 /* ****************************************************************************
 *
 * httpHeaderGet -
@@ -618,6 +616,8 @@ MHD_Result httpHeaderGet(void* cbDataP, MHD_ValueKind kind, const char* key, con
   else if (strcasecmp(key, HTTP_CONNECTION) == 0)        headerP->connection     = value;
   else if (strcasecmp(key, HTTP_CONTENT_TYPE) == 0)
   {
+    orionldState.in.contentType = contentTypeParse(value, NULL);
+
     headerP->contentType = value;
 
     if (strcmp(value, "application/ld+json") == 0)
@@ -634,18 +634,18 @@ MHD_Result httpHeaderGet(void* cbDataP, MHD_ValueKind kind, const char* key, con
     }
     else
     {
-      // Tenant used when tenant is not supported by the broker
-      LM_E(("tenant in use but tenant support is not enabled for the broker"));
-      orionldState.httpStatusCode = 400;
-      orionldErrorResponseCreate(OrionldBadRequestData, "Tenants not supported", "tenant in use but tenant support is not enabled for the broker");
+      // Tenant used when tenant is not supported by the broker - silently ignored for NGSIv2/v2, error for NGSI-LD
+      if (orionldState.apiVersion == NGSI_LD_V1)
+      {
+        LM_E(("tenant in use but tenant support is not enabled for the broker"));
+        orionldState.httpStatusCode = 400;
+        orionldErrorResponseCreate(OrionldBadRequestData, "Tenants not supported", "tenant in use but tenant support is not enabled for the broker");
+      }
     }
   }
-  else if (strcasecmp(key, "NGSILD-Path") == 0)
-    orionldState.servicePath = (char*) value;
   else if (strcasecmp(key, "X-Auth-Token") == 0)
   {
-    orionldState.xauthHeader    = (char*) value;
-    headerP->xauthToken         = value;
+    orionldState.xAuthToken     = (char*) value;
   }
   else if (strcasecmp(key, "Authorization") == 0)
     orionldState.authorizationHeader = (char*) value;
@@ -657,11 +657,8 @@ MHD_Result httpHeaderGet(void* cbDataP, MHD_ValueKind kind, const char* key, con
   {
     headerP->servicePath         = value;
     headerP->servicePathReceived = true;
-#ifdef ORIONLD
     orionldState.servicePath = (char*) value;
-#endif
   }
-#ifdef ORIONLD
   else if (strcasecmp(key, HTTP_LINK) == 0)
   {
     orionldState.link                  = (char*) value;
@@ -671,7 +668,6 @@ MHD_Result httpHeaderGet(void* cbDataP, MHD_ValueKind kind, const char* key, con
   {
     orionldState.preferHeader = (char*) value;
   }
-#endif
   else
   {
     LM_T(LmtHttpUnsupportedHeader, ("'unsupported' HTTP header: '%s', value '%s'", key, value));
@@ -713,6 +709,7 @@ static void requestCompleted
 {
   PERFORMANCE(requestCompletedStart);
 
+  LM_TMP(("orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
   ConnectionInfo*  ciP      = (ConnectionInfo*) *con_cls;
   const char*      spath    = (ciP->servicePathV.size() > 0)? ciP->servicePathV[0].c_str() : "";
   struct timespec  reqEndTime;
@@ -724,10 +721,10 @@ static void requestCompleted
     PERFORMANCE(notifEnd);
   }
 
-  if ((ciP->payload != NULL) && (ciP->payload != static_buffer))
+  if ((orionldState.in.payload != NULL) && (orionldState.in.payload != static_buffer))
   {
-    free(ciP->payload);
-    ciP->payload = NULL;
+    free(orionldState.in.payload);
+    orionldState.in.payload = NULL;
   }
 
 
@@ -782,7 +779,7 @@ static void requestCompleted
   //
   // If the httpStatusCode is above the set of 200s, an error has occurred
   //
-  if (ciP->httpStatusCode >= SccBadRequest)
+  if (orionldState.httpStatusCode >= SccBadRequest)
   {
     if (metricsMgr.isOn())
       metricsMgr.add(orionldState.tenantP->tenant, spath, METRIC_TRANS_IN_ERRORS, 1);
@@ -913,7 +910,7 @@ int servicePathCheck(ConnectionInfo* ciP, const char* servicePath)
   if (servicePath[0] != '/')
   {
     OrionError oe(SccBadRequest, "Only /absolute/ Service Paths allowed [a service path must begin with /]");
-    ciP->answer = oe.setStatusCodeAndSmartRender(ciP->apiVersion, &(ciP->httpStatusCode));
+    ciP->answer = oe.setStatusCodeAndSmartRender(orionldState.apiVersion, &orionldState.httpStatusCode);
     return 1;
   }
 
@@ -922,7 +919,7 @@ int servicePathCheck(ConnectionInfo* ciP, const char* servicePath)
   if (components > SERVICE_PATH_MAX_LEVELS)
   {
     OrionError oe(SccBadRequest, "too many components in ServicePath");
-    ciP->answer = oe.setStatusCodeAndSmartRender(ciP->apiVersion, &(ciP->httpStatusCode));
+    ciP->answer = oe.setStatusCodeAndSmartRender(orionldState.apiVersion, &orionldState.httpStatusCode);
     return 2;
   }
 
@@ -931,14 +928,14 @@ int servicePathCheck(ConnectionInfo* ciP, const char* servicePath)
     if (strlen(compV[ix].c_str()) > SERVICE_PATH_MAX_COMPONENT_LEN)
     {
       OrionError oe(SccBadRequest, "component-name too long in ServicePath");
-      ciP->answer = oe.setStatusCodeAndSmartRender(ciP->apiVersion, &(ciP->httpStatusCode));
+      ciP->answer = oe.setStatusCodeAndSmartRender(orionldState.apiVersion, &orionldState.httpStatusCode);
       return 3;
     }
 
     if (compV[ix].c_str()[0] == 0)
     {
       OrionError oe(SccBadRequest, "empty component in ServicePath");
-      ciP->answer = oe.setStatusCodeAndSmartRender(ciP->apiVersion, &(ciP->httpStatusCode));
+      ciP->answer = oe.setStatusCodeAndSmartRender(orionldState.apiVersion, &orionldState.httpStatusCode);
       return 3;
     }
 
@@ -957,7 +954,7 @@ int servicePathCheck(ConnectionInfo* ciP, const char* servicePath)
       if (!isalnum(comp[cIx]) && (comp[cIx] != '_'))
       {
         OrionError oe(SccBadRequest, "a component of ServicePath contains an illegal character");
-        ciP->answer = oe.setStatusCodeAndSmartRender(ciP->apiVersion, &(ciP->httpStatusCode));
+        ciP->answer = oe.setStatusCodeAndSmartRender(orionldState.apiVersion, &orionldState.httpStatusCode);
         return 4;
       }
     }
@@ -972,17 +969,18 @@ int servicePathCheck(ConnectionInfo* ciP, const char* servicePath)
 *
 * removeTrailingSlash -
 */
-static char* removeTrailingSlash(std::string path)
+static char* removeTrailingSlash(char* path)
 {
-  char* cpath = (char*) path.c_str();
+  int len = strlen(path);
 
-  /* strlen(cpath) > 1 ensures that root service path "/" is not touched */
-  while ((strlen(cpath) > 1) && (cpath[strlen(cpath) - 1] == '/'))
+  // len > 1 ensures that root service path "/" is not touched
+  while ((len > 1) && (path[len - 1] == '/'))
   {
-    cpath[strlen(cpath) - 1] = 0;
+    path[len - 1] = 0;
+    --len;
   }
 
-  return cpath;
+  return path;
 }
 
 
@@ -1027,22 +1025,6 @@ bool isOriginAllowedForCORS(const std::string& requestOrigin)
 */
 int servicePathSplit(ConnectionInfo* ciP)
 {
-#if 0
-  //
-  // Special case: empty service-path
-  //
-  // FIXME P4: We're not sure what this 'fix' really fixes.
-  //           Must implement a functest to reproduce this situation.
-  //           And, if that is not possible, just remove the whole thing
-  //
-  if ((ciP->httpHeaders.servicePathReceived == true) && (ciP->httpHeaders.servicePath == ""))
-  {
-    OrionError e(SccBadRequest, "empty service path");
-    ciP->answer = e.render();
-    alarmMgr.badInput(clientIp, "empty service path");
-    return -1;
-  }
-#endif
   char* servicePathCopy = NULL;
   int   servicePaths    = 0;
 
@@ -1082,7 +1064,7 @@ int servicePathSplit(ConnectionInfo* ciP)
 
   for (int ix = 0; ix < servicePaths; ++ix)
   {
-    std::string stripped = std::string(wsStrip((char*) ciP->servicePathV[ix].c_str()));
+    char* stripped = wsStrip((char*) ciP->servicePathV[ix].c_str());
 
     ciP->servicePathV[ix] = removeTrailingSlash(stripped);
 
@@ -1153,31 +1135,31 @@ static int contentTypeCheck(ConnectionInfo* ciP)
   if (ciP->httpHeaders.contentType == "")
   {
     std::string details = "Content-Type header not used, default application/octet-stream is not supported";
-    ciP->httpStatusCode = SccUnsupportedMediaType;
+    orionldState.httpStatusCode = SccUnsupportedMediaType;
     restErrorReplyGet(ciP, SccUnsupportedMediaType, details, &ciP->answer);
-    ciP->httpStatusCode = SccUnsupportedMediaType;
+    orionldState.httpStatusCode = SccUnsupportedMediaType;
 
     return 1;
   }
 
   // Case 3
-  if ((ciP->apiVersion == V1) && (ciP->httpHeaders.contentType != "application/json"))
+  if ((orionldState.apiVersion == V1) && (ciP->httpHeaders.contentType != "application/json"))
   {
     std::string details = std::string("not supported content type: ") + ciP->httpHeaders.contentType;
-    ciP->httpStatusCode = SccUnsupportedMediaType;
+    orionldState.httpStatusCode = SccUnsupportedMediaType;
     restErrorReplyGet(ciP, SccUnsupportedMediaType, details, &ciP->answer);
-    ciP->httpStatusCode = SccUnsupportedMediaType;
+    orionldState.httpStatusCode = SccUnsupportedMediaType;
     return 1;
   }
 
 
   // Case 4
-  if ((ciP->apiVersion == V2) && (ciP->httpHeaders.contentType != "application/json") && (ciP->httpHeaders.contentType != "text/plain"))
+  if ((orionldState.apiVersion == V2) && (ciP->httpHeaders.contentType != "application/json") && (ciP->httpHeaders.contentType != "text/plain"))
   {
     std::string details = std::string("not supported content type: ") + ciP->httpHeaders.contentType;
-    ciP->httpStatusCode = SccUnsupportedMediaType;
+    orionldState.httpStatusCode = SccUnsupportedMediaType;
     restErrorReplyGet(ciP, SccUnsupportedMediaType, details, &ciP->answer);
-    ciP->httpStatusCode = SccUnsupportedMediaType;
+    orionldState.httpStatusCode = SccUnsupportedMediaType;
     return 1;
   }
 
@@ -1191,7 +1173,7 @@ static int contentTypeCheck(ConnectionInfo* ciP)
 * urlCheck - check for forbidden characters and remove trailing slashes
 *
 * Returns 'true' if the URL is OK, 'false' otherwise.
-* ciP->answer and ciP->httpStatusCode are set if an error is encountered.
+* ciP->answer and orionldState.httpStatusCode are set if an error is encountered.
 *
 */
 bool urlCheck(ConnectionInfo* ciP, const std::string& url)
@@ -1199,8 +1181,8 @@ bool urlCheck(ConnectionInfo* ciP, const std::string& url)
   if (forbiddenChars(url.c_str()) == true)
   {
     OrionError error(SccBadRequest, ERROR_DESC_BAD_REQUEST_INVALID_CHAR_URI);
-    ciP->httpStatusCode = error.code;
-    ciP->answer         = error.smartRender(ciP->apiVersion);
+    orionldState.httpStatusCode = error.code;
+    ciP->answer                 = error.smartRender(orionldState.apiVersion);
     return false;
   }
 
@@ -1283,7 +1265,7 @@ static ApiVersion apiVersionGet(const char* path)
 */
 static bool acceptHeadersAcceptable(ConnectionInfo* ciP, bool* textAcceptedP)
 {
-  char* eopath = (char*) ciP->url.c_str();
+  char* eopath = orionldState.urlPath;
   int   urllen = strlen(eopath);
 
   if (urllen > 6)
@@ -1362,16 +1344,7 @@ ConnectionInfo* connectionTreatInit
   struct timeval   transactionStart;
   ConnectionInfo*  ciP;
 
-  //
-  // Setting crucial fields of orionldState - those that are used for non-ngsi-ld requests
-  //
-  kTimeGet(&orionldState.timestamp);
-
-  orionldState.requestTime  = orionldState.timestamp.tv_sec + ((double) orionldState.timestamp.tv_nsec) / 1000000000;
-  orionldState.responseTree = NULL;
-  orionldState.notify       = false;
-
-  *retValP = MHD_YES;  // Only MHD_NO if allocation of ConnectionInfo fails
+  *retValP = MHD_YES;  // MHD_NO only if allocation of ConnectionInfo fails
 
   // Create point in time for transaction metrics
   if (metricsMgr.isOn())
@@ -1435,9 +1408,7 @@ ConnectionInfo* connectionTreatInit
   // We would save the call to new/free for each and every request.
   // Once we *really* look to scratch some efficiency, this change should be made.
   //
-  // Also, is ciP->ip really used?
-  //
-  if ((ciP = new ConnectionInfo(url, method, version, connection)) == NULL)
+  if ((ciP = new ConnectionInfo(connection)) == NULL)
   {
     LM_E(("Runtime Error (error allocating ConnectionInfo)"));
     // No METRICS here ... Without ConnectionInfo we have no service/subService ...
@@ -1445,16 +1416,8 @@ ConnectionInfo* connectionTreatInit
     return NULL;
   }
 
-  //
-  // Get API version
-  //   Note that we need to get API version before MHD_get_connection_values() as the later
-  //   function may result in an error after processing Accept headers (and the
-  //   render for the error depends on API version)
-  //
-  ciP->apiVersion = apiVersionGet(ciP->url.c_str());
-
-
-  // LM_K(("--------------------- Serving APIv%d request %s %s -----------------", ciP->apiVersion, method, url));
+  LM_TMP(("KZ: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
+  // LM_K(("--------------------- Serving APIv%d request %s %s -----------------", orionldState.apiVersion, method, url));
 
   ciP->transactionStart.tv_sec  = transactionStart.tv_sec;
   ciP->transactionStart.tv_usec = transactionStart.tv_usec;
@@ -1466,9 +1429,6 @@ ConnectionInfo* connectionTreatInit
 
   // WARNING: This log message below is crucial for the correct function of the Behave tests - CANNOT BE REMOVED
   LM_T(LmtRequest, ("--------------------- Serving request %s %s -----------------", method, url));
-  ciP->port    = port;
-  ciP->ip      = ip;
-  ciP->callNo  = reqNo;
 
   ++reqNo;
 
@@ -1483,7 +1443,9 @@ ConnectionInfo* connectionTreatInit
   ciP->uriParam[URI_PARAM_PAGINATION_LIMIT]   = DEFAULT_PAGINATION_LIMIT;
   ciP->uriParam[URI_PARAM_PAGINATION_DETAILS] = DEFAULT_PAGINATION_DETAILS;
 
+  LM_TMP(("KZ: Calling httpHeaderGet: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
   MHD_get_connection_values(connection, MHD_HEADER_KIND, httpHeaderGet, ciP);
+  LM_TMP(("KZ: Called httpHeaderGet: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
 
   if (ciP->httpHeaders.accept == "")  // No Accept: given, treated as */*
   {
@@ -1503,7 +1465,7 @@ ConnectionInfo* connectionTreatInit
   ciP->httpHeader.push_back(HTTP_FIWARE_CORRELATOR);
   ciP->httpHeaderValue.push_back(ciP->httpHeaders.correlator);
 
-  if ((ciP->httpHeaders.contentLength > PAYLOAD_MAX_SIZE) && (ciP->apiVersion == V2))
+  if ((ciP->httpHeaders.contentLength > PAYLOAD_MAX_SIZE) && (orionldState.apiVersion == V2))
   {
     char details[256];
     snprintf(details, sizeof(details), "payload size: %d, max size supported: %d", ciP->httpHeaders.contentLength, PAYLOAD_MAX_SIZE);
@@ -1511,8 +1473,8 @@ ConnectionInfo* connectionTreatInit
     alarmMgr.badInput(clientIp, details);
     OrionError oe(SccRequestEntityTooLarge, details);
 
-    ciP->httpStatusCode = oe.code;
-    ciP->answer = oe.smartRender(ciP->apiVersion);
+    orionldState.httpStatusCode = oe.code;
+    ciP->answer                 = oe.smartRender(orionldState.apiVersion);
 
     //
     // FIXME P4:
@@ -1545,21 +1507,18 @@ ConnectionInfo* connectionTreatInit
     lmTransactionSetFrom(ip);
   }
 
-  char tenant[DB_AND_SERVICE_NAME_MAX_LEN];
+  orionldState.out.contentType = mimeTypeSelect(ciP);
 
-  if (orionldState.tenantP->tenant != NULL)
-    ciP->tenantFromHttpHeader = strToLower(tenant, orionldState.tenantP->tenant, sizeof(tenant));
-
-  ciP->outMimeType          = mimeTypeSelect(ciP);
-
+  LM_TMP(("KZ: Calling uriArgumentGet: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
   MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, uriArgumentGet, ciP);
+  LM_TMP(("KZ: After uriArgumentGet: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
 
   // Lookup Rest Service
   bool badVerb = false;
 
   ciP->restServiceP = restServiceLookup(ciP, &badVerb);
 
-  if (urlCheck(ciP, ciP->url) == false)
+  if (urlCheck(ciP, orionldState.urlPath) == false)
   {
     alarmMgr.badInput(clientIp, "error in URI path");
   }
@@ -1575,34 +1534,21 @@ ConnectionInfo* connectionTreatInit
   // Requests of verb POST, PUT or PATCH are considered erroneous if no payload is present - with the exception of log requests.
   //
   else if ((ciP->httpHeaders.contentLength == 0) &&
-      ((ciP->verb == POST) || (ciP->verb == PUT) || (ciP->verb == PATCH )) &&
-      (strncasecmp(ciP->url.c_str(), "/log/", 5) != 0) &&
-      (strncasecmp(ciP->url.c_str(), "/admin/log", 10) != 0))
+           ((orionldState.verb == POST) || (orionldState.verb == PUT) || (orionldState.verb == PATCH )) &&
+           (strncasecmp(orionldState.urlPath, "/log/", 5) != 0) &&
+           (strncasecmp(orionldState.urlPath, "/admin/log", 10) != 0))
   {
     std::string errorMsg;
 
     restErrorReplyGet(ciP, SccContentLengthRequired, "Zero/No Content-Length in PUT/POST/PATCH request", &errorMsg);
-    ciP->httpStatusCode  = SccContentLengthRequired;
+    orionldState.httpStatusCode  = SccContentLengthRequired;
     restReply(ciP, errorMsg);  // OK to respond as no payload
     alarmMgr.badInput(clientIp, errorMsg);
-
-    return ciP;
   }
-  else if (ciP->badVerb == true)
+  else if (orionldState.badVerb == true)
   {
-    std::vector<std::string> compV;
-
-    // Not ready to answer here - must wait until all payload has been read
-    ciP->httpStatusCode = SccBadVerb;
-  }
-  else
-  {
-    ciP->inMimeType = mimeTypeParse(ciP->httpHeaders.contentType, NULL);
-
-    if (ciP->httpStatusCode != SccOk)
-    {
-      alarmMgr.badInput(clientIp, "error in URI parameters");
-    }
+    // Not ready to answer here - must wait until all the payload has been read
+    orionldState.httpStatusCode = SccBadVerb;
   }
 
   return ciP;
@@ -1647,27 +1593,27 @@ static MHD_Result connectionTreatDataReceive(ConnectionInfo* ciP, size_t* upload
   // FIXME P1: This could be done in "Part I" instead, saving an "if" for each "Part II" call
   //           Once we *really* look to scratch some efficiency, this change should be made.
   //
-  if (ciP->payloadSize == 0)  // First call with payload
+  if (orionldState.in.payloadSize == 0)  // First call with payload
   {
     if (ciP->httpHeaders.contentLength > STATIC_BUFFER_SIZE)
     {
-      ciP->payload = (char*) malloc(ciP->httpHeaders.contentLength + 1);
+      orionldState.in.payload = (char*) malloc(ciP->httpHeaders.contentLength + 1);
     }
     else
     {
-      ciP->payload = static_buffer;
+      orionldState.in.payload = static_buffer;
     }
   }
 
   // Copy the chunk
   LM_T(LmtPartialPayload, ("Got %d of payload of %d bytes", dataLen, ciP->httpHeaders.contentLength));
-  memcpy(&ciP->payload[ciP->payloadSize], upload_data, dataLen);
+  memcpy(&orionldState.in.payload[orionldState.in.payloadSize], upload_data, dataLen);
 
   // Add to the size of the accumulated read buffer
-  ciP->payloadSize += *upload_data_size;
+  orionldState.in.payloadSize += *upload_data_size;
 
   // Zero-terminate the payload
-  ciP->payload[ciP->payloadSize] = 0;
+  orionldState.in.payload[orionldState.in.payloadSize] = 0;
 
   // Acknowledge the data and return
   *upload_data_size = 0;
@@ -1675,6 +1621,9 @@ static MHD_Result connectionTreatDataReceive(ConnectionInfo* ciP, size_t* upload
 }
 
 
+
+extern Verb verbGet(const char* method);
+extern MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* key, const char* value);
 
 /* ****************************************************************************
 *
@@ -1707,7 +1656,6 @@ static MHD_Result connectionTreat
    void**           con_cls
 )
 {
-#ifdef ORIONLD
   //
   // NGSI-LD requests implement a different URL parsing algorithm, a different payload parse algorithm, etc.
   // A complete new set of functions are used for NGSI-LD, so ...
@@ -1736,7 +1684,7 @@ static MHD_Result connectionTreat
       //
       // The entire message has been read, we're allowed to respond.
       //
-      // If any error has been encountered during stage I and II (init + payload-read), then ciP->httpStatusCode has been set to != SccOk (200)
+      // If any error has been encountered during stage I and II (init + payload-read), then orionldState.httpStatusCode has been set to != SccOk (200)
       // and, optionally a payload tree hangs under ciP->response.
       // No need to call the stage III function if this is the case.
       //
@@ -1748,12 +1696,37 @@ static MHD_Result connectionTreat
       return orionldMhdConnectionTreat((ConnectionInfo*) *con_cls);
     }
   }
-#endif
+
+  //
+  //  NOT NGSI-LD
+  //
 
   // 1. First call - setup ConnectionInfo and get/check HTTP headers
   if (*con_cls == NULL)
   {
     MHD_Result retVal;
+
+    //
+    // Setting crucial fields of orionldState - those that are used for non-ngsi-ld requests
+    //
+    kTimeGet(&orionldState.timestamp);
+    orionldStateInit(connection);
+    orionldState.httpVersion    = (char*) version;
+    orionldState.apiVersion     = apiVersionGet(url);
+    orionldState.verbString     = (char*) method;
+    orionldState.verb           = verbGet(method);
+    orionldState.requestTime    = orionldState.timestamp.tv_sec + ((double) orionldState.timestamp.tv_nsec) / 1000000000;
+    orionldState.responseTree   = NULL;
+    orionldState.notify         = false;
+    orionldState.urlPath        = (char*) url;
+    orionldState.attrsFormat    = (char*) "normalized";
+    orionldState.correlator     = (char*) "";
+    orionldState.httpStatusCode = 200;
+
+    LM_TMP(("KZ: Before orionldUriArgumentGet: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
+    MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, orionldUriArgumentGet, NULL);
+    LM_TMP(("KZ: After orionldUriArgumentGet: orionldState.httpStatusCode == %d", orionldState.httpStatusCode));
+
     *con_cls = connectionTreatInit(connection, url, method, version, &retVal);
     return retVal;
   }
@@ -1788,7 +1761,7 @@ static MHD_Result connectionTreat
 
   lmTransactionSetSubservice(ciP->httpHeaders.servicePath.c_str());
 
-  if ((ciP->httpStatusCode != SccOk) && (ciP->httpStatusCode != SccBadVerb))
+  if ((orionldState.httpStatusCode != SccOk) && (orionldState.httpStatusCode != SccBadVerb))
   {
     // An error has occurred. Here we are ready to respond, as all data has been read
     // However, if badVerb, then the service routine needs to execute to add the "Allow" HTTP header
@@ -1807,7 +1780,7 @@ static MHD_Result connectionTreat
     alarmMgr.badInput(clientIp, details);
     restErrorReplyGet(ciP, SccRequestEntityTooLarge, details, &ciP->answer);
 
-    ciP->httpStatusCode = SccRequestEntityTooLarge;
+    orionldState.httpStatusCode = SccRequestEntityTooLarge;
   }
 
 
@@ -1818,9 +1791,9 @@ static MHD_Result connectionTreat
   {
     OrionError   oe(SccBadRequest, ciP->acceptHeaderError);
 
-    ciP->httpStatusCode = oe.code;
+    orionldState.httpStatusCode = oe.code;
     alarmMgr.badInput(clientIp, ciP->acceptHeaderError);
-    restReply(ciP, oe.smartRender(ciP->apiVersion));
+    restReply(ciP, oe.smartRender(orionldState.apiVersion));
     return MHD_YES;
   }
 
@@ -1839,20 +1812,12 @@ static MHD_Result connectionTreat
       oe.details = "acceptable MIME types: application/json";
     }
 
-    ciP->httpStatusCode = oe.code;
+    orionldState.httpStatusCode = oe.code;
     alarmMgr.badInput(clientIp, oe.details);
-    restReply(ciP, oe.smartRender(ciP->apiVersion));
+    restReply(ciP, oe.smartRender(orionldState.apiVersion));
     return MHD_YES;
   }
 
-
-  //
-  // Note that ciP->outMimeType is not set here.
-  // Why?
-  // If text/plain is asked for and accepted ('*/value' operations) but something goes wrong,
-  // then application/json is used for the error
-  // If all goes well, the proper service routine will set ciP->outMimeType to text/plain
-  //
   if (ciP->httpHeaders.outformatSelect() == NOMIMETYPE)
   {
     OrionError oe(SccNotAcceptable, "acceptable MIME types: application/json, text/plain");
@@ -1862,9 +1827,9 @@ static MHD_Result connectionTreat
       oe.details = "acceptable MIME types: application/json";
     }
 
-    ciP->httpStatusCode = oe.code;
+    orionldState.httpStatusCode = oe.code;
     alarmMgr.badInput(clientIp, oe.details);
-    restReply(ciP, oe.smartRender(ciP->apiVersion));
+    restReply(ciP, oe.smartRender(orionldState.apiVersion));
     return MHD_YES;
   }
 
@@ -1872,14 +1837,14 @@ static MHD_Result connectionTreat
   //
   // Check Content-Type and Content-Length for GET/DELETE requests
   //
-  if ((ciP->httpHeaders.contentType != "") && (ciP->httpHeaders.contentLength == 0) && ((ciP->verb == GET) || (ciP->verb == DELETE)))
+  if ((ciP->httpHeaders.contentType != "") && (ciP->httpHeaders.contentLength == 0) && ((orionldState.verb == GET) || (orionldState.verb == DELETE)))
   {
     const char*  details = "Orion accepts no payload for GET/DELETE requests. HTTP header Content-Type is thus forbidden";
     OrionError   oe(SccBadRequest, details);
 
-    ciP->httpStatusCode = oe.code;
+    orionldState.httpStatusCode = oe.code;
     alarmMgr.badInput(clientIp, details);
-    restReply(ciP, oe.smartRender(ciP->apiVersion));
+    restReply(ciP, oe.smartRender(orionldState.apiVersion));
 
     return MHD_YES;
   }
@@ -1900,12 +1865,12 @@ static MHD_Result connectionTreat
   //
   // If error detected, just call treat function and respond to caller
   //
-  if (ciP->httpStatusCode != SccOk)
+  if (orionldState.httpStatusCode != SccOk)
   {
     ciP->answer = ciP->restServiceP->treat(ciP, ciP->urlComponents, ciP->urlCompV, NULL);
 
     // Bad Verb in API v1 should have empty payload
-    if ((ciP->apiVersion == V1) && (ciP->httpStatusCode == SccBadVerb))
+    if ((orionldState.apiVersion == V1) && (orionldState.httpStatusCode == SccBadVerb))
     {
       ciP->answer = "";
     }

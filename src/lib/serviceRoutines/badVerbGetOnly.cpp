@@ -28,6 +28,8 @@
 #include "logMsg/logMsg.h"
 #include "logMsg/traceLevels.h"
 
+#include "orionld/common/orionldState.h"             // orionldState
+
 #include "common/errorMessages.h"
 #include "alarmMgr/alarmMgr.h"
 
@@ -52,22 +54,22 @@ std::string badVerbGetOnly
   ParseData*                 parseDataP
 )
 {
-  std::string  details = std::string("bad verb for url '") + ciP->url + "', method '" + ciP->method + "'";
+  std::string  details = std::string("bad verb for url '") + orionldState.urlPath + "', method '" + orionldState.verbString + "'";
   OrionError   oe(SccBadVerb, ERROR_DESC_BAD_VERB);
 
   ciP->httpHeader.push_back(HTTP_ALLOW);
   std::string headerValue = "GET";
   // OPTIONS verb is only available for V2 API
-  if ((corsEnabled == true) && (ciP->apiVersion == V2))
+  if ((corsEnabled == true) && (orionldState.apiVersion == V2))
   {
     headerValue = headerValue + ", OPTIONS";
   }
   ciP->httpHeaderValue.push_back(headerValue);
-  ciP->httpStatusCode = SccBadVerb;
+  orionldState.httpStatusCode = SccBadVerb;
 
   alarmMgr.badInput(clientIp, details);
 
-  ciP->answer = oe.smartRender(ciP->apiVersion);
+  ciP->answer = oe.smartRender(orionldState.apiVersion);
 
   return ciP->answer;
 }

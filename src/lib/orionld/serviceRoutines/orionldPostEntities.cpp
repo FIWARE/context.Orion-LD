@@ -22,6 +22,9 @@
 *
 * Author: Ken Zangelin
 */
+#include <string>                                                // std::string
+#include <vector>                                                // std::vector
+
 #include "logMsg/logMsg.h"                                       // LM_*
 #include "logMsg/traceLevels.h"                                  // Lmt*
 
@@ -393,15 +396,17 @@ bool orionldPostEntities(ConnectionInfo* ciP)
 
   PERFORMANCE(dbStart);
 
+  std::vector<std::string> servicePathV;
+  servicePathV.push_back("/");
+
   orionldState.httpStatusCode = mongoUpdateContext(&mongoRequest,
                                                    &mongoResponse,
                                                    orionldState.tenantP,
-                                                   ciP->servicePathV,
-                                                   ciP->uriParam,
-                                                   ciP->httpHeaders.xauthToken.c_str(),
-                                                   ciP->httpHeaders.correlator.c_str(),
-                                                   ciP->httpHeaders.ngsiv2AttrsFormat.c_str(),
-                                                   ciP->apiVersion,
+                                                   servicePathV,
+                                                   orionldState.xAuthToken,
+                                                   orionldState.correlator,
+                                                   orionldState.attrsFormat,
+                                                   orionldState.apiVersion,
                                                    NGSIV2_NO_FLAVOUR);
 
   PERFORMANCE(dbEnd);

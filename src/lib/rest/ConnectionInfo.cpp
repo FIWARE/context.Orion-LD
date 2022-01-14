@@ -25,13 +25,11 @@
 #include <string>
 #include <map>
 
+#include "orionld/common/orionldState.h"                    // orionldState
+
 #include "common/string.h"
 #include "common/globals.h"
 #include "rest/ConnectionInfo.h"
-
-#ifdef ORIONLD
-#include "orionld/common/orionldState.h"                    // orionldState
-#endif
 
 
 
@@ -68,24 +66,11 @@ static const char* validOptions[] =
 * ConnectionInfo::ConnectionInfo - 
 */
 ConnectionInfo::ConnectionInfo():
-  connection             (NULL),
-  verb                   (NOVERB),
-  badVerb                (false),
-  inMimeType             (JSON),
-  outMimeType            (JSON),
   restServiceP           (NULL),
-  payload                (NULL),
-  payloadSize            (0),
-  callNo                 (1),
-  parseDataP             (NULL),
-  port                   (0),
-  ip                     (""),
-  apiVersion             (V1),
   transactionStart       { 0, 0 },
   inCompoundValue        (false),
   compoundValueP         (NULL),
-  compoundValueRoot      (NULL),
-  httpStatusCode         (SccOk)
+  compoundValueRoot      (NULL)
 {
 }
 
@@ -95,67 +80,24 @@ ConnectionInfo::ConnectionInfo():
 *
 * ConnectionInfo::ConnectionInfo - 
 */
-ConnectionInfo::ConnectionInfo(MimeType _outMimeType):
-  connection             (NULL),
-  verb                   (NOVERB),
-  badVerb                (false),
-  inMimeType             (JSON),
-  outMimeType            (_outMimeType),
+ConnectionInfo::ConnectionInfo(MHD_Connection* _connection):
   restServiceP           (NULL),
-  payload                (NULL),
-  payloadSize            (0),
-  callNo                 (1),
-  parseDataP             (NULL),
-  port                   (0),
-  ip                     (""),
-  apiVersion             (V1),
   transactionStart       { 0, 0 },
   inCompoundValue        (false),
   compoundValueP         (NULL),
-  compoundValueRoot      (NULL),
-  httpStatusCode         (SccOk)
+  compoundValueRoot      (NULL)
 {
-}
+  orionldState.mhdConnection = _connection;
 
-
-
-/* ****************************************************************************
-*
-* ConnectionInfo::ConnectionInfo - 
-*/
-ConnectionInfo::ConnectionInfo(std::string _url, std::string _method, std::string _version, MHD_Connection* _connection):
-  connection             (_connection),
-  verb                   (NOVERB),
-  badVerb                (false),
-  inMimeType             (JSON),
-  outMimeType            (JSON),
-  url                    (_url),
-  method                 (_method),
-  version                (_version),
-  restServiceP           (NULL),
-  payload                (NULL),
-  payloadSize            (0),
-  callNo                 (1),
-  parseDataP             (NULL),
-  port                   (0),
-  ip                     (""),
-  apiVersion             (V1),
-  transactionStart       { 0, 0 },
-  inCompoundValue        (false),
-  compoundValueP         (NULL),
-  compoundValueRoot      (NULL),
-  httpStatusCode         (SccOk)
-{
-  if      (_method == "POST")    verb = POST;
-  else if (_method == "PUT")     verb = PUT;
-  else if (_method == "GET")     verb = GET;
-  else if (_method == "DELETE")  verb = DELETE;
-  else if (_method == "PATCH")   verb = PATCH;
-  else if (_method == "OPTIONS") verb = OPTIONS;
-  else
+  if ((orionldState.verb != POST)    &&
+      (orionldState.verb != PUT)     &&
+      (orionldState.verb != GET)     &&
+      (orionldState.verb != DELETE)  &&
+      (orionldState.verb != PATCH)   &&
+      (orionldState.verb != OPTIONS))
   {
-    badVerb = true;
-    verb    = NOVERB;
+    orionldState.badVerb = true;
+    orionldState.verb    = NOVERB;
   }
 }
 

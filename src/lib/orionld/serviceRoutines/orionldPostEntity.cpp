@@ -458,6 +458,7 @@ bool orionldPostEntity(ConnectionInfo* ciP)
   {
     HttpStatusCode            status;
     UpdateContextResponse     ucResponse;
+    std::vector<std::string>  servicePathV;
 
     ucr.updateActionType = ActionTypeAppend;
 
@@ -469,12 +470,11 @@ bool orionldPostEntity(ConnectionInfo* ciP)
     status = mongoUpdateContext(&ucr,
                                 &ucResponse,
                                 orionldState.tenantP,
-                                ciP->servicePathV,
-                                ciP->uriParam,
-                                ciP->httpHeaders.xauthToken.c_str(),
-                                ciP->httpHeaders.correlator.c_str(),
-                                ciP->httpHeaders.ngsiv2AttrsFormat.c_str(),
-                                ciP->apiVersion,
+                                servicePathV,
+                                orionldState.xAuthToken,
+                                orionldState.correlator,
+                                orionldState.attrsFormat,
+                                orionldState.apiVersion,
                                 NGSIV2_NO_FLAVOUR);
 
     PERFORMANCE(dbEnd);

@@ -62,6 +62,9 @@ bool orionldPostBatchDelete(ConnectionInfo* ciP)
   // Error or not, the Link header should never be present in the reponse
   orionldState.noLinkHeader = true;
 
+  // The response is never JSON-LD
+  orionldState.out.contentType = JSON;
+
   if (orionldState.requestTree->type != KjArray)
   {
     LM_W(("Bad Input (Payload must be a JSON Array)"));
@@ -191,7 +194,6 @@ bool orionldPostBatchDelete(ConnectionInfo* ciP)
     kjChildAdd(orionldState.responseTree, errors);
 
     orionldState.httpStatusCode = 207;  // Multi-Status
-    ciP->outMimeType            = JSON;
     orionldState.acceptJsonld   = false;
   }
 

@@ -25,6 +25,8 @@
 #include <string>
 #include <vector>
 
+#include "orionld/common/orionldState.h"             // orionldState
+
 #include "common/statistics.h"
 #include "common/clockFunctions.h"
 #include "common/errorMessages.h"
@@ -38,6 +40,8 @@
 #include "serviceRoutinesV2/getEntityAttribute.h"
 #include "parse/forbiddenChars.h"
 #include "rest/OrionError.h"
+
+
 
 /* ****************************************************************************
 *
@@ -62,15 +66,15 @@ std::string getEntityAttribute
   ParseData*                 parseDataP
 )
 {
-  std::string  type   = ciP->uriParam["type"];
+  char*        type   = (orionldState.uriParams.type != NULL)? orionldState.uriParams.type : (char*) "";
   std::string  answer;
   Attribute    attribute;
 
-  if (forbiddenIdChars(ciP->apiVersion, compV[2].c_str(), NULL) ||
-      forbiddenIdChars(ciP->apiVersion, compV[4].c_str(), NULL))
+  if (forbiddenIdChars(orionldState.apiVersion, compV[2].c_str(), NULL) ||
+      forbiddenIdChars(orionldState.apiVersion, compV[4].c_str(), NULL))
   {
     OrionError oe(SccBadRequest, ERROR_DESC_BAD_REQUEST_INVALID_CHAR_URI, ERROR_BAD_REQUEST);
-    ciP->httpStatusCode = oe.code;
+    orionldState.httpStatusCode = oe.code;
     return oe.toJson();
   }
 
@@ -89,24 +93,24 @@ std::string getEntityAttribute
   TIMED_RENDER(answer = attribute.render(ciP->httpHeaders.accepted("text/plain"),
                                          ciP->httpHeaders.accepted("application/json"),
                                          ciP->httpHeaders.outformatSelect(),
-                                         &(ciP->outMimeType),
-                                         &(ciP->httpStatusCode),
+                                         &orionldState.out.contentType,
+                                         &orionldState.httpStatusCode,
                                          ciP->uriParamOptions[OPT_KEY_VALUES],
                                          ciP->uriParam[URI_PARAM_METADATA],
                                          EntityAttributeResponse));
 
   if (attribute.oe.reasonPhrase == ERROR_TOO_MANY)
   {
-    ciP->httpStatusCode = SccConflict;
+    orionldState.httpStatusCode = SccConflict;
   }
   else if (attribute.oe.reasonPhrase == ERROR_NOT_FOUND)
   {
-    ciP->httpStatusCode = SccContextElementNotFound;  // Attribute to be precise!
+    orionldState.httpStatusCode = SccContextElementNotFound;  // Attribute to be precise!
   }
   else
   {
     // the same of the wrapped operation
-    ciP->httpStatusCode = parseDataP->qcrs.res.errorCode.code;
+    orionldState.httpStatusCode = parseDataP->qcrs.res.errorCode.code;
   }
 
   // 04. Cleanup and return result

@@ -26,7 +26,6 @@
 #include "logMsg/traceLevels.h"                                // Lmt*
 
 #include "rest/ConnectionInfo.h"                               // ConnectionInfo
-#include "rest/httpHeaderAdd.h"                                // httpHeaderAdd
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/common/orionldErrorResponse.h"               // orionldErrorResponseCreate
 #include "orionld/mongoBackend/mongoLdRegistrationGet.h"       // mongoLdRegistrationGet
@@ -53,7 +52,7 @@ bool orionldGetRegistration(ConnectionInfo* ciP)
 
   // Transform to KjNode tree
   orionldState.httpStatusCode  = SccOk;
-  orionldState.responseTree    = kjTreeFromRegistration(ciP, &registration);
+  orionldState.responseTree    = kjTreeFromRegistration(&registration);
 
   return true;
 }

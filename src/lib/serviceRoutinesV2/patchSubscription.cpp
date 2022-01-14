@@ -75,19 +75,17 @@ std::string patchSubscription
                                       &beError,
                                       orionldState.tenantP,
                                       ciP->servicePathV,
-                                      ciP->httpHeaders.xauthToken,
+                                      orionldState.xAuthToken,
                                       ciP->httpHeaders.correlator));
 
   std::string  answer = "";
   if (beError.code != SccNone)
   {
     TIMED_RENDER(answer = beError.toJson());
-    ciP->httpStatusCode = beError.code;
+    orionldState.httpStatusCode = beError.code;
   }
   else
-  {
-    ciP->httpStatusCode = SccNoContent;
-  }
+    orionldState.httpStatusCode = SccNoContent;
 
   return answer;
 }

@@ -39,7 +39,6 @@
 #include "ngsi10/NotifyContextRequest.h"
 #include "ngsiNotify/senderThread.h"
 #include "rest/uriParamNames.h"
-#include "rest/ConnectionInfo.h"
 #include "rest/httpHeaderAdd.h"
 
 #ifdef ORIONLD
@@ -88,7 +87,7 @@ void Notifier::sendNotifyContextRequest
     NotifyContextRequest*            ncrP,
     const ngsiv2::HttpInfo&          httpInfo,
     const std::string&               tenant,
-    const std::string&               xauthToken,
+    const char*                      xauthToken,
     const std::string&               fiwareCorrelator,
     RenderFormat                     renderFormat,
     const std::vector<std::string>&  attrsOrder,
@@ -209,7 +208,7 @@ static std::vector<SenderThreadParams*>* buildSenderParamsCustom
     const ContextElementResponseVector&  cv,
     const ngsiv2::HttpInfo&              httpInfo,
     const std::string&                   tenant,
-    const std::string&                   xauthToken,
+    const char*                          xauthToken,
     const std::string&                   fiwareCorrelator,
     RenderFormat                         renderFormat,
     const std::vector<std::string>&      attrsOrder,
@@ -219,6 +218,9 @@ static std::vector<SenderThreadParams*>* buildSenderParamsCustom
   std::vector<SenderThreadParams*>*  paramsV;
 
   paramsV = new std::vector<SenderThreadParams*>;
+
+  if (xauthToken == NULL)
+    xauthToken = "";
 
   for (unsigned ix = 0; ix < cv.size(); ix++)
   {
@@ -438,7 +440,7 @@ std::vector<SenderThreadParams*>* Notifier::buildSenderParams
   NotifyContextRequest*            ncrP,
   const ngsiv2::HttpInfo&          httpInfo,
   const std::string&               tenant,
-  const std::string&               xauthToken,
+  const char*                      xauthToken,
   const std::string&               fiwareCorrelator,
   RenderFormat                     renderFormat,
   const std::vector<std::string>&  attrsOrder,
@@ -446,7 +448,6 @@ std::vector<SenderThreadParams*>* Notifier::buildSenderParams
   bool                             blackList
 )
 {
-    ConnectionInfo                    ci;
     Verb                              verb    = httpInfo.verb;
     std::vector<SenderThreadParams*>* paramsV = NULL;
 #ifdef ORIONLD
@@ -523,16 +524,10 @@ std::vector<SenderThreadParams*>* Notifier::buildSenderParams
       spathList = "";
     }
 
-    ci.outMimeType = JSON;
-
     std::string payloadString;
 
     if (renderFormat == NGSI_V1_LEGACY)
-    {
-      bool asJsonObject = (ci.uriParam[URI_PARAM_ATTRIBUTE_FORMAT] == "object" && ci.outMimeType == JSON);
-      payloadString = ncrP->render(ci.apiVersion, asJsonObject);
-    }
-#ifdef ORIONLD
+      payloadString = ncrP->render(V2, false);
     else if ((renderFormat >= NGSI_LD_V1_NORMALIZED) && (renderFormat <= NGSI_LD_V1_V2_KEYVALUES_COMPACT))
     {
       subP = subCacheItemLookup(tenant.c_str(), ncrP->subscriptionId.c_str());
@@ -564,7 +559,6 @@ std::vector<SenderThreadParams*>* Notifier::buildSenderParams
       payloadString = buf;
       toFree        = buf;
     }
-#endif
     else
       payloadString = ncrP->toJson(renderFormat, attrsOrder, metadataFilter, blackList);
 
@@ -602,7 +596,7 @@ std::vector<SenderThreadParams*>* Notifier::buildSenderParams
     params->verb             = verbName(verb);
     params->tenant           = tenant;
     params->servicePath      = spathList;
-    params->xauthToken       = xauthToken;
+    params->xauthToken       = (xauthToken == NULL)? "" : xauthToken;
     params->resource         = uriPath;
     params->content_type     = contentType;
     params->content          = payloadString;
