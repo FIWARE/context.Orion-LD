@@ -3,7 +3,7 @@ name: Deploy Releases
 on:
   push:
     branches:
-      -  'release/**'
+      -  'releases'
 
 env:
   IMAGE_ORG: fiware
