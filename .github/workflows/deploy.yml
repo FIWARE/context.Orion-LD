@@ -37,9 +37,16 @@ jobs:
           myToken: ${{ secrets.GITHUB_TOKEN }}
           exclude_types: draft|prerelease
 
+      - uses: zwaldowski/semver-release-action@v2
+        with:
+          dry_run: true
+          bump: ${{ steps.latest-release.outputs.tag_name }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+
       - name: Set version output
         id: out
-        run: echo "::set-output name=version::$(echo ${{ steps.latest-release.outputs.tag_name }}-${{ env.IMAGE_TAG_PRE }})"
+        run: echo "::set-output name=version::$(echo ${VERSION}-${{ env.IMAGE_TAG_PRE }})"
 
   prepare-release:
     needs: [ "generate-version" ]
