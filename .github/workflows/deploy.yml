@@ -76,6 +76,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Test
+        run: cat src/lib/orionld/common/orionldState.h
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
 
