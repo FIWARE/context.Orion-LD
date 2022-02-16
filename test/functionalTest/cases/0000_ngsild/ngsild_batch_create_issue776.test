@@ -30,6 +30,7 @@ brokerStart CB
 
 --SHELL--
 
+
 #
 # 01. Batch create 3 entities (issue 776) and see the entity IDs in the response payload body
 #
