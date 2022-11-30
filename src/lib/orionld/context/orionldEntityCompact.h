@@ -1,5 +1,5 @@
-#ifndef SRC_LIB_ORIONLD_FORWARDING_FORWARDREQUESTSEND_H_
-#define SRC_LIB_ORIONLD_FORWARDING_FORWARDREQUESTSEND_H_
+#ifndef SRC_LIB_ORIONLD_CONTEXT_ORIONLDENTITYCOMPACT_H_
+#define SRC_LIB_ORIONLD_CONTEXT_ORIONLDENTITYCOMPACT_H_
 
 /*
 *
@@ -25,14 +25,19 @@
 *
 * Author: Ken Zangelin
 */
-#include "orionld/forwarding/ForwardPending.h"                   // ForwardPending
+extern "C"
+{
+#include "kjson/KjNode.h"                                        // KjNode
+}
+
+#include "orionld/context/OrionldContext.h"                      // OrionldContext
 
 
 
 // -----------------------------------------------------------------------------
 //
-// forwardRequestSend -
+// orionldEntityCompact -
 //
-extern bool forwardRequestSend(ForwardPending* fwdPendingP, const char* dateHeader, const char* xForwardedForHeader);
+extern void orionldEntityCompact(KjNode* entityP, OrionldContext* contextP);
 
-#endif  // SRC_LIB_ORIONLD_FORWARDING_FORWARDREQUESTSEND_H_
+#endif  // SRC_LIB_ORIONLD_CONTEXT_ORIONLDENTITYCOMPACT_H_

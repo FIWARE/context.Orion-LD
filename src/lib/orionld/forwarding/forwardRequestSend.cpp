@@ -322,7 +322,7 @@ void attrsParam(OrionldContext* contextP, ForwardUrlParts* urlPartsP, StringArra
 //
 // forwardRequestSend -
 //
-bool forwardRequestSend(ForwardPending* fwdPendingP, const char* dateHeader)
+bool forwardRequestSend(ForwardPending* fwdPendingP, const char* dateHeader, const char* xForwardedForHeader)
 {
   //
   // Figure out the @context to use for the forwarded request
@@ -408,6 +408,7 @@ bool forwardRequestSend(ForwardPending* fwdPendingP, const char* dateHeader)
   // - Content-Type
   // - User-Agent
   // - Date
+  // - X-Forwarded-For
   // - Those in csourceInfo (if Content-Type is present, it is ignored (for now))
   // - NGSILD-Tenant (part of registration, but can also be in csourceInfo?)
   // - Link - can be in csourceInfo (named jsonldContext)
@@ -421,6 +422,9 @@ bool forwardRequestSend(ForwardPending* fwdPendingP, const char* dateHeader)
 
   // Host
   headers = curl_slist_append(headers, hostHeader);
+
+  // X-Forwarded-For
+  headers = curl_slist_append(headers, xForwardedForHeader);
 
   // Custom headers from Registration::contextSourceInfo
   char* infoTenant    = NULL;
@@ -437,6 +441,30 @@ bool forwardRequestSend(ForwardPending* fwdPendingP, const char* dateHeader)
       if ((keyP == NULL) || (valueP == NULL))                     { LM_W(("Missing key or value in Registration::contextSourceInfo")); continue; }
       if ((keyP->type != KjString) || (valueP->type != KjString)) { LM_W(("key or value in Registration::contextSourceInfo is non-string")); continue; }
       if (strcasecmp(keyP->value.s, "Content-Type") == 0)         { LM_W(("Content-Type is part of the Registration::contextSourceInfo headers, however, that is not implemented yet, sorry")); continue; }
+
+      //
+      // Whatever the key is, if the value is "urn:ngsi-ld:request", then the value is to be taken from the HTTP headers of the original request.
+      //
+      if (strcmp(valueP->value.s, "urn:ngsi-ld:request") == 0)
+      {
+        //
+        // Forward the header "as is" - look it up in the list of incoming headers (orionldState.in.httpHeaders)
+        //
+        if (orionldState.in.httpHeaders != NULL)
+        {
+          kjTreeLog(orionldState.in.httpHeaders, "orionldState.in.httpHeaders");
+          KjNode* kvP = kjLookup(orionldState.in.httpHeaders, keyP->value.s);
+
+          if (kvP != NULL)
+          {
+            char header[512];
+            snprintf(header, sizeof(header), "%s: %s", kvP->name, kvP->value.s);
+            headers = curl_slist_append(headers, header);
+          }
+        }
+
+        continue;
+      }
 
       if (strcasecmp(keyP->value.s, "NGSILD-Tenant") == 0)
       {

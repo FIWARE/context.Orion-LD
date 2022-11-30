@@ -38,6 +38,8 @@ extern "C"
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/common/curlToBrokerStrerror.h"                 // curlToBrokerStrerror
 #include "orionld/common/tenantList.h"                           // tenant0
+#include "orionld/context/orionldEntityExpand.h"                 // orionldEntityExpand
+#include "orionld/context/orionldEntityCompact.h"                // orionldEntityCompact
 #include "orionld/payloadCheck/pCheckUri.h"                      // pCheckUri
 #include "orionld/legacyDriver/legacyGetEntity.h"                // legacyGetEntity
 #include "orionld/mongoc/mongocEntityLookup.h"                   // mongocEntityLookup
@@ -53,6 +55,7 @@ extern "C"
 #include "orionld/forwarding/forwardRequestSend.h"               // forwardRequestSend
 #include "orionld/forwarding/fwdPendingLookupByCurlHandle.h"     // fwdPendingLookupByCurlHandle
 #include "orionld/forwarding/fwdEntityMerge.h"                   // fwdEntityMerge
+#include "orionld/forwarding/xForwardedForCompose.h"             // xForwardedForCompose
 #include "orionld/serviceRoutines/orionldGetEntity.h"            // Own interface
 
 
@@ -111,15 +114,18 @@ bool orionldGetEntity(void)
     fwdPendingList = forwardingListsMerge(fwdPendingList, inclusiveList);
     fwdPendingList = forwardingListsMerge(fwdPendingList, auxiliarList);
 
-    // Send - copy from orionldPostEntities
+    // Enqueue all forwarded requests
     if (fwdPendingList != NULL)
     {
+      // Now that we've found all matching registrations we can add ourselves to the X-forwarded-For header
+      char* xff = xForwardedForCompose(orionldState.in.xForwardedFor, localIpAndPort);
+
       for (ForwardPending* fwdPendingP = fwdPendingList; fwdPendingP != NULL; fwdPendingP = fwdPendingP->next)
       {
         // Send the forwarded request and await all responses
         if (fwdPendingP->regP != NULL)
         {
-          if (forwardRequestSend(fwdPendingP, dateHeader) == 0)
+          if (forwardRequestSend(fwdPendingP, dateHeader, xff) == 0)
           {
             ++forwards;
             fwdPendingP->error = false;
@@ -155,9 +161,12 @@ bool orionldGetEntity(void)
           }
         }
 
-        if ((++loops >= 10) && ((loops % 5) == 0))
+        if ((++loops >= 50) && ((loops % 10) == 0))
           LM_W(("curl_multi_perform doesn't seem to finish ... (%d loops)", loops));
       }
+
+      if (loops >= 50)
+        LM_W(("curl_multi_perform finally finished!"));
     }
   }
 
@@ -228,11 +237,19 @@ bool orionldGetEntity(void)
             KjNode* atContextP = kjLookup(fwdPendingP->body, "@context");
             if (atContextP != NULL)
               kjChildRemove(fwdPendingP->body, atContextP);
-
-            // Now expand the whole thing using the context        *fwdPendingP->regP->contextP*
-            // And then compact the whole thing using the context  *orionldState.contextP*
-            // Set fwdPendingP->body to the resulting KjNode tree
           }
+
+          //
+          // If the original @context was not used when forwarding (a jsonldContext is present in the registration)
+          // then we now must expand the entity using the context 'fwdPendingP->regP->contextP'
+          // and then compact it again, using the @context of the original request
+          //
+          if ((fwdPendingP->regP->contextP != NULL) && (fwdPendingP->regP->contextP != orionldState.contextP))
+          {
+            orionldEntityExpand(fwdPendingP->body, fwdPendingP->regP->contextP);
+            orionldEntityCompact(fwdPendingP->body, orionldState.contextP);
+          }
+
           // Merge in the received body into the local (or nothing)
           if (apiEntityP == NULL)
             apiEntityP = fwdPendingP->body;

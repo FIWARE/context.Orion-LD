@@ -226,6 +226,7 @@ typedef struct OrionldStateOut
 typedef struct OrionldStateIn
 {
   // Incoming HTTP headers
+  KjNode*   httpHeaders;         // Object holding all incoming headers - used for forwarding and "urn:ngsi-ld:request"
   MimeType  contentType;
   char*     contentTypeString;
   int       contentLength;
@@ -585,6 +586,7 @@ extern char              hostHeader[256];          // move to orionld.cpp (from 
 extern bool              debugCurl;                // From orionld.cpp
 extern bool              noCache;                  // From orionld.cpp
 extern int               cSubCounters;             // Number of subscription counter updates before flush from sub-cache to DB
+extern char              localIpAndPort[135];      // Local address for X-Forwarded-For (from orionld.cpp)
 
 
 
