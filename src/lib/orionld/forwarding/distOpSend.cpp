@@ -329,8 +329,6 @@ void subAttrsCompact(KjNode* requestBody, OrionldContext* fwdContextP)
 {
   for (KjNode* subAttrP = requestBody->value.firstChildP; subAttrP != NULL; subAttrP = subAttrP->next)
   {
-    LM(("subAttr '%s'", subAttrP->name));
-
     if (strcmp(subAttrP->name, "type")        == 0)   continue;
     if (strcmp(subAttrP->name, "value")       == 0)   continue;
     if (strcmp(subAttrP->name, "object")      == 0)   continue;
@@ -421,6 +419,8 @@ bool distOpSend(DistOp* distOpP, const char* dateHeader, const char* xForwardedF
   distOpP->curlHandle = curl_easy_init();
   if (distOpP->curlHandle == NULL)
   {
+    curl_multi_cleanup(orionldState.curlDoMultiP);
+    orionldState.curlDoMultiP = NULL;
     LM_E(("Internal Error: curl_easy_init failed"));
     return false;
   }
@@ -526,10 +526,9 @@ bool distOpSend(DistOp* distOpP, const char* dateHeader, const char* xForwardedF
         //
         if (orionldState.in.httpHeaders != NULL)
         {
-          kjTreeLog(orionldState.in.httpHeaders, "orionldState.in.httpHeaders", LmtDistOpMsgs);
           KjNode* kvP = kjLookup(orionldState.in.httpHeaders, keyP->value.s);
 
-          if (kvP != NULL)
+          if ((kvP != NULL) && (kvP->type == KjString))
           {
             char header[512];
             snprintf(header, sizeof(header), "%s: %s", kvP->name, kvP->value.s);

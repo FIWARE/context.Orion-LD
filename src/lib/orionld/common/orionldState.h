@@ -69,7 +69,7 @@ extern "C"
 //
 // ORIONLD_VERSION -
 //
-#define ORIONLD_VERSION "post-v1.1.0"
+#define ORIONLD_VERSION "post-v1.2.0"
 
 
 
@@ -590,6 +590,8 @@ extern bool              debugCurl;                // From orionld.cpp
 extern bool              noCache;                  // From orionld.cpp
 extern int               cSubCounters;             // Number of subscription counter updates before flush from sub-cache to DB
 extern char              localIpAndPort[135];      // Local address for X-Forwarded-For (from orionld.cpp)
+extern unsigned long long  inReqPayloadMaxSize;
+extern unsigned long long  outReqMsgMaxSize;
 
 
 

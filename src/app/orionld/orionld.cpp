@@ -214,6 +214,10 @@ bool            noCache;
 unsigned int    connectionMemory;
 unsigned int    maxConnections;
 unsigned int    reqPoolSize;
+
+unsigned long long  inReqPayloadMaxSize;
+unsigned long long  outReqMsgMaxSize;
+
 bool            simulatedNotification;
 bool            statCounters;
 bool            statSemWait;
@@ -293,6 +297,8 @@ int             cSubCounters;
 #define CONN_MEMORY_DESC       "maximum memory size per connection (in kilobytes)"
 #define MAX_CONN_DESC          "maximum number of simultaneous connections"
 #define REQ_POOL_SIZE          "size of thread pool for incoming connections"
+#define IN_REQ_PAYLOAD_MAX_SIZE_DESC   "maximum size (in bytes) of the payload of incoming requests"
+#define OUT_REQ_MSG_MAX_SIZE_DESC      "maximum size (in bytes) of outgoing forward and notification request messages"
 #define SIMULATED_NOTIF_DESC   "simulate notifications instead of actual sending them (only for testing)"
 #define STAT_COUNTERS          "enable request/notification counters statistics"
 #define STAT_SEM_WAIT          "enable semaphore waiting time statistics"
@@ -332,6 +338,14 @@ int             cSubCounters;
 #define DBURI_DESC             "complete URI for database connection"
 #define DEBUG_CURL_DESC        "turn on debugging of libcurl - to the broker's logfile"
 #define CSUBCOUNTERS_DESC      "number of subscription counter updates before flush from sub-cache to DB (0: never, 1: always)"
+
+
+
+// -----------------------------------------------------------------------------
+//
+// MB - megabytes
+//
+#define MB(mbs) (1024 * 1024 * mbs)
 
 
 
@@ -383,6 +397,9 @@ PaArgument paArgs[] =
   { "-connectionMemory",      &connectionMemory,        "CONN_MEMORY",               PaUInt,    PaOpt,  64,              0,      1024,             CONN_MEMORY_DESC         },
   { "-maxConnections",        &maxConnections,          "MAX_CONN",                  PaUInt,    PaOpt,  1020,            1,      PaNL,             MAX_CONN_DESC            },
   { "-reqPoolSize",           &reqPoolSize,             "TRQ_POOL_SIZE",             PaUInt,    PaOpt,  0,               0,      1024,             REQ_POOL_SIZE            },
+
+  { "-inReqPayloadMaxSize",   &inReqPayloadMaxSize,     "IN_REQ_PAYLOAD_MAX_SIZE",   PaULong,   PaOpt,  MB(1),           0,      PaNL,             IN_REQ_PAYLOAD_MAX_SIZE_DESC },
+  { "-outReqMsgMaxSize",      &outReqMsgMaxSize,        "OUT_REQ_MSG_MAX_SIZE",      PaULong,   PaOpt,  MB(8),           0,      PaNL,             OUT_REQ_MSG_MAX_SIZE_DESC    },
   { "-notificationMode",      &notificationMode,        "NOTIF_MODE",                PaString,  PaOpt,  _i "transient",  PaNL,   PaNL,             NOTIFICATION_MODE_DESC   },
   { "-simulatedNotification", &simulatedNotification,   "DROP_NOTIF",                PaBool,    PaOpt,  false,           false,  true,             SIMULATED_NOTIF_DESC     },
   { "-statCounters",          &statCounters,            "STAT_COUNTERS",             PaBool,    PaOpt,  false,           false,  true,             STAT_COUNTERS            },
@@ -832,31 +849,31 @@ void regCachePresent(void)
   for (OrionldTenant* tenantP = &tenant0; tenantP != NULL; tenantP = tenantP->next)
   {
     if (tenantP->regCache == NULL)
-      LM(("Tenant '%s': No regCache", tenantP->mongoDbName));
+      LM_T(LmtRegCache, ("Tenant '%s': No regCache", tenantP->mongoDbName));
     else
     {
-      LM(("Tenant '%s':", tenantP->mongoDbName));
+      LM_T(LmtRegCache, ("Tenant '%s':", tenantP->mongoDbName));
       RegCacheItem* rciP = tenantP->regCache->regList;
 
       while (rciP != NULL)
       {
         KjNode* regIdP = kjLookup(rciP->regTree, "id");
 
-        LM(("  o Registration %s:", (regIdP != NULL)? regIdP->value.s : "unknown"));
-        LM(("    o mode:  %s", registrationModeToString(rciP->mode)));
-        LM(("    o ops:   0x%x", rciP->opMask));
+        LM_T(LmtRegCache, ("  o Registration %s:", (regIdP != NULL)? regIdP->value.s : "unknown"));
+        LM_T(LmtRegCache, ("    o mode:  %s", registrationModeToString(rciP->mode)));
+        LM_T(LmtRegCache, ("    o ops:   0x%x", rciP->opMask));
 
         if (rciP->idPatternRegexList != NULL)
         {
-          LM(("    o patterns:"));
+          LM_T(LmtRegCache, ("    o patterns:"));
           for (RegIdPattern* ripP = rciP->idPatternRegexList; ripP != NULL; ripP = ripP->next)
           {
-            LM(("      o %s (idPattern at %p)", ripP->owner->value.s, ripP->owner));
+            LM_T(LmtRegCache, ("      o %s (idPattern at %p)", ripP->owner->value.s, ripP->owner));
           }
         }
         else
-          LM(("    o patterns: NONE"));
-        LM(("  -----------------------------------"));
+          LM_T(LmtRegCache, ("    o patterns: NONE"));
+        LM_T(LmtRegCache, ("  -----------------------------------"));
         rciP = rciP->next;
       }
     }
@@ -1133,7 +1150,6 @@ int main(int argC, char* argV[])
 
   // localIpAndPort - IP:port for X-Forwarded-For
   snprintf(localIpAndPort, sizeof(localIpAndPort), "%s:%d", orionldHostName, port);
-  LM(("localIpAndPort: %s", localIpAndPort));
 
   orionldStateInit(NULL);
 
