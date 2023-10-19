@@ -120,3 +120,5 @@ However, the ETSI test suite still needs quite some work to be usable.
 A TTF (Testing Task force) is applied for (ETSI fundings) and hopefully the test suite will be improved upon during 2023.
 
 Orion-LD passes about 95% of the test cases of the older deprecated test suite, while ETSI's test suite isn't really usable at the moment.
+
+
