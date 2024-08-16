@@ -42,6 +42,7 @@ SET (SOURCES
     qEqCompare.cpp
     qGtCompare.cpp
     qLtCompare.cpp
+    qMatch.cpp
 )
 
 # Include directories

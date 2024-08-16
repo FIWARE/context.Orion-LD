@@ -22,10 +22,11 @@
 *
 * Author: Ken Zangelin
 */
+#include <unistd.h>                                            // NULL
+
 extern "C"
 {
 #include "kbase/kMacros.h"                                     // K_FT
-#include "kalloc/kaStrdup.h"                                   // kaStrdup
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjLookup.h"                                    // kjLookup
 }
@@ -40,15 +41,9 @@ extern "C"
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/common/dotForEq.h"                           // dotForEq
 #include "orionld/common/dateTime.h"                           // dateTimeFromString
-#include "orionld/kjTree/kjNavigate.h"                         // kjNavigate2
 #include "orionld/q/qBuild.h"                                  // qBuild
 #include "orionld/q/qPresent.h"                                // qPresent
-#include "orionld/q/qRangeCompare.h"                           // qRangeCompare
-#include "orionld/q/qMatchCompare.h"                           // qMatchCompare
-#include "orionld/q/qCommaListCompare.h"                       // qCommaListCompare
-#include "orionld/q/qEqCompare.h"                              // qEqCompare
-#include "orionld/q/qGtCompare.h"                              // qGtCompare
-#include "orionld/q/qLtCompare.h"                              // qLtCompare
+#include "orionld/q/qMatch.h"                                  // qMatch
 #include "orionld/notifications/subCacheAlterationMatch.h"     // Own interface
 
 
@@ -445,84 +440,6 @@ static OrionldAlterationMatch* attributeMatch(OrionldAlterationMatch* matchList,
 
 // -----------------------------------------------------------------------------
 //
-// qMatch -
-//
-static bool qMatch(QNode* qP, OrionldAlteration* altP)
-{
-  if (qP->type == QNodeOr)
-  {
-    // If any of the children is a match, then it's a match
-    int childNo = 0;
-    for (QNode* childP = qP->value.children; childP != NULL; childP = childP->next)
-    {
-      if (qMatch(childP, altP) == true)
-        return true;
-      ++childNo;
-    }
-  }
-  else if (qP->type == QNodeAnd)
-  {
-    // If ALL of the children are a match, then it's a match
-    for (QNode* childP = qP->value.children; childP != NULL; childP = childP->next)
-    {
-      if (qMatch(childP, altP) == false)
-        return false;
-    }
-
-    return true;
-  }
-  else
-  {
-    QNode* lhs = qP->value.children;        // variable-path
-    QNode* rhs = qP->value.children->next;  // constant (NULL for QNodeExists & QNodeNotExists)
-
-    //
-    // Not OR nor AND => LHS is an  attribute from the entity
-    //
-    // Well, or a sub-attribute, or a fragment of its value ...
-    // Anyway, the attribute/sub-attribute must exist.
-    // If it does not, then the result is always "false" (except for the case "q=!P1", of course :))
-    //
-    bool     isTimestamp = false;
-    KjNode*  lhsNode     = kjNavigate2(altP->finalApiEntityP, lhs->value.v, &isTimestamp);
-
-    //
-    // If Left-Hand-Side does not exist - MATCH for op "NotExist" and No Match for all other operations
-    //
-    if (lhsNode == NULL)
-      return (qP->type == QNodeNotExists)? true : false;
-
-    if      (qP->type == QNodeNotExists)  return false;
-    else if (qP->type == QNodeExists)     return true;
-    else if (qP->type == QNodeEQ)
-    {
-      if      (rhs->type == QNodeRange)   return  qRangeCompare(lhsNode, rhs, isTimestamp);
-      else if (rhs->type == QNodeComma)   return  qCommaListCompare(lhsNode, rhs, isTimestamp);
-      else                                return  qEqCompare(lhsNode, rhs, isTimestamp);
-    }
-    else if (qP->type == QNodeNE)
-    {
-      if      (rhs->type == QNodeRange)   return !qRangeCompare(lhsNode, rhs, isTimestamp);
-      else if (rhs->type == QNodeComma)   return !qCommaListCompare(lhsNode, rhs, isTimestamp);
-      else                                return !qEqCompare(lhsNode, rhs, isTimestamp);
-    }
-    else if (qP->type == QNodeGT)         return  qGtCompare(lhsNode, rhs, isTimestamp);
-    else if (qP->type == QNodeLT)         return  qLtCompare(lhsNode, rhs, isTimestamp);
-    else if (qP->type == QNodeGE)         return !qLtCompare(lhsNode, rhs, isTimestamp);
-    else if (qP->type == QNodeLE)         return !qGtCompare(lhsNode, rhs, isTimestamp);
-    else if (qP->type == QNodeMatch)      return qMatchCompare(lhsNode, rhs);
-    else if (qP->type == QNodeNoMatch)    return !qMatchCompare(lhsNode, rhs);
-    else if (qP->type == QNodeComma)      return false;
-    else if (qP->type == QNodeRange)      return false;
-  }
-
-  return false;
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
 // subCacheAlterationMatch -
 //
 OrionldAlterationMatch* subCacheAlterationMatch(OrionldAlteration* alterationList, int* matchesP)
@@ -594,7 +511,7 @@ OrionldAlterationMatch* subCacheAlterationMatch(OrionldAlteration* alterationLis
       //
       if ((subP->qP != NULL) && (orionldState.verb != HTTP_DELETE))
       {
-        if (qMatch(subP->qP, altP) == false)
+        if (qMatch(subP->qP, altP->finalApiEntityP, false) == false)
         {
           LM_T(LmtSubCacheMatch, ("Sub '%s' - no match due to ldq == '%s'", subP->subscriptionId, subP->qText));
           continue;

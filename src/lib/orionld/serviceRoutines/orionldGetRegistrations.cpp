@@ -47,6 +47,7 @@ extern "C"
 #include "orionld/q/qLex.h"                                      // qLex
 #include "orionld/q/qParse.h"                                    // qParse
 #include "orionld/q/qPresent.h"                                  // qListPresent
+#include "orionld/q/qMatch.h"                                    // qMatch
 #include "orionld/q/qMatchCompare.h"                             // qMatchCompare
 #include "orionld/kjTree/kjNavigate.h"                           // kjNavigate2
 #include "orionld/context/orionldContextItemExpand.h"            // orionldContextItemExpand
@@ -237,70 +238,6 @@ static QNode* csfParse(char* csf)
 
 
 
-// -----------------------------------------------------------------------------
-//
-// csfMatch -
-//
-static bool csfMatch(RegCacheItem* cRegP, QNode* qP)
-{
-  if (qP->type == QNodeOr)
-  {
-    // If any of the children is a match, then it's a match
-    int childNo = 0;
-    for (QNode* childP = qP->value.children; childP != NULL; childP = childP->next)
-    {
-      if (csfMatch(cRegP, childP) == true)
-        return true;
-      ++childNo;
-    }
-  }
-  else if (qP->type == QNodeAnd)
-  {
-    // If ALL of the children are a match, then it's a match
-    for (QNode* childP = qP->value.children; childP != NULL; childP = childP->next)
-    {
-      if (csfMatch(cRegP, childP) == false)
-        return false;
-    }
-
-    return true;
-  }
-  else
-  {
-    KjNode* properties = kjLookup(cRegP->regTree, "properties");
-
-    LM_T(LmtCsf, ("CSF Match check for reg %s", cRegP->regId));
-    kjTreeLog(properties, "Registration Properties", LmtCsf);
-
-    QNode*   lhs         = qP->value.children;        // variable-path
-    QNode*   rhs         = qP->value.children->next;  // constant (NULL for QNodeExists & QNodeNotExists)
-    bool     isTimestamp = false;
-    char*    longName    = orionldContextItemExpand(orionldState.contextP, lhs->value.v, true, NULL);
-    longName = kaStrdup(&orionldState.kalloc, longName);
-    dotForEq(longName);
-    KjNode*  lhsNode     = kjNavigate2(properties, longName, &isTimestamp);
-
-    if (lhsNode == NULL)
-      return (qP->type == QNodeNotExists)? true : false;
-
-    if      (qP->type == QNodeNotExists)  return false;
-
-    if (qP->type == QNodeMatch)
-    {
-      LM_T(LmtCsf, ("Calling qMatchCompare for registration '%s'", cRegP->regId));
-      bool r = qMatchCompare(lhsNode, rhs);
-      LM_T(LmtCsf, ("qMatchCompare returned '%s'", K_FT(r)));
-      return r;
-    }
-    else
-      LM_RE(false, ("CSF Q-Type %d not implemented", qP->type));
-  }
-
-  return false;
-}
-
-
-
 // ----------------------------------------------------------------------------
 //
 // orionldGetRegistrations -
@@ -376,9 +313,11 @@ bool orionldGetRegistrations(void)
     {
       for (RegCacheItem* cRegP = rcP->regList; cRegP != NULL; cRegP = cRegP->next)
       {
-        if (csfTree != NULL)
+        KjNode* properties = kjLookup(cRegP->regTree, "properties");
+
+        if ((csfTree != NULL) && (properties != NULL))
         {
-          if (csfMatch(cRegP, csfTree) == false)
+          if (qMatch(csfTree, properties, true) == false)
             continue;
         }
 
@@ -429,11 +368,13 @@ bool orionldGetRegistrations(void)
           continue;
       }
 
+      KjNode* properties = kjLookup(cRegP->regTree, "properties");
+
       // Filter: CSF
-      if (csfTree != NULL)
+      if ((csfTree != NULL) && (properties != NULL))
       {
         LM_T(LmtCsf, ("CSF check for reg '%s'", cRegP->regId));
-        if (csfMatch(cRegP, csfTree) == false)
+        if (qMatch(csfTree, properties, true) == false)
           continue;
       }
 

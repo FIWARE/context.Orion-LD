@@ -25,8 +25,12 @@
 *
 * Author: Ken Zangelin
 */
+extern "C"
+{
+#include "kjson/KjNode.h"                                      // KjNode
+}
+
 #include "orionld/types/QNode.h"                               // QNode
-#include "orionld/types/OrionldAlteration.h"                   // OrionldAlteration
 
 
 
@@ -34,6 +38,6 @@
 //
 // qMatch -
 //
-extern bool qMatch(QNode* qP, OrionldAlteration* altP)
+extern bool qMatch(QNode* qP, KjNode* attributesP, bool eqNames);
 
 #endif  // SRC_LIB_ORIONLD_Q_QMATCH_H_
