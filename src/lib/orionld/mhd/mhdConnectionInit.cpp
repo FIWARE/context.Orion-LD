@@ -687,6 +687,11 @@ MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
     orionldState.uriParams.options = (char*) value;
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_OPTIONS;
   }
+  else if (strcmp(key, "csf") == 0)
+  {
+    orionldState.uriParams.csf = (char*) value;
+    orionldState.uriParams.mask |= ORIONLD_URIPARAM_CSF;
+  }
   else if (strcmp(key, "expandValues") == 0)
   {
     orionldState.uriParams.expandValues = (char*) value;

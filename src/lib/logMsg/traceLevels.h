@@ -135,6 +135,7 @@ typedef enum TraceLevels
   LmtKjlParse,                         // Trace level start for K libs
   LmtMqtt = 205,                       // MQTT notifications
   LmtQ,                                // Query Language
+  LmtCsf,                              // CSF - 'q' for registrations
   LmtPostgres,                         // Postgres (TRoE)
   LmtSql,                              // SQL command for TRoE
   LmtPgPool,                           // Postgres Connection Pool

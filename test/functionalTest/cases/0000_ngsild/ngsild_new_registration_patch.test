@@ -729,9 +729,9 @@ MongoDB server version: REGEX(.*)
 		"localOnly" : true
 	},
 	"properties" : {
-		"https://uri.etsi.org/ngsi-ld/default-context/P1" : 1,
-		"https://uri.etsi.org/ngsi-ld/default-context/P2" : "2",
-		"https://uri.etsi.org/ngsi-ld/default-context/P3" : [
+		"https://uri=etsi=org/ngsi-ld/default-context/P1" : 1,
+		"https://uri=etsi=org/ngsi-ld/default-context/P2" : "2",
+		"https://uri=etsi=org/ngsi-ld/default-context/P3" : [
 			3
 		]
 	},
@@ -907,9 +907,9 @@ MongoDB server version: REGEX(.*)
 		"localOnly" : true
 	},
 	"properties" : {
-		"https://uri.etsi.org/ngsi-ld/default-context/P1" : 1,
-		"https://uri.etsi.org/ngsi-ld/default-context/P2" : "2",
-		"https://uri.etsi.org/ngsi-ld/default-context/P3" : [
+		"https://uri=etsi=org/ngsi-ld/default-context/P1" : 1,
+		"https://uri=etsi=org/ngsi-ld/default-context/P2" : "2",
+		"https://uri=etsi=org/ngsi-ld/default-context/P3" : [
 			3
 		]
 	},
@@ -1010,9 +1010,9 @@ MongoDB server version: REGEX(.*)
 		"localOnly" : true
 	},
 	"properties" : {
-		"https://uri.etsi.org/ngsi-ld/default-context/P1" : 1,
-		"https://uri.etsi.org/ngsi-ld/default-context/P2" : "2",
-		"https://uri.etsi.org/ngsi-ld/default-context/P3" : [
+		"https://uri=etsi=org/ngsi-ld/default-context/P1" : 1,
+		"https://uri=etsi=org/ngsi-ld/default-context/P2" : "2",
+		"https://uri=etsi=org/ngsi-ld/default-context/P3" : [
 			3
 		]
 	},
@@ -1113,9 +1113,9 @@ MongoDB server version: REGEX(.*)
 		"localOnly" : true
 	},
 	"properties" : {
-		"https://uri.etsi.org/ngsi-ld/default-context/P1" : 1,
-		"https://uri.etsi.org/ngsi-ld/default-context/P2" : "2",
-		"https://uri.etsi.org/ngsi-ld/default-context/P3" : [
+		"https://uri=etsi=org/ngsi-ld/default-context/P1" : 1,
+		"https://uri=etsi=org/ngsi-ld/default-context/P2" : "2",
+		"https://uri=etsi=org/ngsi-ld/default-context/P3" : [
 			3
 		]
 	},
@@ -1216,9 +1216,9 @@ MongoDB server version: REGEX(.*)
 		"localOnly" : true
 	},
 	"properties" : {
-		"https://uri.etsi.org/ngsi-ld/default-context/P1" : 1,
-		"https://uri.etsi.org/ngsi-ld/default-context/P2" : "2",
-		"https://uri.etsi.org/ngsi-ld/default-context/P3" : [
+		"https://uri=etsi=org/ngsi-ld/default-context/P1" : 1,
+		"https://uri=etsi=org/ngsi-ld/default-context/P2" : "2",
+		"https://uri=etsi=org/ngsi-ld/default-context/P3" : [
 			3
 		]
 	},
@@ -1319,9 +1319,9 @@ MongoDB server version: REGEX(.*)
 		"localOnly" : true
 	},
 	"properties" : {
-		"https://uri.etsi.org/ngsi-ld/default-context/P1" : 1,
-		"https://uri.etsi.org/ngsi-ld/default-context/P2" : "2",
-		"https://uri.etsi.org/ngsi-ld/default-context/P3" : [
+		"https://uri=etsi=org/ngsi-ld/default-context/P1" : 1,
+		"https://uri=etsi=org/ngsi-ld/default-context/P2" : "2",
+		"https://uri=etsi=org/ngsi-ld/default-context/P3" : [
 			3
 		]
 	},
@@ -1422,9 +1422,9 @@ MongoDB server version: REGEX(.*)
 		"localOnly" : true
 	},
 	"properties" : {
-		"https://uri.etsi.org/ngsi-ld/default-context/P1" : 1,
-		"https://uri.etsi.org/ngsi-ld/default-context/P2" : "2",
-		"https://uri.etsi.org/ngsi-ld/default-context/P3" : [
+		"https://uri=etsi=org/ngsi-ld/default-context/P1" : 1,
+		"https://uri=etsi=org/ngsi-ld/default-context/P2" : "2",
+		"https://uri=etsi=org/ngsi-ld/default-context/P3" : [
 			3
 		]
 	},
@@ -1525,9 +1525,9 @@ MongoDB server version: REGEX(.*)
 		"localOnly" : true
 	},
 	"properties" : {
-		"https://uri.etsi.org/ngsi-ld/default-context/P1" : 1,
-		"https://uri.etsi.org/ngsi-ld/default-context/P2" : "2",
-		"https://uri.etsi.org/ngsi-ld/default-context/P3" : [
+		"https://uri=etsi=org/ngsi-ld/default-context/P1" : 1,
+		"https://uri=etsi=org/ngsi-ld/default-context/P2" : "2",
+		"https://uri=etsi=org/ngsi-ld/default-context/P3" : [
 			3
 		]
 	},
@@ -1628,9 +1628,9 @@ MongoDB server version: REGEX(.*)
 		"localOnly" : true
 	},
 	"properties" : {
-		"https://uri.etsi.org/ngsi-ld/default-context/P1" : 1,
-		"https://uri.etsi.org/ngsi-ld/default-context/P2" : "2",
-		"https://uri.etsi.org/ngsi-ld/default-context/P3" : [
+		"https://uri=etsi=org/ngsi-ld/default-context/P1" : 1,
+		"https://uri=etsi=org/ngsi-ld/default-context/P2" : "2",
+		"https://uri=etsi=org/ngsi-ld/default-context/P3" : [
 			3
 		]
 	},
@@ -1731,9 +1731,9 @@ MongoDB server version: REGEX(.*)
 		"localOnly" : true
 	},
 	"properties" : {
-		"https://uri.etsi.org/ngsi-ld/default-context/P1" : 1,
-		"https://uri.etsi.org/ngsi-ld/default-context/P2" : "2",
-		"https://uri.etsi.org/ngsi-ld/default-context/P3" : [
+		"https://uri=etsi=org/ngsi-ld/default-context/P1" : 1,
+		"https://uri=etsi=org/ngsi-ld/default-context/P2" : "2",
+		"https://uri=etsi=org/ngsi-ld/default-context/P3" : [
 			3
 		]
 	},
@@ -1838,9 +1838,9 @@ MongoDB server version: REGEX(.*)
 		"localOnly" : true
 	},
 	"properties" : {
-		"https://uri.etsi.org/ngsi-ld/default-context/P1" : 1,
-		"https://uri.etsi.org/ngsi-ld/default-context/P2" : "2",
-		"https://uri.etsi.org/ngsi-ld/default-context/P3" : [
+		"https://uri=etsi=org/ngsi-ld/default-context/P1" : 1,
+		"https://uri=etsi=org/ngsi-ld/default-context/P2" : "2",
+		"https://uri=etsi=org/ngsi-ld/default-context/P3" : [
 			3
 		]
 	},
@@ -1948,9 +1948,9 @@ MongoDB server version: REGEX(.*)
 		"localOnly" : true
 	},
 	"properties" : {
-		"https://uri.etsi.org/ngsi-ld/default-context/P1" : 1,
-		"https://uri.etsi.org/ngsi-ld/default-context/P2" : "2",
-		"https://uri.etsi.org/ngsi-ld/default-context/P3" : [
+		"https://uri=etsi=org/ngsi-ld/default-context/P1" : 1,
+		"https://uri=etsi=org/ngsi-ld/default-context/P2" : "2",
+		"https://uri=etsi=org/ngsi-ld/default-context/P3" : [
 			3
 		]
 	},
@@ -2075,9 +2075,9 @@ MongoDB server version: REGEX(.*)
 		"localOnly" : true
 	},
 	"properties" : {
-		"https://uri.etsi.org/ngsi-ld/default-context/P1" : 1,
-		"https://uri.etsi.org/ngsi-ld/default-context/P2" : "2",
-		"https://uri.etsi.org/ngsi-ld/default-context/P3" : [
+		"https://uri=etsi=org/ngsi-ld/default-context/P1" : 1,
+		"https://uri=etsi=org/ngsi-ld/default-context/P2" : "2",
+		"https://uri=etsi=org/ngsi-ld/default-context/P3" : [
 			3
 		]
 	},
@@ -2189,9 +2189,9 @@ MongoDB server version: REGEX(.*)
 		"timeout" : 2
 	},
 	"properties" : {
-		"https://uri.etsi.org/ngsi-ld/default-context/P1" : 1,
-		"https://uri.etsi.org/ngsi-ld/default-context/P2" : "2",
-		"https://uri.etsi.org/ngsi-ld/default-context/P3" : [
+		"https://uri=etsi=org/ngsi-ld/default-context/P1" : 1,
+		"https://uri=etsi=org/ngsi-ld/default-context/P2" : "2",
+		"https://uri=etsi=org/ngsi-ld/default-context/P3" : [
 			3
 		]
 	},
@@ -2303,9 +2303,9 @@ MongoDB server version: REGEX(.*)
 		"timeout" : 2
 	},
 	"properties" : {
-		"https://uri.etsi.org/ngsi-ld/default-context/P1" : 34,
-		"https://uri.etsi.org/ngsi-ld/default-context/P2" : "2",
-		"https://uri.etsi.org/ngsi-ld/default-context/P3" : [
+		"https://uri=etsi=org/ngsi-ld/default-context/P1" : 34,
+		"https://uri=etsi=org/ngsi-ld/default-context/P2" : "2",
+		"https://uri=etsi=org/ngsi-ld/default-context/P3" : [
 			3
 		]
 	},
@@ -2417,12 +2417,12 @@ MongoDB server version: REGEX(.*)
 		"timeout" : 2
 	},
 	"properties" : {
-		"https://uri.etsi.org/ngsi-ld/default-context/P1" : 34,
-		"https://uri.etsi.org/ngsi-ld/default-context/P2" : "2",
-		"https://uri.etsi.org/ngsi-ld/default-context/P3" : [
+		"https://uri=etsi=org/ngsi-ld/default-context/P1" : 34,
+		"https://uri=etsi=org/ngsi-ld/default-context/P2" : "2",
+		"https://uri=etsi=org/ngsi-ld/default-context/P3" : [
 			3
 		],
-		"https://uri.etsi.org/ngsi-ld/default-context/P5" : {
+		"https://uri=etsi=org/ngsi-ld/default-context/P5" : {
 			"step" : 36
 		}
 	},
@@ -2534,12 +2534,12 @@ MongoDB server version: REGEX(.*)
 		"timeout" : 2
 	},
 	"properties" : {
-		"https://uri.etsi.org/ngsi-ld/default-context/P1" : 34,
-		"https://uri.etsi.org/ngsi-ld/default-context/P2" : "2",
-		"https://uri.etsi.org/ngsi-ld/default-context/P3" : [
+		"https://uri=etsi=org/ngsi-ld/default-context/P1" : 34,
+		"https://uri=etsi=org/ngsi-ld/default-context/P2" : "2",
+		"https://uri=etsi=org/ngsi-ld/default-context/P3" : [
 			3
 		],
-		"https://uri.etsi.org/ngsi-ld/default-context/P5" : {
+		"https://uri=etsi=org/ngsi-ld/default-context/P5" : {
 			"step" : 36
 		}
 	},
@@ -2682,12 +2682,12 @@ MongoDB server version: REGEX(.*)
 		"timeout" : 2
 	},
 	"properties" : {
-		"https://uri.etsi.org/ngsi-ld/default-context/P1" : 34,
-		"https://uri.etsi.org/ngsi-ld/default-context/P2" : "2",
-		"https://uri.etsi.org/ngsi-ld/default-context/P3" : [
+		"https://uri=etsi=org/ngsi-ld/default-context/P1" : 34,
+		"https://uri=etsi=org/ngsi-ld/default-context/P2" : "2",
+		"https://uri=etsi=org/ngsi-ld/default-context/P3" : [
 			3
 		],
-		"https://uri.etsi.org/ngsi-ld/default-context/P5" : {
+		"https://uri=etsi=org/ngsi-ld/default-context/P5" : {
 			"step" : 36
 		}
 	},
@@ -2818,12 +2818,12 @@ MongoDB server version: REGEX(.*)
 		"timeout" : 2
 	},
 	"properties" : {
-		"https://uri.etsi.org/ngsi-ld/default-context/P1" : 34,
-		"https://uri.etsi.org/ngsi-ld/default-context/P2" : "2",
-		"https://uri.etsi.org/ngsi-ld/default-context/P3" : [
+		"https://uri=etsi=org/ngsi-ld/default-context/P1" : 34,
+		"https://uri=etsi=org/ngsi-ld/default-context/P2" : "2",
+		"https://uri=etsi=org/ngsi-ld/default-context/P3" : [
 			3
 		],
-		"https://uri.etsi.org/ngsi-ld/default-context/P5" : {
+		"https://uri=etsi=org/ngsi-ld/default-context/P5" : {
 			"step" : 36
 		}
 	},

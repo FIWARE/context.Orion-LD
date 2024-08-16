@@ -169,6 +169,7 @@ typedef struct OrionldUriParams
   bool      onlyIds;
   bool      entityMap;
   char*     format;
+  char*     csf;
 
   OrionldContextKind kind;
 

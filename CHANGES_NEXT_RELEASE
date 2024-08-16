@@ -2,5 +2,6 @@
 
 ## New Features:
   * Distributed subscriptions: subordinate subscriptions are DELETED when their "father" is deleted
+  * Support for the URL parameter 'csf' in GET /ngsi-ld/v1/csourceRegistrations
 
 ## Notes
