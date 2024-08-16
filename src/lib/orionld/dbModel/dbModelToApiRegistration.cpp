@@ -249,7 +249,7 @@ bool dbModelToApiRegistration(KjNode* dbRegP, bool sysAttrs, bool forCache)
         for (KjNode* propertyP = propertiesP->value.firstChildP; propertyP != NULL; propertyP = propertyP->next)
         {
           char dotName[256];
-          strncpy(dotName, propertyP->name, sizeof(dotName));
+          strncpy(dotName, propertyP->name, sizeof(dotName) - 1);
           eqForDot(dotName);
 
           propertyP->name = orionldContextItemAliasLookup(orionldState.contextP, dotName, NULL, NULL);
