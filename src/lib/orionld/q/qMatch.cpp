@@ -79,7 +79,7 @@ bool qMatch(QNode* qP, KjNode* attributesP, bool eqNames)
     QNode* lhs      = qP->value.children;        // variable-path
     QNode* rhs      = qP->value.children->next;  // constant (NULL for QNodeExists & QNodeNotExists)
     char*  longName = NULL;
-    
+
     if (eqNames == true)
     {
       longName = orionldContextItemExpand(orionldState.contextP, lhs->value.v, true, NULL);

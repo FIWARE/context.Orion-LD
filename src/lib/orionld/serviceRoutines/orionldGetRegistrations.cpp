@@ -246,25 +246,25 @@ static QNode* csfParse(char* csf)
 //
 // > db.registrations.findOne()
 //   {
-//   	"_id" : "urn:ngsi-ld:R1",
-//   	"createdAt" : 1723541918.184624,
-//   	"modifiedAt" : 1723541918.184624,
-//   	"contextRegistration" : [
-//   		{
-//   			"entities" : [
-//   				{
-//   					"id" : "urn:ngsi-ld:Car1",
-//   					"type" : "https://uri.etsi.org/ngsi-ld/default-context/Vehicle"
-//   				}
-//   			],
-//   			"attrs" : [ ],
-//   			"providingApplication" : "http://my.csource.org:1026"
-//   		}
-//   	],
-//   	"properties" : {
-//   		"https://uri.etsi.org/ngsi-ld/default-context/rType" : "urn:aeros:federation:r1"
-//   	},
-//   	"status" : "active"
+//      "_id" : "urn:ngsi-ld:R1",
+//      "createdAt" : 1723541918.184624,
+//      "modifiedAt" : 1723541918.184624,
+//      "contextRegistration" : [
+//              {
+//                      "entities" : [
+//                              {
+//                                      "id" : "urn:ngsi-ld:Car1",
+//                                      "type" : "https://uri.etsi.org/ngsi-ld/default-context/Vehicle"
+//                              }
+//                      ],
+//                      "attrs" : [ ],
+//                      "providingApplication" : "http://my.csource.org:1026"
+//              }
+//      ],
+//      "properties" : {
+//              "https://uri.etsi.org/ngsi-ld/default-context/rType" : "urn:aeros:federation:r1"
+//      },
+//      "status" : "active"
 //   }
 //
 bool orionldGetRegistrations(void)
