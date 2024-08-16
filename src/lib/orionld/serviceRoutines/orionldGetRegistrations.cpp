@@ -24,6 +24,8 @@
 */
 extern "C"
 {
+#include "kbase/kMacros.h"                                       // K_FT
+#include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjObject, kjArray
 #include "kjson/kjClone.h"                                       // kjClone
@@ -37,10 +39,17 @@ extern "C"
 #include "orionld/types/RegCacheItem.h"                          // RegCache, RegCacheItem
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
+#include "orionld/common/dotForEq.h"                             // dotForEq
 #include "orionld/legacyDriver/legacyGetRegistrations.h"         // legacyGetRegistrations
 #include "orionld/mongoc/mongocRegistrationsGet.h"               // mongocRegistrationsGet
 #include "orionld/dbModel/dbModelToApiRegistration.h"            // dbModelToApiRegistration
 #include "orionld/kjTree/kjStringValueLookupInArray.h"           // kjStringValueLookupInArray
+#include "orionld/q/qLex.h"                                      // qLex
+#include "orionld/q/qParse.h"                                    // qParse
+#include "orionld/q/qPresent.h"                                  // qListPresent
+#include "orionld/q/qMatchCompare.h"                             // qMatchCompare
+#include "orionld/kjTree/kjNavigate.h"                           // kjNavigate2
+#include "orionld/context/orionldContextItemExpand.h"            // orionldContextItemExpand
 #include "orionld/serviceRoutines/orionldGetRegistrations.h"     // Own Interface
 
 
@@ -80,13 +89,13 @@ bool entityMatch(RegCacheItem* cRegP, StringArray* idListP, const char* idPatter
 
   for (KjNode* infoItemP = informationP->value.firstChildP; infoItemP != NULL; infoItemP = infoItemP->next)
   {
-    KjNode* entitiesP          = kjLookup(infoItemP, "entities");
-    KjNode* propertyNamesP     = kjLookup(infoItemP, "propertyNames");
-    KjNode* relationshipNamesP = kjLookup(infoItemP, "relationshipNames");
-    bool    typeHit      = false;
-    bool    idHit        = false;
-    bool    idPatternHit = false;
-    bool    attrsHit     = false;
+    KjNode* entitiesP           = kjLookup(infoItemP, "entities");
+    KjNode* propertyNamesP      = kjLookup(infoItemP, "propertyNames");
+    KjNode* relationshipNamesP  = kjLookup(infoItemP, "relationshipNames");
+    bool    typeHit             = false;
+    bool    idHit               = false;
+    bool    idPatternHit        = false;
+    bool    attrsHit            = false;
 
     if (idListP->items   == 0)     idHit        = true;
     if (idPattern        == NULL)  idPatternHit = true;
@@ -194,14 +203,145 @@ extern void regTypeAndOrigin(KjNode* regP, bool fromCache);
 
 
 
+// -----------------------------------------------------------------------------
+//
+// csfParse -
+//
+static QNode* csfParse(char* csf)
+{
+  char* title  = NULL;
+  char* detail = NULL;
+
+  LM_T(LmtCsf, ("CSF: '%s'", csf));
+
+  QNode* csfList = qLex(csf, false, &title, &detail);
+  if (csfList == NULL)
+  {
+    orionldError(OrionldBadRequestData, title, detail, 400);
+    return NULL;
+  }
+
+  qListPresent(csfList, NULL, "csf", "Registration CSF for Query");
+
+  QNode* csfTree = qParse(csfList, NULL, true, false, &title, &detail);
+  if (csfTree == NULL)
+  {
+    orionldError(OrionldBadRequestData, title, detail, 400);
+    return NULL;
+  }
+
+  qPresent(csfTree, "csf", "CSF Tree", LmtCsf);
+
+  return csfTree;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// csfMatch -
+//
+static bool csfMatch(RegCacheItem* cRegP, QNode* qP)
+{
+  if (qP->type == QNodeOr)
+  {
+    // If any of the children is a match, then it's a match
+    int childNo = 0;
+    for (QNode* childP = qP->value.children; childP != NULL; childP = childP->next)
+    {
+      if (csfMatch(cRegP, childP) == true)
+        return true;
+      ++childNo;
+    }
+  }
+  else if (qP->type == QNodeAnd)
+  {
+    // If ALL of the children are a match, then it's a match
+    for (QNode* childP = qP->value.children; childP != NULL; childP = childP->next)
+    {
+      if (csfMatch(cRegP, childP) == false)
+        return false;
+    }
+
+    return true;
+  }
+  else
+  {
+    KjNode* properties = kjLookup(cRegP->regTree, "properties");
+
+    LM_T(LmtCsf, ("CSF Match check for reg %s", cRegP->regId));
+    kjTreeLog(properties, "Registration Properties", LmtCsf);
+
+    QNode*   lhs         = qP->value.children;        // variable-path
+    QNode*   rhs         = qP->value.children->next;  // constant (NULL for QNodeExists & QNodeNotExists)
+    bool     isTimestamp = false;
+    char*    longName    = orionldContextItemExpand(orionldState.contextP, lhs->value.v, true, NULL);
+    longName = kaStrdup(&orionldState.kalloc, longName);
+    dotForEq(longName);
+    KjNode*  lhsNode     = kjNavigate2(properties, longName, &isTimestamp);
+
+    if (lhsNode == NULL)
+      return (qP->type == QNodeNotExists)? true : false;
+
+    if      (qP->type == QNodeNotExists)  return false;
+
+    if (qP->type == QNodeMatch)
+    {
+      LM_T(LmtCsf, ("Calling qMatchCompare for registration '%s'", cRegP->regId));
+      bool r = qMatchCompare(lhsNode, rhs);
+      LM_T(LmtCsf, ("qMatchCompare returned '%s'", K_FT(r)));
+      return r;
+    }
+    else
+      LM_RE(false, ("CSF Q-Type %d not implemented", qP->type));
+  }
+
+  return false;
+}
+
+
+
 // ----------------------------------------------------------------------------
 //
 // orionldGetRegistrations -
+//
+// Example Registration:
+//
+// > db.registrations.findOne()
+//   {
+//   	"_id" : "urn:ngsi-ld:R1",
+//   	"createdAt" : 1723541918.184624,
+//   	"modifiedAt" : 1723541918.184624,
+//   	"contextRegistration" : [
+//   		{
+//   			"entities" : [
+//   				{
+//   					"id" : "urn:ngsi-ld:Car1",
+//   					"type" : "https://uri.etsi.org/ngsi-ld/default-context/Vehicle"
+//   				}
+//   			],
+//   			"attrs" : [ ],
+//   			"providingApplication" : "http://my.csource.org:1026"
+//   		}
+//   	],
+//   	"properties" : {
+//   		"https://uri.etsi.org/ngsi-ld/default-context/rType" : "urn:aeros:federation:r1"
+//   	},
+//   	"status" : "active"
+//   }
 //
 bool orionldGetRegistrations(void)
 {
   if ((experimental == false) || (orionldState.in.legacy != NULL))
     return legacyGetRegistrations();
+
+  QNode* csfTree = NULL;
+  if (orionldState.uriParams.csf != NULL)
+  {
+    csfTree = csfParse(orionldState.uriParams.csf);
+    if (csfTree == NULL)
+      return false;
+  }
 
   if (orionldState.uriParamOptions.fromDb == true)
   {
@@ -236,18 +376,18 @@ bool orionldGetRegistrations(void)
     {
       for (RegCacheItem* cRegP = rcP->regList; cRegP != NULL; cRegP = cRegP->next)
       {
+        if (csfTree != NULL)
+        {
+          if (csfMatch(cRegP, csfTree) == false)
+            continue;
+        }
+
         ++count;
       }
     }
 
     orionldHeaderAdd(&orionldState.out.headers, HttpResultsCount, NULL, count);
   }
-
-  int        offset      = orionldState.uriParams.offset;
-  int        limit       = orionldState.uriParams.limit;
-  KjNode*    regArray    = kjArray(orionldState.kjsonP, NULL);
-  int        regs        = 0;
-  int        ix          = 0;
 
 
   //
@@ -267,10 +407,21 @@ bool orionldGetRegistrations(void)
     idPattern[idPatternLen] = 0;  // CUT OFF the ".*"
   }
 
+  int        offset      = orionldState.uriParams.offset;
+  int        limit       = orionldState.uriParams.limit;
+  KjNode*    regArray    = kjArray(orionldState.kjsonP, NULL);
+  int        regs        = 0;
+  int        ix          = 0;
   if ((limit != 0) && (rcP != NULL))
   {
     for (RegCacheItem* cRegP = rcP->regList; cRegP != NULL; cRegP = cRegP->next)
     {
+      if (ix < offset)
+      {
+        ++ix;
+        continue;
+      }
+
       // Filter: attrs || id || idPattern || type
       if ((orionldState.uriParams.attrs != NULL) || (orionldState.uriParams.id != NULL) || (orionldState.uriParams.idPattern != NULL) || (orionldState.uriParams.type != NULL))
       {
@@ -278,10 +429,12 @@ bool orionldGetRegistrations(void)
           continue;
       }
 
-      if (ix < offset)
+      // Filter: CSF
+      if (csfTree != NULL)
       {
-        ++ix;
-        continue;
+        LM_T(LmtCsf, ("CSF check for reg '%s'", cRegP->regId));
+        if (csfMatch(cRegP, csfTree) == false)
+          continue;
       }
 
       KjNode* apiRegP = kjClone(orionldState.kjsonP, cRegP->regTree);  // Work on a cloned copy from the reg-cache

@@ -26,6 +26,7 @@
 
 extern "C"
 {
+#include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjArray, kjString, kjChildAdd, kjChildRemove, ...
@@ -35,6 +36,7 @@ extern "C"
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/numberToDate.h"                         // numberToDate
+#include "orionld/common/eqForDot.h"                             // eqForDot
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
 #include "orionld/dbModel/dbModelToApiRegistration.h"            // Own interface
 
@@ -246,7 +248,12 @@ bool dbModelToApiRegistration(KjNode* dbRegP, bool sysAttrs, bool forCache)
       {
         for (KjNode* propertyP = propertiesP->value.firstChildP; propertyP != NULL; propertyP = propertyP->next)
         {
-          propertyP->name = orionldContextItemAliasLookup(orionldState.contextP, propertyP->name, NULL, NULL);
+          char dotName[256];
+          strncpy(dotName, propertyP->name, sizeof(dotName));
+          eqForDot(dotName);
+
+          propertyP->name = orionldContextItemAliasLookup(orionldState.contextP, dotName, NULL, NULL);
+          propertyP->name = kaStrdup(&orionldState.kalloc, propertyP->name);
         }
       }
 

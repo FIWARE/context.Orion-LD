@@ -510,7 +510,7 @@ MongoDB server version: REGEX(.*)
 	},
 	"expiration" : REGEX(.*),
 	"properties" : {
-		"https://uri.etsi.org/ngsi-ld/default-context/P1" : 1
+		"https://uri=etsi=org/ngsi-ld/default-context/P1" : 1
 	},
 	"status" : "active"
 }
@@ -872,7 +872,7 @@ MongoDB server version: REGEX(.*)
 	},
 	"expiration" : REGEX(.*),
 	"properties" : {
-		"https://uri.etsi.org/ngsi-ld/default-context/P1" : 1
+		"https://uri=etsi=org/ngsi-ld/default-context/P1" : 1
 	},
 	"status" : "active"
 }
@@ -1609,8 +1609,8 @@ MongoDB server version: REGEX(.*)
 	},
 	"expiration" : REGEX(.*),
 	"properties" : {
-		"https://uri.etsi.org/ngsi-ld/default-context/P1" : "New P1",
-		"https://uri.etsi.org/ngsi-ld/default-context/P7" : "New reg-property"
+		"https://uri=etsi=org/ngsi-ld/default-context/P1" : "New P1",
+		"https://uri=etsi=org/ngsi-ld/default-context/P7" : "New reg-property"
 	},
 	"status" : "active"
 }
@@ -1771,13 +1771,13 @@ MongoDB server version: REGEX(.*)
 	},
 	"expiration" : 1735639219.975,
 	"properties" : {
-		"https://uri.etsi.org/ngsi-ld/default-context/P1" : [
+		"https://uri=etsi=org/ngsi-ld/default-context/P1" : [
 			1,
 			2,
 			3,
 			4
 		],
-		"https://uri.etsi.org/ngsi-ld/default-context/P7" : "New reg-property"
+		"https://uri=etsi=org/ngsi-ld/default-context/P7" : "New reg-property"
 	},
 	"status" : "active"
 }

@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_KJTREE_KJNAVIGATE_H_
-#define SRC_LIB_ORIONLD_KJTREE_KJNAVIGATE_H_
+#ifndef SRC_LIB_ORIONLD_Q_QMATCH_H_
+#define SRC_LIB_ORIONLD_Q_QMATCH_H_
 
 /*
 *
-* Copyright 2022 FIWARE Foundation e.V.
+* Copyright 2024 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,35 +25,15 @@
 *
 * Author: Ken Zangelin
 */
-extern "C"
-{
-#include "kjson/KjNode.h"                                        // KjNode
-}
+#include "orionld/types/QNode.h"                               // QNode
+#include "orionld/types/OrionldAlteration.h"                   // OrionldAlteration
 
 
 
 // -----------------------------------------------------------------------------
 //
-// kjNavigate -
+// qMatch -
 //
-// FIXME: move to kjson library
-//
-extern KjNode* kjNavigate(KjNode* treeP, const char** pathCompV, KjNode** parentPP, bool* onlyLastMissingP);
+extern bool qMatch(QNode* qP, OrionldAlteration* altP)
 
-
-
-// -----------------------------------------------------------------------------
-//
-// kjNavigate - true Kj-Tree navigation
-//
-extern KjNode* kjNavigate(KjNode* treeP, char** compV);
-
-
-
-// -----------------------------------------------------------------------------
-//
-// kjNavigate2 - prepared for db-model, but also OK without
-//
-extern KjNode* kjNavigate2(KjNode* treeP, char* path, bool* isTimestampP);
-
-#endif  // SRC_LIB_ORIONLD_KJTREE_KJNAVIGATE_H_
+#endif  // SRC_LIB_ORIONLD_Q_QMATCH_H_

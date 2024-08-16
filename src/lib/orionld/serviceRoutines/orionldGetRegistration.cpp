@@ -24,6 +24,7 @@
 */
 extern "C"
 {
+#include "kalloc/kaStrdup.h"                                   // kaStrdup
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjClone.h"                                     // kjClone
 #include "kjson/kjLookup.h"                                    // kjLookup
@@ -35,6 +36,7 @@ extern "C"
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/common/orionldError.h"                       // orionldError
 #include "orionld/common/numberToDate.h"                       // numberToDate
+#include "orionld/common/eqForDot.h"                           // eqForDot
 #include "orionld/payloadCheck/PCHECK.h"                       // PCHECK_URI
 #include "orionld/context/orionldContextItemAliasLookup.h"     // orionldContextItemAliasLookup
 #include "orionld/regCache/regCacheItemLookup.h"               // regCacheItemLookup
@@ -254,7 +256,11 @@ void apiModelFromCachedRegistration(KjNode* regTree, RegCacheItem* cachedRegP, b
     // Lookup aliases for the properties
     for (KjNode* propertyP = propertiesP->value.firstChildP; propertyP != NULL; propertyP = propertyP->next)
     {
-      propertyP->name = orionldContextItemAliasLookup(orionldState.contextP, propertyP->name, NULL, NULL);
+      char* dotName = kaStrdup(&orionldState.kalloc, propertyP->name);
+      eqForDot(dotName);
+      LM_T(LmtCsf, ("Finding alias for '%s'", dotName));
+      propertyP->name = orionldContextItemAliasLookup(orionldState.contextP, dotName, NULL, NULL);
+      LM_T(LmtCsf, ("Found '%s'", propertyP->name));
     }
 
     //

@@ -20,10 +20,11 @@
 * For those usages not covered by this license please contact with
 * orionld at fiware dot org
 *
-* Author: Larysse Savanna
+* Author: Ken Zangelin
 */
 extern "C"
 {
+#include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjObject, kjString, kjBoolean, ...
 #include "kjson/kjParse.h"                                       // kjParse
@@ -39,6 +40,7 @@ extern "C"
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/common/numberToDate.h"                         // numberToDate
+#include "orionld/common/eqForDot.h"                             // eqForDot
 #include "orionld/context/orionldCoreContext.h"                  // orionldCoreContext
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
 #include "orionld/contextCache/orionldContextCacheLookup.h"      // orionldContextCacheLookup
@@ -331,7 +333,9 @@ KjNode* kjTreeFromRegistration(ngsiv2::Registration* registrationP)
     //
     for (KjNode* nodeP = registrationP->properties->value.firstChildP; nodeP != NULL; nodeP = nodeP->next)
     {
-      char* alias = orionldContextItemAliasLookup(orionldState.contextP, nodeP->name, NULL, NULL);
+      char* dotName = kaStrdup(&orionldState.kalloc, nodeP->name);
+      eqForDot(dotName);
+      char* alias = orionldContextItemAliasLookup(orionldState.contextP, dotName, NULL, NULL);
 
       if (alias != NULL)
         nodeP->name = alias;
