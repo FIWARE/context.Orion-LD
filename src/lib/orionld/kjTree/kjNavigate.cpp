@@ -138,7 +138,6 @@ KjNode* kjNavigate2(KjNode* treeP, char* path, bool* isTimestampP)
   //
   // Is it a timestamp?   (if so, an ISO8601 string must be turned into a float/integer to be compared
   //
-  LM_T(LmtCsf, ("Here; components: %d", components));
   char* lastComponent = compV[components - 1];
   if ((strcmp(lastComponent, "observedAt") == 0) || (strcmp(lastComponent, "modifiedAt") == 0) || (strcmp(lastComponent, "createdAt") == 0))
     *isTimestampP = true;
@@ -147,11 +146,9 @@ KjNode* kjNavigate2(KjNode* treeP, char* path, bool* isTimestampP)
 
   compV[components] = NULL;
 
-  LM_T(LmtCsf, ("Here"));
   KjNode* result = kjNavigate(treeP, compV);
   if (result != NULL)
     return result;
-  LM_T(LmtCsf, ("Here"));
 
   //
   // Nothing found
@@ -161,12 +158,9 @@ KjNode* kjNavigate2(KjNode* treeP, char* path, bool* isTimestampP)
   //
   // FIXME: Fix this!
   //
-  LM_T(LmtCsf, ("Here"));
   eqForDot(compV[0]);  // As it IS an Attribute
-  LM_T(LmtCsf, ("Here"));
   if (components > 1)
     eqForDot(compV[1]);  // As it MIGHT be a Sub-Attribute (and if not, it has no '=')
-  LM_T(LmtCsf, ("Here"));
 
   result = kjNavigate(treeP, compV);
   if (result != NULL)
