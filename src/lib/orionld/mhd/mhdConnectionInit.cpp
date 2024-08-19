@@ -1174,7 +1174,7 @@ MHD_Result mhdConnectionInit
   // 2. NGSI-LD requests don't support the broker to be started with -noCache
   if (noCache == true)
   {
-    orionldError(OrionldBadRequestData, "Not Implemented", "Running without Subscription Cache is not implemented for NGSI-LD requests", 501);
+    orionldError(OrionldOperationNotSupported, "Not Implemented", "Running without Subscription Cache is not implemented for NGSI-LD requests", 501);
     return MHD_YES;
   }
 

@@ -40,6 +40,7 @@ extern "C"
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/common/dotForEq.h"                             // dotForEq
 #include "orionld/q/qTreeToBson.h"                               // qTreeToBson
+#include "orionld/context/orionldAttributeExpand.h"              // orionldAttributeExpand
 #include "orionld/mongoc/mongocWriteLog.h"                       // MONGOC_RLOG - FIXME: change name to mongocLog.h
 #include "orionld/mongoc/mongocConnectionGet.h"                  // mongocConnectionGet
 #include "orionld/mongoc/mongocKjTreeToBson.h"                   // mongocKjTreeToBson
@@ -661,6 +662,7 @@ KjNode* mongocEntitiesQuery
   OrionldGeoInfo*  geoInfoP,
   int64_t*         countP,
   const char*      geojsonGeometry,
+  const char*      orderBy,
   bool             onlyIds,
   bool             onlyIdAndType
 )
@@ -696,7 +698,26 @@ KjNode* mongocEntitiesQuery
 
     bson_init(&sortDoc);
 
-    bson_append_int32(&sortDoc, "creDate", 7, 1);
+    if (orderBy == NULL)
+      bson_append_int32(&sortDoc, "creDate", 7, 1);
+    else
+    {
+      char* longName = orionldAttributeExpand(orionldState.contextP, orderBy, true, NULL);
+      int   len      = strlen(longName) + 14;
+      char* path     = kaAlloc(&orionldState.kalloc, len);
+
+      len = snprintf(path, len - 1, "attrs.%s.value", longName);
+
+      // Replacing dots for '=' - including the last one (should not be replaced)
+      dotForEq(&path[6]);
+
+      // Reversing the '=' of ".value" to a dot
+      path[len - 6] = '.';
+
+      LM_T(LmtMongoc, ("Ordering by '%s' (%d letters)", path, len));
+      bson_append_int32(&sortDoc, path, len, 1);
+    }
+
     bson_append_int32(&sortDoc, "_id.id", 6, 1);
     bson_append_document(&options, "sort", 4, &sortDoc);
     bson_destroy(&sortDoc);
