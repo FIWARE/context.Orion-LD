@@ -1,0 +1,234 @@
+# Copyright 2024 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+GET /entities with ?orderBy=xxx for local query
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -experimental
+
+typeset -i eNo
+eNo=50
+
+while [ $eNo -ge 0 ]
+do
+  eId=$(printf "urn:ngsi-ld:entities:E%02d" $eNo)
+  
+  payload='{
+    "id": "'$eId'",
+    "type": "T'$eNo'",
+    "relevance": '$eNo'
+  }'
+  orionCurl --url /ngsi-ld/v1/entities --payload "$payload" | grep 'Location:'
+  eNo=$eNo-1
+done
+
+--SHELL--
+
+#
+# 01. GET entities ordered by 'relevance'
+# 02. GET entities ordered by 'relevance', offset 5
+# 03. GET entities without specific order (createdAt is default)
+#
+
+echo "01. GET entities ordered by 'relevance'"
+echo "======================================="
+orionCurl --url "/ngsi-ld/v1/entities?local=true&orderBy=relevance&limit=5"
+echo
+echo
+
+
+echo "02. GET entities ordered by 'relevance', offset 20"
+echo "=================================================="
+orionCurl --url "/ngsi-ld/v1/entities?local=true&orderBy=relevance&offset=5&limit=5"
+echo
+echo
+
+
+echo "03. GET entities without specific order (createdAt is default)"
+echo "=============================================================="
+orionCurl --url "/ngsi-ld/v1/entities?local=true&limit=5"
+echo
+echo
+
+
+--REGEXPECT--
+01. GET entities ordered by 'relevance'
+=======================================
+HTTP/1.1 200 OK
+Content-Length: 441
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "id": "urn:ngsi-ld:entities:E00",
+        "relevance": {
+            "type": "Property",
+            "value": 0
+        },
+        "type": "T0"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E01",
+        "relevance": {
+            "type": "Property",
+            "value": 1
+        },
+        "type": "T1"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E02",
+        "relevance": {
+            "type": "Property",
+            "value": 2
+        },
+        "type": "T2"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E03",
+        "relevance": {
+            "type": "Property",
+            "value": 3
+        },
+        "type": "T3"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E04",
+        "relevance": {
+            "type": "Property",
+            "value": 4
+        },
+        "type": "T4"
+    }
+]
+
+
+02. GET entities ordered by 'relevance', offset 20
+==================================================
+HTTP/1.1 200 OK
+Content-Length: 441
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "id": "urn:ngsi-ld:entities:E05",
+        "relevance": {
+            "type": "Property",
+            "value": 5
+        },
+        "type": "T5"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E06",
+        "relevance": {
+            "type": "Property",
+            "value": 6
+        },
+        "type": "T6"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E07",
+        "relevance": {
+            "type": "Property",
+            "value": 7
+        },
+        "type": "T7"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E08",
+        "relevance": {
+            "type": "Property",
+            "value": 8
+        },
+        "type": "T8"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E09",
+        "relevance": {
+            "type": "Property",
+            "value": 9
+        },
+        "type": "T9"
+    }
+]
+
+
+03. GET entities without specific order (createdAt is default)
+==============================================================
+HTTP/1.1 200 OK
+Content-Length: 451
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "id": "urn:ngsi-ld:entities:E50",
+        "relevance": {
+            "type": "Property",
+            "value": 50
+        },
+        "type": "T50"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E49",
+        "relevance": {
+            "type": "Property",
+            "value": 49
+        },
+        "type": "T49"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E48",
+        "relevance": {
+            "type": "Property",
+            "value": 48
+        },
+        "type": "T48"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E47",
+        "relevance": {
+            "type": "Property",
+            "value": 47
+        },
+        "type": "T47"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E46",
+        "relevance": {
+            "type": "Property",
+            "value": 46
+        },
+        "type": "T46"
+    }
+]
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB

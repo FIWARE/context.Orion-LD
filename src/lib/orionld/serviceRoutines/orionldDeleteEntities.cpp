@@ -166,6 +166,7 @@ bool orionldDeleteEntities(void)
                                                          &geoInfo,
                                                          &count,
                                                          geojsonGeometryLongName,
+                                                         NULL,
                                                          false,
                                                          true);
   //

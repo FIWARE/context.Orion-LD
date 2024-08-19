@@ -244,6 +244,7 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
     serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
     serviceP->uriParams |= ORIONLD_URIPARAM_ONLYIDS;
     serviceP->uriParams |= ORIONLD_URIPARAM_ENTITYMAP;
+    serviceP->uriParams |= ORIONLD_URIPARAM_ORDERBY;
   }
   else if (serviceP->serviceRoutine == orionldGetEntity)
   {

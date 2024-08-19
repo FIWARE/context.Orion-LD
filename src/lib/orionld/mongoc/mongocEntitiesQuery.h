@@ -50,6 +50,7 @@ extern KjNode* mongocEntitiesQuery
   OrionldGeoInfo*  geoInfoP,
   int64_t*         countP,
   const char*      geojsonGeometry,
+  const char*      orderBy,
   bool             onlyIds,
   bool             onlyIdAndType
 );

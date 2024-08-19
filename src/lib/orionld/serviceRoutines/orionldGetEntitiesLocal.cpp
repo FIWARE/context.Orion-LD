@@ -190,6 +190,7 @@ bool orionldGetEntitiesLocal
                                                     geoInfoP,
                                                     &count,
                                                     geojsonGeometryLongName,
+                                                    orionldState.uriParams.orderBy,
                                                     onlyIds,
                                                     false);
 
