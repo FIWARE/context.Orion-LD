@@ -945,6 +945,16 @@ MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
   {
     orionldState.uriParams.orderBy = (char*) value;
   }
+  else if (strcmp(key, "reverse") == 0)
+  {
+    if (strcmp(value, "true") == 0)
+      orionldState.uriParams.reverse = true;
+    else if (strcmp(key, "false") != 0)
+    {
+      orionldError(OrionldBadRequestData, "Invalid value for uri parameter /reverse/", value, 400);
+      return MHD_YES;
+    }
+  }
   else if (strcmp(key, "collapse") == 0)
   {
     if (strcmp(value, "true") == 0)

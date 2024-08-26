@@ -695,30 +695,46 @@ KjNode* mongocEntitiesQuery
     bson_t sortDoc;
     int    limit       = orionldState.uriParams.limit;
     int    offset      = orionldState.uriParams.offset;
+    int    sortOrder   = 1;
+
+    if (orionldState.uriParams.reverse == true)
+      sortOrder = -1;
 
     bson_init(&sortDoc);
 
-    if (orderBy == NULL)
-      bson_append_int32(&sortDoc, "creDate", 7, 1);
+    if ((orderBy == NULL) || (strcmp(orderBy, "createdAt") == 0))
+      bson_append_int32(&sortDoc, "creDate", 7, sortOrder);
     else
     {
-      char* longName = orionldAttributeExpand(orionldState.contextP, orderBy, true, NULL);
-      int   len      = strlen(longName) + 14;
-      char* path     = kaAlloc(&orionldState.kalloc, len);
+      char  pathV[32];
+      char* path = pathV;
+      int   len  = sizeof(pathV);
 
-      len = snprintf(path, len - 1, "attrs.%s.value", longName);
+      if ((strcmp(orderBy, "id") == 0) || (strcmp(orderBy, "type") == 0))
+        len = snprintf(path, len, "_id.%s", orderBy);
+      else if (strcmp(orderBy, "modifiedAt") == 0)
+        len = snprintf(path, len, "%s", "modDate");
+      else
+      {
+        char* longName = orionldAttributeExpand(orionldState.contextP, orderBy, true, NULL);
 
-      // Replacing dots for '=' - including the last one (should not be replaced)
-      dotForEq(&path[6]);
+        len      = strlen(longName) + 14;
+        path     = kaAlloc(&orionldState.kalloc, len);
 
-      // Reversing the '=' of ".value" to a dot
-      path[len - 6] = '.';
+        len = snprintf(path, len - 1, "attrs.%s.value", longName);
+
+        // Replacing dots for '=' - including the last one (should not be replaced)
+        dotForEq(&path[6]);
+
+        // Reversing the '=' of ".value" to a dot
+        path[len - 6] = '.';
+      }
 
       LM_T(LmtMongoc, ("Ordering by '%s' (%d letters)", path, len));
-      bson_append_int32(&sortDoc, path, len, 1);
+      bson_append_int32(&sortDoc, path, len, sortOrder);
     }
 
-    bson_append_int32(&sortDoc, "_id.id", 6, 1);
+    bson_append_int32(&sortDoc, "_id.id", 6, sortOrder);  // Secondary sort on Entity ID
     bson_append_document(&options, "sort", 4, &sortDoc);
     bson_destroy(&sortDoc);
 

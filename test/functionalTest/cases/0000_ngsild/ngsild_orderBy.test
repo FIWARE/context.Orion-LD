@@ -49,6 +49,11 @@ done
 # 01. GET entities ordered by 'relevance'
 # 02. GET entities ordered by 'relevance', offset 5
 # 03. GET entities without specific order (createdAt is default)
+# 04. GET entities ordered by 'relevance' but in reverse
+# 05. GET entities ordered by 'type' (and then 'id')
+# 06. GET entities ordered by 'id'
+# 07. GET entities ordered by 'id' but in reverse
+# 08. GET entities ordered by 'idx' (attribute that does not exist)
 #
 
 echo "01. GET entities ordered by 'relevance'"
@@ -68,6 +73,41 @@ echo
 echo "03. GET entities without specific order (createdAt is default)"
 echo "=============================================================="
 orionCurl --url "/ngsi-ld/v1/entities?local=true&limit=5"
+echo
+echo
+
+
+echo "04. GET entities ordered by 'relevance' but in reverse"
+echo "======================================================"
+orionCurl --url "/ngsi-ld/v1/entities?local=true&orderBy=relevance&limit=5&reverse=true"
+echo
+echo
+
+
+echo "05. GET entities ordered by 'type' (and then 'id')"
+echo "=================================================="
+orionCurl --url "/ngsi-ld/v1/entities?local=true&orderBy=type&limit=5"
+echo
+echo
+
+
+echo "06. GET entities ordered by 'id'"
+echo "================================"
+orionCurl --url "/ngsi-ld/v1/entities?local=true&orderBy=id&limit=5"
+echo
+echo
+
+
+echo "07. GET entities ordered by 'id' but in reverse"
+echo "==============================================="
+orionCurl --url "/ngsi-ld/v1/entities?local=true&orderBy=id&limit=5&reverse=true"
+echo
+echo
+
+
+echo "08. GET entities ordered by 'idx' (attribute that does not exist)"
+echo "================================================================="
+orionCurl --url "/ngsi-ld/v1/entities?local=true&orderBy=idx&limit=5"
 echo
 echo
 
@@ -225,6 +265,266 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             "value": 46
         },
         "type": "T46"
+    }
+]
+
+
+04. GET entities ordered by 'relevance' but in reverse
+======================================================
+HTTP/1.1 200 OK
+Content-Length: 451
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "id": "urn:ngsi-ld:entities:E50",
+        "relevance": {
+            "type": "Property",
+            "value": 50
+        },
+        "type": "T50"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E49",
+        "relevance": {
+            "type": "Property",
+            "value": 49
+        },
+        "type": "T49"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E48",
+        "relevance": {
+            "type": "Property",
+            "value": 48
+        },
+        "type": "T48"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E47",
+        "relevance": {
+            "type": "Property",
+            "value": 47
+        },
+        "type": "T47"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E46",
+        "relevance": {
+            "type": "Property",
+            "value": 46
+        },
+        "type": "T46"
+    }
+]
+
+
+05. GET entities ordered by 'type' (and then 'id')
+==================================================
+HTTP/1.1 200 OK
+Content-Length: 447
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "id": "urn:ngsi-ld:entities:E00",
+        "relevance": {
+            "type": "Property",
+            "value": 0
+        },
+        "type": "T0"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E01",
+        "relevance": {
+            "type": "Property",
+            "value": 1
+        },
+        "type": "T1"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E10",
+        "relevance": {
+            "type": "Property",
+            "value": 10
+        },
+        "type": "T10"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E11",
+        "relevance": {
+            "type": "Property",
+            "value": 11
+        },
+        "type": "T11"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E12",
+        "relevance": {
+            "type": "Property",
+            "value": 12
+        },
+        "type": "T12"
+    }
+]
+
+
+06. GET entities ordered by 'id'
+================================
+HTTP/1.1 200 OK
+Content-Length: 441
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "id": "urn:ngsi-ld:entities:E00",
+        "relevance": {
+            "type": "Property",
+            "value": 0
+        },
+        "type": "T0"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E01",
+        "relevance": {
+            "type": "Property",
+            "value": 1
+        },
+        "type": "T1"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E02",
+        "relevance": {
+            "type": "Property",
+            "value": 2
+        },
+        "type": "T2"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E03",
+        "relevance": {
+            "type": "Property",
+            "value": 3
+        },
+        "type": "T3"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E04",
+        "relevance": {
+            "type": "Property",
+            "value": 4
+        },
+        "type": "T4"
+    }
+]
+
+
+07. GET entities ordered by 'id' but in reverse
+===============================================
+HTTP/1.1 200 OK
+Content-Length: 451
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "id": "urn:ngsi-ld:entities:E50",
+        "relevance": {
+            "type": "Property",
+            "value": 50
+        },
+        "type": "T50"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E49",
+        "relevance": {
+            "type": "Property",
+            "value": 49
+        },
+        "type": "T49"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E48",
+        "relevance": {
+            "type": "Property",
+            "value": 48
+        },
+        "type": "T48"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E47",
+        "relevance": {
+            "type": "Property",
+            "value": 47
+        },
+        "type": "T47"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E46",
+        "relevance": {
+            "type": "Property",
+            "value": 46
+        },
+        "type": "T46"
+    }
+]
+
+
+08. GET entities ordered by 'idx' (attribute that does not exist)
+=================================================================
+HTTP/1.1 200 OK
+Content-Length: 441
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "id": "urn:ngsi-ld:entities:E00",
+        "relevance": {
+            "type": "Property",
+            "value": 0
+        },
+        "type": "T0"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E01",
+        "relevance": {
+            "type": "Property",
+            "value": 1
+        },
+        "type": "T1"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E02",
+        "relevance": {
+            "type": "Property",
+            "value": 2
+        },
+        "type": "T2"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E03",
+        "relevance": {
+            "type": "Property",
+            "value": 3
+        },
+        "type": "T3"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E04",
+        "relevance": {
+            "type": "Property",
+            "value": 4
+        },
+        "type": "T4"
     }
 ]
 
