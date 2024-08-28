@@ -36,6 +36,13 @@ SET (SOURCES
     qLexListRender.cpp
     qClone.cpp
     qVariableFix.cpp
+    qMatchCompare.cpp
+    qRangeCompare.cpp
+    qCommaListCompare.cpp
+    qEqCompare.cpp
+    qGtCompare.cpp
+    qLtCompare.cpp
+    qMatch.cpp
 )
 
 # Include directories

@@ -277,14 +277,14 @@ MongoDB server version: REGEX(.*)
 		]
 	},
 	"properties" : {
-		"https://uri.etsi.org/ngsi-ld/default-context/P1" : 1,
-		"https://uri.etsi.org/ngsi-ld/default-context/P2" : "2",
-		"https://uri.etsi.org/ngsi-ld/default-context/P3" : true,
-		"https://uri.etsi.org/ngsi-ld/default-context/P4" : 4.5,
-		"https://uri.etsi.org/ngsi-ld/default-context/P5" : {
+		"https://uri=etsi=org/ngsi-ld/default-context/P1" : 1,
+		"https://uri=etsi=org/ngsi-ld/default-context/P2" : "2",
+		"https://uri=etsi=org/ngsi-ld/default-context/P3" : true,
+		"https://uri=etsi=org/ngsi-ld/default-context/P4" : 4.5,
+		"https://uri=etsi=org/ngsi-ld/default-context/P5" : {
 			"object" : 6
 		},
-		"https://uri.etsi.org/ngsi-ld/default-context/P6" : [
+		"https://uri=etsi=org/ngsi-ld/default-context/P6" : [
 			7,
 			8
 		]

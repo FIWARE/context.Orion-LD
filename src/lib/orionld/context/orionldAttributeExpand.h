@@ -41,7 +41,7 @@
 extern char* orionldAttributeExpand
 (
   OrionldContext*       contextP,
-  char*                 shortName,
+  const char*           shortName,
   bool                  useDefaultUrlIfNotFound,
   OrionldContextItem**  contextItemPP
 );

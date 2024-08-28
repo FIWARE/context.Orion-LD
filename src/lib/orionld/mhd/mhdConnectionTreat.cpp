@@ -438,6 +438,10 @@ char* pCheckLinkHeader(char* link)
 
 
 
+// -----------------------------------------------------------------------------
+//
+// linkGet -
+//
 static bool linkGet(const char* link)
 {
   //
@@ -1093,6 +1097,12 @@ MHD_Result mhdConnectionTreat(void)
     if (uriParamSupport(orionldState.serviceP->uriParams, orionldState.uriParams.mask, &detail) == false)
     {
       orionldError(OrionldBadRequestData, "Unsupported URI parameter", detail, 400);
+      goto respond;
+    }
+
+    if ((orionldState.uriParams.orderBy != NULL) && (orionldState.uriParams.local == false))
+    {
+      orionldError(OrionldOperationNotSupported, "Not supported URL parameter", "The URL parameter 'orderBy' only works if also 'local' is set", 501);
       goto respond;
     }
   }

@@ -156,6 +156,7 @@ typedef struct OrionldUriParams
   char*     notExists;
   char*     metadata;
   char*     orderBy;
+  bool      reverse;
   bool      collapse;
   bool      reset;
   char*     attributeFormat;
@@ -169,6 +170,7 @@ typedef struct OrionldUriParams
   bool      onlyIds;
   bool      entityMap;
   char*     format;
+  char*     csf;
 
   OrionldContextKind kind;
 

@@ -157,6 +157,8 @@ typedef struct OrionLdRestServiceSimplifiedVector
 #define ORIONLD_URIPARAM_FORMAT               (UINT64_C(1) << 40)
 #define ORIONLD_URIPARAM_EXPAND_VALUES        (UINT64_C(1) << 41)
 #define ORIONLD_URIPARAM_KIND                 (UINT64_C(1) << 42)
+#define ORIONLD_URIPARAM_ORDERBY              (UINT64_C(1) << 43)
+#define ORIONLD_URIPARAM_REVERSE              (UINT64_C(1) << 44)
 
 
 

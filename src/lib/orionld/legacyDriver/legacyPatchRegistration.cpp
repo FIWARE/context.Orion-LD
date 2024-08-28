@@ -37,6 +37,7 @@ extern "C"
 #include "orionld/common/orionldError.h"                               // orionldError
 #include "orionld/common/numberToDate.h"                               // numberToDate
 #include "orionld/common/dateTime.h"                                   // dateTimeFromString
+#include "orionld/common/eqForDot.h"                                   // eqForDot
 #include "orionld/context/orionldAttributeExpand.h"                    // orionldAttributeExpand
 #include "orionld/mongoCppLegacy/mongoCppLegacyRegistrationGet.h"      // mongoCppLegacyRegistrationGet
 #include "orionld/mongoCppLegacy/mongoCppLegacyRegistrationReplace.h"  // mongoCppLegacyRegistrationReplace
@@ -624,7 +625,10 @@ bool legacyPatchRegistration(void)
     //
     if (propertyTree->value.firstChildP != NULL)
     {
-      orionldError(OrionldBadRequestData, "non-existing registration property", propertyTree->value.firstChildP->name, 400);
+      char dotName[256];
+      strncpy(dotName, propertyTree->value.firstChildP->name, sizeof(dotName) - 1);
+      eqForDot(dotName);
+      orionldError(OrionldBadRequestData, "non-existing registration property", dotName, 400);
       return false;
     }
   }
@@ -647,7 +651,10 @@ bool legacyPatchRegistration(void)
 
     if ((dbPropertyP = kjLookup(dbPropertiesP, propertyP->name)) == NULL)
     {
-      orionldError(OrionldBadRequestData, "non-existing registration property", propertyP->name, 400);
+      char dotName[256];
+      strncpy(dotName, propertyP->name, sizeof(dotName) - 1);
+      eqForDot(dotName);
+      orionldError(OrionldBadRequestData, "non-existing registration property", dotName, 400);
       return false;
     }
 

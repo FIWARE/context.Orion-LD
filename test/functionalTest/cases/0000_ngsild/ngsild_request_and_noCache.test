@@ -80,28 +80,28 @@ echo
 01. Create a subscription with accumulator receiving notifications
 ==================================================================
 HTTP/1.1 501 Not Implemented
-Content-Length: 173
+Content-Length: 180
 Content-Type: application/json
 Date: REGEX(.*)
 
 {
     "detail": "Running without Subscription Cache is not implemented for NGSI-LD requests",
     "title": "Not Implemented",
-    "type": "https://uri.etsi.org/ngsi-ld/errors/BadRequestData"
+    "type": "https://uri.etsi.org/ngsi-ld/errors/OperationNotSupported"
 }
 
 
 02. Create a matching Entity
 ============================
 HTTP/1.1 501 Not Implemented
-Content-Length: 173
+Content-Length: 180
 Content-Type: application/json
 Date: REGEX(.*)
 
 {
     "detail": "Running without Subscription Cache is not implemented for NGSI-LD requests",
     "title": "Not Implemented",
-    "type": "https://uri.etsi.org/ngsi-ld/errors/BadRequestData"
+    "type": "https://uri.etsi.org/ngsi-ld/errors/OperationNotSupported"
 }
 
 

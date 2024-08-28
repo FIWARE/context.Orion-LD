@@ -26,10 +26,11 @@
 
 extern "C"
 {
+#include "kalloc/kaAlloc.h"                                    // kaAlloc
+#include "kalloc/kaStrdup.h"                                   // kaStrdup
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjBuilder.h"                                   // kjObject, kjChildRemove, kjChildAdd
 #include "kjson/kjClone.h"                                     // kjClone
-#include "kalloc/kaAlloc.h"                                    // kaAlloc
 }
 
 #include "apiTypesV2/Registration.h"                           // Registration
@@ -37,6 +38,7 @@ extern "C"
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/common/orionldError.h"                       // orionldError
 #include "orionld/common/CHECK.h"                              // CHECKx()
+#include "orionld/common/dotForEq.h"                           // dotForEq
 #include "orionld/common/uuidGenerate.h"                       // uuidGenerate
 #include "orionld/context/orionldContextItemExpand.h"          // orionldContextItemExpand
 #include "orionld/context/orionldAttributeExpand.h"            // orionldAttributeExpand
@@ -382,7 +384,10 @@ bool kjTreeToRegistration(ngsiv2::Registration* regP, char** regIdPP)
       //
       // Expand the name of the property
       //
-      kNodeP->name = orionldAttributeExpand(orionldState.contextP, kNodeP->name, true, NULL);
+      char* dotName = orionldAttributeExpand(orionldState.contextP, kNodeP->name, true, NULL);
+      kNodeP->name  = kaStrdup(&orionldState.kalloc, dotName);
+      dotForEq(kNodeP->name);
+      LM_T(LmtSR, ("KZ: Added registration property '%s'", kNodeP->name));
     }
 
     kNodeP = next;

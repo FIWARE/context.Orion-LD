@@ -127,6 +127,10 @@ diff=$(echo $fd2 - $fd1 | bc)
 if [ $diff -gt 6 ]
 then
   echo "Too big difference between FDs in step 1 and 5: $fd1 vs $fd2 - possible FD leak"
+  # Get the PID of the broker
+  pid=$(ps aux | grep ' orionld -port' | grep -v 'grep ' | awk '{ print $2 }')
+  # List FDs
+  ls -l /proc/$pid/fd/
 else
   echo "All OK - no fd leak"
 fi

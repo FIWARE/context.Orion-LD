@@ -213,6 +213,7 @@ EntityMap* entityMapCreate(DistOp* distOpList, char* idPattern, QNode* qNode, Or
                                                geoInfoP,
                                                NULL,
                                                geojsonGeometryLongName,
+                                               orionldState.uriParams.orderBy,
                                                true,
                                                false);
 

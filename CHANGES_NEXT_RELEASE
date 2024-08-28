@@ -2,6 +2,10 @@
 
 ## New Features:
   * Distributed subscriptions: subordinate subscriptions are DELETED when their "father" is deleted.
+  * Support for the URL parameter 'csf' in GET /ngsi-ld/v1/csourceRegistrations
+  * Support for the URL parameter 'orderBy' (must be an attribute) in GET //ngsi-ld/v1/entities, but only if 'local' is set. (This is not NGSI-LD standard. Yet ...)
+    - Also supporting sorting on entity id, type, and modifiedAt
+    - One more URL parameter '?reverse=true' to reverse the sorting order
 
 ## Notes
   * Lots of improvements for subordinate subscriptions - still not 100% ready, but a lot better.

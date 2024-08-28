@@ -687,6 +687,11 @@ MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
     orionldState.uriParams.options = (char*) value;
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_OPTIONS;
   }
+  else if (strcmp(key, "csf") == 0)
+  {
+    orionldState.uriParams.csf = (char*) value;
+    orionldState.uriParams.mask |= ORIONLD_URIPARAM_CSF;
+  }
   else if (strcmp(key, "expandValues") == 0)
   {
     orionldState.uriParams.expandValues = (char*) value;
@@ -940,6 +945,16 @@ MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
   {
     orionldState.uriParams.orderBy = (char*) value;
   }
+  else if (strcmp(key, "reverse") == 0)
+  {
+    if (strcmp(value, "true") == 0)
+      orionldState.uriParams.reverse = true;
+    else if (strcmp(key, "false") != 0)
+    {
+      orionldError(OrionldBadRequestData, "Invalid value for uri parameter /reverse/", value, 400);
+      return MHD_YES;
+    }
+  }
   else if (strcmp(key, "collapse") == 0)
   {
     if (strcmp(value, "true") == 0)
@@ -1180,7 +1195,7 @@ MHD_Result mhdConnectionInit
   // 2. NGSI-LD requests don't support the broker to be started with -noCache
   if (noCache == true)
   {
-    orionldError(OrionldBadRequestData, "Not Implemented", "Running without Subscription Cache is not implemented for NGSI-LD requests", 501);
+    orionldError(OrionldOperationNotSupported, "Not Implemented", "Running without Subscription Cache is not implemented for NGSI-LD requests", 501);
     return MHD_YES;
   }
 
