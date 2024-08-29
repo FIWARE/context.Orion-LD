@@ -214,46 +214,40 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
     "subscriptionId": "000000000000000000000000"
 }
 10: ++++++++++++++++++++
-HTTP/1.1 400 Bad Request
-Content-Length: 88
+HTTP/1.1 404 Not Found
+Content-Length: 135
 Content-Type: application/json
 Date: REGEX(.*)
 Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 {
-    "orionError": {
-        "code": "400",
-        "details": "service not found",
-        "reasonPhrase": "Bad Request"
-    }
+    "detail": "/v1/registry/notSupportedRequest",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 11: ++++++++++++++++++++
-HTTP/1.1 400 Bad Request
-Content-Length: 88
+HTTP/1.1 404 Not Found
+Content-Length: 126
 Content-Type: application/json
 Date: REGEX(.*)
 Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 {
-    "orionError": {
-        "code": "400",
-        "details": "service not found",
-        "reasonPhrase": "Bad Request"
-    }
+    "detail": "/v1/notSupportedRequest",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 12: ++++++++++++++++++++
-HTTP/1.1 400 Bad Request
-Content-Length: 88
+HTTP/1.1 404 Not Found
+Content-Length: 123
 Content-Type: application/json
 Date: REGEX(.*)
 Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 {
-    "orionError": {
-        "code": "400",
-        "details": "service not found",
-        "reasonPhrase": "Bad Request"
-    }
+    "detail": "/notSupportedRequest",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 13: ++++++++++++++++++++
 --TEARDOWN--

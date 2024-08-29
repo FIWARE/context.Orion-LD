@@ -92,15 +92,16 @@ echo
 --REGEXPECT--
 01. PUT /v2/noService
 =====================
-HTTP/1.1 400 Bad Request
-Content-Length: 56
+HTTP/1.1 404 Not Found
+Content-Length: 116
 Content-Type: application/json
 Date: REGEX(.*)
 Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 {
-    "description": "service not found",
-    "error": "BadRequest"
+    "detail": "/v2/noService",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 
@@ -175,7 +176,7 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 07. grep in log-file
 ====================
-Raising alarm BadInput REGEX((0.0.0.0|127.0.0.1)): service '/v2/noService' not found
+Raising alarm BadInput REGEX((0.0.0.0|127.0.0.1)): JSON parse error
 Releasing alarm BadInput REGEX((0.0.0.0|127.0.0.1))
 Raising alarm BadInput REGEX((0.0.0.0|127.0.0.1)): bad verb for url '/v2/entities', method 'PROUST'
 

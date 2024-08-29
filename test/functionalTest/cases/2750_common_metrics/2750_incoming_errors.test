@@ -350,15 +350,16 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 04. Send a request with an Invalid URL
 ======================================
-HTTP/1.1 400 Bad Request
-Content-Length: 56
+HTTP/1.1 404 Not Found
+Content-Length: 121
 Content-Type: application/json
 Date: REGEX(.*)
 Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 {
-    "description": "service not found",
-    "error": "BadRequest"
+    "detail": "/admin/invalid/url",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 
@@ -501,10 +502,10 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
         "default-service": {
             "subservs": {
                 "SP/error": {
-                    "incomingTransactionErrors": 4,
+                    "incomingTransactionErrors": 3,
                     "incomingTransactionRequestSize": 39,
-                    "incomingTransactionResponseSize": 398,
-                    "incomingTransactions": 4,
+                    "incomingTransactionResponseSize": 342,
+                    "incomingTransactions": 3,
                     "serviceTime": REGEX(.*)
                 },
                 "SP/get/entities": {
@@ -518,9 +519,9 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
                     "serviceTime": REGEX(.*)
                 },
                 "root-subserv": {
-                    "incomingTransactionErrors": 3,
+                    "incomingTransactionErrors": 4,
                     "incomingTransactionResponseSize": REGEX(\d+),
-                    "incomingTransactions": 3,
+                    "incomingTransactions": 4,
                     "serviceTime": REGEX(.*)
                 }
             },
@@ -536,10 +537,10 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
     "sum": {
         "subservs": {
             "SP/error": {
-                "incomingTransactionErrors": 4,
+                "incomingTransactionErrors": 3,
                 "incomingTransactionRequestSize": 39,
-                "incomingTransactionResponseSize": 398,
-                "incomingTransactions": 4,
+                "incomingTransactionResponseSize": 342,
+                "incomingTransactions": 3,
                 "serviceTime": REGEX(.*)
             },
             "SP/get/entities": {
@@ -553,9 +554,9 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
                 "serviceTime": REGEX(.*)
             },
             "root-subserv": {
-                "incomingTransactionErrors": 3,
+                "incomingTransactionErrors": 4,
                 "incomingTransactionResponseSize": REGEX(\d+),
-                "incomingTransactions": 3,
+                "incomingTransactions": 4,
                 "serviceTime": REGEX(.*)
             }
         },

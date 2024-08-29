@@ -227,29 +227,31 @@ echo
 --REGEXPECT--
 01a. /v2//
 ==========
-HTTP/1.1 400 Bad Request
-Content-Length: 56
+HTTP/1.1 404 Not Found
+Content-Length: 108
 Content-Type: application/json
 Date: REGEX(.*)
-Fiware-Correlator: REGEX([0-9a-f\-]{36})
+Fiware-Correlator: REGEX(.*)
 
 {
-    "description": "service not found",
-    "error": "BadRequest"
+    "detail": "/v2//",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 
 01b. /v2///
 ===========
-HTTP/1.1 400 Bad Request
-Content-Length: 56
+HTTP/1.1 404 Not Found
+Content-Length: 109
 Content-Type: application/json
 Date: REGEX(.*)
-Fiware-Correlator: REGEX([0-9a-f\-]{36})
+Fiware-Correlator: REGEX(.*)
 
 {
-    "description": "service not found",
-    "error": "BadRequest"
+    "detail": "/v2///",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 
@@ -259,7 +261,7 @@ HTTP/1.1 400 Bad Request
 Content-Length: 83
 Content-Type: application/json
 Date: REGEX(.*)
-Fiware-Correlator: REGEX([0-9a-f\-]{36})
+Fiware-Correlator: REGEX(.*)
 
 {
     "description": "entity id length: 0, min length supported: 1",
@@ -269,43 +271,46 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 02b. /v2/entities///
 ====================
-HTTP/1.1 400 Bad Request
-Content-Length: 56
+HTTP/1.1 404 Not Found
+Content-Length: 118
 Content-Type: application/json
 Date: REGEX(.*)
-Fiware-Correlator: REGEX([0-9a-f\-]{36})
+Fiware-Correlator: REGEX(.*)
 
 {
-    "description": "service not found",
-    "error": "BadRequest"
+    "detail": "/v2/entities///",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 
 03a. /v2/entities/E1//
 ======================
-HTTP/1.1 400 Bad Request
-Content-Length: 56
+HTTP/1.1 404 Not Found
+Content-Length: 120
 Content-Type: application/json
 Date: REGEX(.*)
-Fiware-Correlator: REGEX([0-9a-f\-]{36})
+Fiware-Correlator: REGEX(.*)
 
 {
-    "description": "service not found",
-    "error": "BadRequest"
+    "detail": "/v2/entities/E1//",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 
 03b. /v2/entities/E1///
 =======================
-HTTP/1.1 400 Bad Request
-Content-Length: 56
+HTTP/1.1 404 Not Found
+Content-Length: 121
 Content-Type: application/json
 Date: REGEX(.*)
-Fiware-Correlator: REGEX([0-9a-f\-]{36})
+Fiware-Correlator: REGEX(.*)
 
 {
-    "description": "service not found",
-    "error": "BadRequest"
+    "detail": "/v2/entities/E1///",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 
@@ -315,7 +320,7 @@ HTTP/1.1 400 Bad Request
 Content-Length: 88
 Content-Type: application/json
 Date: REGEX(.*)
-Fiware-Correlator: REGEX([0-9a-f\-]{36})
+Fiware-Correlator: REGEX(.*)
 
 {
     "description": "attribute name length: 0, min length supported: 1",
@@ -325,71 +330,76 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 04b. /v2/entities/E1/attrs///
 =============================
-HTTP/1.1 400 Bad Request
-Content-Length: 56
+HTTP/1.1 404 Not Found
+Content-Length: 127
 Content-Type: application/json
 Date: REGEX(.*)
-Fiware-Correlator: REGEX([0-9a-f\-]{36})
+Fiware-Correlator: REGEX(.*)
 
 {
-    "description": "service not found",
-    "error": "BadRequest"
+    "detail": "/v2/entities/E1/attrs///",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 
 05a. /v2/entities/E1/attrs/A1//
 ===============================
-HTTP/1.1 400 Bad Request
-Content-Length: 56
+HTTP/1.1 404 Not Found
+Content-Length: 129
 Content-Type: application/json
 Date: REGEX(.*)
-Fiware-Correlator: REGEX([0-9a-f\-]{36})
+Fiware-Correlator: REGEX(.*)
 
 {
-    "description": "service not found",
-    "error": "BadRequest"
+    "detail": "/v2/entities/E1/attrs/A1//",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 
 05b. /v2/entities/E1/attrs/A1///
 ================================
-HTTP/1.1 400 Bad Request
-Content-Length: 56
+HTTP/1.1 404 Not Found
+Content-Length: 130
 Content-Type: application/json
 Date: REGEX(.*)
-Fiware-Correlator: REGEX([0-9a-f\-]{36})
+Fiware-Correlator: REGEX(.*)
 
 {
-    "description": "service not found",
-    "error": "BadRequest"
+    "detail": "/v2/entities/E1/attrs/A1///",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 
 06a. /v2/entities/E1/attrs/A1/value//
 =====================================
-HTTP/1.1 400 Bad Request
-Content-Length: 56
+HTTP/1.1 404 Not Found
+Content-Length: 135
 Content-Type: application/json
 Date: REGEX(.*)
-Fiware-Correlator: REGEX([0-9a-f\-]{36})
+Fiware-Correlator: REGEX(.*)
 
 {
-    "description": "service not found",
-    "error": "BadRequest"
+    "detail": "/v2/entities/E1/attrs/A1/value//",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 
 06b. /v2/entities/E1/attrs/A1/value///
 ======================================
-HTTP/1.1 400 Bad Request
-Content-Length: 56
+HTTP/1.1 404 Not Found
+Content-Length: 136
 Content-Type: application/json
 Date: REGEX(.*)
-Fiware-Correlator: REGEX([0-9a-f\-]{36})
+Fiware-Correlator: REGEX(.*)
 
 {
-    "description": "service not found",
-    "error": "BadRequest"
+    "detail": "/v2/entities/E1/attrs/A1/value///",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 
@@ -399,7 +409,7 @@ HTTP/1.1 400 Bad Request
 Content-Length: 85
 Content-Type: application/json
 Date: REGEX(.*)
-Fiware-Correlator: REGEX([0-9a-f\-]{36})
+Fiware-Correlator: REGEX(.*)
 
 {
     "description": "entity type length: 0, min length supported: 1",
@@ -409,43 +419,46 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 07b. /v2/types///
 =================
-HTTP/1.1 400 Bad Request
-Content-Length: 56
+HTTP/1.1 404 Not Found
+Content-Length: 115
 Content-Type: application/json
 Date: REGEX(.*)
-Fiware-Correlator: REGEX([0-9a-f\-]{36})
+Fiware-Correlator: REGEX(.*)
 
 {
-    "description": "service not found",
-    "error": "BadRequest"
+    "detail": "/v2/types///",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 
 08a. /v2/types/T1//
 ===================
-HTTP/1.1 400 Bad Request
-Content-Length: 56
+HTTP/1.1 404 Not Found
+Content-Length: 117
 Content-Type: application/json
 Date: REGEX(.*)
-Fiware-Correlator: REGEX([0-9a-f\-]{36})
+Fiware-Correlator: REGEX(.*)
 
 {
-    "description": "service not found",
-    "error": "BadRequest"
+    "detail": "/v2/types/T1//",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 
 08b. /v2/types/T1///
 ====================
-HTTP/1.1 400 Bad Request
-Content-Length: 56
+HTTP/1.1 404 Not Found
+Content-Length: 118
 Content-Type: application/json
 Date: REGEX(.*)
-Fiware-Correlator: REGEX([0-9a-f\-]{36})
+Fiware-Correlator: REGEX(.*)
 
 {
-    "description": "service not found",
-    "error": "BadRequest"
+    "detail": "/v2/types/T1///",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 
@@ -455,7 +468,7 @@ HTTP/1.1 400 Bad Request
 Content-Length: 94
 Content-Type: application/json
 Date: REGEX(.*)
-Fiware-Correlator: REGEX([0-9a-f\-]{36})
+Fiware-Correlator: REGEX(.*)
 
 {
     "description": "Invalid subscription ID: bad length - 24 chars expected",
@@ -465,99 +478,106 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 09b. /v2/subscriptions///
 =========================
-HTTP/1.1 400 Bad Request
-Content-Length: 56
+HTTP/1.1 404 Not Found
+Content-Length: 123
 Content-Type: application/json
 Date: REGEX(.*)
-Fiware-Correlator: REGEX([0-9a-f\-]{36})
+Fiware-Correlator: REGEX(.*)
 
 {
-    "description": "service not found",
-    "error": "BadRequest"
+    "detail": "/v2/subscriptions///",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 
 10a. /v2/subscriptions/subId//
 ==============================
-HTTP/1.1 400 Bad Request
-Content-Length: 56
+HTTP/1.1 404 Not Found
+Content-Length: 128
 Content-Type: application/json
 Date: REGEX(.*)
-Fiware-Correlator: REGEX([0-9a-f\-]{36})
+Fiware-Correlator: REGEX(.*)
 
 {
-    "description": "service not found",
-    "error": "BadRequest"
+    "detail": "/v2/subscriptions/subId//",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 
 10b. /v2/subscriptions/subId///
 ===============================
-HTTP/1.1 400 Bad Request
-Content-Length: 56
+HTTP/1.1 404 Not Found
+Content-Length: 129
 Content-Type: application/json
 Date: REGEX(.*)
-Fiware-Correlator: REGEX([0-9a-f\-]{36})
+Fiware-Correlator: REGEX(.*)
 
 {
-    "description": "service not found",
-    "error": "BadRequest"
+    "detail": "/v2/subscriptions/subId///",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 
 11a. /v2/op/query//
 ===================
-HTTP/1.1 400 Bad Request
-Content-Length: 56
+HTTP/1.1 404 Not Found
+Content-Length: 117
 Content-Type: application/json
 Date: REGEX(.*)
-Fiware-Correlator: REGEX([0-9a-f\-]{36})
+Fiware-Correlator: REGEX(.*)
 
 {
-    "description": "service not found",
-    "error": "BadRequest"
+    "detail": "/v2/op/query//",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 
 11b. /v2/op/query///
 ====================
-HTTP/1.1 400 Bad Request
-Content-Length: 56
+HTTP/1.1 404 Not Found
+Content-Length: 118
 Content-Type: application/json
 Date: REGEX(.*)
-Fiware-Correlator: REGEX([0-9a-f\-]{36})
+Fiware-Correlator: REGEX(.*)
 
 {
-    "description": "service not found",
-    "error": "BadRequest"
+    "detail": "/v2/op/query///",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 
 12a. /v2/op/update//
 ====================
-HTTP/1.1 400 Bad Request
-Content-Length: 56
+HTTP/1.1 404 Not Found
+Content-Length: 118
 Content-Type: application/json
 Date: REGEX(.*)
-Fiware-Correlator: REGEX([0-9a-f\-]{36})
+Fiware-Correlator: REGEX(.*)
 
 {
-    "description": "service not found",
-    "error": "BadRequest"
+    "detail": "/v2/op/update//",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 
 12b. /v2/op/update///
 =====================
-HTTP/1.1 400 Bad Request
-Content-Length: 56
+HTTP/1.1 404 Not Found
+Content-Length: 119
 Content-Type: application/json
 Date: REGEX(.*)
-Fiware-Correlator: REGEX([0-9a-f\-]{36})
+Fiware-Correlator: REGEX(.*)
 
 {
-    "description": "service not found",
-    "error": "BadRequest"
+    "detail": "/v2/op/update///",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 

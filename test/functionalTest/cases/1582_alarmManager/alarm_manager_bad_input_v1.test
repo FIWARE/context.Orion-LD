@@ -107,18 +107,16 @@ echo
 --REGEXPECT--
 01. GET /v1/noService
 =====================
-HTTP/1.1 400 Bad Request
-Content-Length: 88
+HTTP/1.1 404 Not Found
+Content-Length: 116
 Content-Type: application/json
 Date: REGEX(.*)
 Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 {
-    "orionError": {
-        "code": "400",
-        "details": "service not found",
-        "reasonPhrase": "Bad Request"
-    }
+    "detail": "/v1/noService",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 
@@ -194,7 +192,7 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 07. grep in log-file
 ====================
-Raising alarm BadInput REGEX((0.0.0.0|127.0.0.1)): service '/v1/noService' not found
+Raising alarm BadInput REGEX(.*)
 Releasing alarm BadInput REGEX((0.0.0.0|127.0.0.1))
 Raising alarm BadInput REGEX((0.0.0.0|127.0.0.1)): bad verb for url '/v1/updateContext', method 'PROUST'
 

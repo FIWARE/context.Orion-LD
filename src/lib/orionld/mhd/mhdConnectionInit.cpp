@@ -617,7 +617,6 @@ MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
     }
   }
 
-
   if (strcmp(key, "id") == 0)
   {
     orionldState.uriParams.id = (char*) value;
