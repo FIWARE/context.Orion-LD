@@ -22,6 +22,9 @@
 *
 * Author: Ken Zangelin
 */
+#include <string>                                              // std::string
+#include <map>                                                 // std::map
+
 extern "C"
 {
 #include "kbase/kMacros.h"                                     // K_FT
@@ -92,7 +95,7 @@ extern "C"
 //
 SubordinateSubscription* subordinateCreate(CachedSubscription* cSubP, RegCacheItem* rciP, const char* entityType)
 {
-  LM_T(LmtSR, ("Creating a subscription subordinate to '%s' on '%s'", cSubP->subscriptionId, rciP->regId));
+  LM_T(LmtSubordinate, ("Creating a subscription subordinate to '%s' on '%s'", cSubP->subscriptionId, rciP->regId));
 
   int  runNo = 1;
 
@@ -104,8 +107,14 @@ SubordinateSubscription* subordinateCreate(CachedSubscription* cSubP, RegCacheIt
   char subSubId[128];
   snprintf(subSubId, sizeof(subSubId), "%s:%d", cSubP->subscriptionId, runNo);
 
-  char notificationUrl[256];
-  snprintf(notificationUrl, sizeof(notificationUrl), "http://%s/ngsi-ld/ex/v1/notifications/%s", localIpAndPort, cSubP->subscriptionId);
+  char notificationUrl[512];
+
+  if (subordinateEndpoint[0] != 0)
+    snprintf(notificationUrl, sizeof(notificationUrl), "%s/notifications/%s", subordinateEndpoint, cSubP->subscriptionId);
+  else
+    snprintf(notificationUrl, sizeof(notificationUrl), "http://%s/ngsi-ld/ex/v1/notifications/%s", localIpAndPort, cSubP->subscriptionId);
+
+  LM_T(LmtSubordinate, ("URL for subordinate subscription: '%s'", notificationUrl));
 
   KjNode* bodyP         = kjObject(orionldState.kjsonP, NULL);
   KjNode* idP           = kjString(orionldState.kjsonP, "id", subSubId);
@@ -125,8 +134,46 @@ SubordinateSubscription* subordinateCreate(CachedSubscription* cSubP, RegCacheIt
   kjChildAdd(entitiesP, entityP);
   kjChildAdd(entityP, entityTypeP);
 
-  kjChildAdd(notificationP, endpointP);
   kjChildAdd(endpointP, urlP);
+  kjChildAdd(notificationP, endpointP);
+
+  //
+  // contextSourceInfo => receiverInfo
+  //
+  // Taking it from the registration
+  // KjNode* contextSourceInfoP = kjLookup(rciP->regTree, "contextSourceInfo"); ...
+  //
+  // For now, we take it from the subscription:
+  //
+  KjNode* receiverInfoP = NULL;
+  for (std::map<std::string, std::string>::const_iterator it = cSubP->httpInfo.headers.begin(); it != cSubP->httpInfo.headers.end(); ++it)
+  {
+    const char* key    = it->first.c_str();
+    char*       value  = (char*) it->second.c_str();
+
+    KjNode* keyP   = kjString(orionldState.kjsonP, "key", key);
+    KjNode* valueP = kjString(orionldState.kjsonP, "value", value);
+    KjNode* kvP    = kjObject(orionldState.kjsonP, NULL);
+
+    kjChildAdd(kvP, keyP);
+    kjChildAdd(kvP, valueP);
+
+    if (receiverInfoP == NULL)
+    {
+      receiverInfoP = kjArray(orionldState.kjsonP, "receiverInfo");
+      kjChildAdd(endpointP, receiverInfoP);
+    }
+
+    kjChildAdd(receiverInfoP, kvP);
+  }
+
+
+  // throttling
+  if (cSubP->throttling > 0)
+  {
+    KjNode* throttlingP = kjFloat(orionldState.kjsonP, "throttling", cSubP->throttling);
+    kjChildAdd(bodyP, throttlingP);
+  }
 
   kjTreeLog(bodyP, "Subordinate subscription", LmtSR);
 
@@ -423,8 +470,11 @@ bool orionldPostSubscriptions(void)
   //
   // Any subordinate subscriptions needed?
   //
+  LM_T(LmtSubordinate, ("Any subordinate subscriptions needed?"));
   if ((distSubsEnabled == true) && (orionldState.uriParams.local == false))
   {
+    LM_T(LmtSubordinate, ("At least, subordinate subscriptions are ON - c hecking regs"));
+
     //
     // Find matching regs
     // Create a subordinate subscription in brokers behind matching regs, if "subCreate" is in "operations"
@@ -433,8 +483,10 @@ bool orionldPostSubscriptions(void)
     {
       char* entityTypeP;
 
+      LM_T(LmtSubordinate, ("Checking reg '%s' for match to subscription '%s'", rciP->regId, cSubP->subscriptionId));
       if (regMatchSubscription(rciP, cSubP, &entityTypeP) == true)
       {
+        LM_T(LmtSubordinate, ("Reg '%s' is a match - creating subordinate subscription", rciP->regId));
         SubordinateSubscription* subSubP = subordinateCreate(cSubP, rciP, entityTypeP);
 
         // Add the subordinate to subP
@@ -457,6 +509,8 @@ bool orionldPostSubscriptions(void)
 
         kjChildAdd(subordinateP, subSubNodeP);
       }
+      else
+        LM_T(LmtSubordinate, ("Reg '%s' is not a match", rciP->regId));
     }
   }
 

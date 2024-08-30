@@ -103,5 +103,6 @@ Usage: orionld  [option '-U' (extended usage)]
                 [option '-cSubCounters' <number of subscription counter updates before flush from sub-cache to DB (0: never, 1: always)>]
                 [option '-distributed' (turn on distributed operation)]
                 [option '-brokerId' <identity of this broker instance for registrations - for the Via header>]
+                [option '-subordinateEndpoint' <endpoint URL for reception of notificatiopns from subordinate subscriptions (distributed subscriptions)>]
 
 --TEARDOWN--

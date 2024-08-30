@@ -33,18 +33,16 @@ orionCurl --url "/v1/contextEntities/Room1/attributes/temperature/foo/bar"
 
 --REGEXPECT--
 1: +++++++++++++++++++++++++++++
-HTTP/1.1 400 Bad Request
-Content-Length: 88
+HTTP/1.1 404 Not Found
+Content-Length: 159
 Content-Type: application/json
 Date: REGEX(.*)
 Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 {
-    "orionError": {
-        "code": "400", 
-        "details": "service not found",
-        "reasonPhrase": "Bad Request"
-    }
+    "detail": "/v1/contextEntities/Room1/attributes/temperature/foo/bar",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 --TEARDOWN--
 brokerStop CB

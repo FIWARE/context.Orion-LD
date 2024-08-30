@@ -617,7 +617,6 @@ MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
     }
   }
 
-
   if (strcmp(key, "id") == 0)
   {
     orionldState.uriParams.id = (char*) value;
@@ -1072,6 +1071,17 @@ MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
 static OrionLdRestService* serviceLookup(void)
 {
   OrionLdRestService* serviceP;
+
+  if (subordinatePath[0] != 0)
+  {
+    if (strncmp(orionldState.urlPath, subordinatePath, subordinatePathLen) == 0)
+    {
+      orionldState.wildcard[0] = &orionldState.urlPath[subordinatePathLen];
+      LM_T(LmtSubordinate, ("Got a notification from a subordinate subscription (parent sub: '%s')", orionldState.wildcard[0]));
+      // orionldState.subordinateNotification = true;
+      return subordinateNotificationServiceP;
+    }
+  }
 
   serviceP = orionldServiceLookup(&orionldRestServiceV[orionldState.verb]);
   if (serviceP == NULL)

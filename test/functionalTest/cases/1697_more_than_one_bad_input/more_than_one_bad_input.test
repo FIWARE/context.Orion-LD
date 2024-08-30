@@ -77,15 +77,16 @@ echo
 --REGEXPECT--
 01. Provoke FOUR Bad Inputs
 ===========================
-HTTP/1.1 400 Bad Request
-Content-Length: 56
+HTTP/1.1 404 Not Found
+Content-Length: 116
 Content-Type: application/json
 Date: REGEX(.*)
 Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 {
-    "description": "service not found",
-    "error": "BadRequest"
+    "detail": "/v2/noService",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 HTTP/1.1 400 Bad Request
 Content-Length: 75
@@ -134,8 +135,7 @@ Bad input active alarms: 1, raised: _total: 1, new: 1_, released: _total: 0, new
 
 04. grep BadInput in log-file (4 lines found)
 =============================================
-Raising alarm BadInput REGEX(\d+\.\d+\.\d+\.\d+.*): service '/v2/noService' not found
-Repeated BadInput REGEX(\d+\.\d+\.\d+\.\d+.*): JSON parse error
+Raising alarm BadInput REGEX(\d+\.\d+\.\d+\.\d+.*): JSON parse error
 Repeated BadInput REGEX(\d+\.\d+\.\d+\.\d+.*): bad verb for url '/v2/entities', method 'GETT'
 Repeated BadInput REGEX(\d+\.\d+\.\d+\.\d+.*): {"error":"ContentLengthRequired","description":"Zero/No Content-Length in PUT/POST/PATCH request"}
  

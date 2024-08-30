@@ -322,6 +322,7 @@ typedef struct OrionldMongoC
 typedef struct OrionldConnectionState
 {
   OrionldPhase            phase;
+  bool                    orionldErrorDone;          // Don't override error - don't call orionldError()
   bool                    distributed;               // Depends on a URI param, but can be modified (to false) via an HTTP header
   MHD_Connection*         mhdConnection;
   char                    clientIp[64];              // IP address of the requester
@@ -649,6 +650,16 @@ extern sem_t                  mongocConnectionSem;
 extern char                   mongocServerVersion[128];
 extern char                   postgresServerVersion[128];
 
+
+
+// -----------------------------------------------------------------------------
+//
+// Variables for notifications from subordinate subscriptions (distributed subscriptions)
+//
+extern char                subordinateEndpoint[256];
+extern char                subordinatePath[256];
+extern int                 subordinatePathLen;
+extern OrionLdRestService* subordinateNotificationServiceP;
 
 
 // -----------------------------------------------------------------------------

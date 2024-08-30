@@ -125,6 +125,15 @@ char                   postgresServerVersion[128];
 
 
 
+//
+// Variables for notifications from subordinate subscriptions (distributed subscriptions)
+//
+char                   subordinatePath[256];
+int                    subordinatePathLen              = -1;
+OrionLdRestService*    subordinateNotificationServiceP = NULL;
+
+
+
 // -----------------------------------------------------------------------------
 //
 // orionldStateInit - initialize the thread-local variable orionldState

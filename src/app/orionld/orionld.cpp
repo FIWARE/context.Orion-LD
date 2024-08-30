@@ -56,7 +56,7 @@
 */
 #include <stdio.h>
 #include <unistd.h>                                         // getppid, fork, setuid, sleep, gethostname, etc.
-#include <string.h>
+#include <string.h>                                         // strchr
 #include <fcntl.h>                                          // open
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -246,6 +246,7 @@ char            coreContextVersion[64];
 bool            triggerOperation = false;
 bool            noprom           = false;
 bool            noArrayReduction = false;
+char            subordinateEndpoint[256];
 
 
 
@@ -340,6 +341,7 @@ bool            noArrayReduction = false;
 #define CORE_CONTEXT_DESC      "core context version (v1.0|v1.3|v1.4|v1.5|v1.6|v1.7) - v1.6 is default"
 #define NO_PROM_DESC           "run without Prometheus metrics"
 #define NO_ARR_REDUCT_DESC     "skip JSON-LD Array Reduction"
+#define SUBORDINATE_ENDPOINT_DESC  "endpoint URL for reception of notificatiopns from subordinate subscriptions (distributed subscriptions)"
 
 
 
@@ -445,6 +447,7 @@ PaArgument paArgs[] =
   { "-lmtmp",                 &lmtmp,                   "TMP_TRACES",                PaBool,    PaHid,  true,            false,  true,             TMPTRACES_DESC           },
   { "-noprom",                &noprom,                  "NO_PROM",                   PaBool,    PaHid,  false,           false,  true,             NO_PROM_DESC             },
   { "-noArrayReduction",      &noArrayReduction,        "NO_ARRAY_REDUCTION",        PaBool,    PaHid,  false,           false,  true,             NO_ARR_REDUCT_DESC       },
+  { "-subordinateEndpoint",   &subordinateEndpoint,     "SUBORDINATE_ENDPOINT",      PaStr,     PaOpt,  _i "",           PaNL,   PaNL,             SUBORDINATE_ENDPOINT_DESC },
 
   PA_END_OF_ARGS
 };
@@ -1076,6 +1079,23 @@ int main(int argC, char* argV[])
         LM_X(1, ("Invalid value for -wip comma-separated list (allowed: 'entityMaps', 'distSubs')"));
     }
   }
+
+  if (subordinateEndpoint[0] != 0)
+  {
+    char* slash = strchr(subordinateEndpoint, '/');
+
+    if ((slash != NULL) && (slash[1] == '/') && (slash[2] != 0))  // xxx:// is skipped
+      slash = strchr(&slash[2], '/');
+
+    char* prefix = slash;
+    subordinatePathLen = snprintf(subordinatePath, sizeof(subordinatePath) - 1, "%s/notifications/", prefix);
+
+    LM_T(LmtSubordinate, ("entity subordinate prefix: '%s'", subordinateEndpoint));
+    LM_T(LmtSubordinate, ("path portion:              '%s'", prefix));
+    LM_T(LmtSubordinate, ("subordinatePath:           '%s'", subordinatePath));
+  }
+  else
+    bzero(subordinatePath, sizeof(subordinatePath));
 
 #if 0
   //

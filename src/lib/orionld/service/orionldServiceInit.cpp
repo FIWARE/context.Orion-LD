@@ -218,6 +218,7 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
   else if (serviceP->serviceRoutine == orionldPostNotification)
   {
     serviceP->uriParams |= ORIONLD_URIPARAM_SUBSCRIPTION_ID;
+    subordinateNotificationServiceP = serviceP;
   }
   else if (serviceP->serviceRoutine == orionldGetEntities)
   {
@@ -565,6 +566,8 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
     else if (serviceP->serviceRoutine == orionldPostBatchCreate)
       serviceP->troeRoutine = troePostBatchCreate;
     else if (serviceP->serviceRoutine == orionldPostBatchUpsert)
+      serviceP->troeRoutine = troePostBatchUpsert;
+    else if (serviceP->serviceRoutine == orionldPostNotify)
       serviceP->troeRoutine = troePostBatchUpsert;
     else if (serviceP->serviceRoutine == orionldPostBatchUpdate)
       serviceP->troeRoutine = troePostBatchUpdate;

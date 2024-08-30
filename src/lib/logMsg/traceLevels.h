@@ -126,6 +126,11 @@ typedef enum TraceLevels
   LmtEntityMapDetail,                  // Details of the entity-registration maps
 
   //
+  // Subordinate Subscriptions
+  //
+  LmtSubordinate = 140,
+
+  //
   // Misc
   //
   LmtMongoc = 200,                     // Entire mongoc library
