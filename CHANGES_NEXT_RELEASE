@@ -7,6 +7,7 @@
     - Also supporting sorting on entity id, type, and modifiedAt
     - One more URL parameter '?reverse=true' to reverse the sorting order
   * Support for GET /ngsi-ld/v1/info/sourceIdentity
+  * Support for management::localOnly in registrations
 
 ## Notes
   * Lots of improvements for subordinate subscriptions - still not 100% ready, but a lot better.
