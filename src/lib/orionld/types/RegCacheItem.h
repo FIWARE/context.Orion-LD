@@ -71,6 +71,7 @@ typedef struct RegCacheItem
   char*                 ipAndPort;          // IP:port - for X-Forwarded-For
   RegIdPattern*         idPatternRegexList;
   char*                 hostAlias;          // Broker identity - for the Via header (replacing X-Forwarded-For)
+  bool                  localOnly;          // Forwarded reqs to include local=true if this field is true
 
   struct RegCacheItem*  next;
 } RegCacheItem;
