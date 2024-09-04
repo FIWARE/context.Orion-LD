@@ -172,7 +172,7 @@ void orionldStateInit(MHD_Connection* connection)
 
   // Pagination
   orionldState.uriParams.offset        = 0;
-  orionldState.uriParams.limit         = 20;
+  orionldState.uriParams.limit         = pageSize;
 
   // orionldState.delayedKjFreeVecSize    = sizeof(orionldState.delayedKjFreeVec) / sizeof(orionldState.delayedKjFreeVec[0]);
 

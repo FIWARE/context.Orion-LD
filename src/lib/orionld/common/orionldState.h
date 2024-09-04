@@ -618,6 +618,7 @@ extern EntityMap*        entityMaps;               // Used by GET /entities in t
 extern bool              entityMapsEnabled;        // Enable Entity Maps
 extern bool              distSubsEnabled;          // Enable distributed subscriptions
 extern bool              noArrayReduction;         // Used by arrayReduce in pCheckAttribute.cpp
+extern int               pageSize;                 // Pagination limit
 
 extern char                localIpAndPort[135];    // Local address for X-Forwarded-For (from orionld.cpp)
 extern unsigned long long  inReqPayloadMaxSize;
