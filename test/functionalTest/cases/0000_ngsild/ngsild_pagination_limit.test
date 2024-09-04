@@ -1,0 +1,93 @@
+# Copyright 2024 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Default pagination limit (page size)
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -experimental -pageSize 8
+
+typeset -i eNo
+eNo=1
+
+while [ $eNo -le 10 ]
+do
+  eId=$(printf "urn:ngsi-ld:entities:E%02d" $eNo)
+  
+  payload='{
+    "id": "'$eId'",
+    "type": "T",
+    "A1": {
+      "type": "Property",
+      "value": "E'$eNo':A1"
+    }
+  }'
+  orionCurl --url /ngsi-ld/v1/entities --payload "$payload" | grep 'Location:'
+  eNo=$eNo+1
+done
+
+--SHELL--
+
+#
+# 01. Query entities - get 8 as pageSize is set to 8 on orion-ld startup
+# 02. Query entities with limit URL param set to 4 - see 4 entities
+#
+
+echo "01. Query entities - get 8 as pageSize is set to 8 on orion-ld startup"
+echo "======================================================================"
+orionCurl --url /ngsi-ld/v1/entities?type=T | grep '"id"'
+echo
+echo
+
+
+echo "02. Query entities with limit URL param set to 4 - see 4 entities"
+echo "================================================================="
+orionCurl --url '/ngsi-ld/v1/entities?type=T&limit=4' | grep '"id"'
+echo
+echo
+
+
+--REGEXPECT--
+01. Query entities - get 8 as pageSize is set to 8 on orion-ld startup
+======================================================================
+        "id": "urn:ngsi-ld:entities:E01",
+        "id": "urn:ngsi-ld:entities:E02",
+        "id": "urn:ngsi-ld:entities:E03",
+        "id": "urn:ngsi-ld:entities:E04",
+        "id": "urn:ngsi-ld:entities:E05",
+        "id": "urn:ngsi-ld:entities:E06",
+        "id": "urn:ngsi-ld:entities:E07",
+        "id": "urn:ngsi-ld:entities:E08",
+
+
+02. Query entities with limit URL param set to 4 - see 4 entities
+=================================================================
+        "id": "urn:ngsi-ld:entities:E01",
+        "id": "urn:ngsi-ld:entities:E02",
+        "id": "urn:ngsi-ld:entities:E03",
+        "id": "urn:ngsi-ld:entities:E04",
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB

@@ -247,6 +247,7 @@ bool            triggerOperation = false;
 bool            noprom           = false;
 bool            noArrayReduction = false;
 char            subordinateEndpoint[256];
+int             pageSize         = 20;
 
 
 
@@ -342,6 +343,7 @@ char            subordinateEndpoint[256];
 #define NO_PROM_DESC           "run without Prometheus metrics"
 #define NO_ARR_REDUCT_DESC     "skip JSON-LD Array Reduction"
 #define SUBORDINATE_ENDPOINT_DESC  "endpoint URL for reception of notificatiopns from subordinate subscriptions (distributed subscriptions)"
+#define PAGE_SIZE_DESC         "default page size (no of entities, subscriptions, registrations)"
 
 
 
@@ -448,6 +450,7 @@ PaArgument paArgs[] =
   { "-noprom",                &noprom,                  "NO_PROM",                   PaBool,    PaHid,  false,           false,  true,             NO_PROM_DESC             },
   { "-noArrayReduction",      &noArrayReduction,        "NO_ARRAY_REDUCTION",        PaBool,    PaHid,  false,           false,  true,             NO_ARR_REDUCT_DESC       },
   { "-subordinateEndpoint",   &subordinateEndpoint,     "SUBORDINATE_ENDPOINT",      PaStr,     PaOpt,  _i "",           PaNL,   PaNL,             SUBORDINATE_ENDPOINT_DESC },
+  { "-pageSize",              &pageSize,                "PAGE_SIZE",                 PaInt,     PaOpt,  20,              1,      1000,             PAGE_SIZE_DESC            },
 
   PA_END_OF_ARGS
 };

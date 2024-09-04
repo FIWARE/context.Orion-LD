@@ -8,6 +8,7 @@
     - One more URL parameter '?reverse=true' to reverse the sorting order
   * Support for GET /ngsi-ld/v1/info/sourceIdentity
   * Support for management::localOnly in registrations
+  * Support for new CLI parameter '-pageSize' to set the default pagination limit (default is 20 if -pageSize is not used)
 
 ## Notes
   * Lots of improvements for subordinate subscriptions - still not 100% ready, but a lot better.
