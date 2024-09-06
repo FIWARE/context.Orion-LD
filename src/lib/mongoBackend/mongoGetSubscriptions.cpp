@@ -78,7 +78,13 @@ using ngsiv2::EntID;
 */
 static void extractSubscriptionId(Subscription* s, const BSONObj* rP)
 {
-  s->id = getFieldF(rP, "_id").OID().toString();
+  mongo::BSONElement  bsonElement = rP->getField("_id");
+  mongo::BSONType     bsonType    = bsonElement.type();
+
+  if (bsonType == mongo::jstOID)
+    s->id = bsonElement.OID().toString();
+  else
+    s->id = bsonElement.String();
 }
 
 
