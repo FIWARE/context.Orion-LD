@@ -22,6 +22,8 @@
 *
 * Author: Ken Zangelin
 */
+#include <string.h>                                            // strlen, strcspn
+
 extern "C"
 {
 #include "kjson/KjNode.h"                                      // KjNode
@@ -38,6 +40,68 @@ extern "C"
 #include "orionld/troe/pgSubAttributeBuild.h"                  // pgSubAttributeBuild
 #include "orionld/troe/pgObservedAtExtract.h"                  // pgObservedAtExtract
 #include "orionld/troe/pgAttributeBuild.h"                     // Own interface
+
+
+
+// ----------------------------------------------------------------------------
+//
+// kjStringValueEncode -
+//
+static char* urlencode(const char* s, int sLen, int acceptedLen)
+{
+  int   maxLen = (sLen - acceptedLen) * 3 + acceptedLen + 1;
+  char* sOut   = kaAlloc(&orionldState.kalloc, maxLen);
+
+  if (sOut == NULL)
+    return (char*) "too long string value";
+
+  int sIx    = acceptedLen;
+  int sOutIx = acceptedLen;
+
+  strncpy(sOut, s, acceptedLen);
+
+  while (s[sIx] != 0)
+  {
+    if (s[sIx] == '\'')
+    {
+      sOut[sOutIx++] = '%';
+      sOut[sOutIx++] = '2';
+      sOut[sOutIx++] = '7';
+    }
+    else
+      sOut[sOutIx++] = s[sIx];
+
+    ++sIx;
+  }
+
+  return sOut;
+}
+
+
+
+// ----------------------------------------------------------------------------
+//
+// kjStringValueEncode -
+//
+void kjStringValueEncode(KjNode* nodeP)
+{
+  if (nodeP->type == KjString)
+  {
+    size_t len         = strlen(nodeP->value.s);
+    size_t acceptedLen = strcspn(nodeP->value.s, "\'");
+
+    if (acceptedLen != len)
+      nodeP->value.s = urlencode(nodeP->value.s, len, acceptedLen);
+  }
+  else if ((nodeP->type == KjObject) || (nodeP->type == KjArray))
+  {
+    for (KjNode* nP = nodeP->value.firstChildP; nP != NULL; nP = nP->next)
+    {
+      if ((nodeP->type == KjObject) || (nodeP->type == KjArray) || (nodeP->type == KjString))
+        kjStringValueEncode(nP);
+    }
+  }
+}
 
 
 
@@ -82,7 +146,13 @@ bool pgAttributeBuild
     else if (strcmp(nodeP->name, "unitCode")    == 0)  unitCode   = nodeP->value.s;
     else if (strcmp(nodeP->name, "type")        == 0)  type       = nodeP->value.s;
     else if (strcmp(nodeP->name, "datasetId")   == 0)  datasetId  = nodeP->value.s;
-    else if (strcmp(nodeP->name, "value")       == 0)  valueNodeP = nodeP;
+    else if (strcmp(nodeP->name, "value")       == 0)
+    {
+      if ((nodeP->type == KjObject) || (nodeP->type == KjArray) || (nodeP->type == KjString))
+        kjStringValueEncode(nodeP);
+
+      valueNodeP = nodeP;
+    }
     else if (strcmp(nodeP->name, "json")        == 0)  valueNodeP = nodeP;
     else if (strcmp(nodeP->name, "object")      == 0)
     {
