@@ -1,5 +1,6 @@
 ## Fixed Issues:
   #1621: URL-Encoding single quote in attribute values in TRoE DB
+  #1649:   Crash when using subscriptions in a mixed environment (LD and V2)
 
 ## New Features:
   * Distributed subscriptions: subordinate subscriptions are DELETED when their "father" is deleted.
