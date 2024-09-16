@@ -61,7 +61,7 @@ add_definitions(-DLM_ON)
 add_definitions(-DORIONLD)
 
 add_definitions(-fPIC)
-add_definitions(-std=c++11)
+add_definitions(-std=c++17)
 add_definitions(-DBOOST_ERROR_CODE_HEADER_ONLY)
 
 # Baseline compiler flags, any change here will affect all build types
@@ -273,9 +273,10 @@ SET (COMMON_STATIC_LIBS
 )
 
 SET (DYNAMIC_LIBS
-    fastrtps
+    fastdds
     fastcdr
     foonathan_memory-0.7.3
+    ddsenabler
     tinyxml2
     prom
     promhttp
@@ -409,7 +410,7 @@ if (error EQUAL 0)
   ADD_SUBDIRECTORY(src/lib/metricsMgr)
   ADD_SUBDIRECTORY(src/lib/logSummary)
   ADD_SUBDIRECTORY(src/app/orionld)
-  ADD_SUBDIRECTORY(test/functionalTest/ftClient)
+#  ADD_SUBDIRECTORY(test/functionalTest/ftClient)
 else ()
     MESSAGE("cmake: NOT OK")
 endif (error EQUAL 0)

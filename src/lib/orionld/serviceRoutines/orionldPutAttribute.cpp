@@ -43,10 +43,6 @@ extern "C"
 #include "orionld/common/traceLevels.h"                          // KT_T trace levels
 #include "orionld/mongoc/mongocEntityLookup.h"                   // mongocEntityLookup
 #include "orionld/mongoc/mongocAttributeReplace.h"               // mongocAttributeReplace
-#include "orionld/dds/kjTreeLog.h"                               // kjTreeLog2
-#include "orionld/dds/ddsPublish.h"                              // ddsPublishAttribute
-#include "orionld/dds/ddsEntityCreateFromAttribute.h"            // ddsEntityCreateFromAttribute
-#include "orionld/dds/ddsAttributeCreate.h"                      // ddsAttributeCreate
 #include "orionld/payloadCheck/pCheckAttribute.h"                // pCheckAttribute
 #include "orionld/dbModel/dbModelToApiEntity.h"                  // dbModelToApiEntity2
 #include "orionld/dbModel/dbModelFromApiAttribute.h"             // dbModelFromApiAttribute
@@ -59,6 +55,7 @@ extern "C"
 #include "orionld/distOp/distOpListRelease.h"                    // distOpListRelease
 #include "orionld/distOp/distOpFailure.h"                        // distOpFailure
 #include "orionld/distOp/distOpSuccess.h"                        // distOpSuccess
+#include "orionld/dds/kjTreeLog.h"                               // kjTreeLog2
 #include "orionld/notifications/alteration.h"                    // alteration
 #include "orionld/notifications/previousValuePopulate.h"         // previousValuePopulate
 #include "orionld/notifications/sysAttrsStrip.h"                 // sysAttrsStrip
@@ -123,8 +120,8 @@ bool orionldPutAttribute(void)
   {
     if (orionldState.distributed == false)
     {
-      if (orionldState.ddsSample == true)
-        return ddsEntityCreateFromAttribute(orionldState.requestTree, entityId, attrName);
+//      if (orionldState.ddsSample == true)
+//        return ddsEntityCreateFromAttribute(orionldState.requestTree, entityId, attrName);
 
       orionldError(OrionldResourceNotFound, "Entity Not Found", entityId, 404);
       return false;
@@ -138,8 +135,8 @@ bool orionldPutAttribute(void)
     dbAttrP = dbModelAttributeLookup(dbEntityP, attrLongNameEq);
     if (dbAttrP == NULL)
     {
-      if (orionldState.ddsSample == true)
-        return ddsAttributeCreate(orionldState.requestTree, entityType, attrName);
+//      if (orionldState.ddsSample == true)
+//        return ddsAttributeCreate(orionldState.requestTree, entityType, attrName);
 
       if (orionldState.distributed == false)
       {
@@ -311,8 +308,8 @@ bool orionldPutAttribute(void)
   alterationP = alteration(entityId, entityType, finalApiEntity, apiAttributeAsEntityP, dbEntityP);
   alterationP->finalApiEntityWithSysAttrsP = finalApiEntityWithSysAttrs;
 
-  if (ddsSupport == true)
-    ddsPublishAttribute(ddsTopicType, entityType, entityId, apiAttributeP);
+//  if (ddsSupport == true)
+//    ddsPublishAttribute(ddsTopicType, entityType, entityId, apiAttributeP);
 
  response:
   if (distOpList != NULL)

@@ -46,6 +46,6 @@ typedef enum DdsOperationMode
 //
 // ddsInit -
 //
-extern int ddsInit(Kjson* kjP, DdsOperationMode ddsOpMode);
+extern int ddsInit(Kjson* kjP, const char* ddsConfigFile, const char* ddsTopicType, char* ddsSubsTopics, DdsOperationMode ddsOpMode);
 
 #endif  // SRC_LIB_ORIONLD_DDS_DDSINIT_H_

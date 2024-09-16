@@ -617,12 +617,20 @@ extern EntityMap*        entityMaps;               // Used by GET /entities in t
 extern bool              entityMapsEnabled;        // Enable Entity Maps
 extern bool              distSubsEnabled;          // Enable distributed subscriptions
 extern bool              noArrayReduction;         // Used by arrayReduce in pCheckAttribute.cpp
-extern bool              ddsSupport;               // Publish/Subscriba via DDS
-extern char              ddsTopicType[512];
-
 extern char                localIpAndPort[135];    // Local address for X-Forwarded-For (from orionld.cpp)
 extern unsigned long long  inReqPayloadMaxSize;
 extern unsigned long long  outReqMsgMaxSize;
+
+
+
+// -----------------------------------------------------------------------------
+//
+// CLI params for DDS
+//
+extern bool              ddsSupport;               // Publish/Subscriba via DDS
+extern char              ddsTopicType[512];
+extern char              ddsConfigFile[512];
+extern char              ddsEnablerConfigFile[512];
 
 
 

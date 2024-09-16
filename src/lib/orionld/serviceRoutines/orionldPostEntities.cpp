@@ -61,7 +61,6 @@ extern "C"
 #include "orionld/distOp/distOpResponses.h"                      // distOpResponses
 #include "orionld/kjTree/kjChildCount.h"                         // kjChildCount
 #include "orionld/kjTree/kjSort.h"                               // kjStringArraySort
-#include "orionld/dds/ddsPublish.h"                              // ddsPublishEntity
 #include "orionld/serviceRoutines/orionldPostEntities.h"         // Own interface
 
 
@@ -257,12 +256,14 @@ bool orionldPostEntities(void)
   //
   sysAttrsToEntity(orionldState.alterations->finalApiEntityWithSysAttrsP);
 
+#if 0
   //
   // We publish on DDS if 'ddsSupport' is on.
   // BUT, we don't publish if the info comes from DDS, obviously!
   //
   if ((ddsSupport == true) && (orionldState.ddsSample == false))
     ddsPublishEntity(ddsTopicType, orionldState.alterations->entityType, orionldState.alterations->entityId, orionldState.alterations->finalApiEntityP);
+#endif
 
   if (cloneForTroeP != NULL)
     orionldState.requestTree = cloneForTroeP;

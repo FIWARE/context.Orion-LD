@@ -1,5 +1,5 @@
-#ifndef SRC_LIB_ORIONLD_DDS_DDSINIT_H_
-#define SRC_LIB_ORIONLD_DDS_DDSINIT_H_
+#ifndef SRC_LIB_ORIONLD_DDS_DDSNOTIFICATION_H_
+#define SRC_LIB_ORIONLD_DDS_DDSNOTIFICATION_H_
 
 /*
 *
@@ -27,25 +27,15 @@
 */
 extern "C"
 {
-#include "kjson/kjson.h"                                    // Kjson
+#include "kjson/KjNode.h"                                   // KjNode
 }
 
 
 
 // -----------------------------------------------------------------------------
 //
-// DdsOperationMode -
+// ddsNotification -
 //
-typedef enum DdsOperationMode
-{
-  DDSOpModeDefault
-} DdsOperationMode;
+extern void ddsNotification(const char* entityType, const char* entityId, const char* attrName, KjNode* notificationP);
 
-
-// -----------------------------------------------------------------------------
-//
-// ddsInit -
-//
-extern int ddsInit(Kjson* kjP, DdsOperationMode ddsOpMode);
-
-#endif  // SRC_LIB_ORIONLD_DDS_DDSINIT_H_
+#endif  // SRC_LIB_ORIONLD_DDS_DDSNOTIFICATION_H_
