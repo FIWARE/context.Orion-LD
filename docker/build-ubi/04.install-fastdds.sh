@@ -25,7 +25,6 @@ dnf config-manager --set-enabled powertools
 yum -y install tinyxml2-devel boost-devel yaml-cpp yaml-cpp-devel
 yum -y --nogpgcheck install https://dl.fedoraproject.org/pub/fedora/linux/releases/39/Everything/x86_64/os/Packages/a/asio-devel-1.28.1-2.fc39.x86_64.rpm
 
-
 # Fast-DDS
 mkdir /opt/Fast-DDS
 
@@ -130,6 +129,8 @@ cmake --build . --target install
 cd /opt/Fast-DDS
 git clone https://github.com/eProsima/FIWARE-DDS-Enabler.git
 cd FIWARE-DDS-Enabler
+
+yum -y install lz4-devel libzstd-devel
 
 mkdir -p build/ddsenabler_participants
 cd build/ddsenabler_participants
