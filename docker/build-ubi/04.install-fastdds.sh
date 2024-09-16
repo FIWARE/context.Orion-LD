@@ -24,7 +24,7 @@ dnf config-manager --set-enabled powertools
 
 yum -y install tinyxml2-devel boost-devel yaml-cpp yaml-cpp-devel
 yum -y --nogpgcheck install https://dl.fedoraproject.org/pub/fedora/linux/releases/39/Everything/x86_64/os/Packages/a/asio-devel-1.28.1-2.fc39.x86_64.rpm
-
+yum -y install lz4-devel libzstd-devel
 
 # Fast-DDS
 mkdir /opt/Fast-DDS
