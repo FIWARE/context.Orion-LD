@@ -24,8 +24,6 @@
 */
 #include <unistd.h>                                         // access
 
-#include "ddsenabler/dds_enabler_runner.hpp"                // dds enabler
-
 extern "C"
 {
 #include "ktrace/kTrace.h"                                  // trace messages - ktrace library
@@ -35,9 +33,11 @@ extern "C"
 }
 
 #include "orionld/common/traceLevels.h"                     // kjTreeLog2
-#include "orionld/common/orionldState.h"                    // ddsEnablerConfigFile, ddsConfigFile
 #include "orionld/kjTree/kjNavigate.h"                      // kjNavigate
+#include "orionld/dds/ddsSubscribe.h"                       // ddsSubscribe
+#include "orionld/dds/ddsNotification.h"                    // ddsNotification
 #include "orionld/dds/ddsConfigLoad.h"                      // ddsConfigLoad
+#include "orionld/dds/ddsConfigTopicToAttribute.h"          // ddsConfigTopicToAttribute  - TMP: debugging
 #include "orionld/dds/kjTreeLog.h"                          // kjTreeLog2
 #include "orionld/dds/ddsInit.h"                            // Own interface
 
@@ -49,13 +49,6 @@ extern "C"
 //
 DdsOperationMode ddsOpMode;
 
-//
-// 3 callbacks for DDS:
-//
-// typedef void (*DdsLogFunc)(conat char* fileName, int lineNo, const char* funcName, int category, const char* msg);
-// typedef void (*DdsTypeNotification)(const char* topicTypeName, const char* topicName, const char* typeId);
-// typedef void (*DdsNotification)(const char* topicTypeName, const char* topicName, const char* json, double publishTime);
-
 
 
 // -----------------------------------------------------------------------------
@@ -63,24 +56,24 @@ DdsOperationMode ddsOpMode;
 // ddsInit - initialization function for DDS
 //
 // PARAMETERS
+// * ddsTopicType
+// * ddsSubsTopics
 // * mode - the DDS mode the broker is working in
 //
-int ddsInit(Kjson* kjP, DdsOperationMode _ddsOpMode)
+int ddsInit(Kjson* kjP, const char* ddsConfigFile, const char* ddsTopicType, char* ddsSubsTopics, DdsOperationMode _ddsOpMode)
 {
   ddsOpMode = _ddsOpMode;  // Not yet in use ... invent usage or remove !
-
-  eprosima::ddsenabler::init_dds_enabler(ddsEnablerConfigFile);
 
   //
   // DDS Configuration File
   //
   errno = 0;
-  if ((ddsConfigFile[0] != 0) && (access(ddsConfigFile, R_OK) == 0))
+  if (access(ddsConfigFile, R_OK) == 0)
   {
     if (ddsConfigLoad(kjP, ddsConfigFile) != 0)
       KT_X(1, "Error reading/parsing the DDS config file '%s'", ddsConfigFile);
 
-#if 0
+#ifdef DEBUG
     extern KjNode* ddsConfigTree;
     kjTreeLog2(ddsConfigTree, "DDS Config", StDdsConfig);
     KT_T(StDdsConfig, "Topics:");
@@ -102,6 +95,34 @@ int ddsInit(Kjson* kjP, DdsOperationMode _ddsOpMode)
       }
     }
 #endif
+  }
+//  else
+//    KT_X(1, ("Unable to read the DDS config file '%s' (%s)", ddsConfigFile, strerror(errno));
+
+
+  //
+  // DDS Subscriptions
+  //
+  // For now, the topics to subscribe to is input to the broker, as a CLI parameter with
+  // the topics as a comma-separated list.
+  // This is temporary, just to be able to test things.
+  //
+  // I imagine in the end, all DDS topics will be found via dicovery and the broker will
+  // subscribe to all of them.  Or, perhaps some filter. We'll see.
+  // For now, just a CSV.
+  //
+  if (ddsSubsTopics[0] == 0)
+    return 0;
+
+  KT_V("topics: %s", ddsSubsTopics);
+  char* topicV[100];
+  int   topics = kStringSplit(ddsSubsTopics, ',', topicV, 3);
+
+  KT_V("no of topics: %d", topics);
+  for (int ix = 0; ix < topics; ix++)
+  {
+    KT_V("Subscribing to DDS topic %s::%s", ddsTopicType, topicV[ix]);
+    ddsSubscribe(ddsTopicType, topicV[ix], ddsNotification);
   }
 
   return 0;

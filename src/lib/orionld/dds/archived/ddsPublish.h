@@ -1,5 +1,5 @@
-#ifndef SRC_LIB_ORIONLD_DDS_DDSINIT_H_
-#define SRC_LIB_ORIONLD_DDS_DDSINIT_H_
+#ifndef SRC_LIB_ORIONLD_DDS_DDSPUBLISH_H_
+#define SRC_LIB_ORIONLD_DDS_DDSPUBLISH_H_
 
 /*
 *
@@ -23,29 +23,39 @@
 * For those usages not covered by this license please contact with
 * orionld at fiware dot org
 *
-* Author: Ken Zangelin
+* Author: David Campo, Ken Zangelin
 */
 extern "C"
 {
-#include "kjson/kjson.h"                                    // Kjson
+#include "kjson/KjNode.h"                                   // KjNode
 }
 
 
 
 // -----------------------------------------------------------------------------
 //
-// DdsOperationMode -
+// ddsPublishAttribute -
 //
-typedef enum DdsOperationMode
-{
-  DDSOpModeDefault
-} DdsOperationMode;
+extern void ddsPublishAttribute
+(
+  const char* topicType,
+  const char* entityType,
+  const char* entityId,
+  KjNode*     attributeP
+);
+
 
 
 // -----------------------------------------------------------------------------
 //
-// ddsInit -
+// ddsPublishEntity -
 //
-extern int ddsInit(Kjson* kjP, DdsOperationMode ddsOpMode);
+extern void ddsPublishEntity
+(
+  const char* topicType,
+  const char* entityType,
+  const char* entityId,
+  KjNode*     entityP
+);
 
-#endif  // SRC_LIB_ORIONLD_DDS_DDSINIT_H_
+#endif  // SRC_LIB_ORIONLD_DDS_DDSPUBLISH_H_

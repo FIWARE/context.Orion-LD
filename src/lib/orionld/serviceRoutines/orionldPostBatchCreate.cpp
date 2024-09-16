@@ -48,7 +48,6 @@ extern "C"
 #include "orionld/mongoc/mongocEntitiesQuery.h"                // mongocEntitiesQuery
 #include "orionld/mongoc/mongocEntitiesUpsert.h"               // mongocEntitiesUpsert
 #include "orionld/notifications/alteration.h"                  // alteration
-#include "orionld/dds/ddsPublish.h"                            // ddsPublishEntity
 #include "orionld/common/eqForDot.h"                           // eqForDot
 #include "orionld/serviceRoutines/orionldPostBatchCreate.h"    // Own interface
 
@@ -58,7 +57,7 @@ extern "C"
 //
 // dbModelToApiAttributeNames -
 //
-static void dbModelToApiAttributeNames(KjNode* entityP)
+void dbModelToApiAttributeNames(KjNode* entityP)
 {
   for (KjNode* attrP = entityP->value.firstChildP; attrP != NULL; attrP = attrP->next)
   {
@@ -187,13 +186,14 @@ bool orionldPostBatchCreate(void)
       KjNode* initialDbEntityP  = NULL;  // FIXME: initialDbEntity might not be NULL
 
       alteration(entityId, entityType, finalApiEntityP, inEntityP, initialDbEntityP);
-
+#if 0
       if (ddsSupport)
       {
         KT_V("Publishing entity '%s', type '%s' on DDS", entityId, entityType);
         dbModelToApiAttributeNames(finalApiEntityP);
         ddsPublishEntity(ddsTopicType, entityType, entityId, finalApiEntityP);
       }
+#endif
     }
 
     inEntityP = next;

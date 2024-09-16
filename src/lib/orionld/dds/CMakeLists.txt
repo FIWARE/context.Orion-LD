@@ -21,21 +21,9 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
 
 SET (SOURCES
-  NgsildEntity.cxx
-  NgsildEntityPubSubTypes.cxx
-  NgsildPublisher.cpp
-  NgsildSubscriber.cpp
-  DdsNotificationReceiver.cpp
-  DdsNotificationSender.cpp
-  ddsSubscribe.cpp
-  ddsPublish.cpp
-  ddsNotification.cpp
   ddsInit.cpp
-  kjTreeLog.cpp
-  ddsConfigTopicToAttribute.cpp
   ddsConfigLoad.cpp
-  ddsEntityCreateFromAttribute.cpp
-  ddsAttributeCreate.cpp
+  kjTreeLog.cpp
 )
 
 # Include directories

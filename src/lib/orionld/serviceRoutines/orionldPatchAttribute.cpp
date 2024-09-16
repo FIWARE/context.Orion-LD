@@ -56,9 +56,6 @@ extern "C"
 #include "orionld/notifications/alteration.h"                    // alteration
 #include "orionld/notifications/sysAttrsStrip.h"                 // sysAttrsStrip
 #include "orionld/notifications/previousValuePopulate.h"         // previousValuePopulate
-#include "orionld/dds/ddsPublish.h"                              // ddsPublishAttribute
-#include "orionld/dds/ddsEntityCreateFromAttribute.h"            // ddsEntityCreateFromAttribute
-#include "orionld/dds/ddsAttributeCreate.h"                      // ddsAttributeCreate
 #include "orionld/serviceRoutines/orionldPostEntities.h"         // orionldPostEntities - if DDS and entity does not exist
 #include "orionld/serviceRoutines/orionldPostEntity.h"           // orionldPostEntity   - if DDS and attribute does not exist
 #include "orionld/serviceRoutines/orionldPatchAttribute.h"       // Own interface
@@ -242,7 +239,6 @@ char* dbModelEntityTypeExtract(KjNode* dbEntityP)
 }
 
 
-extern bool ddsAttributeCreate(KjNode* attrNodeP, const char* entityType, const char* attrName);
 
 // ----------------------------------------------------------------------------
 //
@@ -339,8 +335,8 @@ bool orionldPatchAttribute(void)
     entityType = dbModelEntityTypeExtract(dbEntityP);
   else if (orionldState.distributed == false)
   {
-    if (orionldState.ddsSample == true)
-      return ddsEntityCreateFromAttribute(orionldState.requestTree, entityId, orionldState.in.pathAttrExpanded);
+//    if (orionldState.ddsSample == true)
+//      return ddsEntityCreateFromAttribute(orionldState.requestTree, entityId, orionldState.in.pathAttrExpanded);
 
     orionldError(OrionldResourceNotFound, "Entity Not Found", entityId, 404);
     return false;
@@ -383,8 +379,8 @@ bool orionldPatchAttribute(void)
     dbAttrP = (dbAttrsP != NULL)? kjLookup(dbAttrsP, longAttrNameEq) : NULL;
     if (dbAttrP == NULL)
     {
-      if (orionldState.ddsSample == true)
-        return ddsAttributeCreate(orionldState.requestTree, entityType, orionldState.in.pathAttrExpanded);
+//      if (orionldState.ddsSample == true)
+//        return ddsAttributeCreate(orionldState.requestTree, entityType, orionldState.in.pathAttrExpanded);
 
       if (orionldState.distributed == false)
       {
@@ -480,12 +476,13 @@ bool orionldPatchAttribute(void)
     return false;
   }
 
+#if 0
   if ((ddsSupport == true) && (dbAttrP != NULL))
   {
     orionldState.requestTree->name = orionldState.in.pathAttrExpanded;
     ddsPublishAttribute(ddsTopicType, entityType, entityId, orionldState.requestTree);
   }
-
+#endif
   responseFix(responseBody, DoUpdateAttrs, 204, entityId);
 
   if ((troe == true) && (incomingP != NULL))

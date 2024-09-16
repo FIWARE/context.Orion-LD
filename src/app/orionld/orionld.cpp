@@ -253,6 +253,7 @@ bool            ddsSupport       = false;
 char            ddsSubsTopics[512];
 char            ddsTopicType[512];
 char            ddsConfigFile[512];
+char            ddsEnablerConfigFile[512];
 
 
 
@@ -351,6 +352,7 @@ char            ddsConfigFile[512];
 #define DDS_SUBS_TOPICS_DESC   "topics to subscribe to on DDS"
 #define DDS_TOPIC_TYPE_DESC    "DDS topic type"
 #define DDS_CONFIG_FILE_DESC   "DDS configuration file"
+#define DDS_ENABLER_CONFIG_FILE_DESC   "DDS Enabler configuration file"
 
 
 
@@ -362,7 +364,6 @@ char            ddsConfigFile[512];
 
 
 
-#define DDS_CONF_FILE "src/app/orionld/.ddsConfig"
 /* ****************************************************************************
 *
 * paArgs - option vector for the Parse CLI arguments library
@@ -460,7 +461,8 @@ PaArgument paArgs[] =
   { "-dds",                   &ddsSupport,              "DDS",                       PaBool,    PaOpt,  false,            false,  true,             USE_DDS_DESC             },
   { "-ddsSubsTopics",         ddsSubsTopics,            "DDS_SUBS_TOPICS",           PaString,  PaOpt,  _i "",            PaNL,   PaNL,             DDS_SUBS_TOPICS_DESC     },
   { "-ddsTopicType",          ddsTopicType,             "DDS_TOPIC_TYPE",            PaString,  PaOpt,  _i "NGSI-LD",     PaNL,   PaNL,             DDS_TOPIC_TYPE_DESC      },
-  { "-ddsConfigFile",         ddsConfigFile,            "DDS_CONFIG_FILE",           PaString,  PaOpt,  _i DDS_CONF_FILE, PaNL,   PaNL,             DDS_CONFIG_FILE_DESC     },
+  { "-ddsConfigFile",         ddsConfigFile,            "DDS_CONFIG_FILE",           PaString,  PaOpt,  _i "",            PaNL,   PaNL,             DDS_CONFIG_FILE_DESC     },
+  { "-ddsEnablerConfigFile",  ddsEnablerConfigFile,     "DDS_CONFIG_FILE_PATH",      PaString,  PaOpt,  _i "",            PaNL,   PaNL,             DDS_ENABLER_CONFIG_FILE_DESC },
 
   PA_END_OF_ARGS
 };
@@ -1428,7 +1430,7 @@ int main(int argC, char* argV[])
     pernotLoopStart();
 
   if (ddsSupport == true)
-    ddsInit(kjsonP, ddsConfigFile, ddsTopicType, ddsSubsTopics, DDSOpModeDefault);
+    ddsInit(kjsonP, DDSOpModeDefault);
 
   if (socketService == true)
   {
