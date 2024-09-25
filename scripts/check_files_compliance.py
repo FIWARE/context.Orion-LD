@@ -131,7 +131,7 @@ def ignore(root, file):
     if 'BUILD_' in root or '.git' in root:
         return True
 
-    if file.endswith('.yaml'):
+    if file.endswith('.yaml') or file.endswith('.hpp') or file.endswith('.cxx') or file.endswith('.ipp'):
         return True
 
     if 'ldcontext' in root:
