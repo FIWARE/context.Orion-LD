@@ -52,6 +52,10 @@ DdsOperationMode ddsOpMode;
 
 
 
+// -----------------------------------------------------------------------------
+//
+// ddsNotification -
+//
 void ddsNotification(const char* typeName, const char* topicName, const char* json, double publishTime)
 {
   KT_T(StDds, "Got a notification on %s:%s (json: %s)", typeName, topicName, json);
@@ -59,19 +63,31 @@ void ddsNotification(const char* typeName, const char* topicName, const char* js
 
 
 
+// -----------------------------------------------------------------------------
+//
+// ddsTypeNotification -
+//
 void ddsTypeNotification(const char* typeName, const char* topicName, const char* serializedType)
 {
   KT_T(StDds, "Got a type notification ('%s', '%s', '%s')", typeName, topicName, serializedType);
 }
 
 
+// -----------------------------------------------------------------------------
+//
+// ddsLog -
+//
 void ddsLog(const char* fileName, int lineNo, const char* funcName, int category, const char* msg)
 {
   int  level    = 0;
   char severity = ddsCategoryToKlogSeverity(category, &level);
 
-  ktOut(fileName, lineNo, funcName,  severity, level, msg);
+  char* filename = (fileName != NULL)? (char*) fileName : (char*) "no-filename";
+  char* funcname = (funcName != NULL)? (char*) funcName : (char*) "no-funcname";
+
+  ktOut(filename, lineNo, funcname,  severity, level, msg);
 }
+
 
 
 // -----------------------------------------------------------------------------
