@@ -24,6 +24,7 @@ SET (SOURCES
   ddsInit.cpp
   ddsConfigLoad.cpp
   kjTreeLog.cpp
+  ddsCategoryToKlogSeverity.cpp
 )
 
 # Include directories

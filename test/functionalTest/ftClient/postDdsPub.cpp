@@ -30,13 +30,16 @@ extern "C"
 }
 
 #include "common/orionldState.h"                            // orionldState
-#include "dds/ddsPublish.h"                                 // ddsPublishEntity
 
+#include "ftClient/ddsPublish.h"                            // ddsPublishEntity
 #include "ftClient/ftErrorResponse.h"                       // ftErrorResponse
 
 
 
 extern __thread KjNode* uriParams;
+
+
+
 // -----------------------------------------------------------------------------
 //
 // postDdsPub -
@@ -61,7 +64,7 @@ KjNode* postDdsPub(int* statusCodeP)
 
   KT_V("Publishing on DDS for the topic %s:%s", ddsTopicType, ddsTopicName);
   // orionldState.requestTree->name = (char*) ddsTopicName;
-  ddsPublishEntity(ddsTopicType, entityType, entityId, orionldState.requestTree);
+  ddsPublishEntity(ddsTopicType, ddsTopicName, entityType, entityId, orionldState.requestTree);
 
   *statusCodeP = 204;
   return NULL;

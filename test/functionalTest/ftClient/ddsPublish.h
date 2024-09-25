@@ -23,14 +23,44 @@
 * For those usages not covered by this license please contact with
 * orionld at fiware dot org
 *
-* Author: Ken Zangelin, David Campo, Luis Arturo Frigolet
+* Author: David Campo, Ken Zangelin
 */
+extern "C"
+{
+#include "kjson/KjNode.h"                                   // KjNode
+}
+
 
 
 // -----------------------------------------------------------------------------
 //
-// ddsPublish -
+// ddsPublishAttribute -
 //
-extern void ddsPublish(const char* topicType, const char* topicName);
+extern void ddsPublishAttribute
+(
+  const char*  topicType,
+  const char*  topicName,
+  const char*  entityType,
+  const char*  entityId,
+  const char*  s,
+  int          i,
+  double       f,
+  bool         b
+);
+
+
+
+// -----------------------------------------------------------------------------
+//
+// ddsPublishEntity -
+//
+extern void ddsPublishEntity
+(
+  const char* topicType,
+  const char* topicName,
+  const char* entityType,
+  const char* entityId,
+  KjNode*     entityP
+);
 
 #endif  // TEST_FUNCTIONALTEST_FTCLIENT_DDSPUBLISH_H_
