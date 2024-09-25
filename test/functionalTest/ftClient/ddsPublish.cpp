@@ -29,13 +29,14 @@ extern "C"
 }
 
 #include "orionld/common/traceLevels.h"                     // KT_T trace levels
-#include "orionld/dds/NgsildEntityPubSubTypes.h"            // NgsildEntityPubSubTypes
-#include "orionld/dds/NgsildEntity.h"                       // NgsildEntity
-#include "orionld/dds/NgsildPublisher.h"                    // NgsildPublisher
-#include "orionld/dds/config.h"                             // DDS_RELIABLE, ...
+#include "ftClient/NgsildSample.hpp"                        // NgsildSample
+#include "ftClient/NgsildPublisher.h"                       // NgsildPublisher
+
+#include "ftClient/NgsildSamplePubSubTypes.hpp"             // NgsildSamplePubSubTypes
 
 
 
+#if 0
 // -----------------------------------------------------------------------------
 //
 // ddsPublishAttribute -
@@ -45,14 +46,16 @@ extern "C"
 //
 void ddsPublishAttribute
 (
-  const char* topicType,
-  const char* entityType,
-  const char* entityId,
-  KjNode*     attributeP
+  const char*  topicType,
+  const char*  topicName,
+  const char*  entityType,
+  const char*  entityId,
+  const char*  s,
+  int          i,
+  double       f,
+  bool         b
 )
 {
-#if 0
-  char*            topicName  = attributeP->name;
   NgsildPublisher* publisherP = new NgsildPublisher(topicType);
 
   KT_V("Initializing publisher for topicType '%s', topicName '%s'", topicType, topicName);
@@ -63,26 +66,18 @@ void ddsPublishAttribute
     // There might easily be 10,000 publications per second.
     //
 
-#ifdef DDS_SLEEP
-    usleep(5000);
-#endif
 
     KT_V("Publishing on topicType '%s', topicName '%s'", topicType, topicName);
-    if (publisherP->publish(entityType, entityId, attributeP))
+    if (publisherP->publish(entityType, entityId, topicName, s, i, f, b))
       KT_V("Published on topicType '%s', topicName '%s'", topicType, topicName);
     else
       KT_V("Error publishing on topicType '%s', topicName '%s'", topicType, topicName);
-
-#ifdef DDS_SLEEP
-    usleep(5000);
-#endif
   }
   else
     KT_E("NgsildPublisher::init failed (get error string from DDS)");
 
   KT_V("Deleting publisher");
   delete publisherP;
-#endif
 }
 
 
@@ -99,16 +94,61 @@ void ddsPublishEntity
   KjNode*     entityP
 )
 {
-#if 0
+  const char* topicName = entityP->name;
+
   KT_V("Publishing the attributes of the entity '%s' in DDS", entityId);
   for (KjNode* attributeP = entityP->value.firstChildP; attributeP != NULL; attributeP = attributeP->next)
   {
-    if (strcmp(attributeP->name, "id") == 0)
-      continue;
-    if (strcmp(attributeP->name, "type") == 0)
-      continue;
-
-    ddsPublishAttribute(topicType, entityType, entityId, attributeP);
+    if (strcmp(attributeP->name, "s") == 0)
+      ddsPublishAttribute(topicType, topicName, entityType, entityId, attributeP->value.s, 0, 0, false);
+    else if (strcmp(attributeP->name, "i") == 0)
+      ddsPublishAttribute(topicType, topicName, entityType, entityId, NULL, attributeP->value.i, 0, false);
+    else if (strcmp(attributeP->name, "i") == 0)
+      ddsPublishAttribute(topicType, topicName, entityType, entityId, NULL, 0, attributeP->value.f, false);
+    else if (strcmp(attributeP->name, "b") == 0)
+      ddsPublishAttribute(topicType, topicName, entityType, entityId, NULL, 0, 0, true);
   }
+}
 #endif
+
+// -----------------------------------------------------------------------------
+//
+// ddsPublishEntity -
+//
+void ddsPublishEntity
+(
+  const char* topicType,
+  const char* topicName,
+  const char* entityType,
+  const char* entityId,
+  KjNode*     entityP
+)
+{
+  KT_V("Publishing the entity '%s' in DDS", entityId);
+
+  NgsildPublisher* publisherP = new NgsildPublisher(topicType);
+
+  KT_V("Initializing publisher for topicType '%s', topicName '%s'", topicType, topicName);
+  if (publisherP->init(topicName))
+  {
+    char*  s = NULL;
+    int    i = 0;
+    double f = 0;
+    bool   b  = false;
+
+    for (KjNode* attributeP = entityP->value.firstChildP; attributeP != NULL; attributeP = attributeP->next)
+    {
+      if      (strcmp(attributeP->name, "s") == 0)      s = attributeP->value.s;
+      else if (strcmp(attributeP->name, "i") == 0)      i = attributeP->value.i;
+      else if (strcmp(attributeP->name, "f") == 0)      i = attributeP->value.f;
+      else if (strcmp(attributeP->name, "b") == 0)      i = attributeP->value.b;
+    }
+
+    publisherP->publish(entityType, entityId, topicName, s, i, f, b);
+  }
+  else
+    KT_E("NgsildPublisher::init failed (get error string from DDS)");
+
+  KT_V("Deleting publisher");
+  delete publisherP;
 }

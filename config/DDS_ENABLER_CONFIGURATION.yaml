@@ -1,0 +1,22 @@
+# DDS configuration
+dds:
+  # Domain ID
+  domain: 0
+
+  # Allowed topics
+  allowlist:
+    - name: "*"
+
+  # Blocked topics
+  blocklist:
+    - name: "add_blocked_topics_list_here"
+
+# DDS Enabler configuration
+ddsenabler:
+
+#Specs configuration
+specs:
+  threads: 12
+  logging:
+    stdout: false
+    verbosity: info

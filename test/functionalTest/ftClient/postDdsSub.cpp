@@ -34,7 +34,6 @@ extern "C"
 
 #include "common/orionldState.h"                            // orionldState
 #include "common/traceLevels.h"                             // Trace levels for ktrace
-#include "dds/ddsSubscribe.h"                               // ddsSubscribe
 #include "dds/kjTreeLog.h"                                  // kjTreeLog2
 
 #include "ftClient/ftErrorResponse.h"                       // ftErrorResponse
@@ -101,6 +100,7 @@ extern __thread KjNode* uriParams;
 //
 KjNode* postDdsSub(int* statusCodeP)
 {
+#if 0
   KjNode*      ddsTopicTypeNodeP  = (uriParams         != NULL)? kjLookup(uriParams, "ddsTopicType") : NULL;
   const char*  ddsTopicType       = (ddsTopicTypeNodeP != NULL)? ddsTopicTypeNodeP->value.s : NULL;
   KjNode*      ddsTopicNameNodeP  = (uriParams         != NULL)? kjLookup(uriParams, "ddsTopicName") : NULL;
@@ -108,7 +108,7 @@ KjNode* postDdsSub(int* statusCodeP)
 
   if (ddsTopicName == NULL || ddsTopicType == NULL)
   {
-    KT_E("Both Name and Type of the topic should not be null");
+    KT_E("Both Name and Type of the topic can not be null");
     *statusCodeP = 400;
     return ftErrorResponse(400, "URI Param missing", "Both Name and Type of the topic must be present");
   }
@@ -122,5 +122,8 @@ KjNode* postDdsSub(int* statusCodeP)
     ddsSubscribe(ddsTopicType, attrV[ix], ddsNotification);
 
   *statusCodeP = 201;
+#else
+  KT_W(("Already subscribing to everything - some day this might change"));
+#endif
   return NULL;
 }

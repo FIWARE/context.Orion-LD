@@ -1,0 +1,8 @@
+struct NgsildSample
+{
+  string     s;
+  long       i;
+  double     f;
+  boolean    b;
+  long       ia[2];
+};

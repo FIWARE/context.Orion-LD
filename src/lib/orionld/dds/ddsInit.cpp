@@ -37,6 +37,7 @@ extern "C"
 #include "orionld/common/traceLevels.h"                     // kjTreeLog2
 #include "orionld/common/orionldState.h"                    // ddsEnablerConfigFile, ddsConfigFile
 #include "orionld/kjTree/kjNavigate.h"                      // kjNavigate
+#include "orionld/dds/ddsCategoryToKlogSeverity.h"          // ddsCategoryToKlogSeverity
 #include "orionld/dds/ddsConfigLoad.h"                      // ddsConfigLoad
 #include "orionld/dds/kjTreeLog.h"                          // kjTreeLog2
 #include "orionld/dds/ddsInit.h"                            // Own interface
@@ -49,13 +50,28 @@ extern "C"
 //
 DdsOperationMode ddsOpMode;
 
-//
-// 3 callbacks for DDS:
-//
-// typedef void (*DdsLogFunc)(conat char* fileName, int lineNo, const char* funcName, int category, const char* msg);
-// typedef void (*DdsTypeNotification)(const char* topicTypeName, const char* topicName, const char* typeId);
-// typedef void (*DdsNotification)(const char* topicTypeName, const char* topicName, const char* json, double publishTime);
 
+
+void ddsNotification(const char* typeName, const char* topicName, const char* json, double publishTime)
+{
+  KT_T(StDds, "Got a notification on %s:%s (json: %s)", typeName, topicName, json);
+}
+
+
+
+void ddsTypeNotification(const char* typeName, const char* topicName, const char* serializedType)
+{
+  KT_T(StDds, "Got a type notification ('%s', '%s', '%s')", typeName, topicName, serializedType);
+}
+
+
+void ddsLog(const char* fileName, int lineNo, const char* funcName, int category, const char* msg)
+{
+  int  level    = 0;
+  char severity = ddsCategoryToKlogSeverity(category, &level);
+
+  ktOut(fileName, lineNo, funcName,  severity, level, msg);
+}
 
 
 // -----------------------------------------------------------------------------
@@ -69,7 +85,7 @@ int ddsInit(Kjson* kjP, DdsOperationMode _ddsOpMode)
 {
   ddsOpMode = _ddsOpMode;  // Not yet in use ... invent usage or remove !
 
-  eprosima::ddsenabler::init_dds_enabler(ddsEnablerConfigFile);
+  eprosima::ddsenabler::init_dds_enabler(ddsEnablerConfigFile, ddsNotification, ddsTypeNotification, ddsLog);
 
   //
   // DDS Configuration File

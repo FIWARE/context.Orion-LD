@@ -1,9 +1,6 @@
-#ifndef SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_
-#define SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_
-
 /*
 *
-* Copyright 2022 FIWARE Foundation e.V.
+* Copyright 2024 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,26 +22,22 @@
 *
 * Author: Ken Zangelin
 */
+#include "orionld/common/traceLevels.h"                  // StDdsLibInfo, StDdsLibDebug
 
 
-
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 //
-// Trace Levels -
+// ddsCategoryToKlogSeverity -
 //
-typedef enum OrionldTraceLevels
+char ddsCategoryToKlogSeverity(int ddsCategory, int* levelP)
 {
-  StMhdInit         = 100,
-  StRequest         = 200,
-  StDds             = 201,
-  StDdsPublish      = 202,
-  StDdsNotification = 203,
-  StDdsLibInfo      = 204,
-  StDdsLibDebug     = 205,
-  StDump            = 206,
-  StDdsDump         = 207,
-  StDdsConfig       = 208,
-  StSR              = 209
-} OrionldTraceLevels;
+  switch (ddsCategory)
+  {
+  case 0:  return 'E';                            // DDS Error   => KLog Error
+  case 1:  return 'W';                            // DDS Warning => KLog Warning
+  case 2:  *levelP = StDdsLibInfo; return 'T';    // DDS Info    => KLog Trace
+  }
 
-#endif  // SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_
+  *levelP = StDdsLibDebug;
+  return 'T';  // DDS Unknown => KLog Trace
+}

@@ -588,7 +588,7 @@ bool kjAttributeToNgsiContextAttribute(ContextAttribute* caP, KjNode* inAttribut
 
         if (timestamp < 0)
         {
-          *detailP = errorString;
+          *detailP = kaStrdup(&orionldState.kalloc, errorString);
           return false;
         }
         else

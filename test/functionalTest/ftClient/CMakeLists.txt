@@ -32,6 +32,11 @@ SET (SOURCES
     getDdsDump.cpp
     postDdsSub.cpp
     postDdsPub.cpp
+    ddsPublish.cpp
+    NgsildSampleTypeObjectSupport.cxx
+    NgsildSamplePubSubTypes.cxx
+    NgsildPublisher.cpp
+    DdsNotificationSender.cpp
 )
 
 SET (COMMON_STATIC_LIBS
@@ -81,10 +86,11 @@ SET (STATIC_LIBS
 )
 
 SET (DYNAMIC_LIBS
-  fastrtps.so
-  fastcdr.so
-  foonathan_memory-0.7.3.so
-  tinyxml2.so
+  fastdds
+  fastcdr
+  foonathan_memory-0.7.3
+  ddsenabler
+  tinyxml2
   crypto.so
   ssl.so
   pthread.so

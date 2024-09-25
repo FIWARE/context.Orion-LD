@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_
-#define SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_
+#ifndef SRC_LIB_ORIONLD_DDS_DDSCATEGORYTOKLOGSEVERITY_H_
+#define SRC_LIB_ORIONLD_DDS_DDSCATEGORYTOKLOGSEVERITY_H_
 
 /*
 *
-* Copyright 2022 FIWARE Foundation e.V.
+* Copyright 2024 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -28,23 +28,10 @@
 
 
 
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 //
-// Trace Levels -
+// ddsCategoryToKlogSeverity -
 //
-typedef enum OrionldTraceLevels
-{
-  StMhdInit         = 100,
-  StRequest         = 200,
-  StDds             = 201,
-  StDdsPublish      = 202,
-  StDdsNotification = 203,
-  StDdsLibInfo      = 204,
-  StDdsLibDebug     = 205,
-  StDump            = 206,
-  StDdsDump         = 207,
-  StDdsConfig       = 208,
-  StSR              = 209
-} OrionldTraceLevels;
+extern char ddsCategoryToKlogSeverity(int ddsCategory, int* levelP);
 
-#endif  // SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_
+#endif  // SRC_LIB_ORIONLD_DDS_DDSCATEGORYTOKLOGSEVERITY_H_

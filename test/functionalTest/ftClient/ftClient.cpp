@@ -29,7 +29,7 @@
 
 #include <string>                                           // std::string
 
-#include "fastdds/dds/log/FileConsumer.hpp"                 // DDS logging
+#include "ddsenabler/dds_enabler_runner.hpp"                // dds enabler
 
 extern "C"
 {
@@ -43,11 +43,8 @@ extern "C"
 
 #include "types/Verb.h"                                     // HTTP Verbs
 #include "common/traceLevels.h"                             // Trace levels for ktrace
+#include "dds/ddsCategoryToKlogSeverity.h"                  // ddsCategoryToKlogSeverity
 #include "ftClient/mhdInit.h"                               // mhdInit
-
-
-
-using namespace eprosima::fastdds::dds;  // FIXME: remove this - use "absolute paths"
 
 
 
@@ -76,7 +73,8 @@ unsigned int   mhdMemoryLimit;
 unsigned int   mhdTimeout;
 unsigned int   mhdMaxConnections;
 bool           distributed;
-long long      inReqPayloadMaxSize = 64 * 1024;
+long long      inReqPayloadMaxSize  = 64 * 1024;
+char*          ddsEnablerConfigFile = NULL;
 
 
 
@@ -89,25 +87,28 @@ KArg kargs[] =
   //
   // Potential builtins
   //
-  { "--trace",            "-t",    KaString,  &traceLevels,       KaOpt, 0,         KA_NL,    KA_NL,    "trace levels (csv of levels/ranges)"               },
-  { "--logDir",           "-ld",   KaString,  &logDir,            KaOpt, _i "/tmp", KA_NL,    KA_NL,    "log file directory"                                },
-  { "--logLevel",         "-ll",   KaString,  &logLevel,          KaOpt, 0,         KA_NL,    KA_NL,    "log level (ERR|WARN|INFO|INFO|VERBOSE|TRACE|DEBUG" },
-  { "--logToScreen",      "-ls",   KaBool,    &logToScreen,       KaOpt, KFALSE,    KA_NL,    KA_NL,    "log to screen"                                     },
-  { "--fixme",            "-fix",  KaBool,    &fixme,             KaOpt, KFALSE,    KA_NL,    KA_NL,    "FIXME messages"                                    },
+  { "--trace",            "-t",     KaString,  &traceLevels,          KaOpt, 0,         KA_NL,    KA_NL,    "trace levels (csv of levels/ranges)"               },
+  { "--logDir",           "-ld",    KaString,  &logDir,               KaOpt, _i "/tmp", KA_NL,    KA_NL,    "log file directory"                                },
+  { "--logLevel",         "-ll",    KaString,  &logLevel,             KaOpt, 0,         KA_NL,    KA_NL,    "log level (ERR|WARN|INFO|INFO|VERBOSE|TRACE|DEBUG" },
+  { "--logToScreen",      "-ls",    KaBool,    &logToScreen,          KaOpt, KFALSE,    KA_NL,    KA_NL,    "log to screen"                                     },
+  { "--fixme",            "-fix",   KaBool,    &fixme,                KaOpt, KFALSE,    KA_NL,    KA_NL,    "FIXME messages"                                    },
 
   //
   // Broker options
   //
-  { "--port",             "-p",    KaUShort,  &ldPort,            KaOpt, _i 7701,   _i 1027,  _i 65535, "TCP port for incoming requests"                    },
-  { "--httpsKey",         "-k",    KaString,  &httpsKey,          KaOpt, NULL,      KA_NL,    KA_NL,    "https key file"                                    },
-  { "--httpsCertificate", "-c",    KaString,  &httpsCertificate,  KaOpt, NULL,      KA_NL,    KA_NL,    "https certificate file"                            },
+  { "--port",             "-p",     KaUShort,  &ldPort,               KaOpt, _i 7701,   _i 1027,  _i 65535, "TCP port for incoming requests"                    },
+  { "--httpsKey",         "-k",     KaString,  &httpsKey,             KaOpt, NULL,      KA_NL,    KA_NL,    "https key file"                                    },
+  { "--httpsCertificate", "-c",     KaString,  &httpsCertificate,     KaOpt, NULL,      KA_NL,    KA_NL,    "https certificate file"                            },
+  { "--distOps",          "-dops",  KaBool,    &distributed,          KaOpt, KFALSE,    KA_NL,    KA_NL,    "support for distributed operations"                },
 
-  { "--mhdPoolSize",      "-mps",  KaUInt,    &mhdPoolSize,       KaOpt, _i 8,      _i 0,     _i 1024,  "MHD request thread pool size"                      },
-  { "--mhdMemoryLimit",   "-mlim", KaUInt,    &mhdMemoryLimit,    KaOpt, _i 64,     _i 0,     _i 1024,  "MHD memory limit (in kb)"                          },
-  { "--mhdTimeout",       "-mtmo", KaUInt,    &mhdTimeout,        KaOpt, _i 2000,   _i 0,     KA_NL,    "MHD connection timeout (in milliseconds)"          },
-  { "--mhdConnections",   "-mcon", KaUInt,    &mhdMaxConnections, KaOpt, _i 512,    _i 1,     KA_NL,    "Max number of MHD connections"                     },
+  // MHD
+  { "--mhdPoolSize",      "-mps",   KaUInt,    &mhdPoolSize,          KaOpt, _i 8,      _i 0,     _i 1024,  "MHD request thread pool size"                      },
+  { "--mhdMemoryLimit",   "-mlim",  KaUInt,    &mhdMemoryLimit,       KaOpt, _i 64,     _i 0,     _i 1024,  "MHD memory limit (in kb)"                          },
+  { "--mhdTimeout",       "-mtmo",  KaUInt,    &mhdTimeout,           KaOpt, _i 2000,   _i 0,     KA_NL,    "MHD connection timeout (in milliseconds)"          },
+  { "--mhdConnections",   "-mcon",  KaUInt,    &mhdMaxConnections,    KaOpt, _i 512,    _i 1,     KA_NL,    "Max number of MHD connections"                     },
 
-  { "--distOps",          "-dops", KaBool,    &distributed,       KaOpt, KFALSE,    KA_NL,    KA_NL,    "support for distributed operations"                },
+  // DDS
+  { "--ddsConfig",        "-ddscf", KaString,  &ddsEnablerConfigFile, KaOpt, NULL,      KA_NL,    KA_NL,    "DDS Enabler Config File"                           },
 
   KARGS_END
 };
@@ -167,6 +168,82 @@ static void klibLogFunction
 
 
 
+extern KjNode* ddsDumpArray;
+// -----------------------------------------------------------------------------
+//
+// ddsNotification -
+//
+static void ddsNotification(const char* typeName, const char* topicName, const char* json, double publishTime)
+{
+  KT_T(StDdsDump, "Got a notification on %s:%s (json: %s)", typeName, topicName, json);
+
+#if 0
+  KT_T(StDdsDump, "Need to check the publishTime (%f) to perhaps discard", publishTime);
+
+  if (ddsDumpArray == NULL)
+  {
+    KT_T(StDdsDump, "Creating the DDS DumpArray");
+    ddsDumpArray = kjArray(NULL, "ddsDumpArray");
+  }
+
+  KjNode* entityTypeNode = kjString(NULL, "entityType", entityType);
+  KjNode* entityIdNode   = kjString(NULL, "entityId",   entityId);
+  KjNode* notificationP  = kjObject(NULL, NULL);
+
+  //
+  // The value of the attribute (right now) comes as { "attributeValue": xxx }
+  // Assuming DDS knows only about Property, we change the name "attributeValue" to "value"
+  //
+  if ((attrValue->type == KjObject) && (attrValue->value.firstChildP != NULL))
+  {
+    kjTreeLog2(attrValue, attrName, StDdsDump);
+    attrValue = attrValue->value.firstChildP;
+  }
+
+  attrValue->name = (char*) attrName;
+
+  kjChildAdd(notificationP, entityTypeNode);
+  kjChildAdd(notificationP, entityIdNode);
+  kjChildAdd(notificationP, kjClone(NULL, attrValue));
+
+  kjTreeLog2(ddsDumpArray, "DDS dump array before", StDdsDump);
+  kjTreeLog2(notificationP, "Adding to DDS dump array", StDdsDump);
+
+  kjChildAdd(ddsDumpArray, notificationP);
+  kjTreeLog2(ddsDumpArray, "DDS dump array after", StDdsDump);
+#endif
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// ddsTypeNotification -
+//
+static void ddsTypeNotification(const char* typeName, const char* topicName, const char* serializedType)
+{
+  KT_T(StDds, "Got a type notification ('%s', '%s', '%s')", typeName, topicName, serializedType);
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// ddsLog -
+//
+static void ddsLog(const char* fileName, int lineNo, const char* funcName, int category, const char* msg)
+{
+  int  level    = 0;
+  char severity = ddsCategoryToKlogSeverity(category, &level);
+
+  char* filename = (fileName != NULL)? (char*) fileName : (char*) "no-filename";
+  char* funcname = (funcName != NULL)? (char*) funcName : (char*) "no-funcname";
+
+  ktOut(filename, lineNo, funcname,  severity, level, msg);
+}
+
+
+
 // -----------------------------------------------------------------------------
 //
 // main -
@@ -200,25 +277,6 @@ int main(int argC, char* argV[])
 
   kaInit(klibLogFunction);
 
-  //
-  // Traces for eProsima FastDDS libraries
-  //
-  // EPROS:
-  //   For now, all traces from the eProsima libraries are kept in a separate logfile.
-  //   This needs to change. It's not acceptable that a library demands to have its own log file.
-  //   Orion-LD uses perhaps 25 different libraries. Should we have 25 different logfiles?
-  //   No, we should not.
-  //
-  //   We need a new type for "Log Consumer", one that accepts a callback function pointer for the application
-  //   that uses the eProsima libraries to do whatever needs to be done with the log data.
-  //   Proposed definition of the callback function:
-  //
-  //     void ddsLog(const char* file, const char* function, int lineNo, int logLevel, int traceLevel, const char* logMsg);
-  //
-  std::string ddsLogFile = std::string(logDir) + "/ftClient_dds.log";
-  std::unique_ptr<FileConsumer> append_file_consumer(new FileConsumer(ddsLogFile, true));
-  Log::RegisterConsumer(std::move(append_file_consumer));
-
 
   //
   // Perhaps the most important feature of ftClient is the ability to report on received notifications.
@@ -227,9 +285,14 @@ int main(int argC, char* argV[])
   // NOTE: not only notifications, also forwarded requests, or just about anything received out of the defined API it supports for
   //       configuration.
   //
-  KT_D("%s version:                   %s", progName, FTCLIENT_VERSION);
+  KT_D("%s version: %s", progName, FTCLIENT_VERSION);
 
   mhdInit(ldPort);
+
+  // temporary "hack"
+  if (ddsEnablerConfigFile == NULL)
+    ddsEnablerConfigFile = (char*) "/tmp/DDS_ENABLER_CONFIGURATION.yaml";
+  eprosima::ddsenabler::init_dds_enabler(ddsEnablerConfigFile, ddsNotification, ddsTypeNotification, ddsLog);
 
   while (1)
   {
