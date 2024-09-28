@@ -1101,7 +1101,7 @@ function partExecute()
   #
   grep -v "already exists"                               $dirname/$filename.$what.stderr  > $dirname/$filename.$what.stderr2
   grep -v "mongoc: falling back to malloc for counters." $dirname/$filename.$what.stderr2 > $dirname/$filename.$what.stderr3
-  grep -v "mongoc: Falling back to malloc for counters." $dirname/$filename.$what.stderr3 > $dirname/$filename.$what.stderr4
+  grep -v "Port 7411 Zombie"                             $dirname/$filename.$what.stderr3 > $dirname/$filename.$what.stderr4
   grep -v "screen size is bogus"                         $dirname/$filename.$what.stderr4 > $dirname/$filename.$what.stderr
   rm -f $dirname/$filename.$what.stderr2
   rm -f $dirname/$filename.$what.stderr3
@@ -1288,7 +1288,7 @@ function runTest()
   logMsg "SHELL-INIT part for $path DONE. eCode=$eCode"
   grep -v "already exists"                               $dirname/$filename.shellInit.stderr  > $dirname/$filename.shellInit.stderr2
   grep -v "mongoc: falling back to malloc for counters." $dirname/$filename.shellInit.stderr2 > $dirname/$filename.shellInit.stderr3
-  grep -v "mongoc: Falling back to malloc for counters." $dirname/$filename.shellInit.stderr3 > $dirname/$filename.shellInit.stderr
+  grep -v "Port 7411 Zombie"                             $dirname/$filename.shellInit.stderr3 > $dirname/$filename.shellInit.stderr
   rm $dirname/$filename.shellInit.stderr2
   rm $dirname/$filename.shellInit.stderr3
 

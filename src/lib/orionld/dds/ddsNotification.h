@@ -25,10 +25,6 @@
 *
 * Author: Ken Zangelin
 */
-extern "C"
-{
-#include "kjson/KjNode.h"                                   // KjNode
-}
 
 
 
@@ -36,6 +32,6 @@ extern "C"
 //
 // ddsNotification -
 //
-extern void ddsNotification(const char* entityType, const char* entityId, const char* attrName, KjNode* notificationP);
+extern void ddsNotification(const char* typeName, const char* topicName, const char* json, double publishTime);
 
 #endif  // SRC_LIB_ORIONLD_DDS_DDSNOTIFICATION_H_

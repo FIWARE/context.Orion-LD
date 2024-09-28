@@ -64,17 +64,16 @@ int ddsEntityCreateFromAttribute(KjNode* attrNodeP, const char* entityId, const 
 
   orionldState.payloadIdNode   = kjString(orionldState.kjsonP, "id", entityId);
   orionldState.payloadTypeNode = kjString(orionldState.kjsonP, "type", entityType);
+
   KT_T(StDds, "Entity doesn't exist - calling orionldPostEntities");
-  if (orionldState.requestTree->type != KjObject)
-  {
-    KT_T(StDds, "But first, need to transform the incoming request tree into a JSON object");
-    KjNode* attributeP = orionldState.requestTree;
-    attributeP->name = (char*) attrName;
-    orionldState.requestTree = kjObject(orionldState.kjsonP, NULL);
+  KT_T(StDds, "But first, need to transform the incoming request tree into a JSON object");
 
-    kjChildAdd(orionldState.requestTree, attributeP);
-    kjTreeLog2(orionldState.requestTree, "Input KjNode tree to orionldPostEntities", StDds);
-  }
+  KjNode* attributeP = orionldState.requestTree;
+  attributeP->name = (char*) attrName;
+  orionldState.requestTree = kjObject(orionldState.kjsonP, NULL);
 
+  kjChildAdd(orionldState.requestTree, attributeP);
+
+  kjTreeLog2(orionldState.requestTree, "Input KjNode tree to orionldPostEntities", StDds);
   return orionldPostEntities();
 }

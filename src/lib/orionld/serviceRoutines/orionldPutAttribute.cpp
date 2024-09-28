@@ -56,6 +56,7 @@ extern "C"
 #include "orionld/distOp/distOpFailure.h"                        // distOpFailure
 #include "orionld/distOp/distOpSuccess.h"                        // distOpSuccess
 #include "orionld/dds/kjTreeLog.h"                               // kjTreeLog2
+#include "orionld/dds/ddsEntityCreateFromAttribute.h"            // ddsEntityCreateFromAttribute
 #include "orionld/notifications/alteration.h"                    // alteration
 #include "orionld/notifications/previousValuePopulate.h"         // previousValuePopulate
 #include "orionld/notifications/sysAttrsStrip.h"                 // sysAttrsStrip
@@ -120,8 +121,8 @@ bool orionldPutAttribute(void)
   {
     if (orionldState.distributed == false)
     {
-//      if (orionldState.ddsSample == true)
-//        return ddsEntityCreateFromAttribute(orionldState.requestTree, entityId, attrName);
+      if (orionldState.ddsSample == true)
+        return ddsEntityCreateFromAttribute(orionldState.requestTree, entityId, attrName);
 
       orionldError(OrionldResourceNotFound, "Entity Not Found", entityId, 404);
       return false;
