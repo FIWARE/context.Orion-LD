@@ -680,6 +680,14 @@ fi
 
 # ------------------------------------------------------------------------------
 #
+# Copy the DDS Enabler config file to /tmp
+#
+cp config/DDS_ENABLER_CONFIGURATION.yaml /tmp  
+
+
+
+# ------------------------------------------------------------------------------
+#
 # Check unmatching --dir and 'parameter that is a directory' AND
 #       unmatching --filter and 'parameter that is a file'
 #
