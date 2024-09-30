@@ -188,9 +188,9 @@ bool NgsildPublisher::publish(const char* entityType, const char* entityId, cons
   entity_.f(f);
   entity_.b(b);
 
-  b = writer_->write(&entity_);
+  eprosima::fastdds::dds::ReturnCode_t rc = writer_->write(&entity_);
 
-  if (b == false)
+  if (rc != eprosima::fastdds::dds::RETCODE_OK)
   {
     KT_E("Not able to publish");
     return false;

@@ -22,6 +22,8 @@
 *
 * Author: David Campo, Ken Zangelin
 */
+#include <unistd.h>                                         // usleep
+
 extern "C"
 {
 #include "ktrace/kTrace.h"                                  // trace messages - ktrace library
@@ -127,6 +129,7 @@ void ddsPublishEntity
   KT_V("Publishing the entity '%s' in DDS", entityId);
 
   NgsildPublisher* publisherP = new NgsildPublisher(topicType);
+  usleep(100000);
 
   KT_V("Initializing publisher for topicType '%s', topicName '%s'", topicType, topicName);
   if (publisherP->init(topicName))

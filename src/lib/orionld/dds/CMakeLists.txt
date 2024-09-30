@@ -21,10 +21,12 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
 
 SET (SOURCES
+  kjTreeLog.cpp
   ddsInit.cpp
   ddsConfigLoad.cpp
-  kjTreeLog.cpp
   ddsCategoryToKlogSeverity.cpp
+  ddsNotification.cpp
+  ddsEntityCreateFromAttribute.cpp
 )
 
 # Include directories

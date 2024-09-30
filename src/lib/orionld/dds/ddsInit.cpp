@@ -40,6 +40,7 @@ extern "C"
 #include "orionld/dds/ddsCategoryToKlogSeverity.h"          // ddsCategoryToKlogSeverity
 #include "orionld/dds/ddsConfigLoad.h"                      // ddsConfigLoad
 #include "orionld/dds/kjTreeLog.h"                          // kjTreeLog2
+#include "orionld/dds/ddsNotification.h"                    // ddsNotification
 #include "orionld/dds/ddsInit.h"                            // Own interface
 
 
@@ -54,23 +55,13 @@ DdsOperationMode ddsOpMode;
 
 // -----------------------------------------------------------------------------
 //
-// ddsNotification -
-//
-void ddsNotification(const char* typeName, const char* topicName, const char* json, double publishTime)
-{
-  KT_T(StDds, "Got a notification on %s:%s (json: %s)", typeName, topicName, json);
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
 // ddsTypeNotification -
 //
 void ddsTypeNotification(const char* typeName, const char* topicName, const char* serializedType)
 {
   KT_T(StDds, "Got a type notification ('%s', '%s', '%s')", typeName, topicName, serializedType);
 }
+
 
 
 // -----------------------------------------------------------------------------

@@ -26,8 +26,9 @@ extern "C"
 {
 #include "ktrace/kTrace.h"                                  // trace messages - ktrace library
 #include "kjson/KjNode.h"                                   // KjNode
+#include "kjson/kjParse.h"                                  // kjParse
 #include "kjson/kjLookup.h"                                 // kjLookup
-#include "kjson/kjBuilder.h"                                // kjChildRemove, ...
+#include "kjson/kjBuilder.h"                                // kjObject, kjChildAdd
 }
 
 #include "orionld/common/orionldState.h"                    // orionldState, kjTreeLog
@@ -35,7 +36,6 @@ extern "C"
 #include "orionld/common/tenantList.h"                      // tenant0
 #include "orionld/serviceRoutines/orionldPutAttribute.h"    // orionldPutAttribute
 #include "orionld/dds/kjTreeLog.h"                          // kjTreeLog2
-#include "orionld/dds/ddsConfigTopicToAttribute.h"          // ddsConfigTopicToAttribute
 #include "orionld/dds/ddsNotification.h"                    // Own interface
 
 
@@ -44,6 +44,63 @@ extern "C"
 //
 // ddsNotification -
 //
+void ddsNotification(const char* typeName, const char* topicName, const char* json, double publishTime)
+{
+  KT_T(StDds, "Got a notification on %s:%s (json: %s)", typeName, topicName, json);
+
+  orionldStateInit(NULL);
+
+  KjNode* kTree = kjParse(orionldState.kjsonP, (char*) json);
+  if (kTree == NULL)
+    KT_RVE("Error parsing json payload from DDS: '%s'", json);
+
+  KjNode* idNodeP        = kjLookup(kTree, "id");
+  KjNode* typeNodeP      = kjLookup(kTree, "type");
+  KjNode* attrValueNodeP = kjLookup(kTree, topicName);
+
+  if (idNodeP   == NULL)       KT_RVE("No 'id' field in DDS payload ");
+  if (typeNodeP == NULL)       KT_RVE("No 'type' field in DDS payload ");
+  if (attrValueNodeP == NULL)  KT_RVE("No attribute field ('%s') in DDS payload", topicName);
+
+  orionldState.payloadIdNode   = idNodeP;
+  orionldState.payloadTypeNode = typeNodeP;
+  KT_T(StDds, "orionldState.payloadIdNode:   %p", orionldState.payloadIdNode);
+  KT_T(StDds, "orionldState.payloadTypeNode: %p", orionldState.payloadTypeNode);
+
+  // char* attributeLongName = orionldAttributeExpand(coreContextP, topicName, true, NULL);
+
+  char* pipe = strchr(idNodeP->value.s, '|');
+  if (pipe != NULL)
+    *pipe = 0;
+
+  char id[256];
+  snprintf(id, sizeof(id) - 1, "urn:%s", idNodeP->value.s);
+  KT_T(StDds, "New entity id: %s", id);
+
+  KjNode* attrNodeP = kjObject(orionldState.kjsonP, NULL);
+  kjChildAdd(attrNodeP, attrValueNodeP);
+  attrValueNodeP->name = (char*) "value";
+
+  orionldState.requestTree         = attrNodeP;
+  orionldState.uriParams.format    = (char*) "simplified";
+  orionldState.uriParams.type      = typeNodeP->value.s;
+  orionldState.wildcard[0]         = id;
+  orionldState.wildcard[1]         = (char*) topicName;
+
+  orionldState.tenantP             = &tenant0;  // FIXME ... Use tenants?
+  orionldState.in.pathAttrExpanded = (char*) topicName;
+  orionldState.ddsSample           = true;
+
+  //
+  // If the entity does not exist, it needs to be created
+  // Except of course, if it is registered and exists elsewhere
+  //
+  KT_T(StDds, "Calling orionldPutAttribute");
+  orionldPutAttribute();
+}
+
+#if 0
+#include "orionld/dds/ddsConfigTopicToAttribute.h"          // ddsConfigTopicToAttribute
 void ddsNotification(const char* entityType, const char* entityId, const char* topicName, KjNode* notificationP)
 {
   KT_V("Got a notification from DDS");
@@ -112,3 +169,4 @@ void ddsNotification(const char* entityType, const char* entityId, const char* t
   //
   orionldPutAttribute();
 }
+#endif
