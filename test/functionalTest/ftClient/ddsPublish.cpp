@@ -144,8 +144,8 @@ void ddsPublishEntity
     {
       if      (strcmp(attributeP->name, "s") == 0)      s = attributeP->value.s;
       else if (strcmp(attributeP->name, "i") == 0)      i = attributeP->value.i;
-      else if (strcmp(attributeP->name, "f") == 0)      i = attributeP->value.f;
-      else if (strcmp(attributeP->name, "b") == 0)      i = attributeP->value.b;
+      else if (strcmp(attributeP->name, "f") == 0)      f = attributeP->value.f;
+      else if (strcmp(attributeP->name, "b") == 0)      b = attributeP->value.b;
     }
 
     publisherP->publish(entityType, entityId, topicName, s, i, f, b);
