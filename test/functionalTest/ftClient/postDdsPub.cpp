@@ -30,6 +30,8 @@ extern "C"
 }
 
 #include "common/orionldState.h"                            // orionldState
+#include "common/traceLevels.h"                             // KT_T trace levels
+#include "dds/kjTreeLog.h"                                  // kjTreeLog2
 
 #include "ftClient/ddsPublish.h"                            // ddsPublishEntity
 #include "ftClient/ftErrorResponse.h"                       // ftErrorResponse
@@ -46,6 +48,8 @@ extern __thread KjNode* uriParams;
 //
 KjNode* postDdsPub(int* statusCodeP)
 {
+  kjTreeLog2(uriParams, "uriParams", StDds);
+
   KjNode*      ddsTopicTypeNodeP  = (uriParams         != NULL)? kjLookup(uriParams, "ddsTopicType") : NULL;
   const char*  ddsTopicType       = (ddsTopicTypeNodeP != NULL)? ddsTopicTypeNodeP->value.s : NULL;
   KjNode*      ddsTopicNameNodeP  = (uriParams         != NULL)? kjLookup(uriParams, "ddsTopicName") : NULL;

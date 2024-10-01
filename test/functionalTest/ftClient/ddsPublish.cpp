@@ -129,11 +129,12 @@ void ddsPublishEntity
   KT_V("Publishing the entity '%s' in DDS", entityId);
 
   NgsildPublisher* publisherP = new NgsildPublisher(topicType);
-  usleep(100000);
 
   KT_V("Initializing publisher for topicType '%s', topicName '%s'", topicType, topicName);
   if (publisherP->init(topicName))
   {
+    usleep(100000);
+
     char*  s = NULL;
     int    i = 0;
     double f = 0;
