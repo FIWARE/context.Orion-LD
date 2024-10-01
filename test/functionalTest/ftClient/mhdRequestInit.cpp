@@ -68,9 +68,6 @@ MHD_Result uriParamReceive(void* cbDataP, MHD_ValueKind kind, const char* key, c
 {
   KT_V("Got a URL Parameter: '%s': '%s'", key, value);
 
-  if (uriParams == NULL)
-    uriParams = kjObject(NULL, "params");
-
   KjNode* paramP = kjString(NULL, key, value);
   kjChildAdd(uriParams, paramP);
 
@@ -91,6 +88,7 @@ MHD_Result mhdRequestInit(MHD_Connection* connection, const char* url, const cha
   orionldState.urlPath    = (char*) url;
 
   httpHeaders = kjObject(NULL, "headers");
+  uriParams   = kjObject(NULL, "params");
 
   MHD_get_connection_values(connection, MHD_HEADER_KIND,       headerReceive,   NULL);
   MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, uriParamReceive, NULL);

@@ -52,7 +52,7 @@ echo "===================================================="
 payload='{
   "i": 2
 }'
-orionCurl --url '/dds/pub?ddsTopicType=xyz&xyz&entityId=urn:E2&ddsTopicName=P2' --port $FT_PORT --payload "$payload"
+orionCurl --url '/dds/pub?ddsTopicType=xyz&entityId=urn:E2&entityType=T&ddsTopicName=P2' --port $FT_PORT --payload "$payload"
 echo
 echo
 
@@ -62,7 +62,7 @@ echo "===================================================="
 payload='{
   "f": 3.14
 }'
-orionCurl --url '/dds/pub?ddsTopicType=xyzxyz&entityId=urn:E1&ddsTopicName=P3' --port $FT_PORT --payload "$payload"
+orionCurl --url '/dds/pub?ddsTopicType=xyz&entityId=urn:E3&entityType=T&ddsTopicName=P3' --port $FT_PORT --payload "$payload"
 echo
 echo
 
@@ -99,12 +99,34 @@ Date: REGEX(.*)
 04. Query the broker for all its entities, see urn:E1 and urn:E2
 ================================================================
 HTTP/1.1 200 OK
-Content-Length: 203
+Content-Length: 610
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 [
+    {
+        "P1": {
+            "type": "Property",
+            "value": {
+                "data": {
+                    "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0": {
+                        "b": false,
+                        "f": 0,
+                        "i": 0,
+                        "ia": [
+                            0,
+                            0
+                        ],
+                        "s": "abc"
+                    }
+                },
+                "type": "NgsildSample"
+            }
+        },
+        "id": "urn:REGEX(.*)",
+        "type": "T"
+    },
     {
         "P2": {
             "type": "Property",
@@ -124,7 +146,29 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
                 "type": "NgsildSample"
             }
         },
-        "id": "urn:01.0f.bc.a1.62.42.9a.b8.01.00.01.00",
+        "id": "urn:REGEX(.*)",
+        "type": "T"
+    },
+    {
+        "P3": {
+            "type": "Property",
+            "value": {
+                "data": {
+                    "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0": {
+                        "b": false,
+                        "f": 0,
+                        "i": 3,
+                        "ia": [
+                            0,
+                            0
+                        ],
+                        "s": ""
+                    }
+                },
+                "type": "NgsildSample"
+            }
+        },
+        "id": "urn:REGEX(.*)",
         "type": "T"
     }
 ]
