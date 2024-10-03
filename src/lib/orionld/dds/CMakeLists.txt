@@ -27,6 +27,8 @@ SET (SOURCES
   ddsCategoryToKlogSeverity.cpp
   ddsNotification.cpp
   ddsEntityCreateFromAttribute.cpp
+  ddsConfigTopicToAttribute.cpp
+  ddsAttributeCreate.cpp
 )
 
 # Include directories

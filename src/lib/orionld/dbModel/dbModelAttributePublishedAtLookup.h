@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_
-#define SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_
+#ifndef SRC_LIB_ORIONLD_DBMODEL_DBMODELATTRIBUTEPUBLISHEDATLOOKUP_H_
+#define SRC_LIB_ORIONLD_DBMODEL_DBMODELATTRIBUTEPUBLISHEDATLOOKUP_H_
 
 /*
 *
-* Copyright 2022 FIWARE Foundation e.V.
+* Copyright 2024 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,28 +25,17 @@
 *
 * Author: Ken Zangelin
 */
-
-
-
-// ----------------------------------------------------------------------------
-//
-// Trace Levels -
-//
-typedef enum OrionldTraceLevels
+extern "C"
 {
-  StMhdInit         = 100,
-  StSR              = 101,
+#include "kjson/KjNode.h"                                        // KjNode
+}
 
-  StRequest         = 200,
-  StDds             = 201,
-  StDdsPublish      = 202,
-  StDdsNotification = 203,
-  StDdsLibInfo      = 204,
-  StDdsLibDebug     = 205,
-  StDdsConfig       = 206,
 
-  StDump            = 300,
-  StDdsDump         = 301
-} OrionldTraceLevels;
 
-#endif  // SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_
+// -----------------------------------------------------------------------------
+//
+// dbModelAttributePublishedAtLookup -
+//
+extern double dbModelAttributePublishedAtLookup(KjNode* dbAttrP);
+
+#endif  // SRC_LIB_ORIONLD_DBMODEL_DBMODELATTRIBUTEPUBLISHEDATLOOKUP_H_

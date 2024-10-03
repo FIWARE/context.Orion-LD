@@ -30,7 +30,9 @@ extern "C"
 }
 
 #include "orionld/common/orionldState.h"                      // ddsConfigTree
+#include "orionld/common/traceLevels.h"                       // KT_T trace levels
 #include "orionld/kjTree/kjNavigate.h"                        // kjNavigate
+#include "orionld/dds/kjTreeLog.h"                            // kjTreeLog2
 #include "orionld/dds/ddsConfigTopicToAttribute.h"            // Own interface
 
 

@@ -21,11 +21,28 @@
 # VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
 
 --NAME--
-Two DDS test clients, one publishes, the other receives notifications
+the test client publishes on DDS, the broker receives DDS notifications and creates/updates the corresponding NGSI-LD entities
 
 --SHELL-INIT--
+echo '{
+  "dds": {
+    "topics": {
+      "P1": {
+        "entityId": "urn:ngsi-ld:camera:cam1",
+        "entityType": "Camera",
+        "attribute": "shutterSpeed"
+      },
+      "P2": {
+        "entityId": "urn:ngsi-ld:arm:arm1",
+        "entityType": "Arm",
+        "attribute": "armReach"
+      }
+    }
+  }
+}' > /tmp/ddsConfig
+
 dbInit CB
-orionldStart CB -mongocOnly -dds -ddsSubsTopics https://uri.etsi.org/ngsi-ld/default-context/P1,https://uri.etsi.org/ngsi-ld/default-context/P2 -ddsTopicType xyz
+orionldStart CB -mongocOnly -dds  -ddsConfigFile /tmp/ddsConfig
 ftClientStart -t 0-5000
 
 --SHELL--
@@ -35,7 +52,9 @@ ftClientStart -t 0-5000
 # 02. Ask FT to publish an entity urn:E2 on topic 'P2'
 # 03. Ask FT to publish an entity urn:E3 on topic 'P3'
 # 04. Ask FT to publish an entity urn:E4 on topic 'P4'
-# 05. Query the broker for all its entities, see all four
+# 05. Query the broker for all its entities, see all three (urn:ngsi-ld:camera:cam1, urn:ngsi-ld:arm:arm1, and the default entity)) 
+# 06. Kill the broker and empty its databae, then restart the broker again
+# 07. Query the broker for all its entities, see all three - should be present due to the DDS discovery 
 #
 
 echo "01. Ask FT to publish an entity urn:E1 on topic 'P1'"
@@ -87,6 +106,23 @@ echo
 echo
 
 
+echo "06. Kill the broker and empty its database, then restart the broker again"
+echo "========================================================================="
+brokerStop
+dbInit CB > /dev/null
+orionldStart CB -mongocOnly -dds  -ddsConfigFile /tmp/ddsConfig > /dev/null
+echo Orion-LD is running again
+echo
+echo
+
+
+echo "07. Query the broker for all its entities, see all three - should be present due to the DDS discovery "
+echo "======================================================================================================"
+orionCurl --url /ngsi-ld/v1/entities?local=true
+echo
+echo
+
+
 --REGEXPECT--
 01. Ask FT to publish an entity urn:E1 on topic 'P1'
 ====================================================
@@ -119,14 +155,27 @@ Date: REGEX(.*)
 05. Query the broker for all its entities, see all four
 =======================================================
 HTTP/1.1 200 OK
-Content-Length: 820
+Content-Length: 1438
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 [
     {
-        "P1": {
+        "ddsType": {
+            "type": "Property",
+            "value": "fastdds"
+        },
+        "id": "urn:ngsi-ld:camera:cam1",
+        "shutterSpeed": {
+            "participantId": {
+                "type": "Property",
+                "value": "REGEX(.*)"
+            },
+            "publishedAt": {
+                "type": "Property",
+                "value": REGEX(.*)
+            },
             "type": "Property",
             "value": {
                 "data": {
@@ -144,11 +193,18 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
                 "type": "NgsildSample"
             }
         },
-        "id": "urn:REGEX(.*)",
-        "type": "T"
+        "type": "Camera"
     },
     {
-        "P2": {
+        "armReach": {
+            "participantId": {
+                "type": "Property",
+                "value": "REGEX(.*)"
+            },
+            "publishedAt": {
+                "type": "Property",
+                "value": REGEX(.*)
+            },
             "type": "Property",
             "value": {
                 "data": {
@@ -166,11 +222,23 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
                 "type": "NgsildSample"
             }
         },
-        "id": "urn:REGEX(.*)",
-        "type": "T"
+        "ddsType": {
+            "type": "Property",
+            "value": "fastdds"
+        },
+        "id": "urn:ngsi-ld:arm:arm1",
+        "type": "Arm"
     },
     {
         "P3": {
+            "participantId": {
+                "type": "Property",
+                "value": "REGEX(.*)"
+            },
+            "publishedAt": {
+                "type": "Property",
+                "value": REGEX(.*)
+            },
             "type": "Property",
             "value": {
                 "data": {
@@ -188,11 +256,15 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
                 "type": "NgsildSample"
             }
         },
-        "id": "urn:REGEX(.*)",
-        "type": "T"
-    },
-    {
         "P4": {
+            "participantId": {
+                "type": "Property",
+                "value": "REGEX(.*)"
+            },
+            "publishedAt": {
+                "type": "Property",
+                "value": REGEX(.*)
+            },
             "type": "Property",
             "value": {
                 "data": {
@@ -210,8 +282,157 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
                 "type": "NgsildSample"
             }
         },
-        "id": "urn:REGEX(.*)",
-        "type": "T"
+        "ddsType": {
+            "type": "Property",
+            "value": "fastdds"
+        },
+        "id": "urn:ngsi-ld:dds:default",
+        "type": "DDS"
+    }
+]
+
+
+06. Kill the broker and empty its database, then restart the broker again
+=========================================================================
+Orion-LD is running again
+
+
+07. Query the broker for all its entities, see all three - should be present due to the DDS discovery 
+======================================================================================================
+HTTP/1.1 200 OK
+Content-Length: 1438
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "ddsType": {
+            "type": "Property",
+            "value": "fastdds"
+        },
+        "id": "urn:ngsi-ld:camera:cam1",
+        "shutterSpeed": {
+            "participantId": {
+                "type": "Property",
+                "value": "REGEX(.*)"
+            },
+            "publishedAt": {
+                "type": "Property",
+                "value": REGEX(.*)
+            },
+            "type": "Property",
+            "value": {
+                "data": {
+                    "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0": {
+                        "b": false,
+                        "f": 0,
+                        "i": 0,
+                        "ia": [
+                            0,
+                            0
+                        ],
+                        "s": "abc"
+                    }
+                },
+                "type": "NgsildSample"
+            }
+        },
+        "type": "Camera"
+    },
+    {
+        "armReach": {
+            "participantId": {
+                "type": "Property",
+                "value": "REGEX(.*)"
+            },
+            "publishedAt": {
+                "type": "Property",
+                "value": REGEX(.*)
+            },
+            "type": "Property",
+            "value": {
+                "data": {
+                    "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0": {
+                        "b": false,
+                        "f": 0,
+                        "i": 2,
+                        "ia": [
+                            0,
+                            0
+                        ],
+                        "s": ""
+                    }
+                },
+                "type": "NgsildSample"
+            }
+        },
+        "ddsType": {
+            "type": "Property",
+            "value": "fastdds"
+        },
+        "id": "urn:ngsi-ld:arm:arm1",
+        "type": "Arm"
+    },
+    {
+        "P3": {
+            "participantId": {
+                "type": "Property",
+                "value": "REGEX(.*)"
+            },
+            "publishedAt": {
+                "type": "Property",
+                "value": REGEX(.*)
+            },
+            "type": "Property",
+            "value": {
+                "data": {
+                    "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0": {
+                        "b": false,
+                        "f": 3.14,
+                        "i": 0,
+                        "ia": [
+                            0,
+                            0
+                        ],
+                        "s": ""
+                    }
+                },
+                "type": "NgsildSample"
+            }
+        },
+        "P4": {
+            "participantId": {
+                "type": "Property",
+                "value": "REGEX(.*)"
+            },
+            "publishedAt": {
+                "type": "Property",
+                "value": REGEX(.*)
+            },
+            "type": "Property",
+            "value": {
+                "data": {
+                    "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0": {
+                        "b": false,
+                        "f": 4.14,
+                        "i": 4,
+                        "ia": [
+                            0,
+                            0
+                        ],
+                        "s": "p4"
+                    }
+                },
+                "type": "NgsildSample"
+            }
+        },
+        "ddsType": {
+            "type": "Property",
+            "value": "fastdds"
+        },
+        "id": "urn:ngsi-ld:dds:default",
+        "type": "DDS"
     }
 ]
 
@@ -219,4 +440,4 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 --TEARDOWN--
 ftClientStop
 brokerStop
-dbDrop CB
+#dbDrop CB
