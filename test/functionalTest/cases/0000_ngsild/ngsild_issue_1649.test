@@ -1,0 +1,117 @@
+# Copyright 2024 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Issue #1649 - Subscription created with NGSI-LD and retrieved with NGSIv2
+
+--SHELL-INIT--
+dbInit CB
+dbInit CB test
+orionldStart CB -multiservice
+
+--SHELL--
+
+#
+# 01. Create a subscription using NGSI-LD
+# 02. Retrieve it using NGSIv2
+#
+
+echo "01. Create a subscription using NGSI-LD"
+echo "======================================="
+payload='{
+  "description": "Notify me of all product price changes",
+  "type": "Subscription",
+  "entities": [{"type": "Product"}],
+  "watchedAttributes": ["price"],
+  "notification": {
+    "format": "keyValues",
+    "endpoint": {
+      "uri": "http://tutorial:3000/subscription/price-change",
+      "accept": "application/json"
+    }
+  },
+   "@context": "https://smartdatamodels.org/context.jsonld"
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload" -H "Content-Type: application/ld+json" -H 'fiware-service: test' -H 'fiware-servicepath: /#'
+echo
+echo
+
+
+echo "02. Retrieve it using NGSIv2"
+echo "============================"
+orionCurl --url /v2/subscriptions -H 'fiware-service: test'
+echo
+echo
+
+
+--REGEXPECT--
+01. Create a subscription using NGSI-LD
+=======================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/subscriptions/urn:ngsi-ld:Subscription:REGEX(.*)
+NGSILD-Tenant: test
+
+
+
+02. Retrieve it using NGSIv2
+============================
+HTTP/1.1 200 OK
+Content-Length: 467
+Content-Type: application/json
+Date: REGEX(.*)
+Fiware-Correlator: REGEX(.*)
+
+[
+    {
+        "description": "Notify me of all product price changes",
+        "expires": "REGEX(.*)",
+        "id": "urn:ngsi-ld:Subscription:REGEX(.*)",
+        "notification": {
+            "attrs": [],
+            "attrsFormat": "keyValues",
+            "http": {
+                "url": "http://tutorial:3000/subscription/price-change"
+            }
+        },
+        "status": "expired",
+        "subject": {
+            "condition": {
+                "attrs": [
+                    "https://uri.etsi.org/ngsi-ld/default-context/price"
+                ]
+            },
+            "entities": [
+                {
+                    "type": "https://uri.etsi.org/ngsi-ld/default-context/Product"
+                }
+            ]
+        }
+    }
+]
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
+dbDrop CB test

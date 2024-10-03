@@ -40,4 +40,20 @@ extern "C"
 //
 extern KjNode* kjNavigate(KjNode* treeP, const char** pathCompV, KjNode** parentPP, bool* onlyLastMissingP);
 
+
+
+// -----------------------------------------------------------------------------
+//
+// kjNavigate - true Kj-Tree navigation
+//
+extern KjNode* kjNavigate(KjNode* treeP, char** compV);
+
+
+
+// -----------------------------------------------------------------------------
+//
+// kjNavigate2 - prepared for db-model, but also OK without
+//
+extern KjNode* kjNavigate2(KjNode* treeP, char* path, bool* isTimestampP);
+
 #endif  // SRC_LIB_ORIONLD_KJTREE_KJNAVIGATE_H_

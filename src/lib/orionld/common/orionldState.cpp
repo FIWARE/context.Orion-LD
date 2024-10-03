@@ -110,6 +110,8 @@ PernotSubCache    pernotSubCache;
 EntityMap*        entityMaps        = NULL;    // Used by GET /entities in the distributed case, for pagination
 bool              entityMapsEnabled = false;
 bool              distSubsEnabled   = false;
+OrionldContext*   defaultUserContextP = NULL;
+int               pageSize            = 20;
 
 
 
@@ -122,6 +124,15 @@ sem_t                  mongocContextsSem;
 sem_t                  mongocConnectionSem;
 char                   mongocServerVersion[128];
 char                   postgresServerVersion[128];
+
+
+
+//
+// Variables for notifications from subordinate subscriptions (distributed subscriptions)
+//
+char                   subordinatePath[256];
+int                    subordinatePathLen              = -1;
+OrionLdRestService*    subordinateNotificationServiceP = NULL;
 
 
 
@@ -163,7 +174,7 @@ void orionldStateInit(MHD_Connection* connection)
 
   // Pagination
   orionldState.uriParams.offset        = 0;
-  orionldState.uriParams.limit         = 20;
+  orionldState.uriParams.limit         = pageSize;
 
   // orionldState.delayedKjFreeVecSize    = sizeof(orionldState.delayedKjFreeVec) / sizeof(orionldState.delayedKjFreeVec[0]);
 

@@ -43,26 +43,31 @@ struct QNode;
 typedef enum QNodeType
 {
   QNodeVoid,                     // Nothing, Nada, Zilch
+
   QNodeOpen,                     // '('
   QNodeClose,                    // ')'
   QNodeAnd,                      // ';'
   QNodeOr,                       // '|'
   QNodeExists,                   // ''
+
   QNodeNotExists,                // '!'
   QNodeEQ,                       // '=='
   QNodeNE,                       // '!='
   QNodeGE,                       // '>='
   QNodeGT,                       // '>'
+
   QNodeLE,                       // '<='
   QNodeLT,                       // '<'
   QNodeMatch,                    // '~='
   QNodeNoMatch,                  // '!~='
   QNodeComma,                    // ','
+
   QNodeRange,                    // '..'
   QNodeVariable,                 // attrName[.attrName]*  ([0-9][a-z[A-Z]_)+
   QNodeFloatValue,               // E.g.: '0.123'
   QNodeIntegerValue,             // E.g.: '512'
   QNodeStringValue,              // E.g.: "this is a string"
+
   QNodeTrueValue,                // 'true'
   QNodeFalseValue,               // 'false'
   QNodeRegexpValue               // RE(regexp)

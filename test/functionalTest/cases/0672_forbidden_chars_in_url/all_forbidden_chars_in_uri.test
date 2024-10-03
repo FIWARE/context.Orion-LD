@@ -116,8 +116,8 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 {
     "orionError": {
-        "code": "400", 
-        "details": "invalid character in URI", 
+        "code": "400",
+        "details": "invalid character in URI",
         "reasonPhrase": "Bad Request"
     }
 }
@@ -133,8 +133,8 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 {
     "orionError": {
-        "code": "400", 
-        "details": "invalid character in URI", 
+        "code": "400",
+        "details": "invalid character in URI",
         "reasonPhrase": "Bad Request"
     }
 }
@@ -150,8 +150,8 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 {
     "orionError": {
-        "code": "400", 
-        "details": "invalid character in URI", 
+        "code": "400",
+        "details": "invalid character in URI",
         "reasonPhrase": "Bad Request"
     }
 }
@@ -167,8 +167,8 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 {
     "orionError": {
-        "code": "400", 
-        "details": "invalid character in URI", 
+        "code": "400",
+        "details": "invalid character in URI",
         "reasonPhrase": "Bad Request"
     }
 }
@@ -184,8 +184,8 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 {
     "orionError": {
-        "code": "400", 
-        "details": "invalid character in URI", 
+        "code": "400",
+        "details": "invalid character in URI",
         "reasonPhrase": "Bad Request"
     }
 }
@@ -201,8 +201,8 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 {
     "orionError": {
-        "code": "400", 
-        "details": "invalid character in URI", 
+        "code": "400",
+        "details": "invalid character in URI",
         "reasonPhrase": "Bad Request"
     }
 }
@@ -218,8 +218,8 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 {
     "orionError": {
-        "code": "400", 
-        "details": "invalid character in URI", 
+        "code": "400",
+        "details": "invalid character in URI",
         "reasonPhrase": "Bad Request"
     }
 }
@@ -235,8 +235,8 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 {
     "orionError": {
-        "code": "400", 
-        "details": "invalid character in URI", 
+        "code": "400",
+        "details": "invalid character in URI",
         "reasonPhrase": "Bad Request"
     }
 }
@@ -244,18 +244,16 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 09. Test without forbidden characters
 =====================================
-HTTP/1.1 400 Bad Request
-Content-Length: 88
+HTTP/1.1 404 Not Found
+Content-Length: 137
 Content-Type: application/json
 Date: REGEX(.*)
 Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 {
-    "orionError": {
-        "code": "400", 
-        "details": "service not found", 
-        "reasonPhrase": "Bad Request"
-    }
+    "detail": "/test/without/forbidden/characters",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 

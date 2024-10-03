@@ -555,7 +555,6 @@ MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
     }
   }
 
-
   if (strcmp(key, "id") == 0)
   {
     orionldState.uriParams.id = (char*) value;
@@ -624,6 +623,11 @@ MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
   {
     orionldState.uriParams.options = (char*) value;
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_OPTIONS;
+  }
+  else if (strcmp(key, "csf") == 0)
+  {
+    orionldState.uriParams.csf = (char*) value;
+    orionldState.uriParams.mask |= ORIONLD_URIPARAM_CSF;
   }
   else if (strcmp(key, "expandValues") == 0)
   {
@@ -878,6 +882,16 @@ MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
   {
     orionldState.uriParams.orderBy = (char*) value;
   }
+  else if (strcmp(key, "reverse") == 0)
+  {
+    if (strcmp(value, "true") == 0)
+      orionldState.uriParams.reverse = true;
+    else if (strcmp(key, "false") != 0)
+    {
+      orionldError(OrionldBadRequestData, "Invalid value for uri parameter /reverse/", value, 400);
+      return MHD_YES;
+    }
+  }
   else if (strcmp(key, "collapse") == 0)
   {
     if (strcmp(value, "true") == 0)
@@ -996,6 +1010,17 @@ static OrionLdRestService* serviceLookup(void)
 {
   OrionLdRestService* serviceP;
 
+  if (subordinatePath[0] != 0)
+  {
+    if (strncmp(orionldState.urlPath, subordinatePath, subordinatePathLen) == 0)
+    {
+      orionldState.wildcard[0] = &orionldState.urlPath[subordinatePathLen];
+      LM_T(LmtSubordinate, ("Got a notification from a subordinate subscription (parent sub: '%s')", orionldState.wildcard[0]));
+      // orionldState.subordinateNotification = true;
+      return subordinateNotificationServiceP;
+    }
+  }
+
   serviceP = orionldServiceLookup(&orionldRestServiceV[orionldState.verb]);
   if (serviceP == NULL)
   {
@@ -1107,7 +1132,7 @@ MHD_Result mhdConnectionInit
   // 2. NGSI-LD requests don't support the broker to be started with -noCache
   if (noCache == true)
   {
-    orionldError(OrionldBadRequestData, "Not Implemented", "Running without Subscription Cache is not implemented for NGSI-LD requests", 501);
+    orionldError(OrionldOperationNotSupported, "Not Implemented", "Running without Subscription Cache is not implemented for NGSI-LD requests", 501);
     return MHD_YES;
   }
 

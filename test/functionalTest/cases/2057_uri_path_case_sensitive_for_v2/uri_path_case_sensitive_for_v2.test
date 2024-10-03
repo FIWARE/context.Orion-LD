@@ -125,35 +125,31 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 03. v1 unknown service /v1/no_service - see error
 =================================================
-HTTP/1.1 400 Bad Request
-Content-Length: 88
+HTTP/1.1 404 Not Found
+Content-Length: 117
 Content-Type: application/json
 Date: REGEX(.*)
 Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 {
-    "orionError": {
-        "code": "400",
-        "details": "service not found",
-        "reasonPhrase": "Bad Request"
-    }
+    "detail": "/v1/no_service",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 
 04. v2 query with all uppercase - see error (NGSIv1 error response as not /v2 but /V2)
 ======================================================================================
-HTTP/1.1 400 Bad Request
-Content-Length: 88
+HTTP/1.1 404 Not Found
+Content-Length: 115
 Content-Type: application/json
 Date: REGEX(.*)
 Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 {
-    "orionError": {
-        "code": "400",
-        "details": "service not found",
-        "reasonPhrase": "Bad Request"
-    }
+    "detail": "/V2/ENTITIES",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 

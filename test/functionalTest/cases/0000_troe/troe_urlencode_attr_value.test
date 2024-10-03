@@ -1,0 +1,116 @@
+# Copyright 2024 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Attribute with strange chars in attribute value
+
+--SHELL-INIT--
+export BROKER=orionld
+dbInit CB
+pgInit $CB_DB_NAME
+orionldStart CB -experimental -troe
+
+--SHELL--
+
+#
+# 01. Create an entity E1 with an attribute P1 with a string value with 'strange' characters
+# 02. See all entities in TRoE DB
+# 03. See all attributes in TRoE DB
+# 04. See all sub-attributes in TRoE DB - there aren't any
+#
+
+echo "01. Create an entity E1 with an attribute P1 with a string value with 'strange' characters"
+echo "=========================================================================================="
+payload='{
+  "id": "urn:ngsi-ld:entity:E1",
+  "type": "Device",
+  "P1": "'\'0\''",
+  "P2": {
+    "value": {
+      "a": "1"
+    }
+  },
+  "P3": {
+    "value": {
+      "a": "'\'2\''"
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "02. See all entities in TRoE DB"
+echo "==============================="
+postgresCmd -sql "SELECT opMode,id,type,ts FROM entities"
+echo
+echo
+
+
+echo "03. See all attributes in TRoE DB"
+echo "================================="
+postgresCmd -sql "SELECT opMode,id,valueType,entityId,subProperties,unitcode,datasetid,text,number,boolean,compound,observedAt,ts FROM attributes"
+echo
+echo
+
+
+echo "04. See all sub-attributes in TRoE DB - there aren't any"
+echo "========================================================"
+postgresCmd -sql "SELECT id,valueType,entityId,attrInstanceId,unitcode,text,number,boolean FROM subAttributes"
+echo
+echo
+
+
+--REGEXPECT--
+01. Create an entity E1 with an attribute P1 with a string value with 'strange' characters
+==========================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entity:E1
+
+
+
+02. See all entities in TRoE DB
+===============================
+opmode,id,type,ts
+Create,urn:ngsi-ld:entity:E1,https://uri.etsi.org/ngsi-ld/default-context/Device,202REGEX(.*)
+
+
+03. See all attributes in TRoE DB
+=================================
+opmode,id,valuetype,entityid,subproperties,unitcode,datasetid,text,number,boolean,compound,observedat,ts
+Create,https://uri.etsi.org/ngsi-ld/default-context/P1,String,urn:ngsi-ld:entity:E1,f,,None,%270%27,,,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P2,Compound,urn:ngsi-ld:entity:E1,f,,None,,,,"{""a"": ""1""}",,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P3,Compound,urn:ngsi-ld:entity:E1,f,,None,,,,"{""a"": ""%272%27""}",,202REGEX(.*)
+
+
+04. See all sub-attributes in TRoE DB - there aren't any
+========================================================
+id,valuetype,entityid,attrinstanceid,unitcode,text,number,boolean
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
+pgDrop $CB_DB_NAME

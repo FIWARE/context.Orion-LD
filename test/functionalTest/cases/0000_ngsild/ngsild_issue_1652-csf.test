@@ -1,0 +1,434 @@
+# Copyright 2024 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+CSF for GET /registrations
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -experimental
+
+--SHELL--
+
+#
+# 01. Create a registration R1 with a property Type2 = urn:aeros:federation:r1
+# 02. Create a registration R2 with a property Type2 = urn:aeros:federation:r2
+# 03. Create a registration R3 with a property Type2 = urn:aeros:other:r3
+# 04. GET R1 with same @context - see Type2 as shortname
+# 05. GET R1 with a different @context - see Type2 expanded
+# 06. Query registrations with csf=Type2~=urn:aeros:federation:.* - see R1 and R2
+# 07. Query registrations with csf=Type2~=urn:aeros:o.* - see R3
+# 08. Query registrations with csf=Type2~=urn:hairos:.* - see []
+# 09. PATCH R1 setting Type2 to urn:hairos:09
+# 10. Query registrations with csf=Type2~=urn:hairos:.* - see R1
+# 11. PATCH R2, adding a reg property Type3=urn:aeros:federation2:R2
+# 12. Query registrations with csf=Type3~=urn:aeros:federation2.* - see R2
+#
+
+echo "01. Create a registration R1 with a property Type2 = urn:aeros:federation:r1"
+echo "============================================================================"
+payload='{
+  "id": "urn:ngsi-ld:R1",
+  "type": "ContextSourceRegistration",
+  "information": [
+    {
+      "entities": [
+        {
+          "id": "urn:ngsi-ld:Car1",
+          "type": "Vehicle"
+        }
+      ]
+    }
+  ],
+  "endpoint": "http://my.csource.org:1026",
+  "Type2": "urn:aeros:federation:r1"
+}'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload" -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>'
+echo
+echo
+
+
+echo "02. Create a registration R2 with a property Type2 = urn:aeros:federation:r2"
+echo "============================================================================"
+payload='{
+  "id": "urn:ngsi-ld:R2",
+  "type": "ContextSourceRegistration",
+  "information": [
+    {
+      "entities": [
+        {
+          "id": "urn:ngsi-ld:Car1",
+          "type": "Vehicle"
+        }
+      ]
+    }
+  ],
+  "endpoint": "http://my.csource.org:1026",
+  "Type2": "urn:aeros:federation:r2"
+}'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload" -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>'
+echo
+echo
+
+
+echo "03. Create a registration R3 with a property Type2 = urn:aeros:other:r3"
+echo "======================================================================="
+payload='{
+  "id": "urn:ngsi-ld:R3",
+  "type": "ContextSourceRegistration",
+  "information": [
+    {
+      "entities": [
+        {
+          "id": "urn:ngsi-ld:Car1",
+          "type": "Vehicle"
+        }
+      ]
+    }
+  ],
+  "endpoint": "http://my.csource.org:1026",
+  "Type2": "urn:aeros:other:r3"
+}'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload" -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>'
+echo
+echo
+
+
+echo "04. GET R1 with same @context - see Type2 as shortname"
+echo "======================================================"
+orionCurl --url /ngsi-ld/v1/csourceRegistrations/urn:ngsi-ld:R1 -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>'
+echo
+echo
+
+
+echo "05. GET R1 with a different @context - see Type2 expanded"
+echo "========================================================="
+orionCurl --url /ngsi-ld/v1/csourceRegistrations/urn:ngsi-ld:R1
+echo
+echo
+
+
+echo "06. Query registrations with csf=Type2~=urn:aeros:federation:.* - see R1 and R2"
+echo "==============================================================================="
+orionCurl --url /ngsi-ld/v1/csourceRegistrations?csf=Type2~=urn:aeros:federation:.* -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>'
+echo
+echo
+
+
+echo "07. Query registrations with csf=Type2~=urn:aeros:o.* - see R3"
+echo "=============================================================="
+orionCurl --url /ngsi-ld/v1/csourceRegistrations?csf=Type2~=urn:aeros:o.* -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>'
+echo
+echo
+
+
+echo "08. Query registrations with csf=Type2~=urn:hairos:.* - see []"
+echo "=============================================================="
+orionCurl --url /ngsi-ld/v1/csourceRegistrations?csf=Type2~=urn:hairos.* -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>'
+echo
+echo
+
+
+echo "09. PATCH R1 setting Type2 to urn:hairos:09"
+echo "==========================================="
+payload='{
+  "Type2": "urn:hairos:09"
+}'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations/urn:ngsi-ld:R1 --payload "$payload" -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>' -X PATCH
+echo
+echo
+
+
+echo "10. Query registrations with csf=Type2~=urn:hairos:.* - see R1"
+echo "=============================================================="
+orionCurl --url /ngsi-ld/v1/csourceRegistrations?csf=Type2~=urn:hairos.* -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>'
+echo
+echo
+
+
+echo "11. PATCH R2, adding a reg property Type3=urn:aeros:federation2:R2"
+echo "=================================================================="
+payload='{
+  "Type3": "urn:aeros:federation2:R2"
+}'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations/urn:ngsi-ld:R2 --payload "$payload" -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>' -X PATCH
+echo
+echo
+
+
+echo "12. Query registrations with csf=Type3~=urn:aeros:federation2.* - see R2"
+echo "========================================================================"
+orionCurl --url /ngsi-ld/v1/csourceRegistrations?csf=Type3~=urn:aeros:federation2.* -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>'
+echo
+echo
+
+
+--REGEXPECT--
+01. Create a registration R1 with a property Type2 = urn:aeros:federation:r1
+============================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/csourceRegistrations/urn:ngsi-ld:R1
+
+
+
+02. Create a registration R2 with a property Type2 = urn:aeros:federation:r2
+============================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/csourceRegistrations/urn:ngsi-ld:R2
+
+
+
+03. Create a registration R3 with a property Type2 = urn:aeros:other:r3
+=======================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/csourceRegistrations/urn:ngsi-ld:R3
+
+
+
+04. GET R1 with same @context - see Type2 as shortname
+======================================================
+HTTP/1.1 200 OK
+Content-Length: 241
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+{
+    "Type2": "urn:aeros:federation:r1",
+    "endpoint": "http://my.csource.org:1026",
+    "id": "urn:ngsi-ld:R1",
+    "information": [
+        {
+            "entities": [
+                {
+                    "id": "urn:ngsi-ld:Car1",
+                    "type": "Vehicle"
+                }
+            ]
+        }
+    ],
+    "origin": "cache",
+    "status": "active",
+    "type": "ContextSourceRegistration"
+}
+
+
+05. GET R1 with a different @context - see Type2 expanded
+=========================================================
+HTTP/1.1 200 OK
+Content-Length: 317
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+{
+    "endpoint": "http://my.csource.org:1026",
+    "https://uri.fiware.org/ns/data-models#Type2": "urn:aeros:federation:r1",
+    "id": "urn:ngsi-ld:R1",
+    "information": [
+        {
+            "entities": [
+                {
+                    "id": "urn:ngsi-ld:Car1",
+                    "type": "https://uri.fiware.org/ns/data-models#Vehicle"
+                }
+            ]
+        }
+    ],
+    "origin": "cache",
+    "status": "active",
+    "type": "ContextSourceRegistration"
+}
+
+
+06. Query registrations with csf=Type2~=urn:aeros:federation:.* - see R1 and R2
+===============================================================================
+HTTP/1.1 200 OK
+Content-Length: 485
+Content-Type: application/json
+Date: REGEX(.*)
+Link: REGEX(.*)
+
+[
+    {
+        "Type2": "urn:aeros:federation:r1",
+        "endpoint": "http://my.csource.org:1026",
+        "id": "urn:ngsi-ld:R1",
+        "information": [
+            {
+                "entities": [
+                    {
+                        "id": "urn:ngsi-ld:Car1",
+                        "type": "Vehicle"
+                    }
+                ]
+            }
+        ],
+        "origin": "cache",
+        "status": "active",
+        "type": "ContextSourceRegistration"
+    },
+    {
+        "Type2": "urn:aeros:federation:r2",
+        "endpoint": "http://my.csource.org:1026",
+        "id": "urn:ngsi-ld:R2",
+        "information": [
+            {
+                "entities": [
+                    {
+                        "id": "urn:ngsi-ld:Car1",
+                        "type": "Vehicle"
+                    }
+                ]
+            }
+        ],
+        "origin": "cache",
+        "status": "active",
+        "type": "ContextSourceRegistration"
+    }
+]
+
+
+07. Query registrations with csf=Type2~=urn:aeros:o.* - see R3
+==============================================================
+HTTP/1.1 200 OK
+Content-Length: 238
+Content-Type: application/json
+Date: REGEX(.*)
+Link: REGEX(.*)
+
+[
+    {
+        "Type2": "urn:aeros:other:r3",
+        "endpoint": "http://my.csource.org:1026",
+        "id": "urn:ngsi-ld:R3",
+        "information": [
+            {
+                "entities": [
+                    {
+                        "id": "urn:ngsi-ld:Car1",
+                        "type": "Vehicle"
+                    }
+                ]
+            }
+        ],
+        "origin": "cache",
+        "status": "active",
+        "type": "ContextSourceRegistration"
+    }
+]
+
+
+08. Query registrations with csf=Type2~=urn:hairos:.* - see []
+==============================================================
+HTTP/1.1 200 OK
+Content-Length: 2
+Content-Type: application/json
+Date: REGEX(.*)
+
+[]
+
+
+09. PATCH R1 setting Type2 to urn:hairos:09
+===========================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+10. Query registrations with csf=Type2~=urn:hairos:.* - see R1
+==============================================================
+HTTP/1.1 200 OK
+Content-Length: 233
+Content-Type: application/json
+Date: REGEX(.*)
+Link: REGEX(.*)
+
+[
+    {
+        "Type2": "urn:hairos:09",
+        "endpoint": "http://my.csource.org:1026",
+        "id": "urn:ngsi-ld:R1",
+        "information": [
+            {
+                "entities": [
+                    {
+                        "id": "urn:ngsi-ld:Car1",
+                        "type": "Vehicle"
+                    }
+                ]
+            }
+        ],
+        "origin": "cache",
+        "status": "active",
+        "type": "ContextSourceRegistration"
+    }
+]
+
+
+11. PATCH R2, adding a reg property Type3=urn:aeros:federation2:R2
+==================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+12. Query registrations with csf=Type3~=urn:aeros:federation2.* - see R2
+========================================================================
+HTTP/1.1 200 OK
+Content-Length: 278
+Content-Type: application/json
+Date: REGEX(.*)
+Link: REGEX(.*)
+
+[
+    {
+        "Type2": "urn:aeros:federation:r2",
+        "Type3": "urn:aeros:federation2:R2",
+        "endpoint": "http://my.csource.org:1026",
+        "id": "urn:ngsi-ld:R2",
+        "information": [
+            {
+                "entities": [
+                    {
+                        "id": "urn:ngsi-ld:Car1",
+                        "type": "Vehicle"
+                    }
+                ]
+            }
+        ],
+        "origin": "cache",
+        "status": "active",
+        "type": "ContextSourceRegistration"
+    }
+]
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB

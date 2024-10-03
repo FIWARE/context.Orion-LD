@@ -193,9 +193,17 @@ RegCacheItem* regCacheItemAdd(RegCache* rcP, const char* registrationId, KjNode*
   KjNode* operationsP  = kjLookup(rciP->regTree, "operations");
   KjNode* modeP        = kjLookup(rciP->regTree, "mode");
   KjNode* informationP = kjLookup(rciP->regTree, "information");
+  KjNode* managementP  = kjLookup(rciP->regTree, "management");
 
   rciP->opMask  = distOpTypeMask(operationsP);
   rciP->mode    = (modeP != NULL)? registrationMode(modeP->value.s) : RegModeInclusive;
+
+  if (managementP != NULL)
+  {
+    KjNode* localOnlyP = kjLookup(managementP, "localOnly");
+
+    rciP->localOnly = (localOnlyP != NULL)? localOnlyP->value.b : false;
+  }
 
   if (regCacheIdPatternRegexCompile(rciP, informationP) == false)
     LM_X(1, ("Internal Error (if this happens it's a SW bug of Orion-LD - the idPattern was checked in pcheckEntityInfo and all was OK"));

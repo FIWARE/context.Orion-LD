@@ -514,7 +514,7 @@ MongoDB server version: REGEX(.*)
 		]
 	},
 	"properties" : {
-		"https://uri.etsi.org/ngsi-ld/default-context/P1" : 1
+		"https://uri=etsi=org/ngsi-ld/default-context/P1" : 1
 	}
 }
 bye
@@ -869,7 +869,7 @@ MongoDB server version: REGEX(.*)
 		]
 	},
 	"properties" : {
-		"https://uri.etsi.org/ngsi-ld/default-context/P1" : 1
+		"https://uri=etsi=org/ngsi-ld/default-context/P1" : 1
 	}
 }
 bye
@@ -1595,7 +1595,7 @@ MongoDB server version: REGEX(.*)
 		]
 	},
 	"properties" : {
-		"https://uri.etsi.org/ngsi-ld/default-context/P1" : "New P1"
+		"https://uri=etsi=org/ngsi-ld/default-context/P1" : "New P1"
 	},
 	"endpoint" : "http://localhost:1026/go"
 }
@@ -1755,7 +1755,7 @@ MongoDB server version: REGEX(.*)
 		]
 	},
 	"properties" : {
-		"https://uri.etsi.org/ngsi-ld/default-context/P1" : [
+		"https://uri=etsi=org/ngsi-ld/default-context/P1" : [
 			1,
 			2,
 			3,

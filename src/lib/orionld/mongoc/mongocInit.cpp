@@ -58,13 +58,14 @@ static void mongocLog
   else if (level == MONGOC_LOG_LEVEL_WARNING)
     LM_W(("MONGOC[%s]:warning: %s", domain, msg));
   else if (level == MONGOC_LOG_LEVEL_MESSAGE)
-    LM_W(("MONGOC[%s]:message: %s", domain, msg));  // This LM_M is OK
+    LM_M(("MONGOC[%s]:message: %s", domain, msg));  // This LM_M is OK
   else if (level == MONGOC_LOG_LEVEL_INFO)
-    LM_W(("MONGOC[%s]:info: %s", domain, msg));
-  else if (level == MONGOC_LOG_LEVEL_DEBUG)
-    LM_W(("MONGOC[%s]:debug: %s", domain, msg));
-  else if (level == MONGOC_LOG_LEVEL_TRACE)
-    LM_W(("MONGOC[%s]:trace: %s", domain, msg));
+    LM_I(("MONGOC[%s]:info: %s", domain, msg));
+  else if ((level == MONGOC_LOG_LEVEL_DEBUG) || (level ==  MONGOC_LOG_LEVEL_TRACE))
+  {
+    if (lmTraceIsSet(LmtMongoc) == true)
+      LM_M(("MONGOC[%s]: %s", domain, msg));
+  }
 }
 
 
@@ -143,6 +144,7 @@ static char* uriCompose
   char* compV[50];
   int   compNo = 0;
 
+  LM_T(LmtMongoc, ("dbURI:           '%s'", dbURI));
   LM_T(LmtMongoc, ("dbHost:          '%s'", dbHost));
   LM_T(LmtMongoc, ("dbUser:          '%s'", dbUser));
   if (dbPwd != NULL)
@@ -285,6 +287,7 @@ void mongocInit
   // Redirect mongoc log messages from stdout to OrionLD's own log file
   //
   mongoc_log_set_handler(mongocLog, NULL);
+  // mongoc_log_trace_enable();
 
   //
   // Initialize libmongoc's internals

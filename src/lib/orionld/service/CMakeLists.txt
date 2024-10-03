@@ -24,6 +24,7 @@ SET (SOURCES
     orionldServiceInit.cpp
     orionldServiceLookup.cpp
     orionldServiceInitPresent.cpp
+    orionldServiceNotFound.cpp
 )
 
 # Include directories

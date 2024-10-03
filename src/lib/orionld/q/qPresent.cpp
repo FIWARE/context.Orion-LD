@@ -90,6 +90,8 @@ static void qTreePresent(QNode* qP, int indent, const char* prefix, TraceLevels 
     LM_T(tLevel, ("%s:%s%f (Float)", prefix, indentV, qP->value.f));
   else if (qP->type == QNodeStringValue)
     LM_T(tLevel, ("%s:%s%s (String) at %p (String at %p)", prefix, indentV, qP->value.s, qP, qP->value.s));
+  else if (qP->type == QNodeRegexpValue)
+    LM_T(tLevel, ("%s:%s%s (REGEX) at %p (String at %p)", prefix, indentV, qP->value.re, qP, qP->value.re));
   else if (qP->type == QNodeTrueValue)
     LM_T(tLevel, ("%s:%sTRUE (Bool)", prefix, indentV));
   else if (qP->type == QNodeFalseValue)
@@ -114,6 +116,13 @@ static void qTreePresent(QNode* qP, int indent, const char* prefix, TraceLevels 
   else if (qP->type == QNodeAnd)
   {
     LM_T(tLevel, ("%s:%sAND:", prefix, indentV));
+    indent+=2;
+    for (QNode* childP = qP->value.children; childP != NULL; childP = childP->next)
+      qTreePresent(childP, indent, prefix, tLevel);
+  }
+  else if (qP->type == QNodeMatch)
+  {
+    LM_T(tLevel, ("%s:%sMATCH:", prefix, indentV));
     indent+=2;
     for (QNode* childP = qP->value.children; childP != NULL; childP = childP->next)
       qTreePresent(childP, indent, prefix, tLevel);

@@ -156,6 +156,7 @@ typedef struct OrionldUriParams
   char*     notExists;
   char*     metadata;
   char*     orderBy;
+  bool      reverse;
   bool      collapse;
   bool      reset;
   char*     attributeFormat;
@@ -169,6 +170,7 @@ typedef struct OrionldUriParams
   bool      onlyIds;
   bool      entityMap;
   char*     format;
+  char*     csf;
 
   OrionldContextKind kind;
 
@@ -320,6 +322,7 @@ typedef struct OrionldMongoC
 typedef struct OrionldConnectionState
 {
   OrionldPhase            phase;
+  bool                    orionldErrorDone;          // Don't override error - don't call orionldError()
   bool                    distributed;               // Depends on a URI param, but can be modified (to false) via an HTTP header
   MHD_Connection*         mhdConnection;
   char                    clientIp[64];              // IP address of the requester
@@ -619,6 +622,10 @@ extern EntityMap*        entityMaps;               // Used by GET /entities in t
 extern bool              entityMapsEnabled;        // Enable Entity Maps
 extern bool              distSubsEnabled;          // Enable distributed subscriptions
 extern bool              noArrayReduction;         // Used by arrayReduce in pCheckAttribute.cpp
+extern int               pageSize;                 // Pagination limit
+extern char              defaultUserContextUrl[256];
+extern OrionldContext*   defaultUserContextP;
+
 extern char                localIpAndPort[135];    // Local address for X-Forwarded-For (from orionld.cpp)
 extern unsigned long long  inReqPayloadMaxSize;
 extern unsigned long long  outReqMsgMaxSize;
@@ -661,6 +668,16 @@ extern sem_t                  mongocConnectionSem;
 extern char                   mongocServerVersion[128];
 extern char                   postgresServerVersion[128];
 
+
+
+// -----------------------------------------------------------------------------
+//
+// Variables for notifications from subordinate subscriptions (distributed subscriptions)
+//
+extern char                subordinateEndpoint[256];
+extern char                subordinatePath[256];
+extern int                 subordinatePathLen;
+extern OrionLdRestService* subordinateNotificationServiceP;
 
 
 // -----------------------------------------------------------------------------

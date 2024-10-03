@@ -138,6 +138,3 @@ KjNode* pdTreeCreate
 
   return orionldState.responseTree;
 }
-
-
-
