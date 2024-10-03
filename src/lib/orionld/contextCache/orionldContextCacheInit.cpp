@@ -188,7 +188,6 @@ void orionldContextCacheInit(void)
   //
   // Default User Context
   //
-  LM_W(("defaultUserContextUrl: '%s'", defaultUserContextUrl));
   if (defaultUserContextUrl[0] != 0)
   {
     defaultUserContextP = orionldContextFromUrl(defaultUserContextUrl, NULL);
