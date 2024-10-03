@@ -248,6 +248,7 @@ bool            noprom           = false;
 bool            noArrayReduction = false;
 char            subordinateEndpoint[256];
 int             pageSize         = 20;
+char            defaultUserContextUrl[256];
 
 
 
@@ -344,6 +345,7 @@ int             pageSize         = 20;
 #define NO_ARR_REDUCT_DESC     "skip JSON-LD Array Reduction"
 #define SUBORDINATE_ENDPOINT_DESC  "endpoint URL for reception of notificatiopns from subordinate subscriptions (distributed subscriptions)"
 #define PAGE_SIZE_DESC         "default page size (no of entities, subscriptions, registrations)"
+#define DUC_URL_DESC           "URL to default user context"
 
 
 
@@ -451,6 +453,7 @@ PaArgument paArgs[] =
   { "-noArrayReduction",      &noArrayReduction,        "NO_ARRAY_REDUCTION",        PaBool,    PaHid,  false,           false,  true,             NO_ARR_REDUCT_DESC       },
   { "-subordinateEndpoint",   &subordinateEndpoint,     "SUBORDINATE_ENDPOINT",      PaStr,     PaOpt,  _i "",           PaNL,   PaNL,             SUBORDINATE_ENDPOINT_DESC },
   { "-pageSize",              &pageSize,                "PAGE_SIZE",                 PaInt,     PaOpt,  20,              1,      1000,             PAGE_SIZE_DESC            },
+  { "-duc",                   defaultUserContextUrl,    "DUC_URL",                   PaString,  PaOpt,  _i "",           PaNL,   PaNL,             DUC_URL_DESC              },
 
   PA_END_OF_ARGS
 };
