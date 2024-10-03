@@ -1239,9 +1239,24 @@ MHD_Result mhdConnectionTreat(void)
     }
   }
 
-  if (orionldState.contextP == NULL)
-    orionldState.contextP = orionldCoreContextP;
+  LM_T(LmtUserContext, ("orionldState.contextP at %p", orionldState.contextP));
+  LM_T(LmtUserContext, ("Core Context at          %p", orionldCoreContextP));
+  if (orionldState.contextP == orionldCoreContextP)
+  {
+    if (defaultUserContextP != NULL)
+    {
+      LM_T(LmtUserContext, ("Using the default user context (%s)", defaultUserContextUrl));
+      orionldState.contextP = defaultUserContextP;
+    }
+    else
+    {
+      LM_T(LmtUserContext, ("No default user context, using only the core context"));
+      orionldState.contextP = orionldCoreContextP;
+    }
+  }
 
+  LM_T(LmtUserContext, ("orionldState.contextP: '%s'", orionldState.contextP->url));
+  LM_T(LmtUserContext, ("-------------------------------------------"));
   if (orionldState.link == NULL)
     orionldState.link = orionldState.contextP->url;
 

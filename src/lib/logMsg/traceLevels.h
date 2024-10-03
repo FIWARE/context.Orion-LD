@@ -105,6 +105,7 @@ typedef enum TraceLevels
   LmtContextCacheStats,                // Context Cache Statistics
   LmtContextDownload,                  // Context Download
   LmtCoreContext,                      // Core Context
+  LmtUserContext,                      // User Context
 
   // GeoJSON
   LmtGeoJSON = 110,                    // GeoJSON ... everything (for now)
