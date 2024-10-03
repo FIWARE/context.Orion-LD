@@ -47,6 +47,7 @@ extern "C"
 #include "orionld/dbModel/dbModelToApiEntity.h"                  // dbModelToApiEntity2
 #include "orionld/dbModel/dbModelFromApiAttribute.h"             // dbModelFromApiAttribute
 #include "orionld/dbModel/dbModelAttributeCreatedAtLookup.h"     // dbModelAttributeCreatedAtLookup
+#include "orionld/dbModel/dbModelAttributePublishedAtLookup.h"   // dbModelAttributePublishedAtLookup
 #include "orionld/dbModel/dbModelAttributeCreatedAtSet.h"        // dbModelAttributeCreatedAtSet
 #include "orionld/dbModel/dbModelAttributeLookup.h"              // dbModelAttributeLookup
 #include "orionld/dbModel/dbModelEntityTypeLookup.h"             // dbModelEntityTypeLookup
@@ -57,6 +58,7 @@ extern "C"
 #include "orionld/distOp/distOpSuccess.h"                        // distOpSuccess
 #include "orionld/dds/kjTreeLog.h"                               // kjTreeLog2
 #include "orionld/dds/ddsEntityCreateFromAttribute.h"            // ddsEntityCreateFromAttribute
+#include "orionld/dds/ddsAttributeCreate.h"                      // ddsAttributeCreate
 #include "orionld/notifications/alteration.h"                    // alteration
 #include "orionld/notifications/previousValuePopulate.h"         // previousValuePopulate
 #include "orionld/notifications/sysAttrsStrip.h"                 // sysAttrsStrip
@@ -136,8 +138,8 @@ bool orionldPutAttribute(void)
     dbAttrP = dbModelAttributeLookup(dbEntityP, attrLongNameEq);
     if (dbAttrP == NULL)
     {
-//      if (orionldState.ddsSample == true)
-//        return ddsAttributeCreate(orionldState.requestTree, entityType, attrName);
+      if (orionldState.ddsSample == true)
+        return ddsAttributeCreate(orionldState.requestTree, entityType, attrName);
 
       if (orionldState.distributed == false)
       {
@@ -149,6 +151,19 @@ bool orionldPutAttribute(void)
     }
     else
     {
+      if (orionldState.ddsSample == true)
+      {
+        //
+        // If iniated by a DDS sample and the attribute has a newer publishedAt than the DDS publication time,
+        // then ignore the entire thing
+        //
+        // This can happen during startup, during the discovery phase of DDS.
+        //
+        double publishedAt = dbModelAttributePublishedAtLookup(dbAttrP);
+        if (publishedAt > orionldState.ddsPublishTime)
+          return true;
+      }
+
       // GET Attribute creation date from database
       createdAt = dbModelAttributeCreatedAtLookup(dbAttrP);
       if (createdAt == -1)

@@ -34,8 +34,10 @@ extern "C"
 #include "orionld/common/orionldState.h"                    // orionldState, kjTreeLog
 #include "orionld/common/traceLevels.h"                     // KT_T trace levels
 #include "orionld/common/tenantList.h"                      // tenant0
+#include "orionld/context/orionldContextItemExpand.h"       // orionldContextItemExpand
 #include "orionld/serviceRoutines/orionldPutAttribute.h"    // orionldPutAttribute
 #include "orionld/dds/kjTreeLog.h"                          // kjTreeLog2
+#include "orionld/dds/ddsConfigTopicToAttribute.h"          // ddsConfigTopicToAttribute
 #include "orionld/dds/ddsNotification.h"                    // Own interface
 
 
@@ -46,7 +48,7 @@ extern "C"
 //
 void ddsNotification(const char* typeName, const char* topicName, const char* json, double publishTime)
 {
-  KT_T(StDds, "Got a notification on %s:%s (json: %s)", typeName, topicName, json);
+  KT_T(StDdsNotification, "Got a notification on %s:%s (json: %s)", typeName, topicName, json);
 
   orionldStateInit(NULL);
 
@@ -54,28 +56,42 @@ void ddsNotification(const char* typeName, const char* topicName, const char* js
   if (kTree == NULL)
     KT_RVE("Error parsing json payload from DDS: '%s'", json);
 
-  KjNode* idNodeP        = kjLookup(kTree, "id");
-  KjNode* typeNodeP      = kjLookup(kTree, "type");
-  KjNode* attrValueNodeP = kjLookup(kTree, topicName);
+  char* entityId      = NULL;
+  char* entityType    = NULL;
+  char* attrShortName = ddsConfigTopicToAttribute(topicName, &entityId, &entityType);
 
-  if (idNodeP   == NULL)       KT_RVE("No 'id' field in DDS payload ");
-  if (typeNodeP == NULL)       KT_RVE("No 'type' field in DDS payload ");
-  if (attrValueNodeP == NULL)  KT_RVE("No attribute field ('%s') in DDS payload", topicName);
+  if (attrShortName == NULL)
+  {
+    KT_W("Topic '%s' not found in the config file - redirect to default DDS entity", topicName);
+    entityId      = (char*) "urn:ngsi-ld:dds:default";
+    entityType    = (char*) "DDS";
+    attrShortName = (char*) topicName;
+  }
+
+  KjNode* participantIdNodeP  = kjLookup(kTree, "id");
+  if (participantIdNodeP != NULL)
+  {
+    char* pipe = strchr(participantIdNodeP->value.s, '|');
+    if (pipe != NULL)
+      *pipe = 0;
+    participantIdNodeP->name = (char*) "participantId";
+  }
+
+  KjNode* idNodeP   = kjString(orionldState.kjsonP, "id", entityId);
+  KjNode* typeNodeP = kjLookup(kTree, "type");
+
+  if (typeNodeP != NULL)
+    orionldState.ddsType = typeNodeP->value.s;
+
+  char* expandedType = orionldContextItemExpand(orionldState.contextP, entityType, true, NULL);
+  typeNodeP = kjString(orionldState.kjsonP, "type", expandedType);
+
+  KjNode* attrValueNodeP = kjLookup(kTree, topicName);
+  if (attrValueNodeP == NULL)
+    KT_RVE("No attribute field ('%s') in DDS payload", topicName);
 
   orionldState.payloadIdNode   = idNodeP;
   orionldState.payloadTypeNode = typeNodeP;
-  KT_T(StDds, "orionldState.payloadIdNode:   %p", orionldState.payloadIdNode);
-  KT_T(StDds, "orionldState.payloadTypeNode: %p", orionldState.payloadTypeNode);
-
-  // char* attributeLongName = orionldAttributeExpand(coreContextP, topicName, true, NULL);
-
-  char* pipe = strchr(idNodeP->value.s, '|');
-  if (pipe != NULL)
-    *pipe = 0;
-
-  char id[256];
-  snprintf(id, sizeof(id) - 1, "urn:%s", idNodeP->value.s);
-  KT_T(StDds, "New entity id: %s", id);
 
   KjNode* attrNodeP = kjObject(orionldState.kjsonP, NULL);
   kjChildAdd(attrNodeP, attrValueNodeP);
@@ -84,84 +100,18 @@ void ddsNotification(const char* typeName, const char* topicName, const char* js
   orionldState.requestTree         = attrNodeP;
   orionldState.uriParams.format    = (char*) "simplified";
   orionldState.uriParams.type      = typeNodeP->value.s;
-  orionldState.wildcard[0]         = id;
-  orionldState.wildcard[1]         = (char*) topicName;
+  orionldState.wildcard[0]         = entityId;
+  orionldState.wildcard[1]         = (char*) attrShortName;
 
   orionldState.tenantP             = &tenant0;  // FIXME ... Use tenants?
   orionldState.in.pathAttrExpanded = (char*) topicName;
   orionldState.ddsSample           = true;
+  orionldState.ddsPublishTime      = publishTime;
 
-  //
-  // If the entity does not exist, it needs to be created
-  // Except of course, if it is registered and exists elsewhere
-  //
-  KT_T(StDds, "Calling orionldPutAttribute");
-  orionldPutAttribute();
-}
+  kjChildAdd(attrNodeP, participantIdNodeP);
 
-#if 0
-#include "orionld/dds/ddsConfigTopicToAttribute.h"          // ddsConfigTopicToAttribute
-void ddsNotification(const char* entityType, const char* entityId, const char* topicName, KjNode* notificationP)
-{
-  KT_V("Got a notification from DDS");
-  kjTreeLog2(notificationP, "notification", StDds);
-
-  //
-  // We receive entire NGSI-LD Attributes
-  //
-  KjNode* aValueNodeP = kjLookup(notificationP, "attributeValue");
-
-  if (entityId == NULL)
-  {
-    KT_W("Entity without id from DDS");
-    return;
-  }
-
-  //
-  // Criteria for obtaining the necessary attribute info (Entity ID+Type + Attribute long name):
-  //
-  //   1. Set the attribute long name to the topic name
-  //   2. Take all three from the DDS config file (depending on the topic name)
-  //   3. Override entity id+type with entityType+entityId from the parameters of this function
-  //
-
-  //
-  // GET the attribute long name (and entity id+type) from the DDS config file
-  //
-  char* eId               = NULL;
-  char* eType             = NULL;
-  char* attributeLongName = ddsConfigTopicToAttribute(topicName, &eId, &eType);
-
-  if (attributeLongName == NULL)  // Topic name NOT found in DDS config file
-    attributeLongName = (char*) topicName;
-
-  // Take entity id+type from config file unless given as parameters to this function (which would override)
-  if (entityType == NULL)
-    entityType = eType;
-  if (entityId == NULL)
-    entityId = eId;
-
-  // What to do if we have no entity id+type ?
-  // - The entity id is MANDATORY - cannot continue if we don't know the entity ID
-  // - The entity type is onbly needed when creating the entity - and we don't know right now whether the entity already exists.
-  //     So, we let it pass and get an error later (404 Not Found)
-  if (entityId == NULL)
-  {
-    KT_E(("Got a DDS sample for an entity whose ID cannot be obtained"));
-    return;
-  }
-
-  orionldState.uriParams.type      = (char*) entityType;
-
-  orionldState.wildcard[0]         = (char*) entityId;
-  orionldState.wildcard[1]         = (char*) attributeLongName;  // The topic is the attribute long name
-
-  orionldState.requestTree         = aValueNodeP;
-  orionldState.tenantP             = &tenant0;  // FIXME ... Use tenants?
-  orionldState.in.pathAttrExpanded = (char*) topicName;
-  orionldState.ddsSample           = true;
-
-  KT_T(StDds, "Calling orionldPutAttribute");
+  KjNode* publishedAt = kjFloat(orionldState.kjsonP, "publishedAt", publishTime);
+  kjChildAdd(attrNodeP, publishedAt);
 
   //
   // If the entity does not exist, it needs to be created
@@ -169,4 +119,3 @@ void ddsNotification(const char* entityType, const char* entityId, const char* t
   //
   orionldPutAttribute();
 }
-#endif

@@ -22,37 +22,32 @@
 *
 * Author: Ken Zangelin
 */
+#include <unistd.h>                                              // NULL
+
 extern "C"
 {
-#include "kjson/kjson.h"                                         // Kjson
-#include "kjson/kjBuilder.h"                                     // kjObject, kjChildAdd, ...
+#include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 }
 
-#include "logMsg/logMsg.h"                                       // LM*
-
-#include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/traceLevels.h"                          // KT_T trace levels
 #include "orionld/dds/kjTreeLog.h"                               // kjTreeLog2
-#include "orionld/serviceRoutines/orionldPostEntities.h"         // orionldPostEntities - if the entity does not exist
-#include "orionld/dds/ddsEntityCreateFromAttribute.h"            // Own Interface
 
 
 
 // -----------------------------------------------------------------------------
 //
-// ddsEntityCreateFromAttribute -
+// dbModelAttributePublishedAtLookup -
 //
-int ddsEntityCreateFromAttribute(KjNode* attrNodeP, const char* entityId, const char* attrName)
+double dbModelAttributePublishedAtLookup(KjNode* dbAttrP)
 {
-  KjNode* attributeP = orionldState.requestTree;
+  kjTreeLog2(dbAttrP, "dbAttr", StDds);
 
-  attributeP->name         = (char*) attrName;
-  orionldState.requestTree = kjObject(orionldState.kjsonP, NULL);
+  KjNode* publishedAtP = kjLookup(dbAttrP, "publishedAt");
 
-  kjChildAdd(orionldState.requestTree, attributeP);
+  if (publishedAtP != NULL)
+    return publishedAtP->value.f;
 
-  kjTreeLog2(orionldState.requestTree, "Input KjNode tree to orionldPostEntities", StDds);
-  return orionldPostEntities();
+  return 0;
 }

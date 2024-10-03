@@ -44,6 +44,7 @@ extern "C"
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/common/performance.h"                          // PERFORMANCE
 #include "orionld/common/responseFix.h"                          // responseFix
+#include "orionld/common/traceLevels.h"                          // KT_T trace levels
 #include "orionld/http/httpHeaderLocationAdd.h"                  // httpHeaderLocationAdd
 #include "orionld/legacyDriver/legacyPostEntities.h"             // legacyPostEntities
 #include "orionld/payloadCheck/PCHECK.h"                         // PCHECK_*
@@ -61,6 +62,7 @@ extern "C"
 #include "orionld/distOp/distOpResponses.h"                      // distOpResponses
 #include "orionld/kjTree/kjChildCount.h"                         // kjChildCount
 #include "orionld/kjTree/kjSort.h"                               // kjStringArraySort
+#include "orionld/serviceRoutines/orionldPostEntity.h"           // orionldPostEntity
 #include "orionld/serviceRoutines/orionldPostEntities.h"         // Own interface
 
 
@@ -132,6 +134,21 @@ bool orionldPostEntities(void)
   KjNode* apiEntityP     = NULL;
   KjNode* dbEntityP      = NULL;
 
+  if ((orionldState.ddsSample == true) && (orionldState.ddsType != NULL))
+  {
+    //
+    // Adding special atrtribute 'ddsType' - must be normalized (it's after payload check)
+    //
+    KjNode* ddsTypeObjectNodeP = kjObject(orionldState.kjsonP, "ddsType");
+    KjNode* valueNodeP         = kjString(orionldState.kjsonP, "value", orionldState.ddsType);
+    KjNode* typeNodeP          = kjString(orionldState.kjsonP, "type", "Property");
+
+    kjChildAdd(ddsTypeObjectNodeP, typeNodeP);
+    kjChildAdd(ddsTypeObjectNodeP, valueNodeP);
+
+    kjChildAdd(orionldState.requestTree, ddsTypeObjectNodeP);
+  }
+
   //
   // If the entity already exists, a "409 Conflict" is returned, either complete or as part of a 207
   //
@@ -140,6 +157,16 @@ bool orionldPostEntities(void)
   {
     if (distOpList == NULL)  // Purely local request
     {
+      if (orionldState.ddsSample == true)
+      {
+        // We got here from a DDS notification, via PUT Attribute.
+        // Adding an attribute to an entity - transform the request to a POST Entity
+        // orionldPutAttribute already transformed everything,
+        //
+        KT_T(StDds, "Entity '%s' already exists - calling orionldPostEntity to add/modify an attribute", entityId);
+        return orionldPostEntity();
+      }
+
       orionldError(OrionldAlreadyExists, "Entity already exists", entityId, 409);
       return false;
     }
@@ -169,7 +196,6 @@ bool orionldPostEntities(void)
   orionldState.payloadIdNode->next   = orionldState.payloadTypeNode;
   orionldState.payloadTypeNode->next = (apiEntityP != NULL)? apiEntityP->value.firstChildP : NULL;
 
-
   //
   // An entity can be created without attributes.
   // Also, all attributes may be chopped off to exclusively registered endpoints.
@@ -192,6 +218,7 @@ bool orionldPostEntities(void)
 
   if (orionldState.requestTree == NULL)
     orionldState.requestTree = kjObject(orionldState.kjsonP, NULL);
+
   if (dbModelFromApiEntity(orionldState.requestTree, NULL, true, orionldState.payloadIdNode->value.s, orionldState.payloadTypeNode->value.s) == false)
   {
     //

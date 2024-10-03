@@ -37,6 +37,7 @@ extern "C"
 #include "orionld/common/traceLevels.h"                     // kjTreeLog2
 #include "orionld/common/orionldState.h"                    // ddsEnablerConfigFile, ddsConfigFile
 #include "orionld/kjTree/kjNavigate.h"                      // kjNavigate
+#include "orionld/dds/ddsConfigTopicToAttribute.h"          // ddsConfigTopicToAttribute - for debugging only
 #include "orionld/dds/ddsCategoryToKlogSeverity.h"          // ddsCategoryToKlogSeverity
 #include "orionld/dds/ddsConfigLoad.h"                      // ddsConfigLoad
 #include "orionld/dds/kjTreeLog.h"                          // kjTreeLog2
@@ -92,8 +93,6 @@ int ddsInit(Kjson* kjP, DdsOperationMode _ddsOpMode)
 {
   ddsOpMode = _ddsOpMode;  // Not yet in use ... invent usage or remove !
 
-  eprosima::ddsenabler::init_dds_enabler(ddsEnablerConfigFile, ddsNotification, ddsTypeNotification, ddsLog);
-
   //
   // DDS Configuration File
   //
@@ -126,6 +125,9 @@ int ddsInit(Kjson* kjP, DdsOperationMode _ddsOpMode)
     }
 #endif
   }
+
+  KT_T(StDds, "Calling init_dds_enabler");
+  eprosima::ddsenabler::init_dds_enabler(ddsEnablerConfigFile, ddsNotification, ddsTypeNotification, ddsLog);
 
   return 0;
 }
