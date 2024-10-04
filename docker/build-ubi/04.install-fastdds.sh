@@ -129,7 +129,8 @@ cmake --build . --target install
 cd /opt/Fast-DDS
 git clone https://github.com/eProsima/FIWARE-DDS-Enabler.git
 cd FIWARE-DDS-Enabler
-
+git fetch -a
+git co feature/typed_tests
 yum -y install lz4-devel libzstd-devel
 
 mkdir -p build/ddsenabler_participants
