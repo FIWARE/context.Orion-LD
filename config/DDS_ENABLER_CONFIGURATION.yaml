@@ -11,6 +11,12 @@ dds:
   blocklist:
     - name: "add_blocked_topics_list_here"
 
+topics:
+  name: "*"
+  qos:
+    durability: TRANSIENT_LOCAL
+    history-depth: 5
+
 # DDS Enabler configuration
 ddsenabler:
 

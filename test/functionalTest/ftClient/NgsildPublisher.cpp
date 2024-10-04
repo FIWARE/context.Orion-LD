@@ -127,8 +127,8 @@ bool NgsildPublisher::init(const char* topicName)
 
   wqos.reliability().kind = eprosima::fastdds::dds::RELIABLE_RELIABILITY_QOS;
   wqos.durability().kind  = eprosima::fastdds::dds::TRANSIENT_LOCAL_DURABILITY_QOS;
-//  wqos.history().kind     = eprosima::fastdds::dds::KEEP_LAST_HISTORY_QOS;
-//  wqos.history().depth    = 5;
+  wqos.history().kind     = eprosima::fastdds::dds::KEEP_LAST_HISTORY_QOS;
+  wqos.history().depth    = 5;
   writer_                 = publisher_->create_datawriter(topic_, wqos, &listener_);
 
   if (writer_ == nullptr)

@@ -258,6 +258,7 @@ char            ddsConfigFile[512];
 char            ddsEnablerConfigFile[512];
 
 
+#define DDSE_CONF_FILE "/tmp/DDS_ENABLER_CONFIGURATION.yaml"
 
 /* ****************************************************************************
 *
@@ -465,11 +466,11 @@ PaArgument paArgs[] =
   { "-subordinateEndpoint",   &subordinateEndpoint,     "SUBORDINATE_ENDPOINT",      PaStr,     PaOpt,  _i "",           PaNL,   PaNL,             SUBORDINATE_ENDPOINT_DESC },
   { "-pageSize",              &pageSize,                "PAGE_SIZE",                 PaInt,     PaOpt,  20,              1,      1000,             PAGE_SIZE_DESC            },
   { "-dds",                   &ddsSupport,              "DDS",                       PaBool,    PaOpt,  false,            false,  true,             USE_DDS_DESC             },
-  { "-ddsSubsTopics",         ddsSubsTopics,            "DDS_SUBS_TOPICS",           PaString,  PaOpt,  _i "",            PaNL,   PaNL,             DDS_SUBS_TOPICS_DESC     },
-  { "-ddsTopicType",          ddsTopicType,             "DDS_TOPIC_TYPE",            PaString,  PaOpt,  _i "NGSI-LD",     PaNL,   PaNL,             DDS_TOPIC_TYPE_DESC      },
-  { "-ddsConfigFile",         ddsConfigFile,            "DDS_CONFIG_FILE",           PaString,  PaOpt,  _i "",            PaNL,   PaNL,             DDS_CONFIG_FILE_DESC     },
-  { "-ddsEnablerConfigFile",  ddsEnablerConfigFile,     "DDS_CONFIG_FILE_PATH",      PaString,  PaOpt,  _i "",            PaNL,   PaNL,             DDS_ENABLER_CONFIG_FILE_DESC },
-  { "-duc",                   defaultUserContextUrl,    "DUC_URL",                   PaString,  PaOpt,  _i "",           PaNL,   PaNL,             DUC_URL_DESC              },
+  { "-ddsSubsTopics",         ddsSubsTopics,            "DDS_SUBS_TOPICS",           PaString,  PaOpt,  _i "",             PaNL,   PaNL,             DDS_SUBS_TOPICS_DESC     },
+  { "-ddsTopicType",          ddsTopicType,             "DDS_TOPIC_TYPE",            PaString,  PaOpt,  _i "NGSI-LD",      PaNL,   PaNL,             DDS_TOPIC_TYPE_DESC      },
+  { "-ddsConfigFile",         ddsConfigFile,            "DDS_CONFIG_FILE",           PaString,  PaOpt,  _i "",             PaNL,   PaNL,             DDS_CONFIG_FILE_DESC     },
+  { "-ddsEnablerConfigFile",  ddsEnablerConfigFile,     "DDS_CONFIG_FILE_PATH",      PaString,  PaOpt,  _i DDSE_CONF_FILE, PaNL,   PaNL,             DDS_ENABLER_CONFIG_FILE_DESC },
+  { "-duc",                   defaultUserContextUrl,    "DUC_URL",                   PaString,  PaOpt,  _i "",             PaNL,   PaNL,             DUC_URL_DESC              },
 
   PA_END_OF_ARGS
 };
