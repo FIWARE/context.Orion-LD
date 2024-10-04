@@ -159,7 +159,7 @@ bool orionldPutAttribute(void)
         //
         // This can happen during startup, during the discovery phase of DDS.
         //
-        double publishedAt = dbModelAttributePublishedAtLookup(dbAttrP);
+        int64_t publishedAt = dbModelAttributePublishedAtLookup(dbAttrP);
         if (publishedAt > orionldState.ddsPublishTime)
           return true;
       }

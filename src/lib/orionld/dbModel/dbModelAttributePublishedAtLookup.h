@@ -36,6 +36,6 @@ extern "C"
 //
 // dbModelAttributePublishedAtLookup -
 //
-extern double dbModelAttributePublishedAtLookup(KjNode* dbAttrP);
+extern int64_t dbModelAttributePublishedAtLookup(KjNode* dbAttrP);
 
 #endif  // SRC_LIB_ORIONLD_DBMODEL_DBMODELATTRIBUTEPUBLISHEDATLOOKUP_H_

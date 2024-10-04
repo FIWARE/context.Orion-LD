@@ -173,12 +173,12 @@ extern KjNode* ddsDumpArray;
 //
 // ddsNotification -
 //
-static void ddsNotification(const char* typeName, const char* topicName, const char* json, double publishTime)
+static void ddsNotification(const char* typeName, const char* topicName, const char* json, int64_t publishTime)
 {
   KT_T(StDdsDump, "Got a notification on %s:%s (json: %s)", typeName, topicName, json);
 
 #if 0
-  KT_T(StDdsDump, "Need to check the publishTime (%f) to perhaps discard", publishTime);
+  KT_T(StDdsDump, "Need to check the publishTime (%lld) to perhaps discard", publishTime);
 
   if (ddsDumpArray == NULL)
   {
