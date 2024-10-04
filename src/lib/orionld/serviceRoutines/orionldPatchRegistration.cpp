@@ -763,6 +763,7 @@ bool orionldPatchRegistration(void)
   KjNode* operationsP  = kjLookup(rciP->regTree, "operations");
   KjNode* modeP        = kjLookup(rciP->regTree, "mode");
   KjNode* informationP = kjLookup(rciP->regTree, "information");
+  KjNode* managementP  = kjLookup(rciP->regTree, "management");
 
   rciP->mode = (modeP != NULL)? registrationMode(modeP->value.s) : RegModeInclusive;
 
@@ -773,6 +774,13 @@ bool orionldPatchRegistration(void)
   {
     if (regCacheIdPatternRegexCompile(rciP, informationP) == false)
       LM_X(1, ("Internal Error (if this happens it's a bug of Orion-LD - the idPattern was checked in pcheckEntityInfo and all OK"));
+  }
+
+  if (managementP != NULL)
+  {
+    KjNode* localOnlyP = kjLookup(managementP, "localOnly");
+
+    rciP->localOnly = (localOnlyP != NULL)? localOnlyP->value.b : false;
   }
 
   if (lmTraceIsSet(LmtRegCache))

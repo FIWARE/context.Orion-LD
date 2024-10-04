@@ -498,9 +498,6 @@ bool distOpSend(DistOp* distOpP, const char* dateHeader, const char* xForwardedF
         uriParamAdd(&urlParts, "id", distOpP->entityId, -1);
     }
 
-    if (local == true)
-      uriParamAdd(&urlParts, "local=true", NULL, 10);
-
     if (distOpP->qNode != NULL)
     {
       char buf[256];
@@ -519,6 +516,9 @@ bool distOpSend(DistOp* distOpP, const char* dateHeader, const char* xForwardedF
       uriParamAdd(&urlParts, "type", typeAlias, -1);
     }
   }
+
+  if ((local == true) || (distOpP->regP->localOnly == true))
+    uriParamAdd(&urlParts, "local=true", NULL, 10);
 
   if (orionldState.uriParams.lang != NULL)
     uriParamAdd(&urlParts, "lang", orionldState.uriParams.lang, -1);

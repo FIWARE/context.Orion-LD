@@ -142,15 +142,16 @@ echo
 --REGEXPECT--
 01. PUT /v2/noService
 =====================
-HTTP/1.1 400 Bad Request
-Content-Length: 56
+HTTP/1.1 404 Not Found
+Content-Length: 116
 Content-Type: application/json
 Date: REGEX(.*)
 Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 {
-    "description": "service not found",
-    "error": "BadRequest"
+    "detail": "/v2/noService",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 
@@ -238,15 +239,16 @@ Bad input active alarms: 0, raised: _total: 1, new: 0_, released: _total: 1, new
 
 10. PUT /v2/noService
 =====================
-HTTP/1.1 400 Bad Request
-Content-Length: 56
+HTTP/1.1 404 Not Found
+Content-Length: 116
 Content-Type: application/json
 Date: REGEX(.*)
 Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 {
-    "description": "service not found",
-    "error": "BadRequest"
+    "detail": "/v2/noService",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 
@@ -267,7 +269,7 @@ Bad input active alarms: 0, raised: _total: 1, new: 0_, released: _total: 1, new
 Transactions: REGEX((6 _new: 1_|7 _new: 1_))
 DB status: ok, raised: _total: 0, new: 0_, released: _total: 0, new: 0_
 Notification failure active alarms: 0, raised: _total: 0, new: 0_, released: _total: 0, new: 0_
-Bad input active alarms: 1, raised: _total: 2, new: 1_, released: _total: 1, new: 0_
+Bad input active alarms: 0, raised: _total: 1, new: 0_, released: _total: 1, new: 0_
 
 
 --TEARDOWN--

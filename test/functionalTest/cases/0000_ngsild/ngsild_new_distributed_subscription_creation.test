@@ -61,6 +61,12 @@ payload='{
     }
   ],
   "endpoint": "localhost:'$CP1_PORT'",
+  "contextSourceInfo": [
+    {
+      "key": "X-Auth-Token",
+      "value": "urn:ngsi-ld:request"
+    }
+  ],
   "operations": [ "createEntity", "retrieveEntity", "mergeEntity", "createSubscription" ]
 }'
 orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload"
@@ -80,7 +86,13 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify"
+      "uri": "http://localhost:'$LISTENER_PORT'/notify",
+      "receiverInfo": [
+        {
+          "key": "X-Auth-Token",
+          "value": "urn:ngsi-ld:request"
+        }
+      ]
     }
   }
 }'
@@ -198,6 +210,12 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "notification": {
             "endpoint": {
                 "accept": "application/json",
+                "receiverInfo": [
+                    {
+                        "key": "X-Auth-Token",
+                        "value": "urn:ngsi-ld:request"
+                    }
+                ],
                 "uri": "http://REGEX(.*)/ngsi-ld/ex/v1/notifications/urn:ngsi-ld:Subscription:S1"
             },
             "format": "normalized",
@@ -226,6 +244,7 @@ Content-Length: 250
 Host: REGEX(.*)
 Accept: */*
 Content-Type: application/json
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
     "data": [
@@ -249,7 +268,7 @@ Content-Type: application/json
 06. GET the subscription, see the subordinate subscription
 ==========================================================
 HTTP/1.1 200 OK
-Content-Length: 442
+Content-Length: 512
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -266,6 +285,12 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "notification": {
         "endpoint": {
             "accept": "application/json",
+            "receiverInfo": [
+                {
+                    "key": "X-Auth-Token",
+                    "value": "urn:ngsi-ld:request"
+                }
+            ],
             "uri": "http://localhost:9997/notify"
         },
         "format": "normalized",
@@ -318,6 +343,9 @@ MongoDB server version: REGEX(.*)
 	},
 	"reference" : "http://REGEX(.*)/notify",
 	"mimeType" : "application/json",
+	"headers" : {
+		"X-Auth-Token" : "urn:ngsi-ld:request"
+	},
 	"attrs" : [ ],
 	"format" : "normalized",
 	"conditions" : [ ],
@@ -333,7 +361,7 @@ bye
 08. GET the subscription from DB, see the subordinate subscription
 ==================================================================
 HTTP/1.1 200 OK
-Content-Length: 445
+Content-Length: 515
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -350,6 +378,12 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "notification": {
         "endpoint": {
             "accept": "application/json",
+            "receiverInfo": [
+                {
+                    "key": "X-Auth-Token",
+                    "value": "urn:ngsi-ld:request"
+                }
+            ],
             "uri": "http://localhost:9997/notify"
         },
         "format": "normalized",

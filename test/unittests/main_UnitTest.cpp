@@ -112,10 +112,12 @@ unsigned long long  inReqPayloadMaxSize;
 unsigned long long  outReqMsgMaxSize;
 bool                triggerOperation = false;
 bool                noArrayReduction = false;
+char                subordinateEndpoint[256];
+char                defaultUserContextUrl[256];
+
 bool                ddsSupport       = false;
 char                ddsSubsTopics[512];
 char                ddsTopicType[512];
-
 
 
 /* ****************************************************************************

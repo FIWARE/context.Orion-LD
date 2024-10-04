@@ -1,0 +1,425 @@
+# Copyright 2024 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Looking for a bug in the reg cache
+
+--SHELL-INIT--
+dbInit CB
+dbInit CP1
+dbInit CP2
+orionldStart CB -forwarding -experimental -wip entityMaps,distSubs
+orionldStart CP1 -forwarding -experimental -wip entityMaps,distSubs
+orionldStart CP2 -forwarding -experimental -wip entityMaps,distSubs
+
+--SHELL--
+
+#
+# 01. Create a registration R1 on CB for CP1, with management::localOnly=true
+# 02. Create a registration R2 on CP1 for CP2
+# 03. Create an entity E1 on CB
+# 04. Create an entity E2 on CP1
+# 05. Create an entity E3 on CP2
+# 06. GET entities on CB - see E1+E2
+# 07. Patch R1 on CB, setting management::localOnly=false
+# 08. GET entities on CB - see E1+E2+E3
+# 09. Remove R1
+# 10. Re-create R1 on CB, without management::localOnly
+# 11. GET entities on CB - see E1+E2+E3
+# 12. Patch R1 on CB, setting management::localOnly=true
+# 13. GET entities on CB - see E1+E2
+#
+
+
+echo "01. Create a registration R1 on CB for CP1, with management::localOnly=true"
+echo "==========================================================================="
+payload='{
+  "id": "urn:R1",
+  "type": "ContextSourceRegistration",
+  "information": [
+    {
+      "entities": [
+        {
+          "type": "T"
+        }
+      ]
+    }
+  ],
+  "endpoint": "http://localhost:'$CP1_PORT'",
+  "management": {
+    "localOnly": true
+  }
+}'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload"
+echo
+echo
+
+
+echo "02. Create a registration R2 on CP1 for CP2"
+echo "==========================================="
+payload='{
+  "id": "urn:R2",
+  "type": "ContextSourceRegistration",
+  "information": [
+    {
+      "entities": [
+        {
+          "type": "T"
+        }
+      ]
+    }
+  ],
+  "endpoint": "http://localhost:'$CP2_PORT'"
+}'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload" --port $CP1_PORT
+echo
+echo
+
+
+
+echo "03. Create an entity E1 on CB"
+echo "============================="
+payload='{
+  "id": "urn:E1",
+  "type": "T",
+  "P1": 1
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "04. Create an entity E2 on CP1"
+echo "=============================="
+payload='{
+  "id": "urn:E2",
+  "type": "T",
+  "P1": 1
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" --port $CP1_PORT
+echo
+echo
+
+
+echo "05. Create an entity E3 on CP2"
+echo "=============================="
+payload='{
+  "id": "urn:E3",
+  "type": "T",
+  "P1": 1
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" --port $CP2_PORT
+echo
+echo
+
+
+echo "06. GET entities on CB - see E1+E2"
+echo "=================================="
+orionCurl --url /ngsi-ld/v1/entities?type=T
+echo
+echo
+
+
+echo "07. Patch R1 on CB, setting management::localOnly=false"
+echo "======================================================="
+payload='{
+  "management": {
+    "localOnly": false
+  }
+}'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations/urn:R1 --payload "$payload" -X PATCH
+echo
+echo
+
+
+echo "08. GET entities on CB - see E1+E2+E3"
+echo "====================================="
+orionCurl --url /ngsi-ld/v1/entities?type=T
+echo
+echo
+
+
+echo "09. Remove R1"
+echo "============="
+orionCurl --url /ngsi-ld/v1/csourceRegistrations/urn:R1 -X DELETE
+echo
+echo
+
+
+echo "10. Re-create R1 on CB, without management::localOnly"
+echo "====================================================="
+payload='{
+  "id": "urn:R1",
+  "type": "ContextSourceRegistration",
+  "information": [
+    {
+      "entities": [
+        {
+          "type": "T"
+        }
+      ]
+    }
+  ],
+  "endpoint": "http://localhost:'$CP1_PORT'"
+}'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload"
+echo
+echo
+
+
+echo "11. GET entities on CB - see E1+E2+E3"
+echo "====================================="
+orionCurl --url /ngsi-ld/v1/entities?type=T
+echo
+echo
+
+
+echo "12. Patch R1 on CB, setting management::localOnly=true"
+echo "======================================================"
+payload='{
+  "management": {
+    "localOnly": true
+  }
+}'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations/urn:R1 --payload "$payload" -X PATCH
+echo
+echo
+
+
+echo "13. GET entities on CB - see E1+E2"
+echo "=================================="
+orionCurl --url /ngsi-ld/v1/entities?type=T
+echo
+echo
+
+
+--REGEXPECT--
+01. Create a registration R1 on CB for CP1, with management::localOnly=true
+===========================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/csourceRegistrations/urn:R1
+
+
+
+02. Create a registration R2 on CP1 for CP2
+===========================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/csourceRegistrations/urn:R2
+
+
+
+03. Create an entity E1 on CB
+=============================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E1
+
+
+
+04. Create an entity E2 on CP1
+==============================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E2
+
+
+
+05. Create an entity E3 on CP2
+==============================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E3
+
+
+
+06. GET entities on CB - see E1+E2
+==================================
+HTTP/1.1 200 OK
+Content-Length: 125
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+NGSILD-EntityMap: urn:ngsi-ld:entity-map:REGEX(.*)
+
+[
+    {
+        "P1": {
+            "type": "Property",
+            "value": 1
+        },
+        "id": "urn:E1",
+        "type": "T"
+    },
+    {
+        "P1": {
+            "type": "Property",
+            "value": 1
+        },
+        "id": "urn:E2",
+        "type": "T"
+    }
+]
+
+
+07. Patch R1 on CB, setting management::localOnly=false
+=======================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+08. GET entities on CB - see E1+E2+E3
+=====================================
+HTTP/1.1 200 OK
+Content-Length: 187
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+NGSILD-EntityMap: urn:ngsi-ld:entity-map:REGEX(.*)
+
+[
+    {
+        "P1": {
+            "type": "Property",
+            "value": 1
+        },
+        "id": "urn:E1",
+        "type": "T"
+    },
+    {
+        "P1": {
+            "type": "Property",
+            "value": 1
+        },
+        "id": "urn:E2",
+        "type": "T"
+    },
+    {
+        "P1": {
+            "type": "Property",
+            "value": 1
+        },
+        "id": "urn:E3",
+        "type": "T"
+    }
+]
+
+
+09. Remove R1
+=============
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+10. Re-create R1 on CB, without management::localOnly
+=====================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/csourceRegistrations/urn:R1
+
+
+
+11. GET entities on CB - see E1+E2+E3
+=====================================
+HTTP/1.1 200 OK
+Content-Length: 187
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+NGSILD-EntityMap: urn:ngsi-ld:entity-map:REGEX(.*)
+
+[
+    {
+        "P1": {
+            "type": "Property",
+            "value": 1
+        },
+        "id": "urn:E1",
+        "type": "T"
+    },
+    {
+        "P1": {
+            "type": "Property",
+            "value": 1
+        },
+        "id": "urn:E2",
+        "type": "T"
+    },
+    {
+        "P1": {
+            "type": "Property",
+            "value": 1
+        },
+        "id": "urn:E3",
+        "type": "T"
+    }
+]
+
+
+12. Patch R1 on CB, setting management::localOnly=true
+======================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+13. GET entities on CB - see E1+E2
+==================================
+HTTP/1.1 200 OK
+Content-Length: 125
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+NGSILD-EntityMap: urn:ngsi-ld:entity-map:REGEX(.*)
+
+[
+    {
+        "P1": {
+            "type": "Property",
+            "value": 1
+        },
+        "id": "urn:E1",
+        "type": "T"
+    },
+    {
+        "P1": {
+            "type": "Property",
+            "value": 1
+        },
+        "id": "urn:E2",
+        "type": "T"
+    }
+]
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB

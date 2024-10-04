@@ -54,10 +54,8 @@ DistOp* regMatchForEntitiesQuery
 {
   DistOp* distOpList = NULL;
 
-  LM_W(("Looping over regCache of tenant '%s' (cache at %p, first reg at %p)", orionldState.tenantP->mongoDbName, orionldState.tenantP->regCache, orionldState.tenantP->regCache->regList));
   for (RegCacheItem* regP = orionldState.tenantP->regCache->regList; regP != NULL; regP = regP->next)
   {
-    LM_W(("In Loop"));
     if ((regP->mode & regMode) == 0)
     {
       LM_T(LmtRegMatch, ("%s: No Reg Match due to RegistrationMode ('%s' vs '%s')", regP->regId, registrationModeToString(regP->mode), registrationModeToString(regMode)));

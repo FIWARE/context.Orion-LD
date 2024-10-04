@@ -56,7 +56,7 @@
 */
 #include <stdio.h>
 #include <unistd.h>                                         // getppid, fork, setuid, sleep, gethostname, etc.
-#include <string.h>
+#include <string.h>                                         // strchr
 #include <fcntl.h>                                          // open
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -249,6 +249,8 @@ char            coreContextVersion[64];
 bool            triggerOperation = false;
 bool            noprom           = false;
 bool            noArrayReduction = false;
+char            subordinateEndpoint[256];
+char            defaultUserContextUrl[256];
 bool            ddsSupport       = false;
 char            ddsSubsTopics[512];
 char            ddsTopicType[512];
@@ -353,6 +355,9 @@ char            ddsEnablerConfigFile[512];
 #define DDS_TOPIC_TYPE_DESC    "DDS topic type"
 #define DDS_CONFIG_FILE_DESC   "DDS configuration file"
 #define DDS_ENABLER_CONFIG_FILE_DESC   "DDS Enabler configuration file"
+#define SUBORDINATE_ENDPOINT_DESC  "endpoint URL for reception of notificatiopns from subordinate subscriptions (distributed subscriptions)"
+#define PAGE_SIZE_DESC         "default page size (no of entities, subscriptions, registrations)"
+#define DUC_URL_DESC           "URL to default user context"
 
 
 
@@ -412,7 +417,6 @@ PaArgument paArgs[] =
   { "-connectionMemory",      &connectionMemory,        "CONN_MEMORY",               PaUInt,    PaOpt,  64,               0,      1024,             CONN_MEMORY_DESC         },
   { "-maxConnections",        &maxConnections,          "MAX_CONN",                  PaUInt,    PaOpt,  1020,             1,      PaNL,             MAX_CONN_DESC            },
   { "-reqPoolSize",           &reqPoolSize,             "TRQ_POOL_SIZE",             PaUInt,    PaOpt,  0,                0,      1024,             REQ_POOL_SIZE            },
-
   { "-inReqPayloadMaxSize",   &inReqPayloadMaxSize,     "IN_REQ_PAYLOAD_MAX_SIZE",   PaULong,   PaOpt,  MB(1),            0,      PaNL,             IN_REQ_PAYLOAD_MAX_SIZE_DESC },
   { "-outReqMsgMaxSize",      &outReqMsgMaxSize,        "OUT_REQ_MSG_MAX_SIZE",      PaULong,   PaOpt,  MB(8),            0,      PaNL,             OUT_REQ_MSG_MAX_SIZE_DESC    },
   { "-notificationMode",      &notificationMode,        "NOTIF_MODE",                PaString,  PaOpt,  _i "transient",   PaNL,   PaNL,             NOTIFICATION_MODE_DESC   },
@@ -458,11 +462,14 @@ PaArgument paArgs[] =
   { "-lmtmp",                 &lmtmp,                   "TMP_TRACES",                PaBool,    PaHid,  true,             false,  true,             TMPTRACES_DESC           },
   { "-noprom",                &noprom,                  "NO_PROM",                   PaBool,    PaHid,  false,            false,  true,             NO_PROM_DESC             },
   { "-noArrayReduction",      &noArrayReduction,        "NO_ARRAY_REDUCTION",        PaBool,    PaHid,  false,            false,  true,             NO_ARR_REDUCT_DESC       },
+  { "-subordinateEndpoint",   &subordinateEndpoint,     "SUBORDINATE_ENDPOINT",      PaStr,     PaOpt,  _i "",           PaNL,   PaNL,             SUBORDINATE_ENDPOINT_DESC },
+  { "-pageSize",              &pageSize,                "PAGE_SIZE",                 PaInt,     PaOpt,  20,              1,      1000,             PAGE_SIZE_DESC            },
   { "-dds",                   &ddsSupport,              "DDS",                       PaBool,    PaOpt,  false,            false,  true,             USE_DDS_DESC             },
   { "-ddsSubsTopics",         ddsSubsTopics,            "DDS_SUBS_TOPICS",           PaString,  PaOpt,  _i "",            PaNL,   PaNL,             DDS_SUBS_TOPICS_DESC     },
   { "-ddsTopicType",          ddsTopicType,             "DDS_TOPIC_TYPE",            PaString,  PaOpt,  _i "NGSI-LD",     PaNL,   PaNL,             DDS_TOPIC_TYPE_DESC      },
   { "-ddsConfigFile",         ddsConfigFile,            "DDS_CONFIG_FILE",           PaString,  PaOpt,  _i "",            PaNL,   PaNL,             DDS_CONFIG_FILE_DESC     },
   { "-ddsEnablerConfigFile",  ddsEnablerConfigFile,     "DDS_CONFIG_FILE_PATH",      PaString,  PaOpt,  _i "",            PaNL,   PaNL,             DDS_ENABLER_CONFIG_FILE_DESC },
+  { "-duc",                   defaultUserContextUrl,    "DUC_URL",                   PaString,  PaOpt,  _i "",           PaNL,   PaNL,             DUC_URL_DESC              },
 
   PA_END_OF_ARGS
 };
@@ -1114,6 +1121,23 @@ int main(int argC, char* argV[])
         LM_X(1, ("Invalid value for -wip comma-separated list (allowed: 'entityMaps', 'distSubs')"));
     }
   }
+
+  if (subordinateEndpoint[0] != 0)
+  {
+    char* slash = strchr(subordinateEndpoint, '/');
+
+    if ((slash != NULL) && (slash[1] == '/') && (slash[2] != 0))  // xxx:// is skipped
+      slash = strchr(&slash[2], '/');
+
+    char* prefix = slash;
+    subordinatePathLen = snprintf(subordinatePath, sizeof(subordinatePath) - 1, "%s/notifications/", prefix);
+
+    LM_T(LmtSubordinate, ("entity subordinate prefix: '%s'", subordinateEndpoint));
+    LM_T(LmtSubordinate, ("path portion:              '%s'", prefix));
+    LM_T(LmtSubordinate, ("subordinatePath:           '%s'", subordinatePath));
+  }
+  else
+    bzero(subordinatePath, sizeof(subordinatePath));
 
 #if 0
   //

@@ -69,6 +69,7 @@
 #include "orionld/serviceRoutines/orionldPutAttribute.h"
 #include "orionld/serviceRoutines/orionldGetEntityMap.h"
 #include "orionld/serviceRoutines/orionldDeleteEntityMap.h"
+#include "orionld/serviceRoutines/orionldGetInfo.h"
 
 #include "orionld/serviceRoutines/orionldGetTemporalEntities.h"
 #include "orionld/serviceRoutines/orionldGetTemporalEntity.h"
@@ -105,6 +106,7 @@ static OrionLdRestServiceSimplified getServiceV[] =
   { "/ngsi-ld/v1/csourceRegistrations",    orionldGetRegistrations    },
   { "/ngsi-ld/v1/jsonldContexts/*",        orionldGetContext          },
   { "/ngsi-ld/v1/jsonldContexts",          orionldGetContexts         },
+  { "/ngsi-ld/v1/info/sourceIdentity",     orionldGetInfo             },
   { "/ngsi-ld/v1/temporal/entities/*",     orionldGetTemporalEntity   },
   { "/ngsi-ld/v1/temporal/entities",       orionldGetTemporalEntities },
   { "/ngsi-ld/ex/v1/version",              orionldGetVersion          },

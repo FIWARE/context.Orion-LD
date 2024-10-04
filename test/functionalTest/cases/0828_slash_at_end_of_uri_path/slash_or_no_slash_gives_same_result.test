@@ -82,17 +82,17 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
             "contextElement": {
                 "attributes": [
                     {
-                        "name": "A1", 
-                        "type": "a", 
+                        "name": "A1",
+                        "type": "a",
                         "value": ""
                     }
-                ], 
-                "id": "E1", 
-                "isPattern": "false", 
+                ],
+                "id": "E1",
+                "isPattern": "false",
                 "type": ""
-            }, 
+            },
             "statusCode": {
-                "code": "200", 
+                "code": "200",
                 "reasonPhrase": "OK"
             }
         }
@@ -102,18 +102,16 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 02. GET /v1/contextEntityTypes/ and see error 'service not found'
 =================================================================
-HTTP/1.1 400 Bad Request
-Content-Length: 88
+HTTP/1.1 404 Not Found
+Content-Length: 126
 Content-Type: application/json
 Date: REGEX(.*)
 Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 {
-    "orionError": {
-        "code": "400", 
-        "details": "service not found", 
-        "reasonPhrase": "Bad Request"
-    }
+    "detail": "/v1/contextEntityTypes/",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 

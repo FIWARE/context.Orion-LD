@@ -105,6 +105,7 @@ typedef enum TraceLevels
   LmtContextCacheStats,                // Context Cache Statistics
   LmtContextDownload,                  // Context Download
   LmtCoreContext,                      // Core Context
+  LmtUserContext,                      // User Context
 
   // GeoJSON
   LmtGeoJSON = 110,                    // GeoJSON ... everything (for now)
@@ -126,6 +127,11 @@ typedef enum TraceLevels
   LmtEntityMapDetail,                  // Details of the entity-registration maps
 
   //
+  // Subordinate Subscriptions
+  //
+  LmtSubordinate = 140,
+
+  //
   // Misc
   //
   LmtMongoc = 200,                     // Entire mongoc library
@@ -135,6 +141,7 @@ typedef enum TraceLevels
   LmtKjlParse,                         // Trace level start for K libs
   LmtMqtt = 205,                       // MQTT notifications
   LmtQ,                                // Query Language
+  LmtCsf,                              // CSF - 'q' for registrations
   LmtPostgres,                         // Postgres (TRoE)
   LmtSql,                              // SQL command for TRoE
   LmtPgPool,                           // Postgres Connection Pool

@@ -438,6 +438,10 @@ char* pCheckLinkHeader(char* link)
 
 
 
+// -----------------------------------------------------------------------------
+//
+// linkGet -
+//
 static bool linkGet(const char* link)
 {
   //
@@ -1095,6 +1099,12 @@ MHD_Result mhdConnectionTreat(void)
       orionldError(OrionldBadRequestData, "Unsupported URI parameter", detail, 400);
       goto respond;
     }
+
+    if ((orionldState.uriParams.orderBy != NULL) && (orionldState.uriParams.local == false))
+    {
+      orionldError(OrionldOperationNotSupported, "Not supported URL parameter", "The URL parameter 'orderBy' only works if also 'local' is set", 501);
+      goto respond;
+    }
   }
 
   //
@@ -1229,9 +1239,24 @@ MHD_Result mhdConnectionTreat(void)
     }
   }
 
-  if (orionldState.contextP == NULL)
-    orionldState.contextP = orionldCoreContextP;
+  LM_T(LmtUserContext, ("orionldState.contextP at %p", orionldState.contextP));
+  LM_T(LmtUserContext, ("Core Context at          %p", orionldCoreContextP));
+  if (orionldState.contextP == orionldCoreContextP)
+  {
+    if (defaultUserContextP != NULL)
+    {
+      LM_T(LmtUserContext, ("Using the default user context (%s)", defaultUserContextUrl));
+      orionldState.contextP = defaultUserContextP;
+    }
+    else
+    {
+      LM_T(LmtUserContext, ("No default user context, using only the core context"));
+      orionldState.contextP = orionldCoreContextP;
+    }
+  }
 
+  LM_T(LmtUserContext, ("orionldState.contextP: '%s'", orionldState.contextP->url));
+  LM_T(LmtUserContext, ("-------------------------------------------"));
   if (orionldState.link == NULL)
     orionldState.link = orionldState.contextP->url;
 

@@ -26,16 +26,20 @@
 
 extern "C"
 {
+#include "kalloc/kaStrdup.h"                                    // kaStrdup
 #include "kjson/KjNode.h"                                       // KjNode
 #include "kjson/kjLookup.h"                                     // kjLookup
 #include "kjson/kjBuilder.h"                                    // kjChildAdd, ...
 }
+
+#include "logMsg/logMsg.h"
 
 #include "orionld/types/RegistrationMode.h"                     // RegistrationMode
 #include "orionld/types/OrionldContext.h"                       // OrionldContext
 #include "orionld/common/orionldState.h"                        // orionldState
 #include "orionld/common/orionldError.h"                        // orionldError
 #include "orionld/common/CHECK.h"                               // STRING_CHECK, ...
+#include "orionld/common/dotForEq.h"                            // dotForEq
 #include "orionld/context/orionldAttributeExpand.h"             // orionldAttributeExpand
 #include "orionld/payloadCheck/PCHECK.h"                        // PCHECK_*
 #include "orionld/payloadCheck/pCheckRegistrationMode.h"        // pCheckRegistrationMode
@@ -366,12 +370,17 @@ bool pcheckRegistration(const char* regModeString, KjNode* registrationP, const 
       // If already there, then we have a case of duplicate property and that is an error
       //
       nodeP->name = orionldAttributeExpand(orionldState.contextP, nodeP->name, true, NULL);
-      if (kjLookup(propertyTree, nodeP->name) != NULL)
+
+      char* eqName = kaStrdup(&orionldState.kalloc, nodeP->name);
+      dotForEq(eqName);
+
+      if (kjLookup(propertyTree, eqName) != NULL)
       {
         orionldError(OrionldBadRequestData, "Duplicate Property in Registration", nodeP->name, 400);
         return false;
       }
 
+      nodeP->name = eqName;
       kjChildAdd(propertyTree, nodeP);
     }
 

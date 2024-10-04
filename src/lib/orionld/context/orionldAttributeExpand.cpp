@@ -44,21 +44,23 @@
 char* orionldAttributeExpand
 (
   OrionldContext*       contextP,
-  char*                 shortName,
+  const char*           shortName,
   bool                  useDefaultUrlIfNotFound,
   OrionldContextItem**  contextItemPP
 )
 {
-  if      (strcmp(shortName, "id")               == 0) return shortName;
-  else if (strcmp(shortName, "@id")              == 0) return shortName;
-  else if (strcmp(shortName, "type")             == 0) return shortName;
-  else if (strcmp(shortName, "@type")            == 0) return shortName;
-  else if (strcmp(shortName, "scope")            == 0) return shortName;
-  else if (strcmp(shortName, "location")         == 0) return shortName;
-  else if (strcmp(shortName, "createdAt")        == 0) return shortName;
-  else if (strcmp(shortName, "modifiedAt")       == 0) return shortName;
-  else if (strcmp(shortName, "observationSpace") == 0) return shortName;
-  else if (strcmp(shortName, "operationSpace")   == 0) return shortName;
+  char* sName = (char*) shortName;  // just to avoid a warning for strcmp
+
+  if      (strcmp(sName, "id")               == 0) return sName;
+  else if (strcmp(sName, "@id")              == 0) return sName;
+  else if (strcmp(sName, "type")             == 0) return sName;
+  else if (strcmp(sName, "@type")            == 0) return sName;
+  else if (strcmp(sName, "scope")            == 0) return sName;
+  else if (strcmp(sName, "location")         == 0) return sName;
+  else if (strcmp(sName, "createdAt")        == 0) return sName;
+  else if (strcmp(sName, "modifiedAt")       == 0) return sName;
+  else if (strcmp(sName, "observationSpace") == 0) return sName;
+  else if (strcmp(sName, "operationSpace")   == 0) return sName;
 
 #if 1
   // FIXME: 'observedAt' as an attribute is not a thing - special treatment only if sub-attribute
@@ -70,15 +72,15 @@ char* orionldAttributeExpand
   //
   //  We should probably forbid an attribute to have the name 'observedAt'
   //
-  else if (strcmp(shortName, "observedAt") == 0)
+  else if (strcmp(sName, "observedAt") == 0)
   {
-    orionldContextItemExpand(contextP, shortName, false, contextItemPP);
-    return shortName;
+    orionldContextItemExpand(contextP, sName, false, contextItemPP);
+    return sName;
   }
 #endif
 
-  if (orionldContextItemAlreadyExpanded(shortName) == true)
-    return shortName;
+  if (orionldContextItemAlreadyExpanded(sName) == true)
+    return sName;
 
-  return orionldContextItemExpand(contextP, shortName, useDefaultUrlIfNotFound, contextItemPP);
+  return orionldContextItemExpand(contextP, sName, useDefaultUrlIfNotFound, contextItemPP);
 }

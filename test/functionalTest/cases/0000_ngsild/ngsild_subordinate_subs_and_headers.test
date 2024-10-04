@@ -1,0 +1,319 @@
+# Copyright 2024 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Distributed Subscriptions - headers in notifications
+
+--SHELL-INIT--
+#
+# This test case tests a setup with three brokers:
+# - CP1 is where entities are updated and subordinate subs live (notifications sent to CB)
+# - CB is where user subscriptions are created, for CP2 as final destination and CP1 for subordinate
+# - CP2 is the final destiny for the notifications (originating in CP1, then sent to CB and lastly to CP2) and where troe is persisted
+#
+dbInit CB
+dbInit CP1
+orionldStart CB -experimental -wip distSubs -subordinateEndpoint http://localhost:$CB_PORT/ngsi-ld/ex/v1
+orionldStart CP1 -experimental
+accumulatorStart --pretty-print
+
+--SHELL--
+
+#
+# 01. Create a registration R1 on CB, on entity type T, with endpoint CP1
+# 02. Create a subscription S1 on CB, on entity type T, id urn:E1, with accumulator as notification receptor (triggers a subordinate sub in CP1)
+# 03. Create a subscription S2 on CB, on entity type T, id urn:E2, with accumulator as notification receptor (triggers a subordinate sub in CP1)
+# 04. Create an entity urn:E1 in CP1 (matching S1 subordinate) - get notification in CB that is forwarded to accumulator
+# 05. Create an entity urn:E2 in CP1 (matching S2 subordinate) - get notification in CB that is forwarded to accumulator
+# 06. Dump accumulator (see two notification, one for E1 and one for E2) - check HTTP header Authorization
+#
+
+echo "01. Create a registration R1 on CB, on entity type T, with endpoint CP1"
+echo "======================================================================="
+payload='{
+  "id": "urn:R1",
+  "type": "ContextSourceRegistration",
+  "information": [
+    {
+      "entities": [
+        {
+          "type": "T"
+        }
+      ]
+    }
+  ],
+  "contextSourceInfo": [
+    {
+      "key": "Authorization",
+      "value": "ABC"
+    },
+    {
+      "key": "HeaderOrigin",
+      "value": "Registration"
+    }
+  ],
+  "endpoint": "localhost:'$CP1_PORT'",
+  "operations": [ "createEntity", "retrieveEntity", "mergeEntity", "createSubscription" ]
+}'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload"
+echo
+echo
+
+
+echo "02. Create a subscription S1 on CB, on entity type T, id urn:E1, with accumulator as notification receptor (triggers a subordinate sub in CP1)"
+echo "=============================================================================================================================================="
+payload='{
+  "id": "urn:ngsi-ld:Subscription:S1",
+  "type": "Subscription",
+  "entities": [
+    {
+      "type": "T"
+    }
+  ],
+  "notification": {
+    "endpoint": {
+      "uri": "http://localhost:'$LISTENER_PORT'/notify",
+      "receiverInfo": [
+        {
+          "key": "Authorization",
+          "value": "ABC"
+        },
+        {
+          "key": "HeaderOrigin",
+          "value": "Subscription"
+        }
+      ]
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload"
+echo
+echo
+
+
+echo "03. Create a subscription S2 on CB, on entity type T, id urn:E2, with accumulator as notification receptor (triggers a subordinate sub in CP1)"
+echo "=============================================================================================================================================="
+payload='{
+  "id": "urn:ngsi-ld:Subscription:S2",
+  "type": "Subscription",
+  "entities": [
+    {
+      "type": "T"
+    }
+  ],
+  "notification": {
+    "endpoint": {
+      "uri": "http://localhost:'$LISTENER_PORT'/notify"
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload"
+echo
+echo
+
+
+echo "04. Create an entity urn:E1 in CP1 (matching S1 subordinate) - get notification in CB that is forwarded to accumulator"
+echo "======================================================================================================================"
+payload='{
+  "id": "urn:E1",
+  "type": "T",
+  "P1": 1
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" --port $CP1_PORT
+echo
+echo
+
+
+echo "05. Create an entity urn:E2 in CP1 (matching S2 subordinate) - get notification in CB that is forwarded to accumulator"
+echo "======================================================================================================================"
+payload='{
+  "id": "urn:E2",
+  "type": "T",
+  "P2": 1
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" --port $CP1_PORT
+echo
+echo
+
+echo "06. Dump accumulator (see two notification, one for E1 and one for E2) - check HTTP header Authorization"
+echo "========================================================================================================"
+accumulatorDump
+echo
+echo
+
+
+--REGEXPECT--
+01. Create a registration R1 on CB, on entity type T, with endpoint CP1
+=======================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/csourceRegistrations/urn:R1
+
+
+
+02. Create a subscription S1 on CB, on entity type T, id urn:E1, with accumulator as notification receptor (triggers a subordinate sub in CP1)
+==============================================================================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/subscriptions/urn:ngsi-ld:Subscription:S1
+
+
+
+03. Create a subscription S2 on CB, on entity type T, id urn:E2, with accumulator as notification receptor (triggers a subordinate sub in CP1)
+==============================================================================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/subscriptions/urn:ngsi-ld:Subscription:S2
+
+
+
+04. Create an entity urn:E1 in CP1 (matching S1 subordinate) - get notification in CB that is forwarded to accumulator
+======================================================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E1
+
+
+
+05. Create an entity urn:E2 in CP1 (matching S2 subordinate) - get notification in CB that is forwarded to accumulator
+======================================================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E2
+
+
+
+06. Dump accumulator (see two notification, one for E1 and one for E2) - check HTTP header Authorization
+========================================================================================================
+POST http://REGEX(.*)/notify?subscriptionId=urn:ngsi-ld:Subscription:S2
+Content-Length: 250
+Host: REGEX(.*)
+Accept: */*
+Content-Type: application/json
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "data": [
+        {
+            "P1": {
+                "type": "Property",
+                "value": 1
+            },
+            "id": "urn:E1",
+            "type": "T"
+        }
+    ],
+    "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+    "notifiedAt": "202REGEX(.*)Z",
+    "subscriptionId": "urn:ngsi-ld:Subscription:S2",
+    "type": "Notification"
+}
+=======================================
+POST http://REGEX(.*)/notify?subscriptionId=urn:ngsi-ld:Subscription:S1
+Content-Length: 250
+Authorization: ABC
+Host: REGEX(.*)
+Accept: */*
+Content-Type: application/json
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+Headerorigin: Subscription
+
+{
+    "data": [
+        {
+            "P1": {
+                "type": "Property",
+                "value": 1
+            },
+            "id": "urn:E1",
+            "type": "T"
+        }
+    ],
+    "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+    "notifiedAt": "202REGEX(.*)Z",
+    "subscriptionId": "urn:ngsi-ld:Subscription:S1",
+    "type": "Notification"
+}
+=======================================
+POST http://REGEX(.*)/notify?subscriptionId=urn:ngsi-ld:Subscription:S2
+Content-Length: 250
+Host: localhost:9997
+Accept: */*
+Content-Type: application/json
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "data": [
+        {
+            "P2": {
+                "type": "Property",
+                "value": 1
+            },
+            "id": "urn:E2",
+            "type": "T"
+        }
+    ],
+    "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+    "notifiedAt": "202REGEX(.*)Z",
+    "subscriptionId": "urn:ngsi-ld:Subscription:S2",
+    "type": "Notification"
+}
+=======================================
+POST http://REGEX(.*)/notify?subscriptionId=urn:ngsi-ld:Subscription:S1
+Content-Length: 250
+Authorization: ABC
+Host: REGEX(.*)
+Accept: */*
+Content-Type: application/json
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+Headerorigin: Subscription
+
+{
+    "data": [
+        {
+            "P2": {
+                "type": "Property",
+                "value": 1
+            },
+            "id": "urn:E2",
+            "type": "T"
+        }
+    ],
+    "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+    "notifiedAt": "202REGEX(.*)Z",
+    "subscriptionId": "urn:ngsi-ld:Subscription:S1",
+    "type": "Notification"
+}
+=======================================
+
+
+--TEARDOWN--
+brokerStop CB
+brokerStop CP1
+accumulatorStop
+dbDrop CB
+dbDrop CP1

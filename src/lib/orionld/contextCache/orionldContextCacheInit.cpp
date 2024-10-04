@@ -185,6 +185,16 @@ void orionldContextCacheInit(void)
     LM_W(("Falling back to Built-in Core Context (hard-coded copy of %s)", builtinCoreContextUrl));
   }
 
+  //
+  // Default User Context
+  //
+  if (defaultUserContextUrl[0] != 0)
+  {
+    defaultUserContextP = orionldContextFromUrl(defaultUserContextUrl, NULL);
+    if (defaultUserContextP == NULL)
+      LM_W(("Unable to download the default user context"));
+  }
+
   if (contextArray == NULL)
     return;
 
