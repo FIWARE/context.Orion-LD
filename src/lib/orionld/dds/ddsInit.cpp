@@ -126,7 +126,7 @@ int ddsInit(Kjson* kjP, DdsOperationMode _ddsOpMode)
 #endif
   }
 
-  KT_T(StDds, "Calling init_dds_enabler");
+  KT_T(StDds, "Calling init_dds_enabler('%s')", ddsEnablerConfigFile);
   eprosima::ddsenabler::init_dds_enabler(ddsEnablerConfigFile, ddsNotification, ddsTypeNotification, ddsLog);
 
   return 0;
