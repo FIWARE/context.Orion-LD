@@ -113,7 +113,6 @@ unsigned long long  outReqMsgMaxSize;
 bool                triggerOperation = false;
 bool                noArrayReduction = false;
 char                subordinateEndpoint[256];
-int                 pageSize         = 20;
 char                defaultUserContextUrl[256];
 
 bool                ddsSupport       = false;
