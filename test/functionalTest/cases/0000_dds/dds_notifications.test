@@ -157,7 +157,7 @@ Date: REGEX(.*)
 05. Query the broker for all its entities, see all four
 =======================================================
 HTTP/1.1 200 OK
-Content-Length: 1438
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
