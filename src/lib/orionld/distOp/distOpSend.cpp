@@ -496,6 +496,8 @@ bool distOpSend(DistOp* distOpP, const char* dateHeader, const char* xForwardedF
         uriParamAdd(&urlParts, "id", entityIds, -1);
       else if (distOpP->entityId != NULL)
         uriParamAdd(&urlParts, "id", distOpP->entityId, -1);
+      else if (orionldState.uriParams.idPattern != NULL)
+        uriParamAdd(&urlParts, "idPattern", orionldState.uriParams.idPattern, -1);
     }
 
     if (distOpP->qNode != NULL)

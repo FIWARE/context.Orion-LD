@@ -1,0 +1,189 @@
+# Copyright 2024 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+GET /entities with two brokers all connected via registrations
+
+--SHELL-INIT--
+dbInit CB
+dbInit CP1
+orionldStart CB  -experimental -forwarding -wip entityMaps
+orionldStart CP1 -experimental
+
+--SHELL--
+
+#
+# 01. In CP1, create an entity urn:E1 with attributes P1+R1
+# 02. In CP1, create an entity urn:E2 with attributes P1+R1
+# 03. In CP1, create an entity urn:F1 with attributes P1+R1
+# 04. Create an inclusive registration R1 in CB on entities of type T pointing to CP1
+# 05. GET entities in CB with idPattern urn:E.* - see E1 and E2, not urn:F1
+#
+
+echo "01. In CP1, create an entity urn:E1 with attributes P1+R1"
+echo "========================================================="
+payload='{
+  "id": "urn:E1",
+  "type": "T",
+  "P1": "Entity E1 in CP1",
+  "R1": { "object": "urn:E2" }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" --port $CP1_PORT
+echo
+echo
+
+
+echo "02. In CP1, create an entity urn:E2 with attributes P1+R1"
+echo "========================================================="
+payload='{
+  "id": "urn:E2",
+  "type": "T",
+  "P1": "Entity E2 in CP1",
+  "R1": { "object": "urn:E2" }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" --port $CP1_PORT
+echo
+echo
+
+
+echo "03. In CP1, create an entity urn:F1 with attributes P1+R1"
+echo "========================================================="
+payload='{
+  "id": "urn:F1",
+  "type": "T",
+  "P1": "Entity F1 in CP1",
+  "R1": { "object": "urn:E2" }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" --port $CP1_PORT
+echo
+echo
+
+
+echo "04. Create an inclusive registration R1 in CB on entities of type T pointing to CP1"
+echo "==================================================================================="
+payload='{
+  "id": "urn:R1",
+  "type": "ContextSourceRegistration",
+  "information": [
+    {
+      "entities": [
+        {
+          "type": "T"
+        }
+      ]
+    }
+  ],
+  "mode": "inclusive",
+  "operations": [ "retrieveOps" ],
+  "endpoint": "http://'$(hostname)':'$CP1_PORT'"
+}'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload"
+echo
+echo
+
+
+echo "05. GET entities in CB with idPattern urn:E.* - see E1 and E2"
+echo "============================================================="
+orionCurl --url "/ngsi-ld/v1/entities?idPattern=urn:E.*"
+echo
+echo
+
+
+--REGEXPECT--
+01. In CP1, create an entity urn:E1 with attributes P1+R1
+=========================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E1
+
+
+
+02. In CP1, create an entity urn:E2 with attributes P1+R1
+=========================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E2
+
+
+
+03. In CP1, create an entity urn:F1 with attributes P1+R1
+=========================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:F1
+
+
+
+04. Create an inclusive registration R1 in CB on entities of type T pointing to CP1
+===================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/csourceRegistrations/urn:R1
+
+
+
+05. GET entities in CB with idPattern urn:E.* - see E1 and E2
+=============================================================
+HTTP/1.1 200 OK
+Content-Length: 253
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+NGSILD-EntityMap: urn:ngsi-ld:entity-map:REGEX(.*)
+
+[
+    {
+        "P1": {
+            "type": "Property",
+            "value": "Entity E1 in CP1"
+        },
+        "R1": {
+            "object": "urn:E2",
+            "type": "Relationship"
+        },
+        "id": "urn:E1",
+        "type": "T"
+    },
+    {
+        "P1": {
+            "type": "Property",
+            "value": "Entity E2 in CP1"
+        },
+        "R1": {
+            "object": "urn:E2",
+            "type": "Relationship"
+        },
+        "id": "urn:E2",
+        "type": "T"
+    }
+]
+
+
+--TEARDOWN---
+brokerStop CB
+brokerStop CP1
+dbDrop CB
+dbDrop CP1
