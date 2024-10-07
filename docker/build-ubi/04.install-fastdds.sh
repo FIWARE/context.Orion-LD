@@ -133,22 +133,21 @@ git fetch -a
 git checkout feature/typed_tests
 yum -y install lz4-devel libzstd-devel
 
-./install_dds_module.sh
+# ./install_dds_module.sh
 
-# mkdir -p build/ddsenabler_participants
-# cd build/ddsenabler_participants
-# cmake ../../ddsenabler_participants
-# cmake --build . --target install
-# cd ../..
-# 
-# mkdir -p build/ddsenabler_yaml
-# cd build/ddsenabler_yaml
-# cmake ../../ddsenabler_yaml
-# cmake --build . --target install
-# cd ../..
-# 
-# mkdir -p build/ddsenabler
-# cd build/ddsenabler
-# cmake ../../ddsenabler
-# cmake --build . --target install
-# cd ../..
+mkdir -p build/ddsenabler_participants
+cd build/ddsenabler_participants
+cmake ../../ddsenabler_participants
+cmake --build . --target install
+cd ../..
+
+mkdir -p build/ddsenabler_yaml
+cd build/ddsenabler_yaml
+cmake ../../ddsenabler_yaml
+cmake --build . --target install
+cd ../..
+ 
+mkdir -p build/ddsenabler
+cd build/ddsenabler
+cmake ../../ddsenabler
+cmake --build . --target install
