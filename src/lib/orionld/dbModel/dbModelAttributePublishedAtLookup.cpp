@@ -40,14 +40,15 @@ extern "C"
 //
 // dbModelAttributePublishedAtLookup -
 //
-double dbModelAttributePublishedAtLookup(KjNode* dbAttrP)
+int64_t dbModelAttributePublishedAtLookup(KjNode* dbAttrP)
 {
   kjTreeLog2(dbAttrP, "dbAttr", StDds);
 
-  KjNode* publishedAtP = kjLookup(dbAttrP, "publishedAt");
+  KjNode* publishedAtObjectP = kjLookup(dbAttrP, "publishedAt");
+  KjNode* publishedAtValueP  = (publishedAtObjectP != NULL)? kjLookup(publishedAtObjectP, "value") : NULL;
 
-  if (publishedAtP != NULL)
-    return publishedAtP->value.f;
+  if (publishedAtValueP != NULL)
+    return publishedAtValueP->value.i;
 
-  return 0;
+  return -1;
 }

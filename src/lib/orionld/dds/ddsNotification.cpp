@@ -46,7 +46,7 @@ extern "C"
 //
 // ddsNotification -
 //
-void ddsNotification(const char* typeName, const char* topicName, const char* json, double publishTime)
+void ddsNotification(const char* typeName, const char* topicName, const char* json, int64_t publishTime)
 {
   KT_T(StDdsNotification, "Got a notification on %s:%s (json: %s)", typeName, topicName, json);
 
@@ -110,7 +110,7 @@ void ddsNotification(const char* typeName, const char* topicName, const char* js
 
   kjChildAdd(attrNodeP, participantIdNodeP);
 
-  KjNode* publishedAt = kjFloat(orionldState.kjsonP, "publishedAt", publishTime);
+  KjNode* publishedAt = kjInteger(orionldState.kjsonP, "publishedAt", publishTime);
   kjChildAdd(attrNodeP, publishedAt);
 
   //

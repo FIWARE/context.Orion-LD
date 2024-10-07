@@ -32,6 +32,6 @@
 //
 // ddsNotification -
 //
-extern void ddsNotification(const char* typeName, const char* topicName, const char* json, double publishTime);
+extern void ddsNotification(const char* typeName, const char* topicName, const char* json, int64_t publishTime);
 
 #endif  // SRC_LIB_ORIONLD_DDS_DDSNOTIFICATION_H_
