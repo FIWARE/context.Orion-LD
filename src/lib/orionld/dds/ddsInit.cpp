@@ -35,7 +35,7 @@ extern "C"
 }
 
 #include "orionld/common/traceLevels.h"                     // kjTreeLog2
-#include "orionld/common/orionldState.h"                    // ddsEnablerConfigFile, ddsConfigFile
+#include "orionld/common/orionldState.h"                    // configFile
 #include "orionld/kjTree/kjNavigate.h"                      // kjNavigate
 #include "orionld/dds/ddsConfigTopicToAttribute.h"          // ddsConfigTopicToAttribute - for debugging only
 #include "orionld/dds/ddsCategoryToKlogSeverity.h"          // ddsCategoryToKlogSeverity
@@ -97,16 +97,16 @@ int ddsInit(Kjson* kjP, DdsOperationMode _ddsOpMode)
   // DDS Configuration File
   //
   errno = 0;
-  if ((ddsConfigFile[0] != 0) && (access(ddsConfigFile, R_OK) == 0))
+  if ((configFile[0] != 0) && (access(configFile, R_OK) == 0))
   {
-    if (ddsConfigLoad(kjP, ddsConfigFile) != 0)
-      KT_X(1, "Error reading/parsing the DDS config file '%s'", ddsConfigFile);
+    if (ddsConfigLoad(kjP, configFile) != 0)
+      KT_X(1, "Error reading/parsing the DDS config file '%s'", configFile);
 
 #if 0
     extern KjNode* ddsConfigTree;
     kjTreeLog2(ddsConfigTree, "DDS Config", StDdsConfig);
     KT_T(StDdsConfig, "Topics:");
-    const char*  path[3] = { "dds", "topics", NULL };
+    const char*  path[4] = { "ddsmodule", "ngsild", "topics", NULL };
     KjNode*      topics  = kjNavigate(ddsConfigTree, path , NULL, NULL);
 
     if (topics != NULL)
@@ -126,8 +126,8 @@ int ddsInit(Kjson* kjP, DdsOperationMode _ddsOpMode)
 #endif
   }
 
-  KT_T(StDds, "Calling init_dds_enabler('%s')", ddsEnablerConfigFile);
-  eprosima::ddsenabler::init_dds_enabler(ddsEnablerConfigFile, ddsNotification, ddsTypeNotification, ddsLog);
+  KT_T(StDds, "Calling init_dds_enabler('%s')", configFile);
+  eprosima::ddsenabler::init_dds_enabler(configFile, ddsNotification, ddsTypeNotification, ddsLog);
 
   return 0;
 }

@@ -24,25 +24,9 @@
 the test client publishes on DDS, the broker receives DDS notifications and creates/updates the corresponding NGSI-LD entities
 
 --SHELL-INIT--
-echo '{
-  "dds": {
-    "topics": {
-      "P1": {
-        "entityId": "urn:ngsi-ld:camera:cam1",
-        "entityType": "Camera",
-        "attribute": "shutterSpeed"
-      },
-      "P2": {
-        "entityId": "urn:ngsi-ld:arm:arm1",
-        "entityType": "Arm",
-        "attribute": "armReach"
-      }
-    }
-  }
-}' > /tmp/ddsConfig
-
+$REPO_HOME/scripts/configFile.sh "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > /tmp/ddsConfig
 dbInit CB
-orionldStart CB -mongocOnly -dds  -ddsConfigFile /tmp/ddsConfig
+orionldStart CB -mongocOnly -dds  -configFile /tmp/ddsConfig
 ftClientStart -t 0-5000
 
 --SHELL--

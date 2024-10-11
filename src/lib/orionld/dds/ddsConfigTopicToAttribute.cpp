@@ -56,7 +56,7 @@ char* ddsConfigTopicToAttribute(const char* topic, char** entityIdPP, char** ent
   if (ddsConfigTree == NULL)
     return NULL;  // No error - it's OK to not have a DDS Config File
 
-  const char*    path[3] = { "dds", "topics", NULL };
+  const char*    path[4] = { "ddsmodule", "ngsild", "topics", NULL };
   static KjNode* topicsP = kjNavigate(ddsConfigTree, path, NULL, NULL);
   KjNode*        topicP  = kjLookup(topicsP, topic);
 

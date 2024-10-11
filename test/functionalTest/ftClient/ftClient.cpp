@@ -74,7 +74,7 @@ unsigned int   mhdTimeout;
 unsigned int   mhdMaxConnections;
 bool           distributed;
 long long      inReqPayloadMaxSize  = 64 * 1024;
-char*          ddsEnablerConfigFile = NULL;
+char*          configFile = NULL;
 
 
 
@@ -92,6 +92,7 @@ KArg kargs[] =
   { "--logLevel",         "-ll",    KaString,  &logLevel,             KaOpt, 0,         KA_NL,    KA_NL,    "log level (ERR|WARN|INFO|INFO|VERBOSE|TRACE|DEBUG" },
   { "--logToScreen",      "-ls",    KaBool,    &logToScreen,          KaOpt, KFALSE,    KA_NL,    KA_NL,    "log to screen"                                     },
   { "--fixme",            "-fix",   KaBool,    &fixme,                KaOpt, KFALSE,    KA_NL,    KA_NL,    "FIXME messages"                                    },
+  { "--config",           "-cfg",   KaString,  &configFile,           KaOpt, NULL,      KA_NL,    KA_NL,    "Config File"                                       },
 
   //
   // Broker options
@@ -106,9 +107,6 @@ KArg kargs[] =
   { "--mhdMemoryLimit",   "-mlim",  KaUInt,    &mhdMemoryLimit,       KaOpt, _i 64,     _i 0,     _i 1024,  "MHD memory limit (in kb)"                          },
   { "--mhdTimeout",       "-mtmo",  KaUInt,    &mhdTimeout,           KaOpt, _i 2000,   _i 0,     KA_NL,    "MHD connection timeout (in milliseconds)"          },
   { "--mhdConnections",   "-mcon",  KaUInt,    &mhdMaxConnections,    KaOpt, _i 512,    _i 1,     KA_NL,    "Max number of MHD connections"                     },
-
-  // DDS
-  { "--ddsConfig",        "-ddscf", KaString,  &ddsEnablerConfigFile, KaOpt, NULL,      KA_NL,    KA_NL,    "DDS Enabler Config File"                           },
 
   KARGS_END
 };
@@ -252,6 +250,18 @@ int main(int argC, char* argV[])
 {
   KArgsStatus ks;
   const char* progName = "ftClient";
+  char        configFilePath[256];
+
+  // Config file
+  if (configFile == NULL)
+  {
+    char* home = getenv("HOME");
+    if (home != NULL)
+    {
+      snprintf(configFilePath, sizeof(configFilePath) - 1, "%s/.ftClient", home);
+      configFile = configFilePath;
+    }
+  }
 
   ks = kargsInit(progName, kargs, "FTCLIENT");
   if (ks != KargsOk)
@@ -289,10 +299,7 @@ int main(int argC, char* argV[])
 
   mhdInit(ldPort);
 
-  // temporary "hack"
-  if (ddsEnablerConfigFile == NULL)
-    ddsEnablerConfigFile = (char*) "/tmp/DDS_ENABLER_CONFIGURATION.yaml";
-  eprosima::ddsenabler::init_dds_enabler(ddsEnablerConfigFile, ddsNotification, ddsTypeNotification, ddsLog);
+  eprosima::ddsenabler::init_dds_enabler(configFile, ddsNotification, ddsTypeNotification, ddsLog);
 
   while (1)
   {

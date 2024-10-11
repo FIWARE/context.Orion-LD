@@ -254,11 +254,9 @@ char            defaultUserContextUrl[256];
 bool            ddsSupport       = false;
 char            ddsSubsTopics[512];
 char            ddsTopicType[512];
-char            ddsConfigFile[512];
-char            ddsEnablerConfigFile[512];
+char            configFile[512];
 
 
-#define DDSE_CONF_FILE "/tmp/DDS_ENABLER_CONFIGURATION.yaml"
 
 /* ****************************************************************************
 *
@@ -354,8 +352,7 @@ char            ddsEnablerConfigFile[512];
 #define USE_DDS_DESC           "turn on DDS support"
 #define DDS_SUBS_TOPICS_DESC   "topics to subscribe to on DDS"
 #define DDS_TOPIC_TYPE_DESC    "DDS topic type"
-#define DDS_CONFIG_FILE_DESC   "DDS configuration file"
-#define DDS_ENABLER_CONFIG_FILE_DESC   "DDS Enabler configuration file"
+#define CONFIG_FILE_DESC        "Path to configuration file"
 #define SUBORDINATE_ENDPOINT_DESC  "endpoint URL for reception of notificatiopns from subordinate subscriptions (distributed subscriptions)"
 #define PAGE_SIZE_DESC         "default page size (no of entities, subscriptions, registrations)"
 #define DUC_URL_DESC           "URL to default user context"
@@ -466,11 +463,10 @@ PaArgument paArgs[] =
   { "-subordinateEndpoint",   &subordinateEndpoint,     "SUBORDINATE_ENDPOINT",      PaStr,     PaOpt,  _i "",           PaNL,   PaNL,             SUBORDINATE_ENDPOINT_DESC },
   { "-pageSize",              &pageSize,                "PAGE_SIZE",                 PaInt,     PaOpt,  20,              1,      1000,             PAGE_SIZE_DESC            },
   { "-dds",                   &ddsSupport,              "DDS",                       PaBool,    PaOpt,  false,            false,  true,             USE_DDS_DESC             },
-  { "-ddsSubsTopics",         ddsSubsTopics,            "DDS_SUBS_TOPICS",           PaString,  PaOpt,  _i "",             PaNL,   PaNL,             DDS_SUBS_TOPICS_DESC     },
-  { "-ddsTopicType",          ddsTopicType,             "DDS_TOPIC_TYPE",            PaString,  PaOpt,  _i "NGSI-LD",      PaNL,   PaNL,             DDS_TOPIC_TYPE_DESC      },
-  { "-ddsConfigFile",         ddsConfigFile,            "DDS_CONFIG_FILE",           PaString,  PaOpt,  _i "",             PaNL,   PaNL,             DDS_CONFIG_FILE_DESC     },
-  { "-ddsEnablerConfigFile",  ddsEnablerConfigFile,     "DDS_CONFIG_FILE_PATH",      PaString,  PaOpt,  _i DDSE_CONF_FILE, PaNL,   PaNL,             DDS_ENABLER_CONFIG_FILE_DESC },
-  { "-duc",                   defaultUserContextUrl,    "DUC_URL",                   PaString,  PaOpt,  _i "",             PaNL,   PaNL,             DUC_URL_DESC              },
+  { "-ddsSubsTopics",         ddsSubsTopics,            "DDS_SUBS_TOPICS",           PaString,  PaOpt,  _i "",             PaNL,   PaNL,             DDS_SUBS_TOPICS_DESC    },
+  { "-ddsTopicType",          ddsTopicType,             "DDS_TOPIC_TYPE",            PaString,  PaOpt,  _i "NGSI-LD",      PaNL,   PaNL,             DDS_TOPIC_TYPE_DESC     },
+  { "-configFile",            configFile,               "CONFIG_FILE",               PaString,  PaOpt,  _i "",             PaNL,   PaNL,             CONFIG_FILE_DESC        },
+  { "-duc",                   defaultUserContextUrl,    "DUC_URL",                   PaString,  PaOpt,  _i "",             PaNL,   PaNL,             DUC_URL_DESC            },
 
   PA_END_OF_ARGS
 };
@@ -1075,6 +1071,16 @@ int main(int argC, char* argV[])
 
   paParse(paArgs, argC, (char**) argV, 1, false);
 
+  //
+  // Config file
+  //
+  if (configFile[0] == 0)
+  {
+    char* home = getenv("HOME");
+
+    if (home != NULL)
+      snprintf(configFile, sizeof(configFile) - 1, "%s/.orionld", home);
+  }
 
   //
   // Initializing the new logging library, kTrace
