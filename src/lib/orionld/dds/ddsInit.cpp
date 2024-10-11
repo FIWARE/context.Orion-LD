@@ -106,7 +106,7 @@ int ddsInit(Kjson* kjP, DdsOperationMode _ddsOpMode)
     extern KjNode* ddsConfigTree;
     kjTreeLog2(ddsConfigTree, "DDS Config", StDdsConfig);
     KT_T(StDdsConfig, "Topics:");
-    const char*  path[4] = { "ddsmodule", "ngsild", "topics", NULL };
+    const char*  path[4] = { "dds", "ngsild", "topics", NULL };
     KjNode*      topics  = kjNavigate(ddsConfigTree, path , NULL, NULL);
 
     if (topics != NULL)
