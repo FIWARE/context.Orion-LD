@@ -564,6 +564,8 @@ extern __thread OrionldConnectionState orionldState;
 //
 // Global state
 //
+extern char              configFile[512];
+extern char*             configFileP;
 extern char*             coreContextUrl;
 extern const char*       builtinCoreContext;
 extern char              orionldHostName[128];
@@ -638,8 +640,6 @@ extern unsigned long long  outReqMsgMaxSize;
 //
 extern bool              ddsSupport;               // Publish/Subscriba via DDS
 extern char              ddsTopicType[512];
-extern char              ddsConfigFile[512];
-extern char              ddsEnablerConfigFile[512];
 
 
 

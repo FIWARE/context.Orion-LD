@@ -28,7 +28,6 @@ yum -y --nogpgcheck install https://dl.fedoraproject.org/pub/fedora/linux/releas
 # Fast-DDS
 mkdir /opt/Fast-DDS
 
-
 #
 # foonathan_memory_vendor
 #
