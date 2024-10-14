@@ -27,7 +27,7 @@ the test client publishes on DDS, the broker receives DDS notifications and crea
 $REPO_HOME/scripts/configFile.sh "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.orionld
 $REPO_HOME/scripts/configFile.sh "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.ftClient
 dbInit CB
-orionldStart CB -mongocOnly -dds
+orionldStart CB -mongocOnly -wip dds
 ftClientStart -t 0-5000
 
 --SHELL--
@@ -97,7 +97,7 @@ echo
 # echo "========================================================================="
 # brokerStop
 # dbInit CB > /dev/null
-# orionldStart CB -mongocOnly -dds  -ddsConfigFile /tmp/ddsConfig > /dev/null
+# orionldStart CB -mongocOnly -wip dds  -ddsConfigFile /tmp/ddsConfig > /dev/null
 # echo Orion-LD is running again
 # echo
 # echo
