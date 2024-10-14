@@ -252,17 +252,6 @@ int main(int argC, char* argV[])
   const char* progName = "ftClient";
   char        configFilePath[256];
 
-  // Config file
-  if (configFile == NULL)
-  {
-    char* home = getenv("HOME");
-    if (home != NULL)
-    {
-      snprintf(configFilePath, sizeof(configFilePath) - 1, "%s/.ftClient", home);
-      configFile = configFilePath;
-    }
-  }
-
   ks = kargsInit(progName, kargs, "FTCLIENT");
   if (ks != KargsOk)
   {
@@ -276,6 +265,20 @@ int main(int argC, char* argV[])
     kargsUsage();
     exit(1);
   }
+
+  // Config file
+  if (configFile == NULL)
+  {
+    char* home = getenv("HOME");
+    if (home != NULL)
+    {
+      snprintf(configFilePath, sizeof(configFilePath) - 1, "%s/.ftClient", home);
+      configFile = configFilePath;
+    }
+  }
+
+  if (configFile != NULL)
+    configFile = strdup(configFile);
 
   int kt = ktInit(progName, logDir, logToScreen, logLevel, traceLevels, kaBuiltinVerbose, kaBuiltinDebug, fixme);
 
