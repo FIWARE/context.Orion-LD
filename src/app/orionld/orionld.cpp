@@ -55,7 +55,7 @@
 * CLI option '--insecure'.
 */
 #include <stdio.h>
-#include <unistd.h>                                         // getppid, fork, setuid, sleep, gethostname, etc.
+#include <unistd.h>                                         // getppid, fork, setuid, sleep, gethostname, access, etc.
 #include <string.h>                                         // strchr
 #include <fcntl.h>                                          // open
 #include <sys/types.h>
@@ -1074,12 +1074,17 @@ int main(int argC, char* argV[])
   //
   // Config file
   //
+  configFileP = configFile;
   if (configFile[0] == 0)
   {
     char* home = getenv("HOME");
 
     if (home != NULL)
+    {
       snprintf(configFile, sizeof(configFile) - 1, "%s/.orionld", home);
+      if (access(configFile, R_OK) != 0)
+        configFileP = NULL;
+    }
   }
 
   //

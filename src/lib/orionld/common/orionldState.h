@@ -565,6 +565,7 @@ extern __thread OrionldConnectionState orionldState;
 // Global state
 //
 extern char              configFile[512];
+extern char*             configFileP;
 extern char*             coreContextUrl;
 extern const char*       builtinCoreContext;
 extern char              orionldHostName[128];

@@ -302,7 +302,8 @@ int main(int argC, char* argV[])
 
   mhdInit(ldPort);
 
-  eprosima::ddsenabler::init_dds_enabler(configFile, ddsNotification, ddsTypeNotification, ddsLog);
+  if (eprosima::ddsenabler::init_dds_enabler(configFile, ddsNotification, ddsTypeNotification, ddsLog) != 0)
+    KT_X(1, "Unable to initialize the DDS Enabler");
 
   while (1)
   {

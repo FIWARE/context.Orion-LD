@@ -97,37 +97,35 @@ int ddsInit(Kjson* kjP, DdsOperationMode _ddsOpMode)
   // DDS Configuration File
   //
   errno = 0;
-  if ((configFile[0] != 0) && (access(configFile, R_OK) == 0))
-  {
-    if (ddsConfigLoad(kjP, configFile) != 0)
-      KT_X(1, "Error reading/parsing the DDS config file '%s'", configFile);
+  if (ddsConfigLoad(kjP, configFileP) != 0)
+    KT_X(1, "Error reading/parsing the DDS config file '%s'", configFile);
 
 #if 0
-    extern KjNode* ddsConfigTree;
-    kjTreeLog2(ddsConfigTree, "DDS Config", StDdsConfig);
-    KT_T(StDdsConfig, "Topics:");
-    const char*  path[4] = { "dds", "ngsild", "topics", NULL };
-    KjNode*      topics  = kjNavigate(ddsConfigTree, path , NULL, NULL);
+  extern KjNode* ddsConfigTree;
+  kjTreeLog2(ddsConfigTree, "DDS Config", StDdsConfig);
+  KT_T(StDdsConfig, "Topics:");
+  const char*  path[4] = { "dds", "ngsild", "topics", NULL };
+  KjNode*      topics  = kjNavigate(ddsConfigTree, path , NULL, NULL);
 
-    if (topics != NULL)
+  if (topics != NULL)
+  {
+    for (KjNode* topicP = topics->value.firstChildP; topicP != NULL; topicP = topicP->next)
     {
-      for (KjNode* topicP = topics->value.firstChildP; topicP != NULL; topicP = topicP->next)
-      {
-        char* entityId   = (char*) "N/A";
-        char* entityType = (char*) "N/A";
-        char* attribute = ddsConfigTopicToAttribute(topicP->name, &entityId, &entityType);
+      char* entityId   = (char*) "N/A";
+      char* entityType = (char*) "N/A";
+      char* attribute = ddsConfigTopicToAttribute(topicP->name, &entityId, &entityType);
 
-        KT_T(StDdsConfig, "Topic:         '%s':", topicP->name);
-        KT_T(StDdsConfig, "  Attribute:   '%s'", attribute);
-        KT_T(StDdsConfig, "  Entity ID:   '%s'", entityId);
-        KT_T(StDdsConfig, "  Entity Type: '%s'", entityType);
-      }
+      KT_T(StDdsConfig, "Topic:         '%s':", topicP->name);
+      KT_T(StDdsConfig, "  Attribute:   '%s'", attribute);
+      KT_T(StDdsConfig, "  Entity ID:   '%s'", entityId);
+      KT_T(StDdsConfig, "  Entity Type: '%s'", entityType);
     }
-#endif
   }
+#endif
 
   KT_T(StDds, "Calling init_dds_enabler('%s')", configFile);
-  eprosima::ddsenabler::init_dds_enabler(configFile, ddsNotification, ddsTypeNotification, ddsLog);
+  if (eprosima::ddsenabler::init_dds_enabler(configFile, ddsNotification, ddsTypeNotification, ddsLog) != 0)
+    KT_X(1, "Unable to initialize the DDS Enabler");
 
   return 0;
 }
