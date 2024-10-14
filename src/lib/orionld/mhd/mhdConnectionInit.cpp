@@ -48,11 +48,12 @@ extern "C"
 #include "orionld/common/stringStrip.h"                          // stringStrip
 #include "orionld/common/dateTime.h"                             // dateTimeFromString
 #include "orionld/common/forbidden.h"                            // forbidden
+#include "orionld/http/verbGet.h"                                // verbGet
 #include "orionld/service/orionldServiceInit.h"                  // orionldRestServiceV
+#include "orionld/service/orionldServiceLookup.h"                // orionldServiceLookup
 #include "orionld/serviceRoutines/orionldBadVerb.h"              // orionldBadVerb
 #include "orionld/payloadCheck/pCheckUri.h"                      // pCheckUri
 #include "orionld/entityMaps/entityMapLookup.h"                  // entityMapLookup
-#include "orionld/service/orionldServiceLookup.h"                // orionldServiceLookup
 #include "orionld/mhd/mhdConnectionInit.h"                       // Own interface
 
 
@@ -69,69 +70,6 @@ extern "C"
 //
 // thread_local ConnectionInfo connectionInfo = {};
 //
-
-
-
-// -----------------------------------------------------------------------------
-//
-// verbGet
-//
-Verb verbGet(const char* method)
-{
-  int sLen = strlen(method);
-
-  if (sLen < 3)
-    return HTTP_NOVERB;
-
-  char c0   = method[0];
-  char c1   = method[1];
-  char c2   = method[2];
-  char c3   = method[3];
-
-  if (sLen == 3)
-  {
-    if ((c0 == 'G') && (c1 == 'E') && (c2 == 'T') && (c3 == 0))
-      return HTTP_GET;
-    if ((c0 == 'P') && (c1 == 'U') && (c2 == 'T') && (c3 == 0))
-      return HTTP_PUT;
-  }
-  else if (sLen == 4)
-  {
-    char c4 = method[4];
-
-    if ((c0 == 'P') && (c1 == 'O') && (c2 == 'S') && (c3 == 'T') && (c4 == 0))
-      return HTTP_POST;
-  }
-  else if (sLen == 6)
-  {
-    char c4 = method[4];
-    char c5 = method[5];
-    char c6 = method[6];
-
-    if ((c0 == 'D') && (c1 == 'E') && (c2 == 'L') && (c3 == 'E') && (c4 == 'T') && (c5 == 'E') && (c6 == 0))
-      return HTTP_DELETE;
-  }
-  else if (sLen == 5)
-  {
-    char c4 = method[4];
-    char c5 = method[5];
-
-    if ((c0 == 'P') && (c1 == 'A') && (c2 == 'T') && (c3 == 'C') && (c4 == 'H') && (c5 == 0))
-      return HTTP_PATCH;
-  }
-  else if (sLen == 7)
-  {
-    char c4 = method[4];
-    char c5 = method[5];
-    char c6 = method[6];
-    char c7 = method[7];
-
-    if ((c0 == 'O') && (c1 == 'P') && (c2 == 'T') && (c3 == 'I') && (c4 == 'O') && (c5 == 'N') && (c6 == 'S') && (c7 == 0))
-      return HTTP_OPTIONS;
-  }
-
-  return HTTP_NOVERB;
-}
 
 
 

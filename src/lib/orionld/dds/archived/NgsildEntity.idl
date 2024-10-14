@@ -1,0 +1,10 @@
+struct NgsildEntity
+{
+  string              id;
+  string              type;
+  string              scope;
+  unsigned long long  createdAt;
+  unsigned long long  modifiedAt;
+  string              tenant;
+  string              attributes;
+};

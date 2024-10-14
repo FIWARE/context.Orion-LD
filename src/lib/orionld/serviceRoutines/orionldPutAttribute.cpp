@@ -29,10 +29,10 @@ extern "C"
 #include "kjson/kjBuilder.h"                                     // kjObject
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjClone.h"                                       // kjClone
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 }
 
 #include "logMsg/logMsg.h"                                       // LM*
-#include "logMsg/traceLevels.h"                                  // Lmt*
 
 #include "orionld/types/OrionldAttributeType.h"                  // OrionldAttributeType
 #include "orionld/types/OrionLdRestService.h"                    // OrionLdRestService
@@ -40,12 +40,14 @@ extern "C"
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/common/responseFix.h"                          // responseFix
 #include "orionld/common/dotForEq.h"                             // dotForEq
+#include "orionld/common/traceLevels.h"                          // KT_T trace levels
 #include "orionld/mongoc/mongocEntityLookup.h"                   // mongocEntityLookup
 #include "orionld/mongoc/mongocAttributeReplace.h"               // mongocAttributeReplace
 #include "orionld/payloadCheck/pCheckAttribute.h"                // pCheckAttribute
 #include "orionld/dbModel/dbModelToApiEntity.h"                  // dbModelToApiEntity2
 #include "orionld/dbModel/dbModelFromApiAttribute.h"             // dbModelFromApiAttribute
 #include "orionld/dbModel/dbModelAttributeCreatedAtLookup.h"     // dbModelAttributeCreatedAtLookup
+#include "orionld/dbModel/dbModelAttributePublishedAtLookup.h"   // dbModelAttributePublishedAtLookup
 #include "orionld/dbModel/dbModelAttributeCreatedAtSet.h"        // dbModelAttributeCreatedAtSet
 #include "orionld/dbModel/dbModelAttributeLookup.h"              // dbModelAttributeLookup
 #include "orionld/dbModel/dbModelEntityTypeLookup.h"             // dbModelEntityTypeLookup
@@ -54,6 +56,9 @@ extern "C"
 #include "orionld/distOp/distOpListRelease.h"                    // distOpListRelease
 #include "orionld/distOp/distOpFailure.h"                        // distOpFailure
 #include "orionld/distOp/distOpSuccess.h"                        // distOpSuccess
+#include "orionld/dds/kjTreeLog.h"                               // kjTreeLog2
+#include "orionld/dds/ddsEntityCreateFromAttribute.h"            // ddsEntityCreateFromAttribute
+#include "orionld/dds/ddsAttributeCreate.h"                      // ddsAttributeCreate
 #include "orionld/notifications/alteration.h"                    // alteration
 #include "orionld/notifications/previousValuePopulate.h"         // previousValuePopulate
 #include "orionld/notifications/sysAttrsStrip.h"                 // sysAttrsStrip
@@ -71,6 +76,10 @@ bool orionldPutAttribute(void)
   char*   attrName     = orionldState.wildcard[1];
   char*   attrLongName = orionldState.in.pathAttrExpanded;
   KjNode* responseBody = kjObject(orionldState.kjsonP, NULL);
+
+  KT_T(StDds, "In orionldPutAttribute: entityId: '%s'", entityId);
+  KT_T(StDds, "In orionldPutAttribute: attrName: '%s'", attrName);
+  KT_T(StDds, "In orionldPutAttribute: attrLongName: '%s'", attrLongName);
 
   // 01. GET the entity+attribute from the DB (dbAttrP)
   // 02. Check the payload body (with dbAttrP as input)
@@ -106,7 +115,7 @@ bool orionldPutAttribute(void)
   KjNode*            finalApiEntityWithSysAttrs = NULL;
   KjNode*            finalApiEntity             = NULL;
   KjNode*            createdAtP                 = NULL;
-  KjNode*            modifiedAtP                 = NULL;
+  KjNode*            modifiedAtP                = NULL;
 
   dotForEq(attrLongNameEq);
 
@@ -114,6 +123,9 @@ bool orionldPutAttribute(void)
   {
     if (orionldState.distributed == false)
     {
+      if (orionldState.ddsSample == true)
+        return ddsEntityCreateFromAttribute(orionldState.requestTree, entityId, attrName);
+
       orionldError(OrionldResourceNotFound, "Entity Not Found", entityId, 404);
       return false;
     }
@@ -126,6 +138,9 @@ bool orionldPutAttribute(void)
     dbAttrP = dbModelAttributeLookup(dbEntityP, attrLongNameEq);
     if (dbAttrP == NULL)
     {
+      if (orionldState.ddsSample == true)
+        return ddsAttributeCreate(orionldState.requestTree, entityType, attrName);
+
       if (orionldState.distributed == false)
       {
         orionldError(OrionldResourceNotFound, "Attribute Not Found", attrLongName, 404);
@@ -136,6 +151,19 @@ bool orionldPutAttribute(void)
     }
     else
     {
+      if (orionldState.ddsSample == true)
+      {
+        //
+        // If iniated by a DDS sample and the attribute has a newer publishedAt than the DDS publication time,
+        // then ignore the entire thing
+        //
+        // This can happen during startup, during the discovery phase of DDS.
+        //
+        int64_t publishedAt = dbModelAttributePublishedAtLookup(dbAttrP);
+        if (publishedAt > orionldState.ddsPublishTime)
+          return true;
+      }
+
       // GET Attribute creation date from database
       createdAt = dbModelAttributeCreatedAtLookup(dbAttrP);
       if (createdAt == -1)
@@ -150,7 +178,7 @@ bool orionldPutAttribute(void)
   }
 
   if (pCheckAttribute(entityId, orionldState.requestTree, true, NoAttributeType, true, NULL) == false)
-    return false;  // pcheckAttribute() calls orionldError
+    LM_RE(false, ("pCheckAttribute failed"));  // pcheckAttribute() calls orionldError
 
   previousValuePopulate(NULL, dbAttrP, orionldState.in.pathAttrExpanded);
 
@@ -158,6 +186,7 @@ bool orionldPutAttribute(void)
   DistOp* distOpList   = NULL;
   KjNode* entityObject = kjObject(orionldState.kjsonP, NULL);
   bool    localData    = true;
+
   if (orionldState.distributed == true)
   {
     KjNode* attrClone = kjClone(orionldState.kjsonP, orionldState.requestTree);
@@ -204,7 +233,7 @@ bool orionldPutAttribute(void)
 
   // Set creDate (mongocAttributeReplace sets modDate)
   dbModelAttributeCreatedAtSet(orionldState.requestTree, createdAt);
-  kjTreeLog(orionldState.requestTree, "orionldState.requestTree", LmtSR);
+  kjTreeLog2(orionldState.requestTree, "orionldState.requestTree", StDds);
 
   // Write to mongo
   if (mongocAttributeReplace(entityId, orionldState.requestTree, &detail) == false)
@@ -239,14 +268,20 @@ bool orionldPutAttribute(void)
   // o Remove the attribute that was replaced (old copy)
   // o Insert a copy of the attribute that was replaced (new copy)
   //
-  dbEntityCopy = kjClone(orionldState.kjsonP, dbEntityP);
-
-  finalApiEntityWithSysAttrs = dbModelToApiEntity2(dbEntityCopy, true, RF_NORMALIZED, NULL, false, &orionldState.pd);
-
-  if (finalApiEntityWithSysAttrs == NULL)
+  if (dbEntityP != NULL)
   {
-    LM_E(("dbModelToApiEntity unable to convert DB Entity '%s' to API Entity (%s: %s)", entityId, orionldState.pd.title, orionldState.pd.detail));
-    goto response;
+    dbEntityCopy = kjClone(orionldState.kjsonP, dbEntityP);
+
+    finalApiEntityWithSysAttrs = dbModelToApiEntity2(dbEntityCopy, true, RF_NORMALIZED, NULL, false, &orionldState.pd);
+
+    if (finalApiEntityWithSysAttrs == NULL)
+    {
+      LM_E(("dbModelToApiEntity unable to convert DB Entity '%s' to API Entity (%s: %s)", entityId, orionldState.pd.title, orionldState.pd.detail));
+      goto response;
+    }
+  }
+  else
+  {
   }
 
   oldAttrP = kjLookup(finalApiEntityWithSysAttrs, attrLongName);
@@ -288,6 +323,9 @@ bool orionldPutAttribute(void)
 
   alterationP = alteration(entityId, entityType, finalApiEntity, apiAttributeAsEntityP, dbEntityP);
   alterationP->finalApiEntityWithSysAttrsP = finalApiEntityWithSysAttrs;
+
+//  if (ddsSupport == true)
+//    ddsPublishAttribute(ddsTopicType, entityType, entityId, apiAttributeP);
 
  response:
   if (distOpList != NULL)

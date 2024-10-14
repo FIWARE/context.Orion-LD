@@ -94,6 +94,7 @@ Kjson             kjson;
 Kjson*            kjsonP;
 uint16_t          portNo                   = 0;
 int               dbNameLen;
+char*             configFileP              = NULL;
 char*             coreContextUrl           = (char*) ORIONLD_CORE_CONTEXT_URL_DEFAULT;  // v1.6, see orionld/context/orionldCoreContext.h
 char              orionldHostName[128];
 int               orionldHostNameLen       = -1;
@@ -111,6 +112,8 @@ EntityMap*        entityMaps        = NULL;    // Used by GET /entities in the d
 bool              entityMapsEnabled = false;
 bool              distSubsEnabled   = false;
 OrionldContext*   defaultUserContextP = NULL;
+int               pageSize            = 20;
+
 
 
 //

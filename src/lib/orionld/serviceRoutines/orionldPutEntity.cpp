@@ -38,6 +38,7 @@ extern "C"
 #include "orionld/common/dateTime.h"                             // dateTimeFromString
 #include "orionld/mongoc/mongocEntityLookup.h"                   // mongocEntityLookup
 #include "orionld/mongoc/mongocEntityReplace.h"                  // mongocEntityReplace
+#include "orionld/mongoc/mongocEntityInsert.h"                   // mongocEntityInsert
 #include "orionld/dbModel/dbModelFromApiEntity.h"                // dbModelFromApiEntity
 #include "orionld/dbModel/dbModelToApiEntity.h"                  // dbModelToApiEntity2
 #include "orionld/context/orionldAttributeExpand.h"              // orionldAttributeExpand
@@ -85,13 +86,13 @@ static bool entityIdCheck(KjNode* idP, const char* entityIdFromUrl)
 // NOTE
 //   This function destroys the old DB Entity tree
 //
-KjNode* apiEntityToDbEntity(KjNode* apiEntityP, KjNode* oldDbEntityP, const char* entityId)
+KjNode* apiEntityToDbEntity(KjNode* apiEntityP, KjNode* oldDbEntityP, const char* entityId, const char* entityType)
 {
   KjNode* dbEntityP   = kjObject(orionldState.kjsonP, NULL);
   KjNode* attrNamesP  = kjArray(orionldState.kjsonP,  "attrNames");
   KjNode* attrsP      = kjObject(orionldState.kjsonP, "attrs");
   KjNode* modDateP    = kjFloat(orionldState.kjsonP,  "modDate", orionldState.requestTime);
-  KjNode* creDateP    = kjLookup(oldDbEntityP, "creDate");
+  KjNode* creDateP    = (oldDbEntityP != NULL)? kjLookup(oldDbEntityP, "creDate") : NULL;
 
   if (creDateP == NULL)
     creDateP = kjFloat(orionldState.kjsonP, "creDate", orionldState.requestTime);
@@ -105,14 +106,25 @@ KjNode* apiEntityToDbEntity(KjNode* apiEntityP, KjNode* oldDbEntityP, const char
   }
 
   // Get the _id object from the old DB Entity - that hasn't changed ... well, the entity type might change ... see loop later
-  KjNode* _idP = kjLookup(oldDbEntityP, "_id");
-  if (_idP == NULL)
+  KjNode* _idP = (oldDbEntityP != NULL)? kjLookup(oldDbEntityP, "_id") : NULL;
+  if ((_idP == NULL) && (oldDbEntityP != NULL))
   {
     orionldError(OrionldInternalError, "Database Error (entity without _id)", entityId, 500);
     return NULL;
   }
 
-  kjChildRemove(oldDbEntityP, _idP);
+  if (oldDbEntityP != NULL)
+    kjChildRemove(oldDbEntityP, _idP);
+
+  if (_idP == NULL)
+  {
+    _idP = kjObject(orionldState.kjsonP, "_id");
+    KjNode* ipP   = kjString(orionldState.kjsonP, "id", entityId);
+    KjNode* typeP = kjString(orionldState.kjsonP, "type", entityType);
+
+    kjChildAdd(_idP, ipP);
+    kjChildAdd(_idP, typeP);
+  }
 
   kjChildAdd(dbEntityP, _idP);
   kjChildAdd(dbEntityP, attrNamesP);
@@ -290,7 +302,8 @@ bool orionldPutEntity(void)
   // Get the entity from the database
   //
   KjNode* oldDbEntityP = mongocEntityLookup(entityId, NULL, NULL, NULL, NULL);
-  if (oldDbEntityP == NULL)
+
+  if ((oldDbEntityP == NULL) && (orionldState.upsert == false))
   {
     orionldError(OrionldResourceNotFound, "Entity does not exist", entityId, 404);
     return false;
@@ -299,11 +312,12 @@ bool orionldPutEntity(void)
   //
   // Check the attributes
   //
-  KjNode* dbAttrsP = kjLookup(oldDbEntityP, "attrs");
+  KjNode* dbAttrsP = (oldDbEntityP != NULL)? kjLookup(oldDbEntityP, "attrs") : NULL;
   if (pCheckEntity(orionldState.requestTree, false, dbAttrsP) == false)
     return false;
 
-  previousValues(orionldState.requestTree, dbAttrsP);
+  if (dbAttrsP != NULL)
+    previousValues(orionldState.requestTree, dbAttrsP);
 
   //
   // Create the new DB Entity, based mainly on orionldState.requestTree
@@ -311,15 +325,31 @@ bool orionldPutEntity(void)
   //
   // FIXME: Use dbModelFromApiEntity instead of apiEntityToDbEntity
   //
-  KjNode* dbEntityP = apiEntityToDbEntity(orionldState.requestTree, oldDbEntityP, entityId);
+  KjNode* dbEntityP = apiEntityToDbEntity(orionldState.requestTree, oldDbEntityP, entityId, entityType);
 
   if (dbEntityP == NULL)
-    return false;
-
-  if (mongocEntityReplace(dbEntityP, entityId) == false)
   {
-    orionldError(OrionldInternalError, "Database Error", "mongocEntityReplace failed", 500);
+    if (orionldState.pd.type == 0)  // Not filled in - let's fill it in
+      orionldError(OrionldInternalError, "Internal Error", "unable to transform API enmtity to DB model", 500);
+
     return false;
+  }
+
+  if (oldDbEntityP != NULL)
+  {
+    if (mongocEntityReplace(dbEntityP, entityId) == false)
+    {
+      orionldError(OrionldInternalError, "Database Error", "mongocEntityReplace failed", 500);
+      return false;
+    }
+  }
+  else  // Create the entity
+  {
+    if (mongocEntityInsert(dbEntityP, entityId) == false)
+    {
+      orionldError(OrionldInternalError, "Database Error", "mongocEntityInsert failed", 500);
+      return false;
+    }
   }
 
   KjNode* finalApiEntityWithSysAttrs = dbModelToApiEntity2(dbEntityP, true, RF_NORMALIZED, NULL, false, &orionldState.pd);

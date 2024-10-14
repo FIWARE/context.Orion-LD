@@ -1215,7 +1215,9 @@ static bool pCheckAttributeObject
     // Check for Deletion -
     // FIXME: Change ORIONLD_SERVICE_OPTION_ACCEPT_JSONLD_NULL for ... ORIONLD_SERVICE_OPTION_xxxxx
     //
-    if ((orionldState.serviceP->options & ORIONLD_SERVICE_OPTION_ACCEPT_JSONLD_NULL) != 0)
+    if (orionldState.serviceP == NULL)
+      LM_W(("orionldState.serviceP is NULL as 'DDS initiated via PutAttribute'"));
+    else if ((orionldState.serviceP->options & ORIONLD_SERVICE_OPTION_ACCEPT_JSONLD_NULL) != 0)
     {
       if (deletionWithoutTypePresent(attrP, attributeType, valueP, objectP, languageMapP, vocabP, jsonP) == true)
         return true;

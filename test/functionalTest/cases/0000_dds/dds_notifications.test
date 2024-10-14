@@ -1,0 +1,285 @@
+# Copyright 2024 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+the test client publishes on DDS, the broker receives DDS notifications and creates/updates the corresponding NGSI-LD entities
+
+--SHELL-INIT--
+$REPO_HOME/scripts/configFile.sh "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.orionld
+$REPO_HOME/scripts/configFile.sh "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.ftClient
+dbInit CB
+orionldStart CB -mongocOnly -wip dds
+ftClientStart -t 0-5000
+
+--SHELL--
+
+#
+# 01. Ask FT to publish an entity urn:E1 on topic 'P1'
+# 02. Ask FT to publish an entity urn:E2 on topic 'P2'
+# 03. Ask FT to publish an entity urn:E3 on topic 'P3'
+# 04. Ask FT to publish an entity urn:E4 on topic 'P4'
+# 05. Query the broker for all its entities, see all three (urn:ngsi-ld:camera:cam1, urn:ngsi-ld:arm:arm1, and the default entity))
+#
+# Later:
+# 06. Kill the broker and empty its databae, then restart the broker again
+# 07. Query the broker for all its entities, see all three - should be present due to the DDS discovery 
+#
+
+echo "01. Ask FT to publish an entity urn:E1 on topic 'P1'"
+echo "===================================================="
+payload='{
+  "s": "abc"
+}'
+orionCurl --url '/dds/pub?ddsTopicType=xyz&entityId=urn:E1&entityType=T&ddsTopicName=P1' --port $FT_PORT --payload "$payload"
+echo
+echo
+
+
+echo "02. Ask FT to publish an entity urn:E2 on topic 'P2'"
+echo "===================================================="
+payload='{
+  "i": 2
+}'
+orionCurl --url '/dds/pub?ddsTopicType=xyz&entityId=urn:E2&entityType=T&ddsTopicName=P2' --port $FT_PORT --payload "$payload"
+echo
+echo
+
+
+echo "03. Ask FT to publish an entity urn:E3 on topic 'P3'"
+echo "===================================================="
+payload='{
+  "f": 3.14
+}'
+orionCurl --url '/dds/pub?ddsTopicType=xyz&entityId=urn:E3&entityType=T&ddsTopicName=P3' --port $FT_PORT --payload "$payload"
+echo
+echo
+
+
+echo "04. Ask FT to publish an entity urn:E4 on topic 'P4'"
+echo "===================================================="
+payload='{
+  "s": "p4",
+  "i": 4,
+  "f": 4.14
+}'
+orionCurl --url '/dds/pub?ddsTopicType=xyz&entityId=urn:E4&entityType=T&ddsTopicName=P4' --port $FT_PORT --payload "$payload"
+echo
+echo
+
+
+echo "05. Query the broker for all its entities, see all four"
+echo "======================================================="
+orionCurl --url /ngsi-ld/v1/entities?local=true
+echo
+echo
+
+
+# echo "06. Kill the broker and empty its database, then restart the broker again"
+# echo "========================================================================="
+# brokerStop
+# dbInit CB > /dev/null
+# orionldStart CB -mongocOnly -wip dds  -ddsConfigFile /tmp/ddsConfig > /dev/null
+# echo Orion-LD is running again
+# echo
+# echo
+
+
+# echo "07. Query the broker for all its entities, see all three - should be present due to the DDS discovery "
+# echo "======================================================================================================"
+# orionCurl --url /ngsi-ld/v1/entities?local=true
+# echo
+# echo
+
+
+--REGEXPECT--
+01. Ask FT to publish an entity urn:E1 on topic 'P1'
+====================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+02. Ask FT to publish an entity urn:E2 on topic 'P2'
+====================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+03. Ask FT to publish an entity urn:E3 on topic 'P3'
+====================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+04. Ask FT to publish an entity urn:E4 on topic 'P4'
+====================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+05. Query the broker for all its entities, see all four
+=======================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "ddsType": {
+            "type": "Property",
+            "value": "fastdds"
+        },
+        "id": "urn:ngsi-ld:camera:cam1",
+        "shutterSpeed": {
+            "participantId": {
+                "type": "Property",
+                "value": "REGEX(.*)"
+            },
+            "publishedAt": {
+                "type": "Property",
+                "value": REGEX(.*)
+            },
+            "type": "Property",
+            "value": {
+                "data": {
+                    "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0": {
+                        "b": false,
+                        "f": 0,
+                        "i": 0,
+                        "ia": [
+                            0,
+                            0
+                        ],
+                        "s": "abc"
+                    }
+                },
+                "type": "NgsildSample"
+            }
+        },
+        "type": "Camera"
+    },
+    {
+        "armReach": {
+            "participantId": {
+                "type": "Property",
+                "value": "REGEX(.*)"
+            },
+            "publishedAt": {
+                "type": "Property",
+                "value": REGEX(.*)
+            },
+            "type": "Property",
+            "value": {
+                "data": {
+                    "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0": {
+                        "b": false,
+                        "f": 0,
+                        "i": 2,
+                        "ia": [
+                            0,
+                            0
+                        ],
+                        "s": ""
+                    }
+                },
+                "type": "NgsildSample"
+            }
+        },
+        "ddsType": {
+            "type": "Property",
+            "value": "fastdds"
+        },
+        "id": "urn:ngsi-ld:arm:arm1",
+        "type": "Arm"
+    },
+    {
+        "P3": {
+            "participantId": {
+                "type": "Property",
+                "value": "REGEX(.*)"
+            },
+            "publishedAt": {
+                "type": "Property",
+                "value": REGEX(.*)
+            },
+            "type": "Property",
+            "value": {
+                "data": {
+                    "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0": {
+                        "b": false,
+                        "f": 3.14,
+                        "i": 0,
+                        "ia": [
+                            0,
+                            0
+                        ],
+                        "s": ""
+                    }
+                },
+                "type": "NgsildSample"
+            }
+        },
+        "P4": {
+            "participantId": {
+                "type": "Property",
+                "value": "REGEX(.*)"
+            },
+            "publishedAt": {
+                "type": "Property",
+                "value": REGEX(.*)
+            },
+            "type": "Property",
+            "value": {
+                "data": {
+                    "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0": {
+                        "b": false,
+                        "f": 4.14,
+                        "i": 4,
+                        "ia": [
+                            0,
+                            0
+                        ],
+                        "s": "p4"
+                    }
+                },
+                "type": "NgsildSample"
+            }
+        },
+        "ddsType": {
+            "type": "Property",
+            "value": "fastdds"
+        },
+        "id": "urn:ngsi-ld:dds:default",
+        "type": "DDS"
+    }
+]
+
+
+--TEARDOWN--
+ftClientStop
+brokerStop
+#dbDrop CB

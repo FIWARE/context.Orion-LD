@@ -25,6 +25,7 @@
 *
 * Author: Ken Zangelin
 */
+#include <cstdint>                  // Standard types (int32_t, etc ?)
 
 
 

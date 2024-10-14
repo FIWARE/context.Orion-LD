@@ -131,6 +131,9 @@ def ignore(root, file):
     if 'BUILD_' in root or '.git' in root:
         return True
 
+    if file.endswith('.yaml') or file.endswith('.hpp') or file.endswith('.cxx') or file.endswith('.ipp'):
+        return True
+
     if 'ldcontext' in root:
         return True
 
@@ -184,7 +187,7 @@ def ignore(root, file):
         return True
 
     # Apib files have an "inline" license, so they are ignored
-    extensions_to_ignore = ['apib', 'md']
+    extensions_to_ignore = ['apib', 'md', 'idl']
     if os.path.splitext(file)[1][1:] in extensions_to_ignore:
         return True
 
@@ -203,7 +206,7 @@ def ignore(root, file):
     # Particular cases of files that are also ignored
     files_names = ['.gitignore', '.valgrindrc', '.valgrindSuppressions', 'LICENSE', '.readthedocs.yml',
                    'ContributionPolicy.txt', 'CHANGES_NEXT_RELEASE', 'compileInfo.h',
-                   'unittests_that_fail_sporadically.txt', 'Vagrantfile', 'contextBroker.ubuntu', 'orionld.ubuntu',
+                   'unittests_that_fail_sporadically.txt', 'Vagrantfile', 'contextBroker.ubuntu', 'orionld.ubuntu', 'ftClient.ubuntu',
                    'mkdocs.yml', 'fiware-ngsiv2-reference.errata', 'ServiceRoutines.txt', '.travis.yml',
                    '.dockerignore', '.jmeter.json']
 
@@ -231,7 +234,7 @@ def supported_extension(root, file):
     :return:
     """
     extensions = ['py', 'cpp', 'c', 'h', 'xml', 'json', 'test', 'vtest', 'txt', 'sh', 'spec', 'cfg', 'DISABLED',
-                  'xtest', 'centos', 'js', 'jmx', 'vtestx', 'feature', 'go', 'jsonld', 'supp']
+                  'xtest', 'centos', 'js', 'jmx', 'vtestx', 'feature', 'go', 'jsonld', 'supp', 'cxx', 'ipp', 'hpp', 'idl']
     names = ['makefile', 'Makefile', 'CMakeLists.txt.orion', 'CMakeLists.txt.orionld']
 
     # Check extensions
@@ -249,6 +252,9 @@ def supported_extension(root, file):
     if 'config' in root and file == 'orionld':
         return True
     
+    if 'config' in root and file == 'ftClient':
+        return True
+
     filename = os.path.join(root, file)
     print('not supported extension: {filename}'.format(filename=filename))
     return False
@@ -288,9 +294,13 @@ for root, dirs, files in os.walk(dir):
             is_orionld = True
         elif 'src/app/ssClient/' in filename:
             is_orionld = True
+        elif 'test/functionalTest/ftClient/' in filename:
+            is_orionld = True
         elif 'test/functionalTest/cases/0000_ngsild' in filename:
             is_orionld = True
         elif 'test/functionalTest/cases/0000_troe' in filename:
+            is_orionld = True
+        elif 'test/functionalTest/cases/0000_dds' in filename:
             is_orionld = True
         elif 'test/unittests/orionld' in filename:
             is_orionld = True

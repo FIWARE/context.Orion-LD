@@ -162,6 +162,11 @@ typedef enum TraceLevels
   LmtLegacySubMatch,                   // Old code - update/subscription match for subs/notifs
   LmtLegacySubCacheRefresh,            // Old code - sub-cache-refresh
 
+  //
+  // DDS
+  //
+  LmtDds     = 230,                    // DDS
+
   LmtCurl    = 250,                    // CURL library
   LmtToDo,                             // To Do list
   LmtPatchEntity,                      // Real merge+patch

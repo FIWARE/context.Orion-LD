@@ -67,6 +67,7 @@ extern "C"
 #include "orionld/common/orionldTenantGet.h"                     // orionldTenantGet
 #include "orionld/common/tenantList.h"                           // tenant0
 #include "orionld/common/stringStrip.h"                          // stringStrip
+#include "orionld/http/verbGet.h"                                // verbGet
 #include "orionld/mongoc/mongocConnectionRelease.h"              // Own interface
 #include "orionld/notifications/orionldAlterationsTreat.h"       // orionldAlterationsTreat
 #include "orionld/mhd/mhdConnectionInit.h"                       // mhdConnectionInit
@@ -978,7 +979,6 @@ RestService restServiceForBadVerb;
 
 
 
-extern Verb verbGet(const char* method);
 extern MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* key, const char* value);
 /* ****************************************************************************
 *

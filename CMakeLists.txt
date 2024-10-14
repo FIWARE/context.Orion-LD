@@ -61,7 +61,7 @@ add_definitions(-DLM_ON)
 add_definitions(-DORIONLD)
 
 add_definitions(-fPIC)
-add_definitions(-std=c++11)
+add_definitions(-std=c++17)
 add_definitions(-DBOOST_ERROR_CODE_HEADER_ONLY)
 
 # Baseline compiler flags, any change here will affect all build types
@@ -201,6 +201,7 @@ SET (ORION_LIBS
     orionld_troe
     orionld_kjTree
     orionld_mqtt
+    orionld_dds
     orionld_http
     orionld_context
     orionld_common
@@ -265,11 +266,18 @@ SET (COMMON_STATIC_LIBS
     mongoclient.a
     kjson.a
     khash.a
+    ktrace.a
+    kargs.a
     kalloc.a
     kbase.a
 )
 
 SET (DYNAMIC_LIBS
+    fastdds
+    fastcdr
+    foonathan_memory-0.7.3
+    ddsenabler
+    tinyxml2
     prom
     promhttp
     curl
@@ -328,6 +336,8 @@ link_directories("${PROJECT_SOURCE_DIR}/../kjson")
 link_directories("${PROJECT_SOURCE_DIR}/../kalloc")
 link_directories("${PROJECT_SOURCE_DIR}/../kbase")
 link_directories("${PROJECT_SOURCE_DIR}/../khash")
+link_directories("${PROJECT_SOURCE_DIR}/../ktrace")
+link_directories("${PROJECT_SOURCE_DIR}/../kargs")
 link_directories("${PROJECT_SOURCE_DIR}/../prometheus-client-c/prom/build")
 link_directories("${PROJECT_SOURCE_DIR}/../prometheus-client-c/promhttp/build")
 link_directories("${LIBMONGOC_LIBRARY_DIRS}")
@@ -390,6 +400,7 @@ if (error EQUAL 0)
   ADD_SUBDIRECTORY(src/lib/orionld/mongoc)
   ADD_SUBDIRECTORY(src/lib/orionld/payloadCheck)
   ADD_SUBDIRECTORY(src/lib/orionld/mqtt)
+  ADD_SUBDIRECTORY(src/lib/orionld/dds)
   ADD_SUBDIRECTORY(src/lib/orionld/http)
   ADD_SUBDIRECTORY(src/lib/orionld/prometheus)
   ADD_SUBDIRECTORY(src/lib/orionld/legacyDriver)
@@ -399,6 +410,7 @@ if (error EQUAL 0)
   ADD_SUBDIRECTORY(src/lib/metricsMgr)
   ADD_SUBDIRECTORY(src/lib/logSummary)
   ADD_SUBDIRECTORY(src/app/orionld)
+  ADD_SUBDIRECTORY(test/functionalTest/ftClient)
 else ()
     MESSAGE("cmake: NOT OK")
 endif (error EQUAL 0)

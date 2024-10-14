@@ -59,18 +59,27 @@ export MAXIMUM_WAIT=${MAXIMUM_WAIT:-30}
 
 export CB_PORT=${CB_PORT:-9999}
 export CB2_PORT=${CB2_PORT:-8999}
+
 export CP1_PORT=${CP1_PORT:-9801}
 export CP2_PORT=${CP2_PORT:-9802}
 export CP3_PORT=${CP3_PORT:-9803}
 export CP4_PORT=${CP4_PORT:-9804}
 export CP5_PORT=${CP5_PORT:-9805}
 export CP6_PORT=${CP6_PORT:-9806}
+
 export LISTENER_PORT=${LISTENER_PORT:-9997}
 export LISTENER2_PORT=${LISTENER2_PORT:-9977}
 export LISTENER3_PORT=${LISTENER3_PORT:-9957}
 export LISTENER4_PORT=${LISTENER4_PORT:-9937}
+
 export MQTT_BROKER_PORT=${MQTT_BROKER_PORT:-1883}
 export MQTT_BROKER_HOST=${MQTT_BROKER_HOST:-localhost}
+
+export FT_PORT=${FT_PORT:-7701}
+export FT2_PORT=${FT2_PORT:-7702}
+export FT3_PORT=${FT3_PORT:-7703}
+export FT4_PORT=${FT4_PORT:-7704}
+export FT5_PORT=${FT5_PORT:-7705}
 
 
 
@@ -89,12 +98,15 @@ export MQTT_BROKER_HOST=${MQTT_BROKER_HOST:-localhost}
 #
 export CB_LOG_DIR=${CB_LOG_DIR:-/var/log/contextBroker}
 export CB2_LOG_DIR=${CB2_LOG_DIR:-/tmp/orion/logs/contextBroker2}
+
 export CP1_LOG_DIR=${CP1_LOG_DIR:-/tmp/orion/logs/contextProvider1}
 export CP2_LOG_DIR=${CP2_LOG_DIR:-/tmp/orion/logs/contextProvider2}
 export CP3_LOG_DIR=${CP3_LOG_DIR:-/tmp/orion/logs/contextProvider3}
 export CP4_LOG_DIR=${CP4_LOG_DIR:-/tmp/orion/logs/contextProvider4}
 export CP5_LOG_DIR=${CP5_LOG_DIR:-/tmp/orion/logs/contextProvider5}
 export CP6_LOG_DIR=${CP5_LOG_DIR:-/tmp/orion/logs/contextProvider6}
+
+export FT2_LOG_DIR=${FT2_LOG_DIR:-/tmp/orion/logs/ftClient2}
 
 
 

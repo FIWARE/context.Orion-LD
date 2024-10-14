@@ -829,6 +829,88 @@ function brokerStop
 
 # ------------------------------------------------------------------------------
 #
+# ftClientStart -
+#
+function ftClientStart()
+{
+  _port=7701
+  _verbose=""
+  _traceLevels=""
+  _logDir=""
+
+  while [ "$#" != 0 ]
+  do
+    if   [ "$1" == "--port" ];            then _port=$2; shift;
+    elif [ "$1" == "--logDir" ];          then _logDir="--logDir $2"; shift;
+    elif [ "$1" == "--verbose" ];         then _verbose="-v";
+    elif [ "$1" == "-v" ];                then _verbose="-v";
+    elif [ "$1" == "-t" ];                then _traceLevels="-t $2"; shift;
+    else
+      echo "Bad parameter for ftClientStart: $1"
+      exit 1
+    fi
+    shift
+  done
+
+  logMsg "Stopping the FT Client on port $_port"
+  ftClientStop --port $_port
+
+  #
+  # Moving logfile to .old  - should really be done by the ktrace library!
+  #
+  if [ "$logDir" == "" ]
+  then
+      if [ -f /tmp/ftClient_dds.log ]
+      then
+        mv -f /tmp/ftClient_dds.log /tmp/ftClient_dds.log.old
+      fi
+  else
+    if [ -f $logDir/ftClient_dds.log ]
+    then
+      mv -f $logDir/ftClient_dds.log $logDir/ftClient_dds.log.old
+    fi
+  fi
+
+  logMsg "Starting the FT Client on port $_port ($_verbose $_traceLevels)"
+  which ftClient >> $LOG_FILE
+  ftClient --port $_port $_verbose $_traceLevels $_logDir &
+
+  _port=0
+  _verbose=""
+  _traceLevels=""
+  logDir=""
+}
+
+
+
+# ------------------------------------------------------------------------------
+#
+# ftClientStop -
+#
+function ftClientStop()
+{
+  _port=7701
+  _verbose=""
+
+  while [ "$#" != 0 ]
+  do
+    if   [ "$1" == "--port" ];            then _port=$2; shift;
+    elif [ "$1" == "--verbose" ];         then _verbose="-v";
+    else
+      echo "Bad parameter for ftClientStop: $1"
+      exit 1
+    fi
+    shift
+  done
+
+  curl localhost:$_port/die > /dev/null 2> /dev/null
+  return 0
+}
+
+
+
+# ------------------------------------------------------------------------------
+#
 # accumulatorStop -
 #
 function accumulatorStop()
@@ -1940,3 +2022,5 @@ export -f cServerStop
 export -f cServerCurl
 export -f urlencode
 export -f orionldMetrics
+export -f ftClientStart
+export -f ftClientStop

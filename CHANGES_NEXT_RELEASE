@@ -5,6 +5,7 @@
   #1688: Forward of idPattern URL parameter
 
 ## New Features:
+  * Native support for DDS (off by default - to activate use CLI: -wip dds)
   * Distributed subscriptions: subordinate subscriptions are DELETED when their "father" is deleted.
   * Support for the URL parameter 'csf' in GET /ngsi-ld/v1/csourceRegistrations
   * Support for the URL parameter 'orderBy' (must be an attribute) in GET /ngsi-ld/v1/entities, but only if 'local' is set. (This is not NGSI-LD standard. Yet ...)
