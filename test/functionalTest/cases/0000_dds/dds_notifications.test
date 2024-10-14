@@ -25,6 +25,7 @@ the test client publishes on DDS, the broker receives DDS notifications and crea
 
 --SHELL-INIT--
 $REPO_HOME/scripts/configFile.sh "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.orionld
+$REPO_HOME/scripts/configFile.sh "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.ftClient
 dbInit CB
 orionldStart CB -mongocOnly -dds
 ftClientStart -t 0-5000
