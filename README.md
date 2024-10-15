@@ -17,7 +17,7 @@ This project is part of [FIWARE](https://www.fiware.org/). For more information 
 Issues on this projects can be reported as [github issues](https://github.com/FIWARE/context.Orion-LD/issues),
 while questions are preferred on [Stack Overflow](http://stackoverflow.com/questions/tagged/fiware-orion), using the tag `fiware-orion`.
 
-> The latest release of Orion-LD is [1.6.0](https://github.com/FIWARE/context.Orion-LD/releases/tag/1.6.0) from July 2024
+> The latest release of Orion-LD is [1.7.0](https://github.com/FIWARE/context.Orion-LD/releases/tag/1.7.0) from October 2024
 
 Orion-LD is a Context Broker and [CEF](https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/About+us)
 [building block](https://joinup.ec.europa.eu/collection/egovernment/solution/cef-context-broker) for context data
@@ -63,7 +63,7 @@ Its payloads are encoded as [linked data](https://en.wikipedia.org/wiki/Linked_d
 
 The NGSI-LD Specification is regularly updated and published by ETSI.
 The latest specification is [version 1.8.1](https://www.etsi.org/deliver/etsi_gs/CIM/001_099/009/01.08.01_60/gs_cim009v010801p.pdf), published in March 2024.
-The next release, version 1.9.1, is expected for September/October 2024·
+The next release, version 1.9.1, is expected in the beginning of 2025.
 
 A few presentations on NGSI-LD:
 * [NGSI-LD Overview](https://docs.google.com/presentation/d/1tgh6gBdcZHRPU_ehM7M5rGCI83CrYimCwJXxzRI5GDg)
@@ -73,7 +73,7 @@ A few presentations on NGSI-LD:
 Examples of **NGSI-LD** payloads can be found in [ETSI](https://forge.etsi.org/gitlab/NGSI-LD/NGSI-LD/tree/master/examples).
 See also the [OpenAPI Specification of NGSI-LD](https://forge.etsi.org/swagger/ui/?url=https://forge.etsi.org/rep/cim/ngsi-ld-openapi/-/raw/1.7.1/ngsi-ld-api.yaml).  
 That is for version 1.7.1 of the NGSI-LD API specification.  
-We're currently working on updating this to v1.8.1, ETA: Dec 2024.
+We're currently working on updating this to v1.8.1, ETA: Jan 2025.
 
 If you are not sharing your data across systems and have no need for linked data concepts, then the current stable
 version of **NGSI** (**NGSI-v2**) is more than sufficient.
@@ -101,11 +101,11 @@ Every merged pull request results in a new fixed tag in dockerhub/quay.io.
 
 Please note that for production and/or performance implementations, there is a thorough guide for that right [here](https://github.com/FIWARE/load-tests)
 
-If you want to use a more stable image, the latest release (as of July 2024) is
-[1.6.0](https://github.com/FIWARE/context.Orion-LD/releases/tag/1.6.0)
+If you want to use a more stable image, the latest release (as of October 2024) is
+[1.7.0](https://github.com/FIWARE/context.Orion-LD/releases/tag/1.7.0)
 
 ```console
-docker run quay.io/fiware/orion-ld:1.6.0
+docker run quay.io/fiware/orion-ld:1.7.0
 ```
 
 Please check [quay.io](https://quay.io/repository/fiware/orion-ld?tab=tags) or [dockerhub](https://hub.docker.com/r/fiware/orion-ld/tags) for other releases.

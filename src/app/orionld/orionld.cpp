@@ -1427,11 +1427,12 @@ int main(int argC, char* argV[])
 
   LM_K(("Initialization is Done"));
   LM_K(("  Accepting REST requests on port %d (experimental API endpoints are %sabled)", port, (experimental == true)? "en" : "dis"));
+  LM_K(("  Special Health Check:      %s", (socketService      == true)? "Enabled" : "Disabled"));
   LM_K(("  TRoE:                      %s", (troe               == true)? "Enabled" : "Disabled"));
   LM_K(("  Distributed Operation:     %s", (distributed        == true)? "Enabled" : "Disabled"));
-  LM_K(("  Health Check:              %s", (socketService      == true)? "Enabled" : "Disabled"));
-  LM_K(("  Entity Maps:               %s", (entityMapsEnabled  == true)? "Enabled" : "Disabled"));
   LM_K(("  Distributed Subscriptions: %s", (distSubsEnabled    == true)? "Enabled" : "Disabled"));
+  LM_K(("  Entity Maps:               %s", (entityMapsEnabled  == true)? "Enabled" : "Disabled"));
+  LM_K(("  DDS:                       %s", (ddsSupport         == true)? "Enabled" : "Disabled"));
 
   if (troe)
     LM_K(("  Postgres Server Version:   %s", postgresServerVersion));
