@@ -33,6 +33,7 @@ SET (STATIC_LIBS
     ${ORION_LIBS}
     ${COMMON_STATIC_LIBS}
     kjson.a
+    ktrace.a
 )
 
 # Include directories
@@ -55,8 +56,8 @@ TARGET_LINK_LIBRARIES(orionld
   ${STATIC_LIBS}
   ${DYNAMIC_LIBS}
   -lmongoclient
+  -lmicrohttpd
   ${Boost_LIBRARIES}
-  ${LIBMICROHTTPD_LIBRARIES}
 )
 
 IF (${DISTRO} MATCHES "Ubuntu.*")

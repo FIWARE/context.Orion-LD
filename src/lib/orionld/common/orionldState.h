@@ -363,6 +363,7 @@ typedef struct OrionldConnectionState
   char*                   entityId;
   OrionldUriParamOptions  uriParamOptions;
   OrionldUriParams        uriParams;
+  bool                    upsert;
   char*                   errorAttributeArrayP;
   char                    errorAttributeArray[512];
   int                     errorAttributeArrayUsed;
@@ -448,11 +449,14 @@ typedef struct OrionldConnectionState
   int                     distOpNo;
   DistOp*                 distOpList;
   uint32_t                acceptMask;            // "1 << MimeType" mask for all accepted Mime Types, regardless of which is chosen and of weight
+  bool                    ddsSample;             // Are we treating a sample from DDS?
+  char*                   ddsType;               // type of DDS Sample
+  double                  ddsPublishTime;        // time of DDS publication
 
   //
   // TRoE
   //
-  bool                    noDbUpdate;        // If nothing changed in DB - troe is not invoked
+  bool                    noDbUpdate;            // If nothing changed in DB - troe is not invoked
   bool                    troeError;
   KjNode*                 duplicateArray;
   KjNode*                 troeIgnoreV[20];
@@ -560,6 +564,8 @@ extern __thread OrionldConnectionState orionldState;
 //
 // Global state
 //
+extern char              configFile[512];
+extern char*             configFileP;
 extern char*             coreContextUrl;
 extern const char*       builtinCoreContext;
 extern char              orionldHostName[128];
@@ -625,6 +631,15 @@ extern OrionldContext*   defaultUserContextP;
 extern char                localIpAndPort[135];    // Local address for X-Forwarded-For (from orionld.cpp)
 extern unsigned long long  inReqPayloadMaxSize;
 extern unsigned long long  outReqMsgMaxSize;
+
+
+
+// -----------------------------------------------------------------------------
+//
+// CLI params for DDS
+//
+extern bool              ddsSupport;               // Publish/Subscriba via DDS
+extern char              ddsTopicType[512];
 
 
 

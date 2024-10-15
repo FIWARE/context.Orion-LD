@@ -25,6 +25,9 @@ SET (SOURCES
     mhdConnectionPayloadRead.cpp
     mhdConnectionTreat.cpp
     mhdReply.cpp
+    mhdStart.cpp
+    mhdRequest.cpp
+    mhdRequestEnded.cpp    
 )
 
 # Include directories

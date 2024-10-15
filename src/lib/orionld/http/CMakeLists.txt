@@ -25,6 +25,7 @@ SET (SOURCES
     httpHeaderLinkAdd.cpp
     httpRequest.cpp
     httpRequestHeaderAdd.cpp
+    verbGet.cpp
 )
 
 # Include directories

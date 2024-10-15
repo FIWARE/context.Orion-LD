@@ -22,50 +22,131 @@
 
 dnf config-manager --set-enabled powertools
 
-yum -y install tinyxml2-devel boost-devel
+yum -y install tinyxml2-devel boost-devel yaml-cpp-devel yaml-cpp
 yum -y --nogpgcheck install https://dl.fedoraproject.org/pub/fedora/linux/releases/39/Everything/x86_64/os/Packages/a/asio-devel-1.28.1-2.fc39.x86_64.rpm
 
+# Fast-DDS
 mkdir /opt/Fast-DDS
-cd /opt/Fast-DDS
 
 #
 # foonathan_memory_vendor
 #
+cd /opt/Fast-DDS
 git clone https://github.com/eProsima/foonathan_memory_vendor.git
-mkdir foonathan_memory_vendor/build
 cd foonathan_memory_vendor
-git checkout v1.3.1 
+git checkout master
+mkdir build
 cd build
-
-cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/ -DBUILD_SHARED_LIBS=ON
+cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_SHARED_LIBS=ON
 cmake --build . --target install
 
+
 #
-# CDR
+# Fast-CDR
 #
 cd /opt/Fast-DDS
 git clone https://github.com/eProsima/Fast-CDR.git
-mkdir Fast-CDR/build
 cd Fast-CDR
-git checkout v2.1.3
+git checkout master
+mkdir build
 cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/ -DBUILD_SHARED_LIBS=ON
+cmake ..
 cmake --build . --target install
 
+
 #
-# RTPS
+# Fast-DDS
 #
 cd /opt/Fast-DDS
 git clone https://github.com/eProsima/Fast-DDS.git
 cd Fast-DDS
-git checkout v2.13.3
+git checkout master
 mkdir build
+cd build
 
 ## Prevent glibc bug: https://stackoverflow.com/questions/30680550/c-gettid-was-not-declared-in-this-scope
-file_bug="/opt/Fast-DDS/Fast-DDS/src/cpp/utils/threading/threading_pthread.ipp"
-nl=$(grep -n "namespace eprosima" $file_bug | awk -F':' '{print $1 ; exit 0}')
-sed -i "${nl}i #include <unistd.h>\n#include <sys/syscall.h>\n#define gettid() syscall(SYS_gettid)\n" $file_bug
+#  Seems to be fixed already manually by eProsima
+# file_bug="/opt/Fast-DDS/Fast-DDS/src/cpp/utils/threading/threading_pthread.ipp"
+# nl=$(grep -n "namespace eprosima" $file_bug | awk -F':' '{print $1 ; exit 0}')
+# sed -i "${nl}i #include <unistd.h>\n#include <sys/syscall.h>\n#define gettid() syscall(SYS_gettid)\n" $file_bug
 
+cmake ..
+cmake --build . --target install
+
+
+#
+# DDS Dev Utils (2 packages in one)
+#
+cd /opt/Fast-DDS
+git clone https://github.com/eProsima/dev-utils.git
+cd dev-utils
+git checkout main
+
+mkdir -p build/cmake_utils
+cd build/cmake_utils
+cmake ../../cmake_utils
+cmake --build . --target install
+
+cd -
+mkdir -p build/cpp_utils
+cd build/cpp_utils
+cmake ../../cpp_utils
+cmake --build . --target install
+
+
+#
+# DDS Pipe (3 packages in one)
+#
+cd /opt/Fast-DDS
+git clone https://github.com/eProsima/DDS-Pipe.git
+cd DDS-Pipe
+git checkout main
+
+
+cd ddspipe_core
+mkdir build
 cd build
-cmake ..  -DCMAKE_INSTALL_PREFIX=/usr/local/ -DBUILD_SHARED_LIBS=ON
+cmake ..
+cmake --build . --target install
+
+cd ../../ddspipe_participants
+mkdir build
+cd build
+cmake ..
+cmake --build . --target install
+
+cd ../../ddspipe_yaml
+mkdir build
+cd build
+cmake ..
+cmake --build . --target install
+
+
+#
+# DDS Enabler
+#
+cd /opt/Fast-DDS
+git clone https://github.com/eProsima/FIWARE-DDS-Enabler.git
+cd FIWARE-DDS-Enabler
+git fetch -a
+git checkout feature/json_config
+yum -y install lz4-devel libzstd-devel
+
+# ./install_dds_module.sh
+
+mkdir -p build/ddsenabler_participants
+cd build/ddsenabler_participants
+cmake ../../ddsenabler_participants
+cmake --build . --target install
+cd ../..
+
+mkdir -p build/ddsenabler_yaml
+cd build/ddsenabler_yaml
+cmake ../../ddsenabler_yaml
+cmake --build . --target install
+cd ../..
+ 
+mkdir -p build/ddsenabler
+cd build/ddsenabler
+cmake ../../ddsenabler
 cmake --build . --target install

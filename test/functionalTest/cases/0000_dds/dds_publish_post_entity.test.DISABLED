@@ -1,0 +1,196 @@
+# Copyright 2024 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Orion-LD + a DDS test client, the broker publishes, via POST /entities/{entityId}
+
+--SHELL-INIT--
+dbInit CB
+echo '{
+  "dds": {
+    "topics": {
+      "Robot1/camera": {
+        "entityId": "urn:ngsi-ld:entities:Robot:1",
+        "entityType": "urn:ngsi-ld:Camera",
+        "attribute": "http://smartdatamodels.org/XX/attrs/camera"
+      },
+      "Robot1/arm1": {
+        "entityId": "urn:ngsi-ld:entities:Arm:1",
+        "entityType": "urn:ngsi-ld:Arm",
+        "attribute": "http://smartdatamodels.org/XX/attrs/arm1"
+      }
+    }
+  }
+}' > /tmp/ddsConfig
+orionldStart CB -mongocOnly -dds -ddsConfigFile /tmp/ddsConfig
+ftClientStart -v -t 0-5000
+
+--SHELL--
+
+#
+# 01. Create an entity in Orion-LD (with attrs p1-p5)
+# 02. Ask FT1 to create a DDS subscription on topic 'p1'
+# 03. Ask FT1 to create a DDS subscription on topic 'p2'
+# 04. Update the entity using POST /entities/{entityId}/attrs
+# 05. Ask FT1 what it has received
+# 06. Reset the DDS notification accumulation
+#
+
+echo "01. Create an entity in Orion-LD (with attrs p1-p5)"
+echo "==================================================="
+payload='{
+  "id": "urn:e1",
+  "type": "x",
+  "p1": 1,
+  "p2": 2,
+  "p3": 3,
+  "p4": 4,
+  "p5": 5
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "02. Ask FT1 to create a DDS subscription on topic 'p1'"
+echo "======================================================"
+payload='{
+  "id": "urn:s1",
+  "type": "Subscription"
+}'
+orionCurl --url '/dds/sub?ddsTopicType=NGSI-LD&ddsTopicName=https://uri.etsi.org/ngsi-ld/default-context/p1' --port $FT_PORT --payload "$payload"
+echo
+echo
+
+
+echo "03. Ask FT1 to create a DDS subscription on topic 'p2'"
+echo "======================================================"
+payload='{
+  "id": "urn:s1",
+  "type": "Subscription"
+}'
+orionCurl --url '/dds/sub?ddsTopicType=NGSI-LD&ddsTopicName=https://uri.etsi.org/ngsi-ld/default-context/p2' --port $FT_PORT --payload "$payload"
+echo
+echo
+
+
+echo "04. Update the entity using POST /entities/{entityId}/attrs"
+echo "==========================================================="
+payload='{
+  "p1": 5,
+  "p2": {
+    "type": "Property",
+    "value": 6
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:e1/attrs --payload "$payload"
+echo
+echo
+
+
+echo "05. Ask FT1 what it has received"
+echo "================================"
+orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
+echo
+echo
+
+
+echo "06. Reset the DDS notification accumulation"
+echo "==========================================="
+orionCurl --url /dds/dump --port $FT_PORT -X DELETE
+echo
+echo
+
+
+--REGEXPECT--
+01. Create an entity in Orion-LD (with attrs p1-p5)
+===================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:e1
+
+
+
+02. Ask FT1 to create a DDS subscription on topic 'p1'
+======================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+
+
+
+03. Ask FT1 to create a DDS subscription on topic 'p2'
+======================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+
+
+
+04. Update the entity using POST /entities/{entityId}/attrs
+===========================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+05. Ask FT1 what it has received
+================================
+HTTP/1.1 200 OK
+Content-Length: 421
+Date: REGEX(.*)
+
+[
+  {
+    "entityType": "https://uri.etsi.org/ngsi-ld/default-context/x",
+    "entityId": "urn:e1",
+    "https://uri.etsi.org/ngsi-ld/default-context/p1": {
+      "type": "Property",
+      "value": 5
+    }
+  },
+  {
+    "entityType": "https://uri.etsi.org/ngsi-ld/default-context/x",
+    "entityId": "urn:e1",
+    "https://uri.etsi.org/ngsi-ld/default-context/p2": {
+      "type": "Property",
+      "value": 6
+    }
+  }
+]
+
+
+
+06. Reset the DDS notification accumulation
+===========================================
+HTTP/1.1 200 OK
+Content-Length: 0
+Date: REGEX(.*)
+
+
+
+--TEARDOWN--
+brokerStop CB
+ftClientStop
+dbDrop CB
+rm -f /tmp/ddsConfig

@@ -30,6 +30,7 @@ extern "C"
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjChildRemove, kjChildAdd, kjArray, ...
 #include "kjson/kjClone.h"                                       // kjClone
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 }
 
 #include "logMsg/logMsg.h"                                       // LM_*
@@ -39,6 +40,7 @@ extern "C"
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/common/dotForEq.h"                             // dotForEq
 #include "orionld/common/responseFix.h"                          // responseFix
+#include "orionld/common/traceLevels.h"                          // KT_T trace levels
 #include "orionld/kjTree/kjTreeLog.h"                            // kjTreeLog
 #include "orionld/payloadCheck/PCHECK.h"                         // PCHECK_OBJECT, PCHECK_EMPTY_OBJECT, ...
 #include "orionld/payloadCheck/pCheckEntity.h"                   // pCheckEntity
@@ -305,6 +307,25 @@ bool orionldPostEntity(void)
       alterationP->finalApiEntityWithSysAttrsP = finalApiEntityWithSysAttrs;
     }
   }
+
+#if 0
+  //
+  // We publish on DDS if 'ddsSupport' is on.
+  // BUT, we don't publish if the info comes from DDS, obviously!
+  //
+  if ((ddsSupport == true) && (orionldState.ddsSample == false))
+  {
+    // Only publish those attributes that have been modified
+    for (KjNode* attrP = orionldState.alterations->finalApiEntityP->value.firstChildP; attrP != NULL; attrP = attrP->next)
+    {
+      if (strcmp(attrP->name, "id")   == 0) continue;
+      if (strcmp(attrP->name, "type") == 0) continue;
+
+      if (kjLookup(orionldState.requestTree, attrP->name) != NULL)
+        ddsPublishAttribute(ddsTopicType, orionldState.alterations->entityType, orionldState.alterations->entityId, attrP);
+    }
+  }
+#endif
 
   if (attrExists->value.firstChildP != NULL)
   {

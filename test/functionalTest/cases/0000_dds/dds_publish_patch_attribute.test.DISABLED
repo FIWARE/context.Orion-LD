@@ -1,0 +1,144 @@
+# Copyright 2024 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Orion-LD + a DDS test client, the broker publishes as PUT Attribute, the test client receives notifications
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -mongocOnly -dds
+ftClientStart -v -t 0-5000
+
+--SHELL--
+
+#
+# 01. Create an entity urn:E1 with an attribute A1 
+# 02. Ask FT1 to create a DDS subscription on topic A1
+# 03. Modify A1 using PATCH Attribute
+# 04. Ask FT1 what it has received
+# 05. Reset the DDS notification accumulation
+#
+
+echo "01. Create an entity urn:E1 with an attribute A1"
+echo "================================================"
+payload='{
+  "id": "urn:e1",
+  "type": "x",
+  "A1": 1
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "02. Ask FT1 to create a DDS subscription on topic A1"
+echo "===================================================="
+payload='{
+  "id": "urn:s1",
+  "type": "Subscription"
+}'
+orionCurl --url '/dds/sub?ddsTopicType=NGSI-LD&ddsTopicName=https://uri.etsi.org/ngsi-ld/default-context/A1' --port $FT_PORT --payload "$payload"
+echo
+echo
+
+
+echo "03. Modify A1 using PATCH Attribute"
+echo "==================================="
+payload='{
+  "value": "Step 03"
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:e1/attrs/A1 --payload "$payload" -X PATCH
+echo
+echo
+
+
+echo "04. Ask FT1 what it has received"
+echo "================================"
+orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
+echo
+echo
+
+
+echo "05. Reset the DDS notification accumulation"
+echo "==========================================="
+orionCurl --url /dds/dump --port $FT_PORT -X DELETE
+echo
+echo
+
+
+--REGEXPECT--
+01. Create an entity urn:E1 with an attribute A1
+================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:e1
+
+
+
+02. Ask FT1 to create a DDS subscription on topic A1
+====================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+
+
+
+03. Modify A1 using PATCH Attribute
+===================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+04. Ask FT1 what it has received
+================================
+HTTP/1.1 200 OK
+Content-Length: 220
+Date: REGEX(.*)
+
+[
+  {
+    "entityType": "https://uri.etsi.org/ngsi-ld/default-context/x",
+    "entityId": "urn:e1",
+    "https://uri.etsi.org/ngsi-ld/default-context/A1": {
+      "value": "Step 03",
+      "type": "Property"
+    }
+  }
+]
+
+
+
+05. Reset the DDS notification accumulation
+===========================================
+HTTP/1.1 200 OK
+Content-Length: 0
+Date: REGEX(.*)
+
+
+
+--TEARDOWN--
+brokerStop CB
+ftClientStop
+ftClientStop --port $FT2_PORT
+dbDrop CB

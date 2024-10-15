@@ -1,0 +1,161 @@
+# Copyright 2024 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Test of orionld version service, with branch name
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -mongocOnly
+$REPO_HOME/scripts/configFile.sh > ~/.ftClient
+chmod 777 ~/.ftClient
+
+ftClientStart -v -t 200
+mkdir -p /tmp/orion/logs/ftClient2
+ftClientStart -v -t 200 --port $FT2_PORT --logDir $FT2_LOG_DIR
+
+--SHELL--
+
+#
+# 01. Create a subscription urn:S1 for notifications to ftClient
+# 02. Create an entity matching the subscription urn:S1
+# 03. Ask ftClient what it has received
+# 04. Ask ftClient2 what it has received
+#
+
+
+echo "01. Create a subscription urn:S1 for notifications to ftClient"
+echo "=============================================================="
+payload='{
+  "id": "urn:S1",
+  "type": "Subscription",
+  "entities": [
+    {
+      "type": "T"
+    }
+  ],
+  "notification": {
+    "endpoint": {
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload"
+echo
+echo
+
+
+echo "02. Create an entity matching the subscription urn:S1"
+echo "====================================================="
+payload='{
+  "id": "urn:ngsi-ld:E01",
+  "type": "T",
+  "P1": 1
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "03. Ask ftClient what it has received"
+echo "====================================="
+orionCurl --url /dump --port $FT_PORT --noPayloadCheck
+echo
+echo
+
+
+echo "04. Ask ftClient2 what it has received"
+echo "======================================"
+orionCurl --url /dump --port $FT2_PORT --noPayloadCheck
+echo
+echo
+
+
+
+--REGEXPECT--
+01. Create a subscription urn:S1 for notifications to ftClient
+==============================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/subscriptions/urn:S1
+
+
+
+02. Create an entity matching the subscription urn:S1
+=====================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:E01
+
+
+
+03. Ask ftClient what it has received
+=====================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Date: REGEX(.*)
+
+POST /notify?subscriptionId=urn:S1
+Content-Length: 238
+Content-Type: application/json
+User-Agent: orionld/REGEX(.*)
+Host: REGEX(.*)
+Accept: application/json
+Ngsild-Attribute-Format: Normalized
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+  "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+  "type": "Notification",
+  "subscriptionId": "urn:S1",
+  "notifiedAt": "202REGEX(.*)Z",
+  "data": [
+    {
+      "id": "urn:ngsi-ld:E01",
+      "type": "T",
+      "P1": {
+        "type": "Property",
+        "value": 1
+      }
+    }
+  ]
+}
+
+
+
+04. Ask ftClient2 what it has received
+======================================
+HTTP/1.1 200 OK
+Content-Length: 3
+Date: REGEX(.*)
+
+[]
+
+
+
+--TEARDOWN--
+brokerStop CB
+ftClientStop
+ftClientStop --port $FT2_PORT
+dbDrop CB

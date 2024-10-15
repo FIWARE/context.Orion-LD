@@ -46,8 +46,10 @@ function style_check
 }
 
 
-style_check src/lib/orionld/entityMaps
+style_check test/functionalTest/ftClient
+style_check src/lib/orionld/dds
 style_check src/lib/orionld/mhd
+style_check src/lib/orionld/entityMaps
 style_check src/lib/orionld/service
 style_check src/lib/orionld/serviceRoutines
 style_check src/lib/orionld/regMatch
