@@ -105,7 +105,7 @@ If you want to use a more stable image, the latest release (as of July 2024) is
 [1.6.0](https://github.com/FIWARE/context.Orion-LD/releases/tag/1.6.0)
 
 ```console
-docker run quay.io/fiware/orion-ld:1.6.0
+docker run quay.io/fiware/orion-ld:1.7.0
 ```
 
 Please check [quay.io](https://quay.io/repository/fiware/orion-ld?tab=tags) or [dockerhub](https://hub.docker.com/r/fiware/orion-ld/tags) for other releases.
