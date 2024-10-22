@@ -338,6 +338,19 @@ KjNode* dbEntityTypesGet(OrionldProblemDetails* pdP, bool details)
   }
 
   //
+  // See issue #1698
+  // I'd really need to rewrite the whole function.
+  // As cfreyth correctly comments, the pagination limit/offet are about entities (as mongocEntitiesGet is used)
+  // and NOT entity types.
+  //
+  // As a quick and dirty fix:
+  // * Allow limit/offset
+  // * Set default limit to 1000 (unless set to anything else by the user)
+  //
+  if (orionldState.uriParams.limit == 20)
+    orionldState.uriParams.limit = 1000;  // Default limit of 20 is changed to 1000
+
+  //
   // GET local types - i.e. from the "entities" collection
   //
   if (details == false)

@@ -444,6 +444,8 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
   }
   else if (serviceP->serviceRoutine == orionldGetEntityTypes)
   {
+    serviceP->uriParams |= ORIONLD_URIPARAM_LIMIT;
+    serviceP->uriParams |= ORIONLD_URIPARAM_OFFSET;
     serviceP->uriParams |= ORIONLD_URIPARAM_DETAILS;
   }
   else if (serviceP->serviceRoutine == orionldGetEntityType)
