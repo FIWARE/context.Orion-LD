@@ -29,6 +29,10 @@ COPY --from=build-stage /usr/bin/orionld /usr/bin
 COPY --from=build-stage /usr/local/lib/* /usr/lib64/
 COPY --from=build-stage /usr/local/lib64/* /usr/lib64/
 COPY --from=build-stage /opt/orion/ldcontexts/ /opt/orion/ldcontexts/
+COPY --from=build-stage /usr/lib64/libtinyxml2.so.6 /usr/lib64/
+COPY --from=build-stage /usr/lib64/libtinyxml2.so /usr/lib64/
+COPY --from=build-stage /usr/lib64/libyaml-cpp.so.0.6 /usr/lib64/
+COPY --from=build-stage /usr/lib64/libyaml-cpp.so /usr/lib64/
 
 COPY docker/other-places.repo /etc/yum.repos.d/
 COPY docker/ubi.repo /etc/yum.repos.d/
