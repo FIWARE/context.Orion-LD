@@ -1,0 +1,261 @@
+# Copyright 2024 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Entity pagination
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -experimental
+
+--SHELL--
+
+#
+# 01. Create 100 entities of types T001-T100
+# 02. GET the first 10 types
+# 03. GET the next 10 types
+# 04. GET all (1000 is the pagination limit for entities in GET /types)
+#
+
+echo "01. Create 100 entities of types T001-T100"
+echo "=========================================="
+typeset -i eNo
+eNo=1
+
+while [ $eNo -le 100 ]
+do
+  eId=$(printf "urn:E%03d" $eNo)
+  eType=$(printf "T%03d" $eNo)
+  eNo=$eNo+1
+
+  payload='{
+    "id": "'$eId'",
+    "type": "'$eType'",
+    "A1": {
+      "type": "Property",
+      "value": "E'$eNo':A1"
+    }
+  }'
+  orionCurl --url /ngsi-ld/v1/entities --payload "$payload" | grep 'Location:'
+done | wc
+echo
+echo
+
+
+echo "02. GET the first 10 types"
+echo "=========================="
+orionCurl --url /ngsi-ld/v1/types?limit=10
+echo
+echo
+
+
+echo "03. GET the next 10 types"
+echo "========================="
+orionCurl --url "/ngsi-ld/v1/types?limit=10&offset=10"
+echo
+echo
+
+
+echo "04. GET all (1000 is the pagination limit for entities in GET /types)"
+echo "====================================================================="
+orionCurl --url /ngsi-ld/v1/types
+echo
+echo
+
+
+--REGEXPECT--
+01. Create 100 entities of types T001-T100
+==========================================
+    100     200    4000
+
+
+02. GET the first 10 types
+==========================
+HTTP/1.1 200 OK
+Content-Length: 179
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "id": "urn:ngsi-ld:EntityTypeList:REGEX(.*)",
+    "type": "EntityTypeList",
+    "typeList": [
+        "T001",
+        "T002",
+        "T003",
+        "T004",
+        "T005",
+        "T006",
+        "T007",
+        "T008",
+        "T009",
+        "T010"
+    ]
+}
+
+
+03. GET the next 10 types
+=========================
+HTTP/1.1 200 OK
+Content-Length: 179
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "id": "urn:ngsi-ld:EntityTypeList:REGEX(.*)",
+    "type": "EntityTypeList",
+    "typeList": [
+        "T011",
+        "T012",
+        "T013",
+        "T014",
+        "T015",
+        "T016",
+        "T017",
+        "T018",
+        "T019",
+        "T020"
+    ]
+}
+
+
+04. GET all (1000 is the pagination limit for entities in GET /types)
+=====================================================================
+HTTP/1.1 200 OK
+Content-Length: 809
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "id": "urn:ngsi-ld:EntityTypeList:REGEX(.*)",
+    "type": "EntityTypeList",
+    "typeList": [
+        "T001",
+        "T002",
+        "T003",
+        "T004",
+        "T005",
+        "T006",
+        "T007",
+        "T008",
+        "T009",
+        "T010",
+        "T011",
+        "T012",
+        "T013",
+        "T014",
+        "T015",
+        "T016",
+        "T017",
+        "T018",
+        "T019",
+        "T020",
+        "T021",
+        "T022",
+        "T023",
+        "T024",
+        "T025",
+        "T026",
+        "T027",
+        "T028",
+        "T029",
+        "T030",
+        "T031",
+        "T032",
+        "T033",
+        "T034",
+        "T035",
+        "T036",
+        "T037",
+        "T038",
+        "T039",
+        "T040",
+        "T041",
+        "T042",
+        "T043",
+        "T044",
+        "T045",
+        "T046",
+        "T047",
+        "T048",
+        "T049",
+        "T050",
+        "T051",
+        "T052",
+        "T053",
+        "T054",
+        "T055",
+        "T056",
+        "T057",
+        "T058",
+        "T059",
+        "T060",
+        "T061",
+        "T062",
+        "T063",
+        "T064",
+        "T065",
+        "T066",
+        "T067",
+        "T068",
+        "T069",
+        "T070",
+        "T071",
+        "T072",
+        "T073",
+        "T074",
+        "T075",
+        "T076",
+        "T077",
+        "T078",
+        "T079",
+        "T080",
+        "T081",
+        "T082",
+        "T083",
+        "T084",
+        "T085",
+        "T086",
+        "T087",
+        "T088",
+        "T089",
+        "T090",
+        "T091",
+        "T092",
+        "T093",
+        "T094",
+        "T095",
+        "T096",
+        "T097",
+        "T098",
+        "T099",
+        "T100"
+    ]
+}
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
