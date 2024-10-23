@@ -15,13 +15,12 @@ RUN /tmp/build.sh -b
 FROM registry.access.redhat.com/ubi8/ubi
 
 LABEL authors="Ken Zangelin - ken.zangelin@fiware.org, Jose Ignacio Carretero - joseignacio.carretero@fiware.org" \
-      description="Orion-LD is a Context Broker which supports both the NGSI-LD and the NGSI-v2 APIs." \
+      description="Orion-LD is an NGSI-LD Context Broker which supports also the NGSI-v2 API." \
       maintainer="ken.zangelin@fiware.org,joseignacio.carretero@fiware.org@fiware.org" \
       vendor="FIWARE Foundation e.V." \
       documentation="https://github.com/FIWARE/context.Orion-LD/tree/develop/doc" \
       name="FIWARE Orion-LD" \
       summary="Contains Orion-LD context broker."
-
 
 COPY --from=build-stage /etc/ssl/ /etc/ssl/
 RUN true
@@ -29,22 +28,19 @@ COPY --from=build-stage /usr/bin/orionld /usr/bin
 COPY --from=build-stage /usr/local/lib/* /usr/lib64/
 COPY --from=build-stage /usr/local/lib64/* /usr/lib64/
 COPY --from=build-stage /opt/orion/ldcontexts/ /opt/orion/ldcontexts/
-COPY --from=build-stage /usr/lib64/libtinyxml2.so.6 /usr/lib64/
-COPY --from=build-stage /usr/lib64/libtinyxml2.so /usr/lib64/
-COPY --from=build-stage /usr/lib64/libyaml-cpp.so.0.6 /usr/lib64/
-COPY --from=build-stage /usr/lib64/libyaml-cpp.so /usr/lib64/
 
 COPY docker/other-places.repo /etc/yum.repos.d/
 COPY docker/ubi.repo /etc/yum.repos.d/
-
+COPY ./docker/subscription-manager.conf /etc/yum/pluginconf.d/subscription-manager.conf
 
 RUN cd /etc/pki/rpm-gpg && \
     curl -O https://repo.almalinux.org/almalinux/RPM-GPG-KEY-AlmaLinux && \
     yum -y --nogpgcheck install https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
     dnf -y module disable postgresql && \
-    yum install -y libicu libpq5 boost && \
+    yum -y --nogpgcheck install epel-release && \
+    dnf config-manager --set-enabled powertools && \
+    yum install -y libicu libpq5 boost tinyxml2 yaml-cpp && \
     yum clean all
-
 
 ENTRYPOINT ["orionld", "-fg", "-multiservice", "-ngsiv1Autocast"]
 
