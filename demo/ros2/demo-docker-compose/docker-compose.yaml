@@ -1,0 +1,52 @@
+services:
+  ros2:
+    image: ros2
+    hostname: ros2
+    container_name: ros2
+    privileged: true
+    ipc: host
+    networks:
+      - arise-demo-network
+    environment:
+      DISPLAY: ":0.0"
+    volumes:
+       - /tmp/.X11-unix:/tmp/.X11-unix
+
+  orion-ld:
+    image: quay.io/fiware/orion-ld
+    hostname: orion-ld
+    container_name: orion-ld
+    privileged: true
+    ipc: host
+    networks:
+      - arise-demo-network
+    expose:
+      - 1026
+    ports:
+      - 1026:1026
+    depends_on:
+      - mongo-db
+    command: -dbhost mongo-db -wip dds -logLevel DEBUG
+      # -mongocOnly
+    volumes:
+       - ./config-dds.json:/root/.orionld
+
+  mongo-db:
+    image: mongo:5.0
+    hostname: mongo-db
+    container_name: mongo-db
+    networks:
+      - arise-demo-network
+    expose:
+      - 27017
+    ports:
+      - 27017:27017
+    command: --nojournal
+    volumes:
+      - ./data/db:/data/db
+
+networks:
+  arise-demo-network:
+    driver: bridge
+
+
