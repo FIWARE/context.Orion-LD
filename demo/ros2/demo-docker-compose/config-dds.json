@@ -1,0 +1,48 @@
+{
+  "dds": {
+    "ddsmodule": {
+      "dds": {
+        "domain": 0,
+        "allowlist": [
+          {
+            "name": "*"
+          }
+        ],
+        "blocklist": [
+          {
+            "name": "add_blocked_topics_list_here"
+          }
+        ]
+      },
+      "topics": {
+        "name": "*",
+        "qos": {
+          "durability": "TRANSIENT_LOCAL",
+          "history-depth": 10
+        }
+      },
+      "ddsenabler": null,
+      "specs": {
+        "threads": 12,
+        "logging": {
+          "stdout": false,
+          "verbosity": "info"
+        }
+      }
+    },
+    "ngsild": {
+      "topics": {
+        "rt/cmd_vel": {
+          "entityType": "Robot",
+          "entityId": "urn:ngsi-ld:robot:1",
+          "attribute": "velocityCommand"
+        },
+        "rt/pose": {
+          "entityType": "Robot",
+          "entityId": "urn:ngsi-ld:robot:1",
+          "attribute": "pose"
+        }
+      }
+    }
+  }
+}

@@ -137,6 +137,9 @@ def ignore(root, file):
     if 'ldcontext' in root:
         return True
 
+    if 'demo' in root:
+        return True
+
     # PNG files in manuals o functionalTest are ignored
     if ('manuals' in root or 'functionalTest' in root or 'apiary' in root) and file.endswith('.png'):
         return True
