@@ -86,16 +86,31 @@ void ddsNotification(const char* typeName, const char* topicName, const char* js
   char* expandedType = orionldContextItemExpand(orionldState.contextP, entityType, true, NULL);
   typeNodeP = kjString(orionldState.kjsonP, "type", expandedType);
 
-  KjNode* attrValueNodeP = kjLookup(kTree, topicName);
-  if (attrValueNodeP == NULL)
+  KjNode* topicNameNodeP = kjLookup(kTree, topicName);
+  if (topicNameNodeP == NULL)
     KT_RVE("No attribute field ('%s') in DDS payload", topicName);
+  KjNode* dataNodeP = kjLookup(topicNameNodeP, "data");
+  if (dataNodeP == NULL)
+    KT_RVE("No 'data' field in DDS attribute payload", topicName);
+
+  KjNode* tNodeP = kjLookup(topicNameNodeP, "type");
+  if (tNodeP != NULL)
+    kjChildRemove(topicNameNodeP, tNodeP);
+
+  KjNode* valueNodeP  = dataNodeP->value.firstChildP;
+  char*   xId         = valueNodeP->name;
+  KjNode* subAttrP    = kjString(orionldState.kjsonP, "xId", xId);
+  KjNode* attrNodeP   = kjObject(orionldState.kjsonP, NULL);
+
+  valueNodeP->name = (char*) "value";
+
+  kjChildAdd(attrNodeP, valueNodeP);
+
+  // Add the xId node as "hidden" sub-property - not to be included in GETs, only for DDS publish reconstruction
+  kjChildAdd(attrNodeP, subAttrP);
 
   orionldState.payloadIdNode   = idNodeP;
   orionldState.payloadTypeNode = typeNodeP;
-
-  KjNode* attrNodeP = kjObject(orionldState.kjsonP, NULL);
-  kjChildAdd(attrNodeP, attrValueNodeP);
-  attrValueNodeP->name = (char*) "value";
 
   orionldState.requestTree         = attrNodeP;
   orionldState.uriParams.format    = (char*) "simplified";
