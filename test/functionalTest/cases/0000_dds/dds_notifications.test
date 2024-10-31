@@ -165,19 +165,18 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             },
             "type": "Property",
             "value": {
-                "data": {
-                    "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0": {
-                        "b": false,
-                        "f": 0,
-                        "i": 0,
-                        "ia": [
-                            0,
-                            0
-                        ],
-                        "s": "abc"
-                    }
-                },
-                "type": "NgsildSample"
+                "b": false,
+                "f": 0,
+                "i": 0,
+                "ia": [
+                    0,
+                    0
+                ],
+                "s": "abc"
+            },
+            "xId": {
+                "type": "Property",
+                "value": "REGEX(.*)"
             }
         },
         "type": "Camera"
@@ -194,19 +193,18 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             },
             "type": "Property",
             "value": {
-                "data": {
-                    "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0": {
-                        "b": false,
-                        "f": 0,
-                        "i": 2,
-                        "ia": [
-                            0,
-                            0
-                        ],
-                        "s": ""
-                    }
-                },
-                "type": "NgsildSample"
+                "b": false,
+                "f": 0,
+                "i": 2,
+                "ia": [
+                    0,
+                    0
+                ],
+                "s": ""
+            },
+            "xId": {
+                "type": "Property",
+                "value": "REGEX(.*)"
             }
         },
         "ddsType": {
@@ -228,19 +226,18 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             },
             "type": "Property",
             "value": {
-                "data": {
-                    "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0": {
-                        "b": false,
-                        "f": 3.14,
-                        "i": 0,
-                        "ia": [
-                            0,
-                            0
-                        ],
-                        "s": ""
-                    }
-                },
-                "type": "NgsildSample"
+                "b": false,
+                "f": 3.14,
+                "i": 0,
+                "ia": [
+                    0,
+                    0
+                ],
+                "s": ""
+            },
+            "xId": {
+                "type": "Property",
+                "value": "REGEX(.*)"
             }
         },
         "P4": {
@@ -254,19 +251,18 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             },
             "type": "Property",
             "value": {
-                "data": {
-                    "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0": {
-                        "b": false,
-                        "f": 4.14,
-                        "i": 4,
-                        "ia": [
-                            0,
-                            0
-                        ],
-                        "s": "p4"
-                    }
-                },
-                "type": "NgsildSample"
+                "b": false,
+                "f": 4.14,
+                "i": 4,
+                "ia": [
+                    0,
+                    0
+                ],
+                "s": "p4"
+            },
+            "xId": {
+                "type": "Property",
+                "value": "REGEX(.*)"
             }
         },
         "ddsType": {
