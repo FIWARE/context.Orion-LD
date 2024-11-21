@@ -35,6 +35,7 @@ extern "C"
 #include "orionld/common/traceLevels.h"                     // KT_T trace levels
 #include "orionld/common/tenantList.h"                      // tenant0
 #include "orionld/context/orionldContextItemExpand.h"       // orionldContextItemExpand
+#include "orionld/notifications/orionldAlterationsTreat.h"  // orionldAlterationsTreat
 #include "orionld/serviceRoutines/orionldPutAttribute.h"    // orionldPutAttribute
 #include "orionld/dds/kjTreeLog.h"                          // kjTreeLog2
 #include "orionld/dds/ddsConfigTopicToAttribute.h"          // ddsConfigTopicToAttribute
@@ -133,4 +134,8 @@ void ddsNotification(const char* typeName, const char* topicName, const char* js
   // Except of course, if it is registered and exists elsewhere
   //
   orionldPutAttribute();
+
+  // Do what's needed from the function requestCompleted
+  if (orionldState.alterations != NULL)
+    orionldAlterationsTreat(orionldState.alterations);
 }

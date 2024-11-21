@@ -88,11 +88,13 @@ static bool entityIdMatch(CachedSubscription* subP, const char* entityId, int eI
 //
 static bool entityTypeMatch(CachedSubscription* subP, const char* entityType, int eItems)
 {
+  LM_T(LmtSubCacheMatch, ("Sub '%s': checking entity type", subP->subscriptionId));
   for (int ix = 0; ix < eItems; ++ix)
   {
     EntityInfo* eiP   = subP->entityIdInfos[ix];
     const char* eType = eiP->entityType.c_str();
 
+    LM_T(LmtSubCacheMatch, ("Sub '%s': matching incoming entity type '%s' to the subs '%s'", subP->subscriptionId, entityType, eType));
     if (strcmp(entityType, eType) == 0)
       return true;
 
@@ -100,7 +102,7 @@ static bool entityTypeMatch(CachedSubscription* subP, const char* entityType, in
       return true;
   }
 
-  LM_T(LmtSubCacheMatch, ("Sub '%s': no match due to Entity Type", subP->subscriptionId));
+  LM_T(LmtSubCacheMatch, ("Sub '%s': no match due to Entity Type ('%s')", subP->subscriptionId, entityType));
   return false;
 }
 

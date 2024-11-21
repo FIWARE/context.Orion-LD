@@ -27,7 +27,7 @@ the test client publishes on DDS, the broker receives DDS notifications and crea
 $REPO_HOME/scripts/configFile.sh "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.orionld
 $REPO_HOME/scripts/configFile.sh "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.ftClient
 dbInit CB
-orionldStart CB -mongocOnly -wip dds
+orionldStart CB -mongocOnly -wip dds -t 0-255
 ftClientStart -t 0-5000
 
 --SHELL--
@@ -39,9 +39,14 @@ ftClientStart -t 0-5000
 # 04. Ask FT to publish an entity urn:E4 on topic 'P4'
 # 05. Query the broker for all its entities, see all three (urn:ngsi-ld:camera:cam1, urn:ngsi-ld:arm:arm1, and the default entity))
 #
+# 06. Create a subscription for entity type 'Camera'
+# 07. Ask FT to publish an entity urn:E1 on topic 'P1' - to provoke a notification to ftClient
+# 08. Ping broker to make sure it's still OK (issue XXX says it dies)
+# 09. Dump the ftClient to see the notification
+#
 # Later:
-# 06. Kill the broker and empty its databae, then restart the broker again
-# 07. Query the broker for all its entities, see all three - should be present due to the DDS discovery 
+# 11. Kill the broker and empty its databae, then restart the broker again
+# 12. Query the broker for all its entities, see all three - should be present due to the DDS discovery 
 #
 
 echo "01. Ask FT to publish an entity urn:E1 on topic 'P1'"
@@ -93,7 +98,53 @@ echo
 echo
 
 
-# echo "06. Kill the broker and empty its database, then restart the broker again"
+echo "06. Create a subscription for entity type 'Camera'"
+echo "=================================================="
+payload='{
+  "id": "urn:s1",
+  "type": "Subscription",
+  "entities": [
+    {
+      "type": "Camera"
+    }
+  ],
+  "notification": {
+    "endpoint": {
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload"
+echo
+echo
+
+
+echo "07. Ask FT to publish an entity urn:E1 on topic 'P1' - to provoke a notification to ftClient"
+echo "============================================================================================"
+payload='{
+  "s": "def"
+}'
+orionCurl --url '/dds/pub?ddsTopicType=xyz&entityId=urn:E1&entityType=T&ddsTopicName=P1' --port $FT_PORT --payload "$payload"
+echo
+echo
+
+
+echo "08. Ping broker to make sure it's still OK (issue XXX says it dies)"
+echo "==================================================================="
+orionCurl --url /ngsi-ld/ex/v1/version
+echo
+echo
+
+
+echo "09. Dump the ftClient to see the notification"
+echo "============================================="
+sleep .5
+orionCurl --url /dump --port $FT_PORT --noPayloadCheck
+echo
+echo
+
+
+# echo "11. Kill the broker and empty its database, then restart the broker again"
 # echo "========================================================================="
 # brokerStop
 # dbInit CB > /dev/null
@@ -103,7 +154,7 @@ echo
 # echo
 
 
-# echo "07. Query the broker for all its entities, see all three - should be present due to the DDS discovery "
+# echo "12. Query the broker for all its entities, see all three - should be present due to the DDS discovery "
 # echo "======================================================================================================"
 # orionCurl --url /ngsi-ld/v1/entities?local=true
 # echo
@@ -275,7 +326,113 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 ]
 
 
+06. Create a subscription for entity type 'Camera'
+==================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/subscriptions/urn:s1
+
+
+
+07. Ask FT to publish an entity urn:E1 on topic 'P1' - to provoke a notification to ftClient
+============================================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+08. Ping broker to make sure it's still OK (issue XXX says it dies)
+===================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "Core Context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
+    "Next File Descriptor": REGEX(.*),
+    "Orion-LD version": "REGEX(.*)",
+    "based on orion": "REGEX(.*)",
+    "boost version": "REGEX(.*)",
+    "branch": "REGEX(.*)",
+    "bson version": "REGEX(.*)",
+    "cached subscriptions": 1,
+    "kalloc version": "REGEX(.*)",
+    "kbase version": "REGEX(.*)",
+    "khash version": "REGEX(.*)",
+    "kjson version": "REGEX(.*)",
+    "libcurl version": "REGEX(.*)",
+    "libuuid version": "REGEX(.*)",
+    "microhttpd version": "REGEX(.*)",
+    "mongoc version": "REGEX(.*)",
+    "mongocpp version": "REGEX(.*)",
+    "mongodb server version": "REGEX(.*)",
+    "openssl version": "REGEX(.*)",
+    "rapidjson version": "REGEX(.*)"
+}
+
+
+09. Dump the ftClient to see the notification
+=============================================
+HTTP/1.1 200 OK
+Content-Length: 1262
+Date: REGEX(.*)
+
+POST /notify?subscriptionId=urn:s1
+Content-Length: 560
+Content-Type: application/json
+User-Agent: orionld/REGEX(.*)
+Host: REGEX(.*)
+Accept: application/json
+Ngsild-Attribute-Format: Normalized
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+  "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+  "type": "Notification",
+  "subscriptionId": "urn:s1",
+  "notifiedAt": "202REGEX(.*)",
+  "data": [
+    {
+      "id": "urn:ngsi-ld:camera:cam1",
+      "type": "Camera",
+      "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+      },
+      "shutterSpeed": {
+        "type": "Property",
+        "value": {
+          "b": false,
+          "f": 0,
+          "i": 0,
+          "ia": [
+            0,
+            0
+          ],
+          "s": "def"
+        },
+        "xId": {
+          "type": "Property",
+          "value": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0"
+        },
+        "participantId": {
+          "type": "Property",
+          "value": "REGEX(.*)"
+        },
+        "publishedAt": {
+          "type": "Property",
+          "value": REGEX(.*)
+        }
+      }
+    }
+  ]
+}
+
+
+
 --TEARDOWN--
 ftClientStop
 brokerStop
-#dbDrop CB
+dbDrop CB
