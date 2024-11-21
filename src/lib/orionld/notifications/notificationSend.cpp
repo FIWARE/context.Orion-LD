@@ -582,7 +582,7 @@ static KjNode* notificationTree(OrionldAlterationMatch* matchList)
       apiEntityP = matchP->altP->finalApiEntityP;  // Temporary !!!
 
     // If the entity is already in "data", and, it's not a BATCH Operation, skip - already there
-    if (orionldState.serviceP->isBatchOp == false)
+    if ((orionldState.serviceP == NULL) || (orionldState.serviceP->isBatchOp == false))
     {
       KjNode* idP = kjLookup(apiEntityP, "id");
       if (idP == NULL)
