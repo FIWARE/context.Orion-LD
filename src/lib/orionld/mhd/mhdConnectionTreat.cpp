@@ -1369,54 +1369,6 @@ MHD_Result mhdConnectionTreat(void)
   //
   mhdReply(orionldState.responseTree);    // orionldState.responsePayload freed and NULLed by mhdReply()
 
-
-  //
-  // FIXME: Delay until requestCompleted. The call to orionldStateRelease as well
-  //
-  // Call TRoE Routine (if there is one) to save the TRoE data.
-  // Only if the Service Routine was successful, of course
-  // AND if there is any request tree to process
-  //
-  if ((orionldState.httpStatusCode >= 200) && (orionldState.httpStatusCode <= 300) && (orionldState.noDbUpdate == false))
-  {
-    if ((orionldState.serviceP != NULL) && (orionldState.serviceP->troeRoutine != NULL))
-    {
-      //
-      // Also, if something went wrong during processing, the SR can flag this by setting the requestTree to NULL
-      //
-      if (orionldState.troeError == true)
-        LM_E(("Internal Error (something went wrong during TRoE processing)"));
-      else
-      {
-        //
-        // Special case - Entity creation with no attribute
-        // As both the entity id and the entity type have been removed from the payload body, the payload body is now empty.
-        // We still have to record the creation of the entity in the TRoE database!
-        //
-        // If the incoming request an empty array/object, then don't call the TRoE routine
-        // - EXCEPT if it's a POST /entities request (service routine is orionldPostEntities)
-        //
-        bool invokeTroe = false;
-
-        if (orionldState.verb == HTTP_DELETE)                                                             invokeTroe = true;
-        if (orionldState.serviceP->serviceRoutine == orionldPostEntities)                                 invokeTroe = true;
-        if ((orionldState.requestTree != NULL) && (orionldState.requestTree->value.firstChildP != NULL))  invokeTroe = true;
-
-        if (invokeTroe == true)
-        {
-          PERFORMANCE(troeStart);
-          orionldState.serviceP->troeRoutine();
-          PERFORMANCE(troeEnd);
-        }
-      }
-    }
-  }
-
-  //
-  // Cleanup
-  //
-  orionldStateRelease();
-
   PERFORMANCE(requestPartEnd);
 
   return MHD_YES;

@@ -34,6 +34,8 @@ extern "C"
 #include "kjson/KjNode.h"                                   // KjNode
 }
 
+#include "logMsg/logMsg.h"                                  // lmOut
+
 #include "orionld/common/traceLevels.h"                     // kjTreeLog2
 #include "orionld/common/orionldState.h"                    // configFile
 #include "orionld/kjTree/kjNavigate.h"                      // kjNavigate
@@ -71,13 +73,20 @@ void ddsTypeNotification(const char* typeName, const char* topicName, const char
 //
 void ddsLog(const char* fileName, int lineNo, const char* funcName, int category, const char* msg)
 {
-  int  level    = 0;
-  char severity = ddsCategoryToKlogSeverity(category, &level);
-
   char* filename = (fileName != NULL)? (char*) fileName : (char*) "no-filename";
   char* funcname = (funcName != NULL)? (char*) funcName : (char*) "no-funcname";
 
+#if 1
+  int  level    = 0;
+  char severity = ddsCategoryToKlogSeverity(category, &level);
+
   ktOut(filename, lineNo, funcname,  severity, level, msg);
+#else
+  int  level  = 'W';
+  char lmType = ddsCategoryToKlogSeverity(category, &level);  // Think it will work also for LM
+
+  lmOut((char*) msg, lmType, filename, lineNo, funcname, level);
+#endif
 }
 
 

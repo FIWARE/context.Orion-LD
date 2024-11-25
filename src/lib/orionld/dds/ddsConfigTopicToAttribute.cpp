@@ -58,10 +58,16 @@ char* ddsConfigTopicToAttribute(const char* topic, char** entityIdPP, char** ent
 
   const char*    path[4] = { "dds", "ngsild", "topics", NULL };
   static KjNode* topicsP = kjNavigate(ddsConfigTree, path, NULL, NULL);
-  KjNode*        topicP  = kjLookup(topicsP, topic);
+
+  if (topicsP == NULL)
+    KT_RE(NULL, "the field dds/ngsild/topic not found in DDS config file (looking for topic '%s')", topic);
+
+  KjNode* topicP  = kjLookup(topicsP, topic);
 
   if (topicP == NULL)
     KT_RE(NULL, "topic '%s' not found in DDS config file", topic);
+
+  KT_T(StDdsConfig, "Found topic '%s' in config file", topic);
 
   KjNode* attributeP = kjLookup(topicP, "attribute");
 

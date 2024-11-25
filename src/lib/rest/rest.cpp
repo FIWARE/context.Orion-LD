@@ -61,6 +61,7 @@ extern "C"
 #include "orionld/types/OrionldHeader.h"                         // orionldHeaderAdd
 #include "orionld/types/OrionldMimeType.h"                       // mimeTypeFromString
 #include "orionld/types/ApiVersion.h"                            // ApiVersion
+#include "orionld/types/OrionLdRestService.h"                    // ORIONLD_URIPARAM_LIMIT, ...
 #include "orionld/common/orionldState.h"                         // orionldState, multitenancy, ...
 #include "orionld/common/performance.h"                          // REQUEST_PERFORMANCE
 #include "orionld/common/orionldError.h"                         // orionldError
@@ -68,7 +69,7 @@ extern "C"
 #include "orionld/common/tenantList.h"                           // tenant0
 #include "orionld/common/stringStrip.h"                          // stringStrip
 #include "orionld/http/verbGet.h"                                // verbGet
-#include "orionld/mongoc/mongocConnectionRelease.h"              // Own interface
+#include "orionld/mongoc/mongocConnectionRelease.h"              // mongocConnectionRelease
 #include "orionld/notifications/orionldAlterationsTreat.h"       // orionldAlterationsTreat
 #include "orionld/mhd/mhdConnectionInit.h"                       // mhdConnectionInit
 #include "orionld/mhd/mhdConnectionPayloadRead.h"                // mhdConnectionPayloadRead
@@ -76,6 +77,7 @@ extern "C"
 #include "orionld/distOp/distOpListRelease.h"                    // distOpListRelease
 #include "orionld/service/orionldServiceNotFound.h"              // orionldServiceNotFound
 #include "orionld/payloadCheck/pCheckUri.h"                      // pCheckUri
+#include "orionld/serviceRoutines/orionldPostEntities.h"         // orionldPostEntities
 
 #include "rest/HttpHeaders.h"                                    // HTTP_* defines
 #include "rest/Verb.h"
@@ -363,7 +365,7 @@ static MHD_Result httpHeaderGet(void* cbDataP, MHD_ValueKind kind, const char* k
 *
 * requestCompleted -
 */
-static void requestCompleted
+void requestCompleted
 (
   void*                       cls,
   MHD_Connection*             connection,
@@ -374,7 +376,6 @@ static void requestCompleted
   PERFORMANCE(requestCompletedStart);
 
   ConnectionInfo*  ciP      = (ConnectionInfo*) *con_cls;
-  const char*      spath    = ((orionldState.apiVersion != API_VERSION_NGSILD_V1) && (ciP->servicePathV.size() > 0))? ciP->servicePathV[0].c_str() : "";
   struct timespec  reqEndTime;
 
   //
@@ -385,6 +386,46 @@ static void requestCompleted
     PERFORMANCE(notifStart);
     orionldAlterationsTreat(orionldState.alterations);
     PERFORMANCE(notifEnd);
+  }
+
+  //
+  // Call TRoE Routine (if there is one) to save the TRoE data.
+  // Only if the Service Routine was successful, of course
+  // AND if there is any request tree to process
+  //
+  if ((orionldState.httpStatusCode >= 200) && (orionldState.httpStatusCode <= 300) && (orionldState.noDbUpdate == false))
+  {
+    if ((orionldState.serviceP != NULL) && (orionldState.serviceP->troeRoutine != NULL))
+    {
+      //
+      // Also, if something went wrong during processing, the SR can flag this by setting the requestTree to NULL
+      //
+      if (orionldState.troeError == true)
+        LM_E(("Internal Error (something went wrong during TRoE processing)"));
+      else
+      {
+        //
+        // Special case - Entity creation with no attribute
+        // As both the entity id and the entity type have been removed from the payload body, the payload body is now empty.
+        // We still have to record the creation of the entity in the TRoE database!
+        //
+        // If the incoming request an empty array/object, then don't call the TRoE routine
+        // - EXCEPT if it's a POST /entities request (service routine is orionldPostEntities)
+        //
+        bool invokeTroe = false;
+
+        if (orionldState.verb == HTTP_DELETE)                                                             invokeTroe = true;
+        if (orionldState.serviceP->serviceRoutine == orionldPostEntities)                                 invokeTroe = true;
+        if ((orionldState.requestTree != NULL) && (orionldState.requestTree->value.firstChildP != NULL))  invokeTroe = true;
+
+        if (invokeTroe == true)
+        {
+          PERFORMANCE(troeStart);
+          orionldState.serviceP->troeRoutine();
+          PERFORMANCE(troeEnd);
+        }
+      }
+    }
   }
 
   if ((orionldState.in.payload != NULL) && (orionldState.in.payload != orionldState.preallocReqBuf))
@@ -503,6 +544,7 @@ static void requestCompleted
   //
   if ((orionldState.apiVersion != API_VERSION_NGSILD_V1) && (metricsMgr.isOn()))
   {
+    const char* spath = (ciP->servicePathV.size() > 0)? ciP->servicePathV[0].c_str() : "";
     metricsMgr.add(orionldState.tenantP->tenant, spath, METRIC_TRANS_IN, 1);
 
     if (orionldState.httpStatusCode >= 400)
@@ -530,7 +572,7 @@ static void requestCompleted
   extern void delayedReleaseExecute(void);
   delayedReleaseExecute();
 
-  if (orionldState.apiVersion != API_VERSION_NGSILD_V1)
+  if ((orionldState.apiVersion != API_VERSION_NGSILD_V1) && (ciP != NULL))
     delete(ciP);
 
   kaBufferReset(&orionldState.kalloc, false);  // 'false': it's reused, but in a different thread ...
@@ -582,6 +624,11 @@ static void requestCompleted
     LM_T(LmtPerformance, ("TPUT: mongoConnect Accumulated:   %f (%d calls)", performanceTimestamps.mongoConnectAccumulated, performanceTimestamps.getMongoConnectionCalls));
   }
 #endif
+
+  //
+  // Cleanup
+  //
+  orionldStateRelease();
 }
 
 

@@ -34,12 +34,34 @@ extern "C"
 #include "orionld/common/orionldState.h"                    // orionldState, kjTreeLog
 #include "orionld/common/traceLevels.h"                     // KT_T trace levels
 #include "orionld/common/tenantList.h"                      // tenant0
+#include "orionld/types/OrionLdRestService.h"               // OrionLdRestService, OrionLdRestServiceVector, OrionldServiceRoutine
+#include "orionld/service/orionldServiceInit.h"             // orionldRestServiceV
+#include "orionld/serviceRoutines/orionldPutAttribute.h"    // orionldPutAttribute
+#include "orionld/mongoc/mongocConnectionRelease.h"         // mongocConnectionRelease
 #include "orionld/context/orionldContextItemExpand.h"       // orionldContextItemExpand
 #include "orionld/notifications/orionldAlterationsTreat.h"  // orionldAlterationsTreat
-#include "orionld/serviceRoutines/orionldPutAttribute.h"    // orionldPutAttribute
 #include "orionld/dds/kjTreeLog.h"                          // kjTreeLog2
 #include "orionld/dds/ddsConfigTopicToAttribute.h"          // ddsConfigTopicToAttribute
 #include "orionld/dds/ddsNotification.h"                    // Own interface
+
+
+
+// -----------------------------------------------------------------------------
+//
+// serviceLookupByRoutine -
+//
+static OrionLdRestService* serviceLookupByRoutine(OrionldServiceRoutine serviceRoutine, Verb verb)
+{
+  OrionLdRestServiceVector* serviceVectorP = &orionldRestServiceV[verb];
+
+  for (int ix = 0; ix < serviceVectorP->services; ix++)
+  {
+    if (serviceVectorP->serviceV[ix].serviceRoutine == serviceRoutine)
+      return &serviceVectorP->serviceV[ix];
+  }
+
+  return NULL;
+}
 
 
 
@@ -123,19 +145,21 @@ void ddsNotification(const char* typeName, const char* topicName, const char* js
   orionldState.in.pathAttrExpanded = (char*) topicName;
   orionldState.ddsSample           = true;
   orionldState.ddsPublishTime      = publishTime;
+  orionldState.apiVersion          = API_VERSION_NGSILD_V1;
 
   kjChildAdd(attrNodeP, participantIdNodeP);
 
   KjNode* publishedAt = kjInteger(orionldState.kjsonP, "publishedAt", publishTime);
   kjChildAdd(attrNodeP, publishedAt);
 
-  //
-  // If the entity does not exist, it needs to be created
-  // Except of course, if it is registered and exists elsewhere
-  //
+  orionldState.serviceP = serviceLookupByRoutine(orionldPutAttribute, HTTP_PUT);
+
   orionldPutAttribute();
 
-  // Do what's needed from the function requestCompleted
-  if (orionldState.alterations != NULL)
-    orionldAlterationsTreat(orionldState.alterations);
+  //
+  // Cleanup
+  //
+  void* con_cls;
+  extern void requestCompleted(void* cls, MHD_Connection* connection, void** con_cls, MHD_RequestTerminationCode toe);
+  requestCompleted(NULL, NULL, &con_cls, MHD_REQUEST_TERMINATED_COMPLETED_OK);
 }
