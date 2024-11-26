@@ -202,6 +202,7 @@ SET (ORION_LIBS
     orionld_kjTree
     orionld_mqtt
     orionld_dds
+    orionld_service
     orionld_http
     orionld_context
     orionld_common

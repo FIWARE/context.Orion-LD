@@ -27,7 +27,8 @@ the test client publishes on DDS, the broker receives DDS notifications and crea
 $REPO_HOME/scripts/configFile.sh "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.orionld
 $REPO_HOME/scripts/configFile.sh "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.ftClient
 dbInit CB
-orionldStart CB -mongocOnly -wip dds -t 0-255
+pgInit $CB_DB_NAME
+orionldStart CB -mongocOnly -wip dds -t 0-255 -troe
 ftClientStart -t 0-5000
 
 --SHELL--
@@ -44,9 +45,12 @@ ftClientStart -t 0-5000
 # 08. Ping broker to make sure it's still OK (issue XXX says it dies)
 # 09. Dump the ftClient to see the notification
 #
+# 10. See entities in the temporal database (urn:ngsi-ld:camera:cam1+urn:ngsi-ld:arm:arm1)
+# 11. See attributes in the temporal database
+#
 # Later:
-# 11. Kill the broker and empty its databae, then restart the broker again
-# 12. Query the broker for all its entities, see all three - should be present due to the DDS discovery 
+# 21. Kill the broker and empty its databae, then restart the broker again
+# 22. Query the broker for all its entities, see all three - should be present due to the DDS discovery 
 #
 
 echo "01. Ask FT to publish an entity urn:E1 on topic 'P1'"
@@ -144,7 +148,21 @@ echo
 echo
 
 
-# echo "11. Kill the broker and empty its database, then restart the broker again"
+echo "10. See entities in the temporal database (urn:ngsi-ld:camera:cam1+urn:ngsi-ld:arm:arm1)"
+echo "========================================================================================"
+postgresCmd -sql "SELECT opMode,id,type,ts FROM entities"
+echo
+echo
+
+
+echo "11. See attributes in the temporal database"
+echo "==========================================="
+postgresCmd -sql "SELECT opMode,id,valueType,entityId,subProperties,unitcode,datasetid,text,number,boolean,observedAt,ts FROM attributes"
+echo
+echo
+
+
+# echo "21. Kill the broker and empty its database, then restart the broker again"
 # echo "========================================================================="
 # brokerStop
 # dbInit CB > /dev/null
@@ -154,7 +172,7 @@ echo
 # echo
 
 
-# echo "12. Query the broker for all its entities, see all three - should be present due to the DDS discovery "
+# echo "22. Query the broker for all its entities, see all three - should be present due to the DDS discovery "
 # echo "======================================================================================================"
 # orionCurl --url /ngsi-ld/v1/entities?local=true
 # echo
@@ -369,6 +387,8 @@ Date: REGEX(.*)
     "mongocpp version": "REGEX(.*)",
     "mongodb server version": "REGEX(.*)",
     "openssl version": "REGEX(.*)",
+    "postgres libpq version": "REGEX(.*)",
+    "postgres server version": "REGEX(.*)",
     "rapidjson version": "REGEX(.*)"
 }
 
@@ -432,7 +452,29 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 
 
+10. See entities in the temporal database (urn:ngsi-ld:camera:cam1+urn:ngsi-ld:arm:arm1)
+========================================================================================
+opmode,id,type,ts
+Create,urn:ngsi-ld:camera:cam1,https://uri.etsi.org/ngsi-ld/default-context/Camera,202REGEX(.*)
+Create,urn:ngsi-ld:arm:arm1,https://uri.etsi.org/ngsi-ld/default-context/Arm,202REGEX(.*)
+Create,urn:ngsi-ld:dds:default,https://uri.etsi.org/ngsi-ld/default-context/DDS,202REGEX(.*)
+
+
+11. See attributes in the temporal database
+===========================================
+opmode,id,valuetype,entityid,subproperties,unitcode,datasetid,text,number,boolean,observedat,ts
+Create,https://uri.etsi.org/ngsi-ld/default-context/shutterSpeed,Compound,urn:ngsi-ld:camera:cam1,t,,None,,,,,202REGEX(.*)
+Create,ddsType,String,urn:ngsi-ld:camera:cam1,f,,None,fastdds,,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/armReach,Compound,urn:ngsi-ld:arm:arm1,t,,None,,,,,202REGEX(.*)
+Create,ddsType,String,urn:ngsi-ld:arm:arm1,f,,None,fastdds,,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P3,Compound,urn:ngsi-ld:dds:default,t,,None,,,,,202REGEX(.*)
+Create,ddsType,String,urn:ngsi-ld:dds:default,f,,None,fastdds,,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P4,Compound,urn:ngsi-ld:dds:default,t,,None,,,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/shutterSpeed,Compound,urn:ngsi-ld:camera:cam1,t,,None,,,,,202REGEX(.*)
+
+
 --TEARDOWN--
 ftClientStop
 brokerStop
 dbDrop CB
+pgDrop $CB_DB_NAME

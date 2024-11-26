@@ -37,6 +37,7 @@ extern "C"
 #include "orionld/dds/kjTreeLog.h"                               // kjTreeLog2
 #include "orionld/serviceRoutines/orionldPostEntities.h"         // orionldPostEntities - if the entity does not exist
 #include "orionld/dds/ddsEntityCreateFromAttribute.h"            // Own Interface
+#include "orionld/service/serviceLookupByServiceRoutine.h"       // serviceLookupByServiceRoutine
 
 
 
@@ -54,5 +55,16 @@ int ddsEntityCreateFromAttribute(KjNode* attrNodeP, const char* entityId, const 
   kjChildAdd(orionldState.requestTree, attributeP);
 
   kjTreeLog2(orionldState.requestTree, "Input KjNode tree to orionldPostEntities", StDds);
-  return orionldPostEntities();
+  KT_T(StServiceRoutines, "Calling orionldPostEntities");
+
+  //
+  // We change the service routine
+  //
+  orionldState.serviceP = serviceLookupByServiceRoutine(orionldPostEntities, HTTP_POST);
+
+  // And we call it
+  bool x = orionldPostEntities();
+  KT_T(StServiceRoutines, "Back from orionldPostEntities (returned %s)", (x == true)? "true" : "false");
+
+  return 0;
 }
