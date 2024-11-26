@@ -1,9 +1,6 @@
-#ifndef SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_
-#define SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_
-
 /*
 *
-* Copyright 2022 FIWARE Foundation e.V.
+* Copyright 2024 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,29 +22,27 @@
 *
 * Author: Ken Zangelin
 */
+#include <unistd.h>                                         // NULL
+
+#include "orionld/types/OrionLdRestService.h"               // OrionLdRestService, OrionLdRestServiceVector, OrionldServiceRoutine
+#include "orionld/types/Verb.h"                             // Verb
+#include "orionld/service/orionldServiceInit.h"             // orionldRestServiceV
 
 
 
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 //
-// Trace Levels -
+// serviceLookupByServiceRoutine -
 //
-typedef enum OrionldTraceLevels
+OrionLdRestService* serviceLookupByServiceRoutine(OrionldServiceRoutine serviceRoutine, Verb verb)
 {
-  StMhdInit         = 100,
-  StSR              = 101,
+  OrionLdRestServiceVector* serviceVectorP = &orionldRestServiceV[verb];
 
-  StRequest         = 200,
-  StDds             = 201,
-  StDdsPublish      = 202,
-  StDdsNotification = 203,
-  StDdsLibInfo      = 204,
-  StDdsLibDebug     = 205,
-  StDdsConfig       = 206,
-  StServiceRoutines = 207,
+  for (int ix = 0; ix < serviceVectorP->services; ix++)
+  {
+    if (serviceVectorP->serviceV[ix].serviceRoutine == serviceRoutine)
+      return &serviceVectorP->serviceV[ix];
+  }
 
-  StDump            = 300,
-  StDdsDump         = 301
-} OrionldTraceLevels;
-
-#endif  // SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_
+  return NULL;
+}

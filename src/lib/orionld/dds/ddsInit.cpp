@@ -62,7 +62,10 @@ DdsOperationMode ddsOpMode;
 //
 void ddsTypeNotification(const char* typeName, const char* topicName, const char* serializedType)
 {
+  KT_T(StDds, "----------------------------------------");
   KT_T(StDds, "Got a type notification ('%s', '%s', '%s')", typeName, topicName, serializedType);
+  KT_T(StDds, "Nothing done, for now at least");
+  KT_T(StDds, "----------------------------------------");
 }
 
 
@@ -75,17 +78,13 @@ void ddsLog(const char* fileName, int lineNo, const char* funcName, int category
 {
   char* filename = (fileName != NULL)? (char*) fileName : (char*) "no-filename";
   char* funcname = (funcName != NULL)? (char*) funcName : (char*) "no-funcname";
+  int   level    = 0;
+  char  severity = ddsCategoryToKlogSeverity(category, &level);
 
 #if 1
-  int  level    = 0;
-  char severity = ddsCategoryToKlogSeverity(category, &level);
-
   ktOut(filename, lineNo, funcname,  severity, level, msg);
 #else
-  int  level  = 'W';
-  char lmType = ddsCategoryToKlogSeverity(category, &level);  // Think it will work also for LM
-
-  lmOut((char*) msg, lmType, filename, lineNo, funcname, level);
+  lmOut((char*) msg, severity, filename, lineNo, funcname, level);
 #endif
 }
 

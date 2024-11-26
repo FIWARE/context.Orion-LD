@@ -40,28 +40,10 @@ extern "C"
 #include "orionld/mongoc/mongocConnectionRelease.h"         // mongocConnectionRelease
 #include "orionld/context/orionldContextItemExpand.h"       // orionldContextItemExpand
 #include "orionld/notifications/orionldAlterationsTreat.h"  // orionldAlterationsTreat
+#include "orionld/service/serviceLookupByServiceRoutine.h"  // serviceLookupByServiceRoutine
 #include "orionld/dds/kjTreeLog.h"                          // kjTreeLog2
 #include "orionld/dds/ddsConfigTopicToAttribute.h"          // ddsConfigTopicToAttribute
 #include "orionld/dds/ddsNotification.h"                    // Own interface
-
-
-
-// -----------------------------------------------------------------------------
-//
-// serviceLookupByRoutine -
-//
-static OrionLdRestService* serviceLookupByRoutine(OrionldServiceRoutine serviceRoutine, Verb verb)
-{
-  OrionLdRestServiceVector* serviceVectorP = &orionldRestServiceV[verb];
-
-  for (int ix = 0; ix < serviceVectorP->services; ix++)
-  {
-    if (serviceVectorP->serviceV[ix].serviceRoutine == serviceRoutine)
-      return &serviceVectorP->serviceV[ix];
-  }
-
-  return NULL;
-}
 
 
 
@@ -71,6 +53,7 @@ static OrionLdRestService* serviceLookupByRoutine(OrionldServiceRoutine serviceR
 //
 void ddsNotification(const char* typeName, const char* topicName, const char* json, int64_t publishTime)
 {
+  KT_T(StDdsNotification, "----------------------------------------");
   KT_T(StDdsNotification, "Got a notification on %s:%s (json: %s)", typeName, topicName, json);
 
   orionldStateInit(NULL);
@@ -152,7 +135,7 @@ void ddsNotification(const char* typeName, const char* topicName, const char* js
   KjNode* publishedAt = kjInteger(orionldState.kjsonP, "publishedAt", publishTime);
   kjChildAdd(attrNodeP, publishedAt);
 
-  orionldState.serviceP = serviceLookupByRoutine(orionldPutAttribute, HTTP_PUT);
+  orionldState.serviceP = serviceLookupByServiceRoutine(orionldPutAttribute, HTTP_PUT);
 
   orionldPutAttribute();
 
@@ -161,5 +144,6 @@ void ddsNotification(const char* typeName, const char* topicName, const char* js
   //
   void* con_cls;
   extern void requestCompleted(void* cls, MHD_Connection* connection, void** con_cls, MHD_RequestTerminationCode toe);
+
   requestCompleted(NULL, NULL, &con_cls, MHD_REQUEST_TERMINATED_COMPLETED_OK);
 }

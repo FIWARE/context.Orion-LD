@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_
-#define SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_
+#ifndef SRC_LIB_ORIONLD_SERVICE_SERVICELOOKUPBYSERVICEROUTINE_H_
+#define SRC_LIB_ORIONLD_SERVICE_SERVICELOOKUPBYSERVICEROUTINE_H_
 
 /*
 *
-* Copyright 2022 FIWARE Foundation e.V.
+* Copyright 2024 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,29 +25,15 @@
 *
 * Author: Ken Zangelin
 */
+#include "orionld/types/OrionLdRestService.h"               // OrionLdRestService, OrionldServiceRoutine
+#include "orionld/types/Verb.h"                             // Verb
 
 
 
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 //
-// Trace Levels -
+// serviceLookupByServiceRoutine - FIXME: move to its own module
 //
-typedef enum OrionldTraceLevels
-{
-  StMhdInit         = 100,
-  StSR              = 101,
+extern OrionLdRestService* serviceLookupByServiceRoutine(OrionldServiceRoutine serviceRoutine, Verb verb);
 
-  StRequest         = 200,
-  StDds             = 201,
-  StDdsPublish      = 202,
-  StDdsNotification = 203,
-  StDdsLibInfo      = 204,
-  StDdsLibDebug     = 205,
-  StDdsConfig       = 206,
-  StServiceRoutines = 207,
-
-  StDump            = 300,
-  StDdsDump         = 301
-} OrionldTraceLevels;
-
-#endif  // SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_
+#endif  // SRC_LIB_ORIONLD_SERVICE_SERVICELOOKUPBYSERVICEROUTINE_H_
