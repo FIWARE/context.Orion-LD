@@ -228,19 +228,14 @@ void mongoInit
 )
 {
   double tmo = timeout / 1000.0;  // milliseconds to float value in seconds
+
   if (!mongoStart(dbHost, dbName.c_str(), rplSet, user, pwd, mtenant, tmo, writeConcern, dbPoolSize, mutexTimeStat))
-  {
     LM_X(1, ("Fatal Error (MongoDB error)"));
-  }
 
   if (user[0] != 0)
-  {
     LM_I(("Connected to mongo at %s:%s as user '%s'", dbHost, dbName.c_str(), user));
-  }
   else
-  {
     LM_I(("Connected to mongo at %s:%s", dbHost, dbName.c_str()));
-  }
 
   setDbPrefix(dbName);
 
@@ -263,11 +258,13 @@ void mongoInit
     std::vector<std::string> orionDbs;
 
     getOrionDatabases(&orionDbs);
+    LM_T(LmtMongoPool, ("There are %d Orion databases, the connection pool size is: %d", orionDbs.size(), dbPoolSize));
 
     for (unsigned int ix = 0; ix < orionDbs.size(); ++ix)
     {
       std::string     orionDb     = orionDbs[ix];
       std::string     tenantName  = orionDb.substr(dbName.length() + 1);   // + 1 for the "_" in "orion_tenantA"
+
       OrionldTenant*  tenantP     = orionldTenantGet(tenantName.c_str());
 
       if (idIndex == true)
@@ -288,6 +285,7 @@ void mongoInit
 static void shutdownClient(void)
 {
   mongo::Status status = mongo::client::shutdown();
+
   if (!status.isOK())
   {
     LM_E(("Database Shutdown Error %s (cannot shutdown mongo client)", status.toString().c_str()));
@@ -320,20 +318,16 @@ bool mongoStart
   static bool alreadyDone = false;
 
   if (alreadyDone == true)
-  {
-    LM_E(("Runtime Error (mongoStart already called - can only be called once)"));
-    return false;
-  }
+    LM_RE(false, ("Runtime Error (mongoStart already called - can only be called once)"));
+
   alreadyDone = true;
 
   multitenant = _multitenant;
 
   mongo::Status status = mongo::client::initialize();
   if (!status.isOK())
-  {
-    LM_E(("Database Startup Error %s (cannot initialize mongo client)", status.toString().c_str()));
-    return false;
-  }
+    LM_RE(false, ("Database Startup Error %s (cannot initialize mongo client)", status.toString().c_str()));
+
   atexit(shutdownClient);
 
   if (mongoConnectionPoolInit(host,
@@ -347,7 +341,7 @@ bool mongoStart
                               poolSize,
                               semTimeStat) != 0)
   {
-    LM_E(("Database Startup Error (cannot initialize mongo connection pool)"));
+    LM_E(("Database Startup Error (unable to initialize the mongo connection pool)"));
     return false;
   }
 
@@ -356,14 +350,9 @@ bool mongoStart
 
 
 
-
-
 #ifdef UNIT_TEST
 
 static DBClientBase* connection = NULL;
-
-
-
 /* ****************************************************************************
 *
 * setMongoConnectionForUnitTest -

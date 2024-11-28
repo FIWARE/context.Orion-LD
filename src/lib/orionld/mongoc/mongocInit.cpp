@@ -326,8 +326,14 @@ void mongocInit
   //
   sem_init(&mongocConnectionSem, 0, 1);  // 0: shared between threads of the same process. 1: free to be taken
 
-  if (mongocTenantsGet() == false)
+  int tenants = 1;
+  if (mongocTenantsGet(&tenants) == false)
     LM_X(1, ("Unable to extract tenants from the database - fatal error"));
+
+  LM_T(LmtMongoPool, ("No of tenants: %d", tenants));
+  extern int dbPoolSize;
+  if (dbPoolSize < tenants)
+    dbPoolSize = tenants + 5;
 
   if (mongocGeoIndexInit() == false)
     LM_X(1, ("Unable to initialize geo indices in database - fatal error"));

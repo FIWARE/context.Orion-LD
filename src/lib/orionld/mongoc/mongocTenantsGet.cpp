@@ -45,7 +45,7 @@ extern "C"
 //
 // mongocTenantsGet -
 //
-bool mongocTenantsGet(void)
+bool mongocTenantsGet(int* noOfTenantsP)
 {
   bson_t        command;
   bson_t        reply;
@@ -94,6 +94,7 @@ bool mongocTenantsGet(void)
 
         if (orionldTenantLookup(tenantName) == NULL)
           orionldTenantCreate(tenantName, false, false);
+        *noOfTenantsP += 1;
       }
     }
   }

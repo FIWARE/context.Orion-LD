@@ -161,6 +161,7 @@ typedef enum TraceLevels
   LmtLegacy  = 220,                    // Old code (mongoBackend, json parsers, etc)
   LmtLegacySubMatch,                   // Old code - update/subscription match for subs/notifs
   LmtLegacySubCacheRefresh,            // Old code - sub-cache-refresh
+  LmtMongoPool,
 
   //
   // DDS

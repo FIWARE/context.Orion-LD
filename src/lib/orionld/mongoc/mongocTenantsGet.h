@@ -32,6 +32,6 @@
 //
 // mongocTenantsGet -
 //
-extern bool mongocTenantsGet(void);
+extern bool mongocTenantsGet(int* noOfTenantsP);
 
 #endif  // SRC_LIB_ORIONLD_MONGOC_MONGOCTENANTSGET_H_
