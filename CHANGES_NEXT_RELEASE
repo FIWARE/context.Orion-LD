@@ -1,5 +1,7 @@
 ## Fixed Issues:
-  #1698: Not fixed, but making it almost usable. Real fix coming soon. Needs a complete rewrite.
+  #1698: Not fixed, but making it usable. Real fix coming. Needs a complete rewrite.
+  #1704: problem when the number of tenants is bigger than the size of the mongo connection pool
+  #XXXX: various fixes for DDS
 
 ## New Features:
   * Support for ...
