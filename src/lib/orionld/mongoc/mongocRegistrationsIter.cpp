@@ -36,6 +36,7 @@ extern "C"
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/mongoc/mongocWriteLog.h"                       // MONGOC_RLOG
+#include "orionld/mongoc/mongocConnectionRelease.h"              // mongocConnectionRelease
 #include "orionld/mongoc/mongocConnectionGet.h"                  // mongocConnectionGet
 #include "orionld/mongoc/mongocKjTreeFromBson.h"                 // mongocKjTreeFromBson
 #include "orionld/mongoc/mongocRegistrationsIter.h"              // RegCacheIterFunc
@@ -80,6 +81,7 @@ int mongocRegistrationsIter(RegCache* rcP, RegCacheIterFunc callback)
   if (mongoCursorP == NULL)
   {
     orionldError(OrionldInternalError, "Database Error", "mongoc_collection_find_with_opts ERROR", 500);
+    mongocConnectionRelease();
     mongoc_read_prefs_destroy(readPrefs);
     bson_destroy(&mongoFilter);
     return 1;
@@ -120,6 +122,7 @@ int mongocRegistrationsIter(RegCache* rcP, RegCacheIterFunc callback)
   mongoc_cursor_destroy(mongoCursorP);
   mongoc_read_prefs_destroy(readPrefs);
   bson_destroy(&mongoFilter);
+  mongocConnectionRelease();
 
   return retVal;
 }

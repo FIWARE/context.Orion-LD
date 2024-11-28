@@ -1063,6 +1063,8 @@ int main(int argC, char* argV[])
 
   paParse(paArgs, argC, (char**) argV, 1, false);
 
+  LM_T(LmtMongoPool, ("DB Pool Size: %d", dbPoolSize));
+
   //
   // Config file
   //
@@ -1293,6 +1295,7 @@ int main(int argC, char* argV[])
   orionldTenantInit();
   orionldState.tenantP = &tenant0;
 
+  // mongocInit calls mongocTenantsGet => it gets total number of tenants from there and can change dbPoolSize
   mongocInit(dbURI, dbHost, dbUser, dbPwd, dbAuthDb, rplSet, dbAuthMechanism, dbSSL, dbCertFile);
 
   //

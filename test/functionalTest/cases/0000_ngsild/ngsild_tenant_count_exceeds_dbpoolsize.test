@@ -1,0 +1,172 @@
+# Copyright 2024 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Tenant test for when the number of tenants is bigger than the DB pool size
+
+--SHELL-INIT--
+dbInit CB
+dbResetAll
+orionldStart CB -multiservice -dbPoolSize 2
+
+--SHELL--
+
+#
+# 01. Create an entity urn:ngsi-ld:entity:E1-50 on 50 tenants t1-t50
+# 02. Get urn:ngsi-ld:entity:E1 on tenant t50
+# 03. Restart the broker
+# 04. Get urn:ngsi-ld:entity:E1 on tenant t1
+#
+
+echo "01. Create an entity urn:ngsi-ld:entity:E1-50 on 50 tenants t1-t50"
+echo "=================================================================="
+typeset -i tNo
+tNo=1
+while [ $tNo -le 50 ]
+do
+  tenant=t$tNo
+
+  payload='{
+    "id": "urn:ngsi-ld:entity:E'$tNo'",
+    "type": "T1"
+  }'
+  orionCurl --url /ngsi-ld/v1/entities --payload "$payload" --tenant $tenant
+  tNo=$tNo+1
+done | grep -i tenant
+echo
+echo
+
+
+echo "02. Get urn:ngsi-ld:entity:E50 on tenant t50"
+echo "============================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:entity:E50 --tenant t50
+echo
+echo
+
+
+echo "03. Restart broker - have it create the tenants on startup"
+echo "=========================================================="
+brokerStop CB
+orionldStart CB -multiservice -dbPoolSize 2
+echo
+echo
+
+
+echo "04. Get urn:ngsi-ld:entity:E50 on tenant t50"
+echo "============================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:entity:E50 --tenant t50
+echo
+echo
+
+
+--REGEXPECT--
+01. Create an entity urn:ngsi-ld:entity:E1-50 on 50 tenants t1-t50
+==================================================================
+NGSILD-Tenant: t1
+NGSILD-Tenant: t2
+NGSILD-Tenant: t3
+NGSILD-Tenant: t4
+NGSILD-Tenant: t5
+NGSILD-Tenant: t6
+NGSILD-Tenant: t7
+NGSILD-Tenant: t8
+NGSILD-Tenant: t9
+NGSILD-Tenant: t10
+NGSILD-Tenant: t11
+NGSILD-Tenant: t12
+NGSILD-Tenant: t13
+NGSILD-Tenant: t14
+NGSILD-Tenant: t15
+NGSILD-Tenant: t16
+NGSILD-Tenant: t17
+NGSILD-Tenant: t18
+NGSILD-Tenant: t19
+NGSILD-Tenant: t20
+NGSILD-Tenant: t21
+NGSILD-Tenant: t22
+NGSILD-Tenant: t23
+NGSILD-Tenant: t24
+NGSILD-Tenant: t25
+NGSILD-Tenant: t26
+NGSILD-Tenant: t27
+NGSILD-Tenant: t28
+NGSILD-Tenant: t29
+NGSILD-Tenant: t30
+NGSILD-Tenant: t31
+NGSILD-Tenant: t32
+NGSILD-Tenant: t33
+NGSILD-Tenant: t34
+NGSILD-Tenant: t35
+NGSILD-Tenant: t36
+NGSILD-Tenant: t37
+NGSILD-Tenant: t38
+NGSILD-Tenant: t39
+NGSILD-Tenant: t40
+NGSILD-Tenant: t41
+NGSILD-Tenant: t42
+NGSILD-Tenant: t43
+NGSILD-Tenant: t44
+NGSILD-Tenant: t45
+NGSILD-Tenant: t46
+NGSILD-Tenant: t47
+NGSILD-Tenant: t48
+NGSILD-Tenant: t49
+NGSILD-Tenant: t50
+
+
+02. Get urn:ngsi-ld:entity:E50 on tenant t50
+============================================
+HTTP/1.1 200 OK
+Content-Length: 43
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "id": "urn:ngsi-ld:entity:E50",
+    "type": "T1"
+}
+
+
+03. Restart broker - have it create the tenants on startup
+==========================================================
+
+
+04. Get urn:ngsi-ld:entity:E50 on tenant t50
+============================================
+HTTP/1.1 200 OK
+Content-Length: 43
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "id": "urn:ngsi-ld:entity:E50",
+    "type": "T1"
+}
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
+dbDrop CB tn1
+dbDrop CB tn2

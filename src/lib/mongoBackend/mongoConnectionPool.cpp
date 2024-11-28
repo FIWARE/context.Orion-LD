@@ -146,15 +146,9 @@ static DBClientBase* mongoConnect
       }
 
       if (tryNo == 0)
-      {
-        LM_E(("Database Startup Error (cannot connect to mongo - doing %d retries with a %d millisecond interval)",
-              retries,
-              RECONNECT_DELAY));
-      }
+        LM_E(("Database Startup Error (cannot connect to mongo - doing %d retries with a %d millisecond interval)", retries, RECONNECT_DELAY));
       else
-      {
         LM_T(LmtLegacy, ("Try %d connecting to mongo failed", tryNo));
-      }
 
       usleep(RECONNECT_DELAY * 1000);  // usleep accepts microseconds, RECONNECT_DELAY is in millis
     }
@@ -299,6 +293,8 @@ int mongoConnectionPoolInit
   //
   // Create the pool
   //
+  LM_T(LmtMongoPool, ("Creating a mongo connection pool of %d slots", poolSize));
+
   connectionPool  = (MongoConnection*) calloc(sizeof(MongoConnection), poolSize);
   if (connectionPool == NULL)
   {
@@ -383,9 +379,7 @@ DBClientBase* mongoPoolConnectionGet(void)
   struct timespec  diffTime;
 
   if (semStatistics)
-  {
     clock_gettime(CLOCK_REALTIME, &startTime);
-  }
 
   sem_wait(&connectionSem);
   sem_wait(&connectionPoolSem);
@@ -404,11 +398,15 @@ DBClientBase* mongoPoolConnectionGet(void)
     {
       connectionPool[ix].free = false;
       connection = connectionPool[ix].connection;
+      // LM_T(LmtMongoPool, ("Found a mongo connection in slot %d (%p)", ix, connection));
       break;
     }
   }
 
   sem_post(&connectionPoolSem);
+
+  if (connection == NULL)
+    LM_X(1, ("No mongo pool connection available"));
 
   return connection;
 }
@@ -421,19 +419,26 @@ DBClientBase* mongoPoolConnectionGet(void)
 */
 void mongoPoolConnectionRelease(DBClientBase* connection)
 {
+  bool ok = false;
+
   sem_wait(&connectionPoolSem);
 
   for (int ix = 0; ix < connectionPoolSize; ++ix)
   {
     if (connectionPool[ix].connection == connection)
     {
+      ok = true;
       connectionPool[ix].free = true;
       sem_post(&connectionSem);
+      // LM_T(LmtMongoPool, ("Releasing a mongo connection in slot %d (%p)", ix, connection));
       break;
     }
   }
 
   sem_post(&connectionPoolSem);
+
+  if (ok == false)
+    LM_T(LmtMongoPool, ("Not able to release mongo connection at %p", connection));
 }
 
 
