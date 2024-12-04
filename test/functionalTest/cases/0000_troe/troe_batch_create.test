@@ -226,3 +226,4 @@ https://uri.etsi.org/ngsi-ld/default-context/Sub-Float,Number,urn:ngsi-ld:entiti
 --TEARDOWN--
 brokerStop CB
 dbDrop CB
+pgInit $CB_DB_NAME
