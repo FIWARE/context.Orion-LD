@@ -462,9 +462,12 @@ KjNode* dbModelToApiSubscription
       kjChildAdd(notificationP, dbAttrsP);
 
       // Find alias for all attributes
-      for (KjNode* attrNameNodeP = dbAttrsP->value.firstChildP; attrNameNodeP != NULL; attrNameNodeP = attrNameNodeP->next)
+      if (forSubCache == false)
       {
-        attrNameNodeP->value.s = orionldContextItemAliasLookup(orionldState.contextP, attrNameNodeP->value.s, NULL, NULL);
+        for (KjNode* attrNameNodeP = dbAttrsP->value.firstChildP; attrNameNodeP != NULL; attrNameNodeP = attrNameNodeP->next)
+        {
+          attrNameNodeP->value.s = orionldContextItemAliasLookup(orionldState.contextP, attrNameNodeP->value.s, NULL, NULL);
+        }
       }
     }
   }
