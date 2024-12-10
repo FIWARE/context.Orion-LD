@@ -1,5 +1,5 @@
 ## Fixed Issues:
-  #xxxx: yyyy
+  #XXXX: Complex @contexts of subscriptions weren't persisted in mongodb
 
 ## New Features:
   * Support for ...

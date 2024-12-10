@@ -56,17 +56,20 @@ void dbContextToCache(KjNode* dbContextP, KjNode* atContextP, bool keyValues, bo
   KjNode* urlNodeP       = kjLookup(dbContextP, "url");
   KjNode* parentNodeP    = kjLookup(dbContextP, "parent");
   KjNode* originNodeP    = kjLookup(dbContextP, "origin");
+  KjNode* kindNodeP      = kjLookup(dbContextP, "kind");
   KjNode* createdAtNodeP = kjLookup(dbContextP, "createdAt");
 
   if (idNodeP        == NULL) LM_RVE(("Database Error (No 'id' node in cached context in DB)"));
   if (urlNodeP       == NULL) LM_RVE(("Database Error (No 'url' node in cached context in DB)"));
   if (originNodeP    == NULL) LM_RVE(("Database Error (No 'origin' node in cached context in DB)"));
+  if (kindNodeP      == NULL) LM_RVE(("Database Error (No 'kind' node in cached context in DB)"));
   if (createdAtNodeP == NULL) LM_RVE(("Database Error (No 'createdAt' node in cached context in DB)"));
 
   char*                 id           = idNodeP->value.s;
   char*                 url          = urlNodeP->value.s;
   double                createdAt    = createdAtNodeP->value.f;
   OrionldContextOrigin  origin       = orionldOriginFromString(originNodeP->value.s);
+  OrionldContextKind    kind         = orionldKindFromString(kindNodeP->value.s);
   OrionldContext*       contextP     = orionldContextFromTree(url, origin, id, atContextP);
 
   if (contextP == NULL)
@@ -74,6 +77,7 @@ void dbContextToCache(KjNode* dbContextP, KjNode* atContextP, bool keyValues, bo
 
   contextP->createdAt   = createdAt;
   contextP->usedAt      = 0;
+  contextP->kind        = kind;
 
   if (coreContext == true)
   {
@@ -125,6 +129,7 @@ void orionldContextCacheInit(void)
   {
     KjNode* contextNodeP = contextArray->value.firstChildP;
     KjNode* next;
+
     while (contextNodeP != NULL)
     {
       next = contextNodeP->next;
