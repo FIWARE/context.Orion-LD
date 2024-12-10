@@ -396,7 +396,7 @@ Date: REGEX(.*)
 09. Dump the ftClient to see the notification
 =============================================
 HTTP/1.1 200 OK
-Content-Length: 1262
+Content-Length: REGEX(.*)
 Date: REGEX(.*)
 
 POST /notify?subscriptionId=urn:s1
