@@ -1,8 +1,5 @@
 ## Fixed Issues:
-  #1698: Not fixed, but making it usable. Real fix coming. Needs a complete rewrite.
-  #1704: Problem when the number of tenants is bigger than the size of the mongo connection pool
-  #1715: Bug in subscription cache: attributes in notification::attributes were not longnames after a restart with subscriptions in the DB
-  #XXXX: various fixes for DDS
+  #xxxx: yyyy
 
 ## New Features:
   * Support for ...
