@@ -25,7 +25,7 @@ Issue #1708
 
 --SHELL-INIT--
 dbInit CB
-orionldStart CB
+orionldStart CB -mongocOnly
 accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
 
 --SHELL--
@@ -242,6 +242,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "status": "ok",
         "timesSent": 1
     },
+    "origin": "cache",
     "status": "active",
     "type": "Subscription",
     "watchedAttributes": [
@@ -257,15 +258,14 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 06. Dump and reset the accumulator - see one notification
 =========================================================
 POST http://REGEX(.*)/notify?subscriptionId=urn:s1
-Fiware-Servicepath: /
 Content-Length: 275
-User-Agent: orion/REGEX(.*)
-Ngsiv2-Attrsformat: normalized
+User-Agent: orionld/REGEX(.*)
 Host: REGEX(.*)
 Accept: application/json
 Fiware-Service: openiot
-Content-Type: application/json; charset=utf-8
+Content-Type: application/json
 Link: REGEX(.*)
+Ngsild-Attribute-Format: Normalized
 
 {
     "data": [
@@ -364,4 +364,4 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 --TEARDOWN--
 brokerStop CB
 accumulatorStop
-dbDrop CB
+#dbDrop CB
