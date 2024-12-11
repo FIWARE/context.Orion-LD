@@ -74,6 +74,7 @@ extern "C"
 #include "orionld/context/orionldContextUrlGenerate.h"             // orionldContextUrlGenerate
 #include "orionld/context/orionldContextItemExpand.h"              // orionldContextItemExpand
 #include "orionld/context/orionldAttributeExpand.h"                // orionldAttributeExpand
+#include "orionld/contextCache/orionldContextCachePersist.h"       // orionldContextCachePersist
 #include "orionld/serviceRoutines/orionldPatchAttribute.h"         // orionldPatchAttribute
 #include "orionld/serviceRoutines/orionldGetEntity.h"              // orionldGetEntity
 #include "orionld/serviceRoutines/orionldGetEntities.h"            // orionldGetEntities
@@ -1233,6 +1234,16 @@ MHD_Result mhdConnectionTreat(void)
 
       if (pd.status >= 400)
         goto respond;
+
+      if (implicitlyCreated == true)
+      {
+        if (orionldState.payloadContextNode->type != KjString)
+        {
+          orionldState.contextP->origin = OrionldContextFromInline;
+          orionldState.contextP->kind   = OrionldContextHosted;
+          orionldContextCachePersist(orionldState.contextP);
+        }
+      }
 
       if ((orionldState.contextP != orionldCoreContextP) && (implicitlyCreated == true))
         orionldState.contextP->kind = OrionldContextImplicit;  // Too late - the context is already in mongo

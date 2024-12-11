@@ -1,0 +1,367 @@
+# Copyright 2024 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Issue #1708
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB
+accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+
+--SHELL--
+#
+# 01. Create an entity urn:ngsi-ld:test_entity_id, as from the issue #1708
+# 02. Create a matching subscription 'urn:s1' (with a complex @context), to notify the accumulator
+# 03. Modify the entity, to provoke a notification to the accumulator
+# 04. GET the subscription - see especially its jsonldContext
+# 05. GET the jsonldContext of the subscription
+# 06. Dump and reset the accumulator - see one notification
+# 07. Restart the broker
+# 08. GET the subscription 'urn:s1', make sure all is OK
+# 09. GET the jsonldContext of the subscription
+# 09. Modify the entity again, to provoke a notification to the accumulator
+# 10. Dump and reset the accumulator - see one notification
+#
+
+echo "01. Create an entity urn:ngsi-ld:test_entity_id, as from the issue #1708"
+echo "========================================================================"
+payload='{
+  "id": "urn:ngsi-ld:test_entity_id",
+  "type": "test_entity_type",
+  "temperature": {
+    "type": "Property",
+    "value": 23.4
+  },
+  "@context": [
+    "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld",
+    {
+      "temperature": "https://mysite.com/api/ngsi-ld-attributes/temperature"
+    }
+  ]
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" --in jsonld
+echo
+echo
+
+
+echo "02. Create a matching subscription 'urn:s1' (with a complex @context), to notify the accumulator"
+echo "================================================================================================"
+payload='{
+  "id": "urn:s1",
+  "description": "Notify QuantumLeap of changes to test_entity_type",
+  "type": "Subscription",
+  "entities": [
+    {
+      "id": "urn:ngsi-ld:test_entity_id",
+      "type": "test_entity_type"
+    }
+  ],
+  "watchedAttributes": ["temperature"],
+  "notification": {
+    "attributes": ["temperature"],
+    "format": "normalized",
+    "endpoint": {
+      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "accept": "application/json",
+      "receiverInfo": [
+        {
+          "key": "fiware-service",
+          "value": "openiot"
+        }
+      ]
+    }
+  },
+  "@context": [
+    "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld",
+    {
+      "temperature": "https://mysite.com/api/ngsi-ld-attributes/temperature"
+    }
+  ]  
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload" --in jsonld
+echo
+echo
+
+
+echo "03. Modify the entity, to provoke a notification to the accumulator"
+echo "==================================================================="
+payload='{
+  "temperature": {
+    "type": "Property",
+    "value": 8.5
+  },
+  "@context": [
+    "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld",
+    {
+      "temperature": "https://mysite.com/api/ngsi-ld-attributes/temperature"
+    }
+  ]
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:test_entity_id/attrs -X POST --payload "$payload" --in jsonld
+echo
+echo
+
+
+echo "04. GET the subscription - see especially its jsonldContext"
+echo "==========================================================="
+orionCurl --url /ngsi-ld/v1/subscriptions/urn:s1
+jsonldContext=$(echo $_response | awk -F\"jsonldContext\" '{ print $2 }' | awk -F\" '{ print $2 }')
+echo
+echo
+
+
+echo "05. GET the jsonldContext of the subscription"
+echo "============================================="
+curl $jsonldContext 2> /dev/null
+echo
+echo
+
+
+echo "06. Dump and reset the accumulator - see one notification"
+echo "========================================================="
+accumulatorDump
+accumulatorReset
+echo
+echo
+
+
+echo "06. See the jsonldContext in mongo"
+echo "=================================="
+contextId=$(echo $jsonldContext | awk -F jsonldContexts/ '{ print $2 }')
+mongoCmd2 orionld 'db.contexts.findOne({"_id": "'$contextId'"})'
+echo
+echo
+
+
+echo "07. Restart the broker"
+echo "======================"
+brokerStop CB
+brokerStart CB
+echo "The broker should be running again"
+echo
+echo
+
+
+echo "08. GET the subscription 'urn:s1', make sure all is OK"
+echo "======================================================"
+orionCurl --url /ngsi-ld/v1/subscriptions/urn:s1
+echo
+echo
+
+
+echo "09. GET the jsonldContext of the subscription"
+echo "============================================="
+curl $jsonldContext 2> /dev/null
+echo
+echo
+echo
+
+
+--REGEXPECT--
+01. Create an entity urn:ngsi-ld:test_entity_id, as from the issue #1708
+========================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:test_entity_id
+
+
+
+02. Create a matching subscription 'urn:s1' (with a complex @context), to notify the accumulator
+================================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/subscriptions/urn:s1
+
+
+
+03. Modify the entity, to provoke a notification to the accumulator
+===================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+04. GET the subscription - see especially its jsonldContext
+===========================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "description": "Notify QuantumLeap of changes to test_entity_type",
+    "entities": [
+        {
+            "id": "urn:ngsi-ld:test_entity_id",
+            "type": "test_entity_type"
+        }
+    ],
+    "id": "urn:s1",
+    "isActive": true,
+    "jsonldContext": "REGEX(.*)",
+    "notification": {
+        "attributes": [
+            "https://mysite.com/api/ngsi-ld-attributes/temperature"
+        ],
+        "endpoint": {
+            "accept": "application/json",
+            "receiverInfo": [
+                {
+                    "key": "fiware-service",
+                    "value": "openiot"
+                }
+            ],
+            "uri": "http://127.0.0.1:9997/notify"
+        },
+        "format": "normalized",
+        "lastNotification": "202REGEX(.*)Z",
+        "lastSuccess": "202REGEX(.*)Z",
+        "status": "ok",
+        "timesSent": 1
+    },
+    "status": "active",
+    "type": "Subscription",
+    "watchedAttributes": [
+        "https://mysite.com/api/ngsi-ld-attributes/temperature"
+    ]
+}
+
+
+05. GET the jsonldContext of the subscription
+=============================================
+{"@context":[{"temperature":"https://mysite.com/api/ngsi-ld-attributes/temperature"}]}
+
+06. Dump and reset the accumulator - see one notification
+=========================================================
+POST http://REGEX(.*)/notify?subscriptionId=urn:s1
+Fiware-Servicepath: /
+Content-Length: 275
+User-Agent: orion/REGEX(.*)
+Ngsiv2-Attrsformat: normalized
+Host: REGEX(.*)
+Accept: application/json
+Fiware-Service: openiot
+Content-Type: application/json; charset=utf-8
+Link: REGEX(.*)
+
+{
+    "data": [
+        {
+            "id": "urn:ngsi-ld:test_entity_id",
+            "temperature": {
+                "type": "Property",
+                "value": 8.5
+            },
+            "type": "test_entity_type"
+        }
+    ],
+    "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+    "notifiedAt": "202REGEX(.*)Z",
+    "subscriptionId": "urn:s1",
+    "type": "Notification"
+}
+=======================================
+
+
+06. See the jsonldContext in mongo
+==================================
+MongoDB shell version REGEX(.*)
+connecting to: mongodb://REGEX(.*)/orionld?compressors=disabled&gssapiServiceName=mongodb
+MongoDB server version: REGEX(.*)
+{
+	"_id" : "REGEX(.*)",
+	"url" : "REGEX(.*)",
+	"parent" : null,
+	"origin" : "FromInline",
+	"kind" : "Hosted",
+	"createdAt" : REGEX(.*),
+	"value" : [
+		{
+			"temperature" : "https://mysite.com/api/ngsi-ld-attributes/temperature"
+		}
+	]
+}
+bye
+
+
+07. Restart the broker
+======================
+The broker should be running again
+
+
+08. GET the subscription 'urn:s1', make sure all is OK
+======================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "description": "Notify QuantumLeap of changes to test_entity_type",
+    "entities": [
+        {
+            "id": "urn:ngsi-ld:test_entity_id",
+            "type": "test_entity_type"
+        }
+    ],
+    "id": "urn:s1",
+    "isActive": true,
+    "jsonldContext": "REGEX(.*)",
+    "notification": {
+        "attributes": [
+            "https://mysite.com/api/ngsi-ld-attributes/temperature"
+        ],
+        "endpoint": {
+            "accept": "application/json",
+            "receiverInfo": [
+                {
+                    "key": "fiware-service",
+                    "value": "openiot"
+                }
+            ],
+            "uri": "http://REGEX(.*)/notify"
+        },
+        "format": "normalized",
+        "status": "ok"
+    },
+    "status": "active",
+    "type": "Subscription",
+    "watchedAttributes": [
+        "https://mysite.com/api/ngsi-ld-attributes/temperature"
+    ]
+}
+
+
+09. GET the jsonldContext of the subscription
+=============================================
+{"@context":[{"temperature":"https://mysite.com/api/ngsi-ld-attributes/temperature"}]}
+
+
+--TEARDOWN--
+brokerStop CB
+accumulatorStop
+dbDrop CB
