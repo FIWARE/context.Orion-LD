@@ -25,7 +25,6 @@
 #include <string.h>                                              // strchr
 
 #include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
 
 #include "orionld/types/OrionldContextItem.h"                    // OrionldContextItem
 #include "orionld/types/OrionldContext.h"                        // OrionldContext
@@ -72,7 +71,11 @@ char* orionldContextItemExpand
     contextP = orionldCoreContextP;
 
   if ((colonP = strchr((char*) shortName, ':')) != NULL)
-    return orionldContextPrefixExpand(contextP, shortName, colonP);
+  {
+    char* longName = orionldContextPrefixExpand(contextP, shortName, colonP);
+    LM_T(LmtExpand, ("Prefix-Expanded '%s' to '%s'", shortName, longName));
+    return longName;
+  }
 
   // 1. Lookup in Core Context
   if (orionldCoreContextP != NULL)
@@ -98,9 +101,11 @@ char* orionldContextItemExpand
 
       orionldCoreContextP->expansions += 1;  // Really, @vocab expansions of the core context
 
+      LM_T(LmtExpand, ("Vocab-Expanded '%s' to '%s'", shortName, longName));
       return longName;
     }
 
+    LM_T(LmtExpand, ("No Expansion found for '%s'", shortName));
     return NULL;
   }
 
@@ -108,7 +113,9 @@ char* orionldContextItemExpand
   if (contextItemPP != NULL)
     *contextItemPP = contextItemP;
 
-  contextP->expansions += 1;  // Really, @vocab expansions of the core context
+  contextP->expansions += 1;
+
+  LM_T(LmtExpand, ("Expanded '%s' to '%s'", shortName, contextItemP->id));
 
   return contextItemP->id;
 }

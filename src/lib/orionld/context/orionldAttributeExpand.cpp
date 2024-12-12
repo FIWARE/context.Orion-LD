@@ -25,7 +25,6 @@
 #include <string.h>                                              // strcmp
 
 #include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
 
 #include "orionld/context/orionldContextItemAlreadyExpanded.h"   // orionldContextItemAlreadyExpanded
 #include "orionld/context/orionldContextItemExpand.h"            // orionldContextItemExpand
@@ -67,7 +66,7 @@ char* orionldAttributeExpand
   //  The implementation needs modifications.
   //
   //  Wait ... what if the @context says it must be a String, a DateTime?
-  //  The @context doesn't distinguish between attributesd and sub-attributes ...
+  //  The @context doesn't distinguish between attributes and sub-attributes ...
   //  It will need to be a String wherever it is.
   //
   //  We should probably forbid an attribute to have the name 'observedAt'
@@ -80,7 +79,10 @@ char* orionldAttributeExpand
 #endif
 
   if (orionldContextItemAlreadyExpanded(sName) == true)
+  {
+    LM_T(LmtExpand, ("Already Expanded: '%s'", sName));
     return sName;
+  }
 
   return orionldContextItemExpand(contextP, sName, useDefaultUrlIfNotFound, contextItemPP);
 }
