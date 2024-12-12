@@ -114,7 +114,7 @@ bool orionldDeleteContext(void)
     kjFree(oldContextP->tree);
 
     // Update mongo with the new context
-    orionldContextCachePersist(contextP);
+    orionldContextCachePersist(contextP, true);
   }
   else
   {

@@ -54,7 +54,7 @@ extern "C"
 //   "value":     JSON Array|Object representation of the VALUE of the @context (i.e. NOT containing the @context member)
 // }
 //
-void orionldContextCachePersist(OrionldContext* contextP)
+void orionldContextCachePersist(OrionldContext* contextP, bool reload)
 {
   KjNode*  contextObjP  = kjObject(orionldState.kjsonP, NULL);
   KjNode*  idP;
@@ -98,5 +98,5 @@ void orionldContextCachePersist(OrionldContext* contextP)
   valueP->name = (char*) "value";
   kjChildAdd(contextObjP, valueP);
 
-  mongocContextCachePersist(contextObjP);
+  mongocContextCachePersist(contextObjP, reload);
 }
