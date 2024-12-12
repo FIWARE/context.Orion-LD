@@ -38,6 +38,7 @@ extern "C"
 #include "orionld/contextCache/orionldContextCacheLookup.h"      // orionldContextCacheLookup
 #include "orionld/contextCache/orionldContextCacheDelete.h"      // orionldContextCacheDelete
 #include "orionld/contextCache/orionldContextCacheInsert.h"      // orionldContextCacheInsert
+#include "orionld/contextCache/orionldContextCachePersist.h"     // orionldContextCachePersist
 #include "orionld/serviceRoutines/orionldDeleteContext.h"        // Own Interface
 
 
@@ -111,6 +112,9 @@ bool orionldDeleteContext(void)
 
     // Free the kj tree of the now obsolete old context
     kjFree(oldContextP->tree);
+
+    // Update mongo with the new context
+    orionldContextCachePersist(contextP);
   }
   else
   {

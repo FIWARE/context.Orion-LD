@@ -27,6 +27,7 @@
 extern "C"
 {
 #include "kjson/KjNode.h"                                        // KjNode
+#include "kjson/kjLookup.h"                                      // kjLookup
 }
 
 #include "logMsg/logMsg.h"                                       // LM_*
@@ -45,13 +46,30 @@ extern "C"
 //
 void mongocContextCachePersist(KjNode* contextObject)
 {
-  bson_t bson;
-
-  mongocKjTreeToBson(contextObject, &bson);
-
   mongocConnectionGet(NULL, DbContexts);
-
   sem_wait(&mongocContextsSem);
+
+  //
+  // If the context already exists, it will be REMOVED
+  //
+  KjNode* urlNodeP = kjLookup(contextObject, "url");
+  char*   url      = (urlNodeP != NULL)? urlNodeP->value.s : NULL;
+
+  if (url != NULL)
+  {
+    bson_t        mongoFilter;
+    bson_error_t  error;
+
+    bson_init(&mongoFilter);
+    bson_append_utf8(&mongoFilter, "url", 3, url, -1);
+
+    // Remove the context
+    if (mongoc_collection_remove(orionldState.mongoc.contextsP,  MONGOC_REMOVE_SINGLE_REMOVE, &mongoFilter, NULL, &error) == false)
+      LM_E(("Database Error (mongoc_collection_remove returned %d.%d:%s)", error.domain, error.code, error.message));
+  }
+
+  bson_t bson;
+  mongocKjTreeToBson(contextObject, &bson);
 
   bson_error_t  mcError;
   bool          r = mongoc_collection_insert_one(orionldState.mongoc.contextsP, &bson, NULL, NULL, &mcError);

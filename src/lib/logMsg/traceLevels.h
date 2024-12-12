@@ -135,6 +135,11 @@ typedef enum TraceLevels
   LmtSubordinate = 140,
 
   //
+  // Context Cache
+  //
+  LmtContextCachePersist = 150,        // Persisting contexts in DB
+
+  //
   // Misc
   //
   LmtMongoc = 200,                     // Entire mongoc library
