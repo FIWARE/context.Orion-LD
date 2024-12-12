@@ -375,6 +375,13 @@ MongoDB server version: REGEX(.*)
 			"unit" : "%",
 			"en" : "Humidity",
 			"el" : "Υγρασία"
+		},
+		"pressure" : {
+			"@id" : "myAttributes:pressure",
+			"@type" : "xsd:integer",
+			"unit" : "bar",
+			"en" : "Pressure",
+			"el" : "Υγρασία"
 		}
 	}
 }

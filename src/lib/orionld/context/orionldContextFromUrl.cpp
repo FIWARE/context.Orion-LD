@@ -337,7 +337,7 @@ OrionldContext* orionldContextFromUrl(char* url, char* id)
     contextP->origin    = OrionldContextDownloaded;
     contextP->usedAt    = orionldState.requestTime;
 
-    orionldContextCachePersist(contextP);
+    orionldContextCachePersist(contextP, false);
   }
 
   // Remove the 'url' from the contextDownloadList and persist it to DB
