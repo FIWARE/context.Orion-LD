@@ -1,0 +1,581 @@
+# Copyright 2024 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Delete AND RELOAD a @context from the context cache 
+
+--SHELL-INIT--
+dbInit CB
+dbDrop orionld
+dbDrop CB
+orionldStart CB -experimental
+cServerCurl --url /jsonldContexts/testContext2 --verb DELETE
+
+--SHELL--
+
+#
+# 01. Create a context in the context server
+# 02. Create an entity using the context from step 01, just to get the context inside the context cache of the broker
+# 03. See the context in mongo
+# 04. GET the context (from step 01) from the broker - without details - see 422
+# 05. GET the context (from step 01) from the broker - with details - see metadata of the context
+# 06. Update the context in the context server
+# 07. DELETE and RELOAD the context in the broker's context cache
+# 08. See the context in mongo
+# 09. GET the context (from step 05) from the broker and make sure it's been updated
+# 10. PATCH the entity from step 02, using the context from step 07
+# 11. See the entity in mongo
+# 12. GET the entity, without context - check the longnames
+# 13. GET the entity, with context - check the shortnames
+# 14. Delete the context in the context server
+# 15. Get the context in the context server - see 404 as it's been deleted
+# 16. Attempt to DELETE and RELOAD the context in the broker's context cache - fails as the context cannot be retrieved from the context server
+# 17. GET the context from the broker and make sure it exists in the broker's context cache and is the same as in step 08
+#
+
+echo "01. Create a context in the context server"
+echo "=========================================="
+payload='{
+  "@context": {
+    "myAttributes": "https://mysite.com/api/ngsi-ld-attributes/",
+    "temperature": {
+      "@id": "myAttributes:temperature",
+      "@type": "xsd:float",
+      "unit": "°C",
+      "en": "Temperature",
+      "el": "Θερμοκρασία"
+    },
+    "humidity": {
+      "@id": "myAttributes:humidity",
+      "@type": "xsd:integer",
+      "unit": "%",
+      "en": "Humidity",
+      "el": "Υγρασία"
+    }
+  }
+}'
+cServerCurl --url /jsonldContexts/testContext2 --payload "$payload" --verb POST
+echo
+echo
+
+
+echo "02. Create an entity using the context from step 01, just to get the context inside the context cache of the broker"
+echo "==================================================================================================================="
+payload='{
+  "id": "urn:ngsi-ld:entities:E1",
+  "type": "T",
+  "temperature": {
+    "type": "Property",
+    "value": 1
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" -H 'Link: <http://localhost:7080/jsonldContexts/testContext2>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
+echo
+echo
+
+
+echo "03. See the context in mongo"
+echo "============================"
+mongoCmd2 orionld 'db.contexts.findOne({"url": "http://localhost:7080/jsonldContexts/testContext2"})'
+echo
+echo
+
+
+echo "04. GET the context (from step 01) from the broker - without details - see 422"
+echo "=============================================================================="
+orionCurl --url '/ngsi-ld/v1/jsonldContexts/http://localhost:7080/jsonldContexts/testContext2'
+echo
+echo
+
+
+echo "05. GET the context (from step 01) from the broker - with details - see metadata of the context"
+echo "==============================================================================================="
+orionCurl --url '/ngsi-ld/v1/jsonldContexts/http://localhost:7080/jsonldContexts/testContext2?details=true'
+echo
+echo
+
+
+echo "06. Update the context in the context server"
+echo "============================================"
+cServerCurl --url /jsonldContexts/testContext2 --verb DELETE
+echo
+payload='{
+  "@context": {
+    "myAttributes": "https://mysite.com/api/ngsi-ld-attributes/",
+    "temperature": {
+      "@id": "myAttributes:temperature",
+      "@type": "xsd:float",
+      "unit": "°C",
+      "en": "Temperature",
+      "el": "Θερμοκρασία"
+    },
+    "humidity": {
+      "@id": "myAttributes:humidity",
+      "@type": "xsd:integer",
+      "unit": "%",
+      "en": "Humidity",
+      "el": "Υγρασία"
+    },
+    "pressure": {
+      "@id": "myAttributes:pressure",
+      "@type": "xsd:integer",
+      "unit": "bar",
+      "en": "Pressure",
+      "el": "Υγρασία"
+    }
+  }
+}'
+cServerCurl --url /jsonldContexts/testContext2 --payload "$payload" --verb POST
+echo
+echo
+
+
+echo "07. DELETE and RELOAD the context in the broker's context cache"
+echo "==============================================================="
+orionCurl --url '/ngsi-ld/v1/jsonldContexts/http://localhost:7080/jsonldContexts/testContext2?reload=true' -X DELETE
+echo
+echo
+
+
+echo "08. See the context in mongo"
+echo "============================"
+mongoCmd2 orionld 'db.contexts.findOne({"url": "http://localhost:7080/jsonldContexts/testContext2"})'
+echo
+echo
+
+
+echo "09. GET the context (from step 05) from the broker and make sure it's been updated"
+echo "=================================================================================="
+orionCurl --url '/ngsi-ld/v1/jsonldContexts/http://localhost:7080/jsonldContexts/testContext2?details=true'
+echo
+echo
+
+
+echo "10. PATCH the entity from step 02, using the context from step 07"
+echo "================================================================="
+payload='{
+  "temperature": 10,
+  "humidity": 0.80,
+  "pressure": 2.3
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1 --payload "$payload" -X PATCH -H 'Link: <http://localhost:7080/jsonldContexts/testContext2>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
+echo
+echo
+
+echo "11. See the entity in mongo"
+echo "==========================="
+mongoCmd2 ftest "db.entities.findOne()"
+echo
+echo
+
+
+echo "12. GET the entity, without context - check the longnames"
+echo "========================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1
+echo
+echo
+
+
+echo "13. GET the entity, with context - check the shortnames"
+echo "======================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1 -H 'Link: <http://localhost:7080/jsonldContexts/testContext2>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
+echo
+echo
+
+
+echo "14. Delete the context in the context server"
+echo "============================================"
+cServerCurl --url /jsonldContexts/testContext2 --verb DELETE
+echo
+echo
+
+
+echo "15. Get the context in the context server - see 404 as it's been deleted"
+echo "========================================================================"
+cServerCurl --url /jsonldContexts/testContext2 --verb GET
+echo
+echo
+echo
+
+
+echo "16. Attempt to DELETE and RELOAD the context in the broker's context cache - fails as the context cannot be retrieved from the context server"
+echo "============================================================================================================================================="
+orionCurl --url '/ngsi-ld/v1/jsonldContexts/http://localhost:7080/jsonldContexts/testContext2?reload=true' -X DELETE
+echo
+echo
+
+
+echo "17. GET the context from the broker and make sure it exists in the broker's context cache and is the same as in step 08"
+echo "======================================================================================================================="
+orionCurl --url '/ngsi-ld/v1/jsonldContexts/http://localhost:7080/jsonldContexts/testContext2?details=true'
+echo
+echo
+
+
+--REGEXPECT--
+01. Create a context in the context server
+==========================================
+HTTP/1.1 201 Created
+Location: http://localhost:8080/jsonldContexts/testContext2
+Date: REGEX(.*)
+connection: keep-alive
+transfer-encoding: chunked
+
+
+
+02. Create an entity using the context from step 01, just to get the context inside the context cache of the broker
+===================================================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1
+
+
+
+03. See the context in mongo
+============================
+MongoDB shell version REGEX(.*)
+connecting to: mongodb://REGEX(.*)/orionld?compressors=disabled&gssapiServiceName=mongodb
+MongoDB server version: REGEX(.*)
+{
+	"_id" : "REGEX(.*)",
+	"url" : "http://REGEX(.*)/jsonldContexts/testContext2",
+	"parent" : null,
+	"origin" : "Downloaded",
+	"kind" : "Cached",
+	"createdAt" : REGEX(.*),
+	"value" : {
+		"myAttributes" : "https://mysite.com/api/ngsi-ld-attributes/",
+		"temperature" : {
+			"@id" : "myAttributes:temperature",
+			"@type" : "xsd:float",
+			"unit" : "°C",
+			"en" : "Temperature",
+			"el" : "Θερμοκρασία"
+		},
+		"humidity" : {
+			"@id" : "myAttributes:humidity",
+			"@type" : "xsd:integer",
+			"unit" : "%",
+			"en" : "Humidity",
+			"el" : "Υγρασία"
+		}
+	}
+}
+bye
+
+
+04. GET the context (from step 01) from the broker - without details - see 422
+==============================================================================
+HTTP/1.1 422 Unprocessable Content
+Content-Length: 175
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "http://localhost:7080/jsonldContexts/testContext2",
+    "title": "Not serving cached JSON-LD @context",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/OperationNotSupported"
+}
+
+
+05. GET the context (from step 01) from the broker - with details - see metadata of the context
+===============================================================================================
+HTTP/1.1 200 OK
+Content-Length: 515
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "URL": "http://localhost:7080/jsonldContexts/testContext2",
+    "createdAt": "202REGEX(.*)",
+    "extraInfo": {
+        "compactions": 0,
+        "expansions": 6,
+        "hash-table": {
+            "humidity": "https://mysite.com/api/ngsi-ld-attributes/humidity",
+            "myAttributes": "https://mysite.com/api/ngsi-ld-attributes/",
+            "temperature": "https://mysite.com/api/ngsi-ld-attributes/temperature"
+        },
+        "origin": "Downloaded",
+        "type": "hash-table"
+    },
+    "kind": "Cached",
+    "lastUsage": "202REGEX(.*)",
+    "localId": "REGEX(.*)",
+    "numberOfHits": 1
+}
+
+
+06. Update the context in the context server
+============================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+connection: keep-alive
+
+
+HTTP/1.1 201 Created
+Location: http://localhost:8080/jsonldContexts/testContext2
+Date: REGEX(.*)
+connection: keep-alive
+transfer-encoding: chunked
+
+
+
+07. DELETE and RELOAD the context in the broker's context cache
+===============================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+08. See the context in mongo
+============================
+MongoDB shell version REGEX(.*)
+connecting to: mongodb://REGEX(.*)/orionld?compressors=disabled&gssapiServiceName=mongodb
+MongoDB server version: REGEX(.*)
+{
+	"_id" : "REGEX(.*)",
+	"url" : "http://REGEX(.*)/jsonldContexts/testContext2",
+	"parent" : null,
+	"origin" : "Downloaded",
+	"kind" : "Cached",
+	"createdAt" : REGEX(.*),
+	"value" : {
+		"myAttributes" : "https://mysite.com/api/ngsi-ld-attributes/",
+		"temperature" : {
+			"@id" : "myAttributes:temperature",
+			"@type" : "xsd:float",
+			"unit" : "°C",
+			"en" : "Temperature",
+			"el" : "Θερμοκρασία"
+		},
+		"humidity" : {
+			"@id" : "myAttributes:humidity",
+			"@type" : "xsd:integer",
+			"unit" : "%",
+			"en" : "Humidity",
+			"el" : "Υγρασία"
+		}
+	}
+}
+bye
+
+
+09. GET the context (from step 05) from the broker and make sure it's been updated
+==================================================================================
+HTTP/1.1 200 OK
+Content-Length: 579
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "URL": "http://localhost:7080/jsonldContexts/testContext2",
+    "createdAt": "202REGEX(.*)",
+    "extraInfo": {
+        "compactions": 0,
+        "expansions": 6,
+        "hash-table": {
+            "humidity": "https://mysite.com/api/ngsi-ld-attributes/humidity",
+            "myAttributes": "https://mysite.com/api/ngsi-ld-attributes/",
+            "pressure": "https://mysite.com/api/ngsi-ld-attributes/pressure",
+            "temperature": "https://mysite.com/api/ngsi-ld-attributes/temperature"
+        },
+        "origin": "Downloaded",
+        "type": "hash-table"
+    },
+    "kind": "Cached",
+    "lastUsage": "202REGEX(.*)",
+    "localId": "REGEX(.*)",
+    "numberOfHits": 1
+}
+
+
+10. PATCH the entity from step 02, using the context from step 07
+=================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+11. See the entity in mongo
+===========================
+MongoDB shell version REGEX(.*)
+connecting to: mongodb://REGEX(.*)
+MongoDB server version: REGEX(.*)
+{
+	"_id" : {
+		"id" : "urn:ngsi-ld:entities:E1",
+		"type" : "https://uri.etsi.org/ngsi-ld/default-context/T",
+		"servicePath" : "/"
+	},
+	"attrNames" : [
+		"https://mysite.com/api/ngsi-ld-attributes/temperature",
+		"https://mysite.com/api/ngsi-ld-attributes/humidity",
+		"https://mysite.com/api/ngsi-ld-attributes/pressure"
+	],
+	"attrs" : {
+		"https://mysite=com/api/ngsi-ld-attributes/temperature" : {
+			"type" : "Property",
+			"creDate" : REGEX(.*),
+			"modDate" : REGEX(.*),
+			"value" : 10,
+			"mdNames" : [ ]
+		},
+		"https://mysite=com/api/ngsi-ld-attributes/humidity" : {
+			"type" : "Property",
+			"creDate" : REGEX(.*),
+			"modDate" : REGEX(.*),
+			"value" : 0.8,
+			"mdNames" : [ ]
+		},
+		"https://mysite=com/api/ngsi-ld-attributes/pressure" : {
+			"type" : "Property",
+			"creDate" : REGEX(.*),
+			"modDate" : REGEX(.*),
+			"value" : 2.3,
+			"mdNames" : [ ]
+		}
+	},
+	"creDate" : REGEX(.*),
+	"modDate" : REGEX(.*),
+	"lastCorrelator" : ""
+}
+bye
+
+
+12. GET the entity, without context - check the longnames
+=========================================================
+HTTP/1.1 200 OK
+Content-Length: 300
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "https://mysite.com/api/ngsi-ld-attributes/humidity": {
+        "type": "Property",
+        "value": 0.8
+    },
+    "https://mysite.com/api/ngsi-ld-attributes/pressure": {
+        "type": "Property",
+        "value": 2.3
+    },
+    "https://mysite.com/api/ngsi-ld-attributes/temperature": {
+        "type": "Property",
+        "value": 10
+    },
+    "id": "urn:ngsi-ld:entities:E1",
+    "type": "T"
+}
+
+
+13. GET the entity, with context - check the shortnames
+=======================================================
+HTTP/1.1 200 OK
+Content-Length: 174
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <http://REGEX(.*)
+
+{
+    "humidity": {
+        "type": "Property",
+        "value": 0.8
+    },
+    "id": "urn:ngsi-ld:entities:E1",
+    "pressure": {
+        "type": "Property",
+        "value": 2.3
+    },
+    "temperature": {
+        "type": "Property",
+        "value": 10
+    },
+    "type": "T"
+}
+
+
+14. Delete the context in the context server
+============================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+connection: keep-alive
+
+
+
+15. Get the context in the context server - see 404 as it's been deleted
+========================================================================
+HTTP/1.1 404 Not Found
+Content-Type: application/json
+content-length: 159
+connection: keep-alive
+
+{"type":"https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound ","title":"Context does not exist.","status":404,"detail":"Requested context was not available."}
+
+
+16. Attempt to DELETE and RELOAD the context in the broker's context cache - fails as the context cannot be retrieved from the context server
+=============================================================================================================================================
+HTTP/1.1 503 Service Unavailable
+Content-Length: 166
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "http://localhost:7080/jsonldContexts/testContext2",
+    "title": "Unable to download context",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/LdContextNotAvailable"
+}
+
+
+17. GET the context from the broker and make sure it exists in the broker's context cache and is the same as in step 08
+=======================================================================================================================
+HTTP/1.1 200 OK
+Content-Length: 580
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "URL": "http://localhost:7080/jsonldContexts/testContext2",
+    "createdAt": "202REGEX(.*)",
+    "extraInfo": {
+        "compactions": 3,
+        "expansions": 12,
+        "hash-table": {
+            "humidity": "https://mysite.com/api/ngsi-ld-attributes/humidity",
+            "myAttributes": "https://mysite.com/api/ngsi-ld-attributes/",
+            "pressure": "https://mysite.com/api/ngsi-ld-attributes/pressure",
+            "temperature": "https://mysite.com/api/ngsi-ld-attributes/temperature"
+        },
+        "origin": "Downloaded",
+        "type": "hash-table"
+    },
+    "kind": "Cached",
+    "lastUsage": "202REGEX(.*)Z",
+    "localId": "REGEX(.*)",
+    "numberOfHits": 3
+}
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
