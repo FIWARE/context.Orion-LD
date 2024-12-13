@@ -313,9 +313,9 @@ KjNode* typeObjectLookup(KjNode* arrayP, const char* type)
 //
 KjNode* dbEntityTypesGet(OrionldProblemDetails* pdP, bool details, bool localOnly)
 {
-  KjNode*  local;
-  KjNode*  remote;
-  KjNode*  arrayP = NULL;
+  KjNode*  local   = NULL;
+  KjNode*  remote  = NULL;
+  KjNode*  arrayP  = NULL;
 
   //
   // This is a bit ugly ...
