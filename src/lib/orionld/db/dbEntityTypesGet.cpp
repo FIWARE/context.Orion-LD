@@ -311,11 +311,11 @@ KjNode* typeObjectLookup(KjNode* arrayP, const char* type)
 //
 // dbEntityTypesGet -
 //
-KjNode* dbEntityTypesGet(OrionldProblemDetails* pdP, bool details)
+KjNode* dbEntityTypesGet(OrionldProblemDetails* pdP, bool details, bool localOnly)
 {
-  KjNode*  local;
-  KjNode*  remote;
-  KjNode*  arrayP = NULL;
+  KjNode*  local   = NULL;
+  KjNode*  remote  = NULL;
+  KjNode*  arrayP  = NULL;
 
   //
   // This is a bit ugly ...
@@ -372,11 +372,13 @@ KjNode* dbEntityTypesGet(OrionldProblemDetails* pdP, bool details)
   //
   // GET remote types - i.e. from the "registrations" collection
   //
-  remote = entityTypesFromRegistrationsGet(details);
+  if (localOnly == false)
+  {
+    remote = entityTypesFromRegistrationsGet(details);
 
-  if ((remote != NULL) && (details == true))
-    remote = typesAndAttributesExtractFromRegistrations(remote);
-
+    if ((remote != NULL) && (details == true))
+      remote = typesAndAttributesExtractFromRegistrations(remote);
+  }
 
   //
   // Fix duplicates in 'local'
@@ -490,7 +492,6 @@ KjNode* dbEntityTypesGet(OrionldProblemDetails* pdP, bool details)
       typeP = next;
     }
   }
-
 
   if ((remote == NULL) && (local == NULL))
   {

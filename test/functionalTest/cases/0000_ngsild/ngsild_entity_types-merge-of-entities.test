@@ -34,10 +34,14 @@ orionldStart CB
 # 02. Create entity E2, type T1, with attributes P2 and R2
 # 03. GET Types - see T1
 # 04. GET Types with details - see T1 with P1, P2, R1, R2
-# 05. Create entity E3, type T2, with attributes P1 and R1
-# 06. Create entity E4, type T2, with attributes P2 and R2
-# 07. GET Types - see T1 and T2
-# 08. GET Types with details - see T1 and T2 with P1, P2, R1, R2
+# 05. GET Types with local=true - see T1
+# 06. GET Types with details and local=true - see T1 with P1, P2, R1, R2
+# 07. Create entity E3, type T2, with attributes P1 and R1
+# 08. Create entity E4, type T2, with attributes P2 and R2
+# 09. GET Types - see T1 and T2
+# 10. GET Types with details - see T1 and T2 with P1, P2, R1, R2
+# 11. GET Types with local=true - see T1 and T2
+# 12. GET Types with details and local=true - see T1 and T2 with P1, P2, R1, R2
 #
 
 echo "01. Create entity E1, type T1, with attributes P1 and R1"
@@ -92,7 +96,21 @@ echo
 echo
 
 
-echo "05. Create entity E3, type T2, with attributes P1 and R1"
+echo "05. GET Types with local=true - see T1"
+echo "======================================"
+orionCurl --url /ngsi-ld/v1/types?local=true
+echo
+echo
+
+
+echo "06. GET Types with details and local=true - see T1 with P1, P2, R1, R2"
+echo "======================================================================"
+orionCurl --url '/ngsi-ld/v1/types?details=true&local=true'
+echo
+echo
+
+
+echo "07. Create entity E3, type T2, with attributes P1 and R1"
 echo "========================================================"
 payload='{
   "id": "urn:ngsi-ld:entities:E3",
@@ -111,7 +129,7 @@ echo
 echo
 
 
-echo "06. Create entity E4, type T2, with attributes P2 and R2"
+echo "08. Create entity E4, type T2, with attributes P2 and R2"
 echo "========================================================"
 payload='{
   "id": "urn:ngsi-ld:entities:E4",
@@ -130,16 +148,30 @@ echo
 echo
 
 
-echo "07. GET Types - see T1 and T2"
+echo "09. GET Types - see T1 and T2"
 echo "============================="
 orionCurl --url /ngsi-ld/v1/types
 echo
 echo
 
 
-echo "08. GET Types with details - see T1 and T2 with P1, P2, R1, R2"
+echo "10. GET Types with details - see T1 and T2 with P1, P2, R1, R2"
 echo "=============================================================="
 orionCurl --url /ngsi-ld/v1/types?details=true
+echo
+echo
+
+
+echo "11. GET Types with local=true - see T1 and T2"
+echo "============================================="
+orionCurl --url /ngsi-ld/v1/types?local=true
+echo
+echo
+
+
+echo "12. GET Types with details and local=true - see T1 and T2 with P1, P2, R1, R2"
+echo "============================================================================="
+orionCurl --url '/ngsi-ld/v1/types?details=true&local=true'
 echo
 echo
 
@@ -203,7 +235,47 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 ]
 
 
-05. Create entity E3, type T2, with attributes P1 and R1
+05. GET Types with local=true - see T1
+======================================
+HTTP/1.1 200 OK
+Content-Length: 114
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "id": "urn:ngsi-ld:EntityTypeList:REGEX(.*)",
+    "type": "EntityTypeList",
+    "typeList": [
+        "T1"
+    ]
+}
+
+
+06. GET Types with details and local=true - see T1 with P1, P2, R1, R2
+======================================================================
+HTTP/1.1 200 OK
+Content-Length: 133
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "attributeNames": [
+            "P2",
+            "R2",
+            "P1",
+            "R1"
+        ],
+        "id": "https://uri.etsi.org/ngsi-ld/default-context/T1",
+        "type": "EntityType",
+        "typeName": "T1"
+    }
+]
+
+
+07. Create entity E3, type T2, with attributes P1 and R1
 ========================================================
 HTTP/1.1 201 Created
 Content-Length: 0
@@ -212,7 +284,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E3
 
 
 
-06. Create entity E4, type T2, with attributes P2 and R2
+08. Create entity E4, type T2, with attributes P2 and R2
 ========================================================
 HTTP/1.1 201 Created
 Content-Length: 0
@@ -221,7 +293,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E4
 
 
 
-07. GET Types - see T1 and T2
+09. GET Types - see T1 and T2
 =============================
 HTTP/1.1 200 OK
 Content-Length: 119
@@ -239,8 +311,60 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 }
 
 
-08. GET Types with details - see T1 and T2 with P1, P2, R1, R2
+10. GET Types with details - see T1 and T2 with P1, P2, R1, R2
 ==============================================================
+HTTP/1.1 200 OK
+Content-Length: 265
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "attributeNames": [
+            "P2",
+            "R2",
+            "P1",
+            "R1"
+        ],
+        "id": "https://uri.etsi.org/ngsi-ld/default-context/T1",
+        "type": "EntityType",
+        "typeName": "T1"
+    },
+    {
+        "attributeNames": [
+            "P2",
+            "R2",
+            "P1",
+            "R1"
+        ],
+        "id": "https://uri.etsi.org/ngsi-ld/default-context/T2",
+        "type": "EntityType",
+        "typeName": "T2"
+    }
+]
+
+
+11. GET Types with local=true - see T1 and T2
+=============================================
+HTTP/1.1 200 OK
+Content-Length: 119
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "id": "urn:ngsi-ld:EntityTypeList:REGEX(.*)",
+    "type": "EntityTypeList",
+    "typeList": [
+        "T1",
+        "T2"
+    ]
+}
+
+
+12. GET Types with details and local=true - see T1 and T2 with P1, P2, R1, R2
+=============================================================================
 HTTP/1.1 200 OK
 Content-Length: 265
 Content-Type: application/json

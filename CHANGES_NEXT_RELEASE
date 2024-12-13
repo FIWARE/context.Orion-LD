@@ -1,5 +1,6 @@
 ## Fixed Issues:
   #XXXX: Complex @contexts of subscriptions weren't persisted in mongodb
+  #1707: Support for local=true in the type discovery endpoints (GET /ngsi-ld/v1/types[/{typeName}]
   #1708: Reloaded hosted contexts were not persisted in mongo, only the context cache
 
 ## New Features:

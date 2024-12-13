@@ -39,6 +39,8 @@ orionldStart CB
 # 07. GET Entity Types - see five types (T0-T4)
 # 08. GET Entity Types WITH details - see five types (T0-T4)
 # 09. Same same, but Accept: application/ld+json
+# 10. GET Entity Types with local=true - see one type (T0)
+# 11. GET Entity Types WITH details - see one type (T0)
 #
 
 echo "01. GET Entity Types - see empty array"
@@ -150,6 +152,20 @@ echo
 echo "09. Same same, but Accept: application/ld+json"
 echo "=============================================="
 orionCurl --url /ngsi-ld/v1/types?details=true -H "Accept: application/ld+json"
+echo
+echo
+
+
+echo "10. GET Entity Types with local=true - see one type (T0)"
+echo "========================================================"
+orionCurl --url /ngsi-ld/v1/types?local=true
+echo
+echo
+
+
+echo "11. GET Entity Types WITH details and local=true - see one type (T0)"
+echo "===================================================================="
+orionCurl --url '/ngsi-ld/v1/types?details=true&local=true'
 echo
 echo
 
@@ -379,6 +395,43 @@ Date: REGEX(.*)
         "id": "https://uri.etsi.org/ngsi-ld/default-context/T4",
         "type": "EntityType",
         "typeName": "T4"
+    }
+]
+
+
+10. GET Entity Types with local=true - see one type (T0)
+========================================================
+HTTP/1.1 200 OK
+Content-Length: 114
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "id": "urn:ngsi-ld:EntityTypeList:REGEX(.*)",
+    "type": "EntityTypeList",
+    "typeList": [
+        "T0"
+    ]
+}
+
+
+11. GET Entity Types WITH details and local=true - see one type (T0)
+====================================================================
+HTTP/1.1 200 OK
+Content-Length: 118
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "attributeNames": [
+            "P1"
+        ],
+        "id": "https://uri.etsi.org/ngsi-ld/default-context/T0",
+        "type": "EntityType",
+        "typeName": "T0"
     }
 ]
 

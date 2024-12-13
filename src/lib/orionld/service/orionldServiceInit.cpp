@@ -447,16 +447,22 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
     serviceP->uriParams |= ORIONLD_URIPARAM_LIMIT;
     serviceP->uriParams |= ORIONLD_URIPARAM_OFFSET;
     serviceP->uriParams |= ORIONLD_URIPARAM_DETAILS;
+    serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
   }
   else if (serviceP->serviceRoutine == orionldGetEntityType)
   {
+    serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
   }
   else if (serviceP->serviceRoutine == orionldGetEntityAttributes)
   {
+    serviceP->uriParams |= ORIONLD_URIPARAM_LIMIT;
+    serviceP->uriParams |= ORIONLD_URIPARAM_OFFSET;
     serviceP->uriParams |= ORIONLD_URIPARAM_DETAILS;
+    serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
   }
   else if (serviceP->serviceRoutine == orionldGetEntityAttribute)
   {
+    serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
   }
   else if (serviceP->serviceRoutine == orionldPostTemporalEntities)
   {

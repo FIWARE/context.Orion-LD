@@ -39,6 +39,6 @@ extern "C"
 //
 // dbEntityTypesGet -
 //
-extern KjNode* dbEntityTypesGet(OrionldProblemDetails* pdP, bool details);
+extern KjNode* dbEntityTypesGet(OrionldProblemDetails* pdP, bool details, bool localOnly);
 
 #endif  // SRC_LIB_ORIONLD_DB_DBENTITYTYPESGET_H_

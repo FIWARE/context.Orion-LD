@@ -46,7 +46,7 @@ bool orionldGetEntityTypes(void)
 {
   OrionldProblemDetails  pd;
 
-  orionldState.responseTree = dbEntityTypesGet(&pd, orionldState.uriParams.details);
+  orionldState.responseTree = dbEntityTypesGet(&pd, orionldState.uriParams.details, orionldState.uriParams.local);
   if (orionldState.responseTree == NULL)
   {
     orionldError(OrionldResourceNotFound, pd.title, pd.detail, pd.status);
