@@ -149,7 +149,7 @@ echo
 
 echo "08. GET Entity Type T1 - see T1, count 3, and attrs P1, P2, R1, and R2"
 echo "======================================================================"
-orionCurl --url /ngsi-ld/v1/types/T1
+orionCurl --url /ngsi-ld/v1/types/T1?local=true
 echo
 echo
 
