@@ -88,7 +88,7 @@ bool orionldPostContexts(void)
 
   httpHeaderLocationAdd(contextP->url, NULL, NULL);
 
-  orionldContextCachePersist(contextP);
+  orionldContextCachePersist(contextP, false);
   orionldState.httpStatusCode = 201;
 
   return true;

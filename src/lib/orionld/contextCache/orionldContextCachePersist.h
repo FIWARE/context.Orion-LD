@@ -33,6 +33,6 @@
 //
 // orionldContextCachePersist -
 //
-extern void orionldContextCachePersist(OrionldContext* contextP);
+extern void orionldContextCachePersist(OrionldContext* contextP, bool reload);
 
 #endif  // SRC_LIB_ORIONLD_CONTEXTCACHE_ORIONLDCONTEXTCACHEPERSIST_H_

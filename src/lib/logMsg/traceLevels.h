@@ -106,6 +106,9 @@ typedef enum TraceLevels
   LmtContextDownload,                  // Context Download
   LmtCoreContext,                      // Core Context
   LmtUserContext,                      // User Context
+  LmtContextItem,                      // Item in context cache
+  LmtExpand,                           // JSON-LD Expansions
+  LmtCompact,                          // JSON-LD Compactions
 
   // GeoJSON
   LmtGeoJSON = 110,                    // GeoJSON ... everything (for now)
@@ -130,6 +133,11 @@ typedef enum TraceLevels
   // Subordinate Subscriptions
   //
   LmtSubordinate = 140,
+
+  //
+  // Context Cache
+  //
+  LmtContextCachePersist = 150,        // Persisting contexts in DB
 
   //
   // Misc

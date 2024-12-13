@@ -1241,7 +1241,7 @@ MHD_Result mhdConnectionTreat(void)
         {
           orionldState.contextP->origin = OrionldContextFromInline;
           orionldState.contextP->kind   = OrionldContextHosted;
-          orionldContextCachePersist(orionldState.contextP);
+          orionldContextCachePersist(orionldState.contextP, false);
         }
       }
 

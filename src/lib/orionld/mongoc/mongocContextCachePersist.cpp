@@ -27,6 +27,7 @@
 extern "C"
 {
 #include "kjson/KjNode.h"                                        // KjNode
+#include "kjson/kjLookup.h"                                      // kjLookup
 }
 
 #include "logMsg/logMsg.h"                                       // LM_*
@@ -43,23 +44,44 @@ extern "C"
 //
 // mongocContextCachePersist -
 //
-void mongocContextCachePersist(KjNode* contextObject)
+void mongocContextCachePersist(KjNode* contextObject, bool reload)
 {
-  bson_t bson;
-
-  mongocKjTreeToBson(contextObject, &bson);
+  bson_error_t  error;
 
   mongocConnectionGet(NULL, DbContexts);
-
   sem_wait(&mongocContextsSem);
 
-  bson_error_t  mcError;
-  bool          r = mongoc_collection_insert_one(orionldState.mongoc.contextsP, &bson, NULL, NULL, &mcError);
+  //
+  // If the context is to be reloaded, it is REMOVED before inserted
+  //
+  if (reload == true)
+  {
+    KjNode* urlNodeP = kjLookup(contextObject, "url");
+    char*   url      = (urlNodeP != NULL)? urlNodeP->value.s : NULL;
+
+    if (url != NULL)
+    {
+      bson_t mongoFilter;
+
+      bson_init(&mongoFilter);
+      bson_append_utf8(&mongoFilter, "url", 3, url, -1);
+
+      // Remove the context
+      if (mongoc_collection_remove(orionldState.mongoc.contextsP,  MONGOC_REMOVE_SINGLE_REMOVE, &mongoFilter, NULL, &error) == false)
+        LM_E(("Database Error (mongoc_collection_remove returned %d.%d:%s)", error.domain, error.code, error.message));
+      bson_destroy(&mongoFilter);
+    }
+  }
+
+  bson_t bson;
+  mongocKjTreeToBson(contextObject, &bson);
+
+  bool r = mongoc_collection_insert_one(orionldState.mongoc.contextsP, &bson, NULL, NULL, &error);
 
   sem_post(&mongocContextsSem);
 
   if (r == false)
-    LM_E(("Database Error (persisting context: %s)", mcError.message));
+    LM_E(("Database Error (persisting context: %s)", error.message));
 
   bson_destroy(&bson);
 

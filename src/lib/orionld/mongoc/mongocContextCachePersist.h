@@ -37,6 +37,6 @@ extern "C"
 //
 // mongocContextCachePersist -
 //
-extern void mongocContextCachePersist(KjNode* contextObject);
+extern void mongocContextCachePersist(KjNode* contextObject, bool reload);
 
 #endif  // SRC_LIB_ORIONLD_MONGOC_MONGOCCONTEXTCACHEPERSIST_H_
