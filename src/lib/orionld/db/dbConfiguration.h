@@ -65,7 +65,7 @@ typedef bool    (*DbSubscriptionMatchCallback)(const char* entityId, KjNode* sub
 // Function pointer types for the DB interface
 //
 typedef KjNode* (*DbEntitiesGet)(char** fieldV, int fields, bool entityIdPresent);
-typedef KjNode* (*DbEntityTypesFromRegistrationsGet)(bool details);
+typedef KjNode* (*DbEntityTypesFromRegistrationsGet)(bool details, const char* entityType);
 
 
 

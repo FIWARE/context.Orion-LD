@@ -57,7 +57,7 @@ extern void entitiesAndPropertiesExtract(KjNode* regArray, KjNode* typeArray);
 //
 // mongocEntityTypesFromRegistrationsGet -
 //
-KjNode* mongocEntityTypesFromRegistrationsGet(bool details)
+KjNode* mongocEntityTypesFromRegistrationsGet(bool details, const char* entityType)
 {
   //
   // Projection and options

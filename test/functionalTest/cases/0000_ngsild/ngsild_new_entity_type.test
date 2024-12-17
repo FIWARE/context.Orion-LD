@@ -31,7 +31,7 @@ orionldStart CB -experimental
 --SHELL--
 
 #
-# 01. Create Entity E1 with type T2, and attrs P1 and R1
+# 01. Create Entity E1 with type T2, and attrs P0 and R0
 # 02. GET Entity Type T1 - see 404
 # 03. Create Entity E3 with type T1, and attrs P1 and R1
 # 04. GET Entity Type T1 - see T1, count 1, and attrs P1 and R1
@@ -41,18 +41,24 @@ orionldStart CB -experimental
 # 08. GET Entity Type T1 - see T1, count 3, and attrs P1, P2, R1, and R2
 # 09. Same same, but Accept: application/ld+json
 # 10. Same same, but type in URL as long name
+# 11. Create a registration for entity type T1, and the attribute PR1
+# 12. Create a registration for entity type T2, and the attribute PR2"
+# 13. GET Entity Type T1 with local=true - see same as step 08
+# 14. GET Entity Type T1 without local=true - see same as step 08 + PR1 from registaration from step 11
+# 15. GET Entity Type T2 with local=true - see Entity E1 with attrs P1 and R1
+# 16. GET Entity Type T2 without local=true - see same as step 13 + PR2 from registaration from step 12
 #
 
-echo "01. Create Entity E1 with type T2, and attrs P1 and R1"
+echo "01. Create Entity E1 with type T2, and attrs P0 and R0"
 echo "======================================================"
 payload='{
   "id": "urn:ngsi-ld:entities:E1",
   "type": "T2",
-  "P1": {
+  "P0": {
     "type": "Property",
     "value": 1
   },
-  "R1": {
+  "R0": {
     "type": "Relationship",
     "object": "urn:ngsi-ld:entities:E1"
   }
@@ -169,8 +175,82 @@ echo
 echo
 
 
+echo "11. Create a registration for entity type T1, and the attribute PR1"
+echo "==================================================================="
+payload='{
+  "id": "urn:regs:R1",
+  "type": "ContextSourceRegistration",
+  "information": [
+    {
+      "entities": [
+        {
+          "type": "T1"
+        }
+      ],
+      "propertyNames": [ "PR1" ]
+    }
+  ],
+  "endpoint": "http://localhost:1234",
+  "operations": [ "retrieveEntityTypeInfo" ]
+}'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload"
+echo
+echo
+
+
+echo "12. Create a registration for entity type T2, and the attribute PR2"
+echo "==================================================================="
+payload='{
+  "id": "urn:regs:R2",
+  "type": "ContextSourceRegistration",
+  "information": [
+    {
+      "entities": [
+        {
+          "type": "T2"
+        }
+      ],
+      "propertyNames": [ "PR2" ]
+    }
+  ],
+  "endpoint": "http://localhost:1234",
+  "operations": [ "retrieveEntityTypeInfo" ]
+}'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload"
+echo
+echo
+
+
+echo "13. GET Entity Type T1 with local=true - see same as step 08"
+echo "============================================================"
+orionCurl --url /ngsi-ld/v1/types/T1?local=true
+echo
+echo
+
+
+echo "14. GET Entity Type T1 without local=true - see same as step 08 + PR1 from registaration from step 11"
+echo "====================================================================================================="
+orionCurl --url /ngsi-ld/v1/types/T1
+echo
+echo
+
+
+echo "15. GET Entity Type T2 with local=true - see Entity E1 with attrs P0 and R0"
+echo "==========================================================================="
+orionCurl --url /ngsi-ld/v1/types/T2?local=true
+echo
+echo
+
+
+echo "16. GET Entity Type T2 without local=true - see same as step 13 + PR2 from registaration from step 12"
+echo "====================================================================================================="
+orionCurl --url /ngsi-ld/v1/types/T2
+echo
+echo
+
+
 --REGEXPECT--
-01. Create Entity E1 with type T2, and attrs P1 and R1
+01. Create Entity E1 with type T2, and attrs P0 and R0
 ======================================================
 HTTP/1.1 201 Created
 Content-Length: 0
@@ -463,6 +543,216 @@ Date: REGEX(.*)
     "id": "https://uri.etsi.org/ngsi-ld/default-context/T1",
     "type": "EntityTypeInfo",
     "typeName": "T1"
+}
+
+
+11. Create a registration for entity type T1, and the attribute PR1
+===================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/csourceRegistrations/urn:regs:R1
+
+
+
+12. Create a registration for entity type T2, and the attribute PR2
+===================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/csourceRegistrations/urn:regs:R2
+
+
+
+13. GET Entity Type T1 with local=true - see same as step 08
+============================================================
+HTTP/1.1 200 OK
+Content-Length: 701
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "attributeDetails": [
+        {
+            "attributeName": "P1",
+            "attributeTypes": [
+                "Property",
+                "Relationship"
+            ],
+            "id": "https://uri.etsi.org/ngsi-ld/default-context/P1",
+            "type": "Attribute"
+        },
+        {
+            "attributeName": "R1",
+            "attributeTypes": [
+                "Relationship",
+                "Property"
+            ],
+            "id": "https://uri.etsi.org/ngsi-ld/default-context/R1",
+            "type": "Attribute"
+        },
+        {
+            "attributeName": "P2",
+            "attributeTypes": [
+                "Property",
+                "Relationship"
+            ],
+            "id": "https://uri.etsi.org/ngsi-ld/default-context/P2",
+            "type": "Attribute"
+        },
+        {
+            "attributeName": "R2",
+            "attributeTypes": [
+                "Relationship",
+                "Property"
+            ],
+            "id": "https://uri.etsi.org/ngsi-ld/default-context/R2",
+            "type": "Attribute"
+        }
+    ],
+    "entityCount": 3,
+    "id": "https://uri.etsi.org/ngsi-ld/default-context/T1",
+    "type": "EntityTypeInfo",
+    "typeName": "T1"
+}
+
+
+14. GET Entity Type T1 without local=true - see same as step 08 + PR1 from registaration from step 11
+=====================================================================================================
+HTTP/1.1 200 OK
+Content-Length: 830
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "attributeDetails": [
+        {
+            "attributeName": "P1",
+            "attributeTypes": [
+                "Property",
+                "Relationship"
+            ],
+            "id": "https://uri.etsi.org/ngsi-ld/default-context/P1",
+            "type": "Attribute"
+        },
+        {
+            "attributeName": "R1",
+            "attributeTypes": [
+                "Relationship",
+                "Property"
+            ],
+            "id": "https://uri.etsi.org/ngsi-ld/default-context/R1",
+            "type": "Attribute"
+        },
+        {
+            "attributeName": "P2",
+            "attributeTypes": [
+                "Property",
+                "Relationship"
+            ],
+            "id": "https://uri.etsi.org/ngsi-ld/default-context/P2",
+            "type": "Attribute"
+        },
+        {
+            "attributeName": "R2",
+            "attributeTypes": [
+                "Relationship",
+                "Property"
+            ],
+            "id": "https://uri.etsi.org/ngsi-ld/default-context/R2",
+            "type": "Attribute"
+        },
+        {
+            "attributeName": "PR1",
+            "attributeTypes": [
+                "Property"
+            ],
+            "id": "https://uri.etsi.org/ngsi-ld/default-context/PR1",
+            "type": "Attribute"
+        }
+    ],
+    "entityCount": 3,
+    "id": "https://uri.etsi.org/ngsi-ld/default-context/T1",
+    "type": "EntityTypeInfo",
+    "typeName": "T1"
+}
+
+
+15. GET Entity Type T2 with local=true - see Entity E1 with attrs P0 and R0
+===========================================================================
+HTTP/1.1 200 OK
+Content-Length: 391
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "attributeDetails": [
+        {
+            "attributeName": "P0",
+            "attributeTypes": [
+                "Property"
+            ],
+            "id": "https://uri.etsi.org/ngsi-ld/default-context/P0",
+            "type": "Attribute"
+        },
+        {
+            "attributeName": "R0",
+            "attributeTypes": [
+                "Relationship"
+            ],
+            "id": "https://uri.etsi.org/ngsi-ld/default-context/R0",
+            "type": "Attribute"
+        }
+    ],
+    "entityCount": 1,
+    "id": "https://uri.etsi.org/ngsi-ld/default-context/T2",
+    "type": "EntityTypeInfo",
+    "typeName": "T2"
+}
+
+
+16. GET Entity Type T2 without local=true - see same as step 13 + PR2 from registaration from step 12
+=====================================================================================================
+HTTP/1.1 200 OK
+Content-Length: 520
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "attributeDetails": [
+        {
+            "attributeName": "P0",
+            "attributeTypes": [
+                "Property"
+            ],
+            "id": "https://uri.etsi.org/ngsi-ld/default-context/P0",
+            "type": "Attribute"
+        },
+        {
+            "attributeName": "R0",
+            "attributeTypes": [
+                "Relationship"
+            ],
+            "id": "https://uri.etsi.org/ngsi-ld/default-context/R0",
+            "type": "Attribute"
+        },
+        {
+            "attributeName": "PR2",
+            "attributeTypes": [
+                "Property"
+            ],
+            "id": "https://uri.etsi.org/ngsi-ld/default-context/PR2",
+            "type": "Attribute"
+        }
+    ],
+    "entityCount": 1,
+    "id": "https://uri.etsi.org/ngsi-ld/default-context/T2",
+    "type": "EntityTypeInfo",
+    "typeName": "T2"
 }
 
 

@@ -34,6 +34,7 @@ extern "C"
 
 #include "orionld/types/OrionldProblemDetails.h"                 // OrionldProblemDetails
 #include "orionld/types/OrionLdRestService.h"                    // OrionLdRestService
+#include "orionld/types/RegCache.h"                              // RegCache
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/context/orionldContextItemExpand.h"            // orionldContextItemExpand
@@ -41,6 +42,7 @@ extern "C"
 #include "orionld/kjTree/kjStringValueLookupInArray.h"           // kjStringValueLookupInArray
 #include "orionld/mongoc/mongocEntityTypeGet.h"                  // mongocEntityTypeGet
 #include "orionld/mongoCppLegacy/mongoCppLegacyEntityTypeGet.h"  // mongoCppLegacyEntityTypeGet
+#include "orionld/regMatch/regMatchForEntityGet.h"               // regMatchForEntityGet
 #include "orionld/serviceRoutines/orionldGetEntityType.h"        // Own Interface
 
 
@@ -119,6 +121,41 @@ static void outAttrInfoAdd(KjNode* outAttrP, const char* attrType)
 
 
 
+// -----------------------------------------------------------------------------
+//
+// entityTypeInfoAdd -
+//
+static void entityTypeInfoAdd(KjNode* entityTypeV, KjNode* propertiesP, KjNode* relationshipsP, const char* typeExpanded)
+{
+  if ((propertiesP == NULL) && (relationshipsP == NULL))
+    return;
+
+  KjNode* attrsP = kjObject(orionldState.kjsonP, NULL);
+
+  if (propertiesP != NULL)
+  {
+    for (KjNode* propertyP = propertiesP->value.firstChildP; propertyP != NULL; propertyP = propertyP->next)
+    {
+      KjNode* itemP = kjString(orionldState.kjsonP, propertyP->value.s, "Property");
+      kjChildAdd(attrsP, itemP);
+    }
+  }
+
+  if (relationshipsP != NULL)
+  {
+    for (KjNode* relationshipP = relationshipsP->value.firstChildP; relationshipP != NULL; relationshipP = relationshipP->next)
+    {
+      KjNode* itemP = kjString(orionldState.kjsonP, relationshipP->value.s, "Relationship");
+      kjChildAdd(attrsP, itemP);
+    }
+  }
+
+  if (attrsP->value.firstChildP != NULL)
+    kjChildAdd(entityTypeV, attrsP);
+}
+
+
+
 // ----------------------------------------------------------------------------
 //
 // orionldGetEntityType -
@@ -142,12 +179,63 @@ bool orionldGetEntityType(void)
   else
     entityTypeV = mongoCppLegacyEntityTypeGet(&pd, typeExpanded, &entities);
 
-  if (entityTypeV == NULL)
+
+  if ((orionldState.uriParams.local == false) && (experimental == true))
   {
-    // xxxEntityTypeGet has filled in 'pd'
-    return false;
+    // GET entity info from registration cache and add that to entityTypeV
+    RegCache* rcP = orionldState.tenantP->regCache;
+
+    for (RegCacheItem* rciP = rcP->regList; rciP != NULL; rciP = rciP->next)
+    {
+      if ((rciP->opMask & (1 << DoRetrieveEntityTypeInfo)) != (1 << DoRetrieveEntityTypeInfo))
+        continue;
+
+      KjNode* infoV = kjLookup(rciP->regTree, "information");
+      if (infoV == NULL)
+        continue;
+
+      KjNode* propertiesP    = NULL;
+      KjNode* relationshipsP = NULL;
+      int     slotNo         = 0;
+
+      for (KjNode* infoP = infoV->value.firstChildP; infoP != NULL; infoP = infoP->next)
+      {
+        ++slotNo;
+
+        KjNode* entityV = kjLookup(infoP, "entities");
+
+        propertiesP     = kjLookup(infoP, "propertyNames");
+        relationshipsP  = kjLookup(infoP, "relationshipNames");
+
+        if (entityV == NULL)
+        {
+          entityTypeInfoAdd(entityTypeV, propertiesP, relationshipsP, typeExpanded);
+          break;
+        }
+        else
+        {
+          for (KjNode* entityP = entityV->value.firstChildP; entityP != NULL; entityP = entityP->next)
+          {
+            KjNode* typeNodeP = kjLookup(entityP, "type");  // The entity type field is MANDATORY
+
+            if (typeNodeP != NULL)
+            {
+              if (strcmp(typeNodeP->value.s, typeExpanded) == 0)
+              {
+                entityTypeInfoAdd(entityTypeV, propertiesP, relationshipsP, typeExpanded);
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
   }
-  else if (entities == 0)
+
+  if (entityTypeV == NULL)
+    return false;  // xxxEntityTypeGet has filled in 'pd'
+
+  if (entities == 0)
   {
     LM_E(("xxxEntityTypeGet: no entities found"));
     orionldError(OrionldResourceNotFound, "Entity Type Not Found", typeExpanded, 404);

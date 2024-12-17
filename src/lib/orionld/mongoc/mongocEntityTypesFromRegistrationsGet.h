@@ -37,6 +37,6 @@ extern "C"
 //
 // mongocEntityTypesFromRegistrationsGet -
 //
-extern KjNode* mongocEntityTypesFromRegistrationsGet(bool details);
+extern KjNode* mongocEntityTypesFromRegistrationsGet(bool details, const char* entityType);
 
 #endif  // SRC_LIB_ORIONLD_MONGOC_MONGOCENTITYTYPESFROMREGISTRATIONSGET_H_

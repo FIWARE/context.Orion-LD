@@ -238,7 +238,7 @@ static KjNode* dbEntityAttributesGetWithoutDetails(OrionldProblemDetails* pdP)
   //
   // GET external attributes - i.e. from the "registrations" collection
   //
-  KjNode* remote = entityTypesFromRegistrationsGet(true);
+  KjNode* remote = entityTypesFromRegistrationsGet(true, NULL);
 
   if (remote)
     remoteAttrNamesExtract(outArray, remote);

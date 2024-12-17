@@ -89,7 +89,7 @@ bool kjAttributesWithTypeExtract(KjNode* kjTree, KjNode* entityP)
 
     if (typeP != NULL)
     {
-      // Set 'attrP' to have the value of 'typeP', ad that's whay we want for 'entityP'
+      // Set 'attrP' to have the value of 'typeP', as that's what we want for 'entityP'
       attrP->value = typeP->value;
       attrP->type  = typeP->type;
 

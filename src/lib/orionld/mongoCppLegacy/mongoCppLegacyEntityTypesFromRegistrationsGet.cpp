@@ -181,7 +181,7 @@ void entitiesAndPropertiesExtract(KjNode* regArray, KjNode* typeArray)
 //  ...
 //
 //
-KjNode* mongoCppLegacyEntityTypesFromRegistrationsGet(bool details)
+KjNode* mongoCppLegacyEntityTypesFromRegistrationsGet(bool details, const char* entityType)
 {
   mongo::BSONObjBuilder  fields;
   mongo::BSONObjBuilder  filter;
