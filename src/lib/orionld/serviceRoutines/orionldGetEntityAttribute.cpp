@@ -46,7 +46,7 @@ bool orionldGetEntityAttribute(void)
   OrionldProblemDetails  pd;
   char*                  attrLongName = orionldAttributeExpand(orionldState.contextP, orionldState.wildcard[0], true, NULL);
 
-  orionldState.responseTree = dbEntityAttributesGet(&pd, attrLongName, true);
+  orionldState.responseTree = dbEntityAttributesGet(&pd, attrLongName, true, orionldState.uriParams.local);
 
   if (orionldState.responseTree == NULL)
   {
