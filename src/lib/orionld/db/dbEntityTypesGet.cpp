@@ -374,7 +374,7 @@ KjNode* dbEntityTypesGet(OrionldProblemDetails* pdP, bool details, bool localOnl
   //
   if (localOnly == false)
   {
-    remote = entityTypesFromRegistrationsGet(details);
+    remote = entityTypesFromRegistrationsGet(details, NULL);
 
     if ((remote != NULL) && (details == true))
       remote = typesAndAttributesExtractFromRegistrations(remote);

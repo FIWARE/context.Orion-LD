@@ -238,7 +238,7 @@ static KjNode* dbEntityAttributesGetWithoutDetails(OrionldProblemDetails* pdP, b
   //
   // GET external attributes - i.e. from the "registrations" collection
   //
-  KjNode* remote = (local == false)? entityTypesFromRegistrationsGet(true) : NULL;
+  KjNode* remote = (local == false)? entityTypesFromRegistrationsGet(true, NULL) : NULL;
 
   if (remote != NULL)
     remoteAttrNamesExtract(outArray, remote);
@@ -475,11 +475,11 @@ static KjNode* dbEntityAttributesGetWithDetails(OrionldProblemDetails* pdP, char
   //
   // Need to use local function pointers to not alter the global state of the broker
   //
-  DbEntitiesGet                     entitiesGet                     = mongoCppLegacyEntitiesGet;
+  DbEntitiesGet entitiesGet = mongoCppLegacyEntitiesGet;
   if (experimental == true)
   {
     if (orionldState.in.legacy == NULL)
-      entitiesGet                     = mongocEntitiesGet;
+      entitiesGet = mongocEntitiesGet;
   }
 
 
