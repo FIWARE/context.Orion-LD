@@ -200,7 +200,7 @@ static void remoteAttrNamesExtract(KjNode* outArray, KjNode* remote)
 //
 // dbEntityAttributesGetWithoutDetails -
 //
-static KjNode* dbEntityAttributesGetWithoutDetails(OrionldProblemDetails* pdP)
+static KjNode* dbEntityAttributesGetWithoutDetails(OrionldProblemDetails* pdP, bool local)
 {
   //
   // This is a bit ugly ...
@@ -238,9 +238,9 @@ static KjNode* dbEntityAttributesGetWithoutDetails(OrionldProblemDetails* pdP)
   //
   // GET external attributes - i.e. from the "registrations" collection
   //
-  KjNode* remote = entityTypesFromRegistrationsGet(true, NULL);
+  KjNode* remote = (local == false)? entityTypesFromRegistrationsGet(true) : NULL;
 
-  if (remote)
+  if (remote != NULL)
     remoteAttrNamesExtract(outArray, remote);
 
   return getEntityAttributesResponse(outArray);
@@ -577,12 +577,12 @@ static KjNode* dbEntityAttributesGetWithDetails(OrionldProblemDetails* pdP, char
 //
 // dbEntityAttributesGet -
 //
-KjNode* dbEntityAttributesGet(OrionldProblemDetails* pdP, char* attribute, bool details)
+KjNode* dbEntityAttributesGet(OrionldProblemDetails* pdP, char* attribute, bool details, bool local)
 {
   bzero(pdP, sizeof(OrionldProblemDetails));
 
   if (details == false)
-    return dbEntityAttributesGetWithoutDetails(pdP);
+    return dbEntityAttributesGetWithoutDetails(pdP, local);
   else
     return dbEntityAttributesGetWithDetails(pdP, attribute);
 }

@@ -45,7 +45,7 @@ bool orionldGetEntityAttributes(void)
 {
   OrionldProblemDetails  pd;
 
-  orionldState.responseTree = dbEntityAttributesGet(&pd, NULL, orionldState.uriParams.details);
+  orionldState.responseTree = dbEntityAttributesGet(&pd, NULL, orionldState.uriParams.details, orionldState.uriParams.local);
   if (orionldState.responseTree == NULL)
   {
     // dbEntityAttributesGet calls orionldError
