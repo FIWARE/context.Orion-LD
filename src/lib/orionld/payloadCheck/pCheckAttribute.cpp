@@ -70,7 +70,7 @@ static const char* attrTypeChangeTitle(OrionldAttributeType oldType, OrionldAttr
     if (oldType == Relationship)        return "Attempt to transform a Relationship into a Property";
     if (oldType == GeoProperty)         return "Attempt to transform a GeoProperty into a Property";
     if (oldType == LanguageProperty)    return "Attempt to transform a LanguageProperty into a Property";
-    if (oldType == VocabularyProperty)  return "Attempt to transform a VocabularyProperty into a Property";
+    if (oldType == VocabularyProperty)  return "Attempt to transform a VocabProperty into a Property";
     if (oldType == JsonProperty)        return "Attempt to transform a JsonProperty into a Property";
   }
   else if (newType == Relationship)
@@ -78,7 +78,7 @@ static const char* attrTypeChangeTitle(OrionldAttributeType oldType, OrionldAttr
     if (oldType == Property)            return "Attempt to transform a Property into a Relationship";
     if (oldType == GeoProperty)         return "Attempt to transform a GeoProperty into a Relationship";
     if (oldType == LanguageProperty)    return "Attempt to transform a LanguageProperty into a Relationship";
-    if (oldType == VocabularyProperty)  return "Attempt to transform a VocabularyProperty into a Relationship";
+    if (oldType == VocabularyProperty)  return "Attempt to transform a VocabProperty into a Relationship";
     if (oldType == JsonProperty)        return "Attempt to transform a JsonProperty into a Relationship";
   }
   else if (newType == GeoProperty)
@@ -86,7 +86,7 @@ static const char* attrTypeChangeTitle(OrionldAttributeType oldType, OrionldAttr
     if (oldType == Property)            return "Attempt to transform a Property into a GeoProperty";
     if (oldType == Relationship)        return "Attempt to transform a Relationship into a GeoProperty";
     if (oldType == LanguageProperty)    return "Attempt to transform a LanguageProperty into a GeoProperty";
-    if (oldType == VocabularyProperty)  return "Attempt to transform a VocabularyProperty into a GeoProperty";
+    if (oldType == VocabularyProperty)  return "Attempt to transform a VocabProperty into a GeoProperty";
     if (oldType == JsonProperty)        return "Attempt to transform a JsonProperty into a GeoProperty";
   }
   else if (newType == LanguageProperty)
@@ -94,16 +94,16 @@ static const char* attrTypeChangeTitle(OrionldAttributeType oldType, OrionldAttr
     if (oldType == Property)            return "Attempt to transform a Property into a LanguageProperty";
     if (oldType == Relationship)        return "Attempt to transform a Relationship into a LanguageProperty";
     if (oldType == GeoProperty)         return "Attempt to transform a GeoProperty into a LanguageProperty";
-    if (oldType == VocabularyProperty)  return "Attempt to transform a VocabularyProperty into a LanguageProperty";
+    if (oldType == VocabularyProperty)  return "Attempt to transform a VocabProperty into a LanguageProperty";
     if (oldType == JsonProperty)        return "Attempt to transform a JsonProperty into a LanguageProperty";
   }
   else if (newType == VocabularyProperty)
   {
-    if (oldType == Property)            return "Attempt to transform a Property into a VocabularyProperty";
-    if (oldType == Relationship)        return "Attempt to transform a Relationship into a VocabularyProperty";
-    if (oldType == GeoProperty)         return "Attempt to transform a GeoProperty into a VocabularyProperty";
-    if (oldType == LanguageProperty)    return "Attempt to transform a LanguageProperty into a VocabularyProperty";
-    if (oldType == JsonProperty)        return "Attempt to transform a JsonProperty into a VocabularyProperty";
+    if (oldType == Property)            return "Attempt to transform a Property into a VocabProperty";
+    if (oldType == Relationship)        return "Attempt to transform a Relationship into a VocabProperty";
+    if (oldType == GeoProperty)         return "Attempt to transform a GeoProperty into a VocabProperty";
+    if (oldType == LanguageProperty)    return "Attempt to transform a LanguageProperty into a VocabProperty";
+    if (oldType == JsonProperty)        return "Attempt to transform a JsonProperty into a VocabProperty";
   }
   else if (newType == JsonProperty)
   {
@@ -111,7 +111,7 @@ static const char* attrTypeChangeTitle(OrionldAttributeType oldType, OrionldAttr
     if (oldType == Relationship)        return "Attempt to transform a Relationship into a JsonProperty";
     if (oldType == GeoProperty)         return "Attempt to transform a GeoProperty into a JsonProperty";
     if (oldType == LanguageProperty)    return "Attempt to transform a LanguageProperty into a JsonProperty";
-    if (oldType == VocabularyProperty)  return "Attempt to transform a VocabularyProperty into a JsonProperty";
+    if (oldType == VocabularyProperty)  return "Attempt to transform a VocabProperty into a JsonProperty";
   }
 
   return "Attribute type inconsistency";
@@ -547,27 +547,27 @@ bool valueAndTypeCheck(KjNode* attrP, OrionldAttributeType attributeType, bool a
   {
     if (valueP != NULL)
     {
-      orionldError(OrionldBadRequestData, "Forbidden field for a VocabularyProperty: value", attrP->name, 400);
+      orionldError(OrionldBadRequestData, "Forbidden field for a VocabProperty: value", attrP->name, 400);
       return false;
     }
     else if (objectP != NULL)
     {
-      orionldError(OrionldBadRequestData, "Forbidden field for a VocabularyProperty: object", attrP->name, 400);
+      orionldError(OrionldBadRequestData, "Forbidden field for a VocabProperty: object", attrP->name, 400);
       return false;
     }
     else if (languageMapP != NULL)
     {
-      orionldError(OrionldBadRequestData, "Forbidden field for a VocabularyProperty: languageMap", attrP->name, 400);
+      orionldError(OrionldBadRequestData, "Forbidden field for a VocabProperty: languageMap", attrP->name, 400);
       return false;
     }
     else if (jsonP != NULL)
     {
-      orionldError(OrionldBadRequestData, "Forbidden field for a VocabularyProperty: json", attrP->name, 400);
+      orionldError(OrionldBadRequestData, "Forbidden field for a VocabProperty: json", attrP->name, 400);
       return false;
     }
     else if ((vocabP == NULL) && (attributeExisted == false))  // Attribute is new but the value is missing
     {
-      orionldError(OrionldBadRequestData, "Missing /vocab/ field for VocabularyProperty at creation time", attrP->name, 400);
+      orionldError(OrionldBadRequestData, "Missing /vocab/ field for VocabProperty at creation time", attrP->name, 400);
       return false;
     }
 
@@ -737,7 +737,7 @@ static bool pCheckVocabulary(KjNode* vocabP, const char* attrName)
     {
       if (wordP->type != KjString)
       {
-        orionldError(OrionldBadRequestData, "Invalid VocabularyProperty vocab array item - not a string", attrName, 400);
+        orionldError(OrionldBadRequestData, "Invalid VocabProperty vocab array item - not a string", attrName, 400);
         return false;
       }
 
@@ -746,7 +746,7 @@ static bool pCheckVocabulary(KjNode* vocabP, const char* attrName)
   }
   else
   {
-    orionldError(OrionldBadRequestData, "Invalid VocabularyProperty vocab - not a string nor an array", attrName, 400);
+    orionldError(OrionldBadRequestData, "Invalid VocabProperty vocab - not a string nor an array", attrName, 400);
     return false;
   }
 
@@ -898,8 +898,10 @@ bool deletionWithTypePresent(KjNode* attrP, KjNode* typeP)
       return true;
     }
   }
-  else if (strcmp(typeP->value.s, "VocabularyProperty") == 0)
+  else if ((strcmp(typeP->value.s, "VocabularyProperty") == 0) || (strcmp(typeP->value.s, "VocabProperty") == 0))
   {
+    typeP->value.s = (char*) "VocabProperty";
+
     valueP = kjLookup(attrP, "vocab");
     if ((valueP != NULL) && (valueP->type == KjString) && (strcmp(valueP->value.s, "urn:ngsi-ld:null") == 0))
     {
@@ -1091,6 +1093,10 @@ static bool pCheckAttributeObject
     bool geoJsonValue = false;
 
     attributeType = orionldAttributeType(typeP->value.s);
+
+    if (strcmp(typeP->value.s, "VocabularyProperty") == 0)
+      typeP->value.s = (char*) "VocabProperty";
+
     if (attributeType == NoAttributeType)
     {
       if (isGeoJsonValue(attrP))

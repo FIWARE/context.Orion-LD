@@ -21,7 +21,7 @@
 # VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
 
 --NAME--
-VocabularyProperty
+VocabProperty
 
 --SHELL-INIT--
 dbInit CB
@@ -33,9 +33,9 @@ accumulatorStart --pretty-print
 
 #
 # 01. Create a subscription on entity type T
-# 02. Create an entity urn:E1, type T, with a VocabularyProperty V1: "abc"
-# 03. Create an entity urn:E2, type T, with a VocabularyProperty V2: [ "vocab", "id" ]
-# 04. Create an entity urn:E3, type T, with a VocabularyProperty V3: [ "test" ] - array of one item - flattened to String
+# 02. Create an entity urn:E1, type T, with a VocabProperty V1: "abc"
+# 03. Create an entity urn:E2, type T, with a VocabProperty V2: [ "vocab", "id" ]
+# 04. Create an entity urn:E3, type T, with a VocabProperty V3: [ "test" ] - array of one item - flattened to String
 # 05. GET urn:E1 to see V1
 # 05b. See urn:E1 in the DB - see "abc" expanded
 # 06. GET urn:E2 to see V2
@@ -73,31 +73,37 @@ echo
 echo
 
 
-echo '02. Create an entity urn:E1, type T, with a VocabularyProperty V1: "abc"'
+echo '02. Create an entity urn:E1, type T, with a VocabProperty V1: "abc"'
 echo '========================================================================'
 payload='{
   "id": "urn:E1",
   "type": "T",
-  "V1": { "vocab": "abc" }
+  "V1": {
+    "type": "VocabProperty",
+    "vocab": "abc"
+  }
 }'
 orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
 echo
 echo
 
 
-echo '03. Create an entity urn:E2, type T, with a VocabularyProperty V2: [ "vocab", "id" ]'
+echo '03. Create an entity urn:E2, type T, with a VocabProperty V2: [ "vocab", "id" ]'
 echo '===================================================================================='
 payload='{
   "id": "urn:E2",
   "type": "T",
-  "V2": { "vocab": [ "vocab", "id" ] }
+  "V2": {
+    "type": "VocabularyProperty",
+    "vocab": [ "vocab", "id" ]
+   }
 }'
 orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
 echo
 echo
 
 
-echo '04. Create an entity urn:E3, type T, with a VocabularyProperty V3: [ "test" ] - array of one item - flattened to String'
+echo '04. Create an entity urn:E3, type T, with a VocabProperty V3: [ "test" ] - array of one item - flattened to String'
 echo '======================================================================================================================='
 payload='{
   "id": "urn:E3",
@@ -198,7 +204,7 @@ Location: /ngsi-ld/v1/subscriptions/urn:ngsi-ld:subs:S1
 
 
 
-02. Create an entity urn:E1, type T, with a VocabularyProperty V1: "abc"
+02. Create an entity urn:E1, type T, with a VocabProperty V1: "abc"
 ========================================================================
 HTTP/1.1 201 Created
 Content-Length: 0
@@ -207,7 +213,7 @@ Location: /ngsi-ld/v1/entities/urn:E1
 
 
 
-03. Create an entity urn:E2, type T, with a VocabularyProperty V2: [ "vocab", "id" ]
+03. Create an entity urn:E2, type T, with a VocabProperty V2: [ "vocab", "id" ]
 ====================================================================================
 HTTP/1.1 201 Created
 Content-Length: 0
@@ -216,7 +222,7 @@ Location: /ngsi-ld/v1/entities/urn:E2
 
 
 
-04. Create an entity urn:E3, type T, with a VocabularyProperty V3: [ "test" ] - array of one item - flattened to String
+04. Create an entity urn:E3, type T, with a VocabProperty V3: [ "test" ] - array of one item - flattened to String
 =======================================================================================================================
 HTTP/1.1 201 Created
 Content-Length: 0
@@ -228,14 +234,14 @@ Location: /ngsi-ld/v1/entities/urn:E3
 05. GET urn:E1 to see V1
 ========================
 HTTP/1.1 200 OK
-Content-Length: 75
+Content-Length: 70
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
     "V1": {
-        "type": "VocabularyProperty",
+        "type": "VocabProperty",
         "vocab": "abc"
     },
     "id": "urn:E1",
@@ -259,7 +265,7 @@ MongoDB server version: REGEX(.*)
 	],
 	"attrs" : {
 		"https://uri=etsi=org/ngsi-ld/default-context/V1" : {
-			"type" : "VocabularyProperty",
+			"type" : "VocabProperty",
 			"creDate" : REGEX(.*),
 			"modDate" : REGEX(.*),
 			"value" : "https://uri.etsi.org/ngsi-ld/default-context/abc",
@@ -276,14 +282,14 @@ bye
 06. GET urn:E2 to see V2
 ========================
 HTTP/1.1 200 OK
-Content-Length: 84
+Content-Length: 79
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
     "V2": {
-        "type": "VocabularyProperty",
+        "type": "VocabProperty",
         "vocab": [
             "vocab",
             "id"
@@ -310,7 +316,7 @@ MongoDB server version: REGEX(.*)
 	],
 	"attrs" : {
 		"https://uri=etsi=org/ngsi-ld/default-context/V2" : {
-			"type" : "VocabularyProperty",
+			"type" : "VocabProperty",
 			"creDate" : REGEX(.*),
 			"modDate" : REGEX(.*),
 			"value" : [
@@ -330,14 +336,14 @@ bye
 07. GET urn:E3 to see V3 - see V3 as a string
 =============================================
 HTTP/1.1 200 OK
-Content-Length: 76
+Content-Length: 71
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
     "V2": {
-        "type": "VocabularyProperty",
+        "type": "VocabProperty",
         "vocab": "test"
     },
     "id": "urn:E3",
@@ -361,7 +367,7 @@ MongoDB server version: REGEX(.*)
 	],
 	"attrs" : {
 		"https://uri=etsi=org/ngsi-ld/default-context/V2" : {
-			"type" : "VocabularyProperty",
+			"type" : "VocabProperty",
 			"creDate" : REGEX(.*),
 			"modDate" : REGEX(.*),
 			"value" : "https://uri.etsi.org/ngsi-ld/default-context/test",
@@ -378,7 +384,7 @@ bye
 08. Dump/Reset accumulator, see urn:E1+V1 and urn:E2+V2
 =======================================================
 POST http://REGEX(.*)/notify?subscriptionId=urn:ngsi-ld:subs:S1
-Content-Length: 256
+Content-Length: 251
 User-Agent: orionld/REGEX(.*)
 Host: REGEX(.*)
 Accept: application/json
@@ -390,7 +396,7 @@ Ngsild-Attribute-Format: Normalized
     "data": [
         {
             "V1": {
-                "type": "VocabularyProperty",
+                "type": "VocabProperty",
                 "vocab": "abc"
             },
             "id": "urn:E1",
@@ -404,7 +410,7 @@ Ngsild-Attribute-Format: Normalized
 }
 =======================================
 POST http://REGEX(.*)/notify?subscriptionId=urn:ngsi-ld:subs:S1
-Content-Length: 265
+Content-Length: 260
 User-Agent: orionld/REGEX(.*)
 Host: REGEX(.*)
 Accept: application/json
@@ -416,7 +422,7 @@ Ngsild-Attribute-Format: Normalized
     "data": [
         {
             "V2": {
-                "type": "VocabularyProperty",
+                "type": "VocabProperty",
                 "vocab": [
                     "vocab",
                     "id"
@@ -433,7 +439,7 @@ Ngsild-Attribute-Format: Normalized
 }
 =======================================
 POST http://REGEX(.*)/notify?subscriptionId=urn:ngsi-ld:subs:S1
-Content-Length: 257
+Content-Length: 252
 User-Agent: orionld/REGEX(.*)
 Host: REGEX(.*)
 Accept: application/json
@@ -445,7 +451,7 @@ Ngsild-Attribute-Format: Normalized
     "data": [
         {
             "V2": {
-                "type": "VocabularyProperty",
+                "type": "VocabProperty",
                 "vocab": "test"
             },
             "id": "urn:E3",
@@ -493,7 +499,7 @@ Date: REGEX(.*)
 11. Query entities with q=V1==abc&expandValues=V1,V2 => see urn:E1
 ==================================================================
 HTTP/1.1 200 OK
-Content-Length: 77
+Content-Length: 72
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -501,7 +507,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 [
     {
         "V1": {
-            "type": "VocabularyProperty",
+            "type": "VocabProperty",
             "vocab": "abc"
         },
         "id": "urn:E1",
@@ -513,7 +519,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 12. Query entities with q=V2==id&expandValues=V1,V2 => see urn:E2
 =================================================================
 HTTP/1.1 200 OK
-Content-Length: 86
+Content-Length: 81
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -521,7 +527,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 [
     {
         "V2": {
-            "type": "VocabularyProperty",
+            "type": "VocabProperty",
             "vocab": [
                 "vocab",
                 "id"

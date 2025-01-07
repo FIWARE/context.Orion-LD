@@ -410,7 +410,7 @@ payload='{
     "type": "Point",
     "coordinates": [ 31.0, 32.77 ]
   },
-  "expiresAt": "2024-12-31T10:00:19.975Z",
+  "expiresAt": "2029-12-31T10:00:19.975Z",
   "endpoint": "http://my.other.csource.org:1099",
   "P1": [ 1, 2, 3, 4 ]
 }'
@@ -1685,7 +1685,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
       32.77
     ]
   },
-  "expiresAt": "2024-12-31T10:00:19.975Z",
+  "expiresAt": "2029-12-31T10:00:19.975Z",
   "status": "active",
   "endpoint": "http://my.other.csource.org:1099",
   "P1": [
@@ -1769,7 +1769,7 @@ MongoDB server version: REGEX(.*)
 			32.77
 		]
 	},
-	"expiration" : 1735639219.975,
+	"expiration" : 1893405619.975,
 	"properties" : {
 		"https://uri=etsi=org/ngsi-ld/default-context/P1" : [
 			1,

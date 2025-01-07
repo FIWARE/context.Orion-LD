@@ -84,7 +84,8 @@ void dbModelToApiSubAttribute(KjNode* dbSubAttrP)
   {
     if      (strcmp(typeP->value.s, "Relationship")       == 0) valueP->name = (char*) "object";
     else if (strcmp(typeP->value.s, "LanguageProperty")   == 0) valueP->name = (char*) "languageMap";
-    else if (strcmp(typeP->value.s, "VocabularyProperty") == 0) valueP->name = (char*) "vocab";
+    else if (strcmp(typeP->value.s, "VocabularyProperty") == 0) { valueP->name = (char*) "vocab"; typeP->value.s = (char*) "VocabProperty"; }
+    else if (strcmp(typeP->value.s, "VocabProperty")      == 0) valueP->name = (char*) "vocab";
     else if (strcmp(typeP->value.s, "JsonProperty")       == 0) valueP->name = (char*) "json";
   }
 }
