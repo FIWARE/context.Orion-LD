@@ -114,9 +114,10 @@ void dbModelToApiAttribute(KjNode* dbAttrP, bool sysAttrs, bool eqsForDots)
     if      (strcmp(typeP->value.s, "Relationship")       == 0) valueP->name = (char*) "object";
     else if (strcmp(typeP->value.s, "LanguageProperty")   == 0) valueP->name = (char*) "languageMap";
     else if (strcmp(typeP->value.s, "JsonProperty")       == 0) valueP->name = (char*) "json";
-    else if (strcmp(typeP->value.s, "VocabularyProperty") == 0)
+    else if ((strcmp(typeP->value.s, "VocabularyProperty") == 0) || (strcmp(typeP->value.s, "VocabProperty") == 0))
     {
-      valueP->name = (char*) "vocab";
+      typeP->value.s = (char*) "VocabProperty";
+      valueP->name   = (char*) "vocab";
 
       if (valueP->type == KjString)
         valueP->value.s = orionldContextItemAliasLookup(orionldState.contextP, valueP->value.s, NULL, NULL);
@@ -354,7 +355,10 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
   // And call dbModelToApiSubAttribute2 with Concise
   //
   bool    conciseAsKeyValues = false;
-  KjNode* attrTypeNodeP      = NULL;
+  KjNode* attrTypeNodeP      = kjLookup(dbAttrP, "type");
+
+  if ((attrTypeNodeP != NULL) && (strcmp(attrTypeNodeP->value.s, "VocabularyProperty") == 0))
+    attrTypeNodeP->value.s = (char*) "VocabProperty";
 
   if ((renderFormat == RF_CONCISE) && (sysAttrs == false))
   {
@@ -377,7 +381,7 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
       dbModelToApiLangPropertySimplified(dbAttrP, lang);
       attrP = dbAttrP;
     }
-    else if (strcmp(attrTypeNodeP->value.s, "VocabularyProperty") == 0)
+    else if (strcmp(attrTypeNodeP->value.s, "VocabProperty") == 0)
     {
       KjNode* valueP = kjLookup(dbAttrP, "value");
 
@@ -391,6 +395,8 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
             wordP->value.s = orionldContextItemAliasLookup(orionldState.contextP, wordP->value.s, NULL, NULL);
         }
       }
+
+      attrTypeNodeP->value.s = (char*) "VocabProperty";
 
       // Remove everything except the value, and change its name to "vocab"
       dbAttrP->value.firstChildP = valueP;

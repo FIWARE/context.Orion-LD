@@ -162,7 +162,7 @@ bool pgAttributeBuild
         skip = (char*) "RelationshipArray";
     }
     else if (strcmp(nodeP->name, "languageMap") == 0)  skip = (char*) "LanguageProperty";
-    else if (strcmp(nodeP->name, "vocab")       == 0)  skip = (char*) "VocabularyProperty";
+    else if (strcmp(nodeP->name, "vocab")       == 0)  skip = (char*) "VocabProperty";
     else if (strcmp(nodeP->name, "createdAt")   == 0)  {}  // skip = (char*) "BuiltinTimestamp";
     else if (strcmp(nodeP->name, "modifiedAt")  == 0)  {}  // skip = (char*) "BuiltinTimestamp";
     else if (strcmp(nodeP->name, "https://uri.etsi.org/ngsi-ld/createdAt")  == 0)  {}  // Skipping

@@ -409,7 +409,7 @@ payload='{
     "type": "Point",
     "coordinates": [ 31.0, 32.77 ]
   },
-  "expiresAt": "2024-12-31T10:00:19.975Z",
+  "expiresAt": "2029-12-31T10:00:19.975Z",
   "endpoint": "http://my.other.csource.org:1099",
   "P1": [ 1, 2, 3, 4 ]
 }'
@@ -1622,7 +1622,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
   "type": "ContextSourceRegistration",
   "name": "R1-bis",
   "description": "description of reg R1-bis",
-  "expiresAt": "2024-12-31T10:00:19.975Z",
+  "expiresAt": "2029-12-31T10:00:19.975Z",
   "endpoint": "http://my.other.csource.org:1099",
   "information": [
     {
@@ -1691,7 +1691,7 @@ MongoDB server version: REGEX(.*)
 	"_id" : "urn:ngsi-ld:ContextSourceRegistration:R1",
 	"description" : "description of reg R1-bis",
 	"name" : "R1-bis",
-	"expiration" : 1735639219.975,
+	"expiration" : 1893405619.975,
 	"servicePath" : "/",
 	"contextRegistration" : [
 		{
