@@ -50,6 +50,9 @@ accumulatorStart --pretty-print
 # 11. Query entities with q=V1==abc&expandValues=V1,V2 => see urn:E1
 # 12. Query entities with q=V2==id&expandValues=V1,V2 => see urn:E2
 #
+# 13. Create an entity urn:E4, type T, with a VocabProperty V4 whose vocab is an array with a single element - for array reduction
+# 14. GET urn:E4 in normalized format, see V4 with an array-recuced 'vocab'
+#
 
 echo '01. Create a subscription on entity type T'
 echo '=========================================='
@@ -190,6 +193,25 @@ echo
 echo "12. Query entities with q=V2==id&expandValues=V1,V2 => see urn:E2"
 echo "================================================================="
 orionCurl --url '/ngsi-ld/v1/entities?q=V2==%22id%22&expandValues=V1,V2'
+echo
+echo
+
+
+echo "13. Create an entity urn:E4, type T, with a VocabProperty V4 whose vocab is an array with a single element - for array reduction"
+echo "================================================================================================================================"
+payload='{
+  "id": "urn:E4",
+  "type": "T",
+  "V4": { "type": "VocabProperty", "vocab": [ "test" ] }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "14. GET urn:E4 in normalized format, see V4 with an array-recuced 'vocab'"
+echo "========================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E4
 echo
 echo
 

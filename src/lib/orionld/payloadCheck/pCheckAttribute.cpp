@@ -1127,8 +1127,13 @@ static bool pCheckAttributeObject
       else
         LM_W(("No languageMap field found!"));
     }
-
-    if (attributeType == NoAttributeType)
+    else if (attributeType == VocabularyProperty)
+    {
+      KjNode* vocabP = kjLookup(attrP, "vocab");
+      if (vocabP != NULL)
+        arrayReduce(vocabP);
+    }
+    else if (attributeType == NoAttributeType)
     {
       if (isGeoJsonValue(attrP))
       {
