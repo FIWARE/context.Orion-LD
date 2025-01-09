@@ -561,6 +561,33 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 ]
 
 
+13. Create an entity urn:E4, type T, with a VocabProperty V4 whose vocab is an array with a single element - for array reduction
+================================================================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E4
+
+
+
+14. GET urn:E4 in normalized format, see V4 with an array-recuced 'vocab'
+=========================================================================
+HTTP/1.1 200 OK
+Content-Length: 71
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "V4": {
+        "type": "VocabProperty",
+        "vocab": "test"
+    },
+    "id": "urn:E4",
+    "type": "T"
+}
+
+
 --TEARDOWN--
 brokerStop CB
 accumulatorStop
