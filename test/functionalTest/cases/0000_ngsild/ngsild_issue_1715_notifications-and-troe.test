@@ -677,6 +677,8 @@ Create,https://uri.etsi.org/ngsi-ld/default-context/distanceCollision,Number,urn
 Create,https://uri.etsi.org/ngsi-ld/default-context/signalQuality,String,urn:ngsi-ld:vehicle:5g-car:2,f,,None,0,,,,
 Create,https://uri.etsi.org/ngsi-ld/default-context/cargoWeight,Number,urn:ngsi-ld:vehicle:5g-car:2,f,,None,,0.5,,,
 Create,https://uri.etsi.org/ngsi-ld/default-context/speed,Number,urn:ngsi-ld:vehicle:5g-car:2,f,,None,,89,,,
+Replace,https://uri.etsi.org/ngsi-ld/default-context/distanceCollision,Number,urn:ngsi-ld:vehicle:5g-car:2,f,,None,,543333,,,
+Replace,https://uri.etsi.org/ngsi-ld/default-context/distanceCollision,String,urn:ngsi-ld:vehicle:5g-car:2,f,,None,Step 08,,,,
 
 
 22. See the sub-attributes in the temporal database
