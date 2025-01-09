@@ -896,7 +896,7 @@ Location: /ngsi-ld/v1/entities/urn:E7
 ===========================
 #SORT_START
 POST http://REGEX(.*)/notify?subscriptionId=urn:subs:S3
-Content-Length: 211
+Content-Length: 209
 User-Agent: orionld/REGEX(.*)
 Host: REGEX(.*)
 Accept: application/json
@@ -907,9 +907,7 @@ Ngsild-Attribute-Format: Simplified
 {
     "data": [
         {
-            "L": [
-                "yes"
-            ],
+            "L": "yes",
             "id": "urn:E7",
             "type": "T"
         }
@@ -921,7 +919,7 @@ Ngsild-Attribute-Format: Simplified
 }
 =======================================
 POST http://REGEX(.*)/notify?subscriptionId=urn:subs:S2
-Content-Length: 233
+Content-Length: 231
 User-Agent: orionld/REGEX(.*)
 Host: REGEX(.*)
 Accept: application/json
@@ -934,9 +932,7 @@ Ngsild-Attribute-Format: Concise
         {
             "L": {
                 "lang": "se",
-                "value": [
-                    "yes"
-                ]
+                "value": "yes"
             },
             "id": "urn:E7",
             "type": "T"
@@ -949,7 +945,7 @@ Ngsild-Attribute-Format: Concise
 }
 =======================================
 POST http://REGEX(.*)/notify?subscriptionId=urn:subs:S1
-Content-Length: 251
+Content-Length: 249
 User-Agent: orionld/REGEX(.*)
 Host: REGEX(.*)
 Accept: application/json
@@ -963,9 +959,7 @@ Ngsild-Attribute-Format: Normalized
             "L": {
                 "lang": "se",
                 "type": "Property",
-                "value": [
-                    "yes"
-                ]
+                "value": "yes"
             },
             "id": "urn:E7",
             "type": "T"
@@ -993,7 +987,7 @@ Location: /ngsi-ld/v1/entities/urn:E8
 ===========================
 #SORT_START
 POST http://REGEX(.*)/notify?subscriptionId=urn:subs:S3
-Content-Length: 211
+Content-Length: 209
 User-Agent: orionld/REGEX(.*)
 Host: REGEX(.*)
 Accept: application/json
@@ -1004,9 +998,7 @@ Ngsild-Attribute-Format: Simplified
 {
     "data": [
         {
-            "L": [
-                "yes"
-            ],
+            "L": "yes",
             "id": "urn:E8",
             "type": "T"
         }
@@ -1018,7 +1010,7 @@ Ngsild-Attribute-Format: Simplified
 }
 =======================================
 POST http://REGEX(.*)/notify?subscriptionId=urn:subs:S2
-Content-Length: 233
+Content-Length: 231
 User-Agent: orionld/REGEX(.*)
 Host: REGEX(.*)
 Accept: application/json
@@ -1031,9 +1023,7 @@ Ngsild-Attribute-Format: Concise
         {
             "L": {
                 "lang": "es",
-                "value": [
-                    "yes"
-                ]
+                "value": "yes"
             },
             "id": "urn:E8",
             "type": "T"
@@ -1046,7 +1036,7 @@ Ngsild-Attribute-Format: Concise
 }
 =======================================
 POST http://REGEX(.*)/notify?subscriptionId=urn:subs:S1
-Content-Length: 251
+Content-Length: 249
 User-Agent: orionld/REGEX(.*)
 Host: REGEX(.*)
 Accept: application/json
@@ -1060,9 +1050,7 @@ Ngsild-Attribute-Format: Normalized
             "L": {
                 "lang": "es",
                 "type": "Property",
-                "value": [
-                    "yes"
-                ]
+                "value": "yes"
             },
             "id": "urn:E8",
             "type": "T"

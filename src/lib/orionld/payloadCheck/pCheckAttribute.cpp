@@ -151,6 +151,24 @@ static void arrayReduce(KjNode* valueP)
 
 // -----------------------------------------------------------------------------
 //
+// arrayReduceForLangProp -
+//
+static void arrayReduceForLangProp(KjNode* languageMapP)
+{
+  if (languageMapP->type != KjObject)
+    return;
+
+  for (KjNode* lmapValueP = languageMapP->value.firstChildP; lmapValueP != NULL; lmapValueP = lmapValueP->next)
+  {
+    if (lmapValueP->type == KjArray)
+      arrayReduce(lmapValueP);
+  }
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // pCheckTypeFromContext -
 //
 static bool pCheckTypeFromContext(KjNode* attrP, OrionldContextItem* attrContextInfoP)
@@ -1097,6 +1115,19 @@ static bool pCheckAttributeObject
     if (strcmp(typeP->value.s, "VocabularyProperty") == 0)
       typeP->value.s = (char*) "VocabProperty";
 
+
+    if (attributeType == LanguageProperty)
+    {
+      KjNode* languageMapP = kjLookup(attrP, "languageMap");
+      if (languageMapP != NULL)
+      {
+        if (languageMapP->type == KjObject)
+          arrayReduceForLangProp(languageMapP);
+      }
+      else
+        LM_W(("No languageMap field found!"));
+    }
+
     if (attributeType == NoAttributeType)
     {
       if (isGeoJsonValue(attrP))
@@ -1182,7 +1213,10 @@ static bool pCheckAttributeObject
       arrayReduce(objectP);
     }
     else if (languageMapP != NULL)
+    {
       attributeType = LanguageProperty;
+      arrayReduceForLangProp(languageMapP);
+    }
     else if (vocabP != NULL)
     {
       attributeType = VocabularyProperty;

@@ -99,9 +99,15 @@ static int pathComponentsFix(char** compV, int components, bool* skipP)
     ++oldIx;
   }
 
-  if (strcmp(compV[newIx - 1], "modDate") == 0) *skipP = true;
-  if (strcmp(compV[newIx - 1], "creDate") == 0) *skipP = true;
-  if (strcmp(compV[newIx - 1], "mdNames") == 0) *skipP = true;
+
+  if (newIx > 0)
+  {
+    if (strcmp(compV[newIx - 1], "modDate") == 0) *skipP = true;
+    if (strcmp(compV[newIx - 1], "creDate") == 0) *skipP = true;
+    if (strcmp(compV[newIx - 1], "mdNames") == 0) *skipP = true;
+  }
+  else
+    *skipP = true;
 
   compV[newIx] = NULL;
 
