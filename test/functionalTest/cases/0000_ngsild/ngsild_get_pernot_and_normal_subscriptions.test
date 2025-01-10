@@ -127,7 +127,7 @@ HTTP/1.1 200 OK
 Content-Length: 839
 Content-Type: application/json
 Date: REGEX(.*)
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 [
     {
@@ -138,7 +138,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld>; rel="h
         ],
         "id": "urn:S1",
         "isActive": true,
-        "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+        "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
         "notification": {
             "attributes": [
                 "P1",
@@ -168,7 +168,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld>; rel="h
         ],
         "id": "urn:S2",
         "isActive": true,
-        "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+        "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
         "notification": {
             "attributes": [
                 "P1",
@@ -195,7 +195,7 @@ HTTP/1.1 200 OK
 Content-Length: 840
 Content-Type: application/json
 Date: REGEX(.*)
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 [
     {
@@ -206,7 +206,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld>; rel="h
         ],
         "id": "urn:S1",
         "isActive": true,
-        "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+        "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
         "notification": {
             "attributes": [
                 "P1",
@@ -236,7 +236,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld>; rel="h
         ],
         "id": "urn:S2",
         "isActive": true,
-        "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+        "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
         "notification": {
             "attributes": [
                 "P1",

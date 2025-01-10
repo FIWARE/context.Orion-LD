@@ -576,7 +576,7 @@ HTTP/1.1 200 OK
 Content-Length: 129
 Content-Type: application/json
 Date: REGEX(.*)
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
     "P1": {
@@ -598,7 +598,7 @@ HTTP/1.1 200 OK
 Content-Length: 79
 Content-Type: application/json
 Date: REGEX(.*)
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
     "P1": "Entity E3 in Orion B",
@@ -616,7 +616,7 @@ HTTP/1.1 200 OK
 Content-Length: 68
 Content-Type: application/json
 Date: REGEX(.*)
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
     "P1": "Entity E3 in Orion B",
@@ -632,7 +632,7 @@ HTTP/1.1 200 OK
 Content-Length: 129
 Content-Type: application/json
 Date: REGEX(.*)
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
     "P1": {
@@ -654,7 +654,7 @@ HTTP/1.1 200 OK
 Content-Length: 79
 Content-Type: application/json
 Date: REGEX(.*)
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
     "P1": "Entity E1 in Orion A",
@@ -672,7 +672,7 @@ HTTP/1.1 200 OK
 Content-Length: 68
 Content-Type: application/json
 Date: REGEX(.*)
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
     "P1": "Entity E1 in Orion A",

@@ -8,5 +8,6 @@
 ## New Features:
   #1707: Support for local=true in the type discovery endpoints (GET /ngsi-ld/v1/types[/{typeName}]
   #XXXX: Support for local=true in the ATTRIBUTE discovery endpoints (GET /ngsi-ld/v1/attributes}]
+  #XXXX: Made 1.8 the default core context
 
 ## Notes

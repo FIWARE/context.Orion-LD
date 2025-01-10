@@ -73,8 +73,6 @@ static bool specialCompoundCheck(const char* attrName, KjNode* compoundValueP)
   KjNode*  valueNodeP = NULL;
   KjNode*  otherNodeP = NULL;
 
-  LM_W(("Attr name: '%s'", attrName));
-
   for (KjNode* nodeP = compoundValueP->value.firstChildP; nodeP != NULL; nodeP = nodeP->next)
   {
     if (nodeP->name[0] == '@')
@@ -112,7 +110,6 @@ static bool specialCompoundCheck(const char* attrName, KjNode* compoundValueP)
       if (dateTimeFromString(valueNodeP->value.s, errorString, sizeof(errorString)) < 0)
       {
         orionldError(OrionldBadRequestData, "DateTime value of @value/@type compound must be a valid ISO8601", errorString, 400);
-        LM_W(("Attr name: '%s'", attrName));
         pdAttribute(attrName);
         return false;
       }
@@ -162,7 +159,6 @@ static bool attributeValueSet(ContextAttribute* caP, KjNode* valueP)
 
   if (valueP->type == KjObject)
   {
-    LM_W(("Attr name: '%s'", caP->name.c_str()));
     if (specialCompoundCheck(caP->name.c_str(), valueP) == false)
       return false;
   }
@@ -206,8 +202,6 @@ bool kjTreeToContextAttribute(OrionldContext* contextP, KjNode* kNodeP, ContextA
 
   caP->name    = attributeName;
   *detailP     = (char*) "unknown error";
-
-  LM_W(("attributeName: '%s'", caP->name.c_str()));
 
   if (contextP == NULL)
     contextP = orionldCoreContextP;
@@ -641,7 +635,6 @@ bool kjTreeToContextAttribute(OrionldContext* contextP, KjNode* kNodeP, ContextA
     }
     else
     {
-      LM_W(("Calling attributeValueSet for attribute '%s'", caP->name.c_str()));
       if (attributeValueSet(caP, valueP) == false)
       {
         // attributeValueSet calls orionldError

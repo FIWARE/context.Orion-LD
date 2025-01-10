@@ -56,6 +56,20 @@ bool orionldContextHashTablesFill(OrionldContext* contextP, KjNode* keyValueTree
 
   for (KjNode* kvP = keyValueTree->value.firstChildP; kvP != NULL; kvP = kvP->next)
   {
+    //
+    // Two new fields, neither String nor Object were introduced in the Core Context version 1.8
+    //
+    if (strcmp(kvP->name, "@version") == 0)
+    {
+      // FIXME: Keep the JSON-LD version ?
+      continue;
+    }
+    else if (strcmp(kvP->name, "@protected") == 0)
+    {
+      // FIXME: Keep the JSON-LD protection bool ?
+      continue;
+    }
+
     OrionldContextItem* hiP = (OrionldContextItem*) kaAlloc(&kalloc, sizeof(OrionldContextItem));
 
     hiP->name = kaStrdup(&kalloc, kvP->name);

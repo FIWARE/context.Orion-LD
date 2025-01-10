@@ -342,7 +342,7 @@ MongoDB server version: REGEX(.*)
 			"creDate" : REGEX(.*),
 			"modDate" : REGEX(.*),
 			"value" : [
-				"https://uri.etsi.org/ngsi-ld/default-context/vocab",
+				"https://uri.etsi.org/ngsi-ld/hasVocab",
 				"@id"
 			],
 			"mdNames" : [ ]

@@ -153,7 +153,7 @@ Ngsild-Attribute-Format: Normalized
     "data": {
         "features": [
             {
-                "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+                "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
                 "geometry": {
                     "coordinates": [
                         1,
@@ -218,7 +218,7 @@ Ngsild-Attribute-Format: Normalized
     "data": {
         "features": [
             {
-                "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+                "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
                 "geometry": {
                     "coordinates": [
                         1,

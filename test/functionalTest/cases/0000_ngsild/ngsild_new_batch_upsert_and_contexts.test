@@ -644,42 +644,6 @@ Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jso
 
 [
   {
-    "id": "urn:ngsi-ld:WeatherObserved:BMP180:22828",
-    "type": "WeatherObserved",
-    "dataProvider": {
-      "type": "Property",
-      "value": "sensor.community"
-    },
-    "source": {
-      "type": "Property",
-      "value": "https://data.sensor.community/airrohr/v1/filter/country=DE&type=BMP180"
-    },
-    "stationName": {
-      "type": "Property",
-      "value": "BMP180:22828"
-    },
-    "location": {
-      "type": "GeoProperty",
-      "value": {
-        "type": "Point",
-        "coordinates": [
-          13.418,
-          52.562
-        ]
-      }
-    },
-    "temperature": {
-      "type": "Property",
-      "value": 21.9,
-      "observedAt": "2020-04-09T14:33:38.123Z"
-    },
-    "atmosphericPressure": {
-      "type": "Property",
-      "value": 1014.96,
-      "observedAt": "2020-04-09T14:33:38.007Z"
-    }
-  },
-  {
     "id": "urn:ngsi-ld:WeatherObserved:BMP180:15333",
     "type": "WeatherObserved",
     "dataProvider": {
@@ -716,7 +680,7 @@ Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jso
     }
   },
   {
-    "id": "urn:ngsi-ld:WeatherObserved:BMP180:25514",
+    "id": "urn:ngsi-ld:WeatherObserved:BMP180:16956",
     "type": "WeatherObserved",
     "dataProvider": {
       "type": "Property",
@@ -728,27 +692,27 @@ Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jso
     },
     "stationName": {
       "type": "Property",
-      "value": "BMP180:25514"
+      "value": "BMP180:16956"
     },
     "location": {
       "type": "GeoProperty",
       "value": {
         "type": "Point",
         "coordinates": [
-          10.28,
-          54.242
+          8.354,
+          52.052
         ]
       }
     },
     "temperature": {
       "type": "Property",
-      "value": 14.3,
-      "observedAt": "2020-04-09T14:33:34.000Z"
+      "value": 22.8,
+      "observedAt": "2020-04-09T14:33:29.000Z"
     },
     "atmosphericPressure": {
       "type": "Property",
-      "value": 1020.87,
-      "observedAt": "2020-04-09T14:33:34.000Z"
+      "value": 1015.64,
+      "observedAt": "2020-04-09T14:33:29.556Z"
     }
   },
   {
@@ -788,7 +752,7 @@ Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jso
     }
   },
   {
-    "id": "urn:ngsi-ld:WeatherObserved:BMP180:16956",
+    "id": "urn:ngsi-ld:WeatherObserved:BMP180:22828",
     "type": "WeatherObserved",
     "dataProvider": {
       "type": "Property",
@@ -800,27 +764,63 @@ Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jso
     },
     "stationName": {
       "type": "Property",
-      "value": "BMP180:16956"
+      "value": "BMP180:22828"
     },
     "location": {
       "type": "GeoProperty",
       "value": {
         "type": "Point",
         "coordinates": [
-          8.354,
-          52.052
+          13.418,
+          52.562
         ]
       }
     },
     "temperature": {
       "type": "Property",
-      "value": 22.8,
-      "observedAt": "2020-04-09T14:33:29.000Z"
+      "value": 21.9,
+      "observedAt": "2020-04-09T14:33:38.123Z"
     },
     "atmosphericPressure": {
       "type": "Property",
-      "value": 1015.64,
-      "observedAt": "2020-04-09T14:33:29.556Z"
+      "value": 1014.96,
+      "observedAt": "2020-04-09T14:33:38.007Z"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:WeatherObserved:BMP180:25514",
+    "type": "WeatherObserved",
+    "dataProvider": {
+      "type": "Property",
+      "value": "sensor.community"
+    },
+    "source": {
+      "type": "Property",
+      "value": "https://data.sensor.community/airrohr/v1/filter/country=DE&type=BMP180"
+    },
+    "stationName": {
+      "type": "Property",
+      "value": "BMP180:25514"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          10.28,
+          54.242
+        ]
+      }
+    },
+    "temperature": {
+      "type": "Property",
+      "value": 14.3,
+      "observedAt": "2020-04-09T14:33:34.000Z"
+    },
+    "atmosphericPressure": {
+      "type": "Property",
+      "value": 1020.87,
+      "observedAt": "2020-04-09T14:33:34.000Z"
     }
   }
 ]
@@ -830,13 +830,13 @@ Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jso
 04. Get all contexts from the context cache
 ===========================================
 HTTP/1.1 200 OK
-Content-Length: 2000
+Content-Length: 2001
 Content-Type: application/json
 Date: REGEX(.*)
 
 [
   {
-    "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "localId": "REGEX(.*)",
     "kind": "Cached",
     "createdAt": "202REGEX(.*)",
@@ -844,13 +844,13 @@ Date: REGEX(.*)
       "type": "hash-table",
       "origin": "Downloaded",
       "compactions": 5,
-      "expansions": 286,
+      "expansions": 352,
       "hash-table": {
         "instanceId": "https://uri.etsi.org/ngsi-ld/instanceId",
         "notifiedAt": "https://uri.etsi.org/ngsi-ld/notifiedAt",
+        "linkedMaps": "https://uri.etsi.org/ngsi-ld/linkedMaps",
         "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt",
-        "MultiPoint": "https://purl.org/geojson/vocab#MultiPoint",
-        "notUpdated": "https://uri.etsi.org/ngsi-ld/notUpdated"
+        "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList"
       }
     }
   },
@@ -914,42 +914,6 @@ Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jso
 
 [
   {
-    "id": "urn:ngsi-ld:WeatherObserved:BMP180:22828",
-    "type": "WeatherObserved",
-    "dataProvider": {
-      "type": "Property",
-      "value": "sensor.community"
-    },
-    "source": {
-      "type": "Property",
-      "value": "https://data.sensor.community/airrohr/v1/filter/country=DE&type=BMP181"
-    },
-    "stationName": {
-      "type": "Property",
-      "value": "BMP180:22828"
-    },
-    "location": {
-      "type": "GeoProperty",
-      "value": {
-        "type": "Point",
-        "coordinates": [
-          13.418,
-          52.562
-        ]
-      }
-    },
-    "temperature": {
-      "type": "Property",
-      "value": 21.9,
-      "observedAt": "2020-04-09T14:33:38.460Z"
-    },
-    "atmosphericPressure": {
-      "type": "Property",
-      "value": 1014.96,
-      "observedAt": "2020-04-09T14:33:38.999Z"
-    }
-  },
-  {
     "id": "urn:ngsi-ld:WeatherObserved:BMP180:15333",
     "type": "WeatherObserved",
     "dataProvider": {
@@ -986,7 +950,7 @@ Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jso
     }
   },
   {
-    "id": "urn:ngsi-ld:WeatherObserved:BMP180:25514",
+    "id": "urn:ngsi-ld:WeatherObserved:BMP180:16956",
     "type": "WeatherObserved",
     "dataProvider": {
       "type": "Property",
@@ -998,27 +962,27 @@ Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jso
     },
     "stationName": {
       "type": "Property",
-      "value": "BMP180:25514"
+      "value": "BMP180:16956"
     },
     "location": {
       "type": "GeoProperty",
       "value": {
         "type": "Point",
         "coordinates": [
-          10.28,
-          54.242
+          8.354,
+          52.052
         ]
       }
     },
     "temperature": {
       "type": "Property",
-      "value": 14.3,
-      "observedAt": "2020-04-09T14:33:34.501Z"
+      "value": 22.8,
+      "observedAt": "2020-04-09T14:33:29.000Z"
     },
     "atmosphericPressure": {
       "type": "Property",
-      "value": 1020.87,
-      "observedAt": "2020-04-09T14:33:34.199Z"
+      "value": 1015.64,
+      "observedAt": "2020-04-09T14:33:29.321Z"
     }
   },
   {
@@ -1058,7 +1022,7 @@ Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jso
     }
   },
   {
-    "id": "urn:ngsi-ld:WeatherObserved:BMP180:16956",
+    "id": "urn:ngsi-ld:WeatherObserved:BMP180:22828",
     "type": "WeatherObserved",
     "dataProvider": {
       "type": "Property",
@@ -1070,27 +1034,63 @@ Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jso
     },
     "stationName": {
       "type": "Property",
-      "value": "BMP180:16956"
+      "value": "BMP180:22828"
     },
     "location": {
       "type": "GeoProperty",
       "value": {
         "type": "Point",
         "coordinates": [
-          8.354,
-          52.052
+          13.418,
+          52.562
         ]
       }
     },
     "temperature": {
       "type": "Property",
-      "value": 22.8,
-      "observedAt": "2020-04-09T14:33:29.000Z"
+      "value": 21.9,
+      "observedAt": "2020-04-09T14:33:38.460Z"
     },
     "atmosphericPressure": {
       "type": "Property",
-      "value": 1015.64,
-      "observedAt": "2020-04-09T14:33:29.321Z"
+      "value": 1014.96,
+      "observedAt": "2020-04-09T14:33:38.999Z"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:WeatherObserved:BMP180:25514",
+    "type": "WeatherObserved",
+    "dataProvider": {
+      "type": "Property",
+      "value": "sensor.community"
+    },
+    "source": {
+      "type": "Property",
+      "value": "https://data.sensor.community/airrohr/v1/filter/country=DE&type=BMP181"
+    },
+    "stationName": {
+      "type": "Property",
+      "value": "BMP180:25514"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          10.28,
+          54.242
+        ]
+      }
+    },
+    "temperature": {
+      "type": "Property",
+      "value": 14.3,
+      "observedAt": "2020-04-09T14:33:34.501Z"
+    },
+    "atmosphericPressure": {
+      "type": "Property",
+      "value": 1020.87,
+      "observedAt": "2020-04-09T14:33:34.199Z"
     }
   }
 ]
@@ -1190,13 +1190,13 @@ bye
 07. Get all contexts from the context cache
 ===========================================
 HTTP/1.1 200 OK
-Content-Length: 2001
+Content-Length: 2002
 Content-Type: application/json
 Date: REGEX(.*)
 
 [
   {
-    "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "localId": "REGEX(.*)",
     "kind": "Cached",
     "createdAt": "202REGEX(.*)",
@@ -1204,13 +1204,13 @@ Date: REGEX(.*)
       "type": "hash-table",
       "origin": "Downloaded",
       "compactions": 10,
-      "expansions": 291,
+      "expansions": 357,
       "hash-table": {
         "instanceId": "https://uri.etsi.org/ngsi-ld/instanceId",
         "notifiedAt": "https://uri.etsi.org/ngsi-ld/notifiedAt",
+        "linkedMaps": "https://uri.etsi.org/ngsi-ld/linkedMaps",
         "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt",
-        "MultiPoint": "https://purl.org/geojson/vocab#MultiPoint",
-        "notUpdated": "https://uri.etsi.org/ngsi-ld/notUpdated"
+        "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList"
       }
     }
   },

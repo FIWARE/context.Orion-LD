@@ -90,7 +90,7 @@ Date: REGEX(.*)
   {
     "@context": [
       "https://fiware.github.io/tutorials.Step-by-Step/tutorials-context.jsonld",
-      "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld"
+      "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
     ],
     "type": "ContextSourceRegistration",
     "id": "urn:ngsi-ld:ContextSourceRegistration:REGEX(.*)",

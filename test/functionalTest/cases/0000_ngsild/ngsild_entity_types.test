@@ -233,7 +233,7 @@ Content-Type: application/ld+json
 Date: REGEX(.*)
 
 {
-    "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "id": "urn:ngsi-ld:EntityTypeList:REGEX(.*)",
     "type": "EntityTypeList",
     "typeList": [
@@ -344,7 +344,7 @@ Date: REGEX(.*)
 
 [
     {
-        "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+        "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
         "attributeNames": [
             "P1"
         ],
@@ -353,7 +353,7 @@ Date: REGEX(.*)
         "typeName": "T0"
     },
     {
-        "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+        "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
         "attributeNames": [
             "brandName",
             "isParked",
@@ -364,7 +364,7 @@ Date: REGEX(.*)
         "typeName": "T1"
     },
     {
-        "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+        "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
         "attributeNames": [
             "brandName",
             "isParked",
@@ -375,7 +375,7 @@ Date: REGEX(.*)
         "typeName": "T2"
     },
     {
-        "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+        "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
         "attributeNames": [
             "brandName",
             "isParked",
@@ -386,7 +386,7 @@ Date: REGEX(.*)
         "typeName": "T3"
     },
     {
-        "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+        "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
         "attributeNames": [
             "brandName",
             "isParked",

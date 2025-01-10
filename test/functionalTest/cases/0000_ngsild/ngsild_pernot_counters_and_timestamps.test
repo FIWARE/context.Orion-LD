@@ -211,7 +211,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     ],
     "id": "urn:S1",
     "isActive": true,
-    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "notification": {
         "attributes": [
             "P1",
@@ -302,7 +302,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     ],
     "id": "urn:S1",
     "isActive": true,
-    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "notification": {
         "attributes": [
             "P1",
@@ -376,7 +376,7 @@ MongoDB server version: REGEX(.*)
 	"custom" : false,
 	"servicePath" : "/#",
 	"blacklist" : false,
-	"ldContext" : "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+	"ldContext" : "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
 	"count" : 1,
 	"lastNotification" : REGEX(.*),
 	"noMatch" : 1

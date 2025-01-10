@@ -171,7 +171,7 @@ MongoDB server version: REGEX(.*)
 	"custom" : false,
 	"servicePath" : "/#",
 	"blacklist" : false,
-	"ldContext" : "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld"
+	"ldContext" : "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
 }
 bye
 
@@ -236,7 +236,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
   "throttling": 5,
   "createdAt": "202REGEX(.*)Z",
   "modifiedAt": "202REGEX(.*)Z",
-  "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld"
+  "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
 }
 
 
@@ -299,7 +299,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
   "expiresAt": "2028-12-31T10:00:00.000Z",
   "throttling": 5,
   "origin": "cache",
-  "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld"
+  "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
 }
 
 

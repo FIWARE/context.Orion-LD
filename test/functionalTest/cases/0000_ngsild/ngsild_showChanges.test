@@ -288,7 +288,7 @@ MongoDB server version: REGEX(.*)
 	"custom" : false,
 	"servicePath" : "/#",
 	"blacklist" : false,
-	"ldContext" : "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld"
+	"ldContext" : "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
 }
 bye
 
@@ -349,7 +349,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     ],
     "id": "urn:ngsi-ld:subs:S1",
     "isActive": true,
-    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "notification": {
         "endpoint": {
             "accept": "application/json",
@@ -385,7 +385,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     ],
     "id": "urn:ngsi-ld:subs:S1",
     "isActive": true,
-    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "notification": {
         "endpoint": {
             "accept": "application/json",
@@ -425,7 +425,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     ],
     "id": "urn:ngsi-ld:subs:S1",
     "isActive": true,
-    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "notification": {
         "endpoint": {
             "accept": "application/json",
@@ -458,7 +458,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     ],
     "id": "urn:ngsi-ld:subs:S1",
     "isActive": true,
-    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "notification": {
         "endpoint": {
             "accept": "application/json",
@@ -556,7 +556,7 @@ MongoDB server version: REGEX(.*)
 	"custom" : false,
 	"servicePath" : "/#",
 	"blacklist" : false,
-	"ldContext" : "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld"
+	"ldContext" : "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
 }
 bye
 
@@ -578,7 +578,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     ],
     "id": "urn:ngsi-ld:subs:S1",
     "isActive": true,
-    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "notification": {
         "endpoint": {
             "accept": "application/json",
@@ -613,7 +613,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     ],
     "id": "urn:ngsi-ld:subs:S1",
     "isActive": true,
-    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "notification": {
         "endpoint": {
             "accept": "application/json",
@@ -674,7 +674,7 @@ MongoDB server version: REGEX(.*)
 	"custom" : false,
 	"servicePath" : "/#",
 	"blacklist" : false,
-	"ldContext" : "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld"
+	"ldContext" : "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
 }
 bye
 
@@ -696,7 +696,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     ],
     "id": "urn:ngsi-ld:subs:S1",
     "isActive": true,
-    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "notification": {
         "endpoint": {
             "accept": "application/json",
@@ -732,7 +732,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     ],
     "id": "urn:ngsi-ld:subs:S1",
     "isActive": true,
-    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "notification": {
         "endpoint": {
             "accept": "application/json",

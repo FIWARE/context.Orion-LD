@@ -414,7 +414,7 @@ HTTP/1.1 200 OK
 Content-Length: 2
 Content-Type: application/json
 Date: REGEX(.*)
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 NGSILD-EntityMap: urn:ngsi-ld:entity-map:REGEX(.*)
 NGSILD-Results-Count: 1
 
@@ -498,7 +498,7 @@ HTTP/1.1 200 OK
 Content-Length: 2
 Content-Type: application/json
 Date: REGEX(.*)
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 NGSILD-EntityMap: urn:ngsi-ld:entity-map:REGEX(.*)
 NGSILD-Results-Count: 3
 

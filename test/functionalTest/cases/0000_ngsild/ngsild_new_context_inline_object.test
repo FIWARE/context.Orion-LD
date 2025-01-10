@@ -75,13 +75,13 @@ Location: /ngsi-ld/v1/entities/http://a.b.c/entity/E1
 02. Ask for the entire list of contexts in the context cache
 ============================================================
 HTTP/1.1 200 OK
-Content-Length: 701
+Content-Length: 702
 Content-Type: application/json
 Date: REGEX(.*)
 
 [
   {
-    "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "localId": "REGEX(.*)",
     "kind": "Cached",
     "createdAt": "202REGEX(.*)",
@@ -89,13 +89,13 @@ Date: REGEX(.*)
       "type": "hash-table",
       "origin": "Downloaded",
       "compactions": 0,
-      "expansions": 282,
+      "expansions": 348,
       "hash-table": {
         "instanceId": "https://uri.etsi.org/ngsi-ld/instanceId",
         "notifiedAt": "https://uri.etsi.org/ngsi-ld/notifiedAt",
+        "linkedMaps": "https://uri.etsi.org/ngsi-ld/linkedMaps",
         "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt",
-        "MultiPoint": "https://purl.org/geojson/vocab#MultiPoint",
-        "notUpdated": "https://uri.etsi.org/ngsi-ld/notUpdated"
+        "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList"
       }
     }
   }

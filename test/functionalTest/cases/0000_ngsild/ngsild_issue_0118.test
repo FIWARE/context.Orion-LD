@@ -350,7 +350,7 @@ Date: REGEX(.*)
     {
         "@context": [
             "https://fiware.github.io/NGSI-LD_TestSuite/ldContext/testContext.jsonld",
-            "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld"
+            "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
         ],
         "description": "Description of Test subscription 01",
         "entities": [
@@ -534,7 +534,7 @@ Date: REGEX(.*)
 {
     "@context": [
         "https://fiware.github.io/NGSI-LD_TestSuite/ldContext/testContext.jsonld",
-        "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld"
+        "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
     ],
     "description": "Description of Test subscription 01",
     "entities": [

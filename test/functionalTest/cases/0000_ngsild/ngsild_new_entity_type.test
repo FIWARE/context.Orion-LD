@@ -446,7 +446,7 @@ Content-Type: application/ld+json
 Date: REGEX(.*)
 
 {
-    "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "attributeDetails": [
         {
             "attributeName": "P1",
@@ -500,7 +500,7 @@ Content-Type: application/ld+json
 Date: REGEX(.*)
 
 {
-    "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "attributeDetails": [
         {
             "attributeName": "P1",

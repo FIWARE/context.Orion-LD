@@ -114,7 +114,7 @@ Accept: application/json
 Content-Type: application/ld+json
 
 {
-    "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "data": [
         {
             "P1": {

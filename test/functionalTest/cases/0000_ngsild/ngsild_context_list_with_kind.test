@@ -162,16 +162,16 @@ Date: REGEX(.*)
 
 [
     {
-        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
         "createdAt": "202REGEX(.*)",
         "extraInfo": {
             "compactions": 0,
-            "expansions": 283,
+            "expansions": 349,
             "hash-table": {
-                "MultiPoint": "https://purl.org/geojson/vocab#MultiPoint",
                 "instanceId": "https://uri.etsi.org/ngsi-ld/instanceId",
-                "notUpdated": "https://uri.etsi.org/ngsi-ld/notUpdated",
+                "linkedMaps": "https://uri.etsi.org/ngsi-ld/linkedMaps",
                 "notifiedAt": "https://uri.etsi.org/ngsi-ld/notifiedAt",
+                "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
             "origin": "Downloaded",
@@ -370,7 +370,7 @@ Content-Type: application/json
 Date: REGEX(.*)
 
 [
-    "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "http://smartdatamodels.org/context.jsonld",
     "https://fiware.github.io/data-models/context.jsonld"
 ]
@@ -379,22 +379,22 @@ Date: REGEX(.*)
 08. GET all contexts, with kind=Cached AND details - see the 2 URLs from step 1 + the Core Context
 ==================================================================================================
 HTTP/1.1 200 OK
-Content-Length: 1887
+Content-Length: 1888
 Content-Type: application/json
 Date: REGEX(.*)
 
 [
     {
-        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
         "createdAt": "202REGEX(.*)",
         "extraInfo": {
             "compactions": 0,
-            "expansions": 283,
+            "expansions": 349,
             "hash-table": {
-                "MultiPoint": "https://purl.org/geojson/vocab#MultiPoint",
                 "instanceId": "https://uri.etsi.org/ngsi-ld/instanceId",
-                "notUpdated": "https://uri.etsi.org/ngsi-ld/notUpdated",
+                "linkedMaps": "https://uri.etsi.org/ngsi-ld/linkedMaps",
                 "notifiedAt": "https://uri.etsi.org/ngsi-ld/notifiedAt",
+                "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
             "origin": "Downloaded",

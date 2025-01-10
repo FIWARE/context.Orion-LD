@@ -2649,7 +2649,7 @@ NGSILD-Results-Count: 40
     {
         "@context": [
             "https://fiware.github.io/NGSI-LD_TestSuite/ldContext/testContext.jsonld",
-            "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld"
+            "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
         ],
         "description": "Description of Test subscription 0037",
         "entities": [
@@ -2704,7 +2704,7 @@ NGSILD-Results-Count: 40
     {
         "@context": [
             "https://fiware.github.io/NGSI-LD_TestSuite/ldContext/testContext.jsonld",
-            "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld"
+            "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
         ],
         "description": "Description of Test subscription 0038",
         "entities": [
@@ -2759,7 +2759,7 @@ NGSILD-Results-Count: 40
     {
         "@context": [
             "https://fiware.github.io/NGSI-LD_TestSuite/ldContext/testContext.jsonld",
-            "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld"
+            "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
         ],
         "description": "Description of Test subscription 0039",
         "entities": [
@@ -2814,7 +2814,7 @@ NGSILD-Results-Count: 40
     {
         "@context": [
             "https://fiware.github.io/NGSI-LD_TestSuite/ldContext/testContext.jsonld",
-            "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld"
+            "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
         ],
         "description": "Description of Test subscription 0040",
         "entities": [
@@ -4741,7 +4741,7 @@ NGSILD-Results-Count: 40
     {
         "@context": [
             "https://fiware.github.io/NGSI-LD_TestSuite/ldContext/testContext.jsonld",
-            "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld"
+            "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
         ],
         "description": "Description of Test subscription 0037",
         "entities": [
@@ -4796,7 +4796,7 @@ NGSILD-Results-Count: 40
     {
         "@context": [
             "https://fiware.github.io/NGSI-LD_TestSuite/ldContext/testContext.jsonld",
-            "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld"
+            "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
         ],
         "description": "Description of Test subscription 0038",
         "entities": [
@@ -4851,7 +4851,7 @@ NGSILD-Results-Count: 40
     {
         "@context": [
             "https://fiware.github.io/NGSI-LD_TestSuite/ldContext/testContext.jsonld",
-            "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld"
+            "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
         ],
         "description": "Description of Test subscription 0039",
         "entities": [
@@ -4906,7 +4906,7 @@ NGSILD-Results-Count: 40
     {
         "@context": [
             "https://fiware.github.io/NGSI-LD_TestSuite/ldContext/testContext.jsonld",
-            "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld"
+            "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
         ],
         "description": "Description of Test subscription 0040",
         "entities": [

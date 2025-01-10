@@ -319,7 +319,7 @@ Content-Type: application/ld+json
 Ngsild-Attribute-Format: Normalized
 
 {
-    "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "data": [
         {
             "id": "urn:E1",
@@ -341,7 +341,7 @@ Content-Type: application/ld+json
 Ngsild-Attribute-Format: Normalized
 
 {
-    "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "data": [
         {
             "id": "urn:E1",
@@ -363,7 +363,7 @@ Content-Type: application/ld+json
 Ngsild-Attribute-Format: Normalized
 
 {
-    "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "data": [
         {
             "id": "urn:E1",
@@ -398,7 +398,7 @@ Content-Type: application/ld+json
 Ngsild-Attribute-Format: Normalized
 
 {
-    "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "data": [
         {
             "id": "urn:E2",
@@ -420,7 +420,7 @@ Content-Type: application/ld+json
 Ngsild-Attribute-Format: Normalized
 
 {
-    "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "data": [
         {
             "id": "urn:E2",
@@ -455,7 +455,7 @@ Content-Type: application/ld+json
 Ngsild-Attribute-Format: Normalized
 
 {
-    "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "data": [
         {
             "P2": {
@@ -481,7 +481,7 @@ Content-Type: application/ld+json
 Ngsild-Attribute-Format: Normalized
 
 {
-    "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "data": [
         {
             "P2": {
@@ -507,7 +507,7 @@ Content-Type: application/ld+json
 Ngsild-Attribute-Format: Normalized
 
 {
-    "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "data": [
         {
             "P2": {
