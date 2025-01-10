@@ -898,7 +898,7 @@ Date: REGEX(.*)
 
 [
   {
-    "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "id": "urn:ngsi-ld:entities:E02",
     "type": "T1",
     "A1": {
@@ -907,7 +907,7 @@ Date: REGEX(.*)
     }
   },
   {
-    "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "id": "urn:ngsi-ld:entities:E03",
     "type": "T1",
     "A1": {

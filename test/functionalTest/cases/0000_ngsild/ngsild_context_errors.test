@@ -313,22 +313,22 @@ Date: REGEX(.*)
 02. GET Contexts - see only Core Context
 ========================================
 HTTP/1.1 200 OK
-Content-Length: 701
+Content-Length: 702
 Content-Type: application/json
 Date: REGEX(.*)
 
 [
     {
-        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
         "createdAt": "202REGEX(.*)",
         "extraInfo": {
             "compactions": 0,
-            "expansions": 281,
+            "expansions": 347,
             "hash-table": {
-                "MultiPoint": "https://purl.org/geojson/vocab#MultiPoint",
                 "instanceId": "https://uri.etsi.org/ngsi-ld/instanceId",
-                "notUpdated": "https://uri.etsi.org/ngsi-ld/notUpdated",
+                "linkedMaps": "https://uri.etsi.org/ngsi-ld/linkedMaps",
                 "notifiedAt": "https://uri.etsi.org/ngsi-ld/notifiedAt",
+                "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
             "origin": "Downloaded",
@@ -357,22 +357,22 @@ Date: REGEX(.*)
 04. GET Contexts - see only Core Context
 ========================================
 HTTP/1.1 200 OK
-Content-Length: 701
+Content-Length: 702
 Content-Type: application/json
 Date: REGEX(.*)
 
 [
     {
-        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
         "createdAt": "202REGEX(.*)",
         "extraInfo": {
             "compactions": 0,
-            "expansions": 281,
+            "expansions": 347,
             "hash-table": {
-                "MultiPoint": "https://purl.org/geojson/vocab#MultiPoint",
                 "instanceId": "https://uri.etsi.org/ngsi-ld/instanceId",
-                "notUpdated": "https://uri.etsi.org/ngsi-ld/notUpdated",
+                "linkedMaps": "https://uri.etsi.org/ngsi-ld/linkedMaps",
                 "notifiedAt": "https://uri.etsi.org/ngsi-ld/notifiedAt",
+                "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
             "origin": "Downloaded",
@@ -401,22 +401,22 @@ Date: REGEX(.*)
 06. GET Contexts - see only Core Context
 ========================================
 HTTP/1.1 200 OK
-Content-Length: 701
+Content-Length: 702
 Content-Type: application/json
 Date: REGEX(.*)
 
 [
     {
-        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
         "createdAt": "202REGEX(.*)",
         "extraInfo": {
             "compactions": 0,
-            "expansions": 281,
+            "expansions": 347,
             "hash-table": {
-                "MultiPoint": "https://purl.org/geojson/vocab#MultiPoint",
                 "instanceId": "https://uri.etsi.org/ngsi-ld/instanceId",
-                "notUpdated": "https://uri.etsi.org/ngsi-ld/notUpdated",
+                "linkedMaps": "https://uri.etsi.org/ngsi-ld/linkedMaps",
                 "notifiedAt": "https://uri.etsi.org/ngsi-ld/notifiedAt",
+                "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
             "origin": "Downloaded",
@@ -446,22 +446,22 @@ Date: REGEX(.*)
 08. GET Contexts - see only Core Context
 ========================================
 HTTP/1.1 200 OK
-Content-Length: 701
+Content-Length: 702
 Content-Type: application/json
 Date: REGEX(.*)
 
 [
     {
-        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
         "createdAt": "202REGEX(.*)",
         "extraInfo": {
             "compactions": 0,
-            "expansions": 281,
+            "expansions": 347,
             "hash-table": {
-                "MultiPoint": "https://purl.org/geojson/vocab#MultiPoint",
                 "instanceId": "https://uri.etsi.org/ngsi-ld/instanceId",
-                "notUpdated": "https://uri.etsi.org/ngsi-ld/notUpdated",
+                "linkedMaps": "https://uri.etsi.org/ngsi-ld/linkedMaps",
                 "notifiedAt": "https://uri.etsi.org/ngsi-ld/notifiedAt",
+                "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
             "origin": "Downloaded",
@@ -490,22 +490,22 @@ Date: REGEX(.*)
 10. GET Contexts - see only Core Context
 ========================================
 HTTP/1.1 200 OK
-Content-Length: 701
+Content-Length: 702
 Content-Type: application/json
 Date: REGEX(.*)
 
 [
     {
-        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
         "createdAt": "202REGEX(.*)",
         "extraInfo": {
             "compactions": 0,
-            "expansions": 281,
+            "expansions": 347,
             "hash-table": {
-                "MultiPoint": "https://purl.org/geojson/vocab#MultiPoint",
                 "instanceId": "https://uri.etsi.org/ngsi-ld/instanceId",
-                "notUpdated": "https://uri.etsi.org/ngsi-ld/notUpdated",
+                "linkedMaps": "https://uri.etsi.org/ngsi-ld/linkedMaps",
                 "notifiedAt": "https://uri.etsi.org/ngsi-ld/notifiedAt",
+                "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
             "origin": "Downloaded",
@@ -534,22 +534,22 @@ Date: REGEX(.*)
 12. GET Contexts - see only Core Context
 ========================================
 HTTP/1.1 200 OK
-Content-Length: 701
+Content-Length: 702
 Content-Type: application/json
 Date: REGEX(.*)
 
 [
     {
-        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
         "createdAt": "202REGEX(.*)",
         "extraInfo": {
             "compactions": 0,
-            "expansions": 281,
+            "expansions": 347,
             "hash-table": {
-                "MultiPoint": "https://purl.org/geojson/vocab#MultiPoint",
                 "instanceId": "https://uri.etsi.org/ngsi-ld/instanceId",
-                "notUpdated": "https://uri.etsi.org/ngsi-ld/notUpdated",
+                "linkedMaps": "https://uri.etsi.org/ngsi-ld/linkedMaps",
                 "notifiedAt": "https://uri.etsi.org/ngsi-ld/notifiedAt",
+                "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
             "origin": "Downloaded",
@@ -578,22 +578,22 @@ Date: REGEX(.*)
 14. GET Contexts - see only Core Context
 ========================================
 HTTP/1.1 200 OK
-Content-Length: 701
+Content-Length: 702
 Content-Type: application/json
 Date: REGEX(.*)
 
 [
     {
-        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
         "createdAt": "202REGEX(.*)",
         "extraInfo": {
             "compactions": 0,
-            "expansions": 281,
+            "expansions": 347,
             "hash-table": {
-                "MultiPoint": "https://purl.org/geojson/vocab#MultiPoint",
                 "instanceId": "https://uri.etsi.org/ngsi-ld/instanceId",
-                "notUpdated": "https://uri.etsi.org/ngsi-ld/notUpdated",
+                "linkedMaps": "https://uri.etsi.org/ngsi-ld/linkedMaps",
                 "notifiedAt": "https://uri.etsi.org/ngsi-ld/notifiedAt",
+                "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
             "origin": "Downloaded",
@@ -622,22 +622,22 @@ Date: REGEX(.*)
 16. GET Contexts - see only Core Context
 ========================================
 HTTP/1.1 200 OK
-Content-Length: 701
+Content-Length: 702
 Content-Type: application/json
 Date: REGEX(.*)
 
 [
     {
-        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
         "createdAt": "202REGEX(.*)",
         "extraInfo": {
             "compactions": 0,
-            "expansions": 281,
+            "expansions": 347,
             "hash-table": {
-                "MultiPoint": "https://purl.org/geojson/vocab#MultiPoint",
                 "instanceId": "https://uri.etsi.org/ngsi-ld/instanceId",
-                "notUpdated": "https://uri.etsi.org/ngsi-ld/notUpdated",
+                "linkedMaps": "https://uri.etsi.org/ngsi-ld/linkedMaps",
                 "notifiedAt": "https://uri.etsi.org/ngsi-ld/notifiedAt",
+                "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
             "origin": "Downloaded",
@@ -666,22 +666,22 @@ Date: REGEX(.*)
 18. GET Contexts - see only Core Context
 ========================================
 HTTP/1.1 200 OK
-Content-Length: 701
+Content-Length: 702
 Content-Type: application/json
 Date: REGEX(.*)
 
 [
     {
-        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
         "createdAt": "202REGEX(.*)",
         "extraInfo": {
             "compactions": 0,
-            "expansions": 281,
+            "expansions": 347,
             "hash-table": {
-                "MultiPoint": "https://purl.org/geojson/vocab#MultiPoint",
                 "instanceId": "https://uri.etsi.org/ngsi-ld/instanceId",
-                "notUpdated": "https://uri.etsi.org/ngsi-ld/notUpdated",
+                "linkedMaps": "https://uri.etsi.org/ngsi-ld/linkedMaps",
                 "notifiedAt": "https://uri.etsi.org/ngsi-ld/notifiedAt",
+                "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
             "origin": "Downloaded",
@@ -710,22 +710,22 @@ Date: REGEX(.*)
 20. GET Contexts - see only Core Context
 ========================================
 HTTP/1.1 200 OK
-Content-Length: 701
+Content-Length: 702
 Content-Type: application/json
 Date: REGEX(.*)
 
 [
     {
-        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
         "createdAt": "202REGEX(.*)",
         "extraInfo": {
             "compactions": 0,
-            "expansions": 281,
+            "expansions": 347,
             "hash-table": {
-                "MultiPoint": "https://purl.org/geojson/vocab#MultiPoint",
                 "instanceId": "https://uri.etsi.org/ngsi-ld/instanceId",
-                "notUpdated": "https://uri.etsi.org/ngsi-ld/notUpdated",
+                "linkedMaps": "https://uri.etsi.org/ngsi-ld/linkedMaps",
                 "notifiedAt": "https://uri.etsi.org/ngsi-ld/notifiedAt",
+                "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
             "origin": "Downloaded",

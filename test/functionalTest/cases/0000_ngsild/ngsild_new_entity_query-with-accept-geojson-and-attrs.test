@@ -174,7 +174,7 @@ Date: REGEX(.*)
 {
     "features": [
         {
-            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
             "geometry": {
                 "coordinates": [
                     -3.691944,
@@ -231,7 +231,7 @@ Date: REGEX(.*)
 {
     "features": [
         {
-            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
             "geometry": {
                 "coordinates": [
                     -3.691944,
@@ -333,7 +333,7 @@ Date: REGEX(.*)
 {
     "features": [
         {
-            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
             "geometry": null,
             "id": "urn:ngsi-ld:City:Madrid",
             "properties": {
@@ -384,7 +384,7 @@ Date: REGEX(.*)
 {
     "features": [
         {
-            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
             "geometry": {
                 "coordinates": [
                     -3.691944,
@@ -441,7 +441,7 @@ Date: REGEX(.*)
 {
     "features": [
         {
-            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
             "geometry": {
                 "coordinates": [
                     1,
@@ -498,7 +498,7 @@ Date: REGEX(.*)
 {
     "features": [
         {
-            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
             "geometry": null,
             "id": "urn:ngsi-ld:City:Madrid",
             "properties": {
@@ -549,7 +549,7 @@ Date: REGEX(.*)
 {
     "features": [
         {
-            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
             "geometry": null,
             "id": "urn:ngsi-ld:City:Madrid",
             "properties": {
@@ -602,7 +602,7 @@ Date: REGEX(.*)
 {
     "features": [
         {
-            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
             "geometry": {
                 "coordinates": [
                     -3.691944,
@@ -633,7 +633,7 @@ Date: REGEX(.*)
 {
     "features": [
         {
-            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
             "geometry": {
                 "coordinates": [
                     -3.691944,

@@ -156,7 +156,7 @@ Date: REGEX(.*)
   {
     "@context": [
       "https://fiware.github.io/NGSI-LD_TestSuite/ldContext/testContext.jsonld",
-      "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld"
+      "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
     ],
     "id": "http://a.b.c/entity/E1",
     "type": "T",
@@ -168,7 +168,7 @@ Date: REGEX(.*)
   {
     "@context": [
       "https://fiware.github.io/NGSI-LD_TestSuite/ldContext/testContext.jsonld",
-      "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld"
+      "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
     ],
     "id": "http://a.b.c/entity/E3",
     "type": "T",

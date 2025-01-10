@@ -618,7 +618,7 @@ Date: REGEX(.*)
   "jsonldContext": "https://fiware.github.io/NGSI-LD_TestSuite/ldContext/testContext.jsonld",
   "@context": [
     "https://fiware.github.io/NGSI-LD_TestSuite/ldContext/testContext.jsonld",
-    "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld"
+    "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
   ]
 }
 
@@ -757,7 +757,7 @@ MongoDB server REGEX(.*)
 	"attrs" : [ ],
 	"metadata" : [ ],
 	"blacklist" : false,
-	"ldContext" : "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+	"ldContext" : "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
 	"createdAt" : REGEX(.*),
 	"modifiedAt" : REGEX(.*),
 	"conditions" : [ ],

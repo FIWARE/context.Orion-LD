@@ -81,6 +81,9 @@ char* orionldContextItemExpand
   if (orionldCoreContextP != NULL)
     contextItemP = orionldContextItemLookup(orionldCoreContextP, shortName, NULL);
 
+  if (contextItemP != NULL)
+    LM_T(LmtExpand, ("Found '%s' in the core context (%s)", shortName, orionldCoreContextP->url));
+
   // 2. Lookup in given context (unless it's the Core Context)
   if ((contextItemP == NULL) && (contextP != orionldCoreContextP))
     contextItemP = orionldContextItemLookup(contextP, shortName, NULL);

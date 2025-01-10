@@ -140,7 +140,7 @@ HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
     "entities": [
@@ -174,16 +174,16 @@ Date: REGEX(.*)
 
 [
     {
-        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
         "createdAt": "202REGEX(.*)",
         "extraInfo": {
             "compactions": 1,
-            "expansions": 284,
+            "expansions": 350,
             "hash-table": {
-                "MultiPoint": "https://purl.org/geojson/vocab#MultiPoint",
                 "instanceId": "https://uri.etsi.org/ngsi-ld/instanceId",
-                "notUpdated": "https://uri.etsi.org/ngsi-ld/notUpdated",
+                "linkedMaps": "https://uri.etsi.org/ngsi-ld/linkedMaps",
                 "notifiedAt": "https://uri.etsi.org/ngsi-ld/notifiedAt",
+                "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
             "origin": "Downloaded",

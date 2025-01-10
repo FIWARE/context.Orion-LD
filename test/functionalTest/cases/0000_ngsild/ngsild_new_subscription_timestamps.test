@@ -333,7 +333,7 @@ MongoDB server version: REGEX(.*)
 	"custom" : false,
 	"servicePath" : "/#",
 	"blacklist" : false,
-	"ldContext" : "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld"
+	"ldContext" : "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
 }
 bye
 
@@ -357,7 +357,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "expiresAt": "2028-12-31T11:12:13.456Z",
     "id": "urn:ngsi-ld:subscriptions:s1",
     "isActive": true,
-    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "modifiedAt": "REGEX(.*\.\d\d\dZ)",
     "notification": {
         "endpoint": {
@@ -394,7 +394,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "expiresAt": "2028-12-31T11:12:13.456Z",
     "id": "urn:ngsi-ld:subscriptions:s1",
     "isActive": true,
-    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "modifiedAt": "REGEX(.*\.\d\d\dZ)",
     "notification": {
         "endpoint": {
@@ -477,7 +477,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "expiresAt": "2028-12-31T11:12:13.456Z",
     "id": "urn:ngsi-ld:subscriptions:s1",
     "isActive": true,
-    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "modifiedAt": "REGEX(.*\.\d\d\dZ)",
     "notification": {
         "endpoint": {
@@ -520,7 +520,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "expiresAt": "2028-12-31T11:12:13.456Z",
     "id": "urn:ngsi-ld:subscriptions:s1",
     "isActive": true,
-    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "modifiedAt": "202REGEX(.*)Z",
     "notification": {
         "endpoint": {
@@ -570,7 +570,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "expiresAt": "2028-12-31T11:12:13.456Z",
     "id": "urn:ngsi-ld:subscriptions:s1",
     "isActive": true,
-    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "modifiedAt": "REGEX(.*\.\d\d\dZ)",
     "notification": {
         "endpoint": {
@@ -625,7 +625,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "expiresAt": "2028-12-31T11:12:13.456Z",
     "id": "urn:ngsi-ld:subscriptions:s1",
     "isActive": true,
-    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
     "modifiedAt": "REGEX(.*\.\d\d\dZ)",
     "notification": {
         "consecutiveErrors": 1,

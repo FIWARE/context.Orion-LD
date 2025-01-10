@@ -167,16 +167,16 @@ Date: REGEX(.*)
 
 [
     {
-        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
         "createdAt": "202REGEX(.*)",
         "extraInfo": {
             "compactions": 0,
-            "expansions": 281,
+            "expansions": 347,
             "hash-table": {
-                "MultiPoint": "https://purl.org/geojson/vocab#MultiPoint",
                 "instanceId": "https://uri.etsi.org/ngsi-ld/instanceId",
-                "notUpdated": "https://uri.etsi.org/ngsi-ld/notUpdated",
+                "linkedMaps": "https://uri.etsi.org/ngsi-ld/linkedMaps",
                 "notifiedAt": "https://uri.etsi.org/ngsi-ld/notifiedAt",
+                "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
             "origin": "Downloaded",
@@ -252,7 +252,7 @@ connecting to: REGEX(.*)
 MongoDB server version: REGEX(.*)
 {
 	"_id" : "REGEX(.*)",
-	"url" : "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+	"url" : "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
 	"parent" : null,
 	"origin" : "Downloaded",
 	"kind" : "Cached",
@@ -301,16 +301,16 @@ Date: REGEX(.*)
 
 [
     {
-        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
         "createdAt": "202REGEX(.*)",
         "extraInfo": {
             "compactions": 0,
-            "expansions": 281,
+            "expansions": 347,
             "hash-table": {
-                "MultiPoint": "https://purl.org/geojson/vocab#MultiPoint",
                 "instanceId": "https://uri.etsi.org/ngsi-ld/instanceId",
-                "notUpdated": "https://uri.etsi.org/ngsi-ld/notUpdated",
+                "linkedMaps": "https://uri.etsi.org/ngsi-ld/linkedMaps",
                 "notifiedAt": "https://uri.etsi.org/ngsi-ld/notifiedAt",
+                "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
             "origin": "Downloaded",
@@ -367,7 +367,7 @@ connecting to: REGEX(.*)
 MongoDB server version: REGEX(.*)
 {
 	"_id" : "REGEX(.*)",
-	"url" : "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+	"url" : "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
 	"parent" : null,
 	"origin" : "Downloaded",
 	"kind" : "Cached",

@@ -930,6 +930,7 @@ static char* coreContextUrlSetup(const char* version)
   else if (strcmp(version, "v1.5") == 0)    return ORIONLD_CORE_CONTEXT_URL_V1_5;
   else if (strcmp(version, "v1.6") == 0)    return ORIONLD_CORE_CONTEXT_URL_V1_6;
   else if (strcmp(version, "v1.7") == 0)    return ORIONLD_CORE_CONTEXT_URL_V1_7;
+  else if (strcmp(version, "v1.8") == 0)    return ORIONLD_CORE_CONTEXT_URL_V1_8;
 
   return NULL;
 }

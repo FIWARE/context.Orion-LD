@@ -464,7 +464,7 @@ Date: REGEX(.*)
 
 [
     {
-        "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+        "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
         "attributeCount": 2,
         "attributeName": "P1",
         "attributeTypes": [
@@ -479,7 +479,7 @@ Date: REGEX(.*)
         ]
     },
     {
-        "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+        "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
         "attributeCount": 2,
         "attributeName": "P2",
         "attributeTypes": [
@@ -494,7 +494,7 @@ Date: REGEX(.*)
         ]
     },
     {
-        "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+        "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
         "attributeCount": 3,
         "attributeName": "R1",
         "attributeTypes": [
@@ -509,7 +509,7 @@ Date: REGEX(.*)
         ]
     },
     {
-        "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld",
+        "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
         "attributeCount": 3,
         "attributeName": "R2",
         "attributeTypes": [

@@ -118,7 +118,7 @@ Date: REGEX(.*)
 {
     "@context": [
         "http://smartdatamodels.org/context.jsonld",
-        "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld"
+        "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
     ],
     "Cash": {
         "type": "Property",
@@ -140,7 +140,7 @@ Date: REGEX(.*)
     {
         "@context": [
             "http://smartdatamodels.org/context.jsonld",
-            "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld"
+            "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
         ],
         "Cash": {
             "type": "Property",
@@ -152,7 +152,7 @@ Date: REGEX(.*)
     {
         "@context": [
             "http://smartdatamodels.org/context.jsonld",
-            "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld"
+            "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
         ],
         "Cash": {
             "type": "Property",
@@ -175,7 +175,7 @@ Date: REGEX(.*)
     {
         "@context": [
             "http://smartdatamodels.org/context.jsonld",
-            "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld"
+            "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
         ],
         "Cash": {
             "type": "Property",
@@ -187,7 +187,7 @@ Date: REGEX(.*)
     {
         "@context": [
             "http://smartdatamodels.org/context.jsonld",
-            "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld"
+            "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
         ],
         "Cash": {
             "type": "Property",
