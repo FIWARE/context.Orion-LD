@@ -1,13 +1,7 @@
 ## Fixed Issues:
-  #XXXX: Complex @contexts of subscriptions weren't persisted in mongodb
-  #1708: Reloaded hosted contexts were not persisted in mongo, only the context cache
-  #XXXX: Using "VocabProperty" and not "VocabularyProperty" (old name still accepted as input)
-  #XXXX: Array reduction for LanguageProperty languageMap values
-  #XXXX: Array reduction for VocabProperty vocab values, for normalized mode
+  #XXXX: Fixed XXX
 
 ## New Features:
-  #1707: Support for local=true in the type discovery endpoints (GET /ngsi-ld/v1/types[/{typeName}]
-  #XXXX: Support for local=true in the ATTRIBUTE discovery endpoints (GET /ngsi-ld/v1/attributes}]
-  #XXXX: Made 1.8 the default core context
+  #XXXX: Implemented XXX
 
 ## Notes
