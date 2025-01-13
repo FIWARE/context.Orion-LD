@@ -7,7 +7,7 @@
 [![NGSI-LD badge](https://img.shields.io/badge/NGSI-LD-red.svg)](https://www.etsi.org/deliver/etsi_gs/CIM/001_099/009/01.08.01_60/gs_cim009v010801p.pdf)
 <br>
 [![Documentation badge](https://readthedocs.org/projects/fiware-orion/badge/?version=latest)](http://fiware-orion.readthedocs.io/en/latest/?badge=latest)
-![Status](https://nexus.lab.fiware.org/static/badges/statuses/incubating.svg)
+![Status](https://nexus.lab.fiware.org/static/badges/statuses/full.svg)
 [![Coverage Status](https://coveralls.io/repos/github/FIWARE/context.Orion-LD/badge.svg?branch=develop)](https://coveralls.io/github/FIWARE/context.Orion-LD?branch=develop)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/4800/badge)](https://bestpractices.coreinfrastructure.org/projects/4800)
 
@@ -63,7 +63,7 @@ Its payloads are encoded as [linked data](https://en.wikipedia.org/wiki/Linked_d
 
 The NGSI-LD Specification is regularly updated and published by ETSI.
 The latest specification is [version 1.8.1](https://www.etsi.org/deliver/etsi_gs/CIM/001_099/009/01.08.01_60/gs_cim009v010801p.pdf), published in March 2024.
-The next release, version 1.9.1, is expected for January 2025.
+The next release, version 1.9.1, is expected for February 2025.
 
 A few presentations on NGSI-LD:
 * [NGSI-LD Overview](https://docs.google.com/presentation/d/1tgh6gBdcZHRPU_ehM7M5rGCI83CrYimCwJXxzRI5GDg)
@@ -73,7 +73,7 @@ A few presentations on NGSI-LD:
 Examples of **NGSI-LD** payloads can be found in [ETSI](https://forge.etsi.org/gitlab/NGSI-LD/NGSI-LD/tree/master/examples).
 See also the [OpenAPI Specification of NGSI-LD](https://forge.etsi.org/swagger/ui/?url=https://forge.etsi.org/rep/cim/ngsi-ld-openapi/-/raw/1.7.1/ngsi-ld-api.yaml).  
 That is for version 1.7.1 of the NGSI-LD API specification.  
-We're currently working on updating this to v1.8.1, ETA: Dec 2024.
+We're currently working on updating this to v1.8.1.
 
 If you are not sharing your data across systems and have no need for linked data concepts, then the current stable
 version of **NGSI** (**NGSI-v2**) is more than sufficient.
