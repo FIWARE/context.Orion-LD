@@ -38,16 +38,36 @@
 //
 // orionldContextCacheLookup -
 //
-OrionldContext* orionldContextCacheLookup(const char* url)
+OrionldContext* orionldContextCacheLookup(const char* fullUrl)
 {
   OrionldContext* contextP = NULL;
+  char*           url      = (char*) fullUrl;
+
+  //
+  // Skip the protocol for the lookup
+  //
+  if (strncmp(fullUrl, "http://", 7) == 0)
+    url = (char*) &fullUrl[7];
+  else if (strncmp(fullUrl, "https://", 8) == 0)
+    url = (char*) &fullUrl[8];
 
   for (int ix = 0; ix < orionldContextCacheSlotIx; ix++)
   {
     if (orionldContextCache[ix] == NULL)
       continue;
 
-    if (strcmp(url, orionldContextCache[ix]->url) == 0)
+    //
+    // Skip the protocol for the comparison with context in cache
+    //
+    char* cacheUrlWithoutProtocol = orionldContextCache[ix]->url;
+    if (strncmp(orionldContextCache[ix]->url, "http://", 7) == 0)
+      cacheUrlWithoutProtocol = &orionldContextCache[ix]->url[7];
+    else if (strncmp(orionldContextCache[ix]->url, "https://", 8) == 0)
+      cacheUrlWithoutProtocol = &orionldContextCache[ix]->url[8];
+
+    if (strcmp(url, cacheUrlWithoutProtocol) == 0)
+      contextP = orionldContextCache[ix];
+    else if (strcmp(fullUrl, orionldContextCache[ix]->url) == 0)
       contextP = orionldContextCache[ix];
     else if ((orionldContextCache[ix]->id != NULL) && (strcmp(url, orionldContextCache[ix]->id) == 0))
       contextP = orionldContextCache[ix];

@@ -26,6 +26,7 @@ Retrieval of Context Source Registrations
 --SHELL-INIT--
 # Copied from ngsild_registration_get_success.test
 dbInit CB
+dbInit orionld
 orionldStart CB -experimental
 
 --SHELL--
