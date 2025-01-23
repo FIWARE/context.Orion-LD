@@ -26,6 +26,7 @@ Subscription Creation and DB Content
 --SHELL-INIT--
 dbInit CB
 dbInit CB openiot
+dbInit orionld
 orionldStart CB -multiservice
 accumulatorStart --pretty-print
 
