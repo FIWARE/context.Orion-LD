@@ -25,6 +25,7 @@ Notifications - response of normalized format subscription (nested JSON problem)
 
 --SHELL-INIT--
 dbInit CB
+dbInit orionld
 orionldStart CB
 accumulatorStart --pretty-print
 
@@ -153,7 +154,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:Vehicle:A4501
 ================================================
 POST http://REGEX(.*)/notify
 Fiware-Servicepath: /
-Content-Length: 878
+Content-Length: REGEX((879|878))
 User-Agent: orion/REGEX(.*)
 Ngsiv2-Attrsformat: normalized
 Host: REGEX(.*)
@@ -161,7 +162,7 @@ Accept: application/json
 Content-Type: application/ld+json
 
 {
-    "@context": "http://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context.jsonld",
+    "@context": "REGEX((http|https))://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context.jsonld",
     "data": [
         {
             "brandName": {

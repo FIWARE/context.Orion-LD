@@ -25,6 +25,7 @@ Issue #1224 without -experimental
 
 --SHELL-INIT--
 dbInit CB
+dbInit orionld
 orionldStart CB -experimental
 accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
 

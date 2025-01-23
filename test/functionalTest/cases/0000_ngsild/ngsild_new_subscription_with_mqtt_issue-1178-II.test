@@ -26,6 +26,7 @@ Notifications via MQTT - Issue 1178
 --SHELL-INIT--
 # Copied from ngsild_subscription_with_mqtt_issue.1178.test
 dbInit CB
+dbInit orionld
 orionldStart CB -experimental
 mqttTestClientStart --mqttBrokerPort $MQTT_BROKER_PORT --mqttBrokerIp $MQTT_BROKER_HOST --pretty-print --mqttTopic example_mosquitto_topic
 

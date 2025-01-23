@@ -25,6 +25,7 @@ NGSI-LD Test Suite Case 079, 080, and 081 (contextProvision/append_entity_attrs_
 
 --SHELL-INIT--
 dbInit CB
+dbInit orionld
 orionldStart CB
 
 --SHELL--

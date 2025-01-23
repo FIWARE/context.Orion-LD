@@ -25,6 +25,7 @@ Update an entity using PUT
 
 --SHELL-INIT--
 dbInit CB
+dbInit orionld
 orionldStart CB -experimental
 
 --SHELL--

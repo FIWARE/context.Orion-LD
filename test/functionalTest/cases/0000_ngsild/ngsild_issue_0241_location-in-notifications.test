@@ -25,6 +25,7 @@ Notifications - correct representation of location inside notifications
 
 --SHELL-INIT--
 dbInit CB
+dbInit orionld
 orionldStart CB
 accumulatorStart --pretty-print
 
