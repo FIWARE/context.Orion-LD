@@ -57,38 +57,44 @@ extern "C"
 //
 static void cleanupSysAttrs(void)
 {
-  LM_T(LmtSR, ("In cleanupSysAttrs: orionldState.responseTree: %p", orionldState.responseTree));
+  LM_T(LmtSysAttrs, ("orionldState.responseTree: %p", orionldState.responseTree));
 
   for (KjNode* entityP = orionldState.responseTree->value.firstChildP; entityP != NULL; entityP = entityP->next)
   {
-    KjNode* attrP = entityP->value.firstChildP;
-    KjNode* nextAttrP;
+    KjNode*     idP = kjLookup(entityP, "id");
+    const char* id  = (idP != NULL)? idP->value.s : "unidentified";
 
-    while (attrP != NULL)
+    LM_T(LmtSysAttrs, ("Removing sysAttrs for the entity '%s'", id));
+
+    KjNode* createdAtP  = kjLookup(entityP, "createdAt");
+    KjNode* modifiedAtP = kjLookup(entityP, "modifiedAt");
+    if (createdAtP  != NULL) kjChildRemove(entityP, createdAtP);
+    if (modifiedAtP != NULL) kjChildRemove(entityP, modifiedAtP);
+
+    for (KjNode* attrP = entityP->value.firstChildP; attrP != NULL; attrP = attrP->next)
     {
-      nextAttrP = attrP->next;
+      if (attrP->type != KjObject)
+        continue;
 
-      if      (strcmp(attrP->name, "createdAt")  == 0)  kjChildRemove(entityP, attrP);
-      else if (strcmp(attrP->name, "modifiedAt") == 0)  kjChildRemove(entityP, attrP);
-      else if (attrP->type == KjObject)
+      LM_T(LmtSysAttrs, ("Removing sysAttrs for the attribute '%s'", attrP->name));
+
+      KjNode* createdAtP  = kjLookup(attrP, "createdAt");
+      KjNode* modifiedAtP = kjLookup(attrP, "modifiedAt");
+      if (createdAtP  != NULL) kjChildRemove(attrP, createdAtP);
+      if (modifiedAtP != NULL) kjChildRemove(attrP, modifiedAtP);
+
+      for (KjNode* subAttrP = attrP->value.firstChildP; subAttrP != NULL; subAttrP = subAttrP->next)
       {
-        // It's an attribute
+        if (subAttrP->type != KjObject)
+          continue;
 
-        KjNode* subAttrP = attrP->value.firstChildP;
-        KjNode* nextSubAttrP;
+        LM_T(LmtSysAttrs, ("Removing sysAttrs for the sub-attribute '%s'", subAttrP->name));
 
-        while (subAttrP != NULL)
-        {
-          nextSubAttrP = subAttrP->next;
-
-          if      (strcmp(subAttrP->name, "createdAt")  == 0)  kjChildRemove(attrP, subAttrP);
-          else if (strcmp(subAttrP->name, "modifiedAt") == 0)  kjChildRemove(attrP, subAttrP);
-
-          subAttrP = nextSubAttrP;
-        }
+        KjNode* createdAtP  = kjLookup(subAttrP, "createdAt");
+        KjNode* modifiedAtP = kjLookup(subAttrP, "modifiedAt");
+        if (createdAtP  != NULL) kjChildRemove(subAttrP, createdAtP);
+        if (modifiedAtP != NULL) kjChildRemove(subAttrP, modifiedAtP);
       }
-
-      attrP = nextAttrP;
     }
   }
 }
