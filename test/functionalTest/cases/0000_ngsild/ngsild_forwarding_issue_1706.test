@@ -1,0 +1,353 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Replication of an entity
+
+--SHELL-INIT--
+dbInit CB
+dbInit CP1
+orionldStart CB -experimental -forwarding -wip entityMaps
+orionldStart CP1 -experimental
+
+--SHELL--
+#
+# 01. Create and entity urn:E1 in CP1 with three attributes: heartRate, location, and X
+# 02. Create an exclusive registration in CB with CP1 as endpoint, with all three attributes
+# 03. GET entities from CB without attrs - see all three attributes
+# 04. GET entities from CB without attrs BUT with sysAttrs - see all three attributes (with all sysAttrs)
+# 05. GET entities from CB with attrs=heartRate,location - see both attributes
+# 06. GET entities from CB with attrs=heartRate,location AND sysAttrs - see both attributes (with all sysAttrs)
+#
+
+echo "01. Create and entity urn:E1 in CP1 with three attributes: heartRate, location, and X"
+echo "====================================================================================="
+payload='{
+  "id": "urn:E1",
+  "type": "Animal",
+  "heartRate": {
+    "type": "Property",
+    "value": 10.4,
+    "unitCode": "5K",
+    "observedAt": "2024-02-02T15:00:00.000Z",
+    "providedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Device:cow001"
+    }
+  },
+  "location": {
+    "type": "GeoProperty",
+    "value": {
+      "type": "Point",
+      "coordinates": [13.404, 52.47]
+    },
+    "observedAt": "2024-02-02T15:00:00.000Z",
+    "providedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Device:cow001"
+    }
+  },
+  "X": 1
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" --port $CP1_PORT
+echo
+echo
+
+
+echo "02. Create an exclusive registration in CB with CP1 as endpoint, with all three attributes"
+echo "=========================================================================================="
+payload='{
+  "id": "urn:R1",
+  "type": "ContextSourceRegistration",
+  "information": [
+    {
+      "entities": [
+        {
+          "type": "Animal",
+          "id": "urn:E1"
+        }
+      ],
+      "propertyNames": [
+         "heartRate",
+         "location",
+         "X"
+       ]
+    }
+  ],
+  "mode": "exclusive",
+  "operations": [ "retrieveOps" ],
+  "endpoint": "http://localhost:'$CP1_PORT'"
+}'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload"
+echo
+echo
+
+
+echo "03. GET entities from CB without attrs - see all three attributes"
+echo "================================================================="
+orionCurl --url '/ngsi-ld/v1/entities?type=Animal'
+echo
+echo
+
+
+echo "04. GET entities from CB without attrs BUT with sysAttrs - see all three attributes (with all sysAttrs)"
+echo "======================================================================================================="
+orionCurl --url '/ngsi-ld/v1/entities?type=Animal&options=sysAttrs'
+echo
+echo
+
+echo "05. GET entities from CB with attrs=heartRate,location - see both attributes"
+echo "============================================================================"
+orionCurl --url '/ngsi-ld/v1/entities?type=Animal&attrs=location,heartRate'
+echo
+echo
+
+
+echo "06. GET entities from CB with attrs=heartRate,location AND sysAttrs - see both attributes (with all sysAttrs)"
+echo "============================================================================================================="
+orionCurl --url '/ngsi-ld/v1/entities?type=Animal&attrs=location,heartRate&options=sysAttrs'
+echo
+echo
+
+
+--REGEXPECT--
+01. Create and entity urn:E1 in CP1 with three attributes: heartRate, location, and X
+=====================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E1
+
+
+
+02. Create an exclusive registration in CB with CP1 as endpoint, with all three attributes
+==========================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/csourceRegistrations/urn:R1
+
+
+
+03. GET entities from CB without attrs - see all three attributes
+=================================================================
+HTTP/1.1 200 OK
+Content-Length: 444
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+NGSILD-EntityMap: urn:ngsi-ld:entity-map:REGEX(.*)
+
+[
+    {
+        "X": {
+            "type": "Property",
+            "value": 1
+        },
+        "heartRate": {
+            "observedAt": "2024-02-02T15:00:00.000Z",
+            "providedBy": {
+                "object": "urn:ngsi-ld:Device:cow001",
+                "type": "Relationship"
+            },
+            "type": "Property",
+            "unitCode": "5K",
+            "value": 10.4
+        },
+        "id": "urn:E1",
+        "location": {
+            "observedAt": "2024-02-02T15:00:00.000Z",
+            "providedBy": {
+                "object": "urn:ngsi-ld:Device:cow001",
+                "type": "Relationship"
+            },
+            "type": "GeoProperty",
+            "value": {
+                "coordinates": [
+                    13.404,
+                    52.47
+                ],
+                "type": "Point"
+            }
+        },
+        "type": "Animal"
+    }
+]
+
+
+04. GET entities from CB without attrs BUT with sysAttrs - see all three attributes (with all sysAttrs)
+=======================================================================================================
+HTTP/1.1 200 OK
+Content-Length: 918
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+NGSILD-EntityMap: urn:ngsi-ld:entity-map:REGEX(.*)
+
+[
+    {
+        "X": {
+            "createdAt": "202REGEX(.*)Z",
+            "modifiedAt": "202REGEX(.*)Z",
+            "type": "Property",
+            "value": 1
+        },
+        "createdAt": "202REGEX(.*)Z",
+        "heartRate": {
+            "createdAt": "202REGEX(.*)Z",
+            "modifiedAt": "202REGEX(.*)Z",
+            "observedAt": "2024-02-02T15:00:00.000Z",
+            "providedBy": {
+                "createdAt": "202REGEX(.*)Z",
+                "modifiedAt": "202REGEX(.*)Z",
+                "object": "urn:ngsi-ld:Device:cow001",
+                "type": "Relationship"
+            },
+            "type": "Property",
+            "unitCode": "5K",
+            "value": 10.4
+        },
+        "id": "urn:E1",
+        "location": {
+            "createdAt": "202REGEX(.*)Z",
+            "modifiedAt": "202REGEX(.*)Z",
+            "observedAt": "2024-02-02T15:00:00.000Z",
+            "providedBy": {
+                "createdAt": "202REGEX(.*)Z",
+                "modifiedAt": "202REGEX(.*)Z",
+                "object": "urn:ngsi-ld:Device:cow001",
+                "type": "Relationship"
+            },
+            "type": "GeoProperty",
+            "value": {
+                "coordinates": [
+                    13.404,
+                    52.47
+                ],
+                "type": "Point"
+            }
+        },
+        "modifiedAt": "202REGEX(.*)Z",
+        "type": "Animal"
+    }
+]
+
+
+05. GET entities from CB with attrs=heartRate,location - see both attributes
+============================================================================
+HTTP/1.1 200 OK
+Content-Length: 410
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+NGSILD-EntityMap: urn:ngsi-ld:entity-map:REGEX(.*)
+
+[
+    {
+        "heartRate": {
+            "observedAt": "2024-02-02T15:00:00.000Z",
+            "providedBy": {
+                "object": "urn:ngsi-ld:Device:cow001",
+                "type": "Relationship"
+            },
+            "type": "Property",
+            "unitCode": "5K",
+            "value": 10.4
+        },
+        "id": "urn:E1",
+        "location": {
+            "observedAt": "2024-02-02T15:00:00.000Z",
+            "providedBy": {
+                "object": "urn:ngsi-ld:Device:cow001",
+                "type": "Relationship"
+            },
+            "type": "GeoProperty",
+            "value": {
+                "coordinates": [
+                    13.404,
+                    52.47
+                ],
+                "type": "Point"
+            }
+        },
+        "type": "Animal"
+    }
+]
+
+
+06. GET entities from CB with attrs=heartRate,location AND sysAttrs - see both attributes (with all sysAttrs)
+=============================================================================================================
+HTTP/1.1 200 OK
+Content-Length: 805
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+NGSILD-EntityMap: urn:ngsi-ld:entity-map:REGEX(.*)
+
+[
+    {
+        "createdAt": "202REGEX(.*)Z",
+        "heartRate": {
+            "createdAt": "202REGEX(.*)Z",
+            "modifiedAt": "202REGEX(.*)Z",
+            "observedAt": "2024-02-02T15:00:00.000Z",
+            "providedBy": {
+                "createdAt": "202REGEX(.*)Z",
+                "modifiedAt": "202REGEX(.*)Z",
+                "object": "urn:ngsi-ld:Device:cow001",
+                "type": "Relationship"
+            },
+            "type": "Property",
+            "unitCode": "5K",
+            "value": 10.4
+        },
+        "id": "urn:E1",
+        "location": {
+            "createdAt": "202REGEX(.*)Z",
+            "modifiedAt": "202REGEX(.*)Z",
+            "observedAt": "2024-02-02T15:00:00.000Z",
+            "providedBy": {
+                "createdAt": "202REGEX(.*)Z",
+                "modifiedAt": "202REGEX(.*)Z",
+                "object": "urn:ngsi-ld:Device:cow001",
+                "type": "Relationship"
+            },
+            "type": "GeoProperty",
+            "value": {
+                "coordinates": [
+                    13.404,
+                    52.47
+                ],
+                "type": "Point"
+            }
+        },
+        "modifiedAt": "202REGEX(.*)Z",
+        "type": "Animal"
+    }
+]
+
+
+--TEARDOWN--
+brokerStop CB
+brokerStop CP1
+dbDrop CB
+dbDrop CP1

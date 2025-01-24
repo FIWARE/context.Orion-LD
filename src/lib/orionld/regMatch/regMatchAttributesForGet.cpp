@@ -95,7 +95,36 @@ StringArray* regMatchAttributesForGet
 {
   bool allAttributes = (propertyNamesP == NULL) && (relationshipNamesP == NULL);
 
+#ifdef DEBUG
   LM_T(LmtDistOpAttributes, ("Creating the union of attributes GET URL-Param vs Registered Attributes"));
+
+  if (attrListP != NULL)
+  {
+    LM_T(LmtDistOpAttributes, ("URI param 'attrs':"));
+    for (int ix = 0; ix < attrListP->items; ix++)
+    {
+      LM_T(LmtDistOpAttributes, ("  o %s", attrListP->array[ix]));
+    }
+  }
+
+  if (propertyNamesP != NULL)
+  {
+    LM_T(LmtDistOpAttributes, ("Reg 'propertyNames':"));
+    for (KjNode* propertyP = propertyNamesP->value.firstChildP; propertyP != NULL; propertyP = propertyP->next)
+    {
+      LM_T(LmtDistOpAttributes, ("  o %s", propertyP->value.s));
+    }
+  }
+
+  if (relationshipNamesP != NULL)
+  {
+    LM_T(LmtDistOpAttributes, ("Reg 'relationshipNames':"));
+    for (KjNode* relationshipP = relationshipNamesP->value.firstChildP; relationshipP != NULL; relationshipP = relationshipP->next)
+    {
+      LM_T(LmtDistOpAttributes, ("  o %s", relationshipP->value.s));
+    }
+  }
+#endif
 
   if (allAttributes == true)
   {
@@ -118,7 +147,7 @@ StringArray* regMatchAttributesForGet
   StringArray* sList = (StringArray*) kaAlloc(&orionldState.kalloc, sizeof(StringArray));
   int          items = 0;
 
-  if (allAttributes == true)  // We know that attrListP == NULL (otherwise it would have returned already a few lines up)
+  if (allAttributes == true)  // We know that attrListP == NULL (otherwise this function would have ended already a few lines up)
   {
     // Everything matches - return an empty array
     sList->items = 0;
@@ -127,7 +156,10 @@ StringArray* regMatchAttributesForGet
     return sList;
   }
   else if ((attrListP != NULL) && (attrListP->items > 0))
+  {
     items = attrListP->items;
+    LM_T(LmtDistOpAttributes, ("%d attributes in URL param", items));
+  }
   else
   {
     // Count items in propertyNamesP + relationshipNamesP
@@ -168,24 +200,34 @@ StringArray* regMatchAttributesForGet
   else
   {
     int matches = 0;
+    LM_T(LmtDistOpAttributes, ("Matching %d URL attrs", attrListP->items));
     for (int ix = 0; ix < attrListP->items; ix++)
     {
       bool match = false;
 
+      LM_T(LmtDistOpAttributes, ("Matching URL attr '%s' with propertyNames", attrListP->array[ix]));
       if (propertyNamesP != NULL)
         match = (kjStringValueLookupInArray(propertyNamesP, attrListP->array[ix]) != NULL);
 
+      LM_T(LmtDistOpAttributes, ("Matching URL attr '%s' with relationshipNames", attrListP->array[ix]));
       if ((match == false) && (relationshipNamesP != NULL))
         match = (kjStringValueLookupInArray(relationshipNamesP, attrListP->array[ix]) != NULL);
 
       if (match == false)
+      {
+        LM_T(LmtDistOpAttributes, ("%s is not a match", attrListP->array[ix]));
         continue;
+      }
 
       LM_T(LmtDistOpAttributes, ("Adding '%s' to the attrList of the DistOp", attrListP->array[ix]));
       sList->array[matches++]  = attrListP->array[ix];
 
       if (regP->mode == RegModeExclusive)
+      {
         stringArrayRemoveItem(attrListP, ix);
+        --ix;  // Compensating for the item in attrListP that was just removed
+      }
+      LM_T(LmtDistOpAttributes, ("Matching %d (ix is %d) URL attrs", attrListP->items, ix));
     }
 
     if (matches == 0)
