@@ -1,6 +1,7 @@
 ## Fixed Issues:
   #1706: Fixed a bug in the logic merging attributes from the URL parameter (attrs) with attributes from registrations
   #XXXX: Fixed a bug for system attributes which were sometimes included for sub-attributes in responses even when not requested
+  #1733: URL-encoding entity type in forwarded requests
 
 ## New Features:
   #XXXX: The context cache now ignores the protocol (http, https) in the URLs and thus avoids storing two copies of the very same @context

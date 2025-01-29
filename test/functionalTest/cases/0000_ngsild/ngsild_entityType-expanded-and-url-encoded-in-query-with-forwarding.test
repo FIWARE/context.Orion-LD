@@ -1,0 +1,123 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+GET Entities by type
+
+--SHELL-INIT--
+dbInit CB
+dbInit CP1
+orionldStart CB -experimental -forwarding -wip entityMaps
+orionldStart CP1
+
+--SHELL--
+#
+# 01. Create a registration in CB for CP1, on entity type https://w3id.org/aerOS/data-catalog#DataProduct
+# 02. Create an entity urn:E1 in CP1 of the type https://w3id.org/aerOS/data-catalog#DataProduct
+# 03. Query CB for entities of type https://w3id.org/aerOS/data-catalog#DataProduct (url-encoded) - see urn:E1 from CP1
+#
+
+echo "01. Create a registration in CB for CP1, on entity type https://w3id.org/aerOS/data-catalog#DataProduct"
+echo "======================================================================================================="
+payload='{
+  "id": "urn:Reg1",
+  "type": "ContextSourceRegistration",
+  "information": [
+    {
+      "entities": [
+        {
+          "type": "https://w3id.org/aerOS/data-catalog#DataProduct"
+        }
+      ]
+    }
+  ],
+  "endpoint": "http://localhost:'$CP1_PORT'"
+}'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload"
+echo
+echo
+
+
+echo "02. Create an entity urn:E1 in CP1 of the type https://w3id.org/aerOS/data-catalog#DataProduct"
+echo "=============================================================================================="
+payload='{
+  "id": "urn:E1",
+  "type": "https://w3id.org/aerOS/data-catalog#DataProduct",
+  "A": 1
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" --port $CP1_PORT
+echo
+echo
+
+
+echo "03. Query CB for entities of type https://w3id.org/aerOS/data-catalog#DataProduct (url-encoded) - see urn:E1 from CP1"
+echo "====================================================================================================================="
+orionCurl --url '/ngsi-ld/v1/entities?type=https://w3id.org/aerOS/data-catalog%23DataProduct'
+echo
+echo
+
+
+--REGEXPECT--
+01. Create a registration in CB for CP1, on entity type https://w3id.org/aerOS/data-catalog#DataProduct
+=======================================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/csourceRegistrations/urn:Reg1
+
+
+
+02. Create an entity urn:E1 in CP1 of the type https://w3id.org/aerOS/data-catalog#DataProduct
+==============================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E1
+
+
+
+03. Query CB for entities of type https://w3id.org/aerOS/data-catalog#DataProduct (url-encoded) - see urn:E1 from CP1
+=====================================================================================================================
+HTTP/1.1 200 OK
+Content-Length: 108
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-coreREGEX(.*)
+NGSILD-EntityMap: urn:ngsi-ld:entity-map:REGEX(.*)
+
+[
+    {
+        "A": {
+            "type": "Property",
+            "value": 1
+        },
+        "id": "urn:E1",
+        "type": "https://w3id.org/aerOS/data-catalog#DataProduct"
+    }
+]
+
+
+--TEARDOWN--
+brokerStop CB
+brokerStop CP1
+dbDrop CB
+dbDrop CP1

@@ -168,7 +168,7 @@ void urlEncode(char* from, char* to, int toLen)
     char f = from[fromIx];
 
 //    if (((f >= 'A') && (f <= 'Z')) || ((f >= 'a') && (f <= 'z')) || ((f >= '0') && (f <= '9')))
-    if ((f != '"') && (f != ' ') && (f != '&'))
+    if ((f != '"') && (f != ' ') && (f != '&') && (f != '#'))
       to[toIx++] = f;
     else
     {
@@ -515,6 +515,14 @@ bool distOpSend(DistOp* distOpP, const char* dateHeader, const char* xForwardedF
     if (distOpP->entityType != NULL)
     {
       char* typeAlias = orionldContextItemAliasLookup(fwdContextP, distOpP->entityType, NULL, NULL);
+
+      if (strchr(typeAlias, '#') != NULL)
+      {
+        int   encodedTypeLen = strlen(typeAlias) + 16;
+        char* encodedType    = kaAlloc(&orionldState.kalloc, encodedTypeLen);
+        urlEncode(typeAlias, encodedType, encodedTypeLen);
+        typeAlias = encodedType;
+      }
       uriParamAdd(&urlParts, "type", typeAlias, -1);
     }
   }
