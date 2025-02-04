@@ -252,6 +252,7 @@ typedef struct OrionldStateIn
   char*     legacy;          // Use legacy mongodb driver / mongoBackend
   bool      performance;
   bool      aerOS;           // Special treatment for aerOS specific features
+  bool      arrayConcat;     // Concatenate arrays in PATCH Entity2
   char*     wip;
 
   // Incoming payload

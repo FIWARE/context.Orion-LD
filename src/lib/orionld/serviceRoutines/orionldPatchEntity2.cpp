@@ -255,6 +255,15 @@ static void orionldEntityPatchTree(KjNode* oldP, KjNode* newP, char* path, KjNod
   else if (newP->type == KjFloat)    { if (newP->value.f != oldP->value.f)             change = true; nonCompound = true; }
   else if (newP->type == KjBoolean)  { if (newP->value.b != oldP->value.b)             change = true; nonCompound = true; }
 
+  //
+  // Special case for aerOS
+  //
+  if ((orionldState.in.arrayConcat == true) && (oldP->type == KjArray) && (newP->type == KjArray))
+  {
+    oldP->lastChild->next   = newP->value.firstChildP;
+    newP->value.firstChildP = oldP->value.firstChildP;
+  }
+    
   if (change == true)
     patchTreeItemAdd(patchTree, path, newP, NULL);
 
