@@ -378,6 +378,11 @@ static MHD_Result orionldHttpHeaderReceive(void* cbDataP, MHD_ValueKind kind, co
     if (strcasecmp(value, "true") == 0)
       orionldState.in.aerOS = true;
   }
+  else if (strcasecmp(key, "aerOS-Array-Concat") == 0)
+  {
+    if (strcasecmp(value, "true") == 0)
+      orionldState.in.arrayConcat = true;
+  }
   else if (strcasecmp(key, "NGSILD-Scope") == 0)
   {
     orionldState.scopes = strSplit((char*) value, ',', orionldState.scopeV, K_VEC_SIZE(orionldState.scopeV));
