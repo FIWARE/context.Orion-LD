@@ -263,7 +263,7 @@ static void orionldEntityPatchTree(KjNode* oldP, KjNode* newP, char* path, KjNod
     oldP->lastChild->next   = newP->value.firstChildP;
     newP->value.firstChildP = oldP->value.firstChildP;
   }
-    
+
   if (change == true)
     patchTreeItemAdd(patchTree, path, newP, NULL);
 
