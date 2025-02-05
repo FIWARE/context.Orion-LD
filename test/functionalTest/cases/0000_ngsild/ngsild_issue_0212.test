@@ -106,7 +106,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:Store:santander:COM4111
 02. GET the entity by type - longname
 =====================================
 HTTP/1.1 200 OK
-Content-Length: 668
+Content-Length: 670
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -134,8 +134,8 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             "type": "GeoProperty",
             "value": {
                 "coordinates": [
-                    -3.807756,
-                    43.462826
+                    -3.8077562,
+                    43.4628255
                 ],
                 "type": "Point"
             }
@@ -148,7 +148,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 03. GET the entity with id as URI param
 =======================================
 HTTP/1.1 200 OK
-Content-Length: 668
+Content-Length: 670
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -176,8 +176,8 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             "type": "GeoProperty",
             "value": {
                 "coordinates": [
-                    -3.807756,
-                    43.462826
+                    -3.8077562,
+                    43.4628255
                 ],
                 "type": "Point"
             }

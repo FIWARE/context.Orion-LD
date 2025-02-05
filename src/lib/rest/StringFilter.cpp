@@ -785,8 +785,7 @@ void StringFilterItem::valueAsString(char* buf, int bufLen)
     break;
 
   case SfvtNumber:
-    snprintf(buf, bufLen, "%f", numberValue);
-    kFloatTrim(buf);
+    kFloatTrim(buf, numberValue);
     break;
 
   case SfvtNull:

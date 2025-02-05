@@ -177,7 +177,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:Shelf:unit001
 02. GET the entity, make sure all props/rels are present
 ========================================================
 HTTP/1.1 200 OK
-Content-Length: 603
+Content-Length: 604
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -190,7 +190,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "value": {
       "type": "Point",
       "coordinates": [
-        13.398611,
+        13.3986112,
         52.554699
       ]
     }
@@ -221,7 +221,7 @@ Date: REGEX(.*)
 04. GET the entity, make sure all metadata of 'locatedIn' are present
 =====================================================================
 HTTP/1.1 200 OK
-Content-Length: 1053
+Content-Length: 1054
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -234,7 +234,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "value": {
       "type": "Point",
       "coordinates": [
-        13.398611,
+        13.3986112,
         52.554699
       ]
     }
@@ -277,7 +277,7 @@ Date: REGEX(.*)
 06. GET the entity, make sure the value of 'locatedIn' has changed
 ==================================================================
 HTTP/1.1 200 OK
-Content-Length: 754
+Content-Length: 755
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -290,7 +290,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "value": {
       "type": "Point",
       "coordinates": [
-        13.398611,
+        13.3986112,
         52.554699
       ]
     }
@@ -325,7 +325,7 @@ Date: REGEX(.*)
 08. GET the entity, make sure only new metadata of 'locatedIn' are present
 ==========================================================================
 HTTP/1.1 200 OK
-Content-Length: 853
+Content-Length: 854
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -338,7 +338,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "value": {
       "type": "Point",
       "coordinates": [
-        13.398611,
+        13.3986112,
         52.554699
       ]
     }
@@ -370,7 +370,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 09. GET the entity, with tutorials.Step-by-Step context - see shortnames
 ========================================================================
 HTTP/1.1 200 OK
-Content-Length: 633
+Content-Length: 634
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://fiware.github.io/tutorials.Step-by-Step/tutorials-context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
@@ -383,7 +383,7 @@ Link: <https://fiware.github.io/tutorials.Step-by-Step/tutorials-context.jsonld>
     "value": {
       "type": "Point",
       "coordinates": [
-        13.398611,
+        13.3986112,
         52.554699
       ]
     }
