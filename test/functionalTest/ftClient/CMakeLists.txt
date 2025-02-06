@@ -90,6 +90,12 @@ SET (DYNAMIC_LIBS
   fastcdr
   foonathan_memory-0.7.3
   ddsenabler
+  cpp_utils
+  ddspipe_core
+  ddspipe_participants
+  ddspipe_yaml
+  ddsenabler_participants
+  ddsenabler_yaml
   tinyxml2
   crypto.so
   ssl.so
