@@ -60,7 +60,7 @@ cmake --build . --target install
 cd /opt/Fast-DDS
 git clone https://github.com/eProsima/Fast-DDS.git
 cd Fast-DDS
-git checkout master
+git checkout feature/json-deserialize
 mkdir build
 cd build
 
@@ -100,7 +100,7 @@ cmake --build . --target install
 cd /opt/Fast-DDS
 git clone https://github.com/eProsima/DDS-Pipe.git
 cd DDS-Pipe
-git checkout main
+git checkout efc83a42e9bc8922ecd84a0e424ccd2e4fddd50e
 
 
 cd ddspipe_core
@@ -129,7 +129,7 @@ cd /opt/Fast-DDS
 git clone https://github.com/eProsima/FIWARE-DDS-Enabler.git
 cd FIWARE-DDS-Enabler
 git fetch -a
-git checkout feature/json_config
+git checkout feature/publish
 yum -y install lz4-devel libzstd-devel
 
 # ./install_dds_module.sh
