@@ -45,7 +45,10 @@ payload='{
   "type": "Shelf",
   "location": {
     "type": "GeoProperty",
-    "value": {"type": "Point","coordinates": [13.3986112,52.554699]}
+    "value": {
+      "type": "Point",
+      "coordinates": [ 13.3986112112, 52.554699 ]
+    }
   },
   "maxCapacity": {"type": "Property","value": 50},
   "name": {"type": "Property","value": "Corner Unit"},
@@ -141,7 +144,7 @@ MongoDB server version: REGEX(.*)
 			"value" : {
 				"type" : "Point",
 				"coordinates" : [
-					13.3986112,
+					13.3986112112,
 					52.554699
 				]
 			},
@@ -202,7 +205,7 @@ MongoDB server version: REGEX(.*)
 			"value" : {
 				"type" : "Point",
 				"coordinates" : [
-					13.3986112,
+					13.3986112112,
 					52.554699
 				]
 			},
@@ -264,7 +267,7 @@ bye
 05. Get the entity and see the five attributes
 ==============================================
 HTTP/1.1 200 OK
-Content-Length: 1053
+Content-Length: 1056
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -277,7 +280,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "value": {
       "type": "Point",
       "coordinates": [
-        13.398611,
+        13.398611211,
         52.554699
       ]
     }

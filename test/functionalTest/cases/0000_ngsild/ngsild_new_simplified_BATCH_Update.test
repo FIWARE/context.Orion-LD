@@ -251,7 +251,7 @@ Date: REGEX(.*)
 03. GET the three entities
 ==========================
 HTTP/1.1 200 OK
-Content-Length: 2398
+Content-Length: 2399
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -475,7 +475,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             },
             "Float": {
                 "type": "Property",
-                "value": 4.444444
+                "value": 4.4444444
             },
             "Geo": {
                 "type": "GeoProperty",

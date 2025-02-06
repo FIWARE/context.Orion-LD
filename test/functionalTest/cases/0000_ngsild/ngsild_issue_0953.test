@@ -168,7 +168,7 @@ Date: REGEX(.*)
 03. Query using geometry URL params
 ===================================
 HTTP/1.1 200 OK
-Content-Length: 558
+Content-Length: 560
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -209,8 +209,8 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             "type": "GeoProperty",
             "value": {
                 "coordinates": [
-                    8.644716,
-                    49.418407
+                    8.6447165,
+                    49.4184066
                 ],
                 "type": "Point"
             }

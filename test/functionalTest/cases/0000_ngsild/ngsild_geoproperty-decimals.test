@@ -1,0 +1,243 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Decimals in floating point values
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB
+accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+
+--SHELL--
+
+#
+# 01. Create an entity E1 with a GeoProperty called geoLoc - a point with 12 decimals
+# 02. See E1 in the database - see the 12 decimals
+# 03. GET E1 - see 9 decimals
+# 04. Create a matching subscription
+# 05. Patch E1 to provoke a notification
+# 06. Dump the accumulator, see the geoLoc GeoProperty with 9 decimals in its coordinates
+#
+
+echo "01. Create an entity E1 with a GeoProperty called geoLoc - a point with 12 decimals"
+echo "==================================================================================="
+payload='{
+  "id": "urn:E1",
+  "type": "T",
+  "geoLoc": {
+    "type": "GeoProperty",
+    "value": {
+      "type": "Point",
+      "coordinates": [ 10.123456789012, 11.098765432109 ]
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "02. See E1 in the database - see the 12 decimals"
+echo "================================================"
+mongoCmd2 ftest "db.entities.findOne()"
+echo
+echo
+
+
+echo "03. GET E1 - see 9 decimals"
+echo "==========================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1
+echo
+echo
+
+
+echo "04. Create a matching subscription"
+echo "=================================="
+payload='{
+  "id": "urn:S1",
+  "type": "Subscription",
+  "entities": [
+    {
+      "type": "T"
+    }
+  ],
+  "notification": {
+    "endpoint": {
+      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload"
+echo
+echo
+
+
+echo "05. Patch E1 to provoke a notification"
+echo "======================================"
+payload='{
+  "step": 5
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs -X POST --payload "$payload"
+echo
+echo
+
+
+echo "06. Dump the accumulator, see the geoLoc GeoProperty with 9 decimals in its coordinates"
+echo "======================================================================================="
+accumulatorDump
+echo
+echo
+
+
+
+--REGEXPECT--
+01. Create an entity E1 with a GeoProperty called geoLoc - a point with 12 decimals
+===================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E1
+
+
+
+02. See E1 in the database - see the 12 decimals
+================================================
+MongoDB shell version REGEX(.*)
+connecting to: REGEX(.*)
+MongoDB server version: REGEX(.*)
+{
+	"_id" : {
+		"id" : "urn:E1",
+		"type" : "https://uri.etsi.org/ngsi-ld/default-context/T",
+		"servicePath" : "/"
+	},
+	"attrNames" : [
+		"https://uri.etsi.org/ngsi-ld/default-context/geoLoc"
+	],
+	"attrs" : {
+		"https://uri=etsi=org/ngsi-ld/default-context/geoLoc" : {
+			"type" : "GeoProperty",
+			"creDate" : REGEX(.*),
+			"modDate" : REGEX(.*),
+			"value" : {
+				"type" : "Point",
+				"coordinates" : [
+					10.123456789012,
+					11.098765432109
+				]
+			},
+			"mdNames" : [ ]
+		}
+	},
+	"creDate" : REGEX(.*),
+	"modDate" : REGEX(.*),
+	"lastCorrelator" : ""
+}
+bye
+
+
+03. GET E1 - see 9 decimals
+===========================
+HTTP/1.1 200 OK
+Content-Length: 125
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "geoLoc": {
+        "type": "GeoProperty",
+        "value": {
+            "coordinates": [
+                10.123456789,
+                11.098765432
+            ],
+            "type": "Point"
+        }
+    },
+    "id": "urn:E1",
+    "type": "T"
+}
+
+
+04. Create a matching subscription
+==================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/subscriptions/urn:S1
+
+
+
+05. Patch E1 to provoke a notification
+======================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+06. Dump the accumulator, see the geoLoc GeoProperty with 9 decimals in its coordinates
+=======================================================================================
+POST http://REGEX(.*)/notify?subscriptionId=urn:S1
+Fiware-Servicepath: /
+Content-Length: 330
+User-Agent: orion/REGEX(.*)
+Ngsiv2-Attrsformat: normalized
+Host: REGEX(.*)
+Accept: application/json
+Content-Type: application/json; charset=utf-8
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "data": [
+        {
+            "geoLoc": {
+                "type": "GeoProperty",
+                "value": {
+                    "coordinates": [
+                        10.123456789,
+                        11.098765432
+                    ],
+                    "type": "Point"
+                }
+            },
+            "id": "urn:E1",
+            "step": {
+                "type": "Property",
+                "value": 5
+            },
+            "type": "T"
+        }
+    ],
+    "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+    "notifiedAt": "202REGEX(.*)Z",
+    "subscriptionId": "urn:S1",
+    "type": "Notification"
+}
+=======================================
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
+accumulatorStop

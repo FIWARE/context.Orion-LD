@@ -98,7 +98,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:ParkingSpot:santander:daoiz_velarde_1
 02. GET the entity, just to make sure all is A-OK
 =================================================
 HTTP/1.1 200 OK
-Content-Length: 455
+Content-Length: 461
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://fiware.github.io/data-models/full-context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
@@ -117,8 +117,8 @@ Link: <https://fiware.github.io/data-models/full-context.jsonld>; rel="http://ww
         "type": "GeoProperty",
         "value": {
             "coordinates": [
-                -3.803562,
-                43.462966
+                -3.803561677,
+                43.462966417
             ],
             "type": "Point"
         }

@@ -67,11 +67,11 @@ Date: REGEX(.*)
 
 {
   "Orion-LD version": REGEX(.*),
-  "based on orion": REGEX(.*),
-  "kbase version": REGEX(.*),
-  "kalloc version": REGEX(.*),
-  "khash version": REGEX(.*),
-  "kjson version": "0.8.2",
+  "based on orion": "1.15.0-next",
+  "kbase version": "0.8.2",
+  "kalloc version": "0.8",
+  "khash version": "0.8",
+  "kjson version": "0.8.3",
   "microhttpd version": "0.9.75-0",
   "rapidjson version": REGEX(.*),
   "libcurl version": REGEX(.*),

@@ -48,6 +48,7 @@ payload='{
     "value": {"type": "Point","coordinates": [13.3986112,52.554699]}
   },
   "maxCapacity": {"type": "Property","value": 50},
+  "nines": 1.01234567899999999,
   "name": {"type": "Property","value": "Corner Unit"},
   "@context": [
     "https://fiware.github.io/tutorials.Step-by-Step/tutorials-context.jsonld",
@@ -133,6 +134,7 @@ MongoDB server version: REGEX(.*)
 	"attrNames" : [
 		"location",
 		"https://fiware.github.io/tutorials.Step-by-Step/schema/maxCapacity",
+		"https://uri.etsi.org/ngsi-ld/default-context/nines",
 		"https://uri.etsi.org/ngsi-ld/default-context/name"
 	],
 	"attrs" : {
@@ -154,6 +156,13 @@ MongoDB server version: REGEX(.*)
 			"creDate" : REGEX(.*),
 			"modDate" : REGEX(.*),
 			"value" : 50,
+			"mdNames" : [ ]
+		},
+		"https://uri=etsi=org/ngsi-ld/default-context/nines" : {
+			"type" : "Property",
+			"creDate" : REGEX(.*),
+			"modDate" : REGEX(.*),
+			"value" : 1.012345678999,
 			"mdNames" : [ ]
 		},
 		"https://uri=etsi=org/ngsi-ld/default-context/name" : {
@@ -192,6 +201,7 @@ MongoDB server version: REGEX(.*)
 	"attrNames" : [
 		"location",
 		"https://fiware.github.io/tutorials.Step-by-Step/schema/maxCapacity",
+		"https://uri.etsi.org/ngsi-ld/default-context/nines",
 		"https://uri.etsi.org/ngsi-ld/default-context/name",
 		"https://fiware.github.io/tutorials.Step-by-Step/schema/stocks",
 		"https://fiware.github.io/tutorials.Step-by-Step/schema/locatedIn"
@@ -215,6 +225,13 @@ MongoDB server version: REGEX(.*)
 			"creDate" : REGEX(.*),
 			"modDate" : REGEX(.*),
 			"value" : 50,
+			"mdNames" : [ ]
+		},
+		"https://uri=etsi=org/ngsi-ld/default-context/nines" : {
+			"type" : "Property",
+			"creDate" : REGEX(.*),
+			"modDate" : REGEX(.*),
+			"value" : 1.012345678999,
 			"mdNames" : [ ]
 		},
 		"https://uri=etsi=org/ngsi-ld/default-context/name" : {
@@ -266,7 +283,7 @@ bye
 05. Get the entity and see the five attributes
 ==============================================
 HTTP/1.1 200 OK
-Content-Length: 1053
+Content-Length: 1121
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -279,7 +296,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "value": {
       "type": "Point",
       "coordinates": [
-        13.398611,
+        13.3986112,
         52.554699
       ]
     }
@@ -287,6 +304,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
   "https://fiware.github.io/tutorials.Step-by-Step/schema/maxCapacity": {
     "type": "Property",
     "value": 50
+  },
+  "nines": {
+    "type": "Property",
+    "value": 1.012345679
   },
   "name": {
     "type": "Property",
