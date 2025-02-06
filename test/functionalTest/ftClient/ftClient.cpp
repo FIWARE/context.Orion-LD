@@ -28,6 +28,7 @@
 #include <stdarg.h>                                         // va_start, ...
 
 #include <string>                                           // std::string
+#include <memory>                                           // for std::unique_ptr
 
 #include "ddsenabler/dds_enabler_runner.hpp"                // dds enabler
 
@@ -171,9 +172,9 @@ extern KjNode* ddsDumpArray;
 //
 // ddsNotification -
 //
-static void ddsNotification(const char* typeName, const char* topicName, const char* json, int64_t publishTime)
+static void ddsNotification(const char* topicName, const char* json, int64_t publishTime)
 {
-  KT_T(StDdsDump, "Got a notification on %s:%s (json: %s)", typeName, topicName, json);
+  KT_T(StDdsDump, "Got a notification on topic '%s' (json: %s)", topicName, json);
 
 #if 0
   KT_T(StDdsDump, "Need to check the publishTime (%lld) to perhaps discard", publishTime);
@@ -218,9 +219,57 @@ static void ddsNotification(const char* typeName, const char* topicName, const c
 //
 // ddsTypeNotification -
 //
-static void ddsTypeNotification(const char* typeName, const char* topicName, const char* serializedType)
+static void ddsTypeNotification
+(
+  const char*           typeName,
+  const char*           serializedType,
+  const unsigned char*  serializedTypeInternal,
+  uint32_t              serializedTypeInternalSize,
+  const char*           dataPlaceholder
+)
 {
-  KT_T(StDds, "Got a type notification ('%s', '%s', '%s')", typeName, topicName, serializedType);
+  KT_T(StDds, "----------------------------------------");
+  KT_T(StDds, "Got a type notification:");
+  KT_T(StDds, "o typeName:                    %s", typeName);
+  KT_T(StDds, "o serializedType:              %s", serializedType);
+  KT_T(StDds, "o serializedTypeInternal:      %s", serializedTypeInternal);
+  KT_T(StDds, "o serializedTypeInternalSize:  %d", serializedTypeInternalSize);
+  KT_T(StDds, "o dataPlaceholder:             %s", dataPlaceholder);
+  KT_T(StDds, "Nothing done, for now at least");
+  KT_T(StDds, "----------------------------------------");
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// ddsTopicNotification -
+//
+void ddsTopicNotification(const char* topicName, const char* typeName, const char* serializedQos)
+{
+  KT_T(StDds, "Got a topic notification ('%s', '%s', '%s')", topicName, typeName, serializedQos);
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// ddsTypeRequest -
+//
+void ddsTypeRequest(const char* typeName, unsigned char*& serializedTypeInternal, uint32_t& serializedTypeInternalSize)
+{
+  KT_T(StDds, "Got a type request callback ('%s', '%s', %d)", typeName, serializedTypeInternal, serializedTypeInternalSize);
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// ddsTopicRequest -
+//
+void ddsTopicRequest(const char* topicName, char*& typeName, char*& serializedQos)
+{
+  KT_T(StDds, "Got a type request callback ('%s', '%s', '%s')", topicName, typeName, serializedQos);
 }
 
 
@@ -242,6 +291,7 @@ static void ddsLog(const char* fileName, int lineNo, const char* funcName, int c
 
 
 
+std::unique_ptr<eprosima::ddsenabler::DDSEnabler> ddsEnabler;
 // -----------------------------------------------------------------------------
 //
 // main -
@@ -302,8 +352,17 @@ int main(int argC, char* argV[])
 
   mhdInit(ldPort);
 
-  if (eprosima::ddsenabler::init_dds_enabler(configFile, ddsNotification, ddsTypeNotification, ddsLog) != 0)
-    KT_X(1, "Unable to initialize the DDS Enabler");
+  bool r = eprosima::ddsenabler::create_dds_enabler(configFile,
+                                                    ddsNotification,
+                                                    ddsTypeNotification,
+                                                    ddsTopicNotification,
+                                                    ddsTypeRequest,
+                                                    ddsTopicRequest,
+                                                    ddsLog,
+                                                    ddsEnabler);
+
+  if (r != 0)
+    KT_X(1, "Unable to create the DDS Enabler");
 
   while (1)
   {
