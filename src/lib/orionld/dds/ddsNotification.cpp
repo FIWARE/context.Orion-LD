@@ -51,10 +51,10 @@ extern "C"
 //
 // ddsNotification -
 //
-void ddsNotification(const char* typeName, const char* topicName, const char* json, int64_t publishTime)
+void ddsNotification(const char* topicName, const char* json, int64_t publishTime)
 {
   KT_T(StDdsNotification, "----------------------------------------");
-  KT_T(StDdsNotification, "Got a notification on %s:%s (json: %s)", typeName, topicName, json);
+  KT_T(StDdsNotification, "Got a notification on topic %s (json: %s)", topicName, json);
 
   orionldStateInit(NULL);
 
