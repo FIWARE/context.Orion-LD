@@ -82,7 +82,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:WaterSubscriptionControlTradingHouse:
 02. GET the entity to make sure the broker is still alive and that the entity was created correctly
 ===================================================================================================
 HTTP/1.1 200 OK
-Content-Length: 218030
+Content-Length: 218028
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -8506,7 +8506,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
                         "buildingDetailNo": 22481,
                         "doorNumber": 4,
                         "neighborhoodName": "ALIBEYLI MAHALLESI",
-                        "streetName": "PROF. DR HALET \u00c7AMBEL"
+                        "streetName": "PROF. DR HALET CAMBEL"
                     }
                 ],
                 "buildingNo": 13498,
@@ -9582,7 +9582,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
                         "buildingDetailNo": 22448,
                         "doorNumber": 2,
                         "neighborhoodName": "ALIBEYLI MAHALLESI",
-                        "streetName": "PROF. DR HALET \u00c7AMBEL"
+                        "streetName": "PROF. DR HALET CAMBEL"
                     }
                 ],
                 "buildingNo": 24284,
@@ -14668,7 +14668,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 03. Query all entities
 ======================
 HTTP/1.1 200 OK
-Content-Length: 218032
+Content-Length: 218030
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -23093,7 +23093,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
                             "buildingDetailNo": 22481,
                             "doorNumber": 4,
                             "neighborhoodName": "ALIBEYLI MAHALLESI",
-                            "streetName": "PROF. DR HALET \u00c7AMBEL"
+                            "streetName": "PROF. DR HALET CAMBEL"
                         }
                     ],
                     "buildingNo": 13498,
@@ -24169,7 +24169,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
                             "buildingDetailNo": 22448,
                             "doorNumber": 2,
                             "neighborhoodName": "ALIBEYLI MAHALLESI",
-                            "streetName": "PROF. DR HALET \u00c7AMBEL"
+                            "streetName": "PROF. DR HALET CAMBEL"
                         }
                     ],
                     "buildingNo": 24284,
