@@ -195,8 +195,9 @@ int ddsInit(Kjson* kjP, DdsOperationMode _ddsOpMode)
                                                     ddsLog,
                                                     ddsEnabler);
 
-  if (r != 0)
+  if (r == false)
     KT_X(1, "Unable to create the DDS Enabler");
 
+  KT_T(StDds, "DDS Enabler created");
   return 0;
 }

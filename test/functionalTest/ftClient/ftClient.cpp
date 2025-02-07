@@ -352,6 +352,7 @@ int main(int argC, char* argV[])
 
   mhdInit(ldPort);
 
+  KT_D("Calling create_dds_enabler('%s')", configFile);
   bool r = eprosima::ddsenabler::create_dds_enabler(configFile,
                                                     ddsNotification,
                                                     ddsTypeNotification,
@@ -361,8 +362,10 @@ int main(int argC, char* argV[])
                                                     ddsLog,
                                                     ddsEnabler);
 
-  if (r != 0)
+  if (r == false)
     KT_X(1, "Unable to create the DDS Enabler");
+
+  KT_D("DDS Enabler created");
 
   while (1)
   {
