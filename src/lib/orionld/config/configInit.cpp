@@ -44,8 +44,6 @@ extern "C"
 //
 void configInit(Kjson* kjP, char* configFile)
 {
-  char* configFileP = configFile;
-
   if (configFile[0] == 0)
   {
     char* home = getenv("HOME");
@@ -54,11 +52,11 @@ void configInit(Kjson* kjP, char* configFile)
     {
       snprintf(configFile, 511, "%s/.orionld", home);
       if (access(configFile, R_OK) != 0)
-        configFileP = NULL;
+        return;  // It's OK to not have a config file
     }
   }
 
   errno = 0;
-  if (configLoad(kjP, configFileP) != 0)
-    KT_X(1, "Error reading/parsing the config file '%s'", configFile);
+  if (configLoad(kjP, configFile) != 0)
+    KT_X(1, "Error reading/parsing the config file '%s'", configFile);  // Not OK to have a bad config file
 }

@@ -528,7 +528,7 @@ function showErrorsdAndExit()
 #
 typeset -i fromIx
 typeset -i toIx
-verbose=on
+verbose=off
 loud=off
 dryrun=off
 keep=off
