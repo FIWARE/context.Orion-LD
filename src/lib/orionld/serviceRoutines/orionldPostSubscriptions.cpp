@@ -101,7 +101,7 @@ SubordinateSubscription* subordinateCreate(CachedSubscription* cSubP, RegCacheIt
 
   for (SubordinateSubscription* subordinateP = cSubP->subordinateP; subordinateP != NULL; subordinateP = subordinateP->next)
   {
-    runNo = MAX(runNo, subordinateP->runNo);
+    runNo = MAX(runNo, subordinateP->runNo) + 1;
   }
 
   char subSubId[128];
@@ -109,12 +109,14 @@ SubordinateSubscription* subordinateCreate(CachedSubscription* cSubP, RegCacheIt
 
   char notificationUrl[512];
 
+  LM_T(LmtSubordinate, ("subordinateEndpoint; '%s'", subordinateEndpoint));
+
   if (subordinateEndpoint[0] != 0)
     snprintf(notificationUrl, sizeof(notificationUrl), "%s/notifications/%s", subordinateEndpoint, cSubP->subscriptionId);
   else
     snprintf(notificationUrl, sizeof(notificationUrl), "http://%s/ngsi-ld/ex/v1/notifications/%s", localIpAndPort, cSubP->subscriptionId);
 
-  LM_T(LmtSubordinate, ("URL for subordinate subscription: '%s'", notificationUrl));
+  LM_T(LmtSubordinate, ("Notification URL for subordinate subscription: '%s'", notificationUrl));
 
   KjNode* bodyP         = kjObject(orionldState.kjsonP, NULL);
   KjNode* idP           = kjString(orionldState.kjsonP, "id", subSubId);
@@ -200,6 +202,7 @@ SubordinateSubscription* subordinateCreate(CachedSubscription* cSubP, RegCacheIt
 
   LM_T(LmtSR, ("IP of registration: '%s'", rciIp));
   snprintf(rciUrl, sizeof(rciUrl) - 1, "http://%s/ngsi-ld/v1/subscriptions", rciP->ipAndPort);
+  LM_T(LmtSR, ("URL for creation of subordinate subscription '%s'", rciUrl));
 
   httpRequestHeaderAdd(&headers[headerIx++], "Content-Type", "application/json", 0);
   int httpStatus = httpRequest(rciIp, "POST", rciUrl, bodyP, NULL, headers, tmo, &responseBody, &pd);
