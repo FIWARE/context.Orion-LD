@@ -1,9 +1,6 @@
-#ifndef SRC_LIB_ORIONLD_DDS_DDSINIT_H_
-#define SRC_LIB_ORIONLD_DDS_DDSINIT_H_
-
 /*
 *
-* Copyright 2024 FIWARE Foundation e.V.
+* Copyright 2025 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,27 +22,43 @@
 *
 * Author: Ken Zangelin
 */
+#include <stdio.h>                                          // snprintf
+#include <stdlib.h>                                         // getenv
+#include <unistd.h>                                         // access
+#include <errno.h>                                          // errno
+
 extern "C"
 {
 #include "kjson/kjson.h"                                    // Kjson
+#include "ktrace/kTrace.h"                                  // trace messages - ktrace library
 }
 
-#include "ddsenabler/dds_enabler_runner.hpp"                // dds enabler
+#include "orionld/config/configLoad.h"                      // configLoad
+#include "orionld/config/configInit.h"                      // Own interface
 
 
 
 // -----------------------------------------------------------------------------
 //
-// ddsEnabler -
+// configInit -
 //
-extern std::unique_ptr<eprosima::ddsenabler::DDSEnabler>  ddsEnabler;
+void configInit(Kjson* kjP, char* configFile)
+{
+  char* configFileP = configFile;
 
+  if (configFile[0] == 0)
+  {
+    char* home = getenv("HOME");
 
+    if (home != NULL)
+    {
+      snprintf(configFile, 511, "%s/.orionld", home);
+      if (access(configFile, R_OK) != 0)
+        configFileP = NULL;
+    }
+  }
 
-// -----------------------------------------------------------------------------
-//
-// ddsInit -
-//
-extern int ddsInit(Kjson* kjP);
-
-#endif  // SRC_LIB_ORIONLD_DDS_DDSINIT_H_
+  errno = 0;
+  if (configLoad(kjP, configFileP) != 0)
+    KT_X(1, "Error reading/parsing the config file '%s'", configFile);
+}

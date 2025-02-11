@@ -40,20 +40,10 @@ extern "C"
 #include "orionld/common/traceLevels.h"                     // kjTreeLog2
 #include "orionld/common/orionldState.h"                    // configFile
 #include "orionld/kjTree/kjNavigate.h"                      // kjNavigate
-#include "orionld/dds/ddsConfigTopicToAttribute.h"          // ddsConfigTopicToAttribute - for debugging only
-#include "orionld/dds/ddsCategoryToKlogSeverity.h"          // ddsCategoryToKlogSeverity
-#include "orionld/dds/ddsConfigLoad.h"                      // ddsConfigLoad
 #include "orionld/dds/kjTreeLog.h"                          // kjTreeLog2
 #include "orionld/dds/ddsNotification.h"                    // ddsNotification
+#include "orionld/dds/ddsCategoryToKlogSeverity.h"          // ddsCategoryToKlogSeverity
 #include "orionld/dds/ddsInit.h"                            // Own interface
-
-
-
-// -----------------------------------------------------------------------------
-//
-// ddsOpMode -
-//
-DdsOperationMode ddsOpMode;
 
 
 
@@ -151,41 +141,11 @@ static void ddsLog(const char* fileName, int lineNo, const char* funcName, int c
 // PARAMETERS
 // * mode - the DDS mode the broker is working in
 //
-int ddsInit(Kjson* kjP, DdsOperationMode _ddsOpMode)
+int ddsInit(Kjson* kjP)
 {
-  ddsOpMode = _ddsOpMode;  // Not yet in use ... invent usage or remove !
-
-  //
-  // DDS Configuration File
-  //
-  errno = 0;
-  if (ddsConfigLoad(kjP, configFileP) != 0)
-    KT_X(1, "Error reading/parsing the DDS config file '%s'", configFile);
-
-#if 0
-  extern KjNode* ddsConfigTree;
-  kjTreeLog2(ddsConfigTree, "DDS Config", StDdsConfig);
-  KT_T(StDdsConfig, "Topics:");
-  const char*  path[4] = { "dds", "ngsild", "topics", NULL };
-  KjNode*      topics  = kjNavigate(ddsConfigTree, path , NULL, NULL);
-
-  if (topics != NULL)
-  {
-    for (KjNode* topicP = topics->value.firstChildP; topicP != NULL; topicP = topicP->next)
-    {
-      char* entityId   = (char*) "N/A";
-      char* entityType = (char*) "N/A";
-      char* attribute = ddsConfigTopicToAttribute(topicP->name, &entityId, &entityType);
-
-      KT_T(StDdsConfig, "Topic:         '%s':", topicP->name);
-      KT_T(StDdsConfig, "  Attribute:   '%s'", attribute);
-      KT_T(StDdsConfig, "  Entity ID:   '%s'", entityId);
-      KT_T(StDdsConfig, "  Entity Type: '%s'", entityType);
-    }
-  }
-#endif
-
   KT_T(StDds, "Calling create_dds_enabler('%s')", configFile);
+
+  eprosima::utils::Log::ReportFilenames(true);
   bool r = eprosima::ddsenabler::create_dds_enabler(configFile,
                                                     ddsNotification,
                                                     ddsTypeNotification,

@@ -22,6 +22,8 @@
 *
 * Author: Ken Zangelin
 */
+#include <unistd.h>                                         // NULL
+
 extern "C"
 {
 #include "kbase/kFileRead.h"                                // kFileRead
@@ -30,26 +32,33 @@ extern "C"
 #include "ktrace/kTrace.h"                                  // trace messages - ktrace library
 }
 
-#include "orionld/dds/ddsConfigLoad.h"                      // Own interface
+#include "orionld/config/configLoad.h"                      // Own interface
 
 
 
-KjNode* ddsConfigTree = NULL;
 // -----------------------------------------------------------------------------
 //
-// ddsConfigLoad -
+// configTree -
 //
-int ddsConfigLoad(Kjson* kjP, const char* configFile)
+KjNode* configTree = NULL;
+
+
+
+// -----------------------------------------------------------------------------
+//
+// configLoad -
+//
+int configLoad(Kjson* kjP, const char* configFile)
 {
   char* buf    = NULL;
   int   bufLen = 0;
 
   if (kFileRead((char*) "", (char*) configFile, &buf, &bufLen) != 0)
-    KT_RE(1, ("Error reading the DDS configuration file"));
+    KT_RE(1, "Error reading the configuration file '%s'", configFile);
 
-  ddsConfigTree = kjParse(kjP, buf);
-  if (ddsConfigTree == NULL)
-    KT_RE(1, ("Error parsing the DDS configuration file"));
+  configTree = kjParse(kjP, buf);
+  if (configTree == NULL)
+    KT_RE(1, "Error parsing the configuration file '%s'", configFile);
 
   return 0;
 }

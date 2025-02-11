@@ -35,6 +35,7 @@ extern "C"
 #include "orionld/common/traceLevels.h"                     // KT_T trace levels
 #include "orionld/common/tenantList.h"                      // tenant0
 #include "orionld/types/OrionLdRestService.h"               // OrionLdRestService, OrionLdRestServiceVector, OrionldServiceRoutine
+#include "orionld/config/configDdsTopicToAttribute.h"       // configDdsTopicToAttribute
 #include "orionld/service/orionldServiceInit.h"             // orionldRestServiceV
 #include "orionld/serviceRoutines/orionldPutAttribute.h"    // orionldPutAttribute
 #include "orionld/mongoc/mongocConnectionRelease.h"         // mongocConnectionRelease
@@ -42,7 +43,6 @@ extern "C"
 #include "orionld/notifications/orionldAlterationsTreat.h"  // orionldAlterationsTreat
 #include "orionld/service/serviceLookupByServiceRoutine.h"  // serviceLookupByServiceRoutine
 #include "orionld/dds/kjTreeLog.h"                          // kjTreeLog2
-#include "orionld/dds/ddsConfigTopicToAttribute.h"          // ddsConfigTopicToAttribute
 #include "orionld/dds/ddsNotification.h"                    // Own interface
 
 
@@ -64,7 +64,7 @@ void ddsNotification(const char* topicName, const char* json, int64_t publishTim
 
   char* entityId      = NULL;
   char* entityType    = NULL;
-  char* attrShortName = ddsConfigTopicToAttribute(topicName, &entityId, &entityType);
+  char* attrShortName = configDdsTopicToAttribute(topicName, &entityId, &entityType);
 
   if (attrShortName == NULL)
   {
@@ -131,6 +131,12 @@ void ddsNotification(const char* topicName, const char* json, int64_t publishTim
   orionldState.apiVersion          = API_VERSION_NGSILD_V1;
 
   kjChildAdd(attrNodeP, participantIdNodeP);
+
+  if (tNodeP != NULL)
+  {
+    KjNode* dataType    = kjString(orionldState.kjsonP, "ddsDataType", tNodeP->value.s);
+    kjChildAdd(attrNodeP, dataType);
+  }
 
   KjNode* publishedAt = kjInteger(orionldState.kjsonP, "publishedAt", publishTime);
   kjChildAdd(attrNodeP, publishedAt);

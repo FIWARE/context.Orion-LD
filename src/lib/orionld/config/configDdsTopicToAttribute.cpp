@@ -33,31 +33,22 @@ extern "C"
 #include "orionld/common/traceLevels.h"                       // KT_T trace levels
 #include "orionld/kjTree/kjNavigate.h"                        // kjNavigate
 #include "orionld/dds/kjTreeLog.h"                            // kjTreeLog2
-#include "orionld/dds/ddsConfigTopicToAttribute.h"            // Own interface
+#include "orionld/config/configInit.h"                        // configTree
+#include "orionld/config/configDdsTopicToAttribute.h"         // Own interface
 
 
 
 // -----------------------------------------------------------------------------
 //
-// ddsConfigTree - "hidden" external variable
+// configDdsTopicToAttribute - move to new library (orionld/config)
 //
-// It's the KjNode tree of the DDS config file
-//
-extern KjNode* ddsConfigTree;  // Better not to put this variable in any header file ...
-
-
-
-// -----------------------------------------------------------------------------
-//
-// ddsConfigTopicToAttribute -
-//
-char* ddsConfigTopicToAttribute(const char* topic, char** entityIdPP, char** entityTypePP)
+char* configDdsTopicToAttribute(const char* topic, char** entityIdPP, char** entityTypePP)
 {
-  if (ddsConfigTree == NULL)
+  if (configTree == NULL)
     return NULL;  // No error - it's OK to not have a DDS Config File
 
   const char*    path[4] = { "dds", "ngsild", "topics", NULL };
-  static KjNode* topicsP = kjNavigate(ddsConfigTree, path, NULL, NULL);
+  static KjNode* topicsP = kjNavigate(configTree, path, NULL, NULL);
 
   if (topicsP == NULL)
     KT_RE(NULL, "the field dds/ngsild/topic not found in DDS config file (looking for topic '%s')", topic);

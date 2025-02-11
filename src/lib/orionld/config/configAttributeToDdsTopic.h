@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_DDS_DDSCONFIGLOAD_H_
-#define SRC_LIB_ORIONLD_DDS_DDSCONFIGLOAD_H_
+#ifndef SRC_LIB_ORIONLD_CONFIG_CONFIGATTRIBUTETODDSTOPIC_H_
+#define SRC_LIB_ORIONLD_CONFIG_CONFIGATTRIBUTETODDSTOPIC_H_
 
 /*
 *
-* Copyright 2024 FIWARE Foundation e.V.
+* Copyright 2025 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,17 +25,13 @@
 *
 * Author: Ken Zangelin
 */
-extern "C"
-{
-#include "kjson/kjson.h"                                    // Kjson
-}
 
 
 
 // -----------------------------------------------------------------------------
 //
-// ddsConfigLoad -
+// configAttributeToDdsTopic -
 //
-extern int ddsConfigLoad(Kjson* kjP, const char* configFile);
+extern char* configAttributeToDdsTopic(const char* attributeShortName);
 
-#endif  // SRC_LIB_ORIONLD_DDS_DDSCONFIGLOAD_H_
+#endif  // SRC_LIB_ORIONLD_CONFIG_CONFIGATTRIBUTETODDSTOPIC_H_

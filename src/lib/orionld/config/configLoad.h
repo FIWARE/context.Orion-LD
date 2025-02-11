@@ -1,5 +1,5 @@
-#ifndef SRC_LIB_ORIONLD_DDS_DDSCONFIGTOPICTOATTRIBUTE_H_
-#define SRC_LIB_ORIONLD_DDS_DDSCONFIGTOPICTOATTRIBUTE_H_
+#ifndef SRC_LIB_ORIONLD_CONFIG_CONFIGLOAD_H_
+#define SRC_LIB_ORIONLD_CONFIG_CONFIGLOAD_H_
 
 /*
 *
@@ -25,13 +25,26 @@
 *
 * Author: Ken Zangelin
 */
+extern "C"
+{
+#include "kjson/kjson.h"                                    // Kjson
+#include "kjson/KjNode.h"                                   // KjNode
+}
 
 
 
 // -----------------------------------------------------------------------------
 //
-// ddsConfigTopicToAttribute -
+// configTree -
 //
-extern char* ddsConfigTopicToAttribute(const char* topic, char** entityIdPP, char** entityTypePP);
+extern KjNode* configTree;
 
-#endif  // SRC_LIB_ORIONLD_DDS_DDSCONFIGTOPICTOATTRIBUTE_H_
+
+
+// -----------------------------------------------------------------------------
+//
+// configLoad -
+//
+extern int configLoad(Kjson* kjP, const char* configFile);
+
+#endif  // SRC_LIB_ORIONLD_CONFIG_CONFIGLOAD_H_

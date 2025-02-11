@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_DDS_DDSINIT_H_
-#define SRC_LIB_ORIONLD_DDS_DDSINIT_H_
+#ifndef SRC_LIB_ORIONLD_CONFIG_CONFIGINIT_H_
+#define SRC_LIB_ORIONLD_CONFIG_CONFIGINIT_H_
 
 /*
 *
-* Copyright 2024 FIWARE Foundation e.V.
+* Copyright 2025 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -28,24 +28,23 @@
 extern "C"
 {
 #include "kjson/kjson.h"                                    // Kjson
+#include "kjson/KjNode.h"                                   // KjNode
 }
 
-#include "ddsenabler/dds_enabler_runner.hpp"                // dds enabler
+
+
+// -----------------------------------------------------------------------------
+//
+// configTree -
+//
+extern KjNode* configTree;
 
 
 
 // -----------------------------------------------------------------------------
 //
-// ddsEnabler -
+// configInit -
 //
-extern std::unique_ptr<eprosima::ddsenabler::DDSEnabler>  ddsEnabler;
+extern void configInit(Kjson* kjP, char* configFile);
 
-
-
-// -----------------------------------------------------------------------------
-//
-// ddsInit -
-//
-extern int ddsInit(Kjson* kjP);
-
-#endif  // SRC_LIB_ORIONLD_DDS_DDSINIT_H_
+#endif  // SRC_LIB_ORIONLD_CONFIG_CONFIGINIT_H_
