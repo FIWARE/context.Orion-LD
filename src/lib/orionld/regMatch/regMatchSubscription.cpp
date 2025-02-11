@@ -80,18 +80,24 @@ bool regMatchSubscription
 
           for (KjNode* entityInfoP = entitiesP->value.firstChildP; entityInfoP != NULL; entityInfoP = entityInfoP->next)
           {
-            // Only supported if only an entity type is given
+            // Only supported if only entity type is given
             KjNode* typeP = entityInfoP->value.firstChildP;
 
-            if (strcmp(typeP->name, "type") != 0)
-              continue;
+            //
+            // If the first child is NOT "type", OR there's another child => NOT only entity type is given => no support
+            //
+            if ((strcmp(typeP->name, "type") != 0) || (typeP->next != NULL))
+            {
+              LM_W(("For now, distributed subscriptions only work for type based registrations"));
+              break;
+            }
 
-            if (typeP->next != NULL)
-              continue;
-
-            LM_T(LmtSR, ("Found a matching registration for entity type '%s': %s", entityType, rciP->regId));
-            *entityTypeP = (char*) entityType;
-            return true;
+            if (strcmp(entityType, typeP->value.s) == 0)
+            {
+              LM_T(LmtSR, ("Found a matching registration for entity type '%s': %s", entityType, rciP->regId));
+              *entityTypeP = (char*) entityType;
+              return true;
+            }
           }
         }
       }

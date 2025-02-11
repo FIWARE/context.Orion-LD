@@ -3,6 +3,7 @@
   #1733: URL-encoding entity type in forwarded requests
   #1677: More than 6 decimals in floating point numbers (supporting 9 decimals - 12 is just not possible)
   #XXXX: Fixed a bug for system attributes (timestamps) which were sometimes included in sub-attributes without being requested
+  #XXXX: Fixed a bug for registration matching of subscriptions (for entity types)
 
 ## New Features:
   #XXXX: The context cache now ignores the protocol (http, https) in the URLs and thus avoids storing two copies of the very same @context
