@@ -1344,14 +1344,14 @@ function runTest()
 
     if [ "$linesInStderr" != "" ] && [ "$linesInStderr" != "0" ]
     then
-      exitFunction 20 "SHELL-INIT II produced output on stderr" $path "output on stderr" "$dirname/$filename.shellInit.stdout" "Continue" "$dirname/$filename.shellInit.stderr"
+      exitFunction 20 "SHELL-INIT II produced output on stderr" $path "output on stderr" nodiff "$dirname/$filename.shellInit.stdout" "Continue" "$dirname/$filename.shellInit.stderr"
       runTestStatus="shell-init-output-on-stderr"
       return
     fi
 
     if [ "$eCode" != "0" ]
     then
-      exitFunction 11 "SHELL-INIT exited with code $eCode" $path "output on stderr" "$dirname/$filename.shellInit.stdout" "Continue" "$dirname/$filename.shellInit.stderr"
+      exitFunction 11 "SHELL-INIT exited with code $eCode" $path "other init error" nodiff "$dirname/$filename.shellInit.stdout" "Continue" "$dirname/$filename.shellInit.stderr"
       runTestStatus="shell-init-exited-with-"$eCode
       return
     fi

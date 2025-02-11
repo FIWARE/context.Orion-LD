@@ -46,6 +46,7 @@ function style_check
 }
 
 
+style_check src/lib/orionld/config
 style_check test/functionalTest/ftClient
 style_check src/lib/orionld/dds
 style_check src/lib/orionld/mhd

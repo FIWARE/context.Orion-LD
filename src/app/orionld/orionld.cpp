@@ -104,6 +104,7 @@ extern "C"
 #include "orionld/common/orionldState.h"                      // orionldStateRelease, kalloc, ...
 #include "orionld/common/tenantList.h"                        // tenantList, tenant0
 #include "orionld/common/branchName.h"                        // ORIONLD_BRANCH
+#include "orionld/config/configInit.h"                        // configInit
 #include "orionld/prometheus/promInit.h"                      // promInit
 #include "orionld/mongoc/mongocInit.h"                        // mongocInit
 #include "orionld/mongoc/mongocServerVersionGet.h"            // mongocServerVersionGet
@@ -1067,22 +1068,6 @@ int main(int argC, char* argV[])
   LM_T(LmtMongoPool, ("DB Pool Size: %d", dbPoolSize));
 
   //
-  // Config file
-  //
-  configFileP = configFile;
-  if (configFile[0] == 0)
-  {
-    char* home = getenv("HOME");
-
-    if (home != NULL)
-    {
-      snprintf(configFile, sizeof(configFile) - 1, "%s/.orionld", home);
-      if (access(configFile, R_OK) != 0)
-        configFileP = NULL;
-    }
-  }
-
-  //
   // Initializing the new logging library, kTrace
   //
   KBool          kLogToScreen = KTRUE;
@@ -1292,6 +1277,8 @@ int main(int argC, char* argV[])
 
   orionldStateInit(NULL);
 
+  configInit(kjsonP, configFile);
+
   // mongocInit calls mongocGeoIndexInit - tenant0 must be ready for that
   orionldTenantInit();
   orionldState.tenantP = &tenant0;
@@ -1464,7 +1451,7 @@ int main(int argC, char* argV[])
     pernotLoopStart();
 
   if (ddsSupport == true)
-    ddsInit(kjsonP, DDSOpModeDefault);
+    ddsInit(kjsonP);
 
   if (socketService == true)
   {

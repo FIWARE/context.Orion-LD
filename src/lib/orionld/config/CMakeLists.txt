@@ -1,4 +1,4 @@
-# Copyright 2024 FIWARE Foundation e.V.
+# Copyright 2025 FIWARE Foundation e.V.
 #
 # This file is part of Orion-LD Context Broker.
 #
@@ -21,12 +21,10 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
 
 SET (SOURCES
-  kjTreeLog.cpp
-  ddsInit.cpp
-  ddsCategoryToKlogSeverity.cpp
-  ddsNotification.cpp
-  ddsEntityCreateFromAttribute.cpp
-  ddsAttributeCreate.cpp
+  configInit.cpp
+  configLoad.cpp
+  configDdsTopicToAttribute.cpp
+  configAttributeToDdsTopic.cpp
 )
 
 # Include directories
@@ -36,4 +34,4 @@ include_directories("${PROJECT_SOURCE_DIR}/src/lib")
 
 # Library declaration
 # -----------------------------------------------------------------
-ADD_LIBRARY(orionld_dds  STATIC ${SOURCES})
+ADD_LIBRARY(orionld_config  STATIC ${SOURCES})

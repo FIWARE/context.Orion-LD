@@ -1,5 +1,5 @@
-#ifndef SRC_LIB_ORIONLD_DDS_DDSINIT_H_
-#define SRC_LIB_ORIONLD_DDS_DDSINIT_H_
+#ifndef SRC_LIB_ORIONLD_CONFIG_CONFIGLOAD_H_
+#define SRC_LIB_ORIONLD_CONFIG_CONFIGLOAD_H_
 
 /*
 *
@@ -28,24 +28,23 @@
 extern "C"
 {
 #include "kjson/kjson.h"                                    // Kjson
+#include "kjson/KjNode.h"                                   // KjNode
 }
 
-#include "ddsenabler/dds_enabler_runner.hpp"                // dds enabler
+
+
+// -----------------------------------------------------------------------------
+//
+// configTree -
+//
+extern KjNode* configTree;
 
 
 
 // -----------------------------------------------------------------------------
 //
-// ddsEnabler -
+// configLoad -
 //
-extern std::unique_ptr<eprosima::ddsenabler::DDSEnabler>  ddsEnabler;
+extern int configLoad(Kjson* kjP, const char* configFile);
 
-
-
-// -----------------------------------------------------------------------------
-//
-// ddsInit -
-//
-extern int ddsInit(Kjson* kjP);
-
-#endif  // SRC_LIB_ORIONLD_DDS_DDSINIT_H_
+#endif  // SRC_LIB_ORIONLD_CONFIG_CONFIGLOAD_H_

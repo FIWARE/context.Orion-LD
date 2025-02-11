@@ -1,6 +1,6 @@
 /*
 *
-* Copyright 2024 FIWARE Foundation e.V.
+* Copyright 2025 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -22,34 +22,41 @@
 *
 * Author: Ken Zangelin
 */
+#include <stdio.h>                                          // snprintf
+#include <stdlib.h>                                         // getenv
+#include <unistd.h>                                         // access
+#include <errno.h>                                          // errno
+
 extern "C"
 {
-#include "kbase/kFileRead.h"                                // kFileRead
 #include "kjson/kjson.h"                                    // Kjson
-#include "kjson/kjParse.h"                                  // kjParse
 #include "ktrace/kTrace.h"                                  // trace messages - ktrace library
 }
 
-#include "orionld/dds/ddsConfigLoad.h"                      // Own interface
+#include "orionld/config/configLoad.h"                      // configLoad
+#include "orionld/config/configInit.h"                      // Own interface
 
 
 
-KjNode* ddsConfigTree = NULL;
 // -----------------------------------------------------------------------------
 //
-// ddsConfigLoad -
+// configInit -
 //
-int ddsConfigLoad(Kjson* kjP, const char* configFile)
+void configInit(Kjson* kjP, char* configFile)
 {
-  char* buf    = NULL;
-  int   bufLen = 0;
+  if (configFile[0] == 0)
+  {
+    char* home = getenv("HOME");
 
-  if (kFileRead((char*) "", (char*) configFile, &buf, &bufLen) != 0)
-    KT_RE(1, ("Error reading the DDS configuration file"));
+    if (home != NULL)
+    {
+      snprintf(configFile, 511, "%s/.orionld", home);
+      if (access(configFile, R_OK) != 0)
+        return;  // It's OK to not have a config file
+    }
+  }
 
-  ddsConfigTree = kjParse(kjP, buf);
-  if (ddsConfigTree == NULL)
-    KT_RE(1, ("Error parsing the DDS configuration file"));
-
-  return 0;
+  errno = 0;
+  if (configLoad(kjP, configFile) != 0)
+    KT_X(1, "Error reading/parsing the config file '%s'", configFile);  // Not OK to have a bad config file
 }
