@@ -1,5 +1,5 @@
-#ifndef SRC_LIB_ORIONLD_DDS_DDSINIT_H_
-#define SRC_LIB_ORIONLD_DDS_DDSINIT_H_
+#ifndef SRC_LIB_ORIONLD_CONFIG_CONFIGDDSTOPICTOATTRIBUTE_H_
+#define SRC_LIB_ORIONLD_CONFIG_CONFIGDDSTOPICTOATTRIBUTE_H_
 
 /*
 *
@@ -25,27 +25,13 @@
 *
 * Author: Ken Zangelin
 */
-extern "C"
-{
-#include "kjson/kjson.h"                                    // Kjson
-}
-
-#include "ddsenabler/dds_enabler_runner.hpp"                // dds enabler
 
 
 
 // -----------------------------------------------------------------------------
 //
-// ddsEnabler -
+// configDdsTopicToAttribute -
 //
-extern std::unique_ptr<eprosima::ddsenabler::DDSEnabler>  ddsEnabler;
+extern char* configDdsTopicToAttribute(const char* topic, char** entityIdPP, char** entityTypePP);
 
-
-
-// -----------------------------------------------------------------------------
-//
-// ddsInit -
-//
-extern int ddsInit(Kjson* kjP);
-
-#endif  // SRC_LIB_ORIONLD_DDS_DDSINIT_H_
+#endif  // SRC_LIB_ORIONLD_CONFIG_CONFIGDDSTOPICTOATTRIBUTE_H_

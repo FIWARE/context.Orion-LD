@@ -1,6 +1,3 @@
-#ifndef SRC_LIB_ORIONLD_DDS_DDSCONFIGLOAD_H_
-#define SRC_LIB_ORIONLD_DDS_DDSCONFIGLOAD_H_
-
 /*
 *
 * Copyright 2024 FIWARE Foundation e.V.
@@ -25,17 +22,43 @@
 *
 * Author: Ken Zangelin
 */
+#include <unistd.h>                                         // NULL
+
 extern "C"
 {
+#include "kbase/kFileRead.h"                                // kFileRead
 #include "kjson/kjson.h"                                    // Kjson
+#include "kjson/kjParse.h"                                  // kjParse
+#include "ktrace/kTrace.h"                                  // trace messages - ktrace library
 }
+
+#include "orionld/config/configLoad.h"                      // Own interface
 
 
 
 // -----------------------------------------------------------------------------
 //
-// ddsConfigLoad -
+// configTree -
 //
-extern int ddsConfigLoad(Kjson* kjP, const char* configFile);
+KjNode* configTree = NULL;
 
-#endif  // SRC_LIB_ORIONLD_DDS_DDSCONFIGLOAD_H_
+
+
+// -----------------------------------------------------------------------------
+//
+// configLoad -
+//
+int configLoad(Kjson* kjP, const char* configFile)
+{
+  char* buf    = NULL;
+  int   bufLen = 0;
+
+  if (kFileRead((char*) "", (char*) configFile, &buf, &bufLen) != 0)
+    KT_RE(1, "Error reading the configuration file '%s'", configFile);
+
+  configTree = kjParse(kjP, buf);
+  if (configTree == NULL)
+    KT_RE(1, "Error parsing the configuration file '%s'", configFile);
+
+  return 0;
+}

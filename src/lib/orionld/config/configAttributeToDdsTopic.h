@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_DDS_DDSCONFIGTOPICTOATTRIBUTE_H_
-#define SRC_LIB_ORIONLD_DDS_DDSCONFIGTOPICTOATTRIBUTE_H_
+#ifndef SRC_LIB_ORIONLD_CONFIG_CONFIGATTRIBUTETODDSTOPIC_H_
+#define SRC_LIB_ORIONLD_CONFIG_CONFIGATTRIBUTETODDSTOPIC_H_
 
 /*
 *
-* Copyright 2024 FIWARE Foundation e.V.
+* Copyright 2025 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -30,8 +30,8 @@
 
 // -----------------------------------------------------------------------------
 //
-// ddsConfigTopicToAttribute -
+// configAttributeToDdsTopic -
 //
-extern char* ddsConfigTopicToAttribute(const char* topic, char** entityIdPP, char** entityTypePP);
+extern char* configAttributeToDdsTopic(const char* attributeShortName);
 
-#endif  // SRC_LIB_ORIONLD_DDS_DDSCONFIGTOPICTOATTRIBUTE_H_
+#endif  // SRC_LIB_ORIONLD_CONFIG_CONFIGATTRIBUTETODDSTOPIC_H_

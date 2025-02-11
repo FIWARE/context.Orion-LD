@@ -62,7 +62,7 @@ make install
 # kargs
 #
 cd ${ROOT_FOLDER}/kargs
-git checkout release/0.1
+git checkout release/0.2
 make
 make install
 

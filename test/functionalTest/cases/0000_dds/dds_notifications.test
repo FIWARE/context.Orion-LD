@@ -224,6 +224,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         },
         "id": "urn:ngsi-ld:camera:cam1",
         "shutterSpeed": {
+            "ddsDataType": {
+                "type": "Property",
+                "value": "NgsildSample"
+            },
             "participantId": {
                 "type": "Property",
                 "value": "REGEX(.*)"
@@ -252,6 +256,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     },
     {
         "armReach": {
+            "ddsDataType": {
+                "type": "Property",
+                "value": "NgsildSample"
+            },
             "participantId": {
                 "type": "Property",
                 "value": "REGEX(.*)"
@@ -285,6 +293,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     },
     {
         "P3": {
+            "ddsDataType": {
+                "type": "Property",
+                "value": "NgsildSample"
+            },
             "participantId": {
                 "type": "Property",
                 "value": "REGEX(.*)"
@@ -310,6 +322,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             }
         },
         "P4": {
+            "ddsDataType": {
+                "type": "Property",
+                "value": "NgsildSample"
+            },
             "participantId": {
                 "type": "Property",
                 "value": "REGEX(.*)"
@@ -400,7 +416,7 @@ Content-Length: REGEX(.*)
 Date: REGEX(.*)
 
 POST /notify?subscriptionId=urn:s1
-Content-Length: 560
+Content-Length: 617
 Content-Type: application/json
 User-Agent: orionld/REGEX(.*)
 Host: REGEX(.*)
@@ -440,6 +456,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "participantId": {
           "type": "Property",
           "value": "REGEX(.*)"
+        },
+        "ddsDataType": {
+          "type": "Property",
+          "value": "NgsildSample"
         },
         "publishedAt": {
           "type": "Property",

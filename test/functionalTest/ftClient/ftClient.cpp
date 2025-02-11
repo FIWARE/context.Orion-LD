@@ -39,9 +39,12 @@ extern "C"
 #include "kargs/kargs.h"                                    // argument parsing - kargs library
 #include "kalloc/kaInit.h"                                  // kaInit
 #include "kjson/KjNode.h"                                   // KjNode
+#include "kjson/kjParse.h"                                  // kjParse
 #include "kjson/kjBuilder.h"                                // kjObject, ...
+#include "kjson/kjClone.h"                                  // kjClone
 }
 
+#include "common/orionldState.h"                            // orionldState
 #include "types/Verb.h"                                     // HTTP Verbs
 #include "common/traceLevels.h"                             // Trace levels for ktrace
 #include "dds/ddsCategoryToKlogSeverity.h"                  // ddsCategoryToKlogSeverity
@@ -61,21 +64,21 @@ extern "C"
 //
 // CLI Param variables
 //
-char*          traceLevels;
-char*          logDir        = NULL;
-char*          logLevel;
-KBool          logToScreen;
-KBool          fixme;
-unsigned short ldPort;
-char*          httpsKey;
-char*          httpsCertificate;
-unsigned int   mhdPoolSize;
-unsigned int   mhdMemoryLimit;
-unsigned int   mhdTimeout;
-unsigned int   mhdMaxConnections;
-bool           distributed;
-long long      inReqPayloadMaxSize  = 64 * 1024;
-char*          configFile = NULL;
+char*                traceLevels;
+char*                logDir        = NULL;
+char*                logLevel;
+KBool                logToScreen;
+KBool                fixme;
+unsigned short       ldPort;
+char*                httpsKey;
+char*                httpsCertificate;
+unsigned int         mhdPoolSize;
+unsigned int         mhdMemoryLimit;
+unsigned int         mhdTimeout;
+unsigned int         mhdMaxConnections;
+bool                 distributed;
+unsigned long long   inReqPayloadMaxSize  = 64 * 1024;
+char                 configFile[512];
 
 
 
@@ -88,26 +91,26 @@ KArg kargs[] =
   //
   // Potential builtins
   //
-  { "--trace",            "-t",     KaString,  &traceLevels,          KaOpt, 0,         KA_NL,    KA_NL,    "trace levels (csv of levels/ranges)"               },
-  { "--logDir",           "-ld",    KaString,  &logDir,               KaOpt, _i "/tmp", KA_NL,    KA_NL,    "log file directory"                                },
-  { "--logLevel",         "-ll",    KaString,  &logLevel,             KaOpt, 0,         KA_NL,    KA_NL,    "log level (ERR|WARN|INFO|INFO|VERBOSE|TRACE|DEBUG" },
-  { "--logToScreen",      "-ls",    KaBool,    &logToScreen,          KaOpt, KFALSE,    KA_NL,    KA_NL,    "log to screen"                                     },
-  { "--fixme",            "-fix",   KaBool,    &fixme,                KaOpt, KFALSE,    KA_NL,    KA_NL,    "FIXME messages"                                    },
-  { "--config",           "-cfg",   KaString,  &configFile,           KaOpt, NULL,      KA_NL,    KA_NL,    "Config File"                                       },
+  { "--trace",            "-t",     KaString,  &traceLevels,          KaOpt, 0,          KA_NL,    KA_NL,      "trace levels (csv of levels/ranges)"               },
+  { "--logDir",           "-ld",    KaString,  &logDir,               KaOpt, _vp "/tmp", KA_NL,    KA_NL,      "log file directory"                                },
+  { "--logLevel",         "-ll",    KaString,  &logLevel,             KaOpt, 0,          KA_NL,    KA_NL,      "log level (ERR|WARN|INFO|INFO|VERBOSE|TRACE|DEBUG" },
+  { "--logToScreen",      "-ls",    KaBool,    &logToScreen,          KaOpt, KFALSE,     KA_NL,    KA_NL,      "log to screen"                                     },
+  { "--fixme",            "-fix",   KaBool,    &fixme,                KaOpt, KFALSE,     KA_NL,    KA_NL,      "FIXME messages"                                    },
+  { "--config",           "-cfg",   KaString,  &configFile,           KaOpt, NULL,       KA_NL,    KA_NL,      "Config File"                                       },
 
   //
   // Broker options
   //
-  { "--port",             "-p",     KaUShort,  &ldPort,               KaOpt, _i 7701,   _i 1027,  _i 65535, "TCP port for incoming requests"                    },
-  { "--httpsKey",         "-k",     KaString,  &httpsKey,             KaOpt, NULL,      KA_NL,    KA_NL,    "https key file"                                    },
-  { "--httpsCertificate", "-c",     KaString,  &httpsCertificate,     KaOpt, NULL,      KA_NL,    KA_NL,    "https certificate file"                            },
-  { "--distOps",          "-dops",  KaBool,    &distributed,          KaOpt, KFALSE,    KA_NL,    KA_NL,    "support for distributed operations"                },
+  { "--port",             "-p",     KaUShort,  &ldPort,               KaOpt, _vp 7701,   _vp 1027,  _vp 65535, "TCP port for incoming requests"                    },
+  { "--httpsKey",         "-k",     KaString,  &httpsKey,             KaOpt, NULL,       KA_NL,    KA_NL,      "https key file"                                    },
+  { "--httpsCertificate", "-c",     KaString,  &httpsCertificate,     KaOpt, NULL,       KA_NL,    KA_NL,      "https certificate file"                            },
+  { "--distOps",          "-dops",  KaBool,    &distributed,          KaOpt, KFALSE,     KA_NL,    KA_NL,      "support for distributed operations"                },
 
   // MHD
-  { "--mhdPoolSize",      "-mps",   KaUInt,    &mhdPoolSize,          KaOpt, _i 8,      _i 0,     _i 1024,  "MHD request thread pool size"                      },
-  { "--mhdMemoryLimit",   "-mlim",  KaUInt,    &mhdMemoryLimit,       KaOpt, _i 64,     _i 0,     _i 1024,  "MHD memory limit (in kb)"                          },
-  { "--mhdTimeout",       "-mtmo",  KaUInt,    &mhdTimeout,           KaOpt, _i 2000,   _i 0,     KA_NL,    "MHD connection timeout (in milliseconds)"          },
-  { "--mhdConnections",   "-mcon",  KaUInt,    &mhdMaxConnections,    KaOpt, _i 512,    _i 1,     KA_NL,    "Max number of MHD connections"                     },
+  { "--mhdPoolSize",      "-mps",   KaUInt,    &mhdPoolSize,          KaOpt, _vp 8,      _vp 0,     _vp 1024,  "MHD request thread pool size"                      },
+  { "--mhdMemoryLimit",   "-mlim",  KaUInt,    &mhdMemoryLimit,       KaOpt, _vp 64,     _vp 0,     _vp 1024,  "MHD memory limit (in kb)"                          },
+  { "--mhdTimeout",       "-mtmo",  KaUInt,    &mhdTimeout,           KaOpt, _vp 2000,   _vp 0,     KA_NL,     "MHD connection timeout (in milliseconds)"          },
+  { "--mhdConnections",   "-mcon",  KaUInt,    &mhdMaxConnections,    KaOpt, _vp 512,    _vp 1,     KA_NL,     "Max number of MHD connections"                     },
 
   KARGS_END
 };
@@ -176,41 +179,20 @@ static void ddsNotification(const char* topicName, const char* json, int64_t pub
 {
   KT_T(StDdsDump, "Got a notification on topic '%s' (json: %s)", topicName, json);
 
-#if 0
-  KT_T(StDdsDump, "Need to check the publishTime (%lld) to perhaps discard", publishTime);
+  orionldStateInit(NULL);
+  KjNode* dump = kjParse(orionldState.kjsonP, (char*) json);
+  KT_T(StDdsDump, "parsed the notification");
+
+  if (dump == NULL)
+    KT_E("Error parsing the incoming JSON notification");
 
   if (ddsDumpArray == NULL)
   {
     KT_T(StDdsDump, "Creating the DDS DumpArray");
     ddsDumpArray = kjArray(NULL, "ddsDumpArray");
   }
-
-  KjNode* entityTypeNode = kjString(NULL, "entityType", entityType);
-  KjNode* entityIdNode   = kjString(NULL, "entityId",   entityId);
-  KjNode* notificationP  = kjObject(NULL, NULL);
-
-  //
-  // The value of the attribute (right now) comes as { "attributeValue": xxx }
-  // Assuming DDS knows only about Property, we change the name "attributeValue" to "value"
-  //
-  if ((attrValue->type == KjObject) && (attrValue->value.firstChildP != NULL))
-  {
-    kjTreeLog2(attrValue, attrName, StDdsDump);
-    attrValue = attrValue->value.firstChildP;
-  }
-
-  attrValue->name = (char*) attrName;
-
-  kjChildAdd(notificationP, entityTypeNode);
-  kjChildAdd(notificationP, entityIdNode);
-  kjChildAdd(notificationP, kjClone(NULL, attrValue));
-
-  kjTreeLog2(ddsDumpArray, "DDS dump array before", StDdsDump);
-  kjTreeLog2(notificationP, "Adding to DDS dump array", StDdsDump);
-
-  kjChildAdd(ddsDumpArray, notificationP);
-  kjTreeLog2(ddsDumpArray, "DDS dump array after", StDdsDump);
-#endif
+  dump = kjClone(NULL, dump);
+  kjChildAdd(ddsDumpArray, dump);
 }
 
 
@@ -317,18 +299,19 @@ int main(int argC, char* argV[])
   }
 
   // Config file
-  if (configFile == NULL)
+  char* configFileP = (configFile[0] == 0)? NULL : configFile;
+  if (configFile[0] == 0)
   {
     char* home = getenv("HOME");
     if (home != NULL)
     {
       snprintf(configFilePath, sizeof(configFilePath) - 1, "%s/.ftClient", home);
-      configFile = configFilePath;
+      configFileP = configFilePath;
     }
   }
 
-  if (configFile != NULL)
-    configFile = strdup(configFile);
+  if (configFileP != NULL)
+    configFileP = strdup(configFileP);
 
   int kt = ktInit(progName, logDir, logToScreen, logLevel, traceLevels, kaBuiltinVerbose, kaBuiltinDebug, fixme);
 
@@ -352,8 +335,8 @@ int main(int argC, char* argV[])
 
   mhdInit(ldPort);
 
-  KT_D("Calling create_dds_enabler('%s')", configFile);
-  bool r = eprosima::ddsenabler::create_dds_enabler(configFile,
+  KT_D("Calling create_dds_enabler('%s')", configFileP);
+  bool r = eprosima::ddsenabler::create_dds_enabler(configFileP,
                                                     ddsNotification,
                                                     ddsTypeNotification,
                                                     ddsTopicNotification,

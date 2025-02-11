@@ -236,6 +236,7 @@ SET (ORION_LIBS
     ngsi
     cache
     mongoBackend
+    orionld_config
     orionld_context      # Should not be necessary ... kjTreeFromNotification gets undefined reference to 'orionldAliasLookup' without this ...
     orionld_legacyDriver # legacyDriver uses payloadCheck functions
     orionld_mongoBackend # mongoBackend uses functions in orionld_mongoBackend
@@ -382,6 +383,7 @@ if (error EQUAL 0)
   ADD_SUBDIRECTORY(src/lib/jsonParse)
   ADD_SUBDIRECTORY(src/lib/jsonParseV2)
   ADD_SUBDIRECTORY(src/lib/rest)
+  ADD_SUBDIRECTORY(src/lib/orionld/config)
   ADD_SUBDIRECTORY(src/lib/orionld/entityMaps)
   ADD_SUBDIRECTORY(src/lib/orionld/pernot)
   ADD_SUBDIRECTORY(src/lib/orionld/socketService)
