@@ -53,15 +53,13 @@ void pickForEntity(KjNode* entityP)
   {
     next = itemP->next;
 
-    bool removed = false;
-
     if (stringArrayLookup(&orionldState.in.pickList, itemP->name) == false)
     {
       kjChildRemove(entityP, itemP);
-      removed = true;
+      itemP = NULL;
     }
 
-    LM_T(LmtPick, ("    - %s (%s)", itemP->name, (removed == true)? "removed" : "stays"));
+    LM_T(LmtPick, ("    - %s (%s)", itemP->name, (itemP == NULL)? "removed" : "stays"));
 
     itemP = next;
   }
