@@ -103,7 +103,7 @@ static void regStringAdd(KjNode* regP, const char* name, const char* value)
 //
 // regIpAndPortExtract -
 //
-static char* regIpAndPortExtract(KjNode* regP)
+static char* regIpAndPortExtract(KjNode* regP, char** restP)
 {
   KjNode* endpointP = kjLookup(regP, "endpoint");
 
@@ -128,7 +128,10 @@ static char* regIpAndPortExtract(KjNode* regP)
   if (end == NULL)  // no PATH in the URK, that's OK: "endpoint": "http://localhost:1026"
     len = strlen(start);
   else
+  {
     len = (unsigned long long) end - (unsigned long long) start;
+    *restP = strdup(end);
+  }
 
   char* buf = (char*) malloc(len + 1);  // This goes to the cache - must be allocated using malloc
 
@@ -165,7 +168,7 @@ RegCacheItem* regCacheItemAdd(RegCache* rcP, const char* registrationId, KjNode*
   rciP->regId     = strdup(registrationId);
   rciP->regTree   = kjClone(NULL, regP);
   rciP->contextP  = fwdContextP;
-  rciP->ipAndPort = regIpAndPortExtract(regP);
+  rciP->ipAndPort = regIpAndPortExtract(regP, &rciP->rest);
   rciP->next      = NULL;
 
   // Host Alias

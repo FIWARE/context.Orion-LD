@@ -201,12 +201,16 @@ SubordinateSubscription* subordinateCreate(CachedSubscription* cSubP, RegCacheIt
     *colon = ':';
 
   LM_T(LmtSR, ("IP of registration: '%s'", rciIp));
-  snprintf(rciUrl, sizeof(rciUrl) - 1, "http://%s/ngsi-ld/v1/subscriptions", rciP->ipAndPort);
+  if (rciP->rest == NULL)
+    snprintf(rciUrl, sizeof(rciUrl) - 1, "http://%s/ngsi-ld/v1/subscriptions", rciP->ipAndPort);
+  else
+    snprintf(rciUrl, sizeof(rciUrl) - 1, "http://%s%s/ngsi-ld/v1/subscriptions", rciP->ipAndPort, rciP->rest);
+
   LM_T(LmtSR, ("URL for creation of subordinate subscription '%s'", rciUrl));
 
   httpRequestHeaderAdd(&headers[headerIx++], "Content-Type", "application/json", 0);
   int httpStatus = httpRequest(rciIp, "POST", rciUrl, bodyP, NULL, headers, tmo, &responseBody, &pd);
-  if (httpStatus != 201)
+  if ((httpStatus != 201) && (httpStatus != 200))  // ftClient responds with 200 ...
   {
     LM_W(("Attempt to create subordinate subscription failed with a %d", httpStatus));
     return NULL;
