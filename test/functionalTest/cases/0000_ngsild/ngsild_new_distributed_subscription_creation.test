@@ -45,6 +45,13 @@ accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
 # 10. List subs in CB - see empty array
 # 11. List subs in CP1 - see empty array
 #
+# 12. Create a registration R2 on CB, on entity type T2, with endpoint CP1
+# 13. Create a subscription S2 on CB, on entity type T3 - forwarded to CP1
+# 14. List subs in CP1 - see empty array (non-matching entity types)
+#
+# 15. Create a subscription S3 on CB, on entity type T2 - forwarded to CP1
+# 16. List subs in CP1 - see the CB::S2 subordinate subscription
+#
 
 echo "01. Create a registration R1 on CB, on entity type T, with endpoint CP1"
 echo "======================================================================="
@@ -165,6 +172,84 @@ echo
 
 echo "11. List subs in CP1 - see empty array"
 echo "======================================"
+orionCurl --url /ngsi-ld/v1/subscriptions --port $CP1_PORT
+echo
+echo
+
+
+echo "12. Create a registration R2 on CB, on entity type T2, with endpoint CP1"
+echo "========================================================================"
+payload='{
+  "id": "urn:R2",
+  "type": "ContextSourceRegistration",
+  "information": [
+    {
+      "entities": [
+        {
+          "type": "T2"
+        }
+      ]
+    }
+  ],
+  "endpoint": "localhost:'$CP1_PORT'",
+  "operations": [ "createEntity", "retrieveEntity", "mergeEntity", "createSubscription" ]
+}'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload"
+echo
+echo
+
+
+echo "13. Create a subscription S2 on CB, on entity type T3 - forwarded to CP1"
+echo "========================================================================"
+payload='{
+  "id": "urn:ngsi-ld:Subscription:S2",
+  "type": "Subscription",
+  "entities": [
+    {
+      "type": "T3"
+    }
+  ],
+  "notification": {
+    "endpoint": {
+      "uri": "http://localhost:'$LISTENER_PORT'/notify"
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload"
+echo
+echo
+
+
+echo "14. List subs in CP1 - see empty array (non-matching entity types)"
+echo "=================================================================="
+orionCurl --url /ngsi-ld/v1/subscriptions --port $CP1_PORT
+echo
+echo
+
+
+echo "15. Create a subscription S3 on CB, on entity type T2 - forwarded to CP1"
+echo "========================================================================"
+payload='{
+  "id": "urn:ngsi-ld:Subscription:S3",
+  "type": "Subscription",
+  "entities": [
+    {
+      "type": "T2"
+    }
+  ],
+  "notification": {
+    "endpoint": {
+      "uri": "http://localhost:'$LISTENER_PORT'/notify"
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload"
+echo
+echo
+
+
+echo "16. List subs in CP1 - see the CB::S2 subordinate subscription"
+echo "=============================================================="
 orionCurl --url /ngsi-ld/v1/subscriptions --port $CP1_PORT
 echo
 echo
@@ -428,6 +513,98 @@ Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 []
+
+
+12. Create a registration R2 on CB, on entity type T2, with endpoint CP1
+========================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/csourceRegistrations/urn:R2
+
+
+
+13. Create a subscription S2 on CB, on entity type T3 - forwarded to CP1
+========================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/subscriptions/urn:ngsi-ld:Subscription:S2
+
+
+
+14. List subs in CP1 - see empty array (non-matching entity types)
+==================================================================
+HTTP/1.1 200 OK
+Content-Length: 2
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[]
+
+
+15. Create a subscription S3 on CB, on entity type T2 - forwarded to CP1
+========================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/subscriptions/urn:ngsi-ld:Subscription:S3
+
+
+
+16. List subs in CP1 - see the CB::S2 subordinate subscription
+==============================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "entities": [
+            {
+                "type": "T2"
+            }
+        ],
+        "id": "urn:ngsi-ld:Subscription:S3:1",
+        "isActive": true,
+        "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld",
+        "notification": {
+            "endpoint": {
+                "accept": "application/json",
+                "uri": "http://REGEX(.*)/ngsi-ld/ex/v1/notifications/urn:ngsi-ld:Subscription:S3"
+            },
+            "format": "normalized",
+            "status": "ok"
+        },
+        "origin": "cache",
+        "status": "active",
+        "type": "Subscription"
+    },
+    {
+        "entities": [
+            {
+                "type": "T2"
+            }
+        ],
+        "id": "urn:ngsi-ld:Subscription:S3:2",
+        "isActive": true,
+        "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld",
+        "notification": {
+            "endpoint": {
+                "accept": "application/json",
+                "uri": "http://REGEX(.*)/ngsi-ld/ex/v1/notifications/urn:ngsi-ld:Subscription:S3"
+            },
+            "format": "normalized",
+            "status": "ok"
+        },
+        "origin": "cache",
+        "status": "active",
+        "type": "Subscription"
+    }
+]
 
 
 --TEARDOWN--
