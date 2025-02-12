@@ -843,37 +843,12 @@ int notificationSend(OrionldAlterationMatch* mAltP, double timestamp, CURL** cur
     ++headerIx;
   }
 
-
-  //
-  // X-Auth-Token
-  //
-  if (orionldState.in.xAuthToken != NULL)
-  {
-    int   len = strlen(orionldState.in.xAuthToken) + 20;  // X-Auth-Token: xxx\r\n0
-    char* buf = kaAlloc(&orionldState.kalloc, len);
-
-    ioVec[headerIx].iov_len  = snprintf(buf, len, "X-Auth-Token: %s\r\n", orionldState.in.xAuthToken);
-    ioVec[headerIx].iov_base = buf;
-    ++headerIx;
-  }
-
-
-  //
-  // Authorization
-  //
-  if (orionldState.in.authorization != NULL)
-  {
-    int   len = strlen(orionldState.in.authorization) + 20;  // Authorization: xxx\r\n0
-    char* buf = kaAlloc(&orionldState.kalloc, len);
-
-    ioVec[headerIx].iov_len  = snprintf(buf, len, "Authorization: %s\r\n", orionldState.in.authorization);
-    ioVec[headerIx].iov_base = buf;
-    ++headerIx;
-  }
-
   //
   // FIXME: Store headers in a better way - see issue #1095
   //
+  bool authorizationHeaderPresent = false;
+  bool xAuthTokenPresent          = false;
+
   for (std::map<std::string, std::string>::const_iterator it = mAltP->subP->httpInfo.headers.begin(); it != mAltP->subP->httpInfo.headers.end(); ++it)
   {
     const char* key    = it->first.c_str();
@@ -896,7 +871,40 @@ int notificationSend(OrionldAlterationMatch* mAltP, double timestamp, CURL** cur
     int   len = strlen(key) + strlen(value) + 10;
     char* buf = kaAlloc(&orionldState.kalloc, len);
 
+    if (strcasecmp(key, "Authorization") == 0)
+      authorizationHeaderPresent = true;
+    if (strcasecmp(key, "X-Auth-Token") == 0)
+      xAuthTokenPresent = true;
+
     ioVec[headerIx].iov_len  = snprintf(buf, len, "%s: %s\r\n", key, value);
+    ioVec[headerIx].iov_base = buf;
+    ++headerIx;
+  }
+
+  //
+  // Automatic inclusion of the X-Auth-Token header
+  // But, only if it NOT part of "receiverInfo" of the subscription
+  //
+  if ((xAuthTokenPresent == false) && (orionldState.in.xAuthToken != NULL))
+  {
+    int   len = strlen(orionldState.in.xAuthToken) + 20;  // X-Auth-Token: xxx\r\n0
+    char* buf = kaAlloc(&orionldState.kalloc, len);
+
+    ioVec[headerIx].iov_len  = snprintf(buf, len, "X-Auth-Token: %s\r\n", orionldState.in.xAuthToken);
+    ioVec[headerIx].iov_base = buf;
+    ++headerIx;
+  }
+
+  //
+  // Automatic inclusion of the Authorization header
+  // But, only if it NOT part of "receiverInfo" of the subscription
+  //
+  if ((authorizationHeaderPresent == false) && (orionldState.in.authorization != NULL))
+  {
+    int   len = strlen(orionldState.in.authorization) + 20;  // Authorization: xxx\r\n0
+    char* buf = kaAlloc(&orionldState.kalloc, len);
+
+    ioVec[headerIx].iov_len  = snprintf(buf, len, "Authorization: %s\r\n", orionldState.in.authorization);
     ioVec[headerIx].iov_base = buf;
     ++headerIx;
   }
