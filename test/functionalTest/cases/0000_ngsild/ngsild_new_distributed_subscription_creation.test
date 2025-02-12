@@ -556,7 +556,7 @@ Location: /ngsi-ld/v1/subscriptions/urn:ngsi-ld:Subscription:S3
 16. List subs in CP1 - see the CB::S2 subordinate subscription
 ==============================================================
 HTTP/1.1 200 OK
-Content-Length: 793
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -574,7 +574,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "notification": {
             "endpoint": {
                 "accept": "application/json",
-                "uri": "http://tux:9999/ngsi-ld/ex/v1/notifications/urn:ngsi-ld:Subscription:S3"
+                "uri": "http://REGEX(.*)/ngsi-ld/ex/v1/notifications/urn:ngsi-ld:Subscription:S3"
             },
             "format": "normalized",
             "status": "ok"
@@ -595,7 +595,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "notification": {
             "endpoint": {
                 "accept": "application/json",
-                "uri": "http://tux:9999/ngsi-ld/ex/v1/notifications/urn:ngsi-ld:Subscription:S3"
+                "uri": "http://REGEX(.*)/ngsi-ld/ex/v1/notifications/urn:ngsi-ld:Subscription:S3"
             },
             "format": "normalized",
             "status": "ok"
