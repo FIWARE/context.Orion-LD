@@ -2,6 +2,7 @@
   #1706: Fixed a bug in the logic merging attributes from the URL parameter (attrs) with attributes from registrations
   #1733: URL-encoding entity type in forwarded requests
   #1677: More than 6 decimals in floating point numbers (supporting 9 decimals)
+  #1748: Orion-LD automatically adds a few HTTP headers to notifications. BUT, no check was done for already included in receiverInfo. Got duplicated headers.
   #XXXX: Fixed a bug for system attributes (timestamps) which were sometimes included in sub-attributes without being requested
   #XXXX: Fixed a bug for registration matching of subscriptions (for entity types)
   #XXXX: Fixed a bug in the matching of subs/regs of subsequent subs
