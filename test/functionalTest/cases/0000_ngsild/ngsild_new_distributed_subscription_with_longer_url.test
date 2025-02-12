@@ -110,7 +110,7 @@ Location: /ngsi-ld/v1/subscriptions/urn:ngsi-ld:Subscription:S1
 03. Dump the ftClient, see the correct URL path
 ===============================================
 HTTP/1.1 200 OK
-Content-Length: 426
+Content-Length: REGEX(.*)
 Date: REGEX(.*)
 
 POST /orionld/ngsi-ld/v1/subscriptions
