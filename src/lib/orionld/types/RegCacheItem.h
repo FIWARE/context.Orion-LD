@@ -69,6 +69,7 @@ typedef struct RegCacheItem
   OrionldContext*       contextP;           // Set when creating/patching registration
   bool                  acceptJsonld;       // application/ld+json
   char*                 ipAndPort;          // IP:port - for X-Forwarded-For
+  char*                 rest;               // What comes after IP:port
   RegIdPattern*         idPatternRegexList;
   char*                 hostAlias;          // Broker identity - for the Via header (replacing X-Forwarded-For)
   bool                  localOnly;          // Forwarded reqs to include local=true if this field is true
