@@ -125,6 +125,7 @@ typedef struct OrionldUriParams
   char*     typePattern;
   char*     idPattern;
   char*     attrs;
+  char*     pick;
   char*     options;
   int       offset;
   int       limit;
@@ -270,6 +271,7 @@ typedef struct OrionldStateIn
   StringArray  idList;
   StringArray  typeList;
   StringArray  attrList;
+  StringArray  pickList;
   StringArray  expandValuesList;
 
   // Entity Map

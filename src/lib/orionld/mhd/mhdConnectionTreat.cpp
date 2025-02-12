@@ -734,6 +734,49 @@ static bool pCheckAttrsParam(void)
 
 // -----------------------------------------------------------------------------
 //
+// pCheckPickParam -
+//
+static bool pCheckPickParam(void)
+{
+  if (orionldState.uriParams.pick == NULL)
+    return true;
+
+  int   items     = commaCount(orionldState.uriParams.pick) + 1;
+  char* arraysDup = kaStrdup(&orionldState.kalloc, orionldState.uriParams.pick);  // Keep original value of 'pick'
+
+  orionldState.in.pickList.items = items;
+  orionldState.in.pickList.array = (char**) kaAlloc(&orionldState.kalloc, sizeof(char*) * items);
+
+  if (orionldState.in.pickList.array == NULL)
+  {
+    LM_E(("Out of memory (allocating an /pick/ array of %d char pointers)", items));
+    orionldError(OrionldInternalError, "Out of memory", "allocating the array for /pick/ URI param", 500);
+    return false;
+  }
+
+  int splitItems = kStringSplit(arraysDup, ',', orionldState.in.pickList.array, items);
+
+  if (splitItems != items)
+  {
+    LM_E(("kStringSplit didn't find exactly %d items (it found %d)", items, splitItems));
+    orionldError(OrionldInternalError, "Internal Error", "kStringSplit does not agree with commaCount", 500);
+    return false;
+  }
+
+  //
+  // NOTE:
+  //   pick items are NOT EXPANDED as they're applied at the very end - when attribute names are compacted.
+  //   Obviously, the same @context is used for compaction as would be used for expanding the pick items.
+  //   Thus, expanding the pick items would be a waste of time.
+  //
+
+  return true;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // pCheckEntityIdParam -
 //
 // NOTE
@@ -955,7 +998,7 @@ static bool pCheckExpandValuesParam(void)
 // uriParamExpansion -
 //
 // Expand attribute names and entity types.
-// Convert comma separated lists (attrs + type + id + ...) into arrays.
+// Convert comma separated lists (attrs + pick + type + id + ...) into arrays.
 //
 // Doing the "type" node from the payload body as well. Not a URI param, but close enough
 //
@@ -964,6 +1007,7 @@ static bool uriParamExpansion(void)
   if (pCheckEntityIdParam()            == false) return false;
   if (pCheckEntityTypeParam()          == false) return false;
   if (pCheckAttrsParam()               == false) return false;
+  if (pCheckPickParam()                == false) return false;
   if (pCheckUriParamGeoProperty()      == false) return false;
   if (pCheckUriParamGeometryProperty() == false) return false;
   if (pCheckPayloadEntityType()        == false) return false;

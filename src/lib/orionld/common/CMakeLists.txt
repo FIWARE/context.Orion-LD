@@ -70,6 +70,7 @@ SET (SOURCES
     stringStrip.cpp
     dateTime.cpp
     forbidden.cpp
+    pick.cpp
 )
 
 # Include directories

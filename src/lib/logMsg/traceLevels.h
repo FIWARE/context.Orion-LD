@@ -162,6 +162,7 @@ typedef enum TraceLevels
   LmtFormat,                           // Normalized, Concise, Simplified
   LmtUriEncode,                        // YRL encode/decode results
   LmtBug,                              // Current bug being debugged
+  LmtPick,                             // URI param 'pick'
 
   //
   // Legacy

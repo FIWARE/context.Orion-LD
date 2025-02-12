@@ -233,6 +233,7 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
     serviceP->uriParams |= ORIONLD_URIPARAM_TYPELIST;
     serviceP->uriParams |= ORIONLD_URIPARAM_IDPATTERN;
     serviceP->uriParams |= ORIONLD_URIPARAM_ATTRS;
+    serviceP->uriParams |= ORIONLD_URIPARAM_PICK;
     serviceP->uriParams |= ORIONLD_URIPARAM_Q;
     serviceP->uriParams |= ORIONLD_URIPARAM_EXPAND_VALUES;
     serviceP->uriParams |= ORIONLD_URIPARAM_CSF;
@@ -255,6 +256,7 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
     serviceP->uriParams |= ORIONLD_URIPARAM_OPTIONS;
     serviceP->uriParams |= ORIONLD_URIPARAM_FORMAT;
     serviceP->uriParams |= ORIONLD_URIPARAM_ATTRS;
+    serviceP->uriParams |= ORIONLD_URIPARAM_PICK;
     serviceP->uriParams |= ORIONLD_URIPARAM_GEOMETRYPROPERTY;
     serviceP->uriParams |= ORIONLD_URIPARAM_LANG;
     serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;

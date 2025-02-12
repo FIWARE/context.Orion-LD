@@ -28,7 +28,7 @@
 extern "C"
 {
 #include "kjson/KjNode.h"                                           // KjNode
-#include "kjson/kjBuilder.h"                                        // kjString, kjObject, kjChildAdd, ...
+#include "kjson/kjBuilder.h"                                        // kjString, kjObject, kjChildAdd, kjChildRemove
 #include "kjson/kjLookup.h"                                         // kjLookup
 #include "kjson/kjClone.h"                                          // kjClone
 }
@@ -39,6 +39,7 @@ extern "C"
 #include "orionld/types/OrionldGeoInfo.h"                           // OrionldGeoInfo
 #include "orionld/types/QNode.h"                                    // QNode
 #include "orionld/common/orionldState.h"                            // orionldState
+#include "orionld/common/pick.h"                                    // pickForEntityArray
 #include "orionld/context/orionldContextItemExpand.h"               // orionldContextItemExpand
 #include "orionld/mongoc/mongocEntitiesQuery.h"                     // mongocEntitiesQuery
 #include "orionld/kjTree/kjChildPrepend.h"                          // kjChildPrepend
@@ -256,6 +257,9 @@ bool orionldGetEntitiesLocal
   // If empty result array, no Link header is needed
   if (orionldState.responseTree->value.firstChildP == NULL)
     orionldState.noLinkHeader = true;
+
+  if (orionldState.in.pickList.items > 0)
+    pickForEntityArray();
 
   return true;
 }
