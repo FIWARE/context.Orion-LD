@@ -68,6 +68,10 @@ payload='{
           "value": "789"
         },
         {
+          "key": "Authorization",
+          "value": "urn:ngsi-ld:request"
+        },
+        {
           "key": "FIWARE-Correlator",
           "value": "urn:ngsi-ld:request"
         }

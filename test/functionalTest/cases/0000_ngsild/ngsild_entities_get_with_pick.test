@@ -1,0 +1,254 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Retrieval of Entities with basic options
+
+--SHELL-INIT--
+dbInit CB
+dbInit CP1
+orionldStart CB -experimental -forwarding -wip entityMaps
+orionldStart CP1 -experimental
+
+--SHELL--
+
+#
+# 01. Create an entity urn:E1 of type T with 5 attributes P1-P5
+# 02. Create an entity urn:E2 of type T with 5 attributes P3-P7
+# 03. Create an entity urn:E3 of type T with 5 attributes P5-P9, in CP1
+# 04. Create a registration for urn:E3
+# 05. Query entities of type T and with pick=id,type,P1,P5 - see those 4 fields of the two entities
+# 06. Query entities of type T and with pick=id - see only the ids
+# 07. Retrieve urn:E1 with pick=id,type,P1,P5 - see those 4 fields of urn:E1
+#
+
+echo "01. Create an entity urn:E1 of type T with 5 attributes P1-P5"
+echo "============================================================="
+payload='{
+  "id": "urn:E1",
+  "type": "T",
+  "P1": 1,
+  "P2": 2,
+  "P3": 3,
+  "P4": 4,
+  "P5": 5
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "02. Create an entity urn:E2 of type T with 5 attributes P3-P7"
+echo "============================================================="
+payload='{
+  "id": "urn:E2",
+  "type": "T",
+  "P3": 3,
+  "P4": 4,
+  "P5": 5,
+  "P6": 6,
+  "P7": 7
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "03. Create an entity urn:E3 of type T with 5 attributes P5-P9, in CP1"
+echo "====================================================================="
+payload='{
+  "id": "urn:E3",
+  "type": "T",
+  "P5": 5,
+  "P6": 6,
+  "P7": 7,
+  "P8": 8,
+  "P9": 9
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" --port $CP1_PORT
+echo
+echo
+
+
+echo "04. Create a registration for urn:E3"
+echo "===================================="
+payload='{
+  "id": "urn:R1",
+  "type": "ContextSourceRegistration",
+  "information": [
+    {
+      "entities": [
+        {
+          "type": "T"
+        }
+      ]
+    }
+  ],
+  "endpoint": "localhost:'$CP1_PORT'",
+  "operations": [ "retrieveEntity", "queryEntity" ]
+}'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload"
+echo
+echo
+
+
+
+echo "05. Query entities of type T and with pick=id,type,P1,P5 - see those 4 fields of the two entities"
+echo "================================================================================================="
+orionCurl --url '/ngsi-ld/v1/entities?type=T&pick=id,type,P1,P5&local=true'
+echo
+echo
+
+
+echo "06. Query entities of type T and with pick=id - see only the ids"
+echo "================================================================"
+orionCurl --url '/ngsi-ld/v1/entities?type=T&pick=id'
+echo
+echo
+
+
+echo "07. Retrieve urn:E1 with pick=id,type,P1,P5 - see those 4 fields of urn:E1"
+echo "=========================================================================="
+orionCurl --url '/ngsi-ld/v1/entities/urn:E1?pick=id,type,P1,P5'
+echo
+echo
+
+
+--REGEXPECT--
+01. Create an entity urn:E1 of type T with 5 attributes P1-P5
+=============================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E1
+
+
+
+02. Create an entity urn:E2 of type T with 5 attributes P3-P7
+=============================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E2
+
+
+
+03. Create an entity urn:E3 of type T with 5 attributes P5-P9, in CP1
+=====================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E3
+
+
+
+04. Create a registration for urn:E3
+====================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/csourceRegistrations/urn:R1
+
+
+
+05. Query entities of type T and with pick=id,type,P1,P5 - see those 4 fields of the two entities
+=================================================================================================
+HTTP/1.1 200 OK
+Content-Length: 160
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "P1": {
+            "type": "Property",
+            "value": 1
+        },
+        "P5": {
+            "type": "Property",
+            "value": 5
+        },
+        "id": "urn:E1",
+        "type": "T"
+    },
+    {
+        "P5": {
+            "type": "Property",
+            "value": 5
+        },
+        "id": "urn:E2",
+        "type": "T"
+    }
+]
+
+
+06. Query entities of type T and with pick=id - see only the ids
+================================================================
+HTTP/1.1 200 OK
+Content-Length: 49
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+NGSILD-EntityMap: urn:ngsi-ld:entity-map:REGEX(.*)
+
+[
+    {
+        "id": "urn:E1"
+    },
+    {
+        "id": "urn:E2"
+    },
+    {
+        "id": "urn:E3"
+    }
+]
+
+
+07. Retrieve urn:E1 with pick=id,type,P1,P5 - see those 4 fields of urn:E1
+==========================================================================
+HTTP/1.1 200 OK
+Content-Length: 96
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "P1": {
+        "type": "Property",
+        "value": 1
+    },
+    "P5": {
+        "type": "Property",
+        "value": 5
+    },
+    "id": "urn:E1",
+    "type": "T"
+}
+
+
+--TEARDOWN--
+brokerStop CB
+brokerStop CP1
+dbDrop CB
+dbDrop CP1
+

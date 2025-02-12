@@ -22,6 +22,8 @@
 *
 * Author: Ken Zangelin
 */
+#include <string.h>                                              // strcmp
+
 extern "C"
 {
 #include "kalloc/kaAlloc.h"                                      // kaAlloc
@@ -50,4 +52,21 @@ StringArray* stringArrayClone(StringArray* saP)
   }
 
   return clone;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// stringArrayLookup -
+//
+bool stringArrayLookup(StringArray* saP, const char* needle)
+{
+  for (int ix = 0; ix < saP->items; ix++)
+  {
+    if (strcmp(saP->array[ix], needle) == 0)
+      return true;
+  }
+
+  return false;
 }

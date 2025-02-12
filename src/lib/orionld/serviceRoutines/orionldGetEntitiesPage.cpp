@@ -36,6 +36,7 @@ extern "C"
 #include "orionld/types/DistOp.h"                                   // DistOp
 #include "orionld/common/orionldState.h"                            // orionldState, entityMaps
 #include "orionld/common/orionldError.h"                            // orionldError
+#include "orionld/common/pick.h"                                    // pickForEntityArray
 #include "orionld/kjTree/kjChildCount.h"                            // kjChildCount
 #include "orionld/apiModel/ntocEntity.h"                            // ntocEntity
 #include "orionld/apiModel/ntosEntity.h"                            // ntosEntity
@@ -384,6 +385,9 @@ bool orionldGetEntitiesPage(void)
   //
   if (orionldState.uriParamOptions.sysAttrs == false)
     cleanupSysAttrs();
+
+  if (orionldState.in.pickList.items > 0)
+    pickForEntityArray();
 
   return true;
 }

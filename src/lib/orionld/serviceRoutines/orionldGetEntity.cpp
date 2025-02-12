@@ -39,6 +39,7 @@ extern "C"
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/common/tenantList.h"                           // tenant0
+#include "orionld/common/pick.h"                                 // pickForEntity
 #include "orionld/context/orionldEntityExpand.h"                 // orionldEntityExpand
 #include "orionld/context/orionldEntityCompact.h"                // orionldEntityCompact
 #include "orionld/payloadCheck/pCheckUri.h"                      // pCheckUri
@@ -410,6 +411,9 @@ bool orionldGetEntity(void)
       }
     }
   }
+
+  if (orionldState.in.pickList.items > 0)
+    pickForEntity(apiEntityP);
 
   orionldState.responseTree   = apiEntityP;
   orionldState.httpStatusCode = 200;

@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_TYPES_STRINGARRAY_H_
-#define SRC_LIB_ORIONLD_TYPES_STRINGARRAY_H_
+#ifndef SRC_LIB_ORIONLD_COMMON_PICK_H_
+#define SRC_LIB_ORIONLD_COMMON_PICK_H_
 
 /*
 *
-* Copyright 2022 FIWARE Foundation e.V.
+* Copyright 2025 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,34 +25,24 @@
 *
 * Author: Ken Zangelin
 */
-
-
-
-// -----------------------------------------------------------------------------
-//
-// StringArray -
-//
-typedef struct StringArray
+extern "C"
 {
-  int     items;
-  char**  array;
-} StringArray;
+#include "kjson/KjNode.h"                                           // KjNode
+}
 
+
+// -----------------------------------------------------------------------------
+//
+// pickForEntity -
+//
+extern void pickForEntity(KjNode* entityP);
 
 
 
 // -----------------------------------------------------------------------------
 //
-// stringArrayClone -
+// pickForEntityArray -
 //
-extern StringArray* stringArrayClone(StringArray* saP);
+extern void pickForEntityArray(void);
 
-
-
-// -----------------------------------------------------------------------------
-//
-// stringArrayLookup -
-//
-extern bool stringArrayLookup(StringArray* saP, const char* needle);
-
-#endif  // SRC_LIB_ORIONLD_TYPES_STRINGARRAY_H_
+#endif  // SRC_LIB_ORIONLD_COMMON_PICK_H_
