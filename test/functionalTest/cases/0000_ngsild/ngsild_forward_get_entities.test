@@ -393,21 +393,41 @@ Location: /ngsi-ld/v1/csourceRegistrations/urn:Reg4
 10. Local query on CB for all entities of type T, with pick=id
 ==============================================================
 HTTP/1.1 200 OK
-Content-Length: 221
+Content-Length: 291
 Content-Type: application/json
 Date: REGEX(.*)
 
 [
-    "urn:cb:entities:E00",
-    "urn:cb:entities:E01",
-    "urn:cb:entities:E02",
-    "urn:cb:entities:E03",
-    "urn:cb:entities:E04",
-    "urn:cb:entities:E05",
-    "urn:cb:entities:E06",
-    "urn:cb:entities:E07",
-    "urn:cb:entities:E08",
-    "urn:cb:entities:E09"
+    {
+        "id": "urn:cb:entities:E00"
+    },
+    {
+        "id": "urn:cb:entities:E01"
+    },
+    {
+        "id": "urn:cb:entities:E02"
+    },
+    {
+        "id": "urn:cb:entities:E03"
+    },
+    {
+        "id": "urn:cb:entities:E04"
+    },
+    {
+        "id": "urn:cb:entities:E05"
+    },
+    {
+        "id": "urn:cb:entities:E06"
+    },
+    {
+        "id": "urn:cb:entities:E07"
+    },
+    {
+        "id": "urn:cb:entities:E08"
+    },
+    {
+        "id": "urn:cb:entities:E09"
+    }
 ]
 
 
