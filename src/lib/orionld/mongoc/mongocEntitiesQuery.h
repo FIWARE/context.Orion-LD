@@ -46,13 +46,12 @@ extern KjNode* mongocEntitiesQuery
   StringArray*     entityIdList,
   const char*      entityIdPattern,
   StringArray*     attrList,
+  StringArray*     pickList,
   QNode*           qNode,
   OrionldGeoInfo*  geoInfoP,
   int64_t*         countP,
   const char*      geojsonGeometry,
-  const char*      orderBy,
-  bool             onlyIds,
-  bool             onlyIdAndType
+  const char*      orderBy
 );
 
 #endif  // SRC_LIB_ORIONLD_MONGOC_MONGOCENTITIESQUERY_H_

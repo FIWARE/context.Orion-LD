@@ -40,9 +40,13 @@ extern "C"
 // dbModelToEntityIdAndTypeObject - FIXME: rename to dbModelToEntityMap
 //
 // INPUT:  [ { "_id": { "id": "urn:E1", "type": "urn:...:T1" } }, { "_id": { "id": "urn:E2", "type": "urn:...:T2" } }, ... ]
-// OUTPUT: ["urn:E1", "urn:E2", ...]
+// OUTPUT: [ "urn:E1", "urn:E2", ...]
 //
-KjNode* dbModelToEntityIdAndTypeObject(KjNode* localDbMatches)
+//   OR, if objects==true:
+//
+// OUTPUT: [ { "id": "urn:E1" }, { "id": "urn:E2" }, ... ]
+//
+KjNode* dbModelToEntityIdAndTypeObject(KjNode* localDbMatches, bool objects)
 {
   KjNode* matchIds = kjArray(orionldState.kjsonP, NULL);
 
@@ -58,9 +62,19 @@ KjNode* dbModelToEntityIdAndTypeObject(KjNode* localDbMatches)
     if (idP == NULL)
       continue;   // DB Error !!!
 
-    KjNode* idNodeP = kjString(orionldState.kjsonP, NULL, idP->value.s);
+    if (objects == false)
+    {
+      KjNode* idNodeP = kjString(orionldState.kjsonP, NULL, idP->value.s);
+      kjChildAdd(matchIds, idNodeP);
+    }
+    else
+    {
+      KjNode* idObjectNodeP = kjObject(orionldState.kjsonP, NULL);
+      KjNode* idNodeP       = kjString(orionldState.kjsonP, "id", idP->value.s);
 
-    kjChildAdd(matchIds, idNodeP);
+      kjChildAdd(idObjectNodeP, idNodeP);
+      kjChildAdd(matchIds, idObjectNodeP);
+    }
   }
 
   return matchIds;

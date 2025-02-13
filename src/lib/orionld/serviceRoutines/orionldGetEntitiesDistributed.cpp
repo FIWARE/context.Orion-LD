@@ -151,10 +151,11 @@ extern "C"
 //
 bool orionldGetEntitiesDistributed(DistOp* distOpList, char* idPattern, QNode* qNode, OrionldGeoInfo* geoInfoP)
 {
+  LM_T(LmtEntityMap, ("orionldState.in.entityMap at %p", orionldState.in.entityMap));
   if (orionldState.in.entityMap != NULL)
     return orionldGetEntitiesPage();
 
-  LM_T(LmtCount, ("--------------------------- Creating entity map"));
+  LM_T(LmtEntityMap, ("--------------------------- Creating entity map"));
   orionldState.in.entityMap = entityMapCreate(distOpList, idPattern, qNode, geoInfoP);
   distOpListRelease(distOpList);
 
@@ -190,13 +191,13 @@ bool orionldGetEntitiesDistributed(DistOp* distOpList, char* idPattern, QNode* q
     return orionldGetEntitiesLocal(&orionldState.in.typeList,
                                    &orionldState.in.idList,
                                    &orionldState.in.attrList,
+                                   &orionldState.in.pickList,
                                    idPattern,
                                    qNode,
                                    geoInfoP,
                                    orionldState.uriParams.lang,
                                    orionldState.uriParamOptions.sysAttrs,
                                    orionldState.uriParams.geometryProperty,
-                                   orionldState.uriParams.onlyIds,
                                    true);
 
   return orionldGetEntitiesPage();

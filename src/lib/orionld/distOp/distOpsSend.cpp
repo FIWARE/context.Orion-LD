@@ -27,7 +27,7 @@
 
 #include "orionld/types/DistOp.h"                                   // DistOp
 #include "orionld/common/orionldState.h"                            // orionldState
-#include "orionld/distOp/distOpSend.h"                              // distOpSend
+#include "orionld/distOp/distOpSend.h"                              // istOpSend
 #include "orionld/distOp/xForwardedForCompose.h"                    // xForwardedForCompose
 #include "orionld/distOp/viaCompose.h"                              // viaCompose
 #include "orionld/distOp/distOpsSend.h"                             // Own interface
@@ -52,7 +52,7 @@ int distOpsSend(DistOp* distOpList, bool local)
     // Send the forwarded request and await all responses
     if ((distOpP->regP != NULL) && (distOpP->error == false))
     {
-      distOpP->onlyIds = true;
+      distOpP->entityMap = true;
 
       if (distOpSend(distOpP, dateHeader, xff, via, local, NULL) == 0)
         distOpP->error = false;
@@ -120,7 +120,8 @@ int distOpsSend2(DistOpListItem* distOpList)
     // Send the forwarded request and await all responses
     if ((distOpP->regP != NULL) && (distOpP->error == false))
     {
-      distOpP->onlyIds = false;
+      distOpP->entityMap = false;
+      LM_T(LmtEntityMap, ("Setting distOpP->entityMap to '%s'", (distOpP->entityMap == true)? "true" : "false"));
 
       if (distOpSend(distOpP, dateHeader, xff, via, false, doItemP->entityIds) == 0)
         distOpP->error = false;

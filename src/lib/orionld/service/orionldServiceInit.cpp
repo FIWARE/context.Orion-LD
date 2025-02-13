@@ -244,7 +244,6 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
     serviceP->uriParams |= ORIONLD_URIPARAM_GEOMETRYPROPERTY;
     serviceP->uriParams |= ORIONLD_URIPARAM_LANG;
     serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
-    serviceP->uriParams |= ORIONLD_URIPARAM_ONLYIDS;
     serviceP->uriParams |= ORIONLD_URIPARAM_ENTITYMAP;
     serviceP->uriParams |= ORIONLD_URIPARAM_ORDERBY;
     serviceP->uriParams |= ORIONLD_URIPARAM_REVERSE;

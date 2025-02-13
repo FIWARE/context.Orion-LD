@@ -658,19 +658,35 @@ KjNode* mongocEntitiesQuery
   StringArray*     entityIdList,
   const char*      entityIdPattern,
   StringArray*     attrList,
+  StringArray*     pickList,
   QNode*           qNode,
   OrionldGeoInfo*  geoInfoP,
   int64_t*         countP,
   const char*      geojsonGeometry,
-  const char*      orderBy,
-  bool             onlyIds,
-  bool             onlyIdAndType
+  const char*      orderBy
 )
 {
   if ((attrList != NULL) && (attrList->items > 99))
   {
     orionldError(OrionldBadRequestData, "Too many attributes", "maximum is 99", 400);
     return NULL;
+  }
+
+  //
+  // Just asking for entity id?
+  //
+  bool entityIdsOnly = false;
+  bool onlyIdAndType = false;
+
+  if (pickList != NULL)
+  {
+    if ((pickList->items == 1) && (strcmp(pickList->array[0], "id") == 0))
+      entityIdsOnly = true;
+    else if (pickList->items == 2)
+    {
+      if ((stringArrayLookup(pickList, "id") == true) && (stringArrayLookup(pickList, "type") == true))
+        onlyIdAndType = true;
+    }
   }
 
   bson_t                mongoFilter;
@@ -690,7 +706,7 @@ KjNode* mongocEntitiesQuery
   bson_init(&options);
   bson_init(&projection);
 
-  if (onlyIds == false)
+  if (entityIdsOnly == false)
   {
     bson_t sortDoc;
     int    limit       = orionldState.uriParams.limit;
@@ -790,12 +806,12 @@ KjNode* mongocEntitiesQuery
   // Attribute List
   if ((attrList != NULL) && (attrList->items > 0))
   {
-    if (mongocAuxAttributesFilter(&mongoFilter, attrList, &projection, geojsonGeometry, onlyIds) == false)
+    if (mongocAuxAttributesFilter(&mongoFilter, attrList, &projection, geojsonGeometry, entityIdsOnly) == false)
       return NULL;
   }
   else
   {
-    if (onlyIds == false)
+    if (entityIdsOnly == false)
     {
       bson_append_bool(&projection, "attrs",     5, true);
       bson_append_bool(&projection, "@datasets", 9, true);

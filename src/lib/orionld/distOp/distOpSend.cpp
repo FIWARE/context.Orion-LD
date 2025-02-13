@@ -484,8 +484,13 @@ bool distOpSend(DistOp* distOpP, const char* dateHeader, const char* xForwardedF
     //
     if (orionldState.verb == HTTP_GET)
     {
-      if (distOpP->onlyIds == true)
-        uriParamAdd(&urlParts, "onlyIds=true", NULL, 12);
+      LM_T(LmtEntityMap, ("distOpP->entityMap == %s", (distOpP->entityMap == true)? "true" : "false"));
+
+      if (distOpP->entityMap == true)
+      {
+        LM_W(("********************************************** Adding pick=id as URL param"));
+        uriParamAdd(&urlParts, "pick=id", NULL, 7);
+      }
       else
         uriParamAdd(&urlParts, "options=sysAttrs", NULL, 16);
     }

@@ -246,10 +246,10 @@ SET (ORION_LIBS
     orionld_mqtt
     orionld_q
     orionld_mongoc       # subCache needs mongoc
+    orionld_entityMaps
     orionld_dbModel
     orionld_apiModel
     orionld_common
-    orionld_entityMaps
     orionld_types
     parse
     apiTypesV2

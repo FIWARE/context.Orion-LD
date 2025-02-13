@@ -162,13 +162,13 @@ bool orionldGetEntitiesLocal
   StringArray*     typeList,
   StringArray*     idList,
   StringArray*     attrList,
+  StringArray*     pickList,
   char*            idPattern,
   QNode*           qNode,
   OrionldGeoInfo*  geoInfoP,
   const char*      lang,
   bool             sysAttrs,
   const char*      geometryProperty,
-  bool             onlyIds,
   bool             countHeaderAlreadyAdded
 )
 {
@@ -187,20 +187,19 @@ bool orionldGetEntitiesLocal
                                                     idList,
                                                     idPattern,
                                                     attrList,
+                                                    pickList,
                                                     qNode,
                                                     geoInfoP,
                                                     &count,
                                                     geojsonGeometryLongName,
-                                                    orionldState.uriParams.orderBy,
-                                                    onlyIds,
-                                                    false);
+                                                    orionldState.uriParams.orderBy);
 
   if (dbEntityArray == NULL)
     return false;
 
-  if (onlyIds == true)
+  if ((pickList->items == 1) && (strcmp(pickList->array[0], "id") == 0))
   {
-    orionldState.responseTree = dbModelToEntityIdAndTypeObject(dbEntityArray);
+    orionldState.responseTree = dbModelToEntityIdAndTypeObject(dbEntityArray, true);
     orionldState.noLinkHeader = true;
   }
   else
@@ -258,6 +257,7 @@ bool orionldGetEntitiesLocal
   if (orionldState.responseTree->value.firstChildP == NULL)
     orionldState.noLinkHeader = true;
 
+  kjTreeLog(orionldState.responseTree, "Response Tree", LmtPick);
   if (orionldState.in.pickList.items > 0)
     pickForEntityArray();
 

@@ -39,13 +39,13 @@ extern bool orionldGetEntitiesLocal
   StringArray*     typeList,
   StringArray*     idList,
   StringArray*     attrList,
+  StringArray*     pickList,
   char*            idPattern,
   QNode*           qNode,
   OrionldGeoInfo*  geoInfoP,
   const char*      lang,
   bool             sysAttrs,
   const char*      geometryProperty,
-  bool             onlyIds,
   bool             countHeaderAlreadyAdded
 );
 

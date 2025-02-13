@@ -259,17 +259,17 @@ bool orionldGetEntitiesPage(void)
   }
 
   DistOpListItem* distOpListItem = NULL;
+  LM_T(LmtEntityMap, ("Sending the distOp requests for the entity map"));
   for (KjNode* sourceP = sources->value.firstChildP; sourceP != NULL; sourceP = sourceP->next)
   {
     if (strcmp(sourceP->name, "@none") == 0)
     {
-      LM_T(LmtDistOpList, ("orionldState.distOpList at %p", orionldState.distOpList));
       DistOp* distOpP = distOpLookupByRegId(orionldState.distOpList, "@none");
+      LM_T(LmtEntityMap, ("distOpP->entityMap == %s", (distOpP->entityMap == true)? "true" : "false"));
 
       // Local query - set input params for orionldGetEntitiesLocal
 
       // We want the entire entity this time, not only the entity id
-      orionldState.uriParams.onlyIds = false;
 
       // The type doesn't matter, we have a list of entity ids
       orionldState.in.typeList.items = 0;
@@ -311,13 +311,13 @@ bool orionldGetEntitiesPage(void)
       orionldGetEntitiesLocal(distOpP->typeList,
                               distOpP->idList,
                               &orionldState.in.attrList,
+                              &orionldState.in.pickList,
                               NULL,
                               distOpP->qNode,
                               &distOpP->geoInfo,
                               distOpP->lang,
                               true,                        // sysAttrs needed, to help pick attributes in case more than one of the same
                               distOpP->geometryProperty,
-                              false,
                               true);
 
       // Response comes in orionldState.responseTree - move those to entityArray

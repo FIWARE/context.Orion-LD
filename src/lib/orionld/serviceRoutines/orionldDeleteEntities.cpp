@@ -162,13 +162,12 @@ bool orionldDeleteEntities(void)
                                                          &orionldState.in.idList,
                                                          idPattern,
                                                          &orionldState.in.attrList,
+                                                         NULL,
                                                          qNode,
                                                          &geoInfo,
                                                          &count,
                                                          geojsonGeometryLongName,
-                                                         NULL,
-                                                         false,
-                                                         true);
+                                                         NULL);
   //
   // Create the alterations
   //
