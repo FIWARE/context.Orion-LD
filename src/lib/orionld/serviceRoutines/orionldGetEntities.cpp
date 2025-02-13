@@ -104,8 +104,6 @@ bool orionldGetEntities(void)
   bool    local     = orionldState.uriParams.local;
   QNode*  qNode     = NULL;
 
-  LM_T(LmtEntityMap, ("onlyIds: %s", (orionldState.uriParams.onlyIds == true)? "TRUE" : "FALSE"));
-
   // According to the spec, id takes precedence over idPattern, so, if both are present, idPattern is NULLed out
   if ((orionldState.in.idList.items > 0) && (orionldState.uriParams.idPattern != NULL))
     idPattern = NULL;
@@ -148,13 +146,13 @@ bool orionldGetEntities(void)
     return orionldGetEntitiesLocal(&orionldState.in.typeList,
                                    &orionldState.in.idList,
                                    &orionldState.in.attrList,
+                                   &orionldState.in.pickList,
                                    idPattern,
                                    qNode,
                                    &geoInfo,
                                    orionldState.uriParams.lang,
                                    orionldState.uriParamOptions.sysAttrs,
                                    orionldState.uriParams.geometryProperty,
-                                   orionldState.uriParams.onlyIds,
                                    false);
 
   if (orionldState.in.entityMap == NULL)  // No prior entity map is requested - must create a new one
@@ -171,13 +169,13 @@ bool orionldGetEntities(void)
       return orionldGetEntitiesLocal(&orionldState.in.typeList,
                                      &orionldState.in.idList,
                                      &orionldState.in.attrList,
+                                     &orionldState.in.pickList,
                                      idPattern,
                                      qNode,
                                      &geoInfo,
                                      orionldState.uriParams.lang,
                                      orionldState.uriParamOptions.sysAttrs,
                                      orionldState.uriParams.geometryProperty,
-                                     orionldState.uriParams.onlyIds,
                                      true);
 
     // Create the "@none" DistOp

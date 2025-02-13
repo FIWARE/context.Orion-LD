@@ -40,6 +40,6 @@ extern "C"
 //
 // mongocAuxAttributesFilter -
 //
-extern bool mongocAuxAttributesFilter(bson_t* mongoFilterP, StringArray* attrList, bson_t* projectionP, const char* geojsonGeometry, bool onlyIds);
+extern bool mongocAuxAttributesFilter(bson_t* mongoFilterP, StringArray* attrList, bson_t* projectionP, const char* geojsonGeometry, bool entityIdsOnly);
 
 #endif  // SRC_LIB_ORIONLD_MONGOC_MONGOCAUXATTRIBUTESFILTER_H_

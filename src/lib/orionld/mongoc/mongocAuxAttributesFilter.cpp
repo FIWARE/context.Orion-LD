@@ -40,13 +40,13 @@ extern "C"
 //
 // mongocAuxAttributesFilter -
 //
-bool mongocAuxAttributesFilter(bson_t* mongoFilterP, StringArray* attrList, bson_t* projectionP, const char* geojsonGeometry, bool onlyIds)
+bool mongocAuxAttributesFilter(bson_t* mongoFilterP, StringArray* attrList, bson_t* projectionP, const char* geojsonGeometry, bool entityIdsOnly)
 {
   char    path[512];  // Assuming 512 is always enough ...
   bson_t  exists;
   bool    geojsonGeometryToProjection = (geojsonGeometry == NULL)? false : true;  // if GEOJSON, the "geometry" must be present
 
-  if (onlyIds == true)
+  if (entityIdsOnly == true)
     geojsonGeometryToProjection = false;
 
   bson_init(&exists);
@@ -77,7 +77,7 @@ bool mongocAuxAttributesFilter(bson_t* mongoFilterP, StringArray* attrList, bson
 
     bson_append_document(&attrExists, path, len, &exists);
 
-    if (onlyIds == false)
+    if (entityIdsOnly == false)
       bson_append_bool(projectionP, path, len, true);
 
     bson_append_document(&array, &num[2-numLen], numLen, &attrExists);
@@ -101,7 +101,7 @@ bool mongocAuxAttributesFilter(bson_t* mongoFilterP, StringArray* attrList, bson
   //
   // Then "@datasets.X" - geojsonGeometryToProjection is already taken care of by "attrs" loop
   //
-  if (onlyIds == false)
+  if (entityIdsOnly == false)
   {
     int offset = attrList->items;
     for (int ix = 0; ix < attrList->items; ix++)

@@ -39,6 +39,6 @@ extern "C"
 // INPUT:  [ { "_id": { "id": "urn:E1", "type": "urn:...:T1" } }, { "_id": { "id": "urn:E2", "type": "urn:...:T2" } }, ... ]
 // OUTPUT: { "urn:E1": "urn:...:T1", "urn:E2", "urn:...:T2" }
 //
-extern KjNode* dbModelToEntityIdAndTypeObject(KjNode* localDbMatches);
+extern KjNode* dbModelToEntityIdAndTypeObject(KjNode* localDbMatches, bool objects);
 
 #endif  // SRC_LIB_ORIONLD_DBMODEL_DBMODELTOENTITYIDANDTYPEOBJECT_H_

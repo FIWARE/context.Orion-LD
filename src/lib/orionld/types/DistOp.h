@@ -65,7 +65,7 @@ typedef struct DistOp
 
   StringArray*        idList;            // Used by GET /entities (unless entityId is used)
   StringArray*        typeList;          // Used by GET /entities (unless entityType is used)
-  bool                onlyIds;           // Used to compile the list of entity ids in the preparation for GET /entities
+  bool                entityMap;         // Used to compile the list of entity ids in the preparation for GET /entities
 
   OrionldGeoInfo      geoInfo;
   QNode*              qNode;

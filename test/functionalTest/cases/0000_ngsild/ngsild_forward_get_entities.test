@@ -46,7 +46,7 @@ orionldStart CP3 -experimental
 # 07. Create a registration for all CP2 entities in CB
 # 08. Create a registration for all CP3 entities in CB
 # 09. Create a registration for E1 and E2 in CP3, using 2 information array items
-# 10. Local query on CB for all entities of type T, with onlyIds=true set
+# 10. Local query on CB for all entities of type T, with pick=id
 # 11. Query CB for all entities (they're all type 'T')
 # 12. See the entity map
 # 13. Query using the entity map I got from step 11
@@ -252,9 +252,9 @@ echo
 echo
 
 
-echo "10. Local query on CB for all entities of type T, with onlyIds=true set"
-echo "======================================================================="
-orionCurl --url '/ngsi-ld/v1/entities?type=T&onlyIds=true&local=true'
+echo "10. Local query on CB for all entities of type T, with pick=id"
+echo "=============================================================="
+orionCurl --url '/ngsi-ld/v1/entities?type=T&pick=id&local=true'
 echo
 echo
 
@@ -390,8 +390,8 @@ Location: /ngsi-ld/v1/csourceRegistrations/urn:Reg4
 
 
 
-10. Local query on CB for all entities of type T, with onlyIds=true set
-=======================================================================
+10. Local query on CB for all entities of type T, with pick=id
+==============================================================
 HTTP/1.1 200 OK
 Content-Length: 221
 Content-Type: application/json

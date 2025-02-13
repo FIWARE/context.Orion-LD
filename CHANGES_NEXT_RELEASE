@@ -15,3 +15,4 @@
 
 ## Notes
 * Updated to the newest libraries of FastDDS, with a number of changes in the source code, to prepare for pushing to DDS via the broker.
+* Internal entity map creation is now done using 'pick=id', and not the outdated (never made it into the spec) 'onlyIds=true'

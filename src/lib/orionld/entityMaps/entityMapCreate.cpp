@@ -118,7 +118,7 @@ static int idListResponse(DistOp* distOpP, void* callbackParam)
 
   if ((distOpP->httpResponseCode == 200) && (distOpP->responseBody != NULL))
   {
-    kjTreeLog(distOpP->responseBody, "DistOp RESPONSE", LmtCount);
+    kjTreeLog(distOpP->responseBody, "DistOp RESPONSE", LmtEntityMap);
     for (KjNode* eIdNodeP = distOpP->responseBody->value.firstChildP; eIdNodeP != NULL; eIdNodeP = eIdNodeP->next)
     {
       // FIXME: The response is supposed to be an array of entity ids
@@ -127,7 +127,7 @@ static int idListResponse(DistOp* distOpP, void* callbackParam)
       //        This is an UGLY attempt to "make it work"
       //
       KjNode* eP = (eIdNodeP->type == KjObject)? kjLookup(eIdNodeP, "id") : eIdNodeP;
-      LM_T(LmtCount, ("JSON Type of array item: %s", kjValueType(eIdNodeP->type)));
+      LM_T(LmtEntityMap, ("JSON Type of array item: %s", kjValueType(eIdNodeP->type)));
 
       char* entityId = eP->value.s;
 
@@ -167,6 +167,8 @@ static void distOpMatchIdsRequest(DistOp* distOpList, EntityMap* entityMap)
 //
 EntityMap* entityMapCreate(DistOp* distOpList, char* idPattern, QNode* qNode, OrionldGeoInfo* geoInfoP)
 {
+  LM_T(LmtEntityMap, ("Creating an entity map"));
+
   EntityMap* entityMap = (EntityMap*) malloc(sizeof(EntityMap));
   if (entityMap == NULL)
     LM_X(1, ("Out of memory allocating a memory map"));
@@ -177,7 +179,7 @@ EntityMap* entityMapCreate(DistOp* distOpList, char* idPattern, QNode* qNode, Or
 
   uuidGenerate(entityMap->id, sizeof(entityMap->id), "urn:ngsi-ld:entity-map:");
 
-  LM_T(LmtDistOpList, ("Created an entity map at %p (%s)", entityMap, entityMap->id));
+  LM_T(LmtEntityMap, ("Created an entity map at %p (%s)", entityMap, entityMap->id));
 
   //
   // Send requests to all matching registration-endpoints, to fill in the entity map
@@ -205,24 +207,31 @@ EntityMap* entityMapCreate(DistOp* distOpList, char* idPattern, QNode* qNode, Or
   orionldState.uriParams.offset = 0;
   orionldState.uriParams.limit  = 1000;
 
+  StringArray pickList;
+  char*       pickListArray[2];
+
+  pickList.items = 1;
+  pickListArray[0] = (char*) "id";
+  pickListArray[1] = NULL;
+  pickList.array   = pickListArray;
+
   KjNode* localDbMatches = mongocEntitiesQuery(&orionldState.in.typeList,
                                                &orionldState.in.idList,
                                                idPattern,
                                                &orionldState.in.attrList,
+                                               &pickList,
                                                qNode,
                                                geoInfoP,
                                                NULL,
                                                geojsonGeometryLongName,
-                                               orionldState.uriParams.orderBy,
-                                               true,
-                                               false);
+                                               orionldState.uriParams.orderBy);
 
   orionldState.uriParams.offset = offset;
   orionldState.uriParams.limit  = limit;
 
   if (localDbMatches != NULL)
   {
-    localEntityV = dbModelToEntityIdAndTypeObject(localDbMatches);
+    localEntityV = dbModelToEntityIdAndTypeObject(localDbMatches, false);
     LM_T(LmtEntityMap, ("Adding local entities to the entityMap"));
 
     for (KjNode* eidNodeP = localEntityV->value.firstChildP; eidNodeP != NULL; eidNodeP = eidNodeP->next)

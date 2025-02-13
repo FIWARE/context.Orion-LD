@@ -979,21 +979,6 @@ MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
 
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_ENTITYMAP;
   }
-  else if (strcmp(key, "onlyIds") == 0)
-  {
-    if (strcmp(value, "true") == 0)
-    {
-      orionldState.uriParams.onlyIds = true;
-      LM_T(LmtCount, ("onlyIds is ON"));
-    }
-    else if (strcmp(key, "false") != 0)
-    {
-      orionldError(OrionldBadRequestData, "Invalid value for uri parameter /onlyIds/", value, 400);
-      return MHD_YES;
-    }
-
-    orionldState.uriParams.mask |= ORIONLD_URIPARAM_ONLYIDS;
-  }
   else if (strcmp(key, "entity::type") == 0)  // Is NGSIv1 ?entity::type=X the same as NGSIv2 ?type=X ?
   {
     orionldState.uriParams.type = (char*) value;

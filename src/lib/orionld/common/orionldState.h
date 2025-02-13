@@ -168,7 +168,6 @@ typedef struct OrionldUriParams
   char*     observedAt;
   char*     lang;
   bool      local;
-  bool      onlyIds;
   bool      entityMap;
   char*     format;
   char*     csf;
