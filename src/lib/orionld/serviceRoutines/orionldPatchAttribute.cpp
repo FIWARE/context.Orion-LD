@@ -26,6 +26,7 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
@@ -40,6 +41,7 @@ extern "C"
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/common/dotForEq.h"                             // dotForEq
 #include "orionld/common/responseFix.h"                          // responseFix
+#include "orionld/common/traceLevels.h"                          // KT_T trace levels
 #include "orionld/legacyDriver/legacyPatchAttribute.h"           // legacyPatchAttribute
 #include "orionld/payloadCheck/pCheckUri.h"                      // pCheckUri
 #include "orionld/payloadCheck/pCheckAttribute.h"                // pCheckAttribute
@@ -56,6 +58,9 @@ extern "C"
 #include "orionld/notifications/alteration.h"                    // alteration
 #include "orionld/notifications/sysAttrsStrip.h"                 // sysAttrsStrip
 #include "orionld/notifications/previousValuePopulate.h"         // previousValuePopulate
+#include "orionld/dds/kjTreeLog.h"                               // kjTreeLog2
+#include "orionld/dds/ddsPublishAttribute.h"                     // ddsPublishAttribute
+#include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
 #include "orionld/serviceRoutines/orionldPostEntities.h"         // orionldPostEntities - if DDS and entity does not exist
 #include "orionld/serviceRoutines/orionldPostEntity.h"           // orionldPostEntity   - if DDS and attribute does not exist
 #include "orionld/serviceRoutines/orionldPatchAttribute.h"       // Own interface
@@ -461,6 +466,21 @@ bool orionldPatchAttribute(void)
           KjNode* finalApiEntityWithoutSysAttrsP = kjClone(orionldState.kjsonP, finalApiEntityWithSysAttrsP);
           sysAttrsStrip(finalApiEntityWithoutSysAttrsP);
 
+          if (ddsSupport == true)
+          {
+            char* shortName = orionldContextItemAliasLookup(orionldState.contextP, orionldState.wildcard[1], NULL, NULL);
+            kjTreeLog2(finalApiEntityWithoutSysAttrsP, "finalApiEntityWithoutSysAttrs", StDdsPublish);
+            KjNode* attrP = kjLookup(finalApiEntityWithoutSysAttrsP, orionldState.wildcard[1]);
+
+            if (attrP != NULL)
+            {
+              KT_T(StDds, "Publishing '%s' on DDS", attrP->name);
+              ddsPublishAttribute(NULL, shortName, attrP, false);
+            }
+            else
+              KT_W("Can't find attribute '%s' in finalApiEntityWithoutSysAttrsP", shortName);
+          }
+
           OrionldAlteration* alterationP = alteration(entityId, entityType, finalApiEntityWithoutSysAttrsP, inEntityP, initialDbEntityP);
           alterationP->finalApiEntityWithSysAttrsP = finalApiEntityWithSysAttrsP;
         }
@@ -476,13 +496,6 @@ bool orionldPatchAttribute(void)
     return false;
   }
 
-#if 0
-  if ((ddsSupport == true) && (dbAttrP != NULL))
-  {
-    orionldState.requestTree->name = orionldState.in.pathAttrExpanded;
-    ddsPublishAttribute(ddsTopicType, entityType, entityId, orionldState.requestTree);
-  }
-#endif
   responseFix(responseBody, DoUpdateAttrs, 204, entityId);
 
   if ((troe == true) && (incomingP != NULL))

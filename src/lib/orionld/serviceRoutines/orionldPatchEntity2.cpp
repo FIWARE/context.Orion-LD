@@ -33,8 +33,6 @@ extern "C"
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjChildRemove
 #include "kjson/kjClone.h"                                       // kjClone
-#include "kjson/kjRender.h"                                      // kjFastRender
-#include "kjson/kjRenderSize.h"                                  // kjFastRenderSize
 }
 
 #include "logMsg/logMsg.h"                                       // LM_*
@@ -45,10 +43,7 @@ extern "C"
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/common/dotForEq.h"                             // dotForEq
 #include "orionld/common/eqForDot.h"                             // eqForDot
-#include "orionld/common/orionldPatchApply.h"                    // orionldPatchApply
 #include "orionld/common/responseFix.h"                          // responseFix
-#include "orionld/config/configAttributeToDdsTopic.h"            // configAttributeToDdsTopic
-#include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
 #include "orionld/context/orionldContextItemExpand.h"            // orionldContextItemExpand
 #include "orionld/types/OrionldHeader.h"                         // orionldHeaderAdd
 #include "orionld/types/OrionldAlteration.h"                     // OrionldAlteration, orionldAlterationType
@@ -74,8 +69,8 @@ extern "C"
 #include "orionld/distOp/distOpFailure.h"                        // distOpFailure
 #include "orionld/notifications/orionldAlterations.h"            // orionldAlterations
 #include "orionld/notifications/previousValues.h"                // previousValues
-#include "orionld/dds/ddsInit.h"                                 // ddsEnabler
 #include "orionld/dds/kjTreeLog.h"                               // kjTreeLog2
+#include "orionld/dds/ddsPublishAttributes.h"                    // ddsPublishAttributes
 #include "orionld/serviceRoutines/orionldPatchEntity2.h"         // Own Interface
 
 
@@ -551,84 +546,6 @@ bool apiEntitySimplifiedToNormalized(KjNode* apiEntityFragmentP, KjNode* dbAttrs
   }
 
   return true;
-}
-
-
-
-// ----------------------------------------------------------------------------
-//
-// ddsPublishAttribute -
-//
-// What is published over DDS is the "value" field of the attribute.
-// For now, sub-attributes are not used in DDS.
-//
-static void ddsPublishAttribute(const char* topic, const char* shortName, KjNode* attrP)
-{
-  KT_T(StDds, "Pushing attribute '%s' (%s) to DDS topic '%s'", shortName, attrP->name, topic);
-
-  KjNode* valueP = kjLookup(attrP, "value");
-
-  kjTreeLog2(valueP, "Attr Value", StDds);
-
-  if (valueP == NULL)
-    KT_RVE("The field named 'value' missing in the merged attribute");
-
-  int   serialiedSize = kjFastRenderSize(valueP);
-  char  buf[1024];
-  char* bufP    = buf;
-  int   bufSize = 1024;
-
-  if (serialiedSize > bufSize - 100)
-  {
-    bufP    = kaAlloc(&orionldState.kalloc, serialiedSize + 100);
-    bufSize = serialiedSize + 100;
-  }
-
-  kjFastRender(valueP, bufP);
-  KT_T(StDds, "Publishing attribute '%s' on DDS topic '%s'. Value: %s", shortName, topic, bufP);
-
-  ddsEnabler->publish(topic, bufP);
-}
-
-
-
-// ----------------------------------------------------------------------------
-//
-// ddsPublishAttributes -
-//
-static void ddsPublishAttributes(KjNode* incoming, KjNode* dbAttrsP)
-{
-  KT_T(StDds, "Pushing attributes to DDS");
-
-  KjNode* patchTree = orionldState.requestTree;
-  KjNode* patchBase = kjClone(orionldState.kjsonP, orionldState.patchBase);
-
-  for (KjNode* patchP = patchTree->value.firstChildP; patchP != NULL; patchP = patchP->next)
-  {
-    orionldPatchApply(patchBase, patchP, false);
-  }
-
-  // patchBase is now fully merged
-  // kjTreeLog2(patchBase, "patchBase", StDds);
-
-  for (KjNode* attrP = patchBase->value.firstChildP; attrP != NULL; attrP = attrP->next)
-  {
-    if (strcmp(attrP->name, "id")    == 0)  continue;
-    if (strcmp(attrP->name, "type")  == 0)  continue;
-    if (strcmp(attrP->name, "scope") == 0)  continue;
-
-    KT_T(StDds, "Attribute is '%s'", attrP->name);
-    char*        longName  = kaStrdup(&orionldState.kalloc, attrP->name);
-    eqForDot(longName);
-
-    char*        shortName = orionldContextItemAliasLookup(orionldState.contextP, longName, NULL, NULL);
-    const char*  topic     = configAttributeToDdsTopic(shortName);
-
-    if (topic != NULL)
-      ddsPublishAttribute(topic, shortName, attrP);
-    else
-      KT_T(StDds, "Nothing to be published (attribute '%s' not in config file)", shortName);
-  }
 }
 
 

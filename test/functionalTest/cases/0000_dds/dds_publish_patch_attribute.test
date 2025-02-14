@@ -1,0 +1,257 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+the test client publishes on DDS, the broker receives DDS notifications and creates/updates the corresponding NGSI-LD entities
+
+--SHELL-INIT--
+$REPO_HOME/scripts/configFile.sh "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.orionld
+$REPO_HOME/scripts/configFile.sh "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.ftClient
+dbInit CB
+pgInit $CB_DB_NAME
+orionldStart CB -mongocOnly -wip dds
+ftClientStop
+ftClientStart -t 0-5000
+
+--SHELL--
+
+#
+# 01. Ask FT to publish an entity urn:ngsi-ld:camera:cam1 on topic 'P1'
+# 02. GET urn:ngsi-ld:camera:cam1 from CB
+# 03. PATCH the attribute shutterSpeed of urn:ngsi-ld:camera:cam1
+# 04. GET urn:ngsi-ld:camera:cam1 from CB, see the update
+# 05. Dump the ftClient for DDS notifications - see the PATCH in DDS
+#
+
+echo "01. Ask FT to publish an entity urn:ngsi-ld:camera:cam1 on topic 'P1'"
+echo "====================================================================="
+payload='{
+  "s": "111"
+}'
+orionCurl --url '/dds/pub?ddsTopicType=xyz&entityId=urn:ngsi-ld:camera:cam1&entityType=T&ddsTopicName=P1' --port $FT_PORT --payload "$payload"
+echo
+echo
+
+
+echo "02. GET urn:ngsi-ld:camera:cam1 from CB"
+echo "======================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:camera:cam1
+echo
+echo
+
+
+echo "03. PATCH the attribute shutterSpeed of urn:ngsi-ld:camera:cam1"
+echo "==============================================================="
+payload='{
+  "value": {
+    "s": "333",
+    "b": true,
+    "f": 3.333,
+    "i": 3,
+    "ia": [
+      3,
+      3
+    ]
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:camera:cam1/attrs/shutterSpeed -X PATCH --payload "$payload"
+echo
+echo
+
+
+echo "04. GET urn:ngsi-ld:camera:cam1 from CB, see the update"
+echo "======================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:camera:cam1
+echo
+echo
+
+
+echo "05. Dump the ftClient for DDS notifications - see the PATCH in DDS"
+echo "=================================================================="
+sleep 1
+orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
+echo
+echo
+
+
+--REGEXPECT--
+01. Ask FT to publish an entity urn:ngsi-ld:camera:cam1 on topic 'P1'
+=====================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+02. GET urn:ngsi-ld:camera:cam1 from CB
+=======================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+    },
+    "id": "urn:ngsi-ld:camera:cam1",
+    "shutterSpeed": {
+        "ddsDataType": {
+            "type": "Property",
+            "value": "NgsildSample"
+        },
+        "participantId": {
+            "type": "Property",
+            "value": "REGEX(.*)"
+        },
+        "publishedAt": {
+            "type": "Property",
+            "value": REGEX(.*)
+        },
+        "type": "Property",
+        "value": {
+            "b": false,
+            "f": 0,
+            "i": 0,
+            "ia": [
+                0,
+                0
+            ],
+            "s": "111"
+        },
+        "xId": {
+            "type": "Property",
+            "value": "REGEX(.*)"
+        }
+    },
+    "type": "Camera"
+}
+
+
+03. PATCH the attribute shutterSpeed of urn:ngsi-ld:camera:cam1
+===============================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+04. GET urn:ngsi-ld:camera:cam1 from CB, see the update
+=======================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+    },
+    "id": "urn:ngsi-ld:camera:cam1",
+    "shutterSpeed": {
+        "ddsDataType": {
+            "type": "Property",
+            "value": "NgsildSample"
+        },
+        "participantId": {
+            "type": "Property",
+            "value": "REGEX(.*)"
+        },
+        "publishedAt": {
+            "type": "Property",
+            "value": REGEX(.*)
+        },
+        "type": "Property",
+        "value": {
+            "b": true,
+            "f": 3.333,
+            "i": 3,
+            "ia": [
+                3,
+                3
+            ],
+            "s": "333"
+        },
+        "xId": {
+            "type": "Property",
+            "value": "REGEX(.*)"
+        }
+    },
+    "type": "Camera"
+}
+
+
+05. Dump the ftClient for DDS notifications - see the PATCH in DDS
+==================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Date: REGEX(.*)
+
+[
+  {
+    "P1": {
+      "data": {
+        "REGEX(.*)": {
+          "b": false,
+          "f": 0,
+          "i": 0,
+          "ia": [
+            0,
+            0
+          ],
+          "s": "111"
+        }
+      },
+      "type": "NgsildSample"
+    },
+    "id": "REGEX(.*)",
+    "type": "fastdds"
+  },
+  {
+    "P1": {
+      "data": {
+        "REGEX(.*)": {
+          "b": true,
+          "f": 3.333,
+          "i": 3,
+          "ia": [
+            3,
+            3
+          ],
+          "s": "333"
+        }
+      },
+      "type": "NgsildSample"
+    },
+    "id": "REGEX(.*)",
+    "type": "fastdds"
+  }
+]
+
+
+
+--TEARDOWN--
+ftClientStop
+brokerStop
+dbDrop CB

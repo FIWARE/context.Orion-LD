@@ -27,6 +27,8 @@ SET (SOURCES
   ddsNotification.cpp
   ddsEntityCreateFromAttribute.cpp
   ddsAttributeCreate.cpp
+  ddsPublishAttribute.cpp
+  ddsPublishAttributes.cpp
 )
 
 # Include directories
