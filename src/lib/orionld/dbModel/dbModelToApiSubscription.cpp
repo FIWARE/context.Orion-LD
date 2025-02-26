@@ -562,9 +562,11 @@ KjNode* dbModelToApiSubscription
   //
   // origin
   //
-  KjNode* originP = kjString(orionldState.kjsonP, "origin", "database");
-  kjChildAdd(apiSubP, originP);
-
+  if (extras == true)
+  {
+    KjNode* originP = kjString(orionldState.kjsonP, "origin", "database");
+    kjChildAdd(apiSubP, originP);
+  }
 
   //
   // Headers

@@ -74,7 +74,7 @@ void ntosEntity(KjNode* apiEntityP, const char* lang)
     else
     {
       // Skip "id" and "type" ... and "scope" once that gets implemented
-      if ((strcmp(attrP->name, "id") != 0) && (strcmp(attrP->name, "type") != 0))
+      if ((strcmp(attrP->name, "id") != 0) && (strcmp(attrP->name, "type") != 0) && (strcmp(attrP->name, "scope") != 0))
       {
         LM_T(LmtFormat, ("Calling ntosAttribute for '%s'", attrP->name));
         ntosAttribute(attrP);

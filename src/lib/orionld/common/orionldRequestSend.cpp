@@ -91,14 +91,15 @@ static size_t writeCallback(void* contents, size_t size, size_t members, void* u
 //
 // headerName -
 //
-static const char* headerName[7] = {
+static const char* headerName[8] = {
   "None",
   "Content-Type",
   "Accept",
   "Link",
   "NGSILD-Tenant",
   "NGSILD-Scope",
-  "X-Auth-Token"
+  "X-Auth-Token",
+  "User-Agent"
 };
 
 

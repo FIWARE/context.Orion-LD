@@ -641,6 +641,7 @@ Content-Length: 4161
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+NGSILD-Tenant: smartmaas001
 
 [
   {
@@ -911,6 +912,7 @@ Content-Length: 4161
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+NGSILD-Tenant: smartmaas001
 
 [
   {

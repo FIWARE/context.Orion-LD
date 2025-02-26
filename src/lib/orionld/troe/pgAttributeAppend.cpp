@@ -113,6 +113,11 @@ void pgAttributeAppend
     snprintf(buf, bufSize, "%s('%s', '%s', 'Delete', '%s', null, null, null, '%s', null, null, null, null, null, null, null, null, null, null, null, null, '%s')",
              comma, instanceId, attributeName, entityId, datasetId, orionldState.requestTimeString);
   }
+  else if (type == NULL)
+  {
+    snprintf(buf, bufSize, "%s('%s', '%s', 'Update', '%s', null, null, null, '%s', null, null, null, null, null, null, null, null, null, null, null, null, '%s')",
+             comma, instanceId, attributeName, entityId, datasetId, orionldState.requestTimeString);
+  }
   else if (strcmp(type, "Relationship") == 0)
   {
     if (valueNodeP->type == KjString)

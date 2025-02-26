@@ -45,7 +45,7 @@ extern "C"
 //
 KjNode* kjStringValueLookupInArray(KjNode* stringArray, const char* value)
 {
-  LM_T(LmtRegMatch, ("stringArray at %p", stringArray));
+  // LM_T(LmtRegMatch, ("stringArray at %p", stringArray));
 
   if (stringArray != NULL)
   {
@@ -60,7 +60,7 @@ KjNode* kjStringValueLookupInArray(KjNode* stringArray, const char* value)
       if (nodeP->type != KjString)
         continue;
 
-      LM_T(LmtRegMatch, ("Comparing attr '%s' with '%s'", value, nodeP->value.s));
+      // LM_T(LmtRegMatch, ("Comparing attr '%s' with '%s'", value, nodeP->value.s));
       if (strcmp(value, nodeP->value.s) == 0)
         return nodeP;
     }

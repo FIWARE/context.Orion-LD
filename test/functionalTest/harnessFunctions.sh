@@ -374,42 +374,42 @@ function localBrokerStart()
   if [ "$role" == "CB" ]
   then
     port=$CB_PORT
-    CB_START_CMD="$CB_START_CMD_PREFIX -port $CB_PORT  -pidpath $CB_PID_FILE  -dbhost $dbHost:$dbPort -db $CB_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption $extraParams"
+    CB_START_CMD="$CB_START_CMD_PREFIX -port $CB_PORT -extras -pidpath $CB_PID_FILE  -dbhost $dbHost:$dbPort -db $CB_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption $extraParams"
   elif [ "$role" == "CB2" ]
   then
     mkdir -p $CB2_LOG_DIR
     port=$CB2_PORT
-    CB_START_CMD="$CB_START_CMD_PREFIX -port $CB2_PORT  -pidpath $CB2_PID_FILE  -dbhost $dbHost:$dbPort -db $CB_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption -logDir $CB2_LOG_DIR $extraParams"
+    CB_START_CMD="$CB_START_CMD_PREFIX -port $CB2_PORT -extras -pidpath $CB2_PID_FILE  -dbhost $dbHost:$dbPort -db $CB_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption -logDir $CB2_LOG_DIR $extraParams"
   elif [ "$role" == "CP1" ]
   then
     mkdir -p $CP1_LOG_DIR
     port=$CP1_PORT
-    CB_START_CMD="$CB_START_CMD_PREFIX -port $CP1_PORT -pidpath $CP1_PID_FILE -dbhost $dbHost:$dbPort -db $CP1_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption -logDir $CP1_LOG_DIR $extraParams"
+    CB_START_CMD="$CB_START_CMD_PREFIX -port $CP1_PORT -extras -pidpath $CP1_PID_FILE -dbhost $dbHost:$dbPort -db $CP1_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption -logDir $CP1_LOG_DIR $extraParams"
   elif [ "$role" == "CP2" ]
   then
     mkdir -p $CP2_LOG_DIR
     port=$CP2_PORT
-    CB_START_CMD="$CB_START_CMD_PREFIX -port $CP2_PORT -pidpath $CP2_PID_FILE -dbhost $dbHost:$dbPort -db $CP2_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption -logDir $CP2_LOG_DIR $extraParams"
+    CB_START_CMD="$CB_START_CMD_PREFIX -port $CP2_PORT -extras -pidpath $CP2_PID_FILE -dbhost $dbHost:$dbPort -db $CP2_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption -logDir $CP2_LOG_DIR $extraParams"
   elif [ "$role" == "CP3" ]
   then
     mkdir -p $CP3_LOG_DIR
     port=$CP3_PORT
-    CB_START_CMD="$CB_START_CMD_PREFIX -port $CP3_PORT -pidpath $CP3_PID_FILE -dbhost $dbHost:$dbPort -db $CP3_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption -logDir $CP3_LOG_DIR $extraParams"
+    CB_START_CMD="$CB_START_CMD_PREFIX -port $CP3_PORT -extras -pidpath $CP3_PID_FILE -dbhost $dbHost:$dbPort -db $CP3_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption -logDir $CP3_LOG_DIR $extraParams"
   elif [ "$role" == "CP4" ]
   then
     mkdir -p $CP4_LOG_DIR
     port=$CP4_PORT
-    CB_START_CMD="$CB_START_CMD_PREFIX -port $CP4_PORT -pidpath $CP4_PID_FILE -dbhost $dbHost:$dbPort -db $CP4_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption -logDir $CP4_LOG_DIR $extraParams"
+    CB_START_CMD="$CB_START_CMD_PREFIX -port $CP4_PORT -extras -pidpath $CP4_PID_FILE -dbhost $dbHost:$dbPort -db $CP4_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption -logDir $CP4_LOG_DIR $extraParams"
   elif [ "$role" == "CP5" ]
   then
     mkdir -p $CP5_LOG_DIR
     port=$CP5_PORT
-    CB_START_CMD="$CB_START_CMD_PREFIX -port $CP5_PORT -pidpath $CP5_PID_FILE -dbhost $dbHost:$dbPort -db $CP5_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption -logDir $CP5_LOG_DIR $extraParams"
+    CB_START_CMD="$CB_START_CMD_PREFIX -port $CP5_PORT -extras -pidpath $CP5_PID_FILE -dbhost $dbHost:$dbPort -db $CP5_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption -logDir $CP5_LOG_DIR $extraParams"
   elif [ "$role" == "CP6" ]
   then
     mkdir -p $CP6_LOG_DIR
     port=$CP6_PORT
-    CB_START_CMD="$CB_START_CMD_PREFIX -port $CP6_PORT -pidpath $CP6_PID_FILE -dbhost $dbHost:$dbPort -db $CP6_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption -logDir $CP6_LOG_DIR $extraParams"
+    CB_START_CMD="$CB_START_CMD_PREFIX -port $CP6_PORT -extras -pidpath $CP6_PID_FILE -dbhost $dbHost:$dbPort -db $CP6_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption -logDir $CP6_LOG_DIR $extraParams"
   fi
 
   # In case the PID file still exists ... (happens after crashes)
@@ -638,7 +638,7 @@ function orionldStart
   # In case the PID file still exists ... (happens after crashes)
   \rm -f /tmp/orion_${port}.pid
 
-  BROKER_START_CMD="orionld -port $port -db $db -logDir $logDir -pidpath $pidFile -harakiri $extraParams"
+  BROKER_START_CMD="orionld -port $port -extras -db $db -logDir $logDir -pidpath $pidFile -harakiri $extraParams"
   echo "BROKER_START_CMD: $BROKER_START_CMD" >> /tmp/orionldStart
 
   #
@@ -1470,6 +1470,7 @@ function orionCurl()
     elif [ "$1" == "--payloadCheck" ]; then    _payloadCheck=$2; _noPayloadCheck='off'; shift;
     elif [ "$1" == "--servicePath" ]; then     _servicePath='--header "Fiware-ServicePath: '${2}'"'; shift;
     elif [ "$1" == "--tenant" ]; then          _tenant='--header "Fiware-Service: '${2}'"'; shift;
+    elif [ "$1" == "--tenant2" ]; then         _tenant='--header "NGSILD-Tenant: '${2}'"'; shift;
     elif [ "$1" == "--origin" ]; then          _origin='--header "Origin: '${2}'"'; shift;
     elif [ "$1" == "--correlator" ]; then      _correlator='--header "Fiware-Correlator: '${2}'"'; shift;
     elif [ "$1" == "-H" ]; then                _headers=${_headers}" --header \"$2\""; shift;

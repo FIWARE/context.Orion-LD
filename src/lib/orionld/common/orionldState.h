@@ -611,16 +611,17 @@ extern bool              idIndex;                  // From orionld.cpp
 extern bool              noNotifyFalseUpdate;      // From orionld.cpp
 extern bool              triggerOperation;         // From orionld.cpp
 extern char              mongoServerVersion[32];
-extern bool              experimental;             // From orionld.cpp
-extern bool              mongocOnly;               // From orionld.cpp
-extern char              allowedOrigin[64];        // From orionld.cpp (CORS)
-extern int               maxAge;                   // From orionld.cpp (CORS)
-extern char              userAgentHeader[64];      // From notificationSend.cpp - move to orionld.cpp?
-extern size_t            userAgentHeaderLen;       // From notificationSend.cpp - move to orionld.cpp?
-extern char              userAgentHeaderNoLF[64];  // move to orionld.cpp?
-extern bool              debugCurl;                // From orionld.cpp
-extern bool              noCache;                  // From orionld.cpp
-extern uint32_t          cSubCounters;             // Number of subscription counter updates before flush from sub-cache to DB
+extern bool              experimental;              // From orionld.cpp
+extern bool              mongocOnly;                // From orionld.cpp
+extern char              allowedOrigin[64];         // From orionld.cpp (CORS)
+extern int               maxAge;                    // From orionld.cpp (CORS)
+extern char              userAgentHeader[64];       // From notificationSend.cpp - move to orionld.cpp?
+extern char              userAgentHeaderValue[32];  // From orionldState.cpp
+extern size_t            userAgentHeaderLen;        // From notificationSend.cpp - move to orionld.cpp?
+extern char              userAgentHeaderNoLF[64];   // move to orionld.cpp?
+extern bool              debugCurl;                 // From orionld.cpp
+extern bool              noCache;                   // From orionld.cpp
+extern uint32_t          cSubCounters;              // Number of subscription counter updates before flush from sub-cache to DB
 extern PernotSubCache    pernotSubCache;
 extern EntityMap*        entityMaps;               // Used by GET /entities in the distributed case, for pagination
 extern bool              entityMapsEnabled;        // Enable Entity Maps
@@ -633,6 +634,7 @@ extern OrionldContext*   defaultUserContextP;
 extern char                localIpAndPort[135];    // Local address for X-Forwarded-For (from orionld.cpp)
 extern unsigned long long  inReqPayloadMaxSize;
 extern unsigned long long  outReqMsgMaxSize;
+extern bool                extras;
 
 
 
