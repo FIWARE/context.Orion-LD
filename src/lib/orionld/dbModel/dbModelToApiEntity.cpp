@@ -167,6 +167,9 @@ KjNode* datasetExtract(KjNode* datasetsP, const char* attrName)
 //
 KjNode* dbModelToApiEntity2(KjNode* dbEntityP, bool sysAttrs, OrionldRenderFormat renderFormat, const char* lang, bool compacted, OrionldProblemDetails* pdP)
 {
+  pdP->title  = (char*) "";
+  pdP->detail = (char*) "";
+
   KjNode* _idP      = NULL;
   KjNode* attrsP    = NULL;
   KjNode* datasetsP = kjLookup(dbEntityP, "@datasets");
@@ -294,7 +297,7 @@ KjNode* dbModelToApiEntity2(KjNode* dbEntityP, bool sysAttrs, OrionldRenderForma
   while (attrP != NULL)
   {
     next = attrP->next;
-    if ((strcmp(attrP->name, ".added")   == 0) || (strcmp(attrP->name, ".removed") == 0))
+    if ((strcmp(attrP->name, ".added") == 0) || (strcmp(attrP->name, ".removed") == 0) || (strcmp(attrP->name, "scope") == 0))
     {
       attrP = next;
       continue;

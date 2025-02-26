@@ -167,7 +167,10 @@ KjNode* apiEntityToDbEntity(KjNode* apiEntityP, KjNode* oldDbEntityP, const char
       saP      = subAttrP;   // saP is used inside this loop
       subAttrP = saP->next;  // this is just the "loop incrementor"
 
+      if (saP->name == NULL)                     continue;
+
       if (strcmp(saP->name, "type")        == 0) continue;
+      if (strcmp(saP->name, "scope")       == 0) continue;
       if (strcmp(saP->name, "value")       == 0) continue;
       if (strcmp(saP->name, "object")      == 0) { saP->name = (char*) "value"; continue; }
       if (strcmp(saP->name, "languageMap") == 0) { saP->name = (char*) "value"; continue; }

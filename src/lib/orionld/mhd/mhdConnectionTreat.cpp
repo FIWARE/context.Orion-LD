@@ -407,6 +407,14 @@ static bool payloadParseAndExtractSpecialFields(bool* contextToBeCashedP)
 //
 // pCheckLinkHeader -
 //
+// ToDo:
+//   A link header can be a comma-separated list of various things.
+// E.g.:
+// <https://context/ngsi-ld.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json", </entities?q=temperature==100&limit=3&offset=1>; rel="prev", </entities?q=temperature==100&limit=3&offset=7>; rel="next"
+//
+// So, I'll need to parse this, and turn it into an array opc char* of 3 elements (for the example above)
+// Then, find the "rel" element inside the strings and finally treat it as an @context if rel == "http://www.w3.org/ns/json-ld#context"
+//
 char* pCheckLinkHeader(char* link)
 {
   if (link[0] != '<')

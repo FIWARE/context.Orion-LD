@@ -113,7 +113,7 @@ bool              entityMapsEnabled = false;
 bool              distSubsEnabled   = false;
 OrionldContext*   defaultUserContextP = NULL;
 int               pageSize            = 20;
-
+char              userAgentHeaderValue[32];
 
 
 //

@@ -45,7 +45,7 @@ orionldStart CP4 -experimental
 # 06. Create an exclusive registration R1 on urn:E1/P1 for CP1  (on urn:E1 only)
 # 07. Create a  redirect  registration R2 on urn:E1/P2 for CP2  (on urn:E1 only)
 # 08. Create an inclusive registration R3 on T/P3 for CP3       (on type:T)
-# 09. Create an auxiliar  registration R4 on T for CP4          (on type:T)
+# 09. Create an auxiliary registration R4 on T for CP4          (on type:T)
 # 10. GET /entities, only to create the entityMap
 # 11. GET /entityMaps/* - see the entityMap with urn:E1 and its 4 registrations + URLs
 # 12. In CB,  create an entity urn:E2
@@ -206,7 +206,7 @@ echo
 echo
 
 
-echo "09. Create an auxiliar  registration R4 on T/P4 for CP4"
+echo "09. Create an auxiliary registration R4 on T/P4 for CP4"
 echo "======================================================="
 payload='{
   "id": "urn:Reg4",
@@ -399,7 +399,7 @@ Location: /ngsi-ld/v1/csourceRegistrations/urn:Reg3
 
 
 
-09. Create an auxiliar  registration R4 on T/P4 for CP4
+09. Create an auxiliary registration R4 on T/P4 for CP4
 =======================================================
 HTTP/1.1 201 Created
 Content-Length: 0
@@ -500,7 +500,7 @@ Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 NGSILD-EntityMap: urn:ngsi-ld:entity-map:REGEX(.*)
-NGSILD-Results-Count: 3
+NGSILD-Results-Count: 4
 
 []
 
@@ -508,7 +508,7 @@ NGSILD-Results-Count: 3
 19. GET /entityMaps/* - see the entityMap with urn:E1 - urn:E5
 ==============================================================
 HTTP/1.1 200 OK
-Content-Length: 105
+Content-Length: 127
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -522,6 +522,9 @@ Date: REGEX(.*)
     ],
     "urn:E2": [
         "@none"
+    ],
+    "urn:E5": [
+        "urn:Reg3"
     ],
     "urn:E6": [
         "urn:Reg4"

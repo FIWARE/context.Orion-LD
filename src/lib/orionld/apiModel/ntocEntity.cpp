@@ -51,6 +51,7 @@ void ntocEntity(KjNode* apiEntityP, const char* lang, bool sysAttrs)
   {
     if (strcmp(fieldP->name, "id")          == 0)  continue;
     if (strcmp(fieldP->name, "type")        == 0)  continue;
+    if (strcmp(fieldP->name, "scope")       == 0)  continue;
 
     if (sysAttrs == true)
     {

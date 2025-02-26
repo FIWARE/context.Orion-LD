@@ -36,6 +36,7 @@ extern "C"
 #include "orionld/types/DistOp.h"                                   // DistOp
 #include "orionld/common/orionldState.h"                            // orionldState
 #include "orionld/common/orionldError.h"                            // orionldError
+#include "orionld/common/tenantList.h"                              // tenant0
 #include "orionld/q/qClone.h"                                       // qClone
 #include "orionld/legacyDriver/legacyGetEntities.h"                 // legacyGetEntities
 #include "orionld/kjTree/kjTreeLog.h"                               // kjTreeLog
@@ -141,6 +142,10 @@ bool orionldGetEntities(void)
       return false;
     }
   }
+
+
+  if (orionldState.tenantP != &tenant0)
+    orionldHeaderAdd(&orionldState.out.headers, HttpTenant, orionldState.tenantP->tenant, 0);
 
   if (orionldState.distributed == false)
     return orionldGetEntitiesLocal(&orionldState.in.typeList,

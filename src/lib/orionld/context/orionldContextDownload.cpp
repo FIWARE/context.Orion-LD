@@ -88,9 +88,11 @@ char* orionldContextDownload(const char* url)
     //
     bool              tryAgain       = false;
     bool              downloadFailed = false;
-    OrionldHttpHeader headerV[1];
+    OrionldHttpHeader headerV[2];
 
-    headerV[0].type = HttpHeaderNone;
+    headerV[0].type  = HttpHeaderUserAgent;
+    headerV[0].value = userAgentHeaderValue;
+    headerV[1].type  = HttpHeaderNone;
 
     reqOk = orionldRequestSend(&orionldState.httpResponse,
                                protocol,

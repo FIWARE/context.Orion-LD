@@ -111,7 +111,7 @@ bool orionldContextHashTablesFill(OrionldContext* contextP, KjNode* keyValueTree
       return false;
     }
 
-    LM_T(LmtContextItem, ("Adding '%s' -> '%s' to hash table for context '%s' (step 1)", hiP->name, hiP->id, contextP->url));
+    // LM_T(LmtContextItem, ("Adding '%s' -> '%s' to hash table for context '%s' (step 1)", hiP->name, hiP->id, contextP->url));
     khashItemAdd(nameHashTableP,  hiP->name, hiP);
   }
 
@@ -138,7 +138,7 @@ bool orionldContextHashTablesFill(OrionldContext* contextP, KjNode* keyValueTree
       hashItemP->id = kaStrdup(&kalloc, hashItemP->id);
       khashItemAdd(valueHashTableP, hashItemP->id, hashItemP);
 
-      LM_T(LmtContextItem, ("Fixed '%s' -> '%s' in hash table for context '%s' (step 2)", hashItemP->name, hashItemP->id, contextP->url));
+      // LM_T(LmtContextItem, ("Fixed '%s' -> '%s' in hash table for context '%s' (step 2)", hashItemP->name, hashItemP->id, contextP->url));
 
       itemP = itemP->next;
     }

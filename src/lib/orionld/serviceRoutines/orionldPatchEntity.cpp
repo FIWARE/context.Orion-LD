@@ -299,6 +299,11 @@ bool orionldPatchEntity(void)
       distOpResponses(distOpList, responseBody);
       distOpListRelease(distOpList);
     }
+    else if (dbEntityP == NULL)
+    {
+      orionldError(OrionldResourceNotFound, "Entity Not Found", entityId, 404);
+      return false;
+    }
   }
 
   // Anything to actually PATCH locally? (or were all attributes Invalid|Forwarded [via Exclusive/Redirect registrations])?

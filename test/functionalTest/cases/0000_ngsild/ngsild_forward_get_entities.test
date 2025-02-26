@@ -473,7 +473,7 @@ NGSILD-Results-Count: 40
 ======================
 Entity Map: REGEX(.*)
 HTTP/1.1 200 OK
-Content-Length: 1883
+Content-Length: 1931
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -572,13 +572,16 @@ Date: REGEX(.*)
     "urn:Reg3"
   ],
   "urn:cp3:entities:E31": [
-    "urn:Reg3"
+    "urn:Reg3",
+    "urn:Reg4"
   ],
   "urn:cp3:entities:E32": [
-    "urn:Reg3"
+    "urn:Reg3",
+    "urn:Reg4"
   ],
   "urn:cp3:entities:E33": [
-    "urn:Reg3"
+    "urn:Reg3",
+    "urn:Reg4"
   ],
   "urn:cp3:entities:E34": [
     "urn:Reg3"

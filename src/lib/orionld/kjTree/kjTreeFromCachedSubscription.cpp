@@ -531,7 +531,7 @@ KjNode* kjTreeFromCachedSubscription(CachedSubscription* cSubP, bool sysAttrs, b
   //
   // origin
   //
-  if (experimental == true)
+  if ((experimental == true) && (extras == true))
   {
     nodeP = kjString(orionldState.kjsonP, "origin", "cache");
     NULL_CHECK(nodeP);

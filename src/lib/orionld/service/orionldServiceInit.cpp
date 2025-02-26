@@ -601,7 +601,8 @@ void orionldServiceInit(OrionLdRestServiceSimplifiedVector* restServiceVV, int v
   // * userAgentHeader(Len): Notifications with HTTP(s)
   // * userAgentHeaderNoLF:  Forwarding
   //
-  userAgentHeaderLen = snprintf(userAgentHeader, sizeof(userAgentHeader) -1, "User-Agent: orionld/%s\r\n", ORIONLD_VERSION);  // Used in notifications as value of HTTP Header User-Agent
+  snprintf(userAgentHeaderValue, sizeof(userAgentHeaderValue) - 1, "orionld/%s", ORIONLD_VERSION);                            // Need it for User-Agent when downloading contexts
+  userAgentHeaderLen = snprintf(userAgentHeader, sizeof(userAgentHeader) -1, "User-Agent: %s\r\n", userAgentHeaderValue);  // Used in notifications as value of HTTP Header User-Agent
   snprintf(userAgentHeaderNoLF, sizeof(userAgentHeaderNoLF) -1, "User-Agent: orionld/%s", ORIONLD_VERSION);  // Used in forwarding as value of HTTP Header User-Agent
 
   int svIx;    // Service Vector Index

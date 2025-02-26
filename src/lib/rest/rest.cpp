@@ -1905,7 +1905,7 @@ static int restStart(IpVersion ipVersion, const char* httpsKey = NULL, const cha
 
   if (mhdStartError == true)
   {
-    LM_X(5, ("Fatal Error (error starting REST interface)"));
+    LM_X(5, ("Fatal Error (error starting REST interface - on port %d)", port));
   }
 
   return 0;

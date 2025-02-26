@@ -41,6 +41,7 @@ extern "C"
 #include "orionld/common/responseFix.h"                          // responseFix
 #include "orionld/common/dotForEq.h"                             // dotForEq
 #include "orionld/common/traceLevels.h"                          // KT_T trace levels
+#include "orionld/payloadCheck/pCheckUri.h"                      // pCheckUri
 #include "orionld/mongoc/mongocEntityLookup.h"                   // mongocEntityLookup
 #include "orionld/mongoc/mongocAttributeReplace.h"               // mongocAttributeReplace
 #include "orionld/payloadCheck/pCheckAttribute.h"                // pCheckAttribute
@@ -76,6 +77,12 @@ bool orionldPutAttribute(void)
   char*   attrName     = orionldState.wildcard[1];
   char*   attrLongName = orionldState.in.pathAttrExpanded;
   KjNode* responseBody = kjObject(orionldState.kjsonP, NULL);
+
+  //
+  // Make sure the Entity ID is a valid URI
+  //
+  if (pCheckUri(entityId, "Entity ID from URL PATH", true) == false)
+    return false;
 
   KT_T(StDds, "In orionldPutAttribute: entityId: '%s'", entityId);
   KT_T(StDds, "In orionldPutAttribute: attrName: '%s'", attrName);
@@ -198,6 +205,13 @@ bool orionldPutAttribute(void)
       entityType = orionldState.in.typeList.array[0];
 
     distOpList = distOpRequests(entityId, entityType, DoReplaceAttr, entityObject);
+
+    if ((distOpList == NULL) && (dbEntityP == NULL))
+    {
+      orionldError(OrionldResourceNotFound, "Attribute Not Found", attrLongName, 404);
+      return false;
+    }
+
     if (entityObject->value.firstChildP == NULL)
       localData = false;
   }

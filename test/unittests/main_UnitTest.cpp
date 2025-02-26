@@ -119,6 +119,8 @@ bool                ddsSupport       = false;
 char                ddsSubsTopics[512];
 char                ddsTopicType[512];
 char                configFile[512];
+bool                extras = false;
+
 
 
 /* ****************************************************************************

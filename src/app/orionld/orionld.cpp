@@ -254,6 +254,7 @@ char            subordinateEndpoint[256];
 char            defaultUserContextUrl[256];
 bool            ddsSupport       = false;
 char            configFile[512];
+bool            extras;
 
 
 
@@ -352,7 +353,7 @@ char            configFile[512];
 #define SUBORDINATE_ENDPOINT_DESC  "endpoint URL for reception of notificatiopns from subordinate subscriptions (distributed subscriptions)"
 #define PAGE_SIZE_DESC         "default page size (no of entities, subscriptions, registrations)"
 #define DUC_URL_DESC           "URL to default user context"
-
+#define EXTRAS_DESC            "Extra stuff, non-NGSI-LD, like 'origin' in subs/regs"
 
 
 // -----------------------------------------------------------------------------
@@ -456,6 +457,7 @@ PaArgument paArgs[] =
   { "-lmtmp",                 &lmtmp,                   "TMP_TRACES",                PaBool,    PaHid,  true,             false,  true,             TMPTRACES_DESC           },
   { "-noprom",                &noprom,                  "NO_PROM",                   PaBool,    PaHid,  false,            false,  true,             NO_PROM_DESC             },
   { "-noArrayReduction",      &noArrayReduction,        "NO_ARRAY_REDUCTION",        PaBool,    PaHid,  false,            false,  true,             NO_ARR_REDUCT_DESC       },
+  { "-extras",                &extras,                  "EXTRAS",                    PaBool,    PaHid,  false,            false,  true,             EXTRAS_DESC              },
   { "-subordinateEndpoint",   &subordinateEndpoint,     "SUBORDINATE_ENDPOINT",      PaStr,     PaOpt,  _i "",           PaNL,   PaNL,             SUBORDINATE_ENDPOINT_DESC },
   { "-pageSize",              &pageSize,                "PAGE_SIZE",                 PaInt,     PaOpt,  20,              1,      1000,             PAGE_SIZE_DESC            },
   { "-configFile",            configFile,               "CONFIG_FILE",               PaString,  PaOpt,  _i "",             PaNL,   PaNL,             CONFIG_FILE_DESC        },

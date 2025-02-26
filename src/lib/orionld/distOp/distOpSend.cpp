@@ -473,7 +473,7 @@ bool distOpSend(DistOp* distOpP, const char* dateHeader, const char* xForwardedF
   LM_T(LmtDistOpRequestParams, ("%s: ---- URL Parameters for %s ------------------------", distOpP->regP->regId, distOpP->id));
   if ((orionldState.verb == HTTP_GET) || (orionldState.verb == HTTP_DELETE))
   {
-    if ((distOpP->attrsParam != NULL) && (orionldState.serviceP->serviceRoutine != orionldDeleteAttribute))
+    if ((orionldState.verb == HTTP_GET) && (distOpP->attrsParam != NULL) && (distOpP->entityMap == false))
       uriParamAdd(&urlParts, distOpP->attrsParam, NULL, distOpP->attrsParamLen);
 
     //
@@ -488,7 +488,7 @@ bool distOpSend(DistOp* distOpP, const char* dateHeader, const char* xForwardedF
 
       if (distOpP->entityMap == true)
       {
-        LM_W(("********************************************** Adding pick=id as URL param"));
+        LM_T(LmtDistOpRequestParams, ("Adding pick=id as URL param"));
         uriParamAdd(&urlParts, "pick=id", NULL, 7);
       }
       else
@@ -695,21 +695,20 @@ bool distOpSend(DistOp* distOpP, const char* dateHeader, const char* xForwardedF
     snprintf(tenantHeader, sizeof(tenantHeader), "NGSILD-Tenant: %s", tenant);
     headers = curl_slist_append(headers, tenantHeader);
   }
-
+  else
+    LM_T(LmtDistOpRequestHeaders, ("No tenant header"));
 
   // User-Agent
   headers = curl_slist_append(headers, userAgentHeaderNoLF);  // userAgentHeader is initialized in orionldServiceInit()
   // headers = curl_slist_append(headers, "User-Agent: orionld/xxx");  // This works
 
 
-#if 0
   struct curl_slist* sP = headers;
   while (sP != NULL)
   {
-    LM_T(LmtDistOpRequest, ("FWD: Added header '%s'", sP->data));
+    LM_T(LmtDistOpRequestHeaders, ("Outgoing HTTP Header '%s'", sP->data));
     sP = sP->next;
   }
-#endif
 
   //
   // BODY

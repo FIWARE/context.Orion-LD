@@ -304,8 +304,11 @@ void regTypeAndOrigin(KjNode* regP, bool fromCache)
   regP->value.firstChildP = typeP;
 
   // Add "origin": "database" at the end
-  KjNode* originP = kjString(orionldState.kjsonP, "origin", (fromCache == true)? "cache" : "database");
-  kjChildAdd(regP, originP);
+  if (extras == true)
+  {
+    KjNode* originP = kjString(orionldState.kjsonP, "origin", (fromCache == true)? "cache" : "database");
+    kjChildAdd(regP, originP);
+  }
 }
 
 

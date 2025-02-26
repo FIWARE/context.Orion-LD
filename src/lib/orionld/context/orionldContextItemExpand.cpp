@@ -118,7 +118,7 @@ char* orionldContextItemExpand
 
   contextP->expansions += 1;
 
-  LM_T(LmtExpand, ("Expanded '%s' to '%s'", shortName, contextItemP->id));
+  // LM_T(LmtExpand, ("Expanded '%s' to '%s'", shortName, contextItemP->id));
 
   return contextItemP->id;
 }

@@ -135,7 +135,9 @@ bool orionldPostQuery(void)
     for (KjNode* dbEntityP = dbEntityArray->value.firstChildP; dbEntityP != NULL; dbEntityP = dbEntityP->next)
     {
       KjNode* apiEntityP = dbModelToApiEntity2(dbEntityP, orionldState.uriParamOptions.sysAttrs, rf, lang, true, &orionldState.pd);
-      kjChildAdd(apiEntityArray, apiEntityP);
+
+      if (apiEntityP != NULL)
+        kjChildAdd(apiEntityArray, apiEntityP);
     }
   }
 

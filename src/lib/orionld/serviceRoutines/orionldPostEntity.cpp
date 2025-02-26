@@ -210,11 +210,22 @@ bool orionldPostEntity(void)
   if (orionldState.distributed == true)
     distOpList = distOpRequests(entityId, entityType, DoAppendAttrs, orionldState.requestTree);
 
+  if ((distOpList == NULL) && (dbEntityP == NULL))
+  {
+    orionldError(OrionldResourceNotFound, "Entity does not exist", entityId, 404);
+    return false;
+  }
+
   KjNode* responseBody = kjObject(orionldState.kjsonP, NULL);
   KjNode* attrExists   = kjObject(orionldState.kjsonP, NULL);
 
   if (orionldState.requestTree != NULL)
   {
+    // Remove scope if present
+    KjNode* scopeP = kjLookup(orionldState.requestTree, "scope");
+    if (scopeP != NULL)
+      kjChildRemove(orionldState.requestTree, scopeP);
+
     //
     // Loop over the incoming payload tree
     // Foreach attribute
@@ -245,7 +256,7 @@ bool orionldPostEntity(void)
       char eqName[512];
       strncpy(eqName, attrP->name, sizeof(eqName) - 1);
       dotForEq(eqName);
-      KjNode* dbAttrP = kjLookup(dbAttrsP, eqName);
+      KjNode* dbAttrP = (dbAttrsP != NULL)? kjLookup(dbAttrsP, eqName) : NULL;
 
       if (dbAttrP != NULL)
       {
@@ -297,14 +308,18 @@ bool orionldPostEntity(void)
       if (troe)
         treeForTroe = kjClone(orionldState.kjsonP, orionldState.requestTree);
 
-      dbAttrsMerge(dbAttrsP, dbAttrsUpdate, orionldState.uriParamOptions.noOverwrite == false);
+      if (dbAttrsP != NULL)
+      {
+        dbAttrsMerge(dbAttrsP, dbAttrsUpdate, orionldState.uriParamOptions.noOverwrite == false);
 
-      OrionldProblemDetails  pd;
-      KjNode*                finalApiEntityWithSysAttrs = dbModelToApiEntity2(dbEntityP, true, RF_NORMALIZED, orionldState.uriParams.lang, false, &pd);
-      KjNode*                finalApiEntity             = kjClone(orionldState.kjsonP, finalApiEntityWithSysAttrs);
-      sysAttrsStrip(finalApiEntity);
-      OrionldAlteration*     alterationP                = alteration(entityId, entityType, finalApiEntity, orionldState.requestTree, initialDbEntityP);
-      alterationP->finalApiEntityWithSysAttrsP = finalApiEntityWithSysAttrs;
+        OrionldProblemDetails  pd;
+        KjNode*                finalApiEntityWithSysAttrs = dbModelToApiEntity2(dbEntityP, true, RF_NORMALIZED, orionldState.uriParams.lang, false, &pd);
+
+        KjNode*                finalApiEntity             = kjClone(orionldState.kjsonP, finalApiEntityWithSysAttrs);
+        sysAttrsStrip(finalApiEntity);
+        OrionldAlteration*     alterationP                = alteration(entityId, entityType, finalApiEntity, orionldState.requestTree, initialDbEntityP);
+        alterationP->finalApiEntityWithSysAttrsP = finalApiEntityWithSysAttrs;
+      }
     }
   }
 
