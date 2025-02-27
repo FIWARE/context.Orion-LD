@@ -101,6 +101,7 @@ echo
 
 echo "04. Dump the MQTT test client and see one notification"
 echo "======================================================"
+sleep .3
 mqttTestClientDump entities
 echo
 echo
