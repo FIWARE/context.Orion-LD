@@ -336,7 +336,7 @@ bool orionldGetEntity(void)
 
       if (apiEntityP == NULL)
         apiEntityP = fwdP->responseBody;
-      else
+      else if (fwdP->responseBody != NULL)
         distOpEntityMerge(apiEntityP, fwdP->responseBody, sysAttrs, fwdP->regP->mode == RegModeAuxiliary);
     }
 

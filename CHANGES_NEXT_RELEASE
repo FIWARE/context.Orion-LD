@@ -6,6 +6,7 @@
   #XXXX: Fixed a bug for system attributes (timestamps) which were sometimes included in sub-attributes without being requested
   #XXXX: Fixed a bug for registration matching of subscriptions (for entity types)
   #XXXX: Fixed a bug in the matching of subs/regs of subsequent subs
+  #XXXX: Fixed a crash in timeout in responses from auxiliary registered endpoints
 
 ## New Features:
   #DDS:  Pushing to DDS via PATCH /ngsi-ld/v1/entities/{entityId}
