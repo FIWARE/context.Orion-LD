@@ -250,7 +250,6 @@ void dbModelToApiLangPropertySimplified(KjNode* dbAttrP, const char* lang)
 KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs, OrionldRenderFormat renderFormat, const char* lang, bool compacted, OrionldProblemDetails* pdP)
 {
   bool          defaultAttribute = true;
-  const  char*  attrName = (dbAttrP != NULL)? dbAttrP->name : "No Attr";
 
   if (dbAttrP == NULL)
     defaultAttribute = false;
@@ -264,6 +263,8 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
   if (datasetP != NULL)
   {
 #if 0
+    const  char*  attrName = (dbAttrP != NULL)? dbAttrP->name : "No Attr";
+
     LM_T(LmtSR, ("------------------------------------------------------------------"));
     LM_T(LmtSR, ("dbAttrP at %p", dbAttrP));
     LM_T(LmtSR, ("Attribute name: '%s'", attrName));
