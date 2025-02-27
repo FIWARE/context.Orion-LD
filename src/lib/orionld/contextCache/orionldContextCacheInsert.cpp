@@ -25,13 +25,13 @@
 #include <strings.h>                                             // bzero
 #include <string.h>                                              // memcpy
 #include <semaphore.h>                                           // sem_wait, sem_post
+#include <stdlib.h>                                              // calloc
 
 #include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
 
 #include "orionld/types/OrionLdRestService.h"                    // OrionLdRestService
 #include "orionld/types/OrionldContext.h"                        // OrionldContext
-#include "orionld/common/orionldState.h"                         // kalloc, orionldState
+#include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/serviceRoutines/orionldPostSubscriptions.h"    // orionldPostSubscriptions
 #include "orionld/serviceRoutines/orionldPostRegistrations.h"    // orionldPostRegistrations
 #include "orionld/contextCache/orionldContextCache.h"            // Context Cache Internals
@@ -95,12 +95,15 @@ void orionldContextCacheInsert(OrionldContext* contextP)
     int   slotsToAdd   = 50;
     int   addedSize    = slotsToAdd * sizeof(OrionldContext*);
     int   newNoOfSlots = orionldContextCacheSlots + slotsToAdd;
-    char* newArray     = (char*) kaAlloc(&kalloc, sizeof(OrionldContext*) * newNoOfSlots);
+    char* newArray     = (char*) calloc(sizeof(OrionldContext*), newNoOfSlots);
+
+    if (newArray == NULL)
+      LM_X(1, ("Out of memory attempting to reallocate the context cache for growth (%d bytes)", sizeof(OrionldContext*) * newNoOfSlots));
 
     memcpy(newArray, (char*) orionldContextCache, sizeof(OrionldContext*) * orionldContextCacheSlots);
     bzero(&newArray[sizeof(OrionldContext*) * orionldContextCacheSlots], addedSize);
 
-    orionldContextCacheSlots += 50;
+    orionldContextCacheSlots += slotsToAdd;
     orionldContextCache = (OrionldContext**) newArray;
 
     slotNo = orionldContextCacheSlotIx;

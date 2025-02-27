@@ -34,4 +34,12 @@
 //
 extern void regCachePresent(void);
 
+
+
+// -----------------------------------------------------------------------------
+//
+// regCacheList -
+//
+extern void regCacheList(RegCache* rcP , const char* what);
+
 #endif  // SRC_LIB_ORIONLD_REGCACHE_REGCACHEPRESENT_H_

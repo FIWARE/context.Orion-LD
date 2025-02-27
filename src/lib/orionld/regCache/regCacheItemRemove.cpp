@@ -36,6 +36,7 @@ extern "C"
 #include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/types/RegCacheItem.h"                          // RegCacheItem
+#include "orionld/regCache/regCachePresent.h"                    // regCacheList
 #include "orionld/regCache/regCacheItemRegexRelease.h"           // regCacheItemRegexRelease
 #include "orionld/regCache/regCacheItemRemove.h"                 // Own interface
 
@@ -64,6 +65,9 @@ bool regCacheItemRemove(RegCache* rcP, const char* regId)
   RegCacheItem* rciP = rcP->regList;
   RegCacheItem* prev = NULL;
 
+  LM_T(LmtRegCache, ("Removing the reg '%s' from the regCache for tenant '%s'", regId, rcP->tenantP->mongoDbName));
+  regCacheList(rcP, "Before remove");
+
   while (rciP != NULL)
   {
     KjNode* idP = kjLookup(rciP->regTree, "id");
@@ -79,10 +83,8 @@ bool regCacheItemRemove(RegCache* rcP, const char* regId)
       }
       else if (rciP->next == NULL)  // Last item is the item to remove
       {
-        if (prev != NULL)
-          prev->next = NULL;    // End the list right there
-        else
-          rcP->regList = NULL;  // First and last item is the same - list is emptied
+        prev->next = NULL;    // End the list right there, just before the last item
+        rcP->last  = prev;    //  And make the that "p`rev" item the last one
       }
       else  // In the middle
         prev->next = rciP->next;  // Just step over it
@@ -109,12 +111,15 @@ bool regCacheItemRemove(RegCache* rcP, const char* regId)
       // And finally, free the entire struct
       free(rciP);
 
+      regCacheList(rcP, "After successful remove");
       return true;
     }
 
     prev = rciP;
     rciP = rciP->next;
   }
+
+  regCacheList(rcP, "After failed remove");
 
   return false;
 }

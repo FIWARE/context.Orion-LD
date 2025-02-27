@@ -39,6 +39,25 @@ extern "C"
 
 // -----------------------------------------------------------------------------
 //
+// regCacheList -
+//
+void regCacheList(RegCache* rcP , const char* what)
+{
+  LM_T(LmtRegCache, ("============= %s ====================================", what));
+  LM_T(LmtRegCache, ("Registration cache for tenant '%s':", rcP->tenantP->mongoDbName));
+
+  for (RegCacheItem* rciP = rcP->regList; rciP != NULL; rciP = rciP->next)
+  {
+    LM_T(LmtRegCache, ("* %s", rciP->regId));
+  }
+
+  LM_T(LmtRegCache, ("===================================================================================================="));
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // regCachePresent -
 //
 void regCachePresent(void)
