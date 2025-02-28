@@ -17,7 +17,7 @@ This project is part of [FIWARE](https://www.fiware.org/). For more information 
 Issues on this projects can be reported as [github issues](https://github.com/FIWARE/context.Orion-LD/issues),
 while questions are preferred on [Stack Overflow](http://stackoverflow.com/questions/tagged/fiware-orion), using the tag `fiware-orion`.
 
-> The latest release of Orion-LD is [1.8.0](https://github.com/FIWARE/context.Orion-LD/releases/tag/1.8.0) from January 2025
+> The latest release of Orion-LD is [1.9.0](https://github.com/FIWARE/context.Orion-LD/releases/tag/1.9.0) from March 2025
 
 Orion-LD is a Context Broker and [CEF](https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/About+us)
 [building block](https://joinup.ec.europa.eu/collection/egovernment/solution/cef-context-broker) for context data
@@ -63,7 +63,7 @@ Its payloads are encoded as [linked data](https://en.wikipedia.org/wiki/Linked_d
 
 The NGSI-LD Specification is regularly updated and published by ETSI.
 The latest specification is [version 1.8.1](https://www.etsi.org/deliver/etsi_gs/CIM/001_099/009/01.08.01_60/gs_cim009v010801p.pdf), published in March 2024.
-The next release, version 1.9.1, is expected for February 2025.
+The next release, version 1.9.1, is expected for March 2025.
 
 A few presentations on NGSI-LD:
 * [NGSI-LD Overview](https://docs.google.com/presentation/d/1tgh6gBdcZHRPU_ehM7M5rGCI83CrYimCwJXxzRI5GDg)
@@ -88,7 +88,7 @@ An Excel file detailing the current compatibility of the development version of 
 
 
 ## Test and Deployment of Orion-LD
-If you want to start testing Orion-LD, the most common option is to use Docker.
+If you want to start testing with Orion-LD, the most common option is to use Docker.
 There are a number of docker images to choose from.
 
 If you (at your own risk) want to evaluate the bleeding edge development changes, you can use the latest image:
@@ -101,11 +101,11 @@ Every merged pull request results in a new fixed tag in dockerhub/quay.io.
 
 Please note that for production and/or performance implementations, there is a thorough guide for that right [here](https://github.com/FIWARE/load-tests)
 
-If you want to use a more stable image, the latest release (as of Jan 2025) is
-[1.8.0](https://github.com/FIWARE/context.Orion-LD/releases/tag/1.8.0)
+If you want to use a more stable image, the latest release (as of March 2025) is
+[1.9.0](https://github.com/FIWARE/context.Orion-LD/releases/tag/1.9.0)
 
 ```console
-docker run quay.io/fiware/orion-ld:1.8.0
+docker run quay.io/fiware/orion-ld:1.9.0
 ```
 
 Please check [quay.io](https://quay.io/repository/fiware/orion-ld?tab=tags) or [dockerhub](https://hub.docker.com/r/fiware/orion-ld/tags) for other releases.
@@ -122,9 +122,10 @@ Please check [quay.io](https://quay.io/repository/fiware/orion-ld?tab=tags) or [
 
 A Test Suite for NGSI-LD compliant brokers can be found [here](https://github.com/fiware/NGSI-LD_Tests).
 This test suite is deprecated in favor of the newer [ETSI NGSI-LD API Conformance Test Suite](https://forge.etsi.org/rep/cim/ngsi-ld-test-suite).
-(Orion-LD passes about 95% of the test cases of this older deprecated test suite.)
+(Orion-LD passed about 95% of the test cases of this older deprecated test suite, but that was quite a few years ago.)
 
 About the ETSI funded conformance test suite, a third TTF (Testing Task force) is currently in progress, to improve on overall coverage and to
 aggregate conformance tests for distributed operations.
-This third TTF is expected to finish in February 2025 and by then, the ETSI NGSI-LD conformance test suite should be fully operational,
+This third TTF is expected to finish in May 2025 and by then, the ETSI NGSI-LD conformance test suite should be fully operational,
 and thus test results for Orion-LD can and will be published.
+A fourth TTF is already approved by ETSI and will start pretty much as soon as the third TTF ends
