@@ -41,6 +41,7 @@ extern "C"
 #include "orionld/common/orionldState.h"                         // orionldState, localIpAndPort
 #include "orionld/kjTree/kjTreeLog.h"                            // kjTreeLog
 #include "orionld/regCache/regCacheIdPatternRegexCompile.h"      // regCacheIdPatternRegexCompile
+#include "orionld/regCache/regCachePresent.h"                    // regCacheList
 #include "orionld/regCache/regCacheItemAdd.h"                    // Own interface
 
 
@@ -154,6 +155,12 @@ RegCacheItem* regCacheItemAdd(RegCache* rcP, const char* registrationId, KjNode*
 {
   RegCacheItem* rciP = (RegCacheItem*) calloc(1, sizeof(RegCacheItem));
 
+  if (rciP == NULL)
+    LM_X(1, ("Out of memory attempting to allocate a Registration Cache Item (%d bytes)", sizeof(RegCacheItem)));
+
+  LM_T(LmtRegCache, ("Adding reg '%s' into the reg cache for tenant '%s'", registrationId, rcP->tenantP->mongoDbName));
+  regCacheList(rcP, "Before add");
+
   //
   // Insert the new RegCacheItem LAST in rcP's linked list of registrations
   // MUST BE INSERTED LAST. If not, pagination doesn't work with the registration cache!!!
@@ -170,6 +177,13 @@ RegCacheItem* regCacheItemAdd(RegCache* rcP, const char* registrationId, KjNode*
   rciP->contextP  = fwdContextP;
   rciP->ipAndPort = regIpAndPortExtract(regP, &rciP->rest);
   rciP->next      = NULL;
+
+  LM_T(LmtRegCache, ("First item in reg cache: %p", rcP->regList));
+  LM_T(LmtRegCache, (" Next item in reg cache: %p", rcP->regList->next));
+  if (rcP->regList->next != NULL) LM_T(LmtRegCache, (" Next-next item in reg cache: %p", rcP->regList->next->next));
+  LM_T(LmtRegCache, (" Last item in reg cache: %p", rcP->last));
+
+  regCacheList(rcP, "In the middle");
 
   // Host Alias
   KjNode* hostAliasP = kjLookup(rciP->regTree, "hostAlias");
@@ -210,6 +224,8 @@ RegCacheItem* regCacheItemAdd(RegCache* rcP, const char* registrationId, KjNode*
 
   if (regCacheIdPatternRegexCompile(rciP, informationP) == false)
     LM_X(1, ("Internal Error (if this happens it's a SW bug of Orion-LD - the idPattern was checked in pcheckEntityInfo and all was OK"));
+
+  regCacheList(rcP, "After add");
 
   return rciP;
 }

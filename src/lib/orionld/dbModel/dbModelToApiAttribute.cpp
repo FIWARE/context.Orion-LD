@@ -249,11 +249,30 @@ void dbModelToApiLangPropertySimplified(KjNode* dbAttrP, const char* lang)
 //
 KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs, OrionldRenderFormat renderFormat, const char* lang, bool compacted, OrionldProblemDetails* pdP)
 {
+  bool          defaultAttribute = true;
+
+  if (dbAttrP == NULL)
+    defaultAttribute = false;
+  else if ((dbAttrP->type == KjArray) && (dbAttrP->value.firstChildP == NULL))
+    defaultAttribute = false;
+
+
   if ((renderFormat == RF_CROSS_APIS_NORMALIZED) || (renderFormat == RF_CROSS_APIS_SIMPLIFIED))
     compacted = false;
 
   if (datasetP != NULL)
   {
+#if 0
+    const  char*  attrName = (dbAttrP != NULL)? dbAttrP->name : "No Attr";
+
+    LM_T(LmtSR, ("------------------------------------------------------------------"));
+    LM_T(LmtSR, ("dbAttrP at %p", dbAttrP));
+    LM_T(LmtSR, ("Attribute name: '%s'", attrName));
+    kjTreeLog(datasetP, "datasetP", LmtSR);
+    kjTreeLog(dbAttrP, "dbAttrP", LmtSR);
+    LM_T(LmtSR, ("------------------------------------------------------------------"));
+#endif
+
     char* shortName = datasetP->name;
 
     if (compacted == true)
@@ -268,12 +287,13 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
     KjNode* attrArray = kjArray(orionldState.kjsonP, shortName);
 
     // 1. First the Default attribute
-    if (dbAttrP != NULL)
+    if (defaultAttribute == true)
     {
       KjNode* apiAttrP = dbModelToApiAttribute2(dbAttrP, NULL, sysAttrs, renderFormat, lang, compacted, pdP);
 
       if (apiAttrP == NULL)
         return NULL;
+
       kjChildAdd(attrArray, apiAttrP);
     }
 
@@ -426,15 +446,18 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
   }
   else  // RF_NORMALIZED  or  RF_CONCISE
   {
+    LM_T(LmtSR, ("Attribute: '%s'", dbAttrP->name));
+    kjTreeLog(dbAttrP, "DB Attr", LmtSR);
     KjNode* mdsP    = NULL;
     KjNode* typeP   = (attrTypeNodeP == NULL)? kjLookup(dbAttrP, "type") : attrTypeNodeP;
 
-    attrP = kjObject(orionldState.kjsonP, shortName);
     if (typeP == NULL)
     {
+      LM_E(("Database Error (attribute without type in database)", dbAttrP->name));
       orionldError(OrionldInternalError, "Database Error (attribute without type in database)", dbAttrP->name, 500);
       return NULL;
     }
+    attrP = kjObject(orionldState.kjsonP, shortName);
 
     OrionldAttributeType attrType = orionldAttributeType(typeP->value.s);
     kjChildRemove(dbAttrP, typeP);

@@ -636,6 +636,17 @@ bool orionldPatchRegistration(void)
     return false;
   }
 
+  if (rciP == NULL)
+  {
+    LM_E(("======================================================================================"));
+    LM_E(("Registration '%s' found in database but NOT IN THE REG CACHE !!!", registrationId));
+    kjTreeLog(dbRegP, "DB Reg", LmtSR);
+    LM_E(("Must add the registration to the reg cache"));
+    LM_E(("But really, must find out why the reg is in the database but not in the cache"));
+
+    regCacheList(orionldState.tenantP->regCache, "Lost a cached registration");
+  }
+
   //
   // Get the registration mode
   //
@@ -753,9 +764,12 @@ bool orionldPatchRegistration(void)
   //
   dbModelToApiRegistration(dbRegP, true, true);
 
-  kjFree(rciP->regTree);
-  rciP->regTree = kjClone(NULL, dbRegP);
-  bzero(&rciP->deltas, sizeof(rciP->deltas));
+  if (rciP != NULL)
+  {
+    kjFree(rciP->regTree);
+    rciP->regTree = kjClone(NULL, dbRegP);
+    bzero(&rciP->deltas, sizeof(rciP->deltas));
+  }
 
   //
   // Update the regTree fields that are mirrored in RegCacheItem

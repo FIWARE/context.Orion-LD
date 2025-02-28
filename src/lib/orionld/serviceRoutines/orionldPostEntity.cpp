@@ -162,11 +162,18 @@ bool orionldPostEntity(void)
   // Get the entity from the database
   //
   KjNode* dbEntityP = mongocEntityLookup(entityId, entityType, NULL, NULL, NULL);
-  if ((dbEntityP == NULL) && (orionldState.distributed == false))
+  if (dbEntityP == NULL)
   {
-    orionldError(OrionldResourceNotFound, "Entity does not exist", entityId, 404);
-    return false;
+    if (orionldState.distributed == false)
+    {
+      orionldError(OrionldResourceNotFound, "Entity does not exist", entityId, 404);
+      return false;
+    }
+    else
+      LM_T(LmtSR, ("Entity '%s' does not exist, but must alsdo check registrations", entityId));
   }
+  else
+    LM_T(LmtSR, ("The entity '%s' was found in the local DB", entityId));
 
   // Keep untouched initial state of the entity in the database - for alterations (to check for false updates)
   KjNode* initialDbEntityP = NULL;  // kjClone(orionldState.kjsonP, dbEntityP);
@@ -310,11 +317,12 @@ bool orionldPostEntity(void)
 
       if (dbAttrsP != NULL)
       {
+        kjTreeLog(dbEntityP, "DB Entity before merge", LmtSR);
         dbAttrsMerge(dbAttrsP, dbAttrsUpdate, orionldState.uriParamOptions.noOverwrite == false);
+        kjTreeLog(dbEntityP, "DB Entity after merge", LmtSR);
 
         OrionldProblemDetails  pd;
         KjNode*                finalApiEntityWithSysAttrs = dbModelToApiEntity2(dbEntityP, true, RF_NORMALIZED, orionldState.uriParams.lang, false, &pd);
-
         KjNode*                finalApiEntity             = kjClone(orionldState.kjsonP, finalApiEntityWithSysAttrs);
         sysAttrsStrip(finalApiEntity);
         OrionldAlteration*     alterationP                = alteration(entityId, entityType, finalApiEntity, orionldState.requestTree, initialDbEntityP);

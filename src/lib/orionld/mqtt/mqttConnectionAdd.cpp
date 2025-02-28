@@ -87,7 +87,9 @@ MqttConnection* mqttConnectionAdd
     return NULL;
   }
 
+  LM_T(LmtMqtt, ("Added an MQTT connection for %s:%d (user: '%s', pwd: '%s', ver: '%s')", mqP->host, mqP->port, mqP->username, mqP->password, mqP->version));
   ++mqttConnectionListIx;
+  LM_T(LmtMqtt, ("mqttConnectionListIx is now %d", mqttConnectionListIx));
 
   return mqP;
 }

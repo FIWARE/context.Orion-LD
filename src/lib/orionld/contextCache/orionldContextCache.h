@@ -44,7 +44,7 @@
 // orionldContextCache
 //
 extern sem_t             orionldContextCacheSem;
-extern OrionldContext*   orionldContextCacheArray[100];  // When 100 is not enough, a realloc is done (automatically)
+extern OrionldContext*   orionldContextCacheArray[1000];  // When 1000 is not enough, a realloc is done (automatically)
 extern OrionldContext**  orionldContextCache;
 extern int               orionldContextCacheSlots;
 extern int               orionldContextCacheSlotIx;

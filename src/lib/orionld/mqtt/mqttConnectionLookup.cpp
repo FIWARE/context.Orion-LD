@@ -38,15 +38,45 @@
 //
 MqttConnection* mqttConnectionLookup(const char* host, unsigned short port, const char* username, const char* password, const char* version)
 {
+  LM_T(LmtMqtt, ("mqttConnectionListIx == %d", mqttConnectionListIx));
+
+  if (host == NULL) return NULL;
+
+  LM_T(LmtMqtt, ("Looking up an MQTT connection for %s:%d (user: '%s', pwd: '%s', ver: '%s')", host, port, username, password, version));
+
   for (int ix = 0; ix < mqttConnectionListIx; ix++)
   {
     MqttConnection* mqP = &mqttConnectionList[ix];
 
+    if (mqP->host == NULL)                                                  continue;  // Free slot - no match
+
     if (mqP->port != port)                                                  continue;
-    if (strcmp(host, mqP->host) != 0)                                       continue;
-    if ((mqP->username != NULL) && (strcmp(username, mqP->username) != 0))  continue;
-    if ((mqP->password != NULL) && (strcmp(password, mqP->password) != 0))  continue;
-    if ((mqP->version  != NULL) && (strcmp(version,  mqP->version)  != 0))  continue;
+    if (strcmp(host, mqP->host) != 0)                                       continue;  // Host is mandatory, cannot be empty
+
+    LM_T(LmtMqtt, ("Comparing with MQTT connection %s:%d (user: '%s', pwd: '%s', ver: '%s')", mqP->host, mqP->port, mqP->username, mqP->password, mqP->version));
+
+    if (((username == NULL) || (*username == 0)) && (mqP->username == NULL))
+      {}  // Match
+    else if ((username != NULL) && (mqP->username != NULL) && strcmp(username, mqP->username) == 0)
+      {}  // Match
+    else
+      continue;
+
+    if (((password == NULL) || (*password == 0)) && (mqP->password == NULL))
+      {}  // Match
+    else if ((password != NULL) && (mqP->password != NULL) && strcmp(password, mqP->password) == 0)
+      {}  // Match
+    else
+      continue;
+
+    if ((version == NULL) || (*version == 0))
+      {}  // Match
+    else if (mqP->version == NULL)
+      {}  // Match
+    else if ((version != NULL) && (mqP->version != NULL) && strcmp(version, mqP->version) == 0)
+      {}  // Match
+    else
+      continue;
 
     if (MQTTClient_isConnected(mqP->client) != true)
       LM_T(LmtMqtt, ("Found the MQTT connection, just, it's not connected!"));
@@ -55,6 +85,8 @@ MqttConnection* mqttConnectionLookup(const char* host, unsigned short port, cons
 
     return mqP;
   }
+
+  LM_T(LmtMqtt, ("No MQTT connection found for %s:%d (user: '%s', pwd: '%s', ver: '%s')", host, port, username, password, version));
 
   return NULL;
 }
