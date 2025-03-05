@@ -263,6 +263,16 @@ void entityResponseAccumulate(DistOp* distOpP, KjNode* responseBody, KjNode* suc
     //
     distOpFailure(responseBody, distOpP, "Error during Distributed Operation", "Entity already exists", 409, NULL);
   }
+  else if (httpResponseCode == 404)
+  {
+    KjNode*     titleP  = (distOpP->responseBody != NULL)? kjLookup(distOpP->responseBody, "title")  : NULL;
+    KjNode*     detailP = (distOpP->responseBody != NULL)? kjLookup(distOpP->responseBody, "detail") : NULL;
+    const char* title   = (titleP  != NULL)? titleP->value.s : "Not Found";
+    const char* detail  = (detailP != NULL)? detailP->value.s : NULL;
+
+    orionldState.distOp.e404 += 1;
+    distOpFailure(responseBody, distOpP, title, detail, httpResponseCode, NULL);
+  }
   else if (httpResponseCode >= 400)
   {
     //
@@ -272,9 +282,6 @@ void entityResponseAccumulate(DistOp* distOpP, KjNode* responseBody, KjNode* suc
     KjNode*     detailP = (distOpP->responseBody != NULL)? kjLookup(distOpP->responseBody, "detail") : NULL;
     const char* title   = (titleP  != NULL)? titleP->value.s : "unspecified error from remote provider";
     const char* detail  = (detailP != NULL)? detailP->value.s : NULL;
-
-    if (httpResponseCode == 404)
-      orionldState.distOp.e404 += 1;
 
     distOpFailure(responseBody, distOpP, title, detail, httpResponseCode, NULL);
   }

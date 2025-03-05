@@ -277,7 +277,7 @@ echo
 
 echo "03. Get the entities"
 echo "===================="
-orionCurl --url '/ngsi-ld/v1/entities?type=WeatherObserved&prettyPrint=yes' -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>; ""' -H 'Fiware-Service: smartmaas001' --noPayloadCheck
+orionCurl --url '/ngsi-ld/v1/entities?type=WeatherObserved&prettyPrint=yes' -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"' -H 'Fiware-Service: smartmaas001' --noPayloadCheck
 echo
 echo
 
@@ -501,7 +501,7 @@ echo
 
 echo "06. Get the entities"
 echo "===================="
-orionCurl --url '/ngsi-ld/v1/entities?type=WeatherObserved&prettyPrint=yes' -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>; ""' -H 'Fiware-Service: smartmaas001' --noPayloadCheck
+orionCurl --url '/ngsi-ld/v1/entities?type=WeatherObserved&prettyPrint=yes' -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"' -H 'Fiware-Service: smartmaas001' --noPayloadCheck
 echo
 echo
 

@@ -86,7 +86,7 @@ echo
 
 echo "03. GET the subscription"
 echo "========================"
-orionCurl --url $subLocation -H 'Link: <https://fiware.github.io/data-models/context.jsonld>'
+orionCurl --url $subLocation -H 'Link: <https://fiware.github.io/data-models/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 

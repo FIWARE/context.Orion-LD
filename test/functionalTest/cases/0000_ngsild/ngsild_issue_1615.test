@@ -67,7 +67,7 @@ payload='{
   "type": "WasteContainer",
   "name": "abc"
 }'
-orionCurl --url /ngsi-ld/v1/entities --payload "$payload"  -H "NGSILD-Tenant: X" -H 'Link: <https://raw.githubusercontent.com/smart-data-models/dataModel.WasteManagement/master/context.jsonld>'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"  -H "NGSILD-Tenant: X" -H 'Link: <https://raw.githubusercontent.com/smart-data-models/dataModel.WasteManagement/master/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
@@ -78,7 +78,7 @@ payload='{
   "type": "Property",
   "value": "def"
 }'
-orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/name --payload "$payload" -X PATCH -H "NGSILD-Tenant: X" -H 'Link: <https://raw.githubusercontent.com/smart-data-models/dataModel.WasteManagement/master/context.jsonld>'
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/name --payload "$payload" -X PATCH -H "NGSILD-Tenant: X" -H 'Link: <https://raw.githubusercontent.com/smart-data-models/dataModel.WasteManagement/master/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 

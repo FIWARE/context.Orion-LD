@@ -1,4 +1,4 @@
-# Copyright 2019 FIWARE Foundation e.V.
+# Copyright 2025 FIWARE Foundation e.V.
 #
 # This file is part of Orion-LD Context Broker.
 #
@@ -26,8 +26,8 @@ NGSI-LD Forward of GET /entities/{entityId}?attrs=<Only URI Parameter Attributes
 --SHELL-INIT--
 dbInit CB
 dbInit CP1
-orionldStart CB -forwarding
-orionldStart CP1
+orionldStart CB -forwarding -experimental
+orionldStart CP1 -experimental
 
 --SHELL--
 
@@ -44,7 +44,7 @@ orionldStart CP1
 # 11. See the registration in mongo
 # 21. Create entity urn:ngsi-ld:entities:E1 in CP1, with attributes P1, P2, R1, and R1
 # 03. Ask CB to GET entity urn:ngsi-ld:entities:E1?attrs=P1,R2 - provoke a forward request of GET urn:ngsi-ld:entities:E1?attrs=P1,R2 to CP1
-# 04. Do the same GET, but with a Link HTTP header, with a @context that redefines P1 and R2 => no hits and no attrs are returned
+# 04. Do the same GET, but with a Link HTTP header, with a @context that redefines P1 and R2 => no hits and 404
 # 05. Like step 03 but with options=keyValues
 #
 
@@ -122,8 +122,8 @@ echo
 echo
 
 
-echo "04. Do the same GET, but with a Link HTTP header, with a @context that redefines P1 and R2 => no hits and no attrs are returned"
-echo "==============================================================================================================================="
+echo "04. Do the same GET, but with a Link HTTP header, with a @context that redefines P1 and R2 => no hits and 404"
+echo "============================================================================================================="
 orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1?attrs=P1,R2 -H 'Link: <https://fiware.github.io/NGSI-LD_TestSuite/ldContext/testContext.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
@@ -162,7 +162,8 @@ connecting to: REGEX(.*)
 MongoDB server version: REGEX(.*)
 {
 	"_id" : "urn:ngsi-ld:ContextSourceRegistration:csr01",
-	"servicePath" : "/",
+	"createdAt" : REGEX(.*),
+	"modifiedAt" : REGEX(.*),
 	"contextRegistration" : [
 		{
 			"entities" : [
@@ -175,9 +176,10 @@ MongoDB server version: REGEX(.*)
 			"providingApplication" : "http://REGEX(.*)"
 		}
 	],
-	"format" : "JSON",
-	"createdAt" : REGEX(.*),
-	"modifiedAt" : REGEX(.*)
+	"properties" : {
+		
+	},
+	"status" : "active"
 }
 bye
 
@@ -213,17 +215,17 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 }
 
 
-04. Do the same GET, but with a Link HTTP header, with a @context that redefines P1 and R2 => no hits and no attrs are returned
-===============================================================================================================================
-HTTP/1.1 200 OK
-Content-Length: 43
+04. Do the same GET, but with a Link HTTP header, with a @context that redefines P1 and R2 => no hits and 404
+=============================================================================================================
+HTTP/1.1 404 Not Found
+Content-Length: 125
 Content-Type: application/json
 Date: REGEX(.*)
-Link: <https://fiware.github.io/NGSI-LD_TestSuite/ldContext/testContext.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
 
 {
-    "id": "urn:ngsi-ld:entities:E1",
-    "type": "T"
+    "detail": "urn:ngsi-ld:entities:E1",
+    "title": "Entity not found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 

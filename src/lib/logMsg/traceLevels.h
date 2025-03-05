@@ -100,6 +100,7 @@ typedef enum TraceLevels
   // Context
   //
   LmtContexts = 100,                   // Contexts
+  LmtContextInBody,                    // For Content-Type: application/ld+json
   LmtContextTree,                      // Context Tree
   LmtContextCache,                     // Context Cache
   LmtContextCacheStats,                // Context Cache Statistics
@@ -163,11 +164,12 @@ typedef enum TraceLevels
   LmtUriEncode,                        // YRL encode/decode results
   LmtBug,                              // Current bug being debugged
   LmtPick,                             // URI param 'pick'
+  LmtLinkHeader,                       // HTTP Header: Link
 
   //
   // Legacy
   //
-  LmtLegacy  = 220,                    // Old code (mongoBackend, json parsers, etc)
+  LmtLegacy  = 230,                    // Old code (mongoBackend, json parsers, etc)
   LmtLegacySubMatch,                   // Old code - update/subscription match for subs/notifs
   LmtLegacySubCacheRefresh,            // Old code - sub-cache-refresh
   LmtMongoPool,
@@ -175,7 +177,7 @@ typedef enum TraceLevels
   //
   // DDS
   //
-  LmtDds     = 230,                    // DDS
+  LmtDds     = 240,                    // DDS
 
   LmtCurl    = 250,                    // CURL library
   LmtToDo,                             // To Do list

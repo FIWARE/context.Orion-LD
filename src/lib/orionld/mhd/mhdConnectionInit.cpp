@@ -285,9 +285,9 @@ MimeType acceptHeaderParse(char* accept, bool textOk)
     // GET the MIME type, check for new winner
     // REMEMBER:  JSON is the default Mime Type and if equal weight, JSON wins
     //
-    LM_T(LmtMimeType, ("mimeV[%d]: '%s'", ix, mimeV[ix]));
+    // LM_T(LmtMimeType, ("mimeV[%d]: '%s'", ix, mimeV[ix]));
     mimeType                 = mimeTypeFromString(mimeV[ix], NULL, true, textOk, &orionldState.acceptMask);
-    LM_T(LmtMimeType, ("mimeType:   %d", mimeType));
+    // LM_T(LmtMimeType, ("mimeType:   %d", mimeType));
     orionldState.acceptMask |= (1 << mimeType);  // It's OK to include "NOMIMETYPE"
 
     if (mimeType > MT_NONE)
@@ -310,7 +310,7 @@ MimeType acceptHeaderParse(char* accept, bool textOk)
     }
   }
 
-  LM_T(LmtMimeType, ("winner: %d (%s)", winner, mimeType(winner)));
+  // LM_T(LmtMimeType, ("winner: %d (%s)", winner, mimeType(winner)));
   return winner;
 }
 
@@ -438,8 +438,18 @@ static MHD_Result orionldHttpHeaderReceive(void* cbDataP, MHD_ValueKind kind, co
   }
   else if (strcasecmp(key, "Link") == 0)
   {
-    orionldState.link                  = (char*) value;
-    orionldState.linkHttpHeaderPresent = true;
+    LM_T(LmtLinkHeader, ("Got a Link header: '%s'", orionldState.link));
+
+    if (strstr(value, "rel=\"http://www.w3.org/ns/json-ld#context\";") != NULL)
+    {
+      if (orionldState.link == NULL)
+      {
+        orionldState.link                  = (char*) value;
+        orionldState.linkHttpHeaderPresent = true;
+      }
+      else
+        orionldError(OrionldInternalError, "Invalid NGSI-LD request", "@context given in more than one Link header", 400);
+    }
   }
   else if ((strcasecmp(key, "Fiware-Service") == 0) || (strcasecmp(key, "NGSILD-Tenant") == 0))
   {
@@ -536,8 +546,6 @@ MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
     orionldError(OrionldBadRequestData, "Empty right-hand-side for a URI parameter", key, 400);
     return MHD_YES;
   }
-
-  LM_T(LmtUriParams, ("URI Param: %s=%s", key, value));
 
   //
   // Forbidden characters in URI param value - not for NGSI-LD - for now at least ...

@@ -107,7 +107,7 @@ echo
 
 echo "06. GET the entity, with the creation context, and make sure the terms are compacted accordingly"
 echo "================================================================================================"
-orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1 -H 'Link: <'http://localhost:9999$contextURL'>'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1 -H 'Link: <'http://localhost:9999$contextURL'>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 

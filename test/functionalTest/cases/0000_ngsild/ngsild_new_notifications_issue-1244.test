@@ -59,7 +59,7 @@ payload='{
     }
   }
 }'
-orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload" -H "Link: <https://fiware.github.io/data-models/full-context.jsonld>"
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload" -H 'Link: <https://fiware.github.io/data-models/full-context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
@@ -79,7 +79,7 @@ payload='{
     }
   }
 }'
-orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload" -H "Link: <https://fiware.github.io/data-models/full-context.jsonld>"
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload" -H 'Link: <https://fiware.github.io/data-models/full-context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
@@ -104,7 +104,7 @@ payload='[
     }
   }
 ]'
-orionCurl --url /ngsi-ld/v1/entityOperations/create -X POST --payload "$payload" -H "Link: <https://fiware.github.io/data-models/full-context.jsonld>"
+orionCurl --url /ngsi-ld/v1/entityOperations/create -X POST --payload "$payload" -H 'Link: <https://fiware.github.io/data-models/full-context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
@@ -123,7 +123,7 @@ payload='{
   "type": "Property",
   "value": 80
 }'
-orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:Vehicle:A100/attrs/speed -X PATCH --payload "$payload" -H "Link: <https://fiware.github.io/data-models/full-context.jsonld>"
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:Vehicle:A100/attrs/speed -X PATCH --payload "$payload" -H 'Link: <https://fiware.github.io/data-models/full-context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
@@ -148,7 +148,7 @@ payload='[
     }
   }
 ]'
-orionCurl --url /ngsi-ld/v1/entityOperations/upsert -X POST --payload "$payload" -H "Link: <https://fiware.github.io/data-models/full-context.jsonld>"
+orionCurl --url /ngsi-ld/v1/entityOperations/upsert -X POST --payload "$payload" -H 'Link: <https://fiware.github.io/data-models/full-context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
