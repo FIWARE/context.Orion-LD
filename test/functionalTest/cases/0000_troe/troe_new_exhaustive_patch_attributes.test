@@ -30,7 +30,7 @@ dbInit CB
 dbInit CB t1
 pgInit $CB_DB_NAME
 pgInit ${CB_DB_NAME}_t1
-brokerStart CB 100 IPv4 -troe -multiservice -experimental
+orionldStart CB -troe -multiservice -experimental
 
 --SHELL--
 
@@ -435,7 +435,7 @@ echo
 echo "13. Patch E2, all 7 attributes, on T1 tenant and with user context in payload body - make sure createdAt+modifiedAt+weight+owner are ignored and that the other three are REPLACED"
 echo "=================================================================================================================================================================================="
 payload='{
-  "@context": "https://raw.githubusercontent.com/FIWARE/tutorials.NGSI-LD/master/app/public/data-models/ngsi-context.jsonld",
+  "@context": [ "https://raw.githubusercontent.com/FIWARE/tutorials.NGSI-LD/master/app/public/data-models/ngsi-context.jsonld" ],
   "id": "urn:ngsi-ld:entity:E2",
   "type": "Device",
   "location": {

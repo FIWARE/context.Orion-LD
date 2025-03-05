@@ -1473,9 +1473,9 @@ function orionCurl()
     elif [ "$1" == "--tenant2" ]; then         _tenant='--header "NGSILD-Tenant: '${2}'"'; shift;
     elif [ "$1" == "--origin" ]; then          _origin='--header "Origin: '${2}'"'; shift;
     elif [ "$1" == "--correlator" ]; then      _correlator='--header "Fiware-Correlator: '${2}'"'; shift;
-    elif [ "$1" == "-H" ]; then                _headers=${_headers}" --header \"$2\""; shift;
-    elif [ "$1" == "--header" ]; then          _headers=${_headers}" --header \"$2\""; shift;
-    elif [ "$1" == "-Link" ]; then             _Link="$2"; shift;
+    elif [ "$1" == "-H" ]; then                _headers=${_headers}" --header '"$2"'"; shift;
+    elif [ "$1" == "--header" ]; then          _headers=${_headers}" --header '"$2"'"; shift;
+    elif [ "$1" == "-Link" ]; then             _Link=\'$2\'; shift;
     elif [ "$1" == "--in" ]; then              _in="$2"; shift;
     elif [ "$1" == "--out" ]; then             _out="$2"; shift;
     elif [ "$1" == "--xauthToken" ]; then      _xauthToken='--header "X-Auth-Token: '${2}'"'; shift;
@@ -1602,7 +1602,6 @@ function orionCurl()
   command=${command}' --header "Expect:"'
   command=${command}' -k -s -S --dump-header /tmp/httpHeaders.out'
   logMsg command: $command
-
 
   #
   # Execute the command

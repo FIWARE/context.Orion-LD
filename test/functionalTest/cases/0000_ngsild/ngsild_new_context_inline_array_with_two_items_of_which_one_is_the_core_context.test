@@ -76,7 +76,7 @@ Location: /ngsi-ld/v1/entities/http://a.b.c/entity/E1
 02. Ask for the entire list of contexts in the context cache
 ============================================================
 HTTP/1.1 200 OK
-Content-Length: 1339
+Content-Length: 1374
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -102,7 +102,7 @@ Date: REGEX(.*)
   },
   {
     "URL": "https://fiware.github.io/NGSI-LD_TestSuite/ldContext/testContext.jsonld",
-    "localId": "REGEX(.*)",
+    "localId": "https://fiware.github.io/NGSI-LD_TestSuite/ldContext/testContext.jsonld",
     "kind": "Cached",
     "createdAt": "202REGEX(.*)",
     "extraInfo": {

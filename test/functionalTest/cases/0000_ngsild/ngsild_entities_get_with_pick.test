@@ -39,6 +39,8 @@ orionldStart CP1 -experimental
 # 05. Query entities of type T and with pick=id,type,P1,P5 - see those 4 fields of the two entities
 # 06. Query entities of type T and with pick=id - see only the ids
 # 07. Retrieve urn:E1 with pick=id,type,P1,P5 - see those 4 fields of urn:E1
+# 08. Query entities of type T and with pick=P5 - see P5 only of the three entities
+# 09. Query entities of type T and with pick=P5 with local=true - see P5 only of the two local entities
 #
 
 echo "01. Create an entity urn:E1 of type T with 5 attributes P1-P5"
@@ -46,11 +48,11 @@ echo "============================================================="
 payload='{
   "id": "urn:E1",
   "type": "T",
-  "P1": 1,
-  "P2": 2,
-  "P3": 3,
-  "P4": 4,
-  "P5": 5
+  "P1": 11,
+  "P2": 12,
+  "P3": 13,
+  "P4": 14,
+  "P5": 15
 }'
 orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
 echo
@@ -62,11 +64,11 @@ echo "============================================================="
 payload='{
   "id": "urn:E2",
   "type": "T",
-  "P3": 3,
-  "P4": 4,
-  "P5": 5,
-  "P6": 6,
-  "P7": 7
+  "P3": 23,
+  "P4": 24,
+  "P5": 25,
+  "P6": 26,
+  "P7": 27
 }'
 orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
 echo
@@ -78,11 +80,11 @@ echo "====================================================================="
 payload='{
   "id": "urn:E3",
   "type": "T",
-  "P5": 5,
-  "P6": 6,
-  "P7": 7,
-  "P8": 8,
-  "P9": 9
+  "P5": 35,
+  "P6": 36,
+  "P7": 37,
+  "P8": 38,
+  "P9": 39
 }'
 orionCurl --url /ngsi-ld/v1/entities --payload "$payload" --port $CP1_PORT
 echo
@@ -111,7 +113,6 @@ echo
 echo
 
 
-
 echo "05. Query entities of type T and with pick=id,type,P1,P5 - see those 4 fields of the two entities"
 echo "================================================================================================="
 orionCurl --url '/ngsi-ld/v1/entities?type=T&pick=id,type,P1,P5&local=true'
@@ -129,6 +130,64 @@ echo
 echo "07. Retrieve urn:E1 with pick=id,type,P1,P5 - see those 4 fields of urn:E1"
 echo "=========================================================================="
 orionCurl --url '/ngsi-ld/v1/entities/urn:E1?pick=id,type,P1,P5'
+echo
+echo
+
+
+echo "08. Query entities of type T and with pick=P5 - see P5 only of the two entities"
+echo "==============================================================================="
+orionCurl --url '/ngsi-ld/v1/entities?type=T&pick=P5'
+echo
+echo
+
+
+echo "09. Query entities of type T and with pick=P5 with local=true - see P5 only of the two local entities"
+echo "====================================================================================================="
+orionCurl --url '/ngsi-ld/v1/entities?type=T&pick=P5&local=true'
+echo
+echo
+
+
+echo "10. Create an entity 'urn:ngsi-ld:Domain:Cluster' of type 'Domain' in CB"
+echo "========================================================================"
+payload='{
+  "id": "urn:ngsi-ld:Domain:Cluster",
+  "type": "Domain",
+  "description": {
+    "type": "Property",
+    "value": "UPV Domain 1"
+  },
+  "publicUrl": {
+    "type": "Property",
+    "value": "http://158.42.161.177:31552"
+  },
+  "owner": {
+    "type": "Relationship",
+    "object": [
+      "urn:ngsi-ld:Organization:UPV"
+    ]
+  },
+  "isEntrypoint": {
+    "type": "Property",
+    "value": true
+  },
+  "domainStatus": {
+    "type": "Relationship",
+    "object": "urn:ngsi-ld:DomainStatus:Functional"
+  },
+  "publicKey": {
+    "type": "Property",
+    "value": "X/4Wn7zpxxWPmLCbP6uaUFgQUDlnBLyGiPZs2C9IOlU="
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "11. Query entities of type Domain and with pick=isEntrypoint - see isEntrypoint only for urn:ngsi-ld:Domain:Cluster"
+echo "==================================================================================================================="
+orionCurl --url '/ngsi-ld/v1/entities?type=Domain&pick=isEntrypoint'
 echo
 echo
 
@@ -173,7 +232,7 @@ Location: /ngsi-ld/v1/csourceRegistrations/urn:R1
 05. Query entities of type T and with pick=id,type,P1,P5 - see those 4 fields of the two entities
 =================================================================================================
 HTTP/1.1 200 OK
-Content-Length: 160
+Content-Length: 163
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -182,11 +241,11 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     {
         "P1": {
             "type": "Property",
-            "value": 1
+            "value": 11
         },
         "P5": {
             "type": "Property",
-            "value": 5
+            "value": 15
         },
         "id": "urn:E1",
         "type": "T"
@@ -194,7 +253,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     {
         "P5": {
             "type": "Property",
-            "value": 5
+            "value": 25
         },
         "id": "urn:E2",
         "type": "T"
@@ -226,7 +285,7 @@ NGSILD-EntityMap: urn:ngsi-ld:entity-map:REGEX(.*)
 07. Retrieve urn:E1 with pick=id,type,P1,P5 - see those 4 fields of urn:E1
 ==========================================================================
 HTTP/1.1 200 OK
-Content-Length: 96
+Content-Length: 98
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -234,15 +293,97 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 {
     "P1": {
         "type": "Property",
-        "value": 1
+        "value": 11
     },
     "P5": {
         "type": "Property",
-        "value": 5
+        "value": 15
     },
     "id": "urn:E1",
     "type": "T"
 }
+
+
+08. Query entities of type T and with pick=P5 - see P5 only of the two entities
+===============================================================================
+HTTP/1.1 200 OK
+Content-Length: 115
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+NGSILD-EntityMap: urn:ngsi-ld:entity-map:REGEX(.*)
+
+[
+    {
+        "P5": {
+            "type": "Property",
+            "value": 15
+        }
+    },
+    {
+        "P5": {
+            "type": "Property",
+            "value": 25
+        }
+    },
+    {
+        "P5": {
+            "type": "Property",
+            "value": 35
+        }
+    }
+]
+
+
+09. Query entities of type T and with pick=P5 with local=true - see P5 only of the two local entities
+=====================================================================================================
+HTTP/1.1 200 OK
+Content-Length: 77
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "P5": {
+            "type": "Property",
+            "value": 15
+        }
+    },
+    {
+        "P5": {
+            "type": "Property",
+            "value": 25
+        }
+    }
+]
+
+
+10. Create an entity 'urn:ngsi-ld:Domain:Cluster' of type 'Domain' in CB
+========================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:Domain:Cluster
+
+
+
+11. Query entities of type Domain and with pick=isEntrypoint - see isEntrypoint only for urn:ngsi-ld:Domain:Cluster
+===================================================================================================================
+HTTP/1.1 200 OK
+Content-Length: 51
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "isEntrypoint": {
+            "type": "Property",
+            "value": true
+        }
+    }
+]
 
 
 --TEARDOWN--
@@ -250,4 +391,3 @@ brokerStop CB
 brokerStop CP1
 dbDrop CB
 dbDrop CP1
-

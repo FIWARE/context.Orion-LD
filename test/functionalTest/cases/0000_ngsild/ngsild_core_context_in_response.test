@@ -44,7 +44,7 @@ payload='{
   "type": "ByInvoice",
   "Cash": 100 
 }'
-orionCurl --url /ngsi-ld/v1/entities --payload "$payload" -H "Link: <http://smartdatamodels.org/context.jsonld>"
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" -H 'Link: <http://smartdatamodels.org/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
@@ -56,21 +56,21 @@ payload='{
   "type": "ByInvoice",
   "Cash": 100 
 }'
-orionCurl --url /ngsi-ld/v1/entities --payload "$payload" -H "Link: <http://smartdatamodels.org/context.jsonld>"
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" -H 'Link: <http://smartdatamodels.org/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
 
 echo "03. Retrieve urn:E1, with @context http://smartdatamodels.org/context.jsonld and Accept ld+json - see core context in response"
 echo "=============================================================================================================================="
-orionCurl --url /ngsi-ld/v1/entities/urn:E1 --out application/ld+json -H "Link: <http://smartdatamodels.org/context.jsonld>"
+orionCurl --url /ngsi-ld/v1/entities/urn:E1 --out application/ld+json -H 'Link: <http://smartdatamodels.org/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
 
 echo "04. Query entities, with @context http://smartdatamodels.org/context.jsonld and Accept ld+json - see core context in response"
 echo "============================================================================================================================="
-orionCurl --url /ngsi-ld/v1/entities?type=ByInvoice --out application/ld+json -H "Link: <http://smartdatamodels.org/context.jsonld>"
+orionCurl --url /ngsi-ld/v1/entities?type=ByInvoice --out application/ld+json -H 'Link: <http://smartdatamodels.org/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
@@ -85,7 +85,7 @@ payload='{
     }
   ]
 }'
-orionCurl --url /ngsi-ld/v1/entityOperations/query --payload "$payload" --out application/ld+json -H "Link: <http://smartdatamodels.org/context.jsonld>"
+orionCurl --url /ngsi-ld/v1/entityOperations/query --payload "$payload" --out application/ld+json -H 'Link: <http://smartdatamodels.org/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 

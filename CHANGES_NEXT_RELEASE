@@ -1,8 +1,14 @@
 ## Fixed Issues:
-  #XXXX: ...
+  #1760: Support for multiple Link headers
 
 ## New Features:
   #XXXX: ...
 
 ## Notes
-* ...
+* Fixing the issue #1760, Orion-LD is now more strict about the syntax in the HTTP Link header for @contexts.
+  Before this fix, trhe following Link header was acepted:
+    Link: <URL to user context>
+  That's not valid HTTP so now, after the fix, the link header must have the 'rel' property set to exactly "http://www.w3.org/ns/json-ld#context":
+    Link: <URL to user context>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+  [ No check is made for the 'type' property' ]
+*

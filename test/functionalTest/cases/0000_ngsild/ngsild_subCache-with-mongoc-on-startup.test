@@ -123,14 +123,14 @@ echo
 
 echo "05. GET the subscription from cache, with testFullContext - see short names"
 echo "==========================================================================="
-orionCurl --url /ngsi-ld/v1/subscriptions/urn:ngsi-ld:subs:S1 -H 'Link: <https://fiware.github.io/NGSI-LD_TestSuite/ldContext/testFullContext.jsonld>'
+orionCurl --url /ngsi-ld/v1/subscriptions/urn:ngsi-ld:subs:S1 -H 'Link: <https://fiware.github.io/NGSI-LD_TestSuite/ldContext/testFullContext.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
 
 echo "06. GET the subscription from DB, with testFullContext - see short names"
 echo "========================================================================"
-orionCurl --url /ngsi-ld/v1/subscriptions/urn:ngsi-ld:subs:S1?options=fromDb -H 'Link: <https://fiware.github.io/NGSI-LD_TestSuite/ldContext/testFullContext.jsonld>'
+orionCurl --url /ngsi-ld/v1/subscriptions/urn:ngsi-ld:subs:S1?options=fromDb -H 'Link: <https://fiware.github.io/NGSI-LD_TestSuite/ldContext/testFullContext.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 

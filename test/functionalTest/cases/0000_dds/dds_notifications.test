@@ -142,7 +142,7 @@ echo
 
 echo "09. Dump the ftClient to see the notification"
 echo "============================================="
-sleep .5
+sleep 1
 orionCurl --url /dump --port $FT_PORT --noPayloadCheck
 echo
 echo

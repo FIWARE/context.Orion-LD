@@ -51,6 +51,7 @@ extern "C"
 #include "orionld/payloadCheck/pCheckAttribute.h"                // pCheckAttribute
 #include "orionld/dbModel/dbModelFromApiAttribute.h"             // dbModelFromApiAttribute
 #include "orionld/dbModel/dbModelToApiEntity.h"                  // dbModelToApiEntity2
+#include "orionld/context/orionldContextItemExpand.h"            // orionldContextItemExpand
 #include "orionld/context/orionldAttributeExpand.h"              // orionldAttributeExpand
 #include "orionld/mongoc/mongocEntityLookup.h"                   // mongocEntityLookup
 #include "orionld/mongoc/mongocAttributesAdd.h"                  // mongocAttributesAdd
@@ -111,15 +112,15 @@ static void attributesMerge(KjNode* finalApiEntityP, KjNode* apiAttrs)
 //
 // pCheckEntityType2 -
 //
-char* pCheckEntityType2(KjNode* payloadTypeNode, KjNode* dbEntityP, char* entityTypeFromUriParam)
+static char* pCheckEntityType2(KjNode* payloadTypeNode, KjNode* dbEntityP, char* entityTypeFromUriParam)
 {
   KjNode* dbTypeNodeP           = (dbEntityP != NULL)? dbEntityTypeExtract(dbEntityP) : NULL;
   char*   entityTypeFromDB      = (dbTypeNodeP != NULL)? dbTypeNodeP->value.s : NULL;
   char*   entityTypeFromPayload = (orionldState.payloadTypeNode != NULL)? orionldState.payloadTypeNode->value.s : NULL;
-
+  char*   entityType            = (entityTypeFromPayload != NULL)? orionldContextItemExpand(orionldState.contextP, entityTypeFromPayload, true, NULL) : NULL;
   LM_T(LmtSR, ("entityType From DB:        '%s'", entityTypeFromDB));
   LM_T(LmtSR, ("entityType From URI Param: '%s'", entityTypeFromUriParam));
-  LM_T(LmtSR, ("entityType From Payload:   '%s'", entityTypeFromPayload));
+  LM_T(LmtSR, ("entityType From Payload:   '%s'  ('%s')", entityType, entityTypeFromPayload));
 
   //
   // 3 different way to find the Entity Type:
@@ -133,13 +134,13 @@ char* pCheckEntityType2(KjNode* payloadTypeNode, KjNode* dbEntityP, char* entity
   // Question is, what to do if URI Param "type" or payload body "type" differ (from DB "type" or between the two)
   // For now (as multi type isn't supported yet), I'll give error if mismatch
   //
-  if ((entityTypeFromPayload != NULL) && (entityTypeFromDB != NULL))
+  if ((entityType != NULL) && (entityTypeFromDB != NULL))
   {
-    if (strcmp(entityTypeFromDB, entityTypeFromPayload) != 0)
+    if (strcmp(entityTypeFromDB, entityType) != 0)
     {
       orionldError(OrionldBadRequestData, "Mismatching Entity::type in payload body", "Does not coincide with the Entity::type in the database", 400);
       LM_E(("Entity type in database:       '%s'", entityTypeFromDB));
-      LM_E(("Entity type from payload body: '%s'", entityTypeFromPayload));
+      LM_E(("Entity type from payload body: '%s'", entityType));
       return NULL;
     }
   }
@@ -155,13 +156,13 @@ char* pCheckEntityType2(KjNode* payloadTypeNode, KjNode* dbEntityP, char* entity
     }
   }
 
-  if ((entityTypeFromPayload != NULL) && (entityTypeFromUriParam != NULL))
+  if ((entityType != NULL) && (entityTypeFromUriParam != NULL))
   {
-    if (strcmp(entityTypeFromPayload, entityTypeFromUriParam) != 0)
+    if (strcmp(entityType, entityTypeFromUriParam) != 0)
     {
       orionldError(OrionldBadRequestData, "Mismatching Entity type in URL parameter 'type'", "Does not coincide with the Entity::type in payload body", 400);
       LM_E(("Entity type from URI param:    '%s'", entityTypeFromUriParam));
-      LM_E(("Entity type from payload body: '%s'", entityTypeFromPayload));
+      LM_E(("Entity type from payload body: '%s'", entityType));
       return NULL;
     }
   }
@@ -271,7 +272,7 @@ bool orionldPatchEntity(void)
 
   //
   // If entity type is present in the payload body, it must be a String and identical to the entity type in the database.
-  // [ It is already extracted (by mhdConnectionTreat) and checked for String ]
+  // [ It is already extracted (by mhdConnectionTreat) and checked for String - just not yet expanded! ]
   //
   entityType = pCheckEntityType2(orionldState.payloadTypeNode, dbEntityP, entityType);
 

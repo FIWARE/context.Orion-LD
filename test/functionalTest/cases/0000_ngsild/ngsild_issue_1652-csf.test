@@ -62,7 +62,7 @@ payload='{
   "endpoint": "http://my.csource.org:1026",
   "Type2": "urn:aeros:federation:r1"
 }'
-orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload" -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload" -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
@@ -85,7 +85,7 @@ payload='{
   "endpoint": "http://my.csource.org:1026",
   "Type2": "urn:aeros:federation:r2"
 }'
-orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload" -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload" -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
@@ -108,14 +108,14 @@ payload='{
   "endpoint": "http://my.csource.org:1026",
   "Type2": "urn:aeros:other:r3"
 }'
-orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload" -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload" -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
 
 echo "04. GET R1 with same @context - see Type2 as shortname"
 echo "======================================================"
-orionCurl --url /ngsi-ld/v1/csourceRegistrations/urn:ngsi-ld:R1 -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations/urn:ngsi-ld:R1 -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
@@ -129,21 +129,21 @@ echo
 
 echo "06. Query registrations with csf=Type2~=urn:aeros:federation:.* - see R1 and R2"
 echo "==============================================================================="
-orionCurl --url /ngsi-ld/v1/csourceRegistrations?csf=Type2~=urn:aeros:federation:.* -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations?csf=Type2~=urn:aeros:federation:.* -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
 
 echo "07. Query registrations with csf=Type2~=urn:aeros:o.* - see R3"
 echo "=============================================================="
-orionCurl --url /ngsi-ld/v1/csourceRegistrations?csf=Type2~=urn:aeros:o.* -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations?csf=Type2~=urn:aeros:o.* -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
 
 echo "08. Query registrations with csf=Type2~=urn:hairos:.* - see []"
 echo "=============================================================="
-orionCurl --url /ngsi-ld/v1/csourceRegistrations?csf=Type2~=urn:hairos.* -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations?csf=Type2~=urn:hairos.* -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
@@ -153,14 +153,14 @@ echo "==========================================="
 payload='{
   "Type2": "urn:hairos:09"
 }'
-orionCurl --url /ngsi-ld/v1/csourceRegistrations/urn:ngsi-ld:R1 --payload "$payload" -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>' -X PATCH
+orionCurl --url /ngsi-ld/v1/csourceRegistrations/urn:ngsi-ld:R1 --payload "$payload" -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"' -X PATCH
 echo
 echo
 
 
 echo "10. Query registrations with csf=Type2~=urn:hairos:.* - see R1"
 echo "=============================================================="
-orionCurl --url /ngsi-ld/v1/csourceRegistrations?csf=Type2~=urn:hairos.* -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations?csf=Type2~=urn:hairos.* -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
@@ -170,14 +170,14 @@ echo "=================================================================="
 payload='{
   "Type3": "urn:aeros:federation2:R2"
 }'
-orionCurl --url /ngsi-ld/v1/csourceRegistrations/urn:ngsi-ld:R2 --payload "$payload" -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>' -X PATCH
+orionCurl --url /ngsi-ld/v1/csourceRegistrations/urn:ngsi-ld:R2 --payload "$payload" -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"' -X PATCH
 echo
 echo
 
 
 echo "12. Query registrations with csf=Type3~=urn:aeros:federation2.* - see R2"
 echo "========================================================================"
-orionCurl --url /ngsi-ld/v1/csourceRegistrations?csf=Type3~=urn:aeros:federation2.* -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations?csf=Type3~=urn:aeros:federation2.* -H 'Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 

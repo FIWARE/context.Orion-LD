@@ -46,7 +46,7 @@ payload='{
   "type": "T",
   "eans": 12
 }'
-orionCurl --url /ngsi-ld/v1/entities --payload "$payload" -H "Link: <https://raw.githubusercontent.com/POORT8/poort8.dvu.datamodels/main/datamodels.context-ngsi.jsonl>"
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" -H 'Link: <https://raw.githubusercontent.com/POORT8/poort8.dvu.datamodels/main/datamodels.context-ngsi.jsonl>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
@@ -58,7 +58,7 @@ payload='{
   "type": "T",
   "eans": 12
 }'
-orionCurl --url /ngsi-ld/v1/entities --payload "$payload" -H "Link: <https://raw.githubusercontent.com/POORT8/poort8.dvu.datamodels/main/datamodels.context-ngsi.jsonld>"
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" -H 'Link: <https://raw.githubusercontent.com/POORT8/poort8.dvu.datamodels/main/datamodels.context-ngsi.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
@@ -72,7 +72,7 @@ echo
 
 echo "04. GET the entity - with POORT8's context"
 echo "=========================================="
-orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:T:E1 -H "Link: <https://raw.githubusercontent.com/POORT8/poort8.dvu.datamodels/main/datamodels.context-ngsi.jsonld>"
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:T:E1 -H 'Link: <https://raw.githubusercontent.com/POORT8/poort8.dvu.datamodels/main/datamodels.context-ngsi.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 

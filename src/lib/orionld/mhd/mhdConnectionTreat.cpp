@@ -74,6 +74,7 @@ extern "C"
 #include "orionld/context/orionldContextUrlGenerate.h"             // orionldContextUrlGenerate
 #include "orionld/context/orionldContextItemExpand.h"              // orionldContextItemExpand
 #include "orionld/context/orionldAttributeExpand.h"                // orionldAttributeExpand
+#include "orionld/context/orionldContextSimplify.h"                // orionldContextSimplify
 #include "orionld/contextCache/orionldContextCachePersist.h"       // orionldContextCachePersist
 #include "orionld/serviceRoutines/orionldPatchAttribute.h"         // orionldPatchAttribute
 #include "orionld/serviceRoutines/orionldGetEntity.h"              // orionldGetEntity
@@ -311,7 +312,10 @@ static bool payloadParseAndExtractSpecialFields(bool* contextToBeCashedP)
           orionldError(OrionldBadRequestData, "Duplicated field", "@context", 400);
           return false;
         }
+
         orionldState.payloadContextNode = attrNodeP;
+        LM_T(LmtContextInBody, ("Found an @contest in the payload body - removing it and keeping it in orionldState.payloadContextNode"));
+        kjTreeLog(orionldState.payloadContextNode, "@context in body", LmtContextInBody);
 
         attrNodeP = orionldState.payloadContextNode->next;
         kjNodeDecouple(orionldState.requestTree, orionldState.payloadContextNode, prev);
@@ -417,6 +421,7 @@ static bool payloadParseAndExtractSpecialFields(bool* contextToBeCashedP)
 //
 char* pCheckLinkHeader(char* link)
 {
+  LM_T(LmtLinkHeader, ("link: '%s'", link));
   if (link[0] != '<')
   {
     orionldError(OrionldBadRequestData, "invalid Link HTTP header", "link doesn't start with '<'", 400);
@@ -440,9 +445,36 @@ char* pCheckLinkHeader(char* link)
   *cP = 0;  // End of string for the URL
 
   if (pCheckUri(linkStart, "Link", true) == false)
-    return NULL;
+    LM_RE(NULL, ("pCheckUri failed"));
 
+  LM_T(LmtLinkHeader, ("link: '%s'", linkStart));
   return linkStart;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// linkContext
+//
+static bool linkContextGet(char* link)
+{
+  //
+  // NOTE:
+  //   The HTTP headers live in the thread. Once the thread dies, the memory is freed.
+  //   When calling orionldContextFromUrl, the URL must be properly allocated.
+  //   As it will be inserted in the Context Cache, that must survive requests, it must be
+  //   allocated in the global allocation buffer 'kalloc', not the thread-local 'orionldState.kalloc'.
+  //   This is done by the function orionldContextCreate.
+  //
+
+  orionldState.contextP = orionldContextFromUrl(link, NULL);
+  if (orionldState.contextP == NULL)
+    LM_RE(false, ("orionldContextFromUrl returned NULL - no context!"));
+
+  orionldState.link = orionldState.contextP->url;
+
+  return true;
 }
 
 
@@ -451,21 +483,42 @@ char* pCheckLinkHeader(char* link)
 //
 // linkGet -
 //
-static bool linkGet(const char* link)
+static bool linkHeaderTreat(char* linkHeader)
 {
-  //
-  // The HTTP headers live in the thread. Once the thread dies, the mempry is freed.
-  // When calling orionldContextFromUrl, the URL must be properly allocated.
-  // As it will be inserted in the Context Cache, that must survive requests, it must be
-  // allocated in the global allocation buffer 'kalloc', not the thread-local 'orionldState.kalloc'.
-  //
-  char* url = kaStrdup(&kalloc, link);
+  LM_T(LmtLinkHeader, ("link: '%s'", linkHeader));
 
-  orionldState.contextP = orionldContextFromUrl(url, NULL);
-  if (orionldState.contextP == NULL)
-    LM_RE(false, ("orionldContextFromUrl returned NULL - no context!"));
+  char* linkV[32];
+  int   links   = kStringSplit(linkHeader, ',', linkV, K_VEC_SIZE(linkV));
+  bool  linkSet = false;
 
-  orionldState.link = orionldState.contextP->url;
+  for (int ix = 0; ix < links; ix++)
+  {
+    if (strstr(linkV[ix], "rel=\"http://www.w3.org/ns/json-ld#context\";") != NULL)
+    {
+      LM_T(LmtLinkHeader, ("Got an @context Link header: '%s'", linkV[ix]));
+
+      if (linkSet == true)
+      {
+        orionldError(OrionldInternalError, "Invalid NGSI-LD request", "@context given more than once in a Link header", 400);
+        return false;
+      }
+
+      orionldState.link = pCheckLinkHeader(linkV[ix]);
+      if (orionldState.link == NULL)
+        LM_RE(false, ("pCheckLinkHeader failed"));  // ProblemDetails set by pCheckLinkHeader
+
+      if (linkContextGet(orionldState.link) == false)  // Lookup/Download if necessary
+        LM_RE(false, ("linkContextGet failed"));
+
+      linkSet = true;
+    }
+    else if (strstr(linkV[ix], "rel=\"next\"") != NULL)
+      LM_T(LmtLinkHeader, ("Received a 'next' Link header - ignoring it"));
+    else if (strstr(linkV[ix], "rel=\"previous\"") != NULL)
+      LM_T(LmtLinkHeader, ("Received a 'previous' Link header - ignoring it"));
+    else
+      LM_W(("Unrecognized Link header: '%s'", linkV[ix]));
+  }
 
   return true;
 }
@@ -1238,14 +1291,9 @@ MHD_Result mhdConnectionTreat(void)
   {
     if (orionldState.linkHttpHeaderPresent == true)
     {
-      char* link = pCheckLinkHeader(orionldState.link);
-
-      if (link == NULL)
-        goto respond;
-
-      if (linkGet(link) == false)  // Lookup/Download if necessary
+      if (linkHeaderTreat(orionldState.link) == false)  // Lookup/Download if necessary
       {
-        LM_W(("linkGet failed, going to 'respond'"));
+        LM_W(("linkGet failed"));
         goto respond;
       }
     }
@@ -1256,13 +1304,36 @@ MHD_Result mhdConnectionTreat(void)
     if (orionldState.payloadContextNode != NULL)
     {
       bool implicitlyCreated = false;
+      bool allDone           = false;
 
       LM_T(LmtContextCacheStats, ("Got an @context in the payload body (type %s)", kjValueType(orionldState.payloadContextNode->type)));
+
+      //
+      // Simplify and if need be, flatten array
+      //
+      if (orionldState.payloadContextNode->type == KjArray)
+      {
+        int arrayItems = 0;
+        orionldContextSimplify(orionldState.payloadContextNode, &arrayItems);
+
+        if ((arrayItems == 1) && (orionldState.payloadContextNode->value.firstChildP->type == KjString))
+        {
+          LM_T(LmtContextInBody, ("@context is an array with a single URI inside - flattening"));
+          orionldState.payloadContextNode = orionldState.payloadContextNode->value.firstChildP;
+          orionldState.contextP = orionldContextFromUrl(orionldState.payloadContextNode->value.s, orionldState.payloadContextNode->value.s);
+          LM_T(LmtContextInBody, ("All done: orionldState.contextP->url: '%s'", orionldState.contextP->url));
+          allDone = true;
+        }
+      }
+
       if ((orionldState.serviceP->serviceRoutine == orionldPostSubscriptions) || (orionldState.serviceP->serviceRoutine == orionldPatchSubscription))
       {
         implicitlyCreated = true;
         LM_T(LmtContextCacheStats, ("And the service is Subscription Creation"));
       }
+
+      if (allDone == true)
+        goto allDone;
 
       OrionldProblemDetails pd = { OrionldBadRequestData, (char*) "naught", (char*) "naught", 0 };
 
@@ -1301,6 +1372,8 @@ MHD_Result mhdConnectionTreat(void)
         orionldState.contextP->kind = OrionldContextImplicit;  // Too late - the context is already in mongo
     }
   }
+
+ allDone:
 
   LM_T(LmtUserContext, ("orionldState.contextP at %p", orionldState.contextP));
   LM_T(LmtUserContext, ("Core Context at          %p", orionldCoreContextP));

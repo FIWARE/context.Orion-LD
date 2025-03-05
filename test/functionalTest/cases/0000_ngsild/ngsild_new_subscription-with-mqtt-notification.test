@@ -151,7 +151,7 @@ echo
 
 echo "07. GET the subscription, with context => AirQualityObserved as shortname"
 echo "========================================================================="
-orionCurl --url /ngsi-ld/v1/subscriptions/urn:ngsi-ld:Subscription:mqttNotification  -H 'Link: <https://fiware.github.io/data-models/context.jsonld>'
+orionCurl --url /ngsi-ld/v1/subscriptions/urn:ngsi-ld:Subscription:mqttNotification  -H 'Link: <https://fiware.github.io/data-models/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
@@ -275,7 +275,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     ],
     "id": "urn:ngsi-ld:Subscription:mqttNotification",
     "isActive": true,
-    "jsonldContext": "http://REGEX(.*)",
+    "jsonldContext": "https://REGEX(.*)",
     "notification": {
         "endpoint": {
             "accept": "application/json",

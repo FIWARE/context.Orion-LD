@@ -75,7 +75,7 @@ payload='{
   "type": "T",
   "P1": "P1 of E2"
 }'
-orionCurl --url /ngsi-ld/v1/entities --payload "$payload" -H "Link: <http://localhost:7080/jsonldContexts/urn:C2>"
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" -H 'Link: <http://localhost:7080/jsonldContexts/urn:C2>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
@@ -89,7 +89,7 @@ echo
 
 echo "04. GET all entities, with user context urn:C2, see urn:E2 with shortnames and urn:E1 with longnames"
 echo "===================================================================================================="
-orionCurl --url /ngsi-ld/v1/entities?local=true -H "Link: <http://localhost:7080/jsonldContexts/urn:C2>"
+orionCurl --url /ngsi-ld/v1/entities?local=true -H 'Link: <http://localhost:7080/jsonldContexts/urn:C2>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 

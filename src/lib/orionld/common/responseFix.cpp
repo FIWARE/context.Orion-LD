@@ -29,10 +29,12 @@ extern "C"
 #include "kjson/kjBuilder.h"                                     // kjChildRemove
 }
 
-#include "orionld/http/httpHeaderLocationAdd.h"                  // httpHeaderLocationAdd
-#include "orionld/http/httpHeaderLinkAdd.h"                      // httpHeaderLinkAdd
+#include "logMsg/logMsg.h"                                       // Logging
+
 #include "orionld/types/DistOpType.h"                            // DistOpType
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/http/httpHeaderLocationAdd.h"                  // httpHeaderLocationAdd
+#include "orionld/http/httpHeaderLinkAdd.h"                      // httpHeaderLinkAdd
 #include "orionld/kjTree/kjChildCount.h"                         // kjChildCount
 #include "orionld/kjTree/kjSort.h"                               // kjStringArraySort
 #include "orionld/common/responseFix.h"                          // Own interface

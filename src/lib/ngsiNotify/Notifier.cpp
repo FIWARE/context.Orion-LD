@@ -633,8 +633,7 @@ std::vector<SenderThreadParams*>* Notifier::buildSenderParams
     //
 
     //
-    // WARNING - Perhaps the Link should only be added if (subP->ldContext != "")   ?
-    // [ In the end, when mongoc is fully used, this function won't be used for NGSI-LD operations ]
+    // Add the Link header for the @context
     //
     if (subP != NULL)
     {
