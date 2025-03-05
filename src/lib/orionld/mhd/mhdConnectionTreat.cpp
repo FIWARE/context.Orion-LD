@@ -460,14 +460,15 @@ char* pCheckLinkHeader(char* link)
 static bool linkContextGet(char* link)
 {
   //
-  // The HTTP headers live in the thread. Once the thread dies, the memory is freed.
-  // When calling orionldContextFromUrl, the URL must be properly allocated.
-  // As it will be inserted in the Context Cache, that must survive requests, it must be
-  // allocated in the global allocation buffer 'kalloc', not the thread-local 'orionldState.kalloc'.
+  // NOTE:
+  //   The HTTP headers live in the thread. Once the thread dies, the memory is freed.
+  //   When calling orionldContextFromUrl, the URL must be properly allocated.
+  //   As it will be inserted in the Context Cache, that must survive requests, it must be
+  //   allocated in the global allocation buffer 'kalloc', not the thread-local 'orionldState.kalloc'.
+  //   This is done by the function orionldContextCreate.
   //
-  char* url = strdup(link);
 
-  orionldState.contextP = orionldContextFromUrl(url, NULL);
+  orionldState.contextP = orionldContextFromUrl(link, NULL);
   if (orionldState.contextP == NULL)
     LM_RE(false, ("orionldContextFromUrl returned NULL - no context!"));
 
