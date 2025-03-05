@@ -1325,7 +1325,7 @@ MHD_Result mhdConnectionTreat(void)
           allDone = true;
         }
       }
-      
+
       if ((orionldState.serviceP->serviceRoutine == orionldPostSubscriptions) || (orionldState.serviceP->serviceRoutine == orionldPatchSubscription))
       {
         implicitlyCreated = true;
