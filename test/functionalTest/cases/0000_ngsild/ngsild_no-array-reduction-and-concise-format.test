@@ -68,7 +68,7 @@ Location: /ngsi-ld/v1/entities/urn:E1
 02. GET E1 - see the arrays reduced
 ===================================
 HTTP/1.1 200 OK
-Content-Length: 98
+Content-Length: 100
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -76,7 +76,9 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 {
     "A1": {
         "type": "Property",
-        "value": 1
+        "value": [
+            1
+        ]
     },
     "A2": {
         "type": "Property",

@@ -158,6 +158,9 @@ static void arrayReduceForLangProp(KjNode* languageMapP)
   if (languageMapP->type != KjObject)
     return;
 
+  if (noArrayReduction == true)  // Global variable, from CLI
+    return;
+
   for (KjNode* lmapValueP = languageMapP->value.firstChildP; lmapValueP != NULL; lmapValueP = lmapValueP->next)
   {
     if (lmapValueP->type == KjArray)
@@ -173,7 +176,7 @@ static void arrayReduceForLangProp(KjNode* languageMapP)
 //
 static bool pCheckTypeFromContext(KjNode* attrP, OrionldContextItem* attrContextInfoP)
 {
-  bool arrayReduction = true;
+  bool arrayReduction = (noArrayReduction == true)? false : true;
 
   if ((attrContextInfoP != NULL) && (attrContextInfoP->type != NULL))
   {
@@ -411,7 +414,10 @@ inline bool pCheckAttributeArray
   valueP->lastChild         = attrP->lastChild;
 
   pCheckAttributeTransform(attrP, "Property", valueP);
-  arrayReduce(valueP);
+
+  if (noArrayReduction == false)  // Global variable, from CLI
+    arrayReduce(valueP);
+
   return true;
 }
 
@@ -880,9 +886,9 @@ bool multiAttributeArray(KjNode* attrArrayP, bool* errorP)
 
   if (objects - datasets > 1)  // More than one object without datasetId field
   {
-      orionldError(OrionldBadRequestData, "More than one default attribute in dataset array", attrArrayP->name, 400);
-      *errorP = true;
-      return false;
+    orionldError(OrionldBadRequestData, "More than one default attribute in dataset array", attrArrayP->name, 400);
+    *errorP = true;
+    return false;
   }
 
   return true;
