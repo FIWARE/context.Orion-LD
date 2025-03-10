@@ -32,6 +32,6 @@
 //
 // datasetAttributeFix -
 //
-extern void datasetAttributeFix(KjNode* entityP, KjNode* attrP, const char* datasetId);
+extern void datasetAttributeFix(KjNode* entityP, KjNode* attrP);
 
 #endif  // SRC_LIB_ORIONLD_COMMON_DATASETATTRIBUTEFIX_H_

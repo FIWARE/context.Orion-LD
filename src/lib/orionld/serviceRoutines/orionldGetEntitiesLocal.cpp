@@ -263,7 +263,7 @@ bool orionldGetEntitiesLocal
   {
     for (KjNode* entityP = orionldState.responseTree->value.firstChildP; entityP != NULL; entityP = entityP->next)
     {
-      datasetEntityFix(entityP, orionldState.uriParams.datasetId);
+      datasetEntityFix(entityP);
     }
   }
 

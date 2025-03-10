@@ -40,7 +40,7 @@ extern "C"
 //
 // datasetEntityFix -
 //
-void datasetEntityFix(KjNode* entityP, const char* datasetId)
+void datasetEntityFix(KjNode* entityP)
 {
   KjNode* attrP = entityP->value.firstChildP;
   KjNode* next  = NULL;
@@ -56,7 +56,7 @@ void datasetEntityFix(KjNode* entityP, const char* datasetId)
         (strcmp(attrP->name, "scope") != 0))
     {
       LM_T(LmtDatasetId, ("Fixing datasetId for attribute '%s'", attrP->name));
-      datasetAttributeFix(entityP, attrP, datasetId);
+      datasetAttributeFix(entityP, attrP);
     }
 
     attrP = next;

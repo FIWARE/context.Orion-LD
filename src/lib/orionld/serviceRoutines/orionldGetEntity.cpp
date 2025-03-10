@@ -417,7 +417,7 @@ bool orionldGetEntity(void)
   orionldState.httpStatusCode = 200;
 
   if (orionldState.uriParams.datasetId != NULL)
-    datasetEntityFix(orionldState.responseTree, orionldState.uriParams.datasetId);
+    datasetEntityFix(orionldState.responseTree);
 
   return true;
 }

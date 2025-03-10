@@ -91,14 +91,12 @@ extern "C"
 //
 // uriParamName -
 //
-static const char* uriParamName(uint32_t bit)
+static const char* uriParamName(uint64_t bit)
 {
   switch (bit)
   {
-  case ORIONLD_URIPARAM_OPTIONS:             return "options";
   case ORIONLD_URIPARAM_LIMIT:               return "limit";
   case ORIONLD_URIPARAM_OFFSET:              return "offset";
-  case ORIONLD_URIPARAM_COUNT:               return "count";
   case ORIONLD_URIPARAM_IDLIST:              return "id";
   case ORIONLD_URIPARAM_TYPELIST:            return "type";
   case ORIONLD_URIPARAM_IDPATTERN:           return "idPattern";
@@ -110,7 +108,10 @@ static const char* uriParamName(uint32_t bit)
   case ORIONLD_URIPARAM_GEOPROPERTY:         return "geoproperty";
   case ORIONLD_URIPARAM_GEOMETRYPROPERTY:    return "geometryProperty";
   case ORIONLD_URIPARAM_CSF:                 return "csf";
+  case ORIONLD_URIPARAM_OPTIONS:             return "options";
+  case ORIONLD_URIPARAM_COUNT:               return "count";
   case ORIONLD_URIPARAM_DATASETID:           return "datasetId";
+  case ORIONLD_URIPARAM_DELETEALL:           return "deleteAll";
   case ORIONLD_URIPARAM_TIMEPROPERTY:        return "timeproperty";
   case ORIONLD_URIPARAM_TIMEREL:             return "timerel";
   case ORIONLD_URIPARAM_TIMEAT:              return "timeAt";
@@ -122,6 +123,24 @@ static const char* uriParamName(uint32_t bit)
   case ORIONLD_URIPARAM_LOCATION:            return "location";
   case ORIONLD_URIPARAM_URL:                 return "url";
   case ORIONLD_URIPARAM_RELOAD:              return "reload";
+  case ORIONLD_URIPARAM_NOTEXISTS:           return "notExists";
+  case ORIONLD_URIPARAM_RELATIONSHIPS:       return "relationships";
+  case ORIONLD_URIPARAM_GEOPROPERTIES:       return "geoProperties";
+  case ORIONLD_URIPARAM_LANGUAGEPROPERTIES:  return "languageProperties";
+  case ORIONLD_URIPARAM_OBSERVEDAT:          return "observedAt";
+  case ORIONLD_URIPARAM_LANG:                return "lang";
+  case ORIONLD_URIPARAM_LOCAL:               return "local";
+  case ORIONLD_URIPARAM_RESET:               return "reset";
+  case ORIONLD_URIPARAM_LEVEL:               return "level";
+  case ORIONLD_URIPARAM_ENTITYMAP:           return "entityMap";
+  case ORIONLD_URIPARAM_FORMAT:              return "format";
+  case ORIONLD_URIPARAM_EXPAND_VALUES:       return "expandValues";
+  case ORIONLD_URIPARAM_KIND:                return "kind";
+  case ORIONLD_URIPARAM_ORDERBY:             return "orderBy";
+  case ORIONLD_URIPARAM_REVERSE:             return "reverse";
+  case ORIONLD_URIPARAM_PICK:                return "pick";
+  case ORIONLD_URIPARAM_DATASETID_LIST:      return "datasetId (as list)";
+  // FIXME: Add missing constants!
   }
 
   return "unknown URI parameter";
@@ -707,23 +726,12 @@ static void dbGeoIndexes(void)
 //
 // uriParamSupport - are all given URI parameters supported by the service?
 //
-bool uriParamSupport(uint32_t supported, uint32_t given, char** detailP)
+bool uriParamSupport(uint64_t supported, uint64_t given, char** detailP)
 {
-  int shifts = 0;
-
-  while (given != 0)
+  if ((given & supported) == 0)
   {
-    if ((given & 1) != 0)
-    {
-      if ((supported & (1 << shifts)) == 0)
-      {
-        *detailP = (char*) uriParamName(1 << shifts);
-        return false;
-      }
-    }
-
-    given = given >> 1;
-    ++shifts;
+    *detailP = (char*) uriParamName(given);
+    return false;
   }
 
   return true;
@@ -881,6 +889,36 @@ static bool pCheckEntityIdParam(void)
   {
     if (pCheckUri(orionldState.in.idList.array[item], "Entity ID in URI param", true) == false)
       return false;
+  }
+
+  return true;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// datasetIdList -
+//
+static bool datasetIdList(void)
+{
+  int items = commaCount(orionldState.uriParams.datasetId) + 1;
+
+  orionldState.in.datasetIdList.items = items;
+  orionldState.in.datasetIdList.array = (char**) kaAlloc(&orionldState.kalloc, sizeof(char*) * items);
+
+  int splitItems = kStringSplit(orionldState.uriParams.datasetId, ',', orionldState.in.datasetIdList.array, items);
+
+  if (splitItems != items)
+    LM_X(1, ("BUG - splitItems must be == items"));
+
+  for (int item = 0; item < items; item++)
+  {
+    if (pCheckUri(orionldState.in.datasetIdList.array[item], "datasetId in URI param", true) == false)
+    {
+      orionldError(OrionldInternalError, "Invalid datasetId", orionldState.in.datasetIdList.array[item], 400);
+      return false;
+    }
   }
 
   return true;
@@ -1200,7 +1238,7 @@ MHD_Result mhdConnectionTreat(void)
   if (orionldState.verb != HTTP_OPTIONS)
   {
     char* detail = (char*) "no detail";
-    if (uriParamSupport(orionldState.serviceP->uriParams, orionldState.uriParams.mask, &detail) == false)
+    if ((orionldState.uriParams.mask != 0) && uriParamSupport(orionldState.serviceP->uriParams, orionldState.uriParams.mask, &detail) == false)
     {
       orionldError(OrionldBadRequestData, "Unsupported URI parameter", detail, 400);
       goto respond;
@@ -1405,6 +1443,15 @@ MHD_Result mhdConnectionTreat(void)
   //
   if (uriParamExpansion() == false)
     goto respond;
+
+  //
+  // Fix the array of datasetIds, if present
+  //
+  if ((orionldState.uriParams.datasetId != NULL) && ((orionldState.uriParams.mask & ORIONLD_URIPARAM_DATASETID_LIST) == ORIONLD_URIPARAM_DATASETID_LIST))
+  {
+    if (datasetIdList() == false)
+      goto respond;
+  }
 
   // -----------------------------------------------------------------------------
   //

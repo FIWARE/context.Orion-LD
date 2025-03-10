@@ -272,6 +272,7 @@ typedef struct OrionldStateIn
   StringArray  attrList;
   StringArray  pickList;
   StringArray  expandValuesList;
+  StringArray  datasetIdList;
 
   // Entity Map
   EntityMap* entityMap;

@@ -40,6 +40,10 @@ orionldStart CB -experimental
 # 08. Query all entities, with datasetId urn:ngsi-ld/dataset:2 - see name
 # 09. GET the entity, with datasetId urn:ngsi-ld/dataset:3 - see no attributes
 # 10. Query all entities, with datasetId urn:ngsi-ld/dataset:3 - see no attributes
+# 11. Query all entities, with datasetId list urn:ngsi-ld/dataset:1,urn:ngsi-ld/dataset:2 - see 4 instances of name, name2, and name4
+# 12. GET the entity, with datasetId list urn:ngsi-ld/dataset:1,urn:ngsi-ld/dataset:2 - see 4 instances of name, name2, and name4
+# 13. Query all entities, with datasetId none - see non-datasetId-instances of name and name3
+# 14. GET the entity, with datasetId none - see non-datasetId-instances of name and name3
 #
 
 echo "01. Create an entity with 4 attributes (name, name2, name3, and name4) with a mix of datasetIds"
@@ -144,6 +148,34 @@ echo
 echo "10. Query all entities, with datasetId urn:ngsi-ld/dataset:3 - see no attributes"
 echo "================================================================================"
 orionCurl --url '/ngsi-ld/v1/entities?local=true&datasetId=urn:ngsi-ld/dataset:3'
+echo
+echo
+
+
+echo "11. Query all entities, with datasetId list urn:ngsi-ld/dataset:1,urn:ngsi-ld/dataset:2 - see 4 instances of name, name2, and name4"
+echo "==================================================================================================================================="
+orionCurl --url '/ngsi-ld/v1/entities?local=true&datasetId=urn:ngsi-ld/dataset:1,urn:ngsi-ld/dataset:2'
+echo
+echo
+
+
+echo "12. GET the entity, with datasetId list urn:ngsi-ld/dataset:1,urn:ngsi-ld/dataset:2 - see 4 instances of name, name2, and name4"
+echo "==============================================================================================================================="
+orionCurl --url '/ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1?datasetId=urn:ngsi-ld/dataset:1,urn:ngsi-ld/dataset:2'
+echo
+echo
+
+
+echo "13. Query all entities, with datasetId none - see non-datasetId-instances of name and name3"
+echo "==========================================================================================="
+orionCurl --url '/ngsi-ld/v1/entities?local=true&datasetId=@none'
+echo
+echo
+
+
+echo "14. GET the entity, with datasetId none - see non-datasetId-instances of name and name3"
+echo "======================================================================================="
+orionCurl --url '/ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1?datasetId=@none'
 echo
 echo
 
@@ -450,6 +482,126 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "type": "T"
     }
 ]
+
+
+11. Query all entities, with datasetId list urn:ngsi-ld/dataset:1,urn:ngsi-ld/dataset:2 - see 4 instances of name, name2, and name4
+===================================================================================================================================
+HTTP/1.1 200 OK
+Content-Length: 454
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "id": "urn:ngsi-ld:entities:E1",
+        "name": [
+            {
+                "datasetId": "urn:ngsi-ld/dataset:1",
+                "type": "Property",
+                "value": "dataset urn:ngsi-ld/dataset:1"
+            },
+            {
+                "datasetId": "urn:ngsi-ld/dataset:2",
+                "type": "Property",
+                "value": "dataset urn:ngsi-ld/dataset:2"
+            }
+        ],
+        "name2": {
+            "datasetId": "urn:ngsi-ld/dataset:1",
+            "type": "Property",
+            "value": "dataset urn:ngsi-ld/dataset:1"
+        },
+        "name4": {
+            "datasetId": "urn:ngsi-ld/dataset:1",
+            "type": "Property",
+            "value": "dataset urn:ngsi-ld/dataset:1"
+        },
+        "type": "T"
+    }
+]
+
+
+12. GET the entity, with datasetId list urn:ngsi-ld/dataset:1,urn:ngsi-ld/dataset:2 - see 4 instances of name, name2, and name4
+===============================================================================================================================
+HTTP/1.1 200 OK
+Content-Length: 452
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "id": "urn:ngsi-ld:entities:E1",
+    "name": [
+        {
+            "datasetId": "urn:ngsi-ld/dataset:1",
+            "type": "Property",
+            "value": "dataset urn:ngsi-ld/dataset:1"
+        },
+        {
+            "datasetId": "urn:ngsi-ld/dataset:2",
+            "type": "Property",
+            "value": "dataset urn:ngsi-ld/dataset:2"
+        }
+    ],
+    "name2": {
+        "datasetId": "urn:ngsi-ld/dataset:1",
+        "type": "Property",
+        "value": "dataset urn:ngsi-ld/dataset:1"
+    },
+    "name4": {
+        "datasetId": "urn:ngsi-ld/dataset:1",
+        "type": "Property",
+        "value": "dataset urn:ngsi-ld/dataset:1"
+    },
+    "type": "T"
+}
+
+
+13. Query all entities, with datasetId none - see non-datasetId-instances of name and name3
+===========================================================================================
+HTTP/1.1 200 OK
+Content-Length: 148
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "id": "urn:ngsi-ld:entities:E1",
+        "name": {
+            "type": "Property",
+            "value": "no dataset id"
+        },
+        "name3": {
+            "type": "Property",
+            "value": "no dataset id"
+        },
+        "type": "T"
+    }
+]
+
+
+14. GET the entity, with datasetId none - see non-datasetId-instances of name and name3
+=======================================================================================
+HTTP/1.1 200 OK
+Content-Length: 146
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "id": "urn:ngsi-ld:entities:E1",
+    "name": {
+        "type": "Property",
+        "value": "no dataset id"
+    },
+    "name3": {
+        "type": "Property",
+        "value": "no dataset id"
+    },
+    "type": "T"
+}
 
 
 --TEARDOWN--

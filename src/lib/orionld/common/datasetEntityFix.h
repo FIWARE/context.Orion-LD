@@ -32,6 +32,6 @@
 //
 // datasetEntityFix -
 //
-extern void datasetEntityFix(KjNode* entityP, const char* datasetId);
+extern void datasetEntityFix(KjNode* entityP);
 
 #endif  // SRC_LIB_ORIONLD_COMMON_DATASETENTITYFIX_H_
