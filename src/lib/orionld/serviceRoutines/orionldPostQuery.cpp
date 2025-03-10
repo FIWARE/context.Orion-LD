@@ -33,6 +33,8 @@ extern "C"
 
 #include "orionld/types/TreeNode.h"                              // TreeNode
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/datasetEntityFix.h"                     // datasetEntityFix
+#include "orionld/kjTree/kjChildCount.h"                         // kjChildCount
 #include "orionld/legacyDriver/legacyPostQuery.h"                // legacyPostQuery
 #include "orionld/payloadCheck/pCheckQuery.h"                    // pCheckQuery
 #include "orionld/mongoc/mongocEntitiesQuery2.h"                 // mongocEntitiesQuery2
@@ -87,6 +89,7 @@ bool orionldPostQuery(void)
   OrionldGeoInfo*  geoInfoP        = (OrionldGeoInfo*) treeNodeV[4].output;
   char*            lang            = (treeNodeV[9].nodeP != NULL)? treeNodeV[9].nodeP->value.s : NULL;
   KjNode*          dbEntityArray   = mongocEntitiesQuery2(entitySelectorP, attrsArray, qTree, geoInfoP, lang, &count);
+  KjNode*          datasetIdArray  = treeNodeV[10].nodeP;
 
   //
   // The post-processing (after the call to mongoc query entities) I simply copied from orionldGetEntities()
@@ -147,6 +150,29 @@ bool orionldPostQuery(void)
   // If empty result array, no Link header is needed
   if (orionldState.responseTree->value.firstChildP == NULL)
     orionldState.noLinkHeader = true;
+
+  LM_T(LmtSR, ("datasetIdArray at %p", datasetIdArray));
+  if (datasetIdArray != NULL)
+  {
+    kjTreeLog(datasetIdArray, "datasetIdArray", LmtSR);
+    int datasets = kjChildCount(datasetIdArray);
+
+    //
+    // datasetEntityFix works on orionldState.in.datasetIdList - let's fool it ...
+    //
+    orionldState.in.datasetIdList.items = datasets;
+    orionldState.in.datasetIdList.array = (char**) kaAlloc(&orionldState.kalloc, sizeof(char*) * datasets);
+    int ix = 0;
+    for (KjNode* datasetP = datasetIdArray->value.firstChildP; datasetP != NULL; datasetP = datasetP->next)
+    {
+      orionldState.in.datasetIdList.array[ix++] = datasetP->value.s;
+    }
+
+    for (KjNode* entityP = orionldState.responseTree->value.firstChildP; entityP != NULL; entityP = entityP->next)
+    {
+      datasetEntityFix(entityP);
+    }
+  }
 
   return true;
 }
