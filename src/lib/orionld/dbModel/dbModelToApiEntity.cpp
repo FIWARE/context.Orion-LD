@@ -304,7 +304,7 @@ KjNode* dbModelToApiEntity2(KjNode* dbEntityP, bool sysAttrs, OrionldRenderForma
     }
 
     KjNode* attributeP;
-    KjNode* datasetP = datasetExtract(datasetsP, attrP->name);  // datasetExtract removes the dataset from @datasets
+    KjNode* datasetP = datasetExtract(datasetsP, attrP->name);  // datasetExtract simply removes the dataset from @datasets
 
     if ((attributeP = dbModelToApiAttribute2(attrP, datasetP, sysAttrs, renderFormat, lang, compacted, pdP)) == NULL)
     {
@@ -321,8 +321,13 @@ KjNode* dbModelToApiEntity2(KjNode* dbEntityP, bool sysAttrs, OrionldRenderForma
   //
   if (datasetsP != NULL)
   {
-    for (KjNode* datasetP = datasetsP->value.firstChildP; datasetP != NULL; datasetP = datasetP->next)
+    KjNode* datasetP = datasetsP->value.firstChildP;
+    KjNode* next     = NULL;
+
+    while (datasetP != NULL)
     {
+      next = datasetP->next;
+
       KjNode* attributeP;
 
       kjChildRemove(datasetsP, datasetP);
@@ -333,6 +338,7 @@ KjNode* dbModelToApiEntity2(KjNode* dbEntityP, bool sysAttrs, OrionldRenderForma
       }
 
       kjChildAdd(entityP, attributeP);
+      datasetP = next;
     }
   }
 

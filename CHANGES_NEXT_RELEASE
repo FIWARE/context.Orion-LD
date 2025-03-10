@@ -2,7 +2,7 @@
   #1760: Support for multiple Link headers
 
 ## New Features:
-  #XXXX: ...
+  #XXXX: Support for datasetId URI param for Query/Retrieve Entities
 
 ## Notes
 * Fixing the issue #1760, Orion-LD is now more strict about the syntax in the HTTP Link header for @contexts.

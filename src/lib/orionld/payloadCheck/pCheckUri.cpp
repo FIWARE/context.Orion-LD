@@ -129,7 +129,8 @@ bool pCheckUri(const char* uri, const char* name, bool mustBeUri)
 
     return false;
   }
-
+  else if (strcmp(uri, "@none") == 0)
+    return true;
 
   //
   // Is there a colon somewhere inside the URI string?

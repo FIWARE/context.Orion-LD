@@ -71,6 +71,8 @@ SET (SOURCES
     dateTime.cpp
     forbidden.cpp
     pick.cpp
+    datasetAttributeFix.cpp
+    datasetEntityFix.cpp
 )
 
 # Include directories

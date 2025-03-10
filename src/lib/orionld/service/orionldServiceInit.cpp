@@ -210,6 +210,8 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
     serviceP->options    = ORIONLD_SERVICE_OPTION_PREFETCH_ID_AND_TYPE;
     serviceP->options   |= ORIONLD_SERVICE_OPTION_EXPAND_TYPE;
     serviceP->options   |= ORIONLD_SERVICE_OPTION_DATASET_SUPPORT;
+
+    serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
   }
   else if (serviceP->serviceRoutine == orionldPostNotify)
   {
@@ -247,6 +249,8 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
     serviceP->uriParams |= ORIONLD_URIPARAM_ENTITYMAP;
     serviceP->uriParams |= ORIONLD_URIPARAM_ORDERBY;
     serviceP->uriParams |= ORIONLD_URIPARAM_REVERSE;
+    serviceP->uriParams |= ORIONLD_URIPARAM_DATASETID;
+    serviceP->uriParams |= ORIONLD_URIPARAM_DATASETID_LIST;
   }
   else if (serviceP->serviceRoutine == orionldGetEntity)
   {
@@ -260,12 +264,15 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
     serviceP->uriParams |= ORIONLD_URIPARAM_LANG;
     serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
     serviceP->uriParams |= ORIONLD_URIPARAM_TYPELIST;
+    serviceP->uriParams |= ORIONLD_URIPARAM_DATASETID;
+    serviceP->uriParams |= ORIONLD_URIPARAM_DATASETID_LIST;
   }
   else if (serviceP->serviceRoutine == orionldDeleteEntity)
   {
     serviceP->options   |= ORIONLD_SERVICE_OPTION_NO_CONTEXT_NEEDED;
 
     serviceP->uriParams |= ORIONLD_URIPARAM_TYPELIST;
+    serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
   }
   else if (serviceP->serviceRoutine == orionldDeleteEntities)
   {
@@ -281,10 +288,12 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
     serviceP->uriParams |= ORIONLD_URIPARAM_COORDINATES;
     serviceP->uriParams |= ORIONLD_URIPARAM_GEOPROPERTY;
     serviceP->uriParams |= ORIONLD_URIPARAM_GEOMETRYPROPERTY;
+    serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
   }
   else if (serviceP->serviceRoutine == orionldPostEntity)
   {
     serviceP->uriParams |= ORIONLD_URIPARAM_OPTIONS;
+    serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
   }
   else if (serviceP->serviceRoutine == orionldPatchAttribute)
   {
@@ -292,12 +301,14 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
     serviceP->options   |= ORIONLD_SERVICE_OPTION_EXPAND_ATTR;
 
     serviceP->uriParams |= ORIONLD_URIPARAM_TYPELIST;
+    serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
   }
   else if (serviceP->serviceRoutine == orionldPutAttribute)
   {
     serviceP->options   |= ORIONLD_SERVICE_OPTION_EXPAND_ATTR;
 
     serviceP->uriParams |= ORIONLD_URIPARAM_TYPELIST;
+    serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
   }
   else if (serviceP->serviceRoutine == orionldPatchEntity)
   {
@@ -305,6 +316,7 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
     serviceP->options   |= ORIONLD_SERVICE_OPTION_CLONE_PAYLOAD;
 
     serviceP->uriParams |= ORIONLD_URIPARAM_TYPELIST;
+    serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
   }
   else if (serviceP->serviceRoutine == orionldPatchEntity2)
   {
@@ -314,10 +326,12 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
     serviceP->uriParams |= ORIONLD_URIPARAM_OPTIONS;
     serviceP->uriParams |= ORIONLD_URIPARAM_OBSERVEDAT;
     serviceP->uriParams |= ORIONLD_URIPARAM_TYPELIST;
+    serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
   }
   else if (serviceP->serviceRoutine == orionldPutEntity)
   {
     serviceP->uriParams |= ORIONLD_URIPARAM_TYPELIST;
+    serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
   }
   else if (serviceP->serviceRoutine == orionldDeleteAttribute)
   {
@@ -326,6 +340,7 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
 
     serviceP->options   |= ORIONLD_SERVICE_OPTION_EXPAND_ATTR;
     serviceP->uriParams |= ORIONLD_URIPARAM_TYPELIST;
+    serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
   }
   else if (serviceP->serviceRoutine == orionldPostRegistrations)
   {
@@ -407,14 +422,17 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
 
     serviceP->options    = 0;  // Tenant will be created if necessary
     serviceP->options   |= ORIONLD_SERVICE_OPTION_DONT_ADD_CONTEXT_TO_RESPONSE_PAYLOAD;
+
+    serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
   }
   else if (serviceP->serviceRoutine == orionldPostBatchUpdate)
   {
     serviceP->isBatchOp  = true;
 
-    serviceP->uriParams |= ORIONLD_URIPARAM_OPTIONS;
-
     serviceP->options   |= ORIONLD_SERVICE_OPTION_DONT_ADD_CONTEXT_TO_RESPONSE_PAYLOAD;
+
+    serviceP->uriParams |= ORIONLD_URIPARAM_OPTIONS;
+    serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
   }
   else if (serviceP->serviceRoutine == orionldPostBatchUpsert)
   {
@@ -424,6 +442,7 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
     serviceP->options   |= ORIONLD_SERVICE_OPTION_DONT_ADD_CONTEXT_TO_RESPONSE_PAYLOAD;
 
     serviceP->uriParams |= ORIONLD_URIPARAM_OPTIONS;
+    serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
   }
   else if (serviceP->serviceRoutine == orionldPostBatchDelete)
   {
@@ -431,6 +450,8 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
 
     serviceP->options   |= ORIONLD_SERVICE_OPTION_DONT_ADD_CONTEXT_TO_RESPONSE_PAYLOAD;
     serviceP->options   |= ORIONLD_SERVICE_OPTION_NO_CONTEXT_NEEDED;
+
+    serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
   }
   else if (serviceP->serviceRoutine == orionldPostQuery)
   {
@@ -442,6 +463,7 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
     serviceP->uriParams |= ORIONLD_URIPARAM_COUNT;
     serviceP->uriParams |= ORIONLD_URIPARAM_LIMIT;
     serviceP->uriParams |= ORIONLD_URIPARAM_OFFSET;
+    serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
   }
   else if (serviceP->serviceRoutine == orionldGetEntityTypes)
   {
@@ -471,6 +493,8 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
 
     serviceP->options |= ORIONLD_SERVICE_OPTION_PREFETCH_ID_AND_TYPE;
     serviceP->options |= ORIONLD_SERVICE_OPTION_EXPAND_TYPE;
+
+    serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
   }
   else if (serviceP->serviceRoutine == orionldGetTemporalEntities)
     serviceP->mintaka = true;

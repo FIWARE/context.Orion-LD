@@ -164,7 +164,8 @@ typedef enum TraceLevels
   LmtUriEncode,                        // YRL encode/decode results
   LmtBug,                              // Current bug being debugged
   LmtPick,                             // URI param 'pick'
-  LmtLinkHeader,                       // HTTP Header: Link
+  LmtLinkHeader = 220,                 // HTTP Header: Link
+  LmtDatasetId,                        // datasetId
 
   //
   // Legacy

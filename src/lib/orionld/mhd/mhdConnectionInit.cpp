@@ -729,11 +729,22 @@ MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
   }
   else if (strcmp(key, "datasetId") == 0)
   {
-    if (pCheckUri((char*) value, "datasetId", true) == false)
-      return MHD_YES;
+    //
+    // Can either be a single datasetId or a comma-separated list of datassetIds
+    //
+    if (strchr(value, ',') == NULL)
+    {
+      if (pCheckUri((char*) value, "datasetId", true) == false)
+        return MHD_YES;
 
-    orionldState.uriParams.datasetId = (char*) value;
-    orionldState.uriParams.mask |= ORIONLD_URIPARAM_DATASETID;
+      orionldState.uriParams.datasetId = (char*) value;
+      orionldState.uriParams.mask |= ORIONLD_URIPARAM_DATASETID;
+    }
+    else
+    {
+      orionldState.uriParams.datasetId = (char*) value;
+      orionldState.uriParams.mask |= ORIONLD_URIPARAM_DATASETID_LIST;
+    }
   }
   else if (strcmp(key, "deleteAll") == 0)
   {

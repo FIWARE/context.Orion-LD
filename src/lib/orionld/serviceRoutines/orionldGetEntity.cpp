@@ -40,6 +40,7 @@ extern "C"
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/common/tenantList.h"                           // tenant0
 #include "orionld/common/pick.h"                                 // pickForEntity
+#include "orionld/common/datasetEntityFix.h"                     // datasetEntityFix
 #include "orionld/context/orionldEntityExpand.h"                 // orionldEntityExpand
 #include "orionld/context/orionldEntityCompact.h"                // orionldEntityCompact
 #include "orionld/payloadCheck/pCheckUri.h"                      // pCheckUri
@@ -358,12 +359,9 @@ bool orionldGetEntity(void)
   //
   // Transform the apiEntityP according to orionldState.out.format, lang, and sysAttrs
   //
-  kjTreeLog(apiEntityP, "apiEntityP", LmtBug);
   if      (orionldState.out.format == RF_SIMPLIFIED) ntosEntity(apiEntityP, lang);
   else if (orionldState.out.format == RF_CONCISE)    ntocEntity(apiEntityP, lang, sysAttrs);
   else                                               ntonEntity(apiEntityP, lang, sysAttrs);
-
-  kjTreeLog(apiEntityP, "apiEntityP", LmtBug);
 
   if (sysAttrs == false)
     kjSysAttrsRemove(apiEntityP, 2);
@@ -417,6 +415,9 @@ bool orionldGetEntity(void)
 
   orionldState.responseTree   = apiEntityP;
   orionldState.httpStatusCode = 200;
+
+  if (orionldState.uriParams.datasetId != NULL)
+    datasetEntityFix(orionldState.responseTree);
 
   return true;
 }
