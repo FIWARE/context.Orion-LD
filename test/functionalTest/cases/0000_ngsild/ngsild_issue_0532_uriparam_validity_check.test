@@ -30,18 +30,10 @@ orionldStart CB
 --SHELL--
 
 #
-# 01. Call GET /entities with URI param 'datasetId' - see error
-# 02. Call GET /entities with URI param 'abc' - see error
+# 01. Call GET /entities with URI param 'abc' - see error
 #
 
-echo "01. Call GET /entities with URI param 'datasetId' - see error"
-echo "============================================================="
-orionCurl --url /ngsi-ld/v1/entities?datasetId=urn:ngsi-ld:datasets:E1
-echo
-echo
-
-
-echo "02. Call GET /entities with URI param 'abc' - see error"
+echo "01. Call GET /entities with URI param 'abc' - see error"
 echo "======================================================="
 orionCurl --url /ngsi-ld/v1/entities?abc=13
 echo
@@ -49,21 +41,7 @@ echo
 
 
 --REGEXPECT--
-01. Call GET /entities with URI param 'datasetId' - see error
-=============================================================
-HTTP/1.1 400 Bad Request
-Content-Length: 118
-Content-Type: application/json
-Date: REGEX(.*)
-
-{
-    "detail": "datasetId",
-    "title": "Unsupported URI parameter",
-    "type": "https://uri.etsi.org/ngsi-ld/errors/BadRequestData"
-}
-
-
-02. Call GET /entities with URI param 'abc' - see error
+01. Call GET /entities with URI param 'abc' - see error
 =======================================================
 HTTP/1.1 400 Bad Request
 Content-Length: 108

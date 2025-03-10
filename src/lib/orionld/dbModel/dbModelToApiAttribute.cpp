@@ -249,10 +249,13 @@ void dbModelToApiLangPropertySimplified(KjNode* dbAttrP, const char* lang)
 //
 KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs, OrionldRenderFormat renderFormat, const char* lang, bool compacted, OrionldProblemDetails* pdP)
 {
-  bool          defaultAttribute = true;
+  bool defaultAttribute = true;
 
   if (dbAttrP == NULL)
+  {
     defaultAttribute = false;
+    LM_T(LmtSR, ("Dataset-only Attribute: '%s'", datasetP->name));
+  }
   else if ((dbAttrP->type == KjArray) && (dbAttrP->value.firstChildP == NULL))
     defaultAttribute = false;
 
@@ -446,7 +449,6 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
   }
   else  // RF_NORMALIZED  or  RF_CONCISE
   {
-    LM_T(LmtSR, ("Attribute: '%s'", dbAttrP->name));
     kjTreeLog(dbAttrP, "DB Attr", LmtSR);
     KjNode* mdsP    = NULL;
     KjNode* typeP   = (attrTypeNodeP == NULL)? kjLookup(dbAttrP, "type") : attrTypeNodeP;

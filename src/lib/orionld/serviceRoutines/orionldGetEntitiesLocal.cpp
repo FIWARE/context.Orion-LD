@@ -40,6 +40,7 @@ extern "C"
 #include "orionld/types/QNode.h"                                    // QNode
 #include "orionld/common/orionldState.h"                            // orionldState
 #include "orionld/common/pick.h"                                    // pickForEntityArray
+#include "orionld/common/datasetEntityFix.h"                        // datasetEntityFix
 #include "orionld/context/orionldContextItemExpand.h"               // orionldContextItemExpand
 #include "orionld/mongoc/mongocEntitiesQuery.h"                     // mongocEntitiesQuery
 #include "orionld/kjTree/kjChildPrepend.h"                          // kjChildPrepend
@@ -152,7 +153,7 @@ KjNode* apiEntityToGeoJson(KjNode* apiEntityP, KjNode* geometryNodeP, bool geoPr
 }
 
 
-
+extern void entityDatasetIdFix(KjNode* entityP, const char* datasetId);
 // ----------------------------------------------------------------------------
 //
 // orionldGetEntitiesLocal -
@@ -257,6 +258,14 @@ bool orionldGetEntitiesLocal
   // If empty result array, no Link header is needed
   if (orionldState.responseTree->value.firstChildP == NULL)
     orionldState.noLinkHeader = true;
+
+  if (orionldState.uriParams.datasetId != NULL)
+  {
+    for (KjNode* entityP = orionldState.responseTree->value.firstChildP; entityP != NULL; entityP = entityP->next)
+    {
+      datasetEntityFix(entityP, orionldState.uriParams.datasetId);
+    }
+  }
 
   kjTreeLog(orionldState.responseTree, "Response Tree", LmtPick);
   if (orionldState.in.pickList.items > 0)
