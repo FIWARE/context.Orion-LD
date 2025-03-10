@@ -3,6 +3,7 @@
 
 ## New Features:
   #XXXX: Support for datasetId URI param for Query/Retrieve Entities
+  #XXXX: Support for datasetId for POST Query
 
 ## Notes
 * Fixing the issue #1760, Orion-LD is now more strict about the syntax in the HTTP Link header for @contexts.

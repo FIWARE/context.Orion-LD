@@ -29,8 +29,6 @@ orionldStart CB -experimental
 
 --SHELL--
 #
-# No datasetId for now.
-#
 # 01. Create an entity E1 with an attr P1
 # 02. See E1 in DB
 # 03. GET E1

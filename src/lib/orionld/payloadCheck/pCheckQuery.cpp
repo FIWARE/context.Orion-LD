@@ -230,28 +230,29 @@ TreeNode* pCheckQuery(KjNode* queryP)
     return NULL;
   }
 
-  TreeNode* treeNodeV = (TreeNode*) kaAlloc(&orionldState.kalloc, 10 * sizeof(TreeNode));
+  TreeNode* treeNodeV = (TreeNode*) kaAlloc(&orionldState.kalloc, 11 * sizeof(TreeNode));
   if (treeNodeV == NULL)
   {
     orionldError(OrionldInternalError, "Out of memory", "allocating TreeNode array", 500);
     return NULL;
   }
 
-  treeNodeSet(&treeNodeV[0], "type",      NULL, 1 << KjString,  MANDATORY);
-  treeNodeSet(&treeNodeV[1], "entities",  NULL, 1 << KjArray,   0);
-  treeNodeSet(&treeNodeV[2], "attrs",     NULL, 1 << KjArray,   0);
-  treeNodeSet(&treeNodeV[3], "q",         NULL, 1 << KjString,  0);
-  treeNodeSet(&treeNodeV[4], "geoQ",      NULL, 1 << KjObject,  0);
-  treeNodeSet(&treeNodeV[5], "local",     NULL, 1 << KjBoolean, 0);
-  treeNodeSet(&treeNodeV[6], "csf",       NULL, 1 << KjString,  NOT_SUPPORTED);
-  treeNodeSet(&treeNodeV[7], "temporalQ", NULL, 1 << KjObject,  NOT_SUPPORTED);
-  treeNodeSet(&treeNodeV[8], "scopeQ",    NULL, 1 << KjString,  NOT_IMPLEMENTED);
-  treeNodeSet(&treeNodeV[9], "lang",      NULL, 1 << KjString,  0);
+  treeNodeSet(&treeNodeV[0],  "type",      NULL, 1 << KjString,  MANDATORY);
+  treeNodeSet(&treeNodeV[1],  "entities",  NULL, 1 << KjArray,   0);
+  treeNodeSet(&treeNodeV[2],  "attrs",     NULL, 1 << KjArray,   0);
+  treeNodeSet(&treeNodeV[3],  "q",         NULL, 1 << KjString,  0);
+  treeNodeSet(&treeNodeV[4],  "geoQ",      NULL, 1 << KjObject,  0);
+  treeNodeSet(&treeNodeV[5],  "local",     NULL, 1 << KjBoolean, 0);
+  treeNodeSet(&treeNodeV[6],  "csf",       NULL, 1 << KjString,  NOT_SUPPORTED);
+  treeNodeSet(&treeNodeV[7],  "temporalQ", NULL, 1 << KjObject,  NOT_SUPPORTED);
+  treeNodeSet(&treeNodeV[8],  "scopeQ",    NULL, 1 << KjString,  NOT_IMPLEMENTED);
+  treeNodeSet(&treeNodeV[9],  "lang",      NULL, 1 << KjString,  0);
+  treeNodeSet(&treeNodeV[10], "datasetId", NULL, 1 << KjArray,  0);
 
   //
   // Extract first level nodes + check for unknown fields and duplicates
   //
-  if (pCheckTreeNodesExtract(queryP, treeNodeV, 10, true, NULL) == false)
+  if (pCheckTreeNodesExtract(queryP, treeNodeV, 11, true, NULL) == false)
     return NULL;
 
   // Make sure "type": "Query" - we already know it's there and is a String
