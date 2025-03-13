@@ -581,6 +581,8 @@ bool orionldPatchEntity2(void)
   {
     if (dbEntityFields(dbEntityP, entityId, &entityType, &dbAttrsP) == false)
       return false;
+
+    orionldState.entityTypeForTroe = entityType;
   }
 
   //

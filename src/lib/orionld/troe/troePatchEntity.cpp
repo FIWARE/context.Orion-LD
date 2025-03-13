@@ -42,6 +42,7 @@ extern "C"
 #include "orionld/troe/pgAttributeAppend.h"                    // pgAttributeAppend
 #include "orionld/troe/pgSubAttributeAppend.h"                 // pgSubAttributeAppend
 #include "orionld/troe/pgCommands.h"                           // pgCommands
+#include "orionld/troe/troeFilterMatch.h"                      // troeFilterMatch
 #include "orionld/troe/troePatchEntity.h"                      // Own interface
 
 
@@ -53,6 +54,15 @@ extern "C"
 bool troePatchEntity(void)
 {
   char* entityId   = orionldState.wildcard[0];
+
+  if (orionldState.entityTypeForTroe != NULL)
+  {
+    if (troeFilterMatch(orionldState.entityTypeForTroe, orionldState.wildcard[0]) == false)
+    {
+      LM_T(LmtConfig, ("Not storing entities of type '%s' in TRoE - filtered out", orionldState.entityTypeForTroe));
+      return true;
+    }
+  }
 
   PgAppendBuffer attributesBuffer;
   PgAppendBuffer subAttributesBuffer;

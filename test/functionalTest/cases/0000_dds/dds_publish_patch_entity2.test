@@ -24,8 +24,8 @@
 the test client publishes on DDS, the broker receives DDS notifications and creates/updates the corresponding NGSI-LD entities
 
 --SHELL-INIT--
-$REPO_HOME/scripts/configFile.sh "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.orionld
-$REPO_HOME/scripts/configFile.sh "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.ftClient
+$REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" --ddsTopic "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.orionld
+$REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" --ddsTopic "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.ftClient
 dbInit CB
 pgInit $CB_DB_NAME
 orionldStart CB -mongocOnly -wip dds
@@ -250,3 +250,5 @@ Date: REGEX(.*)
 ftClientStop
 brokerStop
 dbDrop CB
+rm -f $HOME/.orionld
+rm -f $HOME/.ftClient

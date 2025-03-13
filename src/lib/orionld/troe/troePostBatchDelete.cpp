@@ -22,8 +22,13 @@
 *
 * Author: Ken Zangelin
 */
+extern "C"
+{
+#include "kjson/KjNode.h"                                      // KjNode
+#include "kjson/kjLookup.h"                                    // kjLookup
+}
+
 #include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
 
 #include "orionld/types/PgTableDefinitions.h"                  // PG_ENTITY_INSERT_START
 #include "orionld/types/PgAppendBuffer.h"                      // PgAppendBuffer
@@ -33,6 +38,7 @@
 #include "orionld/troe/pgAppend.h"                             // pgAppend
 #include "orionld/troe/pgEntityAppend.h"                       // pgEntityAppend
 #include "orionld/troe/pgCommands.h"                           // pgCommands
+#include "orionld/troe/troeFilterMatch.h"                      // troeFilterMatch
 #include "orionld/troe/troePostBatchDelete.h"                  // Own interface
 
 
@@ -52,6 +58,19 @@ bool troePostBatchDelete(void)
   {
     char* entityId = entityIdP->value.s;
     char  instanceId[80];
+
+    // orionldState.entityIdAndTypeTable ...
+    KjNode* idAndTypeP = (orionldState.entityIdAndTypeTable != NULL)? kjLookup(orionldState.entityIdAndTypeTable, entityId) : NULL;
+    char*   entityType = NULL;
+
+    if (idAndTypeP != NULL)
+      entityType = idAndTypeP->value.s;
+
+    if ((entityType != NULL) && troeFilterMatch(entityType, entityId) == false)
+    {
+      LM_T(LmtConfig, ("Not storing entities of type '%s' in TRoE - filtered out (entity id: '%s')", entityType, entityId));
+      continue;
+    }
 
     uuidGenerate(instanceId, sizeof(instanceId), "urn:ngsi-ld:attribute:instance:");
 

@@ -74,6 +74,7 @@ SET (SOURCES
     pgConnectionPoolInsert.cpp
     pgConnectionPoolInit.cpp
     pgVersionGet.cpp
+    troeFilterMatch.cpp
 )
 
 SET (HEADERS
@@ -123,6 +124,7 @@ SET (HEADERS
     pgConnectionPoolCreate.h
     pgConnectionPoolInsert.h
     pgConnectionPoolInit.h
+    troeFilterMatch.h
 )
 
 

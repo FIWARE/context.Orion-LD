@@ -141,6 +141,14 @@ typedef enum TraceLevels
   LmtContextCachePersist = 150,        // Persisting contexts in DB
 
   //
+  // TRoE
+  //
+  LmtTroe       = 160,                 // Temporal Representation of Entities
+  LmtTroeFilter,                       // Filtering of entities/attributes for inclusion in TRoE
+  LmtPostgres,                         // Postgres (TRoE)
+  LmtSql,                              // SQL command for TRoE
+
+  //
   // Misc
   //
   LmtMongoc = 200,                     // Entire mongoc library
@@ -151,8 +159,6 @@ typedef enum TraceLevels
   LmtMqtt = 205,                       // MQTT notifications
   LmtQ,                                // Query Language
   LmtCsf,                              // CSF - 'q' for registrations
-  LmtPostgres,                         // Postgres (TRoE)
-  LmtSql,                              // SQL command for TRoE
   LmtPgPool,                           // Postgres Connection Pool
   LmtTenants = 210,                    // Well, tenants :)
   LmtSocketService,                    // Socket Service
@@ -166,6 +172,7 @@ typedef enum TraceLevels
   LmtPick,                             // URI param 'pick'
   LmtLinkHeader = 220,                 // HTTP Header: Link
   LmtDatasetId,                        // datasetId
+  LmtConfig,                           // Config File
 
   //
   // Legacy

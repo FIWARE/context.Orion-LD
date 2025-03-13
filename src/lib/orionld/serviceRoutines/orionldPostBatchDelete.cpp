@@ -408,6 +408,7 @@ bool orionldPostBatchDelete(void)
       // FIXME: Remodel responseErrors to follow the API
     }
   }
+  orionldState.entityIdAndTypeTable = entityIdAndTypeTable;
 
   //
   // Those Entity IDs that did not exist locally are set as 404 in responseErrors

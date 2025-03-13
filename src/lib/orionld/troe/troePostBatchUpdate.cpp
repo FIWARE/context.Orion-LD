@@ -40,6 +40,7 @@ extern "C"
 #include "orionld/troe/pgAppend.h"                             // pgAppend
 #include "orionld/troe/pgAttributesBuild.h"                    // pgAttributesBuild
 #include "orionld/troe/pgCommands.h"                           // pgCommands
+#include "orionld/troe/troeFilterMatch.h"                      // troeFilterMatch
 #include "orionld/troe/troePostBatchUpdate.h"                  // Own interface
 
 
@@ -72,6 +73,20 @@ bool troePostBatchUpdate(void)
   {
     if (troeIgnored(entityP) == true)
       continue;
+
+    KjNode* typeP = kjLookup(entityP, "type");
+    KjNode* idP   = kjLookup(entityP, "id");
+    char*   type  = (typeP != NULL)? typeP->value.s : NULL;
+    char*   id    = (idP != NULL)? idP->value.s : NULL;
+
+    if (type != NULL)
+    {
+      if (troeFilterMatch(type, id) == false)
+      {
+        LM_T(LmtConfig, ("Not storing entities of type '%s' in TRoE - filtered out (entity id: '%s')", type, id));
+        continue;
+      }
+    }
 
     pgAttributesBuild(&attributes, entityP, NULL, attributeTroeMode, &subAttributes);
   }
