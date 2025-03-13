@@ -296,7 +296,7 @@ bool orionldPatchAttribute(void)
     return legacyPatchAttribute();
 
   char* entityId   = orionldState.wildcard[0];
-  char* entityType = NULL;
+  char* entityType = orionldState.uriParams.type;
   char* attrName   = orionldState.wildcard[1];
 
   //

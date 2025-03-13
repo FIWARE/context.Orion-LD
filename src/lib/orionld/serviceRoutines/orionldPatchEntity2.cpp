@@ -755,15 +755,20 @@ bool orionldPatchEntity2(void)
       distOpSuccess(responseBody, &local, entityId, NULL);
   }
 
-  responseFix(responseBody, DoMergeEntity, 204, entityId);
-
-  if (orionldState.curlDoMultiP != NULL)
-    distOpListRelease(distOpList);
-
-  if ((ddsSupport == true) && (orionldState.alterations != NULL))
+  if ((dbEntityP == NULL) && (distOpList == NULL))
+    orionldError(OrionldResourceNotFound, "Entity not found", entityId, 404);
+  else
   {
-    orionldState.requestTree = patchTree;
-    ddsPublishAttributes(incoming, dbAttrsP);
+    responseFix(responseBody, DoMergeEntity, 204, entityId);
+
+    if (orionldState.curlDoMultiP != NULL)
+      distOpListRelease(distOpList);
+
+    if ((ddsSupport == true) && (orionldState.alterations != NULL))
+    {
+      orionldState.requestTree = patchTree;
+      ddsPublishAttributes(incoming, dbAttrsP);
+    }
   }
 
   return true;

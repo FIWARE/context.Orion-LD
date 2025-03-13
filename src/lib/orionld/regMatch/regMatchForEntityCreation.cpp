@@ -119,6 +119,8 @@ DistOp* regMatchForEntityCreation
 
   LM_T(LmtRegMatch, ("Registration Mode: %d (%s)", regMode, registrationModeToString(regMode)));
   LM_T(LmtRegMatch, ("Operation:         %d (%s)", operation, distOpTypes[operation]));
+  LM_T(LmtRegMatch, ("Entity ID:         %s", entityId));
+  LM_T(LmtRegMatch, ("Entity Type:       %s", entityType));
 
   for (RegCacheItem* regP = orionldState.tenantP->regCache->regList; regP != NULL; regP = regP->next)
   {

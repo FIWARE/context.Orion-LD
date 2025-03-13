@@ -53,7 +53,7 @@ echo $testStartTime > $LOG_FILE
 #
 if [ -f ~/.orionld ]
 then
-    rm -F ~/.orionld
+    rm -f ~/.orionld
 fi
 
 
