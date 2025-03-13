@@ -1,0 +1,355 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Distributed PATCH of single attribute
+
+--SHELL-INIT--
+dbInit CB
+dbInit CP1
+orionldStart CB  -experimental -forwarding
+orionldStart CP1 -experimental
+
+--SHELL--
+#
+# 01. Create an inclusive registration 'Domain02:infrastructure' for CP1 - according to the issue (1673)
+# 02. Create an inclusive registration 'Domain02:services' for CP1 - according to the issue (1673)
+# 03. Create an entity 'urn:ngsi-ld:Service:TestLlo:Component:Nginx' in CP1, with attributes 'name', 'service', 'serviceComponentStatus', and 'containerImage'
+# 04. Create an entity 'urn:ngsi-ld:Domain:D1' in CP1, with attributes 'name', 'service'
+# 05. Attempt to PATCH /entities/urn:ngsi-ld:Domain:D1 in CB - reg 'urn:aeros:federation:Domain02:infrastructure' is a match (as entity type is not known)"
+# 06. As step 04, but giving also the entity type of 'urn:ngsi-ld:Service:TestLlo:Component:Nginx' - 404 as no matching regs nor in local
+# 07. GET the entity urn:ngsi-ld:Domain:D1 from CP1
+# 08. Same PATCH, no entity type given, using PATCH Attribute instead - goes through as no entity type is given
+# 09. As step 08 but giving also the entity type - 404 as no matching regs nor in local
+# 10. GET the entity urn:ngsi-ld:Domain:D1 from CP1
+#
+
+echo "01. Create an inclusive registration 'Domain02:infrastructure' for CP1 - according to the issue (1673)"
+echo "======================================================================================================"
+payload='{
+  "type": "ContextSourceRegistration",
+  "id": "urn:aeros:federation:Domain02:infrastructure",
+  "information": [
+    {
+      "entities": [
+        {
+          "type": "Domain"
+        },
+        {
+          "type": "LowLevelOrchestrator"
+        },
+        {
+          "type": "InfrastructureElement"
+        }
+      ]
+    }
+  ],
+  "contextSourceInfo": [
+    {
+      "key": "Authorization",
+      "value": "urn:ngsi-ld:request"
+    }
+  ],
+  "mode": "inclusive",
+  "operations": [
+    "retrieveOps"
+  ],
+  "hostAlias": "Domain02",
+  "management": {
+    "localOnly": true
+  },
+  "endpoint": "localhost:'$CP1_PORT'",
+  "aerosDomain": "Domain02",
+  "aerosDomainFederation": true
+}'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload"
+echo
+echo
+
+
+echo "02. Create an inclusive registration 'Domain02:services' for CP1 - according to the issue (1673)"
+echo "================================================================================================"
+payload='{
+  "type": "ContextSourceRegistration",
+  "id": "urn:aeros:federation:Domain02:services",
+  "information": [
+    {
+      "entities": [
+        {
+          "type": "Service"
+        },
+        {
+          "type": "ServiceComponent"
+        },
+        {
+          "type": "NetworkPort"
+        },
+        {
+          "type": "InfrastructureElementRequirements"
+        }
+      ]
+    }
+  ],
+  "contextSourceInfo": [
+    {
+      "key": "Authorization",
+      "value": "urn:ngsi-ld:request"
+    }
+  ],
+  "mode": "inclusive",
+  "operations": [
+    "retrieveOps",
+    "updateOps",
+    "deleteEntity"
+  ],
+  "hostAlias": "Domain02",
+  "management": {
+    "localOnly": true
+  },
+  "endpoint": "localhost:'$CP1_PORT'",
+  "aerosDomain": "Domain02",
+  "aerosDomainFederation": true
+}'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload"
+echo
+echo
+
+
+echo "03. Create an entity 'urn:ngsi-ld:Service:TestLlo:Component:Nginx' in CP1, with attributes 'name', 'service', 'serviceComponentStatus', and 'containerImage'"
+echo "============================================================================================================================================================"
+payload='{
+  "id": "urn:ngsi-ld:Service:TestLlo:Component:Nginx",
+  "type": "ServiceComponent",
+  "name": "NGINX",
+  "service": {
+    "type": "Relationship",
+    "object": "urn:ngsi-ld:Service:TestLlo"
+  },
+  "serviceComponentStatus": {
+    "type": "Relationship",
+    "object": "urn:ngsi-ld:ServiceComponentStatus:Starting"
+  },
+  "containerImage": {
+    "type": "Property",
+    "value": "nginx:latest"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" --port $CP1_PORT
+echo
+echo
+
+
+echo "04. Create an entity 'urn:ngsi-ld:Domain:D1' in CP1, with attributes 'name', 'service'"
+echo "======================================================================================"
+payload='{
+  "id": "urn:ngsi-ld:Domain:D1",
+  "type": "Domain",
+  "name": "N:04",
+  "service": "S:04"
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" --port $CP1_PORT
+echo
+echo
+
+
+echo "05. Attempt to PATCH /entities/urn:ngsi-ld:Domain:D1 in CB - reg 'urn:aeros:federation:Domain02:infrastructure' is a match (as entity type is not known)"
+echo "========================================================================================================================================================"
+payload='{
+  "name": "N:05"
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:Domain:D1 --payload "$payload" -X PATCH
+echo
+echo
+
+
+echo "06. As step 04, but giving also the entity type of 'urn:ngsi-ld:Service:TestLlo:Component:Nginx' - 404 as no matching regs nor in local"
+echo "======================================================================================================================================="
+payload='{
+  "name": "N:06"
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:Domain:D1?type=Domain --payload "$payload" -X PATCH
+echo
+echo
+
+
+echo "07. GET the entity urn:ngsi-ld:Domain:D1 from CP1"
+echo "================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:Domain:D1 --port $CP1_PORT
+echo
+echo
+
+
+echo "08. Same PATCH, no entity type given, using PATCH Attribute instead - goes through as no entity type is given"
+echo "============================================================================================================="
+payload='{
+  "value": "N:08"
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:Domain:D1/attrs/name --payload "$payload" -X PATCH
+echo
+echo
+
+
+echo "09. As step 08 but giving also the entity type - 404 as no matching regs nor in local"
+echo "====================================================================================="
+payload='{
+  "value": "N:09"
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:Domain:D1/attrs/name?type=Domain --payload "$payload" -X PATCH
+echo
+echo
+
+
+echo "10. GET the entity urn:ngsi-ld:Domain:D1 from CP1"
+echo "================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:Domain:D1 --port $CP1_PORT
+echo
+echo
+
+
+--REGEXPECT--
+01. Create an inclusive registration 'Domain02:infrastructure' for CP1 - according to the issue (1673)
+======================================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/csourceRegistrations/urn:aeros:federation:Domain02:infrastructure
+
+
+
+02. Create an inclusive registration 'Domain02:services' for CP1 - according to the issue (1673)
+================================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/csourceRegistrations/urn:aeros:federation:Domain02:services
+
+
+
+03. Create an entity 'urn:ngsi-ld:Service:TestLlo:Component:Nginx' in CP1, with attributes 'name', 'service', 'serviceComponentStatus', and 'containerImage'
+============================================================================================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:Service:TestLlo:Component:Nginx
+
+
+
+04. Create an entity 'urn:ngsi-ld:Domain:D1' in CP1, with attributes 'name', 'service'
+======================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:Domain:D1
+
+
+
+05. Attempt to PATCH /entities/urn:ngsi-ld:Domain:D1 in CB - reg 'urn:aeros:federation:Domain02:infrastructure' is a match (as entity type is not known)
+========================================================================================================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+06. As step 04, but giving also the entity type of 'urn:ngsi-ld:Service:TestLlo:Component:Nginx' - 404 as no matching regs nor in local
+=======================================================================================================================================
+HTTP/1.1 404 Not Found
+Content-Length: 123
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "urn:ngsi-ld:Domain:D1",
+    "title": "Entity not found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
+}
+
+
+07. GET the entity urn:ngsi-ld:Domain:D1 from CP1
+=================================================
+HTTP/1.1 200 OK
+Content-Length: 133
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "id": "urn:ngsi-ld:Domain:D1",
+    "name": {
+        "type": "Property",
+        "value": "N:05"
+    },
+    "service": {
+        "type": "Property",
+        "value": "S:04"
+    },
+    "type": "Domain"
+}
+
+
+08. Same PATCH, no entity type given, using PATCH Attribute instead - goes through as no entity type is given
+=============================================================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+09. As step 08 but giving also the entity type - 404 as no matching regs nor in local
+=====================================================================================
+HTTP/1.1 404 Not Found
+Content-Length: 133
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "urn:ngsi-ld:Domain:D1",
+    "title": "Entity/Attribute Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
+}
+
+
+10. GET the entity urn:ngsi-ld:Domain:D1 from CP1
+=================================================
+HTTP/1.1 200 OK
+Content-Length: 133
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "id": "urn:ngsi-ld:Domain:D1",
+    "name": {
+        "type": "Property",
+        "value": "N:08"
+    },
+    "service": {
+        "type": "Property",
+        "value": "S:04"
+    },
+    "type": "Domain"
+}
+
+
+--TEARDOWN--
+brokerStop CB
+brokerStop CP1
+dbDrop CB
+dbDrop CP1
