@@ -49,6 +49,17 @@ echo $testStartTime > $LOG_FILE
 
 # -----------------------------------------------------------------------------
 #
+# Removingf the config file, if present
+#
+if [ -f ~/.orionld ]
+then
+    rm -F ~/.orionld
+fi
+
+
+
+# -----------------------------------------------------------------------------
+#
 # logMsg -
 #
 function logMsg()
