@@ -25,8 +25,8 @@
 extern "C"
 {
 #include "kalloc/kaStrdup.h"                                   // kaStrdup
-#include "kjson/kjLookup.h"                                    // kjLookup
 #include "kjson/KjNode.h"                                      // KjNode
+#include "kjson/kjLookup.h"                                    // kjLookup
 }
 
 #include "logMsg/logMsg.h"                                     // LM_*
@@ -40,6 +40,7 @@ extern "C"
 #include "orionld/troe/pgAppend.h"                             // pgAppend
 #include "orionld/troe/pgAttributeAppend.h"                    // pgAttributeAppend
 #include "orionld/troe/pgCommands.h"                           // pgCommands
+#include "orionld/troe/troeFilterMatch.h"                      // troeFilterMatch
 #include "orionld/troe/troeDeleteAttribute.h"                  // Own interface
 
 
@@ -54,6 +55,15 @@ bool troeDeleteAttribute(void)
   char* attributeName = orionldState.wildcard[1];  // Already expanded by the service routine (orionldDeleteAttribute)
   char* attributeNameEq;
   char  instanceId[80];
+
+  if (orionldState.entityTypeForTroe != NULL)
+  {
+    if (troeFilterMatch(orionldState.entityTypeForTroe, orionldState.wildcard[0]) == false)
+    {
+      LM_T(LmtConfig, ("Not storing entities of type '%s' in TRoE - filtered out", orionldState.entityTypeForTroe));
+      return true;
+    }
+  }
 
   uuidGenerate(instanceId, sizeof(instanceId), "urn:ngsi-ld:attribute:instance:");
 

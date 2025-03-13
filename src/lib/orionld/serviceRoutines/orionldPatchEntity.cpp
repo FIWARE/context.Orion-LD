@@ -118,6 +118,7 @@ static char* pCheckEntityType2(KjNode* payloadTypeNode, KjNode* dbEntityP, char*
   char*   entityTypeFromDB      = (dbTypeNodeP != NULL)? dbTypeNodeP->value.s : NULL;
   char*   entityTypeFromPayload = (orionldState.payloadTypeNode != NULL)? orionldState.payloadTypeNode->value.s : NULL;
   char*   entityType            = (entityTypeFromPayload != NULL)? orionldContextItemExpand(orionldState.contextP, entityTypeFromPayload, true, NULL) : NULL;
+
   LM_T(LmtSR, ("entityType From DB:        '%s'", entityTypeFromDB));
   LM_T(LmtSR, ("entityType From URI Param: '%s'", entityTypeFromUriParam));
   LM_T(LmtSR, ("entityType From Payload:   '%s'  ('%s')", entityType, entityTypeFromPayload));
@@ -275,6 +276,7 @@ bool orionldPatchEntity(void)
   // [ It is already extracted (by mhdConnectionTreat) and checked for String - just not yet expanded! ]
   //
   entityType = pCheckEntityType2(orionldState.payloadTypeNode, dbEntityP, entityType);
+  orionldState.entityTypeForTroe = entityType;
 
   KjNode* dbAttrsP = (dbEntityP != NULL)? kjLookup(dbEntityP, "attrs") : NULL;
   if (pCheckEntity(orionldState.requestTree, false, dbAttrsP) == false)

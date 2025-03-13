@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_MONGOC_MONGOCENTITYGET_H_
-#define SRC_LIB_ORIONLD_MONGOC_MONGOCENTITYGET_H_
+#ifndef SRC_LIB_ORIONLD_TROE_TROEFILTERMATCH_H_
+#define SRC_LIB_ORIONLD_TROE_TROEFILTERMATCH_H_
 
 /*
 *
-* Copyright 2022 FIWARE Foundation e.V.
+* Copyright 2025 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,17 +25,13 @@
 *
 * Author: Ken Zangelin
 */
-extern "C"
-{
-#include "kjson/KjNode.h"                                        // KjNode
-}
 
 
 
-// -----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 //
-// mongocEntityGet -
+// troeFilterMatch -
 //
-extern KjNode* mongocEntityGet(const char* entityId, const char** projection);
+extern bool troeFilterMatch(const char* entityType, const char* entityId);
 
-#endif  // SRC_LIB_ORIONLD_MONGOC_MONGOCENTITYGET_H_
+#endif  // SRC_LIB_ORIONLD_TROE_TROEFILTERMATCH_H_

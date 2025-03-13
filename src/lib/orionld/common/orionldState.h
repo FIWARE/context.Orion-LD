@@ -364,6 +364,7 @@ typedef struct OrionldConnectionState
   KjNode*                 geoCoordsP;
 
   char*                   entityId;
+  char*                   entityTypeForTroe;
   OrionldUriParamOptions  uriParamOptions;
   OrionldUriParams        uriParams;
   bool                    upsert;
@@ -465,10 +466,11 @@ typedef struct OrionldConnectionState
   KjNode*                 troeIgnoreV[20];
   unsigned int            troeIgnoreIx;
   KjNode*                 batchEntities;
-  KjNode*                 dbAttrWithDatasetsP;  // Used in TRoE for DELETE Attribute with ?deleteAll=true
-  TroeMode                troeOpMode;           // Used in troePostEntities as both POST /entities and POST /temporal/entities use troePostEntities
-  KjNode*                 patchBase;            // Used in troePatchEntity2 as base to where apply the patchTree and then REPLACE those attrs in postgres
-  KjNode*                 patchTree;            // Used in troePatchEntity (set by troePatchEntity2) for inclusion of deleted attrs/sub-attrs
+  KjNode*                 dbAttrWithDatasetsP;    // Used in TRoE for DELETE Attribute with ?deleteAll=true
+  TroeMode                troeOpMode;             // Used in troePostEntities as both POST /entities and POST /temporal/entities use troePostEntities
+  KjNode*                 patchBase;              // Used in troePatchEntity2 as base to where apply the patchTree and then REPLACE those attrs in postgres
+  KjNode*                 patchTree;              // Used in troePatchEntity (set by troePatchEntity2) for inclusion of deleted attrs/sub-attrs
+  KjNode*                 entityIdAndTypeTable;   // Used in orionldPostBatchDelete to get corresponding entity types for the entities to delete (for TRoE filtering)
 
   //
   // GeoJSON - help vars for the case:

@@ -42,6 +42,7 @@ extern "C"
 #include "orionld/dbModel/dbModelFromApiEntity.h"                // dbModelFromApiEntity
 #include "orionld/dbModel/dbModelToApiEntity.h"                  // dbModelToApiEntity2
 #include "orionld/context/orionldAttributeExpand.h"              // orionldAttributeExpand
+#include "orionld/context/orionldContextItemExpand.h"            // orionldContextItemExpand
 #include "orionld/payloadCheck/pCheckUri.h"                      // pCheckUri
 #include "orionld/payloadCheck/pCheckEntityType.h"               // pCheckEntityType
 #include "orionld/payloadCheck/pCheckEntity.h"                   // pCheckEntity
@@ -298,8 +299,13 @@ bool orionldPutEntity(void)
   char*   entityType = orionldState.uriParams.type;  // Set by pCheckEntityType - need to look at that ...
   KjNode* typeNodeP  = kjLookup(orionldState.requestTree, "type");
 
+  if (typeNodeP != NULL)
+    orionldState.payloadTypeNode = typeNodeP;
+
   if (pCheckEntityType(typeNodeP, true, &entityType) == false)
     return false;
+
+  orionldState.entityTypeForTroe = orionldContextItemExpand(orionldState.contextP, entityType, true, NULL);
 
   //
   // Get the entity from the database

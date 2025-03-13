@@ -38,6 +38,7 @@ extern "C"
 #include "orionld/troe/pgAppend.h"                             // pgAppend
 #include "orionld/troe/pgEntityBuild.h"                        // pgEntityBuild
 #include "orionld/troe/pgCommands.h"                           // pgCommands
+#include "orionld/troe/troeFilterMatch.h"                      // troeFilterMatch
 #include "orionld/troe/troePostEntities.h"                     // Own interface
 
 
@@ -58,6 +59,15 @@ bool troePostEntities(void)
 
     if (entityId == NULL)
       LM_RE(false, ("No entity ID"));
+  }
+
+  if (entityType != NULL)
+  {
+    if (troeFilterMatch(entityType, entityId) == false)
+    {
+      LM_T(LmtConfig, ("Not storing entities of type '%s' in TRoE - filtered out", entityType));
+      return true;
+    }
   }
 
   //

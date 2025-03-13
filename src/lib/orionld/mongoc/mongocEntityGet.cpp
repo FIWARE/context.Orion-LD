@@ -36,6 +36,7 @@ extern "C"
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/mongoc/mongocConnectionGet.h"                  // mongocConnectionGet
 #include "orionld/mongoc/mongocKjTreeFromBson.h"                 // mongocKjTreeFromBson
+#include "orionld/mongoc/mongocWriteLog.h"                       // MONGOC_RLOG - FIXME: change name to mongocLog.h
 #include "orionld/mongoc/mongocEntityGet.h"                      // Own interface
 
 
@@ -44,7 +45,7 @@ extern "C"
 //
 // mongocEntityGet -
 //
-KjNode* mongocEntityGet(const char* entityId, const char** projectionV, bool includeEntityId)
+KjNode* mongocEntityGet(const char* entityId, const char** projectionV)
 {
   bson_t        mongoFilter;
   const bson_t* mongoDocP = NULL;
@@ -77,10 +78,8 @@ KjNode* mongocEntityGet(const char* entityId, const char** projectionV, bool inc
       ++projections;
     }
 
-    if (includeEntityId)
-      bson_append_bool(&projection, "_id.id", 6, true);
-    else
-      bson_append_bool(&projection, "_id", 3, false);
+    // Include the entity id/type
+    bson_append_bool(&projection, "_id", 3, true);
 
     if (projections > 0)
       bson_append_document(&options, "projection", 10, &projection);
@@ -99,6 +98,8 @@ KjNode* mongocEntityGet(const char* entityId, const char** projectionV, bool inc
   KjNode*               entityNodeP = NULL;
   mongoc_read_prefs_t*  readPrefs   = mongoc_read_prefs_new(MONGOC_READ_NEAREST);
   mongoc_cursor_t*      mongoCursorP;
+
+  MONGOC_RLOG("Retrieving Entity", orionldState.tenantP->mongoDbName, "entities", &mongoFilter, &options, LmtMongoc);
 
   mongoCursorP = mongoc_collection_find_with_opts(orionldState.mongoc.entitiesP, &mongoFilter, &options, readPrefs);
   bson_destroy(&options);

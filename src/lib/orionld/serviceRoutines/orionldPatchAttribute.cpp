@@ -334,10 +334,14 @@ bool orionldPatchAttribute(void)
   // - for TRoE, just the attribute
   //
   //
-  KjNode* dbEntityP = mongocEntityGet(entityId, NULL, true);
+  KjNode* dbEntityP = mongocEntityGet(entityId, NULL);
 
   if (dbEntityP != NULL)
+  {
     entityType = dbModelEntityTypeExtract(dbEntityP);
+    orionldState.entityTypeForTroe = entityType;
+    LM_T(LmtTroe, ("orionldState.entityTypeForTroe: %s", orionldState.entityTypeForTroe));
+  }
   else if (orionldState.distributed == false)
   {
 //    if (orionldState.ddsSample == true)

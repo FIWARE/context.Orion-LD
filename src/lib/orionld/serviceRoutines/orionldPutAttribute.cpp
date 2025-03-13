@@ -158,6 +158,9 @@ bool orionldPutAttribute(void)
     }
     else
     {
+      entityType = dbModelEntityTypeLookup(dbEntityP, entityId);
+      orionldState.entityTypeForTroe = entityType;
+
       if (orionldState.ddsSample == true)
       {
         //

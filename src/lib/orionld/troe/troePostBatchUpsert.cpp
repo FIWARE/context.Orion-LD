@@ -30,7 +30,6 @@ extern "C"
 }
 
 #include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
 
 #include "orionld/types/PgTableDefinitions.h"                  // PG_ATTRIBUTE_INSERT_START, PG_SUB_ATTRIBUTE_INSERT_START
 #include "orionld/types/PgAppendBuffer.h"                      // PgAppendBuffer
@@ -41,6 +40,7 @@ extern "C"
 #include "orionld/troe/pgAttributesBuild.h"                    // pgAttributesBuild
 #include "orionld/troe/pgEntityBuild.h"                        // pgEntityBuild
 #include "orionld/troe/pgCommands.h"                           // pgCommands
+#include "orionld/troe/troeFilterMatch.h"                      // troeFilterMatch
 #include "orionld/troe/troePostBatchUpsert.h"                  // Own interface
 
 
@@ -134,12 +134,25 @@ bool troePostBatchUpsert(void)
         troeEntityMode = (char*) "Create";
     }
 
+    KjNode* typeP = kjLookup(entityP, "type");
+    KjNode* idP   = kjLookup(entityP, "id");
+    char*   type  = (typeP != NULL)? typeP->value.s : NULL;
+    char*   id    = (idP != NULL)? idP->value.s : NULL;
+
+    if (type != NULL)
+    {
+      if (troeFilterMatch(type, id) == false)
+      {
+        LM_T(LmtConfig, ("Not storing entities of type '%s' in TRoE - filtered out (entity id: '%s')", type, id));
+        continue;
+      }
+    }
+
     if (entityUpdate == true)
       pgAttributesBuild(&attributes, entityP, NULL, "Replace", &subAttributes);
     else
       pgEntityBuild(&entities, troeEntityMode, entityP, NULL, NULL, &attributes, &subAttributes);
   }
-
 
   char* sqlV[3];
   int   sqlIx = 0;

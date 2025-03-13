@@ -197,7 +197,8 @@ bool orionldPostEntity(void)
   // If entity type is present in the payload body, it must be a String and identical to the entity type in the database
   //
   KjNode* dbTypeNodeP = (dbEntityP != NULL)? dbEntityTypeExtract(dbEntityP) : NULL;
-  entityType = (dbTypeNodeP != NULL)? dbTypeNodeP->value.s : NULL;
+  entityType = (dbTypeNodeP != NULL)? dbTypeNodeP->value.s : entityType;
+  orionldState.entityTypeForTroe = entityType;
 
   //
   // If the Entity Type is present in the payload body ... need to make sure it's a match

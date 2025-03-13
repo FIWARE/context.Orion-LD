@@ -1,0 +1,1031 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+TRoE with a filter on entity types
+
+--SHELL-INIT--
+$REPO_HOME/scripts/configFile.sh --troe ",,https://uri.etsi.org/ngsi-ld/default-context/T1+https://uri.etsi.org/ngsi-ld/default-context/T2," > $HOME/.orionld
+dbInit CB
+pgInit $CB_DB_NAME
+orionldStart CB -mongocOnly -troe
+
+--SHELL--
+
+#
+# 01. Create an entity urn:E1 of type T1 - to TRoE                                   - POST /entities
+# 02. Create an entity urn:E2 of type T3 - NOT to TRoE
+# 03. See entities in postgres
+# 04. See attributes in postgres
+#
+# 11. Update urn:E1 using POST /entities/*/attrs - to TRoE                           - POST /entities/{entityId}/attrs
+# 12. Update urn:E2 using POST /entities/*/attrs - NOT to TRoE
+# 13. See entities in postgres
+# 14. See attributes in postgres
+#
+# 21. Delete the attribute P2 (added in step 11) in  from urn:E1 - to TRoE           - DELETE /entities/{entityId}/attrs/{attrName}
+# 22. Delete the attribute P2 (added in step 11) in  from urn:E2 - NOT to TRoE
+# 23. See entities in postgres - no change
+# 24. See attributes in postgres - see DELETION of urn:E1/P2 but NOT urn:E2/P2
+#
+# 31. PATCH urn:E1/P1 using PATCH /entities/{entityId}/attrs/P1 - to TRoE            - PATCH /entities/{entityId}/attrs/{attrName}
+# 32. PATCH urn:E2/P1 using PATCH /entities/{entityId}/attrs/P1 - NOT to TRoE
+# 33. See entities in postgres - no change
+# 34. See attributes in postgres - see Update of urn:E1/P1
+#
+# 41. Delete urn:E1 using DELETE /entities/{entityId} - to TRoE                      - DELETE /entities/{entityId}
+# 42. Delete urn:E2 using DELETE /entities/{entityId} - NOT to TRoE
+# 43. See entities in postgres - see deletion of urn:E1
+# 44. See attributes in postgres - no change
+#
+# 51. Create urn:E3 and urn:E4 (type T1) and urn:E5 (type T3) - 2/3 to TRoE          - POST /entityOperations/create
+# 52. See entities in postgres - see urn:E3 and urn:E4
+# 53. See attributes in postgres - see new attr of urn:E3 and urn:E4
+#
+# 61. BATCH Upsert urn:E6 and urn:E7 (type T1) and urn:E8 (type T3) - 2/3 to TRoE    - POST /entityOperations/upsert
+# 62. See entities in postgres - see urn:E6 and urn:E7
+# 63. See attributes in postgres - see new attr of urn:E6 and urn:E7
+#
+# 71. BATCH Update urn:E6 and urn:E7 (type T1) and urn:E8 (type T3) - 2/3 to TRoE    - POST /entityOperations/upsert
+# 72. See entities in postgres - no change
+# 73. See attributes in postgres - see updates of attrs of urn:E6 and urn:E7
+#
+# 81. PATCH urn:E6 - to TRoE                                                         - PATCH /entities/{entityId}/attrs
+# 82. PATCH urn:E8 - NOT to TRoE
+# 83. See entities in postgres - no change
+# 84. See attributes in postgres - see attributes of urn:E6
+#
+# 91. PATCH urn:E6 - to TRoE                                                         - PATCH /entities/{entityId}
+# 92. PATCH urn:E8 - NOT to TRoE
+# 93. See entities in postgres - see Update of urn:E6, but not of urn:E8
+# 94. See attributes in postgres - see attributes of urn:E6
+#
+# 101. PUT urn:E6 - to TRoE                                                          - PUT /entities/{entityId}
+# 102. PUT urn:E8 - NOT to TRoE
+# 103. See entities in postgres - no change
+# 104. See attributes in postgres - see attribute P61 of urn:E6
+#
+# 111. PUT urn:E6/P61 - to TRoE                                                      - PUT /entities/{entityId}/attrs/P61
+# 112. PUT urn:E8/P61 - NOT to TRoE
+# 113. See entities in postgres - no change
+# 114. See attributes in postgres - see attribute P61 of urn:E6
+#
+# 121. BATCH DELETE urn:E3-E8 - E3+E6+E7 to TRoE, E4+E8 NOT to TRoE                  - POST /entityOperations/delete
+# 122. See entities in postgres - see urn:E3+E6+E7
+# 123. See attributes in postgres - no change
+#
+
+echo "01. Create an entity urn:E1 of type T1 - to TRoE"
+echo "================================================"
+payload='{
+  "id": "urn:E1",
+  "type": "T1",
+  "P1": {
+    "type": "Property",
+    "value": 1
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "02. Create an entity urn:E2 of type T3 - NOT to TRoE"
+echo "===================================================="
+payload='{
+  "id": "urn:E2",
+  "type": "T3",
+  "P1": {
+    "type": "Property",
+    "value": 1
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "03. See entities in postgres"
+echo "============================"
+postgresCmd -sql "SELECT opMode,id,type,ts FROM entities"
+echo
+echo
+
+
+echo "04. See attributes in postgres"
+echo "=============================="
+postgresCmd -sql "SELECT opMode,id,valueType,entityId,subProperties,unitcode,datasetid,text,number,boolean,observedAt,ts FROM attributes"
+echo
+echo
+
+
+echo "11. Update urn:E1 using POST /entities/*/attrs - to TRoE"
+echo "========================================================"
+payload='{
+  "P2": {
+    "type": "Property",
+    "value": 1
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs --payload "$payload"
+echo
+echo
+
+
+echo "12. Update urn:E2 using POST /entities/*/attrs - NOT to TRoE"
+echo "============================================================"
+payload='{
+  "P2": {
+    "type": "Property",
+    "value": 1
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:E2/attrs --payload "$payload"
+echo
+echo
+
+
+echo "13. See entities in postgres"
+echo "============================"
+postgresCmd -sql "SELECT opMode,id,type,ts FROM entities"
+echo
+echo
+
+
+echo "14. See attributes in postgres"
+echo "=============================="
+postgresCmd -sql "SELECT opMode,id,valueType,entityId,subProperties,unitcode,datasetid,text,number,boolean,observedAt,ts FROM attributes"
+echo
+echo
+
+
+echo "21. Delete the attribute P2 (added in step 11) in  from urn:E1 - to TRoE"
+echo "========================================================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/P2 -X DELETE
+echo
+echo
+
+
+echo "22. Delete the attribute P2 (added in step 11) in  from urn:E2 - NOT to TRoE"
+echo "============================================================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:E2/attrs/P2 -X DELETE
+echo
+echo
+
+
+echo "23. See entities in postgres - no change"
+echo "========================================"
+postgresCmd -sql "SELECT opMode,id,type,ts FROM entities"
+echo
+echo
+
+
+echo "24. See attributes in postgres - see DELETION of urn:E1/P2 but NOT urn:E2/P2"
+echo "============================================================================"
+postgresCmd -sql "SELECT opMode,id,valueType,entityId,subProperties,unitcode,datasetid,text,number,boolean,observedAt,ts FROM attributes"
+echo
+echo
+
+
+echo "31. PATCH urn:E1/P1 using PATCH /entities/{entityId}/attrs/P1 - to TRoE"
+echo "======================================================================="
+payload='{
+  "value": 31
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/P1 --payload "$payload" -X PATCH
+echo
+echo
+
+
+echo "32. PATCH urn:E2/P1 using PATCH /entities/{entityId}/attrs/P1 - NOT to TRoE"
+echo "==========================================================================="
+payload='{
+  "value": 32
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:E2/attrs/P1 --payload "$payload" -X PATCH
+echo
+echo
+
+
+echo "33. See entities in postgres - no change"
+echo "========================================"
+postgresCmd -sql "SELECT opMode,id,type,ts FROM entities"
+echo
+echo
+
+
+echo "34. See attributes in postgres - see Update of urn:E1/P1"
+echo "========================================================"
+postgresCmd -sql "SELECT opMode,id,valueType,entityId,subProperties,unitcode,datasetid,text,number,boolean,observedAt,ts FROM attributes"
+echo
+echo
+
+
+echo "41. Delete urn:E1 using DELETE /entities/{entityId} - to TRoE"
+echo "============================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1 -X DELETE
+echo
+echo
+
+
+echo "42. Delete urn:E2 using DELETE /entities/{entityId} - NOT to TRoE"
+echo "================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E2 -X DELETE
+echo
+echo
+
+
+echo "43. See entities in postgres - see deletion of urn:E1"
+echo "====================================================="
+postgresCmd -sql "SELECT opMode,id,type,ts FROM entities"
+echo
+echo
+
+
+echo "44. See attributes in postgres - no change"
+echo "=========================================="
+postgresCmd -sql "SELECT opMode,id,valueType,entityId,subProperties,unitcode,datasetid,text,number,boolean,observedAt,ts FROM attributes"
+echo
+echo
+
+
+echo "51. Create urn:E3 and urn:E4 (type T1) and urn:E5 (type T3) - 2/3 to TRoE"
+echo "========================================================================="
+payload='[
+  {
+    "id": "urn:E3",
+    "type": "T1",
+    "P51": 32
+  },
+  {
+    "id": "urn:E4",
+    "type": "T1",
+    "P51": 32
+  },
+  {
+    "id": "urn:E5",
+    "type": "T3",
+    "P51": 32
+  }
+]'
+orionCurl --url /ngsi-ld/v1/entityOperations/create --payload "$payload"
+echo
+echo
+
+
+echo "52. See entities in postgres - see urn:E3 and urn:E4"
+echo "===================================================="
+postgresCmd -sql "SELECT opMode,id,type,ts FROM entities"
+echo
+echo
+
+
+echo "53. See attributes in postgres - see new attr of urn:E3 and urn:E4"
+echo "=================================================================="
+postgresCmd -sql "SELECT opMode,id,valueType,entityId,subProperties,unitcode,datasetid,text,number,boolean,observedAt,ts FROM attributes"
+echo
+echo
+
+
+echo "61. BATCH Upsert urn:E6 and urn:E7 (type T1) and urn:E8 (type T3) - 2/3 to TRoE"
+echo "==============================================================================="
+payload='[
+  {
+    "id": "urn:E6",
+    "type": "T1",
+    "P61": 32
+  },
+  {
+    "id": "urn:E7",
+    "type": "T1",
+    "P61": 32
+  },
+  {
+    "id": "urn:E8",
+    "type": "T3",
+    "P61": 32
+  }
+]'
+orionCurl --url /ngsi-ld/v1/entityOperations/upsert --payload "$payload"
+echo
+echo
+
+
+echo "62. See entities in postgres - see urn:E6 and urn:E7"
+echo "===================================================="
+postgresCmd -sql "SELECT opMode,id,type,ts FROM entities"
+echo
+echo
+
+
+echo "63. See attributes in postgres - see new attr of urn:E6 and urn:E7"
+echo "=================================================================="
+postgresCmd -sql "SELECT opMode,id,valueType,entityId,subProperties,unitcode,datasetid,text,number,boolean,observedAt,ts FROM attributes"
+echo
+echo
+
+
+echo "71. BATCH Update urn:E6 and urn:E7 (type T1) and urn:E8 (type T3) - 2/3 to TRoE"
+echo "==============================================================================="
+payload='[
+  {
+    "id": "urn:E6",
+    "type": "T1",
+    "P61": 71
+  },
+  {
+    "id": "urn:E7",
+    "type": "T1",
+    "P61": 71
+  },
+  {
+    "id": "urn:E8",
+    "type": "T3",
+    "P61": 71
+  }
+]'
+orionCurl --url /ngsi-ld/v1/entityOperations/update --payload "$payload"
+echo
+echo
+
+
+echo "72. See entities in postgres - no change"
+echo "========================================"
+postgresCmd -sql "SELECT opMode,id,type,ts FROM entities"
+echo
+echo
+
+
+echo "73. See attributes in postgres - see updates of attrs of urn:E6 and urn:E7"
+echo "=========================================================================="
+postgresCmd -sql "SELECT opMode,id,valueType,entityId,subProperties,unitcode,datasetid,text,number,boolean,observedAt,ts FROM attributes"
+echo
+echo
+
+
+echo "81. PATCH urn:E6 - to TRoE"
+echo "=========================="
+payload='{
+  "P61": {
+    "value": 81
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:E6/attrs --payload "$payload" -X PATCH
+echo
+echo
+
+
+echo "82. PATCH urn:E8 - NOT to TRoE"
+echo "=============================="
+payload='{
+  "P61": {
+    "value": 82
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:E8/attrs --payload "$payload" -X PATCH
+echo
+echo
+
+
+echo "83. See entities in postgres - no change"
+echo "========================================"
+postgresCmd -sql "SELECT opMode,id,type,ts FROM entities"
+echo
+echo
+
+
+echo "84. See attributes in postgres - see attributes of urn:E6"
+echo "========================================================="
+postgresCmd -sql "SELECT opMode,id,valueType,entityId,subProperties,unitcode,datasetid,text,number,boolean,observedAt,ts FROM attributes"
+echo
+echo
+
+
+echo "91. PATCH urn:E6 - to TRoE"
+echo "=========================="
+payload='{
+  "P61": {
+    "value": 91
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:E6 --payload "$payload" -X PATCH
+echo
+echo
+
+
+echo "92. PATCH urn:E8 - NOT to TRoE"
+echo "=============================="
+payload='{
+  "P61": {
+    "value": 92
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:E8 --payload "$payload" -X PATCH
+echo
+echo
+
+
+echo "93. See entities in postgres - no change"
+echo "========================================"
+postgresCmd -sql "SELECT opMode,id,type,ts FROM entities"
+echo
+echo
+
+
+echo "94. See attributes in postgres - see attributes of urn:E6"
+echo "========================================================="
+postgresCmd -sql "SELECT opMode,id,valueType,entityId,subProperties,unitcode,datasetid,text,number,boolean,observedAt,ts FROM attributes"
+echo
+echo
+
+
+echo "101. PUT urn:E6 - to TRoE"
+echo "========================="
+payload='{
+  "type": "T1",
+  "P61": {
+    "value": 101
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:E6 --payload "$payload" -X PUT
+echo
+echo
+
+
+echo "102. PUT urn:E8 - NOT to TRoE"
+echo "============================="
+payload='{
+  "type": "T3",
+  "P61": {
+    "value": 102
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:E8 --payload "$payload" -X PUT
+echo
+echo
+
+
+echo "103. See entities in postgres - no change"
+echo "========================================="
+postgresCmd -sql "SELECT opMode,id,type,ts FROM entities"
+echo
+echo
+
+
+echo "104. See attributes in postgres - see attribute P61 of urn:E6"
+echo "============================================================="
+postgresCmd -sql "SELECT opMode,id,valueType,entityId,subProperties,unitcode,datasetid,text,number,boolean,observedAt,ts FROM attributes"
+echo
+echo
+
+
+echo "111. PUT urn:E6/P61 - to TRoE"
+echo "============================="
+payload='{
+  "value": 111
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:E6/attrs/P61 --payload "$payload" -X PUT
+echo
+echo
+
+
+echo "112. PUT urn:E8/P61 - NOT to TRoE"
+echo "================================="
+payload='{
+  "value": 111
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:E8/attrs/P61 --payload "$payload" -X PUT
+echo
+echo
+
+
+echo "113. See entities in postgres - no change"
+echo "========================================="
+postgresCmd -sql "SELECT opMode,id,type,ts FROM entities"
+echo
+echo
+
+
+echo "114. See attributes in postgres - see attribute P61 of urn:E6"
+echo "============================================================="
+postgresCmd -sql "SELECT opMode,id,valueType,entityId,subProperties,unitcode,datasetid,text,number,boolean,observedAt,ts FROM attributes"
+echo
+echo
+
+
+echo "121. BATCH DELETE urn:E3-E8 - E3+E6+E7 to TRoE, E4+E8 NOT to TRoE"
+echo "================================================================="
+payload='[
+  "urn:E3",
+  "urn:E4",
+  "urn:E5",
+  "urn:E6",
+  "urn:E7",
+  "urn:E8"
+]'
+orionCurl --url /ngsi-ld/v1/entityOperations/delete --payload "$payload"
+echo
+echo
+
+
+echo "122. See entities in postgres - see urn:E3+E6+E7"
+echo "================================================"
+postgresCmd -sql "SELECT opMode,id,type,ts FROM entities"
+echo
+echo
+
+
+echo "123. See attributes in postgres - no change"
+echo "==========================================="
+postgresCmd -sql "SELECT opMode,id,valueType,entityId,subProperties,unitcode,datasetid,text,number,boolean,observedAt,ts FROM attributes"
+echo
+echo
+
+
+--REGEXPECT--
+01. Create an entity urn:E1 of type T1 - to TRoE
+================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E1
+
+
+
+02. Create an entity urn:E2 of type T3 - NOT to TRoE
+====================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E2
+
+
+
+03. See entities in postgres
+============================
+opmode,id,type,ts
+Create,urn:E1,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+
+
+04. See attributes in postgres
+==============================
+opmode,id,valuetype,entityid,subproperties,unitcode,datasetid,text,number,boolean,observedat,ts
+Create,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+
+
+11. Update urn:E1 using POST /entities/*/attrs - to TRoE
+========================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+12. Update urn:E2 using POST /entities/*/attrs - NOT to TRoE
+============================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+13. See entities in postgres
+============================
+opmode,id,type,ts
+Create,urn:E1,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+
+
+14. See attributes in postgres
+==============================
+opmode,id,valuetype,entityid,subproperties,unitcode,datasetid,text,number,boolean,observedat,ts
+Create,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+
+
+21. Delete the attribute P2 (added in step 11) in  from urn:E1 - to TRoE
+========================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+22. Delete the attribute P2 (added in step 11) in  from urn:E2 - NOT to TRoE
+============================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+23. See entities in postgres - no change
+========================================
+opmode,id,type,ts
+Create,urn:E1,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+
+
+24. See attributes in postgres - see DELETION of urn:E1/P2 but NOT urn:E2/P2
+============================================================================
+opmode,id,valuetype,entityid,subproperties,unitcode,datasetid,text,number,boolean,observedat,ts
+Create,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Delete,https://uri.etsi.org/ngsi-ld/default-context/P2,,urn:E1,,,None,,,,,202REGEX(.*)
+
+
+31. PATCH urn:E1/P1 using PATCH /entities/{entityId}/attrs/P1 - to TRoE
+=======================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+32. PATCH urn:E2/P1 using PATCH /entities/{entityId}/attrs/P1 - NOT to TRoE
+===========================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+33. See entities in postgres - no change
+========================================
+opmode,id,type,ts
+Create,urn:E1,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+
+
+34. See attributes in postgres - see Update of urn:E1/P1
+========================================================
+opmode,id,valuetype,entityid,subproperties,unitcode,datasetid,text,number,boolean,observedat,ts
+Create,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Delete,https://uri.etsi.org/ngsi-ld/default-context/P2,,urn:E1,,,None,,,,,202REGEX(.*)
+Update,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,31,,,202REGEX(.*)
+
+
+41. Delete urn:E1 using DELETE /entities/{entityId} - to TRoE
+=============================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+42. Delete urn:E2 using DELETE /entities/{entityId} - NOT to TRoE
+=================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+43. See entities in postgres - see deletion of urn:E1
+=====================================================
+opmode,id,type,ts
+Create,urn:E1,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Delete,urn:E1,NULL,202REGEX(.*)
+
+
+44. See attributes in postgres - no change
+==========================================
+opmode,id,valuetype,entityid,subproperties,unitcode,datasetid,text,number,boolean,observedat,ts
+Create,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Delete,https://uri.etsi.org/ngsi-ld/default-context/P2,,urn:E1,,,None,,,,,202REGEX(.*)
+Update,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,31,,,202REGEX(.*)
+
+
+51. Create urn:E3 and urn:E4 (type T1) and urn:E5 (type T3) - 2/3 to TRoE
+=========================================================================
+HTTP/1.1 201 Created
+Content-Length: 28
+Content-Type: application/json
+Date: REGEX(.*)
+
+[
+    "urn:E3",
+    "urn:E4",
+    "urn:E5"
+]
+
+
+52. See entities in postgres - see urn:E3 and urn:E4
+====================================================
+opmode,id,type,ts
+Create,urn:E1,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Delete,urn:E1,NULL,202REGEX(.*)
+Create,urn:E3,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Create,urn:E4,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+
+
+53. See attributes in postgres - see new attr of urn:E3 and urn:E4
+==================================================================
+opmode,id,valuetype,entityid,subproperties,unitcode,datasetid,text,number,boolean,observedat,ts
+Create,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Delete,https://uri.etsi.org/ngsi-ld/default-context/P2,,urn:E1,,,None,,,,,202REGEX(.*)
+Update,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,31,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P51,Number,urn:E3,f,,None,,32,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P51,Number,urn:E4,f,,None,,32,,,202REGEX(.*)
+
+
+61. BATCH Upsert urn:E6 and urn:E7 (type T1) and urn:E8 (type T3) - 2/3 to TRoE
+===============================================================================
+HTTP/1.1 201 Created
+Content-Length: 28
+Content-Type: application/json
+Date: REGEX(.*)
+
+[
+    "urn:E6",
+    "urn:E7",
+    "urn:E8"
+]
+
+
+62. See entities in postgres - see urn:E6 and urn:E7
+====================================================
+opmode,id,type,ts
+Create,urn:E1,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Delete,urn:E1,NULL,202REGEX(.*)
+Create,urn:E3,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Create,urn:E4,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Create,urn:E6,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Create,urn:E7,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+
+
+63. See attributes in postgres - see new attr of urn:E6 and urn:E7
+==================================================================
+opmode,id,valuetype,entityid,subproperties,unitcode,datasetid,text,number,boolean,observedat,ts
+Create,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Delete,https://uri.etsi.org/ngsi-ld/default-context/P2,,urn:E1,,,None,,,,,202REGEX(.*)
+Update,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,31,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P51,Number,urn:E3,f,,None,,32,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P51,Number,urn:E4,f,,None,,32,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E6,f,,None,,32,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E7,f,,None,,32,,,202REGEX(.*)
+
+
+71. BATCH Update urn:E6 and urn:E7 (type T1) and urn:E8 (type T3) - 2/3 to TRoE
+===============================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+72. See entities in postgres - no change
+========================================
+opmode,id,type,ts
+Create,urn:E1,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Delete,urn:E1,NULL,202REGEX(.*)
+Create,urn:E3,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Create,urn:E4,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Create,urn:E6,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Create,urn:E7,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+
+
+73. See attributes in postgres - see updates of attrs of urn:E6 and urn:E7
+==========================================================================
+opmode,id,valuetype,entityid,subproperties,unitcode,datasetid,text,number,boolean,observedat,ts
+Create,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Delete,https://uri.etsi.org/ngsi-ld/default-context/P2,,urn:E1,,,None,,,,,202REGEX(.*)
+Update,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,31,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P51,Number,urn:E3,f,,None,,32,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P51,Number,urn:E4,f,,None,,32,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E6,f,,None,,32,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E7,f,,None,,32,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E6,f,,None,,71,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E7,f,,None,,71,,,202REGEX(.*)
+
+
+81. PATCH urn:E6 - to TRoE
+==========================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+82. PATCH urn:E8 - NOT to TRoE
+==============================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+83. See entities in postgres - no change
+========================================
+opmode,id,type,ts
+Create,urn:E1,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Delete,urn:E1,NULL,202REGEX(.*)
+Create,urn:E3,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Create,urn:E4,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Create,urn:E6,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Create,urn:E7,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+
+
+84. See attributes in postgres - see attributes of urn:E6
+=========================================================
+opmode,id,valuetype,entityid,subproperties,unitcode,datasetid,text,number,boolean,observedat,ts
+Create,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Delete,https://uri.etsi.org/ngsi-ld/default-context/P2,,urn:E1,,,None,,,,,202REGEX(.*)
+Update,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,31,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P51,Number,urn:E3,f,,None,,32,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P51,Number,urn:E4,f,,None,,32,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E6,f,,None,,32,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E7,f,,None,,32,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E6,f,,None,,71,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E7,f,,None,,71,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E6,f,,None,,81,,,202REGEX(.*)
+
+
+91. PATCH urn:E6 - to TRoE
+==========================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+92. PATCH urn:E8 - NOT to TRoE
+==============================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+93. See entities in postgres - no change
+========================================
+opmode,id,type,ts
+Create,urn:E1,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Delete,urn:E1,NULL,202REGEX(.*)
+Create,urn:E3,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Create,urn:E4,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Create,urn:E6,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Create,urn:E7,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+
+
+94. See attributes in postgres - see attributes of urn:E6
+=========================================================
+opmode,id,valuetype,entityid,subproperties,unitcode,datasetid,text,number,boolean,observedat,ts
+Create,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Delete,https://uri.etsi.org/ngsi-ld/default-context/P2,,urn:E1,,,None,,,,,202REGEX(.*)
+Update,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,31,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P51,Number,urn:E3,f,,None,,32,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P51,Number,urn:E4,f,,None,,32,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E6,f,,None,,32,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E7,f,,None,,32,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E6,f,,None,,71,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E7,f,,None,,71,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E6,f,,None,,81,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E6,f,,None,,91,,,202REGEX(.*)
+
+
+101. PUT urn:E6 - to TRoE
+=========================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+102. PUT urn:E8 - NOT to TRoE
+=============================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+103. See entities in postgres - no change
+=========================================
+opmode,id,type,ts
+Create,urn:E1,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Delete,urn:E1,NULL,202REGEX(.*)
+Create,urn:E3,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Create,urn:E4,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Create,urn:E6,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Create,urn:E7,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Replace,urn:E6,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+
+
+104. See attributes in postgres - see attribute P61 of urn:E6
+=============================================================
+opmode,id,valuetype,entityid,subproperties,unitcode,datasetid,text,number,boolean,observedat,ts
+Create,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Delete,https://uri.etsi.org/ngsi-ld/default-context/P2,,urn:E1,,,None,,,,,202REGEX(.*)
+Update,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,31,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P51,Number,urn:E3,f,,None,,32,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P51,Number,urn:E4,f,,None,,32,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E6,f,,None,,32,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E7,f,,None,,32,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E6,f,,None,,71,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E7,f,,None,,71,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E6,f,,None,,81,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E6,f,,None,,91,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E6,f,,None,,101,,,202REGEX(.*)
+
+
+111. PUT urn:E6/P61 - to TRoE
+=============================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+112. PUT urn:E8/P61 - NOT to TRoE
+=================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+113. See entities in postgres - no change
+=========================================
+opmode,id,type,ts
+Create,urn:E1,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Delete,urn:E1,NULL,202REGEX(.*)
+Create,urn:E3,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Create,urn:E4,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Create,urn:E6,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Create,urn:E7,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Replace,urn:E6,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+
+
+114. See attributes in postgres - see attribute P61 of urn:E6
+=============================================================
+opmode,id,valuetype,entityid,subproperties,unitcode,datasetid,text,number,boolean,observedat,ts
+Create,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Delete,https://uri.etsi.org/ngsi-ld/default-context/P2,,urn:E1,,,None,,,,,202REGEX(.*)
+Update,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,31,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P51,Number,urn:E3,f,,None,,32,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P51,Number,urn:E4,f,,None,,32,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E6,f,,None,,32,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E7,f,,None,,32,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E6,f,,None,,71,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E7,f,,None,,71,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E6,f,,None,,81,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E6,f,,None,,91,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E6,f,,None,,101,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E6,f,,None,,111,,,202REGEX(.*)
+
+
+121. BATCH DELETE urn:E3-E8 - E3+E6+E7 to TRoE, E4+E8 NOT to TRoE
+=================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+122. See entities in postgres - see urn:E3+E6+E7
+================================================
+opmode,id,type,ts
+Create,urn:E1,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Delete,urn:E1,NULL,202REGEX(.*)
+Create,urn:E3,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Create,urn:E4,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Create,urn:E6,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Create,urn:E7,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Replace,urn:E6,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
+Delete,urn:E3,NULL,202REGEX(.*)
+Delete,urn:E4,NULL,202REGEX(.*)
+Delete,urn:E6,NULL,202REGEX(.*)
+Delete,urn:E7,NULL,202REGEX(.*)
+
+
+123. See attributes in postgres - no change
+===========================================
+opmode,id,valuetype,entityid,subproperties,unitcode,datasetid,text,number,boolean,observedat,ts
+Create,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Delete,https://uri.etsi.org/ngsi-ld/default-context/P2,,urn:E1,,,None,,,,,202REGEX(.*)
+Update,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,31,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P51,Number,urn:E3,f,,None,,32,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P51,Number,urn:E4,f,,None,,32,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E6,f,,None,,32,,,202REGEX(.*)
+Create,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E7,f,,None,,32,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E6,f,,None,,71,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E7,f,,None,,71,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E6,f,,None,,81,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E6,f,,None,,91,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E6,f,,None,,101,,,202REGEX(.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P61,Number,urn:E6,f,,None,,111,,,202REGEX(.*)
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
+rm -f $HOME/.orionld

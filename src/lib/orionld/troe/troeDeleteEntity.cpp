@@ -33,6 +33,7 @@
 #include "orionld/troe/pgAppend.h"                             // pgAppend
 #include "orionld/troe/pgEntityAppend.h"                       // pgEntityAppend
 #include "orionld/troe/pgCommands.h"                           // pgCommands
+#include "orionld/troe/troeFilterMatch.h"                      // troeFilterMatch
 #include "orionld/troe/troeDeleteEntity.h"                     // Own interface
 
 
@@ -46,6 +47,18 @@ bool troeDeleteEntity(void)
   PgAppendBuffer  entitiesBuffer;
   char*           entityId = orionldState.wildcard[0];
   char            instanceId[80];
+
+  LM_T(LmtTroeFilter, ("orionldState.entityTypeForTroe: '%s'", orionldState.entityTypeForTroe));
+  LM_T(LmtTroeFilter, ("entityId:                       '%s'", entityId));
+
+  if (orionldState.entityTypeForTroe != NULL)
+  {
+    if (troeFilterMatch(orionldState.entityTypeForTroe, entityId) == false)
+    {
+      LM_T(LmtConfig, ("Not storing entities of type '%s' in TRoE - filtered out", orionldState.entityTypeForTroe));
+      return true;
+    }
+  }
 
   uuidGenerate(instanceId, sizeof(instanceId), "urn:ngsi-ld:attribute:instance:");
 

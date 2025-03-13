@@ -36,6 +36,7 @@ extern "C"
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldPatchApply.h"                    // orionldPatchApply
 #include "orionld/troe/troePatchEntity.h"                        // troePatchEntity - to reuse the "push to TRoE" of troePatchEntity
+#include "orionld/troe/troeFilterMatch.h"                        // troeFilterMatch
 #include "orionld/troe/troePatchEntity2.h"                       // Own interface
 
 
@@ -48,6 +49,12 @@ bool troePatchEntity2(void)
 {
   KjNode* patchTree = orionldState.requestTree;
   KjNode* patchBase = orionldState.patchBase;
+
+  if (troeFilterMatch(orionldState.entityTypeForTroe, orionldState.wildcard[0]) == false)
+  {
+    LM_T(LmtConfig, ("Not storing entities of type '%s' in TRoE - filtered out", orionldState.entityTypeForTroe));
+    return true;
+  }
 
   for (KjNode* patchP = patchTree->value.firstChildP; patchP != NULL; patchP = patchP->next)
   {

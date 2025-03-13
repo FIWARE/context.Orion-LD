@@ -25,10 +25,10 @@
 extern "C"
 {
 #include "kjson/KjNode.h"                                      // KjNode
+#include "kjson/kjLookup.h"                                    // kjLookup
 }
 
 #include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
 
 #include "orionld/types/PgTableDefinitions.h"                  // PG_ATTRIBUTE_INSERT_START, PG_SUB_ATTRIBUTE_INSERT_START
 #include "orionld/types/PgAppendBuffer.h"                      // PgAppendBuffer
@@ -37,6 +37,7 @@ extern "C"
 #include "orionld/troe/pgAppend.h"                             // pgAppend
 #include "orionld/troe/pgEntityBuild.h"                        // pgEntityBuild
 #include "orionld/troe/pgCommands.h"                           // pgCommands
+#include "orionld/troe/troeFilterMatch.h"                      // troeFilterMatch
 #include "orionld/troe/troePostEntities.h"                     // Own interface
 
 
@@ -61,6 +62,20 @@ bool troePostBatchCreate(void)
 
   for (KjNode* entityP = orionldState.requestTree->value.firstChildP; entityP != NULL; entityP = entityP->next)
   {
+    KjNode* typeP = kjLookup(entityP, "type");
+    KjNode* idP   = kjLookup(entityP, "id");
+    if (typeP != NULL)
+    {
+      char* type = typeP->value.s;
+      char* id   = (idP != NULL)? idP->value.s : NULL;
+
+      if (troeFilterMatch(typeP->value.s, id) == false)
+      {
+        LM_T(LmtConfig, ("Not storing entities of type '%s' in TRoE - filtered out (entity id: '%s')", type, id));
+        continue;
+      }
+    }
+
     pgEntityBuild(&entities, "Create", entityP, NULL, NULL, &attributes, &subAttributes);
   }
 

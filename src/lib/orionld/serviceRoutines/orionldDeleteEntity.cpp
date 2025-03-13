@@ -184,7 +184,10 @@ bool orionldDeleteEntity(void)
   PCHECK_URI(entityId, true, 0, "Invalid Entity ID", "Must be a valid URI", 400);
 
   if (orionldState.uriParams.type != NULL)
+  {
     entityTypeExpanded = orionldContextItemExpand(orionldState.contextP, orionldState.uriParams.type, true, NULL);
+    orionldState.entityTypeForTroe = entityTypeExpanded;
+  }
 
   //
   // GET the entity locally
@@ -205,6 +208,7 @@ bool orionldDeleteEntity(void)
     KjNode* typeP = (_idP != NULL)? kjLookup(_idP, "type") : NULL;
 
     entityTypeExpanded  = (typeP != NULL)? typeP->value.s : NULL;  // Always Expanded in DB
+    orionldState.entityTypeForTroe = entityTypeExpanded;
   }
 
   if (entityTypeExpanded != NULL)

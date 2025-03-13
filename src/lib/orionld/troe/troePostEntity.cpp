@@ -38,6 +38,7 @@ extern "C"
 #include "orionld/troe/pgAppend.h"                             // pgAppend
 #include "orionld/troe/pgAttributesBuild.h"                    // pgAttributesBuild
 #include "orionld/troe/pgCommands.h"                           // pgCommands
+#include "orionld/troe/troeFilterMatch.h"                      // troeFilterMatch
 #include "orionld/troe/troePostEntity.h"                       // Own interface
 
 
@@ -50,6 +51,15 @@ bool troePostEntity(void)
 {
   if (orionldState.requestTree == NULL)  // Nothing was really changed
     return true;
+
+  if (orionldState.entityTypeForTroe != NULL)
+  {
+    if (troeFilterMatch(orionldState.entityTypeForTroe, orionldState.wildcard[0]) == false)
+    {
+      LM_T(LmtConfig, ("Not storing entities of type '%s' in TRoE - filtered out", orionldState.entityTypeForTroe));
+      return true;
+    }
+  }
 
   const char*     opMode   = (orionldState.uriParamOptions.noOverwrite == true)? "Append" : "Replace";
   char*           entityId = orionldState.wildcard[0];

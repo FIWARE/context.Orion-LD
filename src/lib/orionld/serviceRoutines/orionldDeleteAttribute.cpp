@@ -196,12 +196,14 @@ bool orionldDeleteAttribute(void)
   //
   // Retrieve part of the entity from the database (only attrNames)
   //
-  const char* projection[]       = { "attrNames", "attrs", NULL };
-  KjNode*     dbEntityP          = mongocEntityGet(entityId, projection, false);
+  const char* projectionV[]      = { "attrNames", "attrs", NULL };
+  KjNode*     dbEntityP          = mongocEntityGet(entityId, projectionV);
   KjNode*     attrNamesP         = NULL;
   KjNode*     attrNameP          = NULL;
   char*       entityTypeExpanded = NULL;
   KjNode*     responseBody       = kjObject(orionldState.kjsonP, NULL);
+
+  kjTreeLog(dbEntityP, "dbEntityP", LmtTroeFilter);
 
   if (dbEntityP == NULL)
   {
@@ -213,8 +215,7 @@ bool orionldDeleteAttribute(void)
     else
       distOpFailure(responseBody, NULL, "Attribute Not Found", NULL, 404, attrName);
   }
-
-  if (dbEntityP != NULL)
+  else
   {
     attrNamesP = kjLookup(dbEntityP, "attrNames");
 
@@ -240,7 +241,12 @@ bool orionldDeleteAttribute(void)
     KjNode* typeP      = (_idP != NULL)? kjLookup(_idP, "type") : NULL;
 
     entityTypeExpanded  = (typeP != NULL)? typeP->value.s : NULL;  // Always Expanded in DB
+    kjTreeLog(_idP, "_idP", LmtTroeFilter);
+    LM_T(LmtTroeFilter, ("entityTypeExpanded: '%s'", entityTypeExpanded));
+    if (entityTypeExpanded != NULL)
+      orionldState.entityTypeForTroe = entityTypeExpanded;
   }
+  LM_T(LmtTroeFilter, ("orionldState.entityTypeForTroe: '%s'", orionldState.entityTypeForTroe));
 
   DistOp* distOpList = NULL;
   if (orionldState.distributed == true)
