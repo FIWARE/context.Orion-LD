@@ -26,23 +26,23 @@ Attribute Delete with datasetId and TRoE
 --SHELL-INIT--
 dbInit CB
 pgInit $CB_DB_NAME
-orionldStart CB -troe
+orionldStart CB -troe -mongocOnly
 
 --SHELL--
 
 #
 # 01. Create an entity E1 with an attribute A1 having 3 datasets (D1, D2, and D3) apart from the default
-# 02. See the entity in mongo
-# 03. DELETE E1/A1, with dataset D1
-# 04. See the entity in mongo
-# 05. DELETE E1/A1, default instance
-# 06. See the entity in mongo
-# 07. DELETE E1/A1, with dataset D2
-# 08. See the entity in mongo
-# 09. DELETE E1/A1, ALL of it
-# 10. See the entity in mongo
-# 11. DELETE E1/A1, ALL of it again - see 404 Not Found
-# 12. DELETE E1/A1, with dataset D2 - see 404 Not Found
+# 01b. See the entity in mongo
+# 02. DELETE E1/A1, with dataset D1
+# 02b. See the entity in mongo
+# 03. DELETE E1/A1, default instance
+# 03b. See the entity in mongo
+# 04. DELETE E1/A1, with dataset D2
+# 04b. See the entity in mongo
+# 05. DELETE E1/A1, ALL of it
+# 05b. See the entity in mongo
+# 06. DELETE E1/A1, ALL of it again - see 404 Not Found
+# 07. DELETE E1/A1, with dataset D2 - see 404 Not Found
 #
 
 echo "01. Create an entity E1 with an attribute A1 having 3 datasets (D1, D2, and D3) apart from the default"
@@ -77,77 +77,77 @@ echo
 echo
 
 
-echo "02. See the entity in mongo"
-echo "==========================="
+echo "01b. See the entity in mongo"
+echo "============================"
 mongoCmd2 ftest "db.entities.findOne()"
 echo
 echo
 
 
-echo "03. DELETE E1/A1, with dataset D1"
+echo "02. DELETE E1/A1, with dataset D1"
 echo "================================="
 orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1/attrs/A1?datasetId=urn:ngsi-ld:dataset:D1 -X DELETE
 echo
 echo
 
 
-echo "04. See the entity in mongo"
-echo "==========================="
+echo "02b. See the entity in mongo"
+echo "============================"
 mongoCmd2 ftest "db.entities.findOne()"
 echo
 echo
 
 
-echo "05. DELETE E1/A1, default instance"
+echo "03. DELETE E1/A1, default instance"
 echo "=================================="
 orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1/attrs/A1 -X DELETE
 echo
 echo
 
 
-echo "06. See the entity in mongo"
-echo "==========================="
+echo "03b. See the entity in mongo"
+echo "============================"
 mongoCmd2 ftest "db.entities.findOne()"
 echo
 echo
 
 
-echo "07. DELETE E1/A1, with dataset D2"
+echo "04. DELETE E1/A1, with dataset D2"
 echo "================================="
 orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1/attrs/A1?datasetId=urn:ngsi-ld:dataset:D2 -X DELETE
 echo
 echo
 
 
-echo "08. See the entity in mongo"
-echo "==========================="
+echo "04b. See the entity in mongo"
+echo "============================"
 mongoCmd2 ftest "db.entities.findOne()"
 echo
 echo
 
 
-echo "09. DELETE E1/A1, ALL of it"
+echo "05. DELETE E1/A1, ALL of it"
 echo "==========================="
 orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1/attrs/A1?deleteAll=true -X DELETE
 echo
 echo
 
 
-echo "10. See the entity in mongo"
-echo "==========================="
+echo "05b. See the entity in mongo"
+echo "============================"
 mongoCmd2 ftest "db.entities.findOne()"
 echo
 echo
 
 
-echo "11. DELETE E1/A1, ALL of it again - see 404 Not Found"
+echo "06. DELETE E1/A1, ALL of it again - see 404 Not Found"
 echo "====================================================="
 orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1/attrs/A1?deleteAll=true -X DELETE
 echo
 echo
 
 
-echo "12. DELETE E1/A1, with dataset D2 - see 404 Not Found"
+echo "07. DELETE E1/A1, with dataset D2 - see 404 Not Found"
 echo "====================================================="
 orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1/attrs/A1?datasetId=urn:ngsi-ld:dataset:D2 -X DELETE
 echo
@@ -164,8 +164,8 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1
 
 
 
-02. See the entity in mongo
-===========================
+01b. See the entity in mongo
+============================
 MongoDB shell version REGEX(.*)
 connecting to: REGEX(.*)
 MongoDB server version: REGEX(.*)
@@ -219,15 +219,15 @@ MongoDB server version: REGEX(.*)
 bye
 
 
-03. DELETE E1/A1, with dataset D1
+02. DELETE E1/A1, with dataset D1
 =================================
 HTTP/1.1 204 No Content
 Date: REGEX(.*)
 
 
 
-04. See the entity in mongo
-===========================
+02b. See the entity in mongo
+============================
 MongoDB shell version REGEX(.*)
 connecting to: REGEX(.*)
 MongoDB server version: REGEX(.*)
@@ -274,15 +274,15 @@ MongoDB server version: REGEX(.*)
 bye
 
 
-05. DELETE E1/A1, default instance
+03. DELETE E1/A1, default instance
 ==================================
 HTTP/1.1 204 No Content
 Date: REGEX(.*)
 
 
 
-06. See the entity in mongo
-===========================
+03b. See the entity in mongo
+============================
 MongoDB shell version REGEX(.*)
 connecting to: REGEX(.*)
 MongoDB server version: REGEX(.*)
@@ -321,15 +321,15 @@ MongoDB server version: REGEX(.*)
 bye
 
 
-07. DELETE E1/A1, with dataset D2
+04. DELETE E1/A1, with dataset D2
 =================================
 HTTP/1.1 204 No Content
 Date: REGEX(.*)
 
 
 
-08. See the entity in mongo
-===========================
+04b. See the entity in mongo
+============================
 MongoDB shell version REGEX(.*)
 connecting to: REGEX(.*)
 MongoDB server version: REGEX(.*)
@@ -341,7 +341,7 @@ MongoDB server version: REGEX(.*)
 	},
 	"attrNames" : [ ],
 	"attrs" : {
-
+		
 	},
 	"creDate" : REGEX(.*),
 	"modDate" : REGEX(.*),
@@ -361,15 +361,15 @@ MongoDB server version: REGEX(.*)
 bye
 
 
-09. DELETE E1/A1, ALL of it
+05. DELETE E1/A1, ALL of it
 ===========================
 HTTP/1.1 204 No Content
 Date: REGEX(.*)
 
 
 
-10. See the entity in mongo
-===========================
+05b. See the entity in mongo
+============================
 MongoDB shell version REGEX(.*)
 connecting to: REGEX(.*)
 MongoDB server version: REGEX(.*)
@@ -393,30 +393,30 @@ MongoDB server version: REGEX(.*)
 bye
 
 
-11. DELETE E1/A1, ALL of it again - see 404 Not Found
+06. DELETE E1/A1, ALL of it again - see 404 Not Found
 =====================================================
 HTTP/1.1 404 Not Found
-Content-Length: 159
+Content-Length: 152
 Content-Type: application/json
 Date: REGEX(.*)
 
 {
     "detail": "https://uri.etsi.org/ngsi-ld/default-context/A1",
-    "title": "Entity/Attribute not found",
+    "title": "Attribute Not Found",
     "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 
-12. DELETE E1/A1, with dataset D2 - see 404 Not Found
+07. DELETE E1/A1, with dataset D2 - see 404 Not Found
 =====================================================
 HTTP/1.1 404 Not Found
-Content-Length: 169
+Content-Length: 152
 Content-Type: application/json
 Date: REGEX(.*)
 
 {
     "detail": "https://uri.etsi.org/ngsi-ld/default-context/A1",
-    "title": "Entity/Attribute/datasetId not found",
+    "title": "Attribute Not Found",
     "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 

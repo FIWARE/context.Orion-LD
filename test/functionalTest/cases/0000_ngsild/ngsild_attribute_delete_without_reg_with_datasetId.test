@@ -1,0 +1,300 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Attribute Delete without registration but with datasetId
+
+--SHELL-INIT--
+dbInit CB
+dbInit CP1
+orionldStart CB -mongocOnly -forwarding
+
+--SHELL--
+
+#
+# No Default, one single dataset instance:
+# 01. Create an entity E1 with an attribute A1 with a datasetId, no default, in CB
+# 02. Ask CB to delete the attribute A1, without datasetId - see 404
+# 03. GET the entity - see that the attribute A1 is gone
+# 04. Ask CB to delete the attribute AGAIN - 404
+# 05. GET the entity - see that the attribute A1 is gone
+# 06. Ask CB to delete the attribute AGAIN - 404
+#
+# With Default, one dataset instance:
+# 07. Create an entity E2 with an attribute A2 with a datasetId, and a default instance, in CB
+# 08. GET the entity - see the attribute A2 as array with two instances
+# 09. Ask CB to delete the attribute A2, with datasetId - see 204
+# 10. GET the entity - see that the dataset instance of the attribute A2 is gone
+# 11. Ask CB to delete the attribute, with datasetId, AGAIN - 404
+#
+
+echo "01. Create an entity E1 with an attribute A1 with a datasetId, no default, in CB"
+echo "================================================================================"
+payload='{
+  "id": "urn:E1",
+  "type": "T",
+  "A1": {
+     "value": 1,
+     "datasetId": "urn:dset:1"
+   }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "02. Ask CB to delete the attribute A1, without datasetId - see 404"
+echo "=================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/A1 -X DELETE
+echo
+echo
+
+
+echo "03. Ask CB to delete the attribute A1, with non-matching datasetId - see 404"
+echo "============================================================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/A1?datasetId=urn:no -X DELETE
+echo
+echo
+
+
+echo "04. Ask CB to delete the attribute A1, with matching datasetId - see 204"
+echo "========================================================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/A1?datasetId=urn:dset:1 -X DELETE
+echo
+echo
+
+
+echo "05. GET the entity - see that the attribute A1 is gone"
+echo "======================================================"
+orionCurl --url /ngsi-ld/v1/entities?local=true
+echo
+echo
+
+
+echo "06. Ask CB to delete the attribute AGAIN - 404"
+echo "=============================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/A1 -X DELETE
+echo
+echo
+
+
+echo "07. Create an entity E2 with an attribute A2 with a datasetId, and a default instance, in CB"
+echo "============================================================================================"
+payload='{
+  "id": "urn:E2",
+  "type": "T",
+  "A2": [
+    {
+       "value": "default"
+    },
+    {
+       "value": "dset1",
+       "datasetId": "urn:dset:1"
+    }
+  ]
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "08. GET the entity - see the attribute A2 as array with two instances"
+echo "====================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E2
+echo
+echo
+
+
+echo "09. Ask CB to delete the attribute A2, with datasetId - see 204"
+echo "==============================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E2/attrs/A2?datasetId=urn:dset:1 -X DELETE
+echo
+echo
+
+
+echo "10. GET the entity - see that the dataset instance of the attribute A2 is gone"
+echo "=============================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E2
+echo
+echo
+
+
+echo "11. Ask CB to delete the attribute, with datasetId, AGAIN - 404"
+echo "==============================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E2/attrs/A2?datasetId=urn:dset:1 -X DELETE
+echo
+echo
+
+
+--REGEXPECT--
+01. Create an entity E1 with an attribute A1 with a datasetId, no default, in CB
+================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E1
+
+
+
+02. Ask CB to delete the attribute A1, without datasetId - see 404
+==================================================================
+HTTP/1.1 404 Not Found
+Content-Length: 152
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "https://uri.etsi.org/ngsi-ld/default-context/A1",
+    "title": "Attribute Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
+}
+
+
+03. Ask CB to delete the attribute A1, with non-matching datasetId - see 404
+============================================================================
+HTTP/1.1 404 Not Found
+Content-Length: 152
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "https://uri.etsi.org/ngsi-ld/default-context/A1",
+    "title": "Attribute Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
+}
+
+
+04. Ask CB to delete the attribute A1, with matching datasetId - see 204
+========================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+05. GET the entity - see that the attribute A1 is gone
+======================================================
+HTTP/1.1 200 OK
+Content-Length: 28
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "id": "urn:E1",
+        "type": "T"
+    }
+]
+
+
+06. Ask CB to delete the attribute AGAIN - 404
+==============================================
+HTTP/1.1 404 Not Found
+Content-Length: 152
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "https://uri.etsi.org/ngsi-ld/default-context/A1",
+    "title": "Attribute Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
+}
+
+
+07. Create an entity E2 with an attribute A2 with a datasetId, and a default instance, in CB
+============================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E2
+
+
+
+08. GET the entity - see the attribute A2 as array with two instances
+=====================================================================
+HTTP/1.1 200 OK
+Content-Length: 132
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "A2": [
+        {
+            "type": "Property",
+            "value": "default"
+        },
+        {
+            "datasetId": "urn:dset:1",
+            "type": "Property",
+            "value": "dset1"
+        }
+    ],
+    "id": "urn:E2",
+    "type": "T"
+}
+
+
+09. Ask CB to delete the attribute A2, with datasetId - see 204
+===============================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+10. GET the entity - see that the dataset instance of the attribute A2 is gone
+==============================================================================
+HTTP/1.1 200 OK
+Content-Length: 69
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "A2": {
+        "type": "Property",
+        "value": "default"
+    },
+    "id": "urn:E2",
+    "type": "T"
+}
+
+
+11. Ask CB to delete the attribute, with datasetId, AGAIN - 404
+===============================================================
+HTTP/1.1 404 Not Found
+Content-Length: 152
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "https://uri.etsi.org/ngsi-ld/default-context/A2",
+    "title": "Attribute Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
+}
+
+
+--TEARDOWN--
+brokerStop CB
+brokerStop CP1
+dbDrop CB
+dbDrop CP1

@@ -63,6 +63,7 @@ typedef struct HttpResponse
   uint32_t    bufPos;
   uint32_t    bufLen;
   bool        mustBeFreed;
+  uint32_t    httpStatusCode;
   char        preBuf[4 * 1024];  // Could be much smaller for POST/PATCH/PUT/DELETE (only cover errors, 1k would be more than enough)
 } HttpResponse;
 
@@ -326,11 +327,38 @@ static int responseSave(void* chunk, size_t size, size_t members, void* userP)
 
 // -----------------------------------------------------------------------------
 //
-// responseHeaderDebug -
+// responseHeaders -
 //
-static size_t responseHeaderDebug(char* buffer, size_t size, size_t nitems, void* userdata)
+static size_t responseHeaders(char* buffer, size_t size, size_t nitems, void* userdata)
 {
+  HttpResponse* httpResponseP = (HttpResponse*) userdata;
+
   LM_T(LmtDistOpResponseHeaders, ("Response Header: %s", buffer));
+
+  if (strncmp(buffer, "HTTP/", 5) == 0)
+  {
+    char* space = buffer;
+    char* status = NULL;
+
+    while ((*space != ' ') && (*space != 0))
+      ++space;
+
+    if (*space == ' ')
+    {
+      ++space;
+      status = space;
+
+      while ((*space != ' ') && (*space != 0))
+        ++space;
+      if (*space == ' ')
+      {
+        *space = 0;
+        httpResponseP->distOpP->httpResponseCode = atoi(status);
+        LM_T(LmtDistOpResponseHeaders, ("httpStatusCode: %d", httpResponseP->httpStatusCode));
+      }
+    }
+  }
+
   return nitems;
 }
 
@@ -540,6 +568,12 @@ bool distOpSend(DistOp* distOpP, const char* dateHeader, const char* xForwardedF
 
   if ((distOpP->operation == DoAppendAttrs) && (orionldState.uriParamOptions.noOverwrite == true))
     uriParamAdd(&urlParts, "options", "noOverwrite", 11);
+
+  if (orionldState.uriParams.datasetId != NULL)
+    uriParamAdd(&urlParts, "datasetId", orionldState.uriParams.datasetId, -1);
+
+  if (orionldState.uriParams.deleteAll == true)
+    uriParamAdd(&urlParts, "deleteAll=true", NULL, 14);
 
   if (orionldState.uriParams.qCopy != NULL)
   {
@@ -787,13 +821,8 @@ bool distOpSend(DistOp* distOpP, const char* dateHeader, const char* xForwardedF
   //
   curl_easy_setopt(distOpP->curlHandle, CURLOPT_CUSTOMREQUEST, orionldState.verbString);
   curl_easy_setopt(distOpP->curlHandle, CURLOPT_TIMEOUT_MS, 5000);                     // Timeout - hard-coded to 5 seconds for now ...
-  // curl_easy_setopt(distOpP->curlHandle, CURLOPT_FAILONERROR, true);                    // Fail On Error - to detect 404 etc.
+  // curl_easy_setopt(distOpP->curlHandle, CURLOPT_FAILONERROR, true);                 // Fail On Error - to detect 404 etc.
   curl_easy_setopt(distOpP->curlHandle, CURLOPT_FOLLOWLOCATION, 1L);                   // Follow redirections
-
-  // Debugging Incoming HTTP Headers?
-  if (lmTraceIsSet(LmtDistOpResponseHeaders) == true)
-    curl_easy_setopt(distOpP->curlHandle, CURLOPT_HEADERFUNCTION, responseHeaderDebug);   // Callback for headers
-
 
   //
   // Set the callback function (responseSave) for reading the response
@@ -811,6 +840,10 @@ bool distOpSend(DistOp* distOpP, const char* dateHeader, const char* xForwardedF
 
   curl_easy_setopt(distOpP->curlHandle, CURLOPT_WRITEFUNCTION, responseSave);          // Callback for reading the response body
   curl_easy_setopt(distOpP->curlHandle, CURLOPT_WRITEDATA, (void*) httpResponseP);     // User data for responseSave
+
+  // Extract info from Incoming HTTP Headers
+  curl_easy_setopt(distOpP->curlHandle, CURLOPT_HEADERFUNCTION, responseHeaders);     // Callback for headers
+  curl_easy_setopt(distOpP->curlHandle, CURLOPT_HEADERDATA, (void*) httpResponseP);   // User data
 
   if (https)
   {

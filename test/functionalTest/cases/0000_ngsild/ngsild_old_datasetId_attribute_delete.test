@@ -25,7 +25,7 @@ Attribute Delete with datasetId
 
 --SHELL-INIT--
 dbInit CB
-orionldStart CB -mongocOnly
+orionldStart CB
 
 --SHELL--
 
@@ -67,13 +67,6 @@ payload='{
   ]
 }'
 orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
-echo
-echo
-
-
-echo "01b. See the entity in mongo"
-echo "============================"
-mongoCmd2 ftest "db.entities.findOne()"
 echo
 echo
 
@@ -128,61 +121,6 @@ Content-Length: 0
 Date: REGEX(.*)
 Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1
 
-
-
-01b. See the entity in mongo
-============================
-MongoDB shell version REGEX(.*)
-connecting to: REGEX(.*)
-MongoDB server version: REGEX(.*)
-{
-	"_id" : {
-		"id" : "urn:ngsi-ld:entities:E1",
-		"type" : "https://uri.etsi.org/ngsi-ld/default-context/T",
-		"servicePath" : "/"
-	},
-	"attrNames" : [
-		"https://uri.etsi.org/ngsi-ld/default-context/A1"
-	],
-	"attrs" : {
-		"https://uri=etsi=org/ngsi-ld/default-context/A1" : {
-			"type" : "Property",
-			"creDate" : REGEX(.*),
-			"modDate" : REGEX(.*),
-			"value" : "A1:Default",
-			"mdNames" : [ ]
-		}
-	},
-	"creDate" : REGEX(.*),
-	"modDate" : REGEX(.*),
-	"lastCorrelator" : "",
-	"@datasets" : {
-		"https://uri=etsi=org/ngsi-ld/default-context/A1" : [
-			{
-				"type" : "Property",
-				"value" : "A1:D1",
-				"datasetId" : "urn:ngsi-ld:dataset:D1",
-				"createdAt" : REGEX(.*),
-				"modifiedAt" : REGEX(.*)
-			},
-			{
-				"type" : "Property",
-				"value" : "A1:D2",
-				"datasetId" : "urn:ngsi-ld:dataset:D2",
-				"createdAt" : REGEX(.*),
-				"modifiedAt" : REGEX(.*)
-			},
-			{
-				"type" : "Property",
-				"value" : "A1:D3",
-				"datasetId" : "urn:ngsi-ld:dataset:D3",
-				"createdAt" : REGEX(.*),
-				"modifiedAt" : REGEX(.*)
-			}
-		]
-	}
-}
-bye
 
 
 02. Delete A1:D1 using the datasetId URI param

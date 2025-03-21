@@ -116,8 +116,10 @@ DistOp* distOpRequests(char* entityId, char* entityType, DistOpType operation, K
   DistOp* inclusiveList = NULL;
 
   exclusiveList = regMatchForEntityCreation(RegModeExclusive, operation, entityId, entityType, payloadBody);
-  redirectList  = regMatchForEntityCreation(RegModeRedirect,  operation, entityId, entityType, payloadBody);
+  // regMatchAttributes (down the line) chops off matching attributes
 
+  redirectList  = regMatchForEntityCreation(RegModeRedirect,  operation, entityId, entityType, payloadBody);
+  // Chop off matching attributes - AFTER all Redirect Registrations have been processed
   if (redirectList != NULL)
     purgeRedirectedAttributes(redirectList, payloadBody);  // chopping attrs off payloadBody
 

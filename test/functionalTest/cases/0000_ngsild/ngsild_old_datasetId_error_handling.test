@@ -25,7 +25,7 @@ Attributes with datasetId - creation
 
 --SHELL-INIT--
 dbInit CB
-orionldStart CB -mongocOnly
+orionldStart CB
 
 --SHELL--
 
@@ -154,13 +154,13 @@ Date: REGEX(.*)
 06. Attempt to DELETE an attribute with a simple datasetId (supported) - see 404
 ================================================================================
 HTTP/1.1 404 Not Found
-Content-Length: 108
+Content-Length: 169
 Content-Type: application/json
 Date: REGEX(.*)
 
 {
-    "detail": "urn:E1",
-    "title": "Entity Not Found",
+    "detail": "https://uri.etsi.org/ngsi-ld/default-context/A1",
+    "title": "Entity/Attribute/datasetId not found",
     "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 

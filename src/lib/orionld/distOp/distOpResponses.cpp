@@ -364,7 +364,7 @@ void distOpResponseAccumulate(DistOp* distOpP, KjNode* responseBody, KjNode* suc
 //
 // distOpResponses -
 //
-void distOpResponses(DistOp* distOpList, KjNode* responseBody)
+void distOpResponses(DistOp* distOpList, KjNode* responseBody, bool exclude404)
 {
   CURLMsg* msgP;
   int      msgsLeft;
@@ -412,7 +412,9 @@ void distOpResponses(DistOp* distOpList, KjNode* responseBody)
     if (distOpP != NULL)
     {
       LM_T(LmtDistOpResponseDetail, ("%s: got some response - accumulating it", distOpP->regP->regId));
-      distOpResponseAccumulate(distOpP, responseBody, successV, failureV, msgP);
+
+      if ((exclude404 == false) || (distOpP->httpResponseCode != 404))
+        distOpResponseAccumulate(distOpP, responseBody, successV, failureV, msgP);
     }
     else
       LM_W(("distOpLookupByCurlHandle failed to find the DistOp - the response from the distributed request will not be handled!!!"));

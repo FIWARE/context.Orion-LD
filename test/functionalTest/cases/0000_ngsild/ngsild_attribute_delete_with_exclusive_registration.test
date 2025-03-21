@@ -1,0 +1,182 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Attribute Delete with datasetId
+
+--SHELL-INIT--
+dbInit CB
+dbInit CP1
+orionldStart CB -mongocOnly -forwarding
+orionldStart CP1 -mongocOnly
+
+--SHELL--
+
+#
+# 01. Create an entity E1 with an attribute A1 in CP1
+# 02. GET the entity from CP1 (paranoia)
+# 03. Create an Exclusive registration for E1/A1 in CB
+# 04. Ask CB to delete the attribute
+# 05. Query CP1 for E1, see no A1
+# 06. Ask CB to delete the attribute AGAIN - 404
+#
+
+echo "01. Create an entity E1 with an attribute A1 in CP1"
+echo "==================================================="
+payload='{
+  "id": "urn:E1",
+  "type": "T",
+  "A1": 1
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" --port $CP1_PORT
+echo
+echo
+
+
+echo "02. GET the entity from CP1 (paranoia)"
+echo "======================================"
+orionCurl --url /ngsi-ld/v1/entities?type=T --port $CP1_PORT
+echo
+echo
+
+
+echo "03. Create an Exclusive registration for E1/A1 in CB"
+echo "===================================================="
+payload='{
+  "id": "urn:ngsi-ld:registration:R1",
+  "type": "ContextSourceRegistration",
+  "information": [
+    {
+      "entities": [
+        {
+          "id": "urn:E1",
+          "type": "T"
+        }
+      ],
+      "propertyNames": [ "A1" ]
+    }
+  ],
+  "mode": "exclusive",
+  "operations": [ "deleteAttrs", "retrieveEntity" ],
+  "endpoint": "http://localhost:'$CP1_PORT'"
+}'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload"
+echo
+echo
+
+
+echo "04. Ask CB to delete the attribute"
+echo "=================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/A1 -X DELETE
+echo
+echo
+
+
+echo "05. Query CP1 for E1, see no A1"
+echo "==============================="
+orionCurl --url /ngsi-ld/v1/entities?local=true --port $CP1_PORT
+echo
+echo
+
+
+echo "06. Ask CB to delete the attribute AGAIN - 404"
+echo "=============================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/A1 -X DELETE
+echo
+echo
+
+
+--REGEXPECT--
+01. Create an entity E1 with an attribute A1 in CP1
+===================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E1
+
+
+
+02. GET the entity from CP1 (paranoia)
+======================================
+HTTP/1.1 200 OK
+Content-Length: 63
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "A1": {
+            "type": "Property",
+            "value": 1
+        },
+        "id": "urn:E1",
+        "type": "T"
+    }
+]
+
+
+03. Create an Exclusive registration for E1/A1 in CB
+====================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/csourceRegistrations/urn:ngsi-ld:registration:R1
+
+
+
+04. Ask CB to delete the attribute
+==================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+05. Query CP1 for E1, see no A1
+===============================
+HTTP/1.1 200 OK
+Content-Length: 28
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "id": "urn:E1",
+        "type": "T"
+    }
+]
+
+
+06. Ask CB to delete the attribute AGAIN - 404
+==============================================
+HTTP/1.1 404 Not Found
+Content-Length: 0
+Date: REGEX(.*)
+
+
+
+--TEARDOWN--
+brokerStop CB
+brokerStop CP1
+dbDrop CB
+dbDrop CP1
