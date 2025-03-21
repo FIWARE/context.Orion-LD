@@ -71,6 +71,23 @@ extern "C"
 //
 // orionldPutAttribute -
 //
+// REIMPLEMENT for datasetId support:
+// 1. Get "dbEntityP" from mongo (we need the Entity Type for DistOps)
+// 2. If the entity type is given as URI param use that one instead but DO NO LOCAL UPDATE
+// 3. Send all distOps - save results (204 and 404 are extra interesting)
+//    - if any distOp error != 404, use that one as error and stop
+// 4. If the attribute has been chopped off by Exclusive/Redirect registrations, we're done
+// 5. Get the entity from mongo, inclusing "@datasets", if datasetId is in use
+// 6. Lookup the attribute in the DB Entity
+// 7. if datasetId is present - lookup the DB field $datasets.<attrLongNameEq>.[datasetId match]
+// 8. Check for 404
+//    - if dbEntityP == NULL || dbAttrP == NULL:
+//    - If any 204 in distOp responses, return 204
+//    - [ before we checked for any distOp error != 204 and != 404 ]
+//    - [ so, now we're in a situation with ALL (or none) distOps returned 404 ]
+//    - If no datasetId and "Entity not found" => 404 Entity Not Found
+//      - Actually, should check 404's in distOps for all Attribute Not Found and use that if so)
+//
 bool orionldPutAttribute(void)
 {
   char*   entityId     = orionldState.wildcard[0];

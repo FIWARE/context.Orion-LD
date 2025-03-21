@@ -289,6 +289,12 @@ bool orionldDeleteAttribute(void)
   //
   entityP = entityFromDb(entityId, &entityType);
 
+  if (troe)
+  {
+    orionldState.wildcard[1]       = orionldState.in.pathAttrExpanded;
+    orionldState.entityTypeForTroe = entityType;
+  }
+
   //
   // 2. Distributed Ops - in case the operation is ONLY REMOTE
   //
