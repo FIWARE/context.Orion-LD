@@ -1,6 +1,6 @@
 /*
 *
-* Copyright 2023 FIWARE Foundation e.V.
+* Copyright 2025 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -23,28 +23,28 @@
 * Author: Ken Zangelin
 */
 #include <bson/bson.h>                                           // bson_t, ...
+#include <mongoc/mongoc.h>                                       // MongoDB C Client Driver
 
 extern "C"
 {
 #include "kjson/KjNode.h"                                        // KjNode
-#include "kjson/kjLookup.h"                                      // kjLookup
 }
 
 #include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/common/orionldState.h"                         // orionldState
-#include "orionld/mongoc/mongocConnectionGet.h"                  // mongocConnectionGet
 #include "orionld/mongoc/mongocWriteLog.h"                       // MONGOC_WLOG
+#include "orionld/mongoc/mongocConnectionGet.h"                  // mongocConnectionGet
 #include "orionld/mongoc/mongocKjTreeToBson.h"                   // mongocKjTreeToBson
-#include "orionld/mongoc/mongocAttributeReplace.h"               // Own interface
+#include "orionld/mongoc/mongocEntityFieldDelete.h"              // Own interface
 
 
 
 // -----------------------------------------------------------------------------
 //
-// mongocAttributeReplace -
+// mongocEntityFieldDelete -
 //
-bool mongocAttributeReplace(const char* entityId, KjNode* dbAttrP, char** detailP)
+bool mongocEntityFieldDelete(const char* entityId, const char* dbFieldPath, char** detailP)
 {
   mongocConnectionGet(orionldState.tenantP, DbEntities);
 
@@ -52,42 +52,25 @@ bool mongocAttributeReplace(const char* entityId, KjNode* dbAttrP, char** detail
   bson_init(&selector);
   bson_append_utf8(&selector, "_id.id", 6, entityId, -1);
 
-  bson_t set;
+  bson_t unset;
   bson_t request;
   bson_t reply;
 
   bson_init(&request);
   bson_init(&reply);
-  bson_init(&set);
+  bson_init(&unset);
 
-  // Replace attrs.<attrNameInDbFormat>
-  char   attrPath[512];
-  strcpy(attrPath, "attrs.");
-  strncpy(&attrPath[6], dbAttrP->name, 505);
+  bson_append_utf8(&unset, dbFieldPath, -1, "", 0);
+  bson_append_document(&request, "$unset", 6, &unset);
+  bson_destroy(&unset);
 
-  // Set the Attribute's modDate
-  KjNode* attrModDateP = kjLookup(dbAttrP, "modDate");
-  if (attrModDateP != NULL)
-    attrModDateP->value.f = orionldState.requestTime;
-
-  bson_t attr;
-  mongocKjTreeToBson(dbAttrP, &attr);
-  bson_append_document(&set, attrPath, -1, &attr);
-  bson_destroy(&attr);
-
-  // Update the Entity's modDate
-  bson_append_double(&set, "modDate", 7, orionldState.requestTime);
-
-  bson_append_document(&request, "$set", 4, &set);
-  bson_destroy(&set);
-
-  MONGOC_WLOG("Adding Attributes", orionldState.tenantP->mongoDbName, "entities", &selector, &request, LmtMongoc);
+  MONGOC_WLOG("Deleting a field", orionldState.tenantP->mongoDbName, "entities", &selector, &request, LmtMongoc);
   bool dbResult = mongoc_collection_update_one(orionldState.mongoc.entitiesP, &selector, &request, NULL, &reply, &orionldState.mongoc.error);
   if (dbResult == false)
   {
     bson_error_t* errP = &orionldState.mongoc.error;
     *detailP = errP->message;
-    LM_E(("mongoc error updating entity '%s': [%d.%d]: %s", entityId, errP->domain, errP->code, errP->message));
+    LM_E(("mongoc error replacing a filed of entity '%s': [%d.%d]: %s", entityId, errP->domain, errP->code, errP->message));
   }
 
   bson_destroy(&request);
@@ -95,4 +78,3 @@ bool mongocAttributeReplace(const char* entityId, KjNode* dbAttrP, char** detail
 
   return dbResult;
 }
-

@@ -76,6 +76,7 @@ typedef enum TraceLevels
   LmtDistOpRequest = 70,               // ONLY the verb, path, and body of a distributed request
   LmtDistOpRequestHeaders,             // HTTP headers of distributed requests
   LmtDistOpRequestParams,              // URL parameters of distributed requests
+  LmtDistOpAttrRemove,                 // Removal of attributes for Exclusive/Redirect Registrations
 
   //
   // Distributed Operations - responses

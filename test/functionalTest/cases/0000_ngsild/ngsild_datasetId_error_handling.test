@@ -1,0 +1,170 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Attributes with datasetId - creation
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -mongocOnly
+
+--SHELL--
+
+#
+# 01. Attempt to query entities with a datasetId that is not a URI - see error
+# 02. Attempt to retrieve an entity with a datasetId that is not a URI - see error
+# 03. Attempt to query entities with a datasetId list with an item that is not a URI - see error
+# 04. Attempt to retrieve an entity with a datasetId list with an item that is not a URI - see error
+# 05. Attempt to DELETE an attribute with a datasetId list (not supported in API version 1.9.1 or older) - see error
+# 06. Attempt to DELETE an attribute with a simple datasetId list (supported) - see 404
+#
+
+echo "01. Attempt to query entities with a datasetId that is not a URI - see error"
+echo "============================================================================"
+orionCurl --url /ngsi-ld/v1/entities?datasetId=14
+echo
+echo
+
+
+echo "02. Attempt to retrieve an entity with a datasetId that is not a URI - see error"
+echo "================================================================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:E1?datasetId=14
+echo
+echo
+
+
+echo "03. Attempt to query entities with a datasetId list with an item that is not a URI - see error"
+echo "=============================================================================================="
+orionCurl --url /ngsi-ld/v1/entities?datasetId=urn:a,14
+echo
+echo
+
+
+echo "04. Attempt to retrieve an entity with a datasetId list with an item that is not a URI - see error"
+echo "=================================================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1?datasetId=urn:a,14
+echo
+echo
+
+
+echo "05. Attempt to DELETE an attribute with a datasetId list (not supported in API version 1.9.1 or older) - see error"
+echo "=================================================================================================================="
+orionCurl --url '/ngsi-ld/v1/entities/urn:E1/attrs/A1?datasetId=urn:a,urn:b' -X DELETE
+echo
+echo
+
+
+echo "06. Attempt to DELETE an attribute with a simple datasetId (supported) - see 404"
+echo "================================================================================"
+orionCurl --url '/ngsi-ld/v1/entities/urn:E1/attrs/A1?datasetId=urn:a' -X DELETE
+echo
+echo
+
+
+--REGEXPECT--
+01. Attempt to query entities with a datasetId that is not a URI - see error
+============================================================================
+HTTP/1.1 400 Bad Request
+Content-Length: 121
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "datasetId",
+    "title": "Invalid URI - no colon found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/BadRequestData"
+}
+
+
+02. Attempt to retrieve an entity with a datasetId that is not a URI - see error
+================================================================================
+HTTP/1.1 400 Bad Request
+Content-Length: 121
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "datasetId",
+    "title": "Invalid URI - no colon found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/BadRequestData"
+}
+
+
+03. Attempt to query entities with a datasetId list with an item that is not a URI - see error
+==============================================================================================
+HTTP/1.1 400 Bad Request
+Content-Length: 102
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "14",
+    "title": "Invalid datasetId",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/InternalError"
+}
+
+
+04. Attempt to retrieve an entity with a datasetId list with an item that is not a URI - see error
+==================================================================================================
+HTTP/1.1 400 Bad Request
+Content-Length: 102
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "14",
+    "title": "Invalid datasetId",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/InternalError"
+}
+
+
+05. Attempt to DELETE an attribute with a datasetId list (not supported in API version 1.9.1 or older) - see error
+==================================================================================================================
+HTTP/1.1 400 Bad Request
+Content-Length: 128
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "datasetId (as list)",
+    "title": "Unsupported URI parameter",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/BadRequestData"
+}
+
+
+06. Attempt to DELETE an attribute with a simple datasetId (supported) - see 404
+================================================================================
+HTTP/1.1 404 Not Found
+Content-Length: 108
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "urn:E1",
+    "title": "Entity Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
+}
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB

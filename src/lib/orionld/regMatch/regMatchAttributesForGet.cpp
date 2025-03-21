@@ -225,6 +225,7 @@ StringArray* regMatchAttributesForGet
       if (regP->mode == RegModeExclusive)
       {
         stringArrayRemoveItem(attrListP, ix);
+        LM_T(LmtDistOpAttrRemove, ("Removing the attribute '%s' from the attrV (%d attr left)", attrListP->array[ix], attrListP->items));
         --ix;  // Compensating for the item in attrListP that was just removed
       }
       LM_T(LmtDistOpAttributes, ("Matching %d (ix is %d) URL attrs", attrListP->items, ix));

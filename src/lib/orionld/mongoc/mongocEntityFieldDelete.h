@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_DISTOP_DISTOPRESPONSES_H_
-#define SRC_LIB_ORIONLD_DISTOP_DISTOPRESPONSES_H_
+#ifndef SRC_LIB_ORIONLD_MONGOC_MONGOCENTITYFIELDDELETE_H_
+#define SRC_LIB_ORIONLD_MONGOC_MONGOCENTITYFIELDDELETE_H_
 
 /*
 *
-* Copyright 2023 FIWARE Foundation e.V.
+* Copyright 2025 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,19 +25,13 @@
 *
 * Author: Ken Zangelin
 */
-extern "C"
-{
-#include "kjson/KjNode.h"                                        // KjNode
-}
-
-#include "orionld/types/DistOp.h"                                // DistOp
 
 
 
 // -----------------------------------------------------------------------------
 //
-// distOpResponses -
+// mongocEntityFieldDelete -
 //
-extern void distOpResponses(DistOp* distOpList, KjNode* responseBody, bool exclude404 = false);
+extern bool mongocEntityFieldDelete(const char* entityId, const char* dbFieldPath, char** detailP);
 
-#endif  // SRC_LIB_ORIONLD_DISTOP_DISTOPRESPONSES_H_
+#endif  // SRC_LIB_ORIONLD_MONGOC_MONGOCENTITYFIELDDELETE_H_

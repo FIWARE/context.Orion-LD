@@ -1,6 +1,6 @@
 /*
 *
-* Copyright 2023 FIWARE Foundation e.V.
+* Copyright 2025 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -23,28 +23,28 @@
 * Author: Ken Zangelin
 */
 #include <bson/bson.h>                                           // bson_t, ...
+#include <mongoc/mongoc.h>                                       // MongoDB C Client Driver
 
 extern "C"
 {
 #include "kjson/KjNode.h"                                        // KjNode
-#include "kjson/kjLookup.h"                                      // kjLookup
 }
 
 #include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/common/orionldState.h"                         // orionldState
-#include "orionld/mongoc/mongocConnectionGet.h"                  // mongocConnectionGet
 #include "orionld/mongoc/mongocWriteLog.h"                       // MONGOC_WLOG
+#include "orionld/mongoc/mongocConnectionGet.h"                  // mongocConnectionGet
 #include "orionld/mongoc/mongocKjTreeToBson.h"                   // mongocKjTreeToBson
-#include "orionld/mongoc/mongocAttributeReplace.h"               // Own interface
+#include "orionld/mongoc/mongocEntityFieldReplace.h"             // Own interface
 
 
 
 // -----------------------------------------------------------------------------
 //
-// mongocAttributeReplace -
+// mongocEntityFieldReplace -
 //
-bool mongocAttributeReplace(const char* entityId, KjNode* dbAttrP, char** detailP)
+bool mongocEntityFieldReplace(const char* entityId, const char* dbFieldPath, KjNode* newValue, char** detailP)
 {
   mongocConnectionGet(orionldState.tenantP, DbEntities);
 
@@ -60,34 +60,28 @@ bool mongocAttributeReplace(const char* entityId, KjNode* dbAttrP, char** detail
   bson_init(&reply);
   bson_init(&set);
 
-  // Replace attrs.<attrNameInDbFormat>
-  char   attrPath[512];
-  strcpy(attrPath, "attrs.");
-  strncpy(&attrPath[6], dbAttrP->name, 505);
+  bson_t dataset;
+  mongocKjTreeToBson(newValue, &dataset);
 
-  // Set the Attribute's modDate
-  KjNode* attrModDateP = kjLookup(dbAttrP, "modDate");
-  if (attrModDateP != NULL)
-    attrModDateP->value.f = orionldState.requestTime;
+  if (newValue->type == KjArray)
+    bson_append_array(&set, dbFieldPath, -1, &dataset);
+  else if (newValue->type == KjObject)
+    bson_append_document(&set, dbFieldPath, -1, &dataset);
+  else
+    LM_X(1, ("501 - the JSON type '%s' is not supported - easy fix - needs recompilation", kjValueType(newValue->type)));
 
-  bson_t attr;
-  mongocKjTreeToBson(dbAttrP, &attr);
-  bson_append_document(&set, attrPath, -1, &attr);
-  bson_destroy(&attr);
-
-  // Update the Entity's modDate
-  bson_append_double(&set, "modDate", 7, orionldState.requestTime);
+  bson_destroy(&dataset);
 
   bson_append_document(&request, "$set", 4, &set);
   bson_destroy(&set);
 
-  MONGOC_WLOG("Adding Attributes", orionldState.tenantP->mongoDbName, "entities", &selector, &request, LmtMongoc);
+  MONGOC_WLOG("Replacing a field", orionldState.tenantP->mongoDbName, "entities", &selector, &request, LmtMongoc);
   bool dbResult = mongoc_collection_update_one(orionldState.mongoc.entitiesP, &selector, &request, NULL, &reply, &orionldState.mongoc.error);
   if (dbResult == false)
   {
     bson_error_t* errP = &orionldState.mongoc.error;
     *detailP = errP->message;
-    LM_E(("mongoc error updating entity '%s': [%d.%d]: %s", entityId, errP->domain, errP->code, errP->message));
+    LM_E(("mongoc error replacing a filed of entity '%s': [%d.%d]: %s", entityId, errP->domain, errP->code, errP->message));
   }
 
   bson_destroy(&request);
@@ -95,4 +89,3 @@ bool mongocAttributeReplace(const char* entityId, KjNode* dbAttrP, char** detail
 
   return dbResult;
 }
-

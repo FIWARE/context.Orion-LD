@@ -72,6 +72,9 @@ SET (SOURCES
     mongocWriteLog.cpp
     mongocAttributeReplace.cpp
     mongocIndexString.cpp
+    mongocAttributeReplace.cpp
+    mongocEntityFieldReplace.cpp
+    mongocEntityFieldDelete.cpp
 )
 
 # Include directories

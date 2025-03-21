@@ -207,32 +207,15 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 07. Attempt to DELETE Attribute P1 again - 404
 ==============================================
-HTTP/1.1 207 Multi-Status
-Content-Length: 259
+HTTP/1.1 404 Not Found
+Content-Length: 152
 Content-Type: application/json
 Date: REGEX(.*)
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
-    "notUpdated": [
-        {
-            "attributes": [
-                "P1"
-            ],
-            "statusCode": 404,
-            "title": "Attribute Not Found"
-        },
-        {
-            "attributes": [
-                "P1"
-            ],
-            "detail": "https://uri.etsi.org/ngsi-ld/default-context/P1",
-            "registrationId": "urn:R1",
-            "statusCode": 404,
-            "title": "Entity/Attribute not found"
-        }
-    ],
-    "updated": []
+    "detail": "https://uri.etsi.org/ngsi-ld/default-context/P1",
+    "title": "Attribute Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
 
 

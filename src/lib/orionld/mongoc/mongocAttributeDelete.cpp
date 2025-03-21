@@ -33,6 +33,7 @@ extern "C"
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/dotForEq.h"                             // dotForEq
+#include "orionld/mongoc/mongocWriteLog.h"                       // MONGOC_WLOG
 #include "orionld/mongoc/mongocConnectionGet.h"                  // mongocConnectionGet
 #include "orionld/mongoc/mongocAttributeDelete.h"                // Own interface
 
@@ -93,6 +94,7 @@ bool mongocAttributeDelete(const char* entityId, const char* attrName)
   bson_append_document(&request, "$pull",  5, &pull);
 
   // Send the request to mongo
+  MONGOC_WLOG("Deleting an attribute", orionldState.tenantP->mongoDbName, "entities", &selector, &request, LmtMongoc);
   bool b = mongoc_collection_update_one(orionldState.mongoc.entitiesP, &selector, &request, NULL, &reply, &orionldState.mongoc.error);
   if (b == false)
   {
