@@ -39,7 +39,7 @@ extern "C"
 //
 // dbModelEntityTypeLookup -
 //
-char* dbModelEntityTypeLookup(KjNode* dbEntityP, char* entityId)
+char* dbModelEntityTypeLookup(KjNode* dbEntityP, const char* entityId)
 {
   KjNode* _idP = kjLookup(dbEntityP, "_id");
 

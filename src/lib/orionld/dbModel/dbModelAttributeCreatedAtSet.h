@@ -36,6 +36,6 @@ extern "C"
 //
 // dbModelAttributeCreatedAtSet -
 //
-extern void dbModelAttributeCreatedAtSet(KjNode* dbAttrP, double createdAt);
+extern void dbModelAttributeCreatedAtSet(KjNode* dbAttrP, double createdAt, const char* fieldName);
 
 #endif  // SRC_LIB_ORIONLD_DBMODEL_DBMODELATTRIBUTECREATEDATSET_H_

@@ -117,11 +117,17 @@ DistOp* distOpRequests(char* entityId, char* entityType, DistOpType operation, K
 
   exclusiveList = regMatchForEntityCreation(RegModeExclusive, operation, entityId, entityType, payloadBody);
   // regMatchAttributes (down the line) chops off matching attributes
+  if ((operation == DoReplaceAttr) && (exclusiveList != NULL))
+    orionldState.attributeConsumed = true;
 
   redirectList  = regMatchForEntityCreation(RegModeRedirect,  operation, entityId, entityType, payloadBody);
   // Chop off matching attributes - AFTER all Redirect Registrations have been processed
   if (redirectList != NULL)
+  {
     purgeRedirectedAttributes(redirectList, payloadBody);  // chopping attrs off payloadBody
+    if (operation == DoReplaceAttr)
+      orionldState.attributeConsumed = true;
+  }
 
   inclusiveList = regMatchForEntityCreation(RegModeInclusive, operation, entityId, entityType, payloadBody);
 

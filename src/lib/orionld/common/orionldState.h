@@ -452,6 +452,8 @@ typedef struct OrionldConnectionState
   bool                    distOpAttrsCompacted;
   int                     distOpNo;
   DistOp*                 distOpList;
+  bool                    attributeConsumed;     // Single attribute (/entities/*/attrs/*) and it has been comsumed
+
   uint32_t                acceptMask;            // "1 << MimeType" mask for all accepted Mime Types, regardless of which is chosen and of weight
   bool                    ddsSample;             // Are we treating a sample from DDS?
   char*                   ddsType;               // type of DDS Sample

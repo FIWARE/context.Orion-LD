@@ -799,18 +799,16 @@ Location: /ngsi-ld/v1/csourceRegistrations/urn:R1
 22. Replace urn:E1/P0 in CB - 409 due to urn:R1 not supporting 'replaceAttr'
 ============================================================================
 HTTP/1.1 409 Conflict
-Content-Length: 148
+Content-Length: 249
 Content-Type: application/json
 Date: REGEX(.*)
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
-    "attributes": [
-        "P0"
-    ],
+    "attribute": "https://uri.etsi.org/ngsi-ld/default-context/P0",
     "detail": "A matching exclusive registration forbids the Operation",
     "registrationId": "urn:R1",
-    "title": "Operation not supported"
+    "title": "Operation not supported",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/AlreadyExists"
 }
 
 

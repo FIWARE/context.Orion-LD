@@ -168,6 +168,7 @@ DistOp* regMatchForEntityCreation
       for (DistOp* doP = distOpP; doP != NULL; doP = doP->next)
       {
         doP->error            = true;
+        doP->errorType        = OrionldAlreadyExists;
         doP->title            = (char*) "Operation not supported";
         doP->detail           = (char*) "A matching exclusive registration forbids the Operation";
         doP->httpResponseCode = 409;
