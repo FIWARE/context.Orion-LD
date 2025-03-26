@@ -25,7 +25,7 @@ Attribute Delete with datasetId
 
 --SHELL-INIT--
 dbInit CB
-orionldStart CB -mongocOnly
+orionldStart CB -mongocOnly -t 0-255
 
 --SHELL--
 
@@ -102,6 +102,7 @@ echo
 
 
 --REGEXPECT--
+Provoked Error
 01. Create an entity E1 with an attribute A1 having 3 datasets (D1, D2, and D3) apart from the default
 ======================================================================================================
 HTTP/1.1 201 Created
