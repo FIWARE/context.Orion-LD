@@ -43,19 +43,15 @@ extern "C"
 //
 void dbModelAttributeCreatedAtSet(KjNode* dbAttrP, double createdAt, const char* fieldName)
 {
-  LM_T(LmtSR, ("createdAt == %f (looking for field '%s')", createdAt, fieldName));
   KjNode* creDateP = kjLookup(dbAttrP, fieldName);  // "creDate" for default instance and "createdAt" for dataset instances
 
-  LM_T(LmtSR, ("creDateP at %p", creDateP));
   if (createdAt == 0)
     createdAt = orionldState.requestTime;
-  LM_T(LmtSR, ("createdAt == %f", createdAt));
 
   if (creDateP != NULL)
     creDateP->value.f = createdAt;
   else
   {
-    LM_T(LmtSR, ("attribute '%s'", dbAttrP->name));
     LM_W(("No '%s' found in attribute '%s'", fieldName, dbAttrP->name));
 
     KjNode* createdAtP = kjFloat(orionldState.kjsonP, fieldName, createdAt);
