@@ -259,6 +259,13 @@ bool orionldPutAttribute(void)
   if (dbEntityP != NULL)
     kjTreeLog(dbEntityP, "dbEntity", LmtSR);
 
+  //
+  // Is a DDS notification the source of this update?
+  // For now, distOps for DDS notifications is not enabled
+  //
+  if ((orionldState.ddsSample == true) && (dbEntityP == NULL))
+    return ddsEntityCreateFromAttribute(orionldState.requestTree, entityId, attrName);
+
   // Select what entity type to use (from URI param, from DB, or NULL)
   bool        entityTypeMismatch = false;
   const char* entityType         = entityTypeSelect(entityId, entityTypeFromUriParam, dbEntityP, &entityTypeMismatch);
@@ -395,6 +402,19 @@ bool orionldPutAttribute(void)
 
     if (dbAttrsP != NULL)
       dbAttrP = kjLookup(dbAttrsP, attrLongNameEq);
+
+    // DDS
+    if (orionldState.ddsSample == true)
+    {
+      if (dbAttrP == NULL)
+        return ddsAttributeCreate(orionldState.requestTree, entityType, attrName);
+      else
+      {
+        int64_t publishedAt = dbModelAttributePublishedAtLookup(dbAttrP);
+        if (publishedAt > orionldState.ddsPublishTime)
+          return true;
+      }
+    }
   }
 
   // It's OK to modify the attribute type in a PUT Attribute operation (thus NoAttributeType)

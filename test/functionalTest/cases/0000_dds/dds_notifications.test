@@ -28,7 +28,7 @@ $REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,s
 $REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" --ddsTopic "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.ftClient
 dbInit CB
 pgInit $CB_DB_NAME
-orionldStart CB -mongocOnly -wip dds -t 0-255 -troe
+orionldStart CB -mongocOnly -wip dds -troe
 ftClientStart -t 0-5000
 
 --SHELL--
@@ -438,7 +438,6 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "value": "fastdds"
       },
       "shutterSpeed": {
-        "type": "Property",
         "value": {
           "b": false,
           "f": 0,
@@ -464,7 +463,8 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "publishedAt": {
           "type": "Property",
           "value": REGEX(.*)
-        }
+        },
+        "type": "Property"
       }
     }
   ]

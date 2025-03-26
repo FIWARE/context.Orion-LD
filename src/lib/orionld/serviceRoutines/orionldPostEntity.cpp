@@ -326,6 +326,7 @@ bool orionldPostEntity(void)
         KjNode*                finalApiEntityWithSysAttrs = dbModelToApiEntity2(dbEntityP, true, RF_NORMALIZED, orionldState.uriParams.lang, false, &pd);
         KjNode*                finalApiEntity             = kjClone(orionldState.kjsonP, finalApiEntityWithSysAttrs);
         sysAttrsStrip(finalApiEntity);
+
         OrionldAlteration*     alterationP                = alteration(entityId, entityType, finalApiEntity, orionldState.requestTree, initialDbEntityP);
         alterationP->finalApiEntityWithSysAttrsP = finalApiEntityWithSysAttrs;
       }
