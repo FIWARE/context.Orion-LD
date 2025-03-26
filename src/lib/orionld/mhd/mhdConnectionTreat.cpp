@@ -1493,7 +1493,7 @@ MHD_Result mhdConnectionTreat(void)
   //
   if ((orionldState.pd.status >= 400) && (orionldState.responseTree == NULL) && (orionldState.pd.status != 405))
   {
-    pdTreeCreate(orionldState.pd.type, orionldState.pd.title, orionldState.pd.detail);
+    pdTreeCreate(&orionldState.pd);
     orionldState.httpStatusCode = orionldState.pd.status;
   }
 

@@ -138,3 +138,51 @@ KjNode* pdTreeCreate
 
   return orionldState.responseTree;
 }
+
+
+
+// ----------------------------------------------------------------------------
+//
+// pdTreeCreate -
+//
+KjNode* pdTreeCreate(OrionldProblemDetails* pdP)
+{
+  KjNode*     typeP   = kjString(orionldState.kjsonP, "type", orionldResponseErrorType(pdP->type));
+  KjNode*     titleP  = kjString(orionldState.kjsonP, "title",   pdP->title);
+  const char* detail  = ((pdP->detail != NULL) && (pdP->detail[0] != 0))? pdP->detail : "no detail";
+  KjNode*     detailP = kjString(orionldState.kjsonP, "detail", detail);
+
+  orionldState.responseTree = kjObject(orionldState.kjsonP, NULL);
+
+  kjChildAdd(orionldState.responseTree, typeP);
+  kjChildAdd(orionldState.responseTree, titleP);
+  kjChildAdd(orionldState.responseTree, detailP);
+
+  if (pdP->field != NULL)
+  {
+    KjNode* fieldP = kjString(orionldState.kjsonP, "field", pdP->field);
+    kjChildAdd(orionldState.responseTree, fieldP);
+  }
+
+  if (pdP->registrationId != NULL)
+  {
+    KjNode* regIdP = kjString(orionldState.kjsonP, "registrationId", pdP->registrationId);
+    kjChildAdd(orionldState.responseTree, regIdP);
+  }
+
+  if (pdP->attribute != NULL)
+  {
+    KjNode* attributeP = kjString(orionldState.kjsonP, "attribute", pdP->attribute);
+    kjChildAdd(orionldState.responseTree, attributeP);
+  }
+
+#if 0
+  if (pdP->status >= 400)
+  {
+    KjNode* statusP = kjInteger(orionldState.kjsonP, "status", pdP->status);
+    kjChildAdd(orionldState.responseTree, statusP);
+  }
+#endif
+
+  return orionldState.responseTree;
+}

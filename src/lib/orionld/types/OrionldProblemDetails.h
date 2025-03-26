@@ -46,6 +46,7 @@ typedef struct OrionldProblemDetails
   int                       status;
   char                      titleAndDetailBuffer[256];
   char*                     titleAndDetail;
+  char*                     registrationId;
   char*                     field;
   char*                     attribute;
 } OrionldProblemDetails;
@@ -93,5 +94,13 @@ extern KjNode* pdTreeCreate
   const char*               title,
   const char*               detail
 );
+
+
+
+// ----------------------------------------------------------------------------
+//
+// pdTreeCreate -
+//
+extern KjNode* pdTreeCreate(OrionldProblemDetails* pdP);
 
 #endif  // SRC_LIB_ORIONLD_TYPES_ORIONLDPROBLEMDETAILS_H_

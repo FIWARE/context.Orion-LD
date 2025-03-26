@@ -119,13 +119,15 @@ void ddsNotification(const char* topicName, const char* json, int64_t publishTim
   orionldState.payloadTypeNode = typeNodeP;
 
   orionldState.requestTree         = attrNodeP;
+  orionldState.requestTree->name   = orionldContextItemExpand(orionldState.contextP, attrShortName, true, NULL);
+
   orionldState.uriParams.format    = (char*) "simplified";
   orionldState.uriParams.type      = typeNodeP->value.s;
   orionldState.wildcard[0]         = entityId;
   orionldState.wildcard[1]         = (char*) attrShortName;
 
   orionldState.tenantP             = &tenant0;  // FIXME ... Use tenants?
-  orionldState.in.pathAttrExpanded = (char*) topicName;
+  orionldState.in.pathAttrExpanded = orionldState.requestTree->name;
   orionldState.ddsSample           = true;
   orionldState.ddsPublishTime      = publishTime;
   orionldState.apiVersion          = API_VERSION_NGSILD_V1;

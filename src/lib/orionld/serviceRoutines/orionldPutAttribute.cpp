@@ -34,17 +34,22 @@ extern "C"
 
 #include "logMsg/logMsg.h"                                       // LM*
 
-#include "orionld/types/OrionldAttributeType.h"                  // OrionldAttributeType
+#include "orionld/types/OrionldAttributeType.h"                  // OrionldAttributeType, orionldAttributeType
 #include "orionld/types/OrionLdRestService.h"                    // OrionLdRestService
+#include "orionld/types/OrionldResponseErrorType.h"              // OrionldResponseErrorType
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/common/responseFix.h"                          // responseFix
 #include "orionld/common/dotForEq.h"                             // dotForEq
 #include "orionld/common/traceLevels.h"                          // KT_T trace levels
+#include "orionld/common/httpStatusCodeToOrionldErrorType.h"     // httpStatusCodeToOrionldErrorType
+#include "orionld/common/numberToDate.h"                         // numberToDate
 #include "orionld/payloadCheck/pCheckUri.h"                      // pCheckUri
 #include "orionld/mongoc/mongocEntityLookup.h"                   // mongocEntityLookup
 #include "orionld/mongoc/mongocAttributeReplace.h"               // mongocAttributeReplace
+#include "orionld/mongoc/mongocEntityFieldReplace.h"             // mongocEntityFieldReplace
 #include "orionld/payloadCheck/pCheckAttribute.h"                // pCheckAttribute
+#include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
 #include "orionld/dbModel/dbModelToApiEntity.h"                  // dbModelToApiEntity2
 #include "orionld/dbModel/dbModelFromApiAttribute.h"             // dbModelFromApiAttribute
 #include "orionld/dbModel/dbModelAttributeCreatedAtLookup.h"     // dbModelAttributeCreatedAtLookup
@@ -52,11 +57,16 @@ extern "C"
 #include "orionld/dbModel/dbModelAttributeCreatedAtSet.h"        // dbModelAttributeCreatedAtSet
 #include "orionld/dbModel/dbModelAttributeLookup.h"              // dbModelAttributeLookup
 #include "orionld/dbModel/dbModelEntityTypeLookup.h"             // dbModelEntityTypeLookup
+#include "orionld/regMatch/regMatchForEntityGet.h"               // regMatchForEntityGet
+#include "orionld/distOp/distOpSend.h"                           // distOpSend
 #include "orionld/distOp/distOpRequests.h"                       // distOpRequests
 #include "orionld/distOp/distOpResponses.h"                      // distOpResponses
 #include "orionld/distOp/distOpListRelease.h"                    // distOpListRelease
 #include "orionld/distOp/distOpFailure.h"                        // distOpFailure
 #include "orionld/distOp/distOpSuccess.h"                        // distOpSuccess
+#include "orionld/distOp/distOpListsMerge.h"                     // distOpListsMerge
+#include "orionld/distOp/xForwardedForCompose.h"                 // xForwardedForCompose
+#include "orionld/distOp/viaCompose.h"                           // viaCompose
 #include "orionld/dds/kjTreeLog.h"                               // kjTreeLog2
 #include "orionld/dds/ddsEntityCreateFromAttribute.h"            // ddsEntityCreateFromAttribute
 #include "orionld/dds/ddsAttributeCreate.h"                      // ddsAttributeCreate
@@ -69,18 +79,157 @@ extern "C"
 
 // ----------------------------------------------------------------------------
 //
+// entityTypeSelect -
+//
+static const char* entityTypeSelect(const char* entityId, const char* entityTypeFromUriParam, KjNode* dbEntityP, bool* entityTypeMismatchP)
+{
+  if (dbEntityP != NULL)
+  {
+    char* entityTypeFromDb = dbModelEntityTypeLookup(dbEntityP, entityId);
+
+    if (entityTypeFromDb == NULL)
+      LM_W(("Entity '%s' has no type in the database!!!", entityId));
+    else
+    {
+      if (entityTypeFromUriParam != NULL)
+      {
+        if (strcmp(entityTypeFromUriParam, entityTypeFromDb) != 0)
+        {
+          LM_W(("Entity Type via URI Parameter (%s) differs fronm the one in the database (%s)", entityTypeFromUriParam, entityTypeFromDb));
+          LM_W(("Multi Type is not yet supported. Picking the entity type from the URI Parameter"));
+          *entityTypeMismatchP = true;
+          return entityTypeFromUriParam;
+        }
+      }
+
+      return entityTypeFromDb;
+    }
+  }
+
+  return entityTypeFromUriParam;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// kjChildReplace - FIXME: Move to kjTree library
+//
+static void kjChildReplace(KjNode* container, KjNode* outP, KjNode* inP)
+{
+  KjNode* prev  = NULL;
+  bool    found = false;
+
+  for (KjNode* childP = container->value.firstChildP; childP != NULL; childP = childP->next)
+  {
+    if (childP == outP)
+    {
+      found = true;
+      break;
+    }
+
+    prev = childP;
+  }
+
+  if (found == false)
+  {
+    LM_W(("Unable to replace a child of a contained (\"old\" not found"));
+    return;
+  }
+
+  if (prev == NULL)
+  {
+    container->value.firstChildP = inP;
+    inP->next = outP->next;
+  }
+  else
+  {
+    prev->next = inP;
+    inP->next  = outP->next;
+  }
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// datasetInstanceReplace -
+//
+static void datasetInstanceReplace(KjNode* dbAttrDatasetV, KjNode* oldInstanceP, KjNode* newInstanceP)
+{
+  kjTreeLog(oldInstanceP, "old db dataset instance", LmtSR);
+  kjTreeLog(newInstanceP, "new db dataset instance", LmtSR);
+
+  if (dbAttrDatasetV->type == KjObject)
+  {
+    // Replace entity object (all children)
+    dbAttrDatasetV->value.firstChildP = newInstanceP->value.firstChildP;
+    dbAttrDatasetV->lastChild         = newInstanceP->lastChild;
+  }
+  else
+    kjChildReplace(dbAttrDatasetV, oldInstanceP, newInstanceP);
+}
+
+
+
+// ----------------------------------------------------------------------------
+//
+// entityMergeInAttribute -
+//
+static void entityMergeInAttribute(KjNode* apiEntityP, KjNode* newAttrP)
+{
+  KjNode* oldAttrP = kjLookup(apiEntityP, newAttrP->name);
+
+  LM_T(LmtSR, ("Old attribute '%s' at: %p", newAttrP->name, oldAttrP));
+  if (oldAttrP != NULL)
+  {
+    kjTreeLog(oldAttrP, "OLD", LmtSR);
+    kjTreeLog(newAttrP, "NEW", LmtSR);
+
+    kjChildRemove(apiEntityP, oldAttrP);
+    kjChildAdd(apiEntityP, newAttrP);
+  }
+}
+
+
+
+// ----------------------------------------------------------------------------
+//
+// sysAttrs -
+//
+static void sysAttrs(KjNode* container, double createdAt, double modifiedAt)
+{
+  char* createdAtV  = kaAlloc(&orionldState.kalloc, 32);
+  char* modifiedAtV = kaAlloc(&orionldState.kalloc, 32);
+
+  if (createdAt == 0)
+    createdAt = modifiedAt;
+
+  numberToDate(createdAt,  createdAtV,  32);
+  numberToDate(modifiedAt, modifiedAtV, 32);
+
+  KjNode* createdAtP  = kjString(orionldState.kjsonP, "createdAt", createdAtV);
+  KjNode* modifiedAtP = kjString(orionldState.kjsonP, "modifiedAt", modifiedAtV);
+
+  kjChildAdd(orionldState.requestTree, createdAtP);
+  kjChildAdd(orionldState.requestTree, modifiedAtP);
+}
+
+
+
+// ----------------------------------------------------------------------------
+//
 // orionldPutAttribute -
 //
 // REIMPLEMENT for datasetId support:
 // 1. Get "dbEntityP" from mongo (we need the Entity Type for DistOps)
-// 2. If the entity type is given as URI param use that one instead but DO NO LOCAL UPDATE
-// 3. Send all distOps - save results (204 and 404 are extra interesting)
+// 2. Send all distOps - save results (204 and 404 are especially interesting)
 //    - if any distOp error != 404, use that one as error and stop
-// 4. If the attribute has been chopped off by Exclusive/Redirect registrations, we're done
-// 5. Get the entity from mongo, inclusing "@datasets", if datasetId is in use
-// 6. Lookup the attribute in the DB Entity
-// 7. if datasetId is present - lookup the DB field $datasets.<attrLongNameEq>.[datasetId match]
-// 8. Check for 404
+// 3. If the attribute has been chopped off by Exclusive/Redirect registrations, we're done
+// 4. Get the entity from mongo, inclusing "@datasets", if datasetId is in use
+// 5. Lookup the attribute in the DB Entity
+// 6. if datasetId is present - lookup the DB field @datasets.<attrLongNameEq>.[datasetId match]
+// 7. Check for 404
 //    - if dbEntityP == NULL || dbAttrP == NULL:
 //    - If any 204 in distOp responses, return 204
 //    - [ before we checked for any distOp error != 204 and != 404 ]
@@ -90,288 +239,308 @@ extern "C"
 //
 bool orionldPutAttribute(void)
 {
-  char*   entityId     = orionldState.wildcard[0];
-  char*   attrName     = orionldState.wildcard[1];
-  char*   attrLongName = orionldState.in.pathAttrExpanded;
-  KjNode* responseBody = kjObject(orionldState.kjsonP, NULL);
+  char*   entityId               = orionldState.wildcard[0];
+  char*   attrName               = orionldState.wildcard[1];
+  char*   entityTypeFromUriParam = orionldState.uriParams.type;       // Is it already expanded?
+  char*   attrLongName           = orionldState.in.pathAttrExpanded;
 
-  //
-  // Make sure the Entity ID is a valid URI
-  //
+  // Make sure the Entity ID (from URI variable) is a valid URI
   if (pCheckUri(entityId, "Entity ID from URL PATH", true) == false)
     return false;
 
-  KT_T(StDds, "In orionldPutAttribute: entityId: '%s'", entityId);
-  KT_T(StDds, "In orionldPutAttribute: attrName: '%s'", attrName);
-  KT_T(StDds, "In orionldPutAttribute: attrLongName: '%s'", attrLongName);
+  // Make sure the Entity ID (from URI parameter) is a valid URI or a shortname
+  if ((entityTypeFromUriParam != NULL) && pCheckUri(entityTypeFromUriParam, "Entity Type from URL Parameter", false) == false)
+    return false;
 
-  // 01. GET the entity+attribute from the DB (dbAttrP)
-  // 02. Check the payload body (with dbAttrP as input)
-  //     - Error if something wrong in the check
-  // 03. if (dbAttrP == NULL)
-  //   - 404 if forwarding is OFF
-  //   - distOpFailure if forwarding is ON
-  // 04. distOpRequests
-  // 05. if (attribute still there)
-  //       - clone for TRoE (if necessary)
-  //       - clone for Alterations (if necessary)
-  //       - dbModelFromAttribute()
-  //       - mongocAttributeReplace()
-  //       - alterations
-  // 06. distOpResponses
-  // 07. responseFix()
+  // Get the Entity from the database (if it's there ...)
+  char*       detail             = NULL;
+  KjNode*     dbEntityP          = mongocEntityLookup(entityId, NULL, NULL, NULL, &detail);
+
+  if (dbEntityP != NULL)
+    kjTreeLog(dbEntityP, "dbEntity", LmtSR);
+
   //
-  char*   detail                = NULL;
-  char*   entityType            = NULL;
-  KjNode* dbEntityP             = mongocEntityLookup(entityId, NULL, NULL, NULL, &detail);
-  KjNode* dbAttrP               = NULL;
-  KjNode* apiAttributeP         = NULL;
-  double  createdAt             = 0;
-  char*   attrLongNameEq        = kaStrdup(&orionldState.kalloc, attrLongName);
-  KjNode* apiAttributeAsEntityP = NULL;
-  KjNode* dbEntityCopy          = NULL;
-  KjNode* oldAttrP              = NULL;
-  KjNode* apiAttributeClone     = NULL;
-  bool    entityNotFoundLocally = false;
-  bool    attrNotFoundLocally   = false;
+  // Is a DDS notification the source of this update?
+  // For now, distOps for DDS notifications is not enabled
+  //
+  if ((orionldState.ddsSample == true) && (dbEntityP == NULL))
+    return ddsEntityCreateFromAttribute(orionldState.requestTree, entityId, attrName);
 
-  OrionldAlteration* alterationP                = NULL;
-  KjNode*            finalApiEntityWithSysAttrs = NULL;
-  KjNode*            finalApiEntity             = NULL;
-  KjNode*            createdAtP                 = NULL;
-  KjNode*            modifiedAtP                = NULL;
+  // Select what entity type to use (from URI param, from DB, or NULL)
+  bool        entityTypeMismatch = false;
+  const char* entityType         = entityTypeSelect(entityId, entityTypeFromUriParam, dbEntityP, &entityTypeMismatch);
+
+  //
+  // What to do if the user provides an Entity Type, but an Entity with a matching Entity ID has a different Entity Type?
+  // For now, I treat that as a not-found, as I don't support multi-typing.
+  //
+  if (entityTypeMismatch == true)
+    dbEntityP = NULL;
+
+  orionldState.entityTypeForTroe = (char*) entityType;
+
+  LM_T(LmtSR, ("In orionldPutAttribute: entity type:  '%s'", (entityType != NULL)? entityType : "Not Known"));
+  LM_T(LmtSR, ("In orionldPutAttribute: entity id:    '%s'", entityId));
+  LM_T(LmtSR, ("In orionldPutAttribute: attrName:     '%s'", attrName));
+  LM_T(LmtSR, ("In orionldPutAttribute: attrLongName: '%s'", attrLongName));
+
+  //
+  // DistOps
+  //
+  DistOp* distOpList  = NULL;
+  int     distOps404s = 0;
+  int     distOps204s = 0;
+  int     distOps     = 0;
+  DistOp* otherP   = NULL;
+
+  if ((orionldState.distributed == true) && (orionldState.uriParams.local == false))
+  {
+    LM_T(LmtDistOpRequest, ("Distributed - checking reg matches"));
+    KjNode* entityObject = kjObject(orionldState.kjsonP, NULL);
+    KjNode* attrClone    = kjClone(orionldState.kjsonP, orionldState.requestTree);
+
+    attrClone->name = attrLongName;
+    kjChildAdd(entityObject, attrClone);
+    distOpList = distOpRequests(entityId, (char*) entityType, DoReplaceAttr, entityObject);
+  }
+
+  LM_T(LmtDistOpRequest, ("distOpList at %p", distOpList));
+  if (distOpList != NULL)
+  {
+    for (DistOp* distOpP = distOpList; distOpP != NULL; distOpP = distOpP->next)
+    {
+      LM_T(LmtDistOpRequest, ("Got a DistOp response of %d", distOpP->httpResponseCode));
+      ++distOps;
+
+      if (distOpP->httpResponseCode == 204)
+        distOps204s += 1;
+      else if (distOpP->httpResponseCode == 404)
+        distOps404s += 1;
+      else
+      {
+        LM_T(LmtDistOpRequest, ("Other Error: %d", distOpP->httpResponseCode));
+        otherP = distOpP;
+      }
+    }
+  }
+
+  if (orionldState.attributeConsumed == true)
+  {
+    LM_T(LmtDistOpRequest, ("The attribute has been consumed by Exclusive/Redirect registration"));
+    if (distOps204s > 0)
+      orionldState.httpStatusCode = 204;
+    else if (distOps404s == distOps)
+      orionldError(OrionldResourceNotFound, "Entity/Attribute Not Found", entityId, 404);
+    else
+    {
+      if (otherP->errorType == 0)
+        otherP->errorType = httpStatusCodeToOrionldErrorType(otherP->httpResponseCode);
+
+      orionldError(otherP->errorType, otherP->title, otherP->detail, otherP->httpResponseCode);
+
+      //
+      // Add the registration ID and the attribute
+      //
+      orionldState.pd.registrationId = otherP->regP->regId;
+      orionldState.pd.attribute      = attrLongName;
+
+      return false;
+    }
+
+    // Nothing done in local => no TRoE, no Notifications
+    return true;
+  }
+
+  //
+  // datasetId?
+  //
+  kjTreeLog(orionldState.requestTree, "Incoming", LmtSR);
+  KjNode*     datasetIdNodeP = kjLookup(orionldState.requestTree, "datasetId");
+  const char* datasetId      = (datasetIdNodeP != NULL)?datasetIdNodeP->value.s : NULL;
+  KjNode*     dbAttrDatasetP = NULL;
+  KjNode*     dbAttrDatasetV = NULL;
+  char*       attrLongNameEq = kaStrdup(&orionldState.kalloc, attrLongName);
 
   dotForEq(attrLongNameEq);
 
-  if (dbEntityP == NULL)
+  if (datasetId != NULL)
   {
-    if (orionldState.distributed == false)
-    {
-      if (orionldState.ddsSample == true)
-        return ddsEntityCreateFromAttribute(orionldState.requestTree, entityId, attrName);
+    LM_T(LmtSR, ("datasetId: '%s'", datasetId));
+    KjNode* datasets = kjLookup(dbEntityP, "@datasets");
 
-      orionldError(OrionldResourceNotFound, "Entity Not Found", entityId, 404);
-      return false;
-    }
-    else
-      entityNotFoundLocally = true;
-  }
-  else
-  {
-    // Extract the DB attribute from dbEntityP
-    dbAttrP = dbModelAttributeLookup(dbEntityP, attrLongNameEq);
-    if (dbAttrP == NULL)
+    dbAttrDatasetV = (datasets != NULL)? kjLookup(datasets, attrLongNameEq) : NULL;
+    if (dbAttrDatasetV != NULL)
     {
-      if (orionldState.ddsSample == true)
-        return ddsAttributeCreate(orionldState.requestTree, entityType, attrName);
-
-      if (orionldState.distributed == false)
+      for (KjNode* instanceP = dbAttrDatasetV->value.firstChildP; instanceP != NULL; instanceP = instanceP->next)
       {
-        orionldError(OrionldResourceNotFound, "Attribute Not Found", attrLongName, 404);
-        return false;
+        KjNode* datassetIdP = kjLookup(instanceP, "datasetId");
+
+        if (datassetIdP == NULL)
+          LM_W(("DB Error - instance of attribute '%s' has no datasetId in @datasets field in DB", attrLongNameEq));
+        else
+        {
+          if (strcmp(datassetIdP->value.s, datasetId) == 0)
+          {
+            dbAttrDatasetP = instanceP;
+            break;
+          }
+        }
       }
-      else
-        attrNotFoundLocally = true;
     }
-    else
-    {
-      entityType = dbModelEntityTypeLookup(dbEntityP, entityId);
-      orionldState.entityTypeForTroe = entityType;
+  }
 
-      if (orionldState.ddsSample == true)
+
+  //
+  // Default instance?
+  //
+  KjNode* dbAttrsP = NULL;
+  KjNode* dbAttrP  = NULL;
+
+  if (dbEntityP != NULL)
+  {
+    dbAttrsP = kjLookup(dbEntityP, "attrs");
+
+    if (dbAttrsP != NULL)
+      dbAttrP = kjLookup(dbAttrsP, attrLongNameEq);
+
+    // DDS
+    if (orionldState.ddsSample == true)
+    {
+      if (dbAttrP == NULL)
+        return ddsAttributeCreate(orionldState.requestTree, entityType, attrName);
+      else
       {
-        //
-        // If iniated by a DDS sample and the attribute has a newer publishedAt than the DDS publication time,
-        // then ignore the entire thing
-        //
-        // This can happen during startup, during the discovery phase of DDS.
-        //
         int64_t publishedAt = dbModelAttributePublishedAtLookup(dbAttrP);
         if (publishedAt > orionldState.ddsPublishTime)
           return true;
       }
-
-      // GET Attribute creation date from database
-      createdAt = dbModelAttributeCreatedAtLookup(dbAttrP);
-      if (createdAt == -1)
-      {
-        orionldError(OrionldInternalError, "Database Error (attribute::createdAt field not present in database)", entityId, 500);
-        return false;
-      }
-
-      // GET Entity Type from the DB
-      entityType = dbModelEntityTypeLookup(dbEntityP, entityId);
     }
   }
 
+  // It's OK to modify the attribute type in a PUT Attribute operation (thus NoAttributeType)
   if (pCheckAttribute(entityId, orionldState.requestTree, true, NoAttributeType, true, NULL) == false)
     LM_RE(false, ("pCheckAttribute failed"));  // pcheckAttribute() calls orionldError
 
   previousValuePopulate(NULL, dbAttrP, orionldState.in.pathAttrExpanded);
 
-  // Distributed requests?
-  DistOp* distOpList   = NULL;
-  KjNode* entityObject = kjObject(orionldState.kjsonP, NULL);
-  bool    localData    = true;
-
-  if (orionldState.distributed == true)
+  //
+  // 404 ?
+  //
+  if ((distOpList == NULL) || (distOps404s == distOps))
   {
-    KjNode* attrClone = kjClone(orionldState.kjsonP, orionldState.requestTree);
+    if (dbEntityP == NULL)
+      orionldError(OrionldResourceNotFound, "Entity Not Found", entityId, 404);
 
-    attrClone->name = attrLongName;
-    kjChildAdd(entityObject, attrClone);
-
-    if ((entityType == NULL) && (orionldState.in.typeList.items == 1))
-      entityType = orionldState.in.typeList.array[0];
-
-    distOpList = distOpRequests(entityId, entityType, DoReplaceAttr, entityObject);
-
-    if ((distOpList == NULL) && (dbEntityP == NULL))
+    if (datasetId == NULL)
     {
-      orionldError(OrionldResourceNotFound, "Attribute Not Found", attrLongName, 404);
-      return false;
+      if (dbAttrP == NULL)
+        orionldError(OrionldResourceNotFound, "Attribute Not Found", attrName, 404);
     }
-
-    if (entityObject->value.firstChildP == NULL)
-      localData = false;
+    else if ((datasetId != NULL) && (dbAttrDatasetP) == NULL)
+      orionldError(OrionldResourceNotFound, "Attribute Dataset Instance Not Found", attrName, 404);
   }
 
+  LM_T(LmtSR, ("dbEntityP at %p", dbEntityP));
 
   //
-  // Local treatment?
-  // Only if something is still left after the DistOps
+  // Local DB processing
   //
-  if (localData == false)
-  {
-    // Make troe do NOTHING, as there was no local update
-    orionldState.requestTree = NULL;
-    goto response;
-  }
-
-  if (entityNotFoundLocally == true)
-    distOpFailure(responseBody, NULL, "Entity Not Found", entityId, 404, attrName);
-  else if (attrNotFoundLocally == true)
-    distOpFailure(responseBody, NULL, "Attribute Not Found", entityId, 404, attrName);
-
-  // Save requestTree before it is destroyed by dbModelFromApiAttribute (needed for notifications and TRoE
-  apiAttributeP = kjClone(orionldState.kjsonP, orionldState.requestTree);
-
-  // Convert to DB Model (dbModelFromApiAttribute adds creDat/modDate - creDate needs a modification)
-  if (dbModelFromApiAttribute(orionldState.requestTree, NULL, NULL, NULL, NULL, true) == false)
-    goto response;
-
-  //
-  // The attribute name needs to be in DB format (replace dots for '=')
-  //
-  orionldState.requestTree->name = attrLongNameEq;
-
-  // Set creDate (mongocAttributeReplace sets modDate)
-  dbModelAttributeCreatedAtSet(orionldState.requestTree, createdAt);
-  kjTreeLog2(orionldState.requestTree, "orionldState.requestTree", StDds);
-
-  // Write to mongo
-  if (mongocAttributeReplace(entityId, orionldState.requestTree, &detail) == false)
-  {
-    LM_E(("mongocAttributeReplace failed: %s", detail));
-    if (distOpList == NULL)
-    {
-      orionldError(OrionldInternalError, "Database Error", detail, 500);
-      return false;
-    }
-    else
-      distOpFailure(responseBody, NULL, "Database Error", detail, 500, attrName);
-  }
-
-  // Alterations
-  //   For this we need:
-  //   o Entity ID
-  //   o Entity Type
-  //   o Resulting and complete API entity
-  //   o Incoming API Attribute "fragment"
-  //   o DB Entity as it was before the modification
-  //
-  apiAttributeAsEntityP = kjObject(orionldState.kjsonP, NULL);
-  kjChildAdd(apiAttributeAsEntityP, apiAttributeP);
-
-  apiAttributeP->name = orionldState.in.pathAttrExpanded;
-
-  //
-  // Resulting and complete API entity:
-  // o Clone the dbEntity
-  // o transform it into an API Entity
-  // o Remove the attribute that was replaced (old copy)
-  // o Insert a copy of the attribute that was replaced (new copy)
-  //
+  double createdAt = 0;
   if (dbEntityP != NULL)
   {
-    dbEntityCopy = kjClone(orionldState.kjsonP, dbEntityP);
+    LM_T(LmtSR, ("dbEntityP at %p", dbEntityP));
+    //
+    // Need to keep the initial attribute (orionldState.requestTree) for notifications, TRoE, DDS
+    // So, we close the payload to create thje DB modeled attribute
+    //
+    KjNode* dbAttributeP = kjClone(orionldState.kjsonP, orionldState.requestTree);
+    LM_T(LmtSR, ("dbEntityP at %p", dbEntityP));
 
-    finalApiEntityWithSysAttrs = dbModelToApiEntity2(dbEntityCopy, true, RF_NORMALIZED, NULL, false, &orionldState.pd);
+    // The attribute name needs to be in DB format (replace dots for '=')
+    dbAttributeP->name = attrLongNameEq;
+    LM_T(LmtSR, ("dbEntityP at %p", dbEntityP));
 
-    if (finalApiEntityWithSysAttrs == NULL)
+    bool  r      = false;
+    char* detail = (char*) "all good";
+
+    LM_T(LmtSR, ("dbEntityP at %p", dbEntityP));
+    if (dbAttrDatasetP != NULL)  // dataset instance to be replaced
     {
-      LM_E(("dbModelToApiEntity unable to convert DB Entity '%s' to API Entity (%s: %s)", entityId, orionldState.pd.title, orionldState.pd.detail));
-      goto response;
+      LM_T(LmtSR, ("dbEntityP at %p", dbEntityP));
+      // Need the createdAt from the DB, as it must stay intact
+      KjNode* createdAtP  = kjLookup(dbAttrDatasetP, "createdAt");
+
+      createdAt   = (createdAtP != NULL)? createdAtP->value.f : 0;
+      LM_T(LmtSR, ("dbEntityP at %p", dbEntityP));
+      dbModelAttributeCreatedAtSet(dbAttributeP, createdAt, "createdAt");
+      LM_T(LmtSR, ("dbEntityP at %p", dbEntityP));
+
+      KjNode* modifiedAtP = kjFloat(orionldState.kjsonP, "modifiedAt", orionldState.requestTime);
+      kjChildAdd(dbAttributeP, modifiedAtP);
+      LM_T(LmtSR, ("dbEntityP at %p", dbEntityP));
+      datasetInstanceReplace(dbAttrDatasetV, dbAttrDatasetP, dbAttributeP);
+      LM_T(LmtSR, ("dbEntityP at %p", dbEntityP));
+
+      char datasetPath[512];
+      snprintf(datasetPath, sizeof(datasetPath) - 1, "@datasets.%s", attrLongNameEq);
+      r = mongocEntityFieldReplace(entityId, datasetPath, dbAttrDatasetV, &detail);
     }
+    else if (dbAttrP != NULL)  // Default attribute is being replaced
+    {
+  LM_T(LmtSR, ("dbEntityP at %p", dbEntityP));
+      // Need the createdAt from the DB, as it must stay intact
+      KjNode* creDateP = kjLookup(dbAttrP, "creDate");
+      createdAt  = (creDateP != NULL)? creDateP->value.f : 0;
+
+      LM_T(LmtSR, ("==================================================================================="));
+      kjTreeLog(dbAttributeP, "API Attribute", LmtSR);
+      if (dbModelFromApiAttribute(dbAttributeP, NULL, NULL, NULL, NULL, true) == false)
+        goto response;
+
+      kjTreeLog(dbAttributeP, "DB Attribute", LmtSR);
+      LM_T(LmtSR, ("==================================================================================="));
+
+      if (creDateP != NULL)
+        dbModelAttributeCreatedAtSet(dbAttributeP, createdAt, "creDate");
+      else
+        LM_W(("No creDate found in default instance of attribute '%s' of entity '%s'", attrLongNameEq, entityId));
+
+      r = mongocAttributeReplace(entityId, dbAttributeP, &detail);
+    }
+
+    if (r == false)
+      orionldError(OrionldInternalError, "DB Error", detail, 500);
+    else
+      orionldState.httpStatusCode = 204;
   }
-  else
-  {
-  }
-
-  oldAttrP = kjLookup(finalApiEntityWithSysAttrs, attrLongName);
-  if (oldAttrP == NULL)
-  {
-    LM_E(("Unable to find the attribute '%s' in the entity '%s'", attrLongName, entityId));
-    goto response;
-  }
-
-  apiAttributeClone = kjClone(orionldState.kjsonP, apiAttributeP);
-  if (apiAttributeClone == NULL)
-  {
-    LM_E(("Unable to clone the attribute '%s' in the entity '%s'", attrLongName, entityId));
-    goto response;
-  }
-  kjChildRemove(finalApiEntityWithSysAttrs, oldAttrP);
-  kjChildAdd(finalApiEntityWithSysAttrs, apiAttributeClone);
-
-  // Now get createdAt/modifiedAt from oldAttrP
-  createdAtP  = kjLookup(oldAttrP, "createdAt");
-  modifiedAtP = kjLookup(oldAttrP, "modifiedAt");
-
-  if (createdAtP != NULL)
-  {
-    kjChildRemove(oldAttrP, createdAtP);
-    kjChildAdd(apiAttributeClone, createdAtP);
-  }
-
-  if (modifiedAtP != NULL)
-  {
-    kjChildRemove(oldAttrP, modifiedAtP);
-    kjChildAdd(apiAttributeClone, modifiedAtP);
-  }
-
-
-  finalApiEntity = kjClone(orionldState.kjsonP, finalApiEntityWithSysAttrs);  // Check for NULL !
-  sysAttrsStrip(finalApiEntity);
-
-
-  alterationP = alteration(entityId, entityType, finalApiEntity, apiAttributeAsEntityP, dbEntityP);
-  alterationP->finalApiEntityWithSysAttrsP = finalApiEntityWithSysAttrs;
-
-//  if (ddsSupport == true)
-//    ddsPublishAttribute(ddsTopicType, entityType, entityId, apiAttributeP);
 
  response:
-  if (distOpList != NULL)
+  // TRoE+Alterations needs the expanded attribute name for the payload body
+  orionldState.requestTree->name = attrLongName;
+  kjTreeLog(orionldState.requestTree, "Attribute For TRoE", LmtSR);
+
+  // For Alterations
+  if ((dbAttrP != NULL) || (dbAttrDatasetP != NULL))
   {
-    distOpResponses(distOpList, responseBody);
-    distOpListRelease(distOpList);
+    KjNode* dbEntityCopy               = kjClone(orionldState.kjsonP, dbEntityP);
+    KjNode* finalApiEntityWithSysAttrs = dbModelToApiEntity2(dbEntityCopy, true, RF_NORMALIZED, NULL, false, &orionldState.pd);
+
+    // Need to add the sysAttrs to the new attribute
+    // Might be I should clone orionldState.requestTree before adding the timestamps ...
+    sysAttrs(orionldState.requestTree, createdAt, orionldState.requestTime);
+
+    // Merge in the new attribute to finalApiEntityWithSysAttrs
+    entityMergeInAttribute(finalApiEntityWithSysAttrs, orionldState.requestTree);
+
+    KjNode* apiAttributeAsEntityP = kjObject(orionldState.kjsonP, NULL);
+    kjChildAdd(apiAttributeAsEntityP, orionldState.requestTree);
+
+    KjNode* finalApiEntity = kjClone(orionldState.kjsonP, finalApiEntityWithSysAttrs);  // Check for NULL !
+    sysAttrsStrip(finalApiEntity);
+
+    OrionldAlteration* alterationP = alteration(entityId, entityType, finalApiEntity, apiAttributeAsEntityP, dbEntityP);
+    alterationP->finalApiEntityWithSysAttrsP = finalApiEntityWithSysAttrs;
   }
-
-  responseFix(responseBody, DoReplaceAttr, 204, entityId);
-
-  if (troe == true)
-    orionldState.requestTree = apiAttributeP;
 
   return true;
 }

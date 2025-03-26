@@ -37,6 +37,7 @@ extern "C"
 #include "orionld/types/QNode.h"                                 // QNode
 #include "orionld/types/RegCacheItem.h"                          // RegCacheItem
 #include "orionld/types/DistOpType.h"                            // DistOpType
+#include "orionld/types/OrionldResponseErrorType.h"              // OrionldResponseErrorType
 
 
 
@@ -72,9 +73,10 @@ typedef struct DistOp
   char*               lang;
   char*               geometryProperty;  // URI Param "geometryProperty" for GET Requests
 
-  bool                error;
-  char*               title;
-  char*               detail;
+  bool                      error;       // FIXME: Use "OrionldProblemDetails" instead of these 4
+  char*                     title;
+  char*                     detail;
+  OrionldResponseErrorType  errorType;
 
   CURL*               curlHandle;
   struct curl_slist*  curlHeaders;

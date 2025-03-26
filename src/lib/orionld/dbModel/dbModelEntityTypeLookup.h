@@ -36,6 +36,6 @@ extern "C"
 //
 // dbModelEntityTypeLookup -
 //
-extern char* dbModelEntityTypeLookup(KjNode* dbEntityP, char* entityId);
+extern char* dbModelEntityTypeLookup(KjNode* dbEntityP, const char* entityId);
 
 #endif  // SRC_LIB_ORIONLD_DBMODEL_DBMODELENTITYTYPELOOKUP_H_

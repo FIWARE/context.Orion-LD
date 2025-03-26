@@ -28,7 +28,12 @@ extern "C"
 {
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
+#include "kjson/kjBuilder.h"                                     // kjFloat, kjChildAdd
 }
+
+#include "logMsg/logMsg.h"                                       // LM*
+
+#include "orionld/common/orionldState.h"                         // orionldState
 
 
 
@@ -36,10 +41,20 @@ extern "C"
 //
 // dbModelAttributeCreatedAtSet -
 //
-void dbModelAttributeCreatedAtSet(KjNode* dbAttrP, double createdAt)
+void dbModelAttributeCreatedAtSet(KjNode* dbAttrP, double createdAt, const char* fieldName)
 {
-  KjNode* creDateP = kjLookup(dbAttrP, "creDate");
+  KjNode* creDateP = kjLookup(dbAttrP, fieldName);  // "creDate" for default instance and "createdAt" for dataset instances
+
+  if (createdAt == 0)
+    createdAt = orionldState.requestTime;
 
   if (creDateP != NULL)
     creDateP->value.f = createdAt;
+  else
+  {
+    LM_W(("No '%s' found in attribute '%s'", fieldName, dbAttrP->name));
+
+    KjNode* createdAtP = kjFloat(orionldState.kjsonP, fieldName, createdAt);
+    kjChildAdd(dbAttrP, createdAtP);
+  }
 }
