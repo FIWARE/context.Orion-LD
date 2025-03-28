@@ -146,9 +146,10 @@ static void attributeMerge(KjNode* dbAttrP, KjNode* incomingP, KjNode* addedV, K
 
     bool isValue = false;
 
-    if      (strcmp(subAttrP->name, "languageMap") == 0)  { isValue = true; }
+    if      (strcmp(subAttrP->name, "value")       == 0)  { isValue = true; }
     else if (strcmp(subAttrP->name, "object")      == 0)  { isValue = true; }
-    else if (strcmp(subAttrP->name, "value")       == 0)  { isValue = true; }
+    else if (strcmp(subAttrP->name, "languageMap") == 0)  { isValue = true; }
+    else if (strcmp(subAttrP->name, "vocab")       == 0)  { isValue = true; }
 
     //
     // Just a change in the "value"
@@ -472,9 +473,8 @@ bool orionldPatchAttribute(void)
 
           if (ddsSupport == true)
           {
-            char* shortName = orionldContextItemAliasLookup(orionldState.contextP, orionldState.wildcard[1], NULL, NULL);
-            kjTreeLog2(finalApiEntityWithoutSysAttrsP, "finalApiEntityWithoutSysAttrs", StDdsPublish);
-            KjNode* attrP = kjLookup(finalApiEntityWithoutSysAttrsP, orionldState.wildcard[1]);
+            char*   shortName = orionldContextItemAliasLookup(orionldState.contextP, orionldState.wildcard[1], NULL, NULL);
+            KjNode* attrP     = kjLookup(finalApiEntityWithoutSysAttrsP, orionldState.wildcard[1]);
 
             if (attrP != NULL)
             {
