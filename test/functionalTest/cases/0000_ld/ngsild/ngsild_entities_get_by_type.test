@@ -69,7 +69,7 @@ payload='{
     },
     "name": {
         "type": "Property",
-        "value": "Bösebrücke Einkauf"
+        "value": "Bosebrucke Einkauf"
     },
     "@context": [
         "http://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context.jsonld",
@@ -93,7 +93,7 @@ payload='{
     "address": {
         "type": "Property",
         "value": {
-            "streetAddress": "Friedrichstraße 44",
+            "streetAddress": "Friedrichstrasse 44",
             "addressRegion": "Berlin",
             "addressLocality": "Kreuzberg",
             "postalCode": "10969"
@@ -132,7 +132,7 @@ payload='{
     "address": {
         "type": "Property",
         "value": {
-            "streetAddress": "Friedrichstraße 44",
+            "streetAddress": "Friedrichstrasse 44",
             "addressRegion": "Berlin",
             "addressLocality": "Kreuzberg",
             "postalCode": "10969"
@@ -211,7 +211,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:Building:store003
 04. GET entities with type Building, see stores 1 and 2
 =======================================================
 HTTP/1.1 200 OK
-Content-Length: 829
+Content-Length: 827
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://fiware.github.io/data-models/full-context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
@@ -244,7 +244,7 @@ Link: <https://fiware.github.io/data-models/full-context.jsonld>; rel="http://ww
         },
         "name": {
             "type": "Property",
-            "value": "B\u00f6sebr\u00fccke Einkauf"
+            "value": "Bosebrucke Einkauf"
         },
         "type": "Building"
     },
@@ -255,7 +255,7 @@ Link: <https://fiware.github.io/data-models/full-context.jsonld>; rel="http://ww
                 "addressLocality": "Kreuzberg",
                 "addressRegion": "Berlin",
                 "postalCode": "10969",
-                "streetAddress": "Friedrichstra\u00dfe 44"
+                "streetAddress": "Friedrichstrasse 44"
             }
         },
         "category": {
@@ -298,7 +298,7 @@ Link: <https://fiware.github.io/data-models/full-context.jsonld>; rel="http://ww
                 "addressLocality": "Kreuzberg",
                 "addressRegion": "Berlin",
                 "postalCode": "10969",
-                "streetAddress": "Friedrichstra\u00dfe 44"
+                "streetAddress": "Friedrichstrasse 44"
             }
         },
         "category": {
@@ -328,7 +328,7 @@ Link: <https://fiware.github.io/data-models/full-context.jsonld>; rel="http://ww
 06. GET Building-typed entities, using context https://fiware.github.io/data-models/full-context.jsonld
 =======================================================================================================
 HTTP/1.1 200 OK
-Content-Length: 829
+Content-Length: 827
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://fiware.github.io/data-models/full-context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
@@ -361,7 +361,7 @@ Link: <https://fiware.github.io/data-models/full-context.jsonld>; rel="http://ww
         },
         "name": {
             "type": "Property",
-            "value": "B\u00f6sebr\u00fccke Einkauf"
+            "value": "Bosebrucke Einkauf"
         },
         "type": "Building"
     },
@@ -372,7 +372,7 @@ Link: <https://fiware.github.io/data-models/full-context.jsonld>; rel="http://ww
                 "addressLocality": "Kreuzberg",
                 "addressRegion": "Berlin",
                 "postalCode": "10969",
-                "streetAddress": "Friedrichstra\u00dfe 44"
+                "streetAddress": "Friedrichstrasse 44"
             }
         },
         "category": {

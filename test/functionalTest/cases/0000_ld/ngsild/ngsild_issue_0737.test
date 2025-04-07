@@ -85,7 +85,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 {
     "id": "urn:ngsi-ld:entities:E1",
     "type": "T",
-    "\uff4e\uff41\uff4d\uff45": {
+    "ｎａｍｅ": {
         "type": "Property",
         "value": 1
     }
