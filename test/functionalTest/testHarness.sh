@@ -566,9 +566,6 @@ do
   if   [ "$1" == "-u" ];             then usage 0;
   elif [ "$1" == "-v" ];             then verbose=on;
   elif [ "$1" == "-t" ];             then export CB_TRACELEVELS="$2"; shift;
-  elif [ "$1" == "-ld" ];            then ngsild=on;
-  elif [ "$1" == "-dds" ];           then dds=on;
-  elif [ "$1" == "-troe" ];          then troe=on;
   elif [ "$1" == "-eb" ];            then externalBroker=ON;
   elif [ "$1" == "-tk" ];            then CB_DIFF_TOOL=tkdiff;
   elif [ "$1" == "-meld" ];          then CB_DIFF_TOOL=meld;
@@ -580,6 +577,10 @@ do
   elif [ "$1" == "--filter" ];       then testFilter="$2"; filterGiven=yes; shift;
   elif [ "$1" == "--match" ];        then match="$2"; shift;
   elif [ "$1" == "--dir" ];          then dir="$2"; dirGiven=yes; shift;
+  elif [ "$1" == "-ld" ];            then dir=test/functionalTest/cases/0000_ld;dirGiven=yes;
+  elif [ "$1" == "-dds" ];           then dir=test/functionalTest/cases/0000_ld/dds;dirGiven=yes;
+  elif [ "$1" == "-troe" ];          then dir=test/functionalTest/cases/0000_ld/troe;dirGiven=yes;
+  elif [ "$1" == "-api" ];           then dir=test/functionalTest/cases/0000_ld/ngsild;dirGiven=yes;
   elif [ "$1" == "--fromIx" ];       then fromIx=$2; shift;
   # in case of 'end', set toIx to 1000000 to assure it will run until the last available test.
   elif [ "$1" == "--toIx" ]
