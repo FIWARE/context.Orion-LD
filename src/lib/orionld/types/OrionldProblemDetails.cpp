@@ -118,6 +118,17 @@ void pdNewValue(const char* newValue)
 
 
 
+// -----------------------------------------------------------------------------
+//
+// pdDatasetId - add value for OrionldProblemDetails::datasetId
+//
+void pdDatasetId(const char* datasetId)
+{
+  orionldState.pd.datasetId = (char*) datasetId;
+}
+
+
+
 // ----------------------------------------------------------------------------
 //
 // pdTreeCreate -
@@ -190,6 +201,12 @@ KjNode* pdTreeCreate
     kjChildAdd(orionldState.responseTree, newValueP);
   }
 
+  if (orionldState.pd.datasetId != NULL)
+  {
+    KjNode* datasetIdP = kjString(orionldState.kjsonP, "datasetId", orionldState.pd.datasetId);
+    kjChildAdd(orionldState.responseTree, datasetIdP);
+  }
+
   return orionldState.responseTree;
 }
 
@@ -246,6 +263,12 @@ KjNode* pdTreeCreate(OrionldProblemDetails* pdP)
   {
     KjNode* newValueP = kjString(orionldState.kjsonP, "newValue", orionldState.pd.newValue);
     kjChildAdd(orionldState.responseTree, newValueP);
+  }
+
+  if (orionldState.pd.datasetId != NULL)
+  {
+    KjNode* datasetIdP = kjString(orionldState.kjsonP, "datasetId", orionldState.pd.datasetId);
+    kjChildAdd(orionldState.responseTree, datasetIdP);
   }
 
 #if 0

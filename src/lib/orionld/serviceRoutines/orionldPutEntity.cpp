@@ -80,186 +80,6 @@ static bool entityIdCheck(KjNode* idP, const char* entityIdFromUrl)
 
 
 
-// -----------------------------------------------------------------------------
-//
-// apiEntityToDbEntity -
-//
-// NOTE
-//   This function destroys the old DB Entity tree
-//
-KjNode* apiEntityToDbEntity(KjNode* apiEntityP, KjNode* oldDbEntityP, const char* entityId, const char* entityType)
-{
-  KjNode* dbEntityP   = kjObject(orionldState.kjsonP, NULL);
-  KjNode* attrNamesP  = kjArray(orionldState.kjsonP,  "attrNames");
-  KjNode* attrsP      = kjObject(orionldState.kjsonP, "attrs");
-  KjNode* modDateP    = kjFloat(orionldState.kjsonP,  "modDate", orionldState.requestTime);
-  KjNode* creDateP    = (oldDbEntityP != NULL)? kjLookup(oldDbEntityP, "creDate") : NULL;
-
-  if (creDateP == NULL)
-    creDateP = kjFloat(orionldState.kjsonP, "creDate", orionldState.requestTime);
-  else
-    kjChildRemove(oldDbEntityP, creDateP);
-
-  if ((dbEntityP == NULL) || (attrNamesP == NULL) || (attrsP == NULL) || (modDateP == NULL) || (creDateP == NULL))
-  {
-    orionldError(OrionldInternalError, "Internal Error", "Out of memory", 500);
-    return NULL;
-  }
-
-  // Get the _id object from the old DB Entity - that hasn't changed ... well, the entity type might change ... see loop later
-  KjNode* _idP = (oldDbEntityP != NULL)? kjLookup(oldDbEntityP, "_id") : NULL;
-  if ((_idP == NULL) && (oldDbEntityP != NULL))
-  {
-    orionldError(OrionldInternalError, "Database Error (entity without _id)", entityId, 500);
-    return NULL;
-  }
-
-  if (oldDbEntityP != NULL)
-    kjChildRemove(oldDbEntityP, _idP);
-
-  if (_idP == NULL)
-  {
-    _idP = kjObject(orionldState.kjsonP, "_id");
-    KjNode* ipP   = kjString(orionldState.kjsonP, "id", entityId);
-    KjNode* typeP = kjString(orionldState.kjsonP, "type", entityType);
-
-    kjChildAdd(_idP, ipP);
-    kjChildAdd(_idP, typeP);
-  }
-
-  kjChildAdd(dbEntityP, _idP);
-  kjChildAdd(dbEntityP, attrNamesP);
-  kjChildAdd(dbEntityP, attrsP);
-  kjChildAdd(dbEntityP, creDateP);
-  kjChildAdd(dbEntityP, modDateP);
-
-  for (KjNode* attrP = apiEntityP->value.firstChildP; attrP != NULL; attrP = attrP->next)
-  {
-    if (strcmp(attrP->name, "id")         == 0) continue;
-    if (strcmp(attrP->name, "type")       == 0) continue;
-    if (strcmp(attrP->name, "createdAt")  == 0) continue;
-    if (strcmp(attrP->name, "modifiedAt") == 0) continue;
-
-    char*   longName = orionldAttributeExpand(orionldState.contextP, attrP->name, true, NULL);
-    KjNode* nameNode = kjString(orionldState.kjsonP, NULL, longName);
-    kjChildAdd(attrNamesP, nameNode);
-
-    KjNode* newAttrP = kjClone(orionldState.kjsonP, attrP);  // The incoming payload is not destroyed (apiEntityP)
-    KjNode* mdNamesP = kjArray(orionldState.kjsonP,  "mdNames");
-    KjNode* mdP      = kjObject(orionldState.kjsonP, "md");
-
-    if ((newAttrP == NULL) || (mdNamesP == NULL))
-    {
-      orionldError(OrionldInternalError, "Internal Error", "Out of memory", 500);
-      return NULL;
-    }
-
-    dotForEq(newAttrP->name);
-    kjChildAdd(attrsP, newAttrP);
-
-    KjNode* saP      = newAttrP->value.firstChildP;
-    KjNode* subAttrP = saP;
-    while (subAttrP != NULL)
-    {
-      //
-      // This construction of saP (used) and subAttrP (incrementor) makes it possible to remove
-      // items from the list inside the loop
-      //
-      saP      = subAttrP;   // saP is used inside this loop
-      subAttrP = saP->next;  // this is just the "loop incrementor"
-
-      if (saP->name == NULL)                     continue;
-
-      if (strcmp(saP->name, "type")        == 0) continue;
-      if (strcmp(saP->name, "scope")       == 0) continue;
-      if (strcmp(saP->name, "value")       == 0) continue;
-      if (strcmp(saP->name, "object")      == 0) { saP->name = (char*) "value"; continue; }
-      if (strcmp(saP->name, "languageMap") == 0) { saP->name = (char*) "value"; continue; }
-
-      if (strcmp(saP->name, "datasetId") == 0)
-      {
-        orionldError(OrionldOperationNotSupported, "Not Implemented (for this request type)", "datasetId", 501);
-        return NULL;
-      }
-
-      // Add sub-attribute name to "mdNames"
-      KjNode* mdName = kjString(orionldState.kjsonP, NULL, saP->name);
-      kjChildAdd(mdNamesP, mdName);
-
-      // Move sub-attribute down to "md"
-      kjChildRemove(newAttrP, saP);
-      kjChildAdd(mdP, saP);
-
-      if (strcmp(saP->name, "observedAt") == 0)
-      {
-        char errorString[256];
-
-        double  dateTime = dateTimeFromString(saP->value.s, errorString, sizeof(errorString));
-
-        if (dateTime < 0)
-        {
-          orionldError(OrionldBadRequestData, "Invalid ISO8601 for 'observedAt'", errorString, 400);
-          return NULL;
-        }
-
-        KjNode* oaP      = kjFloat(orionldState.kjsonP, "observedAt", dateTime);
-
-        saP->type = KjObject;
-        saP->value.firstChildP = oaP;
-        saP->lastChild         = oaP;
-        oaP->next = NULL;
-        oaP->name = (char*) "value";
-      }
-      else if (strcmp(saP->name, "unitCode") == 0)
-      {
-        // Make it a property without a type ...
-        KjNode* ucP = kjString(orionldState.kjsonP, "unitCode", saP->value.s);
-        saP->type = KjObject;
-        saP->value.firstChildP = ucP;
-        saP->lastChild         = ucP;
-        ucP->next = NULL;
-        ucP->name = (char*) "value";
-      }
-      else
-      {
-        dotForEq(saP->name);
-
-        for (KjNode* subAttrFieldP = saP->value.firstChildP; subAttrFieldP != NULL; subAttrFieldP = subAttrFieldP->next)
-        {
-          if (strcmp(subAttrFieldP->name, "type")        == 0) continue;
-          if (strcmp(subAttrFieldP->name, "value")       == 0) continue;
-          if (strcmp(subAttrFieldP->name, "object")      == 0) { subAttrFieldP->name = (char*) "value"; continue; }
-          if (strcmp(subAttrFieldP->name, "languageMap") == 0) { subAttrFieldP->name = (char*) "value"; continue; }
-        }
-
-        creDateP = kjFloat(orionldState.kjsonP,  "createdAt",  orionldState.requestTime);
-        modDateP = kjFloat(orionldState.kjsonP,  "modifiedAt", orionldState.requestTime);
-        kjChildAdd(saP, creDateP);
-        kjChildAdd(saP, modDateP);
-      }
-    }
-
-    kjChildAdd(newAttrP, mdNamesP);          // mdNames always present in the DB
-    if (mdP->value.firstChildP != NULL)      // md only present if there are actually any metadata
-      kjChildAdd(newAttrP, mdP);
-
-    creDateP = kjFloat(orionldState.kjsonP,  "creDate", orionldState.requestTime);
-    modDateP = kjFloat(orionldState.kjsonP,  "modDate", orionldState.requestTime);
-    kjChildAdd(newAttrP, creDateP);
-    kjChildAdd(newAttrP, modDateP);
-  }
-
-  //
-  // "lastCorrelator" ... not used in NGSI-LD, but, for NGSIv2 backwards compatibility, it should be present in DB
-  //
-  KjNode* lastCorrelatorP = kjString(orionldState.kjsonP,  "lastCorrelator", "");
-  kjChildAdd(dbEntityP, lastCorrelatorP);
-
-  return dbEntityP;
-}
-
-
-
 // ----------------------------------------------------------------------------
 //
 // orionldPutEntity -
@@ -318,6 +138,26 @@ bool orionldPutEntity(void)
     return false;
   }
 
+  // The Entity Type cannot be altered
+  KjNode*  _idP             = kjLookup(oldDbEntityP, "_id");
+  KjNode* dbTypeP           = (_idP    != NULL)? kjLookup(_idP, "type") : NULL;
+  char*   entityTypeFromDb  = (dbTypeP != NULL)? dbTypeP->value.s       : NULL;
+
+  if (entityTypeFromDb == NULL)
+  {
+    orionldError(OrionldInternalError, "Database Error", "Entity without type in database", 500);
+    pdEntityId(entityId);
+    return false;
+  }
+
+  if (strcmp(orionldState.entityTypeForTroe, entityTypeFromDb) != 0)
+  {
+    orionldError(OrionldBadRequestData, "Inconsistent Entity Type", "Entity Type cannot be altered", 400);
+    pdEntityId(entityId);
+    pdOldValue(entityTypeFromDb);
+    pdNewValue(orionldState.entityTypeForTroe);
+  }
+
   //
   // Check the attributes
   //
@@ -334,9 +174,12 @@ bool orionldPutEntity(void)
   //
   // FIXME: Use dbModelFromApiEntity instead of apiEntityToDbEntity
   //
-  KjNode* dbEntityP = apiEntityToDbEntity(orionldState.requestTree, oldDbEntityP, entityId, entityType);
+  // KjNode* dbEntityP = apiEntityToDbEntity(orionldState.requestTree, oldDbEntityP, entityId, entityType);
+  //
 
-  if (dbEntityP == NULL)
+  // Get the entity type from the DB ?
+  KjNode* dbEntityP = kjClone(orionldState.kjsonP, orionldState.requestTree);
+  if (dbModelFromApiEntity(dbEntityP, dbEntityP, true, entityId, entityType) == false)
   {
     if (orionldState.pd.type == 0)  // Not filled in - let's fill it in
       orionldError(OrionldInternalError, "Internal Error", "unable to transform API enmtity to DB model", 500);
@@ -346,6 +189,9 @@ bool orionldPutEntity(void)
 
   if (oldDbEntityP != NULL)
   {
+    if (orionldState.datasets != NULL)
+      kjChildAdd(dbEntityP, orionldState.datasets);
+
     if (mongocEntityReplace(dbEntityP, entityId) == false)
     {
       orionldError(OrionldInternalError, "Database Error", "mongocEntityReplace failed", 500);

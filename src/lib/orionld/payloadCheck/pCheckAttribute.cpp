@@ -859,6 +859,31 @@ static bool isGeoJsonValue(KjNode* valueP)
 }
 
 
+
+// -----------------------------------------------------------------------------
+//
+// datasetInstances -
+//
+static int datasetInstances(KjNode* attrArrayP, const char* datasetId)
+{
+  int instances = 0;
+
+  for (KjNode* aInstanceP = attrArrayP->value.firstChildP; aInstanceP != NULL; aInstanceP = aInstanceP->next)
+  {
+    KjNode* datasetIdP = kjLookup(aInstanceP, "datasetId");
+
+    if (datasetIdP == NULL)
+      continue;
+
+    if ((datasetIdP->type == KjString) && (strcmp(datasetIdP->value.s, datasetId) == 0))
+      instances += 1;
+  }
+
+  return instances;
+}
+
+
+
 // -----------------------------------------------------------------------------
 //
 // multiAttributeArray -
@@ -881,7 +906,17 @@ bool multiAttributeArray(KjNode* attrArrayP, bool* errorP)
     KjNode* datasetIdP = kjLookup(aInstanceP, "datasetId");
 
     if (datasetIdP != NULL)
+    {
       ++datasets;
+
+      if (datasetInstances(attrArrayP, datasetIdP->value.s) > 1)
+      {
+        orionldError(OrionldBadRequestData, "More than one attribute instance with one and the same datasetId", attrArrayP->name, 400);
+        pdDatasetId(datasetIdP->value.s);
+        *errorP = true;
+        return false;
+      }
+    }
 
     ++objects;
   }

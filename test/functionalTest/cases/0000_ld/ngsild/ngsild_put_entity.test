@@ -215,8 +215,10 @@ MongoDB server version: REGEX(.*)
 	],
 	"attrs" : {
 		"https://uri=etsi=org/ngsi-ld/default-context/P1" : {
-			"value" : 1,
 			"type" : "Property",
+			"creDate" : REGEX(.*),
+			"modDate" : REGEX(.*),
+			"value" : 1,
 			"mdNames" : [
 				"unitCode",
 				"observedAt",
@@ -242,16 +244,14 @@ MongoDB server version: REGEX(.*)
 					"createdAt" : REGEX(.*),
 					"modifiedAt" : REGEX(.*)
 				}
-			},
-			"creDate" : REGEX(.*),
-			"modDate" : REGEX(.*)
+			}
 		},
 		"https://uri=etsi=org/ngsi-ld/default-context/R1" : {
-			"value" : "urn:ngsi-ld:Building:R2",
 			"type" : "Relationship",
-			"mdNames" : [ ],
 			"creDate" : REGEX(.*),
-			"modDate" : REGEX(.*)
+			"modDate" : REGEX(.*),
+			"value" : "urn:ngsi-ld:Building:R2",
+			"mdNames" : [ ]
 		}
 	},
 	"creDate" : REGEX(.*),

@@ -1,0 +1,410 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Attribute Delete with datasetId
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -mongocOnly
+
+--SHELL--
+
+#
+# 01. Create an entity E1 with an attribute A1 having 3 datasets (D1, D2, and D3) apart from the default
+# 01b. See the entity in the database
+# 02. GET the entity - see the datasets
+# 03. Replace E1 without any datasetIds
+# 03b. See the entity in the database
+# 04. GET the entity - see no datasets
+# 05. Replace E1 with datasetIds
+# 06. GET the entity - see the new datasets
+# 06b. See the entity in the database
+#
+
+echo "01. Create an entity E1 with an attribute A1 having 3 datasets (D1, D2, and D3) apart from the default"
+echo "======================================================================================================"
+payload='{
+  "id": "urn:E1",
+  "type": "T",
+  "A1": [
+    {
+      "type": "Property",
+      "value": "A1:Default"
+    },
+    {
+      "type": "Property",
+      "value": "A1:D1",
+      "datasetId": "urn:ngsi-ld:dataset:D1"
+    },
+    {
+      "type": "Property",
+      "value": "A1:D2",
+      "datasetId": "urn:ngsi-ld:dataset:D2"
+    }
+  ]
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "01b. See the entity in the database"
+echo "=================================="
+mongoCmd2 ftest "db.entities.findOne()"
+echo
+echo
+
+
+echo "02. GET the entity - see the datasets"
+echo "====================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1
+echo
+echo
+
+
+echo "03. Replace E1 without any datasetIds"
+echo "====================================="
+payload='{
+  "id": "urn:E1",
+  "type": "T",
+  "A1": 31,
+  "A2": 32
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:E1 -X PUT --payload "$payload"
+echo
+echo
+
+
+echo "03b. See the entity in the database"
+echo "=================================="
+mongoCmd2 ftest "db.entities.findOne()"
+echo
+echo
+
+
+echo "04. GET the entity - see no datasets"
+echo "===================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1
+echo
+echo
+
+
+echo "05. Replace E1 with datasetIds"
+echo "=============================="
+payload='{
+  "id": "urn:E1",
+  "type": "T",
+  "A1": [
+    {
+      "type": "Property",
+      "value": 51,
+      "datasetId": "urn:ngsi-ld:dataset:D3"
+    },
+    {
+      "value": 52,
+      "datasetId": "urn:ngsi-ld:dataset:D4"
+    },
+    {
+      "value": 53
+    }
+  ],
+  "A2": [
+    {
+      "value": 54    
+    }
+  ]
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:E1 -X PUT --payload "$payload"
+echo
+echo
+
+
+echo "06. GET the entity - see the new datasets"
+echo "========================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1
+echo
+echo
+
+
+echo "06b. See the entity in the database"
+echo "=================================="
+mongoCmd2 ftest "db.entities.findOne()"
+echo
+echo
+
+
+--REGEXPECT--
+01. Create an entity E1 with an attribute A1 having 3 datasets (D1, D2, and D3) apart from the default
+======================================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E1
+
+
+
+01b. See the entity in the database
+==================================
+MongoDB shell version REGEX(.*)
+connecting to: REGEX(.*)
+MongoDB server version: REGEX(.*)
+{
+	"_id" : {
+		"id" : "urn:E1",
+		"type" : "https://uri.etsi.org/ngsi-ld/default-context/T",
+		"servicePath" : "/"
+	},
+	"attrNames" : [
+		"https://uri.etsi.org/ngsi-ld/default-context/A1"
+	],
+	"attrs" : {
+		"https://uri=etsi=org/ngsi-ld/default-context/A1" : {
+			"type" : "Property",
+			"creDate" : REGEX(.*),
+			"modDate" : REGEX(.*),
+			"value" : "A1:Default",
+			"mdNames" : [ ]
+		}
+	},
+	"creDate" : REGEX(.*),
+	"modDate" : REGEX(.*),
+	"lastCorrelator" : "",
+	"@datasets" : {
+		"https://uri=etsi=org/ngsi-ld/default-context/A1" : [
+			{
+				"type" : "Property",
+				"value" : "A1:D1",
+				"datasetId" : "urn:ngsi-ld:dataset:D1",
+				"createdAt" : REGEX(.*),
+				"modifiedAt" : REGEX(.*)
+			},
+			{
+				"type" : "Property",
+				"value" : "A1:D2",
+				"datasetId" : "urn:ngsi-ld:dataset:D2",
+				"createdAt" : REGEX(.*),
+				"modifiedAt" : REGEX(.*)
+			}
+		]
+	}
+}
+bye
+
+
+02. GET the entity - see the datasets
+=====================================
+HTTP/1.1 200 OK
+Content-Length: 220
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "A1": [
+        {
+            "type": "Property",
+            "value": "A1:Default"
+        },
+        {
+            "datasetId": "urn:ngsi-ld:dataset:D1",
+            "type": "Property",
+            "value": "A1:D1"
+        },
+        {
+            "datasetId": "urn:ngsi-ld:dataset:D2",
+            "type": "Property",
+            "value": "A1:D2"
+        }
+    ],
+    "id": "urn:E1",
+    "type": "T"
+}
+
+
+03. Replace E1 without any datasetIds
+=====================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+03b. See the entity in the database
+==================================
+MongoDB shell version v4.4.29
+connecting to: mongodb://localhost:27017/ftest?compressors=disabled&gssapiServiceName=mongodb
+MongoDB server version: 4.4.29
+{
+	"_id" : {
+		"id" : "urn:E1",
+		"type" : "https://uri.etsi.org/ngsi-ld/default-context/T",
+		"servicePath" : "/"
+	},
+	"creDate" : REGEX(.*),
+	"attrNames" : [
+		"https://uri.etsi.org/ngsi-ld/default-context/A1",
+		"https://uri.etsi.org/ngsi-ld/default-context/A2"
+	],
+	"attrs" : {
+		"https://uri=etsi=org/ngsi-ld/default-context/A1" : {
+			"type" : "Property",
+			"creDate" : REGEX(.*),
+			"modDate" : REGEX(.*),
+			"value" : 31,
+			"mdNames" : [ ]
+		},
+		"https://uri=etsi=org/ngsi-ld/default-context/A2" : {
+			"type" : "Property",
+			"creDate" : REGEX(.*),
+			"modDate" : REGEX(.*),
+			"value" : 32,
+			"mdNames" : [ ]
+		}
+	},
+	"modDate" : REGEX(.*),
+	"lastCorrelator" : ""
+}
+bye
+
+
+04. GET the entity - see no datasets
+====================================
+HTTP/1.1 200 OK
+Content-Length: 98
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "A1": {
+        "type": "Property",
+        "value": 31
+    },
+    "A2": {
+        "type": "Property",
+        "value": 32
+    },
+    "id": "urn:E1",
+    "type": "T"
+}
+
+
+05. Replace E1 with datasetIds
+==============================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+06. GET the entity - see the new datasets
+=========================================
+HTTP/1.1 200 OK
+Content-Length: 236
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "A1": [
+        {
+            "type": "Property",
+            "value": 53
+        },
+        {
+            "datasetId": "urn:ngsi-ld:dataset:D3",
+            "type": "Property",
+            "value": 51
+        },
+        {
+            "datasetId": "urn:ngsi-ld:dataset:D4",
+            "type": "Property",
+            "value": 52
+        }
+    ],
+    "A2": {
+        "type": "Property",
+        "value": 54
+    },
+    "id": "urn:E1",
+    "type": "T"
+}
+
+
+06b. See the entity in the database
+==================================
+MongoDB shell version REGEX(.*)
+connecting to: REGEX(.*)
+MongoDB server version: REGEX(.*)
+{
+	"_id" : {
+		"id" : "urn:E1",
+		"type" : "https://uri.etsi.org/ngsi-ld/default-context/T",
+		"servicePath" : "/"
+	},
+	"creDate" : REGEX(.*),
+	"attrNames" : [
+		"https://uri.etsi.org/ngsi-ld/default-context/A1",
+		"https://uri.etsi.org/ngsi-ld/default-context/A2"
+	],
+	"attrs" : {
+		"https://uri=etsi=org/ngsi-ld/default-context/A1" : {
+			"type" : "Property",
+			"creDate" : REGEX(.*),
+			"modDate" : REGEX(.*),
+			"value" : 53,
+			"mdNames" : [ ]
+		},
+		"https://uri=etsi=org/ngsi-ld/default-context/A2" : {
+			"type" : "Property",
+			"creDate" : REGEX(.*),
+			"modDate" : REGEX(.*),
+			"value" : 54,
+			"mdNames" : [ ]
+		}
+	},
+	"modDate" : REGEX(.*),
+	"lastCorrelator" : "",
+	"@datasets" : {
+		"https://uri=etsi=org/ngsi-ld/default-context/A1" : [
+			{
+				"type" : "Property",
+				"value" : 51,
+				"datasetId" : "urn:ngsi-ld:dataset:D3",
+				"createdAt" : REGEX(.*),
+				"modifiedAt" : REGEX(.*)
+			},
+			{
+				"value" : 52,
+				"datasetId" : "urn:ngsi-ld:dataset:D4",
+				"type" : "Property",
+				"createdAt" : REGEX(.*),
+				"modifiedAt" : REGEX(.*)
+			}
+		]
+	}
+}
+bye
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB

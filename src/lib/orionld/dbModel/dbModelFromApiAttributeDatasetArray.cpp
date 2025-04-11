@@ -40,6 +40,28 @@ extern "C"
 
 // -----------------------------------------------------------------------------
 //
+// datasetInstanceLookup -
+//
+KjNode* datasetInstanceLookup(KjNode* datasetArrayP, const char* datasetId)
+{
+  for (KjNode* instanceP = datasetArrayP->value.firstChildP;  instanceP != NULL; instanceP = instanceP->next)
+  {
+    KjNode* datasetIdP = kjLookup(instanceP, "datasetId");
+
+    if (datasetIdP != NULL)
+    {
+      if (strcmp(datasetIdP->value.s, datasetId) == 0)
+        return instanceP;
+    }
+  }
+
+  return NULL;
+}
+
+
+extern void attrNameAdd(KjNode* attrNames, const char* name);
+// -----------------------------------------------------------------------------
+//
 // dbModelFromApiAttributeDatasetArray -
 //
 bool dbModelFromApiAttributeDatasetArray
@@ -53,9 +75,11 @@ bool dbModelFromApiAttributeDatasetArray
   char*   attrDotName
 )
 {
-  bool     defaultFound  = false;
-  KjNode*  datasetArrayP = NULL;
-  char*    attrNameEq    = attrArrayP->name;
+  bool     defaultFound        = false;
+  KjNode*  datasetArrayP       = NULL;
+  KjNode*  dbDatasetArrayP     = NULL;
+  KjNode*  dbDatasetInstanceP  = NULL;
+  char*    attrNameEq          = attrArrayP->name;
 
   //
   // Allocate (if needed) the datasets object "orionldState.datasets"
@@ -72,7 +96,12 @@ bool dbModelFromApiAttributeDatasetArray
   else
     datasetArrayP = kjLookup(orionldState.datasets, attrNameEq);
 
-  if (datasetArrayP == NULL)
+  if (dbDatasetArray != NULL)
+  {
+    dbDatasetArrayP    = kjLookup(dbDatasetArray, attrNameEq);
+    dbDatasetInstanceP = (datasetArrayP != NULL)? datasetInstanceLookup(dbDatasetArrayP, orionldState.uriParams.datasetId) : NULL;  // lookup in $datasets.ATTR DB field
+  }
+  else
   {
     datasetArrayP = kjArray(orionldState.kjsonP, attrNameEq);
 
@@ -92,11 +121,13 @@ bool dbModelFromApiAttributeDatasetArray
   {
     next = attrInstanceP->next;
 
+    LM_T(LmtDbModel, ("Attribute: %s (JSON type: %s)", attrArrayP->name, kjValueType(attrInstanceP->type)));
+
     KjNode* datasetIdNodeP = kjLookup(attrInstanceP, "datasetId");
 
     if (datasetIdNodeP == NULL)  // Default instance
     {
-      if (defaultFound == true)
+      if (defaultFound == true)  // Can only have one instance without datasetId
       {
         orionldError(OrionldBadRequestData, "More than one attribute instances without datasetId", attrInstanceP->name, 400);
         return false;
@@ -109,6 +140,16 @@ bool dbModelFromApiAttributeDatasetArray
     }
     else
     {
+      double createdAt = orionldState.requestTime;
+
+      // If an old instance with this datasetId exists, get the createdAt and reuse it
+      if (dbDatasetInstanceP != NULL)
+      {
+        KjNode* createdAtP = kjLookup(dbDatasetInstanceP, "createdAt");
+        if (createdAtP != NULL)
+          createdAt = createdAtP->value.f;
+      }
+
       kjChildRemove(attrArrayP, attrInstanceP);  // Remove the attribute instance from the attribute ...
       kjChildAdd(datasetArrayP, attrInstanceP);  // ... And insert it under @datasets::attrName
 
@@ -124,7 +165,7 @@ bool dbModelFromApiAttributeDatasetArray
       if (createdAtP  != NULL) kjChildRemove(attrInstanceP, createdAtP);
       if (modifiedAtP != NULL) kjChildRemove(attrInstanceP, modifiedAtP);
 
-      createdAtP  = kjFloat(orionldState.kjsonP, "createdAt",  orionldState.requestTime);
+      createdAtP  = kjFloat(orionldState.kjsonP, "createdAt",  createdAt);
       modifiedAtP = kjFloat(orionldState.kjsonP, "modifiedAt", orionldState.requestTime);
 
       kjChildAdd(attrInstanceP, createdAtP);

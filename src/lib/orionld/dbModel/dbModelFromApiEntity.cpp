@@ -186,7 +186,7 @@ bool dbModelFromApiEntity(KjNode* entityP, KjNode* dbEntityP, bool creation, con
     bool ignore = false;
 
     next = attrP->next;
-    if (dbModelFromApiAttribute(attrP, dbAttrsP, attrAddedV, attrRemovedV, &ignore, false, datasets) == false)
+    if (dbModelFromApiAttribute(attrP, dbAttrsP, attrAddedV, attrRemovedV, &ignore, true, datasets) == false)
     {
       if (ignore == true)
         kjChildRemove(attrsP, attrP);
