@@ -82,6 +82,42 @@ void pdAttribute(const char* attrName)
 
 
 
+// -----------------------------------------------------------------------------
+//
+// pdEntityId - add value for OrionldProblemDetails::entityId
+//
+void pdEntityId(const char* entityId)
+{
+  if (entityId != NULL)
+    orionldState.pd.entityId = kaStrdup(&orionldState.kalloc, entityId);
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// pdOldValue - add value for OrionldProblemDetails::oldValue
+//
+void pdOldValue(const char* oldValue)
+{
+  if (oldValue != NULL)
+    orionldState.pd.oldValue = kaStrdup(&orionldState.kalloc, oldValue);
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// pdNewValue - add value for OrionldProblemDetails::newValue
+//
+void pdNewValue(const char* newValue)
+{
+  if (newValue != NULL)
+    orionldState.pd.newValue = kaStrdup(&orionldState.kalloc, newValue);
+}
+
+
+
 // ----------------------------------------------------------------------------
 //
 // pdTreeCreate -
@@ -136,6 +172,24 @@ KjNode* pdTreeCreate
     kjChildAdd(orionldState.responseTree, attributeP);
   }
 
+  if (orionldState.pd.entityId != NULL)
+  {
+    KjNode* entityIdP = kjString(orionldState.kjsonP, "entityId", orionldState.pd.entityId);
+    kjChildAdd(orionldState.responseTree, entityIdP);
+  }
+
+  if (orionldState.pd.oldValue != NULL)
+  {
+    KjNode* oldValueP = kjString(orionldState.kjsonP, "oldValue", orionldState.pd.oldValue);
+    kjChildAdd(orionldState.responseTree, oldValueP);
+  }
+
+  if (orionldState.pd.newValue != NULL)
+  {
+    KjNode* newValueP = kjString(orionldState.kjsonP, "newValue", orionldState.pd.newValue);
+    kjChildAdd(orionldState.responseTree, newValueP);
+  }
+
   return orionldState.responseTree;
 }
 
@@ -174,6 +228,24 @@ KjNode* pdTreeCreate(OrionldProblemDetails* pdP)
   {
     KjNode* attributeP = kjString(orionldState.kjsonP, "attribute", pdP->attribute);
     kjChildAdd(orionldState.responseTree, attributeP);
+  }
+
+  if (orionldState.pd.entityId != NULL)
+  {
+    KjNode* entityIdP = kjString(orionldState.kjsonP, "entityId", orionldState.pd.entityId);
+    kjChildAdd(orionldState.responseTree, entityIdP);
+  }
+
+  if (orionldState.pd.oldValue != NULL)
+  {
+    KjNode* oldValueP = kjString(orionldState.kjsonP, "oldValue", orionldState.pd.oldValue);
+    kjChildAdd(orionldState.responseTree, oldValueP);
+  }
+
+  if (orionldState.pd.newValue != NULL)
+  {
+    KjNode* newValueP = kjString(orionldState.kjsonP, "newValue", orionldState.pd.newValue);
+    kjChildAdd(orionldState.responseTree, newValueP);
   }
 
 #if 0

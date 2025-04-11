@@ -124,7 +124,7 @@ KjNode* batchUpdateEntity(KjNode* inEntityP, KjNode* originalDbEntityP, bool ign
 
     dbAttrP = kjClone(orionldState.kjsonP, apiAttrP);  // Copy the API attribute and then transform it into DB Model
 
-    dbModelFromApiAttribute(dbAttrP, dbAttrsP, attrAddedV, attrRemovedV, NULL, false);
+    dbModelFromApiAttribute(dbAttrP, dbAttrsP, attrAddedV, attrRemovedV, NULL, false, NULL);  // FIXME: Need the @dataset pointer!
     kjChildAdd(dbAttrsP, dbAttrP);
 
     apiAttrP = next;

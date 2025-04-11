@@ -36,6 +36,15 @@ extern "C"
 //
 // dbModelFromApiAttributeDatasetArray -
 //
-extern bool dbModelFromApiAttributeDatasetArray(KjNode* attrArrayP, KjNode* dbAttrsP, KjNode* attrAddedV, KjNode* attrRemovedV, bool* ignoreP);
+extern bool dbModelFromApiAttributeDatasetArray
+(
+  KjNode* attrArrayP,
+  KjNode* dbAttrsP,
+  KjNode* attrAddedV,
+  KjNode* attrRemovedV,
+  bool*   ignoreP,
+  KjNode* dbDatasetArray,
+  char*   attrDotName
+);
 
 #endif  // SRC_LIB_ORIONLD_DBMODEL_DBMODELFROMAPIATTRIBUTEDATASETARRAY_H_

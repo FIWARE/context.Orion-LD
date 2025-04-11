@@ -153,7 +153,7 @@ static void namesArrayMergeToPatchTree(KjNode* patchTree, const char* path, KjNo
       kjChildRemove(namesP, itemP);
   }
 
-  // Now add the strings in addedP:
+  // Now add the strings to addedP:
   if (namesP->value.firstChildP == NULL)  // Array is empty
     namesP->value.firstChildP = addedP->value.firstChildP;
   else
@@ -263,7 +263,9 @@ static void orionldEntityPatchTree(KjNode* oldP, KjNode* newP, char* path, KjNod
   //
   if ((orionldState.in.arrayConcat == true) && (oldP->type == KjArray) && (newP->type == KjArray))
   {
-    oldP->lastChild->next   = newP->value.firstChildP;
+    if (oldP->lastChild != NULL)
+      oldP->lastChild->next   = newP->value.firstChildP;
+
     newP->value.firstChildP = oldP->value.firstChildP;
   }
 
@@ -325,7 +327,7 @@ static void orionldEntityPatchTree(KjNode* oldP, KjNode* newP, char* path, KjNod
     newItemP = next;
   }
 
-  if (namesP != NULL)
+  if ((namesP != NULL) && (newP != NULL))
     namesToPatchTree(patchTree, path, namesP, addedP, removedP);
 }
 

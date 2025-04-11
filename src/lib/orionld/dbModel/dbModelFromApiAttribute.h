@@ -52,6 +52,6 @@ extern "C"
 //   * "modDate"  is added
 //   * "creDate"  is added iff the attribute did not previously exist
 //
-extern bool dbModelFromApiAttribute(KjNode* attrP, KjNode* dbAttrsP, KjNode* attrAddedV, KjNode* attrRemovedV, bool* ignoreP, bool stealCreDate);
+extern bool dbModelFromApiAttribute(KjNode* attrP, KjNode* dbAttrsP, KjNode* attrAddedV, KjNode* attrRemovedV, bool* ignoreP, bool stealCreDate, KjNode* datasets);
 
 #endif  // SRC_LIB_ORIONLD_DBMODEL_DBMODELFROMAPIATTRIBUTE_H_

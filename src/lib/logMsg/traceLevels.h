@@ -174,6 +174,9 @@ typedef enum TraceLevels
   LmtLinkHeader = 220,                 // HTTP Header: Link
   LmtDatasetId,                        // datasetId
   LmtConfig,                           // Config File
+  LmtDbModel,
+  LmtDbModel2,
+  LmtAttrNames = 225,
 
   //
   // Legacy

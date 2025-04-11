@@ -868,10 +868,15 @@ bool multiAttributeArray(KjNode* attrArrayP, bool* errorP)
   int datasets = 0;
   int objects  = 0;
 
+  kjTreeLog(attrArrayP, "Attr Array", LmtDbModel);
+
   for (KjNode* aInstanceP = attrArrayP->value.firstChildP; aInstanceP != NULL; aInstanceP = aInstanceP->next)
   {
     if (aInstanceP->type != KjObject)
+    {
+      LM_T(LmtDbModel, ("Instance is not an object"));
       return false;
+    }
 
     KjNode* datasetIdP = kjLookup(aInstanceP, "datasetId");
 
@@ -882,7 +887,10 @@ bool multiAttributeArray(KjNode* attrArrayP, bool* errorP)
   }
 
   if (datasets == 0)
+  {
+    LM_T(LmtDbModel, ("no datasets"));
     return false;
+  }
 
   if (objects - datasets > 1)  // More than one object without datasetId field
   {
@@ -891,6 +899,7 @@ bool multiAttributeArray(KjNode* attrArrayP, bool* errorP)
     return false;
   }
 
+  LM_T(LmtDbModel, ("dataset array recognized"));
   return true;
 }
 
@@ -1575,6 +1584,8 @@ bool pCheckAttribute
   OrionldContextItem*     attrContextInfoP          // Attr Info from the @context (add shortname to struct?)
 )
 {
+  LM_T(LmtDbModel, ("Checking attribute '%s'", attrP->name));
+
   if (attrNameAlreadyExpanded == false)
   {
     if (pCheckName(attrP->name) == false)
@@ -1606,8 +1617,10 @@ bool pCheckAttribute
   {
     bool error = false;
 
+    LM_T(LmtDbModel, ("It's an Attribute and it is an Array - datasets?"));
     if (multiAttributeArray(attrP, &error) == true)
     {
+      LM_T(LmtDbModel, ("Yes, datasets"));
       for (KjNode* aInstanceP = attrP->value.firstChildP; aInstanceP != NULL; aInstanceP = aInstanceP->next)
       {
         // Do I need the attribute instance in the DB?
@@ -1633,6 +1646,7 @@ bool pCheckAttribute
         return false;
     }
   }
+  LM_T(LmtDbModel, ("no datasets found"));
 
   //
   // Check for special attributes

@@ -225,6 +225,7 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
   else if (serviceP->serviceRoutine == orionldGetEntities)
   {
     serviceP->options   |= ORIONLD_SERVICE_OPTION_CORE_CONTEXT_IN_RESPONSE;
+    serviceP->options   |= ORIONLD_SERVICE_OPTION_DATASET_SUPPORT;
 
     serviceP->uriParams |= ORIONLD_URIPARAM_OPTIONS;
     serviceP->uriParams |= ORIONLD_URIPARAM_FORMAT;
@@ -255,6 +256,7 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
   else if (serviceP->serviceRoutine == orionldGetEntity)
   {
     serviceP->options   |= ORIONLD_SERVICE_OPTION_CORE_CONTEXT_IN_RESPONSE;
+    serviceP->options   |= ORIONLD_SERVICE_OPTION_DATASET_SUPPORT;
 
     serviceP->uriParams |= ORIONLD_URIPARAM_OPTIONS;
     serviceP->uriParams |= ORIONLD_URIPARAM_FORMAT;
@@ -306,6 +308,7 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
   else if (serviceP->serviceRoutine == orionldPutAttribute)
   {
     serviceP->options   |= ORIONLD_SERVICE_OPTION_EXPAND_ATTR;
+    serviceP->options   |= ORIONLD_SERVICE_OPTION_DATASET_SUPPORT;
 
     serviceP->uriParams |= ORIONLD_URIPARAM_TYPELIST;
     serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
@@ -330,15 +333,18 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
   }
   else if (serviceP->serviceRoutine == orionldPutEntity)
   {
+    serviceP->options   |= ORIONLD_SERVICE_OPTION_DATASET_SUPPORT;
+
     serviceP->uriParams |= ORIONLD_URIPARAM_TYPELIST;
     serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
   }
   else if (serviceP->serviceRoutine == orionldDeleteAttribute)
   {
+    serviceP->options   |= ORIONLD_SERVICE_OPTION_DATASET_SUPPORT;
+    serviceP->options   |= ORIONLD_SERVICE_OPTION_EXPAND_ATTR;
+
     serviceP->uriParams |= ORIONLD_URIPARAM_DATASETID;
     serviceP->uriParams |= ORIONLD_URIPARAM_DELETEALL;
-
-    serviceP->options   |= ORIONLD_SERVICE_OPTION_EXPAND_ATTR;
     serviceP->uriParams |= ORIONLD_URIPARAM_TYPELIST;
     serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
   }
@@ -458,6 +464,7 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
     serviceP->isBatchOp  = true;
 
     serviceP->options   |= ORIONLD_SERVICE_OPTION_CORE_CONTEXT_IN_RESPONSE;
+    serviceP->options   |= ORIONLD_SERVICE_OPTION_DATASET_SUPPORT;
 
     serviceP->uriParams |= ORIONLD_URIPARAM_OPTIONS;
     serviceP->uriParams |= ORIONLD_URIPARAM_COUNT;

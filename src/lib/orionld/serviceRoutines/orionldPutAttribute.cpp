@@ -404,7 +404,7 @@ bool orionldPutAttribute(void)
       dbAttrP = kjLookup(dbAttrsP, attrLongNameEq);
 
     // DDS
-    if (orionldState.ddsSample == true)
+    if (orionldState.ddsSample == true)  // Coming in from DDS
     {
       if (dbAttrP == NULL)
         return ddsAttributeCreate(orionldState.requestTree, entityType, attrName);
@@ -494,7 +494,7 @@ bool orionldPutAttribute(void)
 
       LM_T(LmtSR, ("==================================================================================="));
       kjTreeLog(dbAttributeP, "API Attribute", LmtSR);
-      if (dbModelFromApiAttribute(dbAttributeP, NULL, NULL, NULL, NULL, true) == false)
+      if (dbModelFromApiAttribute(dbAttributeP, NULL, NULL, NULL, NULL, true, NULL) == false)
         goto response;
 
       kjTreeLog(dbAttributeP, "DB Attribute", LmtSR);
