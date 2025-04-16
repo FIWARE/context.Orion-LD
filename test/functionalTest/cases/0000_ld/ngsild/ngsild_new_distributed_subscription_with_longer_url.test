@@ -124,7 +124,7 @@ Content-Type: application/json
   "type": "Subscription",
   "entities": [
     {
-      "type": "https://uri.etsi.org/ngsi-ld/default-context/T"
+      "type": "T"
     }
   ],
   "notification": {
