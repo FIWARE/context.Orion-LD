@@ -70,6 +70,7 @@ extern "C"
 #include "orionld/http/httpRequest.h"                          // httpRequest
 #include "orionld/common/tenantList.h"                         // tenant0
 #include "orionld/regMatch/regMatchSubscription.h"             // regMatchSubscription
+#include "orionld/kjTree/kjNavigate.h"                         // kjNavigate
 #include "orionld/serviceRoutines/orionldPostSubscriptions.h"  // Own Interface
 
 
@@ -93,10 +94,11 @@ extern "C"
 //   }
 // }
 //
-SubordinateSubscription* subordinateCreate(CachedSubscription* cSubP, RegCacheItem* rciP, const char* entityType)
+SubordinateSubscription* subordinateCreate(CachedSubscription* cSubP, RegCacheItem* rciP, KjNode* subP)
 {
-  LM_T(LmtSubordinate, ("Creating a subscription subordinate to '%s' on '%s'", cSubP->subscriptionId, rciP->regId));
-
+  //
+  // Modify the Subscription ID for the subordinate subscription
+  //
   int  runNo = 1;
 
   for (SubordinateSubscription* subordinateP = cSubP->subordinateP; subordinateP != NULL; subordinateP = subordinateP->next)
@@ -104,81 +106,54 @@ SubordinateSubscription* subordinateCreate(CachedSubscription* cSubP, RegCacheIt
     runNo = MAX(runNo, subordinateP->runNo) + 1;
   }
 
-  char subSubId[128];
+  //
+  // Add "type": "Subscription" if not there
+  //
+  KjNode* typeP = kjLookup(subP, "type");
+
+  if (typeP == NULL)
+  {
+    typeP = kjString(orionldState.kjsonP, "type", "Subscription");
+    kjChildPrepend(subP, typeP);
+  }
+
+  //
+  // Set/Add subscription id
+  //
+  char subSubId[64];
   snprintf(subSubId, sizeof(subSubId), "%s:%d", cSubP->subscriptionId, runNo);
+  KjNode* idP = kjLookup(subP, "id");
 
+  if (idP != NULL)
+    idP->value.s = subSubId;
+  else
+  {
+    idP = kjString(orionldState.kjsonP, "id", subSubId);
+    kjChildPrepend(subP, idP);
+  }
+
+  //
+  // Modify "notification::endpoint::url" to point to this broker
+  //
   char notificationUrl[512];
-
-  LM_T(LmtSubordinate, ("subordinateEndpoint; '%s'", subordinateEndpoint));
 
   if (subordinateEndpoint[0] != 0)
     snprintf(notificationUrl, sizeof(notificationUrl), "%s/notifications/%s", subordinateEndpoint, cSubP->subscriptionId);
   else
     snprintf(notificationUrl, sizeof(notificationUrl), "http://%s/ngsi-ld/ex/v1/notifications/%s", localIpAndPort, cSubP->subscriptionId);
 
-  LM_T(LmtSubordinate, ("Notification URL for subordinate subscription: '%s'", notificationUrl));
+  const char* compV[] = { "notification", "endpoint", "uri", NULL };
+  KjNode*     uriP    = kjNavigate(subP, compV, NULL, NULL);
 
-  KjNode* bodyP         = kjObject(orionldState.kjsonP, NULL);
-  KjNode* idP           = kjString(orionldState.kjsonP, "id", subSubId);
-  KjNode* typeP         = kjString(orionldState.kjsonP, "type", "Subscription");
-  KjNode* entitiesP     = kjArray(orionldState.kjsonP, "entities");
-  KjNode* entityP       = kjObject(orionldState.kjsonP, NULL);
-  KjNode* entityTypeP   = kjString(orionldState.kjsonP, "type", entityType);
-  KjNode* notificationP = kjObject(orionldState.kjsonP, "notification");
-  KjNode* endpointP     = kjObject(orionldState.kjsonP, "endpoint");
-  KjNode* urlP          = kjString(orionldState.kjsonP, "uri", notificationUrl);
+  if (uriP == NULL)
+    LM_RE(NULL, ("No notification:endpoint:uri field in the subscription!"));
 
-  kjChildAdd(bodyP, idP);
-  kjChildAdd(bodyP, typeP);
-  kjChildAdd(bodyP, entitiesP);
-  kjChildAdd(bodyP, notificationP);
+  uriP->value.s = notificationUrl;
 
-  kjChildAdd(entitiesP, entityP);
-  kjChildAdd(entityP, entityTypeP);
-
-  kjChildAdd(endpointP, urlP);
-  kjChildAdd(notificationP, endpointP);
 
   //
-  // contextSourceInfo => receiverInfo
+  // Create the subordinate subscription in the "child" broker
   //
-  // Taking it from the registration
-  // KjNode* contextSourceInfoP = kjLookup(rciP->regTree, "contextSourceInfo"); ...
-  //
-  // For now, we take it from the subscription:
-  //
-  KjNode* receiverInfoP = NULL;
-  for (std::map<std::string, std::string>::const_iterator it = cSubP->httpInfo.headers.begin(); it != cSubP->httpInfo.headers.end(); ++it)
-  {
-    const char* key    = it->first.c_str();
-    char*       value  = (char*) it->second.c_str();
-
-    KjNode* keyP   = kjString(orionldState.kjsonP, "key", key);
-    KjNode* valueP = kjString(orionldState.kjsonP, "value", value);
-    KjNode* kvP    = kjObject(orionldState.kjsonP, NULL);
-
-    kjChildAdd(kvP, keyP);
-    kjChildAdd(kvP, valueP);
-
-    if (receiverInfoP == NULL)
-    {
-      receiverInfoP = kjArray(orionldState.kjsonP, "receiverInfo");
-      kjChildAdd(endpointP, receiverInfoP);
-    }
-
-    kjChildAdd(receiverInfoP, kvP);
-  }
-
-
-  // throttling
-  if (cSubP->throttling > 0)
-  {
-    KjNode* throttlingP = kjFloat(orionldState.kjsonP, "throttling", cSubP->throttling);
-    kjChildAdd(bodyP, throttlingP);
-  }
-
-  kjTreeLog(bodyP, "Subordinate subscription", LmtSR);
-
   HttpKeyValue  headers[3];
   int           headerIx = 0;
 
@@ -200,7 +175,6 @@ SubordinateSubscription* subordinateCreate(CachedSubscription* cSubP, RegCacheIt
   if (colon != NULL)
     *colon = ':';
 
-  LM_T(LmtSR, ("IP of registration: '%s'", rciIp));
   if (rciP->rest == NULL)
     snprintf(rciUrl, sizeof(rciUrl) - 1, "http://%s/ngsi-ld/v1/subscriptions", rciP->ipAndPort);
   else
@@ -209,12 +183,9 @@ SubordinateSubscription* subordinateCreate(CachedSubscription* cSubP, RegCacheIt
   LM_T(LmtSR, ("URL for creation of subordinate subscription '%s'", rciUrl));
 
   httpRequestHeaderAdd(&headers[headerIx++], "Content-Type", "application/json", 0);
-  int httpStatus = httpRequest(rciIp, "POST", rciUrl, bodyP, NULL, headers, tmo, &responseBody, &pd);
+  int httpStatus = httpRequest(rciIp, "POST", rciUrl, subP, NULL, headers, tmo, &responseBody, &pd);
   if ((httpStatus != 201) && (httpStatus != 200))  // ftClient responds with 200 ...
-  {
-    LM_W(("Attempt to create subordinate subscription failed with a %d", httpStatus));
-    return NULL;
-  }
+    LM_RE(NULL, ("Attempt to create subordinate subscription failed with a %d", httpStatus));
 
   SubordinateSubscription* subordinateP = (SubordinateSubscription*) calloc(1, sizeof(SubordinateSubscription));
   if (subordinateP == NULL)
@@ -245,6 +216,8 @@ bool orionldPostSubscriptions(void)
   if ((experimental == false) || (orionldState.in.legacy != NULL))
     return legacyPostSubscriptions();  // this will be removed!! (after thorough testing)
 
+  kjTreeLog(orionldState.requestTree, "Father Sub 01", LmtSubordinate);
+
   KjNode*              subP            = orionldState.requestTree;
   KjNode*              subIdP          = orionldState.payloadIdNode;
   KjNode*              endpointP       = NULL;
@@ -263,6 +236,7 @@ bool orionldPostSubscriptions(void)
   KjNode*              sysAttrsP       = NULL;
   double               timeInterval    = 0;
   OrionldRenderFormat  renderFormat    = RF_NORMALIZED;
+  KjNode*              clonedSubP      = kjClone(orionldState.kjsonP, orionldState.requestTree);
 
   b = pCheckSubscription(subP,
                          true,
@@ -331,6 +305,8 @@ bool orionldPostSubscriptions(void)
 
   // Add subId to the tree
   kjChildPrepend(subP, subIdP);
+
+  kjTreeLog(orionldState.requestTree, "With ID", LmtSubordinate);
 
   // The three 'q's ... that's also dbModel
   if (ldqNodeP != NULL)
@@ -480,7 +456,7 @@ bool orionldPostSubscriptions(void)
   LM_T(LmtSubordinate, ("Any subordinate subscriptions needed?"));
   if ((distSubsEnabled == true) && (orionldState.uriParams.local == false))
   {
-    LM_T(LmtSubordinate, ("At least, subordinate subscriptions are ON - c hecking regs"));
+    LM_T(LmtSubordinate, ("At least, subordinate subscriptions are ON - checking regs"));
 
     //
     // Find matching regs
@@ -494,27 +470,32 @@ bool orionldPostSubscriptions(void)
       if (regMatchSubscription(rciP, cSubP, &entityTypeP) == true)
       {
         LM_T(LmtSubordinate, ("Reg '%s' is a match - creating subordinate subscription", rciP->regId));
-        SubordinateSubscription* subSubP = subordinateCreate(cSubP, rciP, entityTypeP);
 
-        // Add the subordinate to subP
-        KjNode* subordinateP = kjLookup(subP, "subordinate");
-
-        if (subordinateP == NULL)
+        SubordinateSubscription* subSubP = subordinateCreate(cSubP, rciP, clonedSubP);
+        if (subSubP != NULL)
         {
-          subordinateP = kjArray(orionldState.kjsonP, "subordinate");
-          kjChildAdd(subP, subordinateP);
+          // Add the subordinate to subP
+          KjNode* subordinateP = kjLookup(subP, "subordinate");
+
+          if (subordinateP == NULL)
+          {
+            subordinateP = kjArray(orionldState.kjsonP, "subordinate");
+            kjChildAdd(subP, subordinateP);
+          }
+
+          KjNode* subSubNodeP = kjObject(orionldState.kjsonP,  NULL);  // No name - part of array
+          KjNode* subIdP      = kjString(orionldState.kjsonP,  "subscriptionId", subSubP->subscriptionId);
+          KjNode* regIdP      = kjString(orionldState.kjsonP,  "registrationId", subSubP->registrationId);
+          KjNode* runNoP      = kjInteger(orionldState.kjsonP, "runNo",          subSubP->runNo);
+
+          kjChildAdd(subSubNodeP, subIdP);
+          kjChildAdd(subSubNodeP, regIdP);
+          kjChildAdd(subSubNodeP, runNoP);
+
+          kjChildAdd(subordinateP, subSubNodeP);
         }
-
-        KjNode* subSubNodeP = kjObject(orionldState.kjsonP,  NULL);  // No name - part of array
-        KjNode* subIdP      = kjString(orionldState.kjsonP,  "subscriptionId", subSubP->subscriptionId);
-        KjNode* regIdP      = kjString(orionldState.kjsonP,  "registrationId", subSubP->registrationId);
-        KjNode* runNoP      = kjInteger(orionldState.kjsonP, "runNo",          subSubP->runNo);
-
-        kjChildAdd(subSubNodeP, subIdP);
-        kjChildAdd(subSubNodeP, regIdP);
-        kjChildAdd(subSubNodeP, runNoP);
-
-        kjChildAdd(subordinateP, subSubNodeP);
+        else
+          LM_W(("Unable to create subordinate subscription for '%s'", subscriptionId));
       }
       else
         LM_T(LmtSubordinate, ("Reg '%s' is not a match", rciP->regId));

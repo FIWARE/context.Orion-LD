@@ -3,6 +3,7 @@
   #1673: Fixed a bug about not taken the entity type into account (if given as URI param) for PATCH Attribute
   #1673: PATCH Entity (W/o /attrs) giving a 404 response (was 204, which was erroneous) when there is no local match and no registrations match
   #1773: PATCH Attribute didn't implement VocabProperty (and the broker crashed when attempting to update a VocabProperty)
+  #1778: Not all fields were forwarded for subordinate subscriptions
 
 ## New Features:
   #XXXX: Support for datasetId URI param for Query/Retrieve Entities
