@@ -38,6 +38,7 @@ extern "C"
 #include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/types/DistOp.h"                                // DistOp
+#include "orionld/types/OrionldAttributeType.h"                  // OrionldAttributeType
 #include "orionld/common/traceLevels.h"                          // KT_T trace levels
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
@@ -54,8 +55,6 @@ extern "C"
 #include "orionld/kjTree/kjSort.h"                               // kjStringArraySort
 #include "orionld/mongoc/mongocEntityUpdate.h"                   // mongocEntityUpdate
 #include "orionld/mongoc/mongocEntityLookup.h"                   // mongocEntityLookup
-#include "orionld/payloadCheck/pCheckAttributeTransform.h"       // pCheckAttributeTransform
-#include "orionld/payloadCheck/pCheckAttribute.h"                // pCheckAttribute
 #include "orionld/payloadCheck/pCheckEntity.h"                   // pCheckEntity
 #include "orionld/payloadCheck/pCheckUri.h"                      // pCheckUri
 #include "orionld/context/orionldAttributeExpand.h"              // orionldAttributeExpand
@@ -287,7 +286,8 @@ static void orionldEntityPatchTree(KjNode* oldP, KjNode* newP, char* path, KjNod
   KjNode* addedP     = kjLookup(newP, ".added");
   KjNode* removedP   = kjLookup(newP, ".removed");
 
-
+  if (namesP == NULL)
+    namesP = kjLookup(newP, "mdNames");
 
   //
   // CAREFUL with the linked lists of newP - the recursive calls may invoke patchTreeItemAdd and that *REMOVES ITEMS FROM A LIST*
@@ -327,7 +327,7 @@ static void orionldEntityPatchTree(KjNode* oldP, KjNode* newP, char* path, KjNod
     newItemP = next;
   }
 
-  if ((namesP != NULL) && (newP != NULL))
+  if (namesP != NULL)
     namesToPatchTree(patchTree, path, namesP, addedP, removedP);
 }
 

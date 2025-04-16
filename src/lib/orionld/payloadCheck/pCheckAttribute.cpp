@@ -299,8 +299,8 @@ inline bool pCheckAttributeString
   //
   // If all those are fulfilled, then the value (object) of the Relationship will be modified
   //
-  if ((orionldState.out.format == RF_SIMPLIFIED)                      &&
-      (orionldState.serviceP->serviceRoutine  == orionldPatchEntity2) &&
+  if ((orionldState.out.format                == RF_SIMPLIFIED)        &&
+      (orionldState.serviceP->serviceRoutine  == orionldPatchEntity2)  &&
       (attrTypeFromDb                         == Relationship))
   {
     if (pCheckUri(attrP->value.s, attrP->name, true) == false)
@@ -953,6 +953,7 @@ bool deletionWithTypePresent(KjNode* attrP, KjNode* typeP)
     valueP = kjLookup(attrP, "value");
     if ((valueP != NULL) && (valueP->type == KjString) && (strcmp(valueP->value.s, "urn:ngsi-ld:null") == 0))
     {
+      LM_T(LmtAttrNames, ("Marking '%s' for REMOVAL", attrP->name));
       attrP->type = KjNull;
       return true;
     }
@@ -1327,7 +1328,10 @@ static bool pCheckAttributeObject
     next = fieldP->next;
 
     if ((fieldP->type == KjString) && (strcmp(fieldP->value.s, "urn:ngsi-ld:null") == 0))
+    {
+      LM_T(LmtAttrNames, ("Marking '%s' of '%s' for REMOVAL", fieldP->name, attrP->name));
       fieldP->type = KjNull;
+    }
 
     if (fieldP->type == KjNull)
     {
@@ -1619,8 +1623,6 @@ bool pCheckAttribute
   OrionldContextItem*     attrContextInfoP          // Attr Info from the @context (add shortname to struct?)
 )
 {
-  LM_T(LmtDbModel, ("Checking attribute '%s'", attrP->name));
-
   if (attrNameAlreadyExpanded == false)
   {
     if (pCheckName(attrP->name) == false)
@@ -1637,6 +1639,7 @@ bool pCheckAttribute
   // "Direct" Deletion?
   if ((attrP->type == KjString) && (strcmp(attrP->value.s, "urn:ngsi-ld:null") == 0))
   {
+    LM_T(LmtAttrNames, ("Marking '%s' for REMOVAL", attrP->name));
     attrP->type = KjNull;
     return true;
   }
@@ -1681,7 +1684,6 @@ bool pCheckAttribute
         return false;
     }
   }
-  LM_T(LmtDbModel, ("no datasets found"));
 
   //
   // Check for special attributes
