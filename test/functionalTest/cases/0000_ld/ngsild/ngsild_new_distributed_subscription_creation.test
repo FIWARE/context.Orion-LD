@@ -101,7 +101,19 @@ payload='{
         }
       ]
     }
-  }
+  },
+  "watchedAttributes": [ "P1" ],
+  "q": "P1==1",
+  "geoQ": {
+    "geometry": "Point",
+    "coordinates": [ 1,2,3 ],
+    "georel": "near;maxDistance==100",
+    "geoproperty": "loc"
+  },
+  "description": "Description",
+  "expiresAt": "2029-01-01T12:00:00",
+  "subscriptionName": "Test Sub",
+  "throttling": 5
 }'
 orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload"
 echo
@@ -120,7 +132,11 @@ echo "==========================================================================
 payload='{
   "id": "urn:E1",
   "type": "T",
-  "P1": 1
+  "P1": 1,
+  "loc": {
+    "type": "Point",
+    "coordinates": [ 1,2,3 ]
+  }
 }'
 orionCurl --url /ngsi-ld/v1/entities --payload "$payload" --port $CP1_PORT
 echo
@@ -284,11 +300,23 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 [
     {
+        "description": "Description",
         "entities": [
             {
                 "type": "T"
             }
         ],
+        "expiresAt": "2029-01-01T12:00:00.000Z",
+        "geoQ": {
+            "coordinates": [
+                1,
+                2,
+                3
+            ],
+            "geometry": "Point",
+            "geoproperty": "loc",
+            "georel": "near;maxDistance==100"
+        },
         "id": "urn:ngsi-ld:Subscription:S1:1",
         "isActive": true,
         "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
@@ -307,8 +335,14 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             "status": "ok"
         },
         "origin": "cache",
+        "q": "P1==1",
         "status": "active",
-        "type": "Subscription"
+        "subscriptionName": "Test Sub",
+        "throttling": 5,
+        "type": "Subscription",
+        "watchedAttributes": [
+            "P1"
+        ]
     }
 ]
 
@@ -325,7 +359,7 @@ Location: /ngsi-ld/v1/entities/urn:E1
 05. Dump the accumulator to see the notification
 ================================================
 POST http://REGEX(.*)/notify?subscriptionId=urn:ngsi-ld:Subscription:S1
-Content-Length: 250
+Content-Length: 326
 Host: REGEX(.*)
 Accept: */*
 Content-Type: application/json
@@ -339,6 +373,17 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
                 "value": 1
             },
             "id": "urn:E1",
+            "loc": {
+                "type": "GeoProperty",
+                "value": {
+                    "coordinates": [
+                        1,
+                        2,
+                        3
+                    ],
+                    "type": "Point"
+                }
+            },
             "type": "T"
         }
     ],
@@ -353,17 +398,29 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 06. GET the subscription, see the subordinate subscription
 ==========================================================
 HTTP/1.1 200 OK
-Content-Length: 512
+Content-Length: 766
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
+    "description": "Description",
     "entities": [
         {
             "type": "T"
         }
     ],
+    "expiresAt": "2029-01-01T12:00:00.000Z",
+    "geoQ": {
+        "coordinates": [
+            1,
+            2,
+            3
+        ],
+        "geometry": "Point",
+        "geoproperty": "loc",
+        "georel": "near;maxDistance==100"
+    },
     "id": "urn:ngsi-ld:Subscription:S1",
     "isActive": true,
     "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
@@ -382,6 +439,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "status": "ok"
     },
     "origin": "cache",
+    "q": "P1==1",
     "status": "active",
     "subordinate": [
         {
@@ -389,7 +447,12 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             "subscriptionId": "urn:ngsi-ld:Subscription:S1:1"
         }
     ],
-    "type": "Subscription"
+    "subscriptionName": "Test Sub",
+    "throttling": 5,
+    "type": "Subscription",
+    "watchedAttributes": [
+        "P1"
+    ]
 }
 
 
@@ -408,6 +471,22 @@ MongoDB server version: REGEX(.*)
 			"isTypePattern" : false
 		}
 	],
+	"conditions" : [
+		"https://uri.etsi.org/ngsi-ld/default-context/P1"
+	],
+	"ldQ" : "https://uri=etsi=org/ngsi-ld/default-context/P1.value==1",
+	"expression" : {
+		"geometry" : "point",
+		"coords" : "1,2,3",
+		"georel" : "near;maxDistance:100",
+		"geoproperty" : "https://uri=etsi=org/ngsi-ld/default-context/loc",
+		"q" : "https://uri=etsi=org/ngsi-ld/default-context/P1.value==1",
+		"mq" : ""
+	},
+	"description" : "Description",
+	"expiration" : 1861963200,
+	"name" : "Test Sub",
+	"throttling" : 5,
 	"createdAt" : REGEX(.*),
 	"modifiedAt" : REGEX(.*),
 	"subordinate" : [
@@ -417,15 +496,6 @@ MongoDB server version: REGEX(.*)
 			"runNo" : 1
 		}
 	],
-	"throttling" : 0,
-	"expression" : {
-		"geometry" : "",
-		"coords" : "",
-		"georel" : "",
-		"geoproperty" : "",
-		"q" : "",
-		"mq" : ""
-	},
 	"reference" : "http://REGEX(.*)/notify",
 	"mimeType" : "application/json",
 	"headers" : {
@@ -433,7 +503,6 @@ MongoDB server version: REGEX(.*)
 	},
 	"attrs" : [ ],
 	"format" : "normalized",
-	"conditions" : [ ],
 	"status" : "active",
 	"custom" : false,
 	"servicePath" : "/#",
@@ -446,17 +515,29 @@ bye
 08. GET the subscription from DB, see the subordinate subscription
 ==================================================================
 HTTP/1.1 200 OK
-Content-Length: 515
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
+    "description": "Description",
     "entities": [
         {
             "type": "T"
         }
     ],
+    "expiresAt": "2029-01-01T12:00:00.000Z",
+    "geoQ": {
+        "coordinates": [
+            1,
+            2,
+            3
+        ],
+        "geometry": "Point",
+        "geoproperty": "loc",
+        "georel": "near;maxDistance==100"
+    },
     "id": "urn:ngsi-ld:Subscription:S1",
     "isActive": true,
     "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
@@ -475,6 +556,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "status": "ok"
     },
     "origin": "database",
+    "q": "P1==1",
     "status": "active",
     "subordinate": [
         {
@@ -482,7 +564,12 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             "subscriptionId": "urn:ngsi-ld:Subscription:S1:1"
         }
     ],
-    "type": "Subscription"
+    "subscriptionName": "Test Sub",
+    "throttling": 5,
+    "type": "Subscription",
+    "watchedAttributes": [
+        "P1"
+    ]
 }
 
 
