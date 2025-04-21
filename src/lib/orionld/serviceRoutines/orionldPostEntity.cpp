@@ -86,7 +86,7 @@ static bool attributeToDbArray(KjNode* dbAttrArray, KjNode* apiAttributeP, KjNod
   // MUST CLONE as dbModelFromApiAttribute is DESTRUCTIVE + Need copy for dbAttrArray
   KjNode* dbAttributeP = kjClone(orionldState.kjsonP, apiAttributeP);
 
-  if (dbModelFromApiAttribute(dbAttributeP, dbAttrsP, attrsAddedV, NULL, ignoreP, true) == true)
+  if (dbModelFromApiAttribute(dbAttributeP, dbAttrsP, attrsAddedV, NULL, ignoreP, true, NULL) == true)  // FIXME: Need the pointer to the @datasets DB field
   {
     // Change name from .names to mdNames
     KjNode* mdNamesP = kjLookup(dbAttributeP, ".names");

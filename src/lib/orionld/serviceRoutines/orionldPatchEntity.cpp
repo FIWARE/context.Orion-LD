@@ -350,7 +350,7 @@ bool orionldPatchEntity(void)
       dotForEq(eqName);
 
       previousValuePopulate(dbAttrsP, NULL, eqName);
-      dbModelFromApiAttribute(attrP, dbAttrsP, NULL, NULL, NULL, true);  // Removes creDate for attributes
+      dbModelFromApiAttribute(attrP, dbAttrsP, NULL, NULL, NULL, true, NULL);  // Removes creDate for attributes + Need pointer to @datasets
     }
 
     attrP = next;

@@ -68,7 +68,7 @@ extern "C"
 //   * + "modDate"  is added
 //   * + "creDate"  is added OR "stolen" from dbAttrP
 //
-bool dbModelFromApiAttribute(KjNode* attrP, KjNode* dbAttrsP, KjNode* attrAddedV, KjNode* attrRemovedV, bool* ignoreP, bool stealCreDate)
+bool dbModelFromApiAttribute(KjNode* attrP, KjNode* dbAttrsP, KjNode* attrAddedV, KjNode* attrRemovedV, bool* ignoreP, bool stealCreDate, KjNode* datasets)
 {
   KjNode* mdP         = NULL;
   char*   attrEqName  = kaStrdup(&orionldState.kalloc, attrP->name);
@@ -99,7 +99,7 @@ bool dbModelFromApiAttribute(KjNode* attrP, KjNode* dbAttrsP, KjNode* attrAddedV
       return false;
     }
 
-    return dbModelFromApiAttributeDatasetArray(attrP, dbAttrsP, attrAddedV, attrRemovedV, ignoreP);
+    return dbModelFromApiAttributeDatasetArray(attrP, dbAttrsP, attrAddedV, attrRemovedV, ignoreP, datasets, attrDotName);
   }
 
   // Can also be datasetId without the attribute to be an array - just one instance BUT with a datasetId !
@@ -127,7 +127,7 @@ bool dbModelFromApiAttribute(KjNode* attrP, KjNode* dbAttrsP, KjNode* attrAddedV
     if (ignoreP != NULL)
       *ignoreP = true;  // Ignoring datasetId attrs for TRoE
 
-    return dbModelFromApiAttributeDatasetArray(attrP, dbAttrsP, attrAddedV, attrRemovedV, ignoreP);
+    return dbModelFromApiAttributeDatasetArray(attrP, dbAttrsP, attrAddedV, attrRemovedV, ignoreP, datasets, attrDotName);
   }
 
   KjNode*  dbAttrP = (dbAttrsP != NULL)? kjLookup(dbAttrsP, attrEqName) : NULL;
@@ -148,8 +148,8 @@ bool dbModelFromApiAttribute(KjNode* attrP, KjNode* dbAttrsP, KjNode* attrAddedV
   // - mdNames
   //
 
-  // Move special fields back to "attrP"
-  const char* specialV[] = { "type", "value", "object", "languageMap", "vocab", "json", "datasetId" };  // observedAt+unitCode are mds (db-model)
+  // Move special fields back to "attrP" (unitCode and observedAt are metadatas in the "md" field in the DB)
+  const char* specialV[] = { "type", "value", "object", "languageMap", "vocab", "json", "datasetId" };
   for (unsigned int ix = 0; ix < K_VEC_SIZE(specialV); ix++)
   {
     KjNode* nodeP = kjLookup(mdP, specialV[ix]);

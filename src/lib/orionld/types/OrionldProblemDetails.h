@@ -49,6 +49,10 @@ typedef struct OrionldProblemDetails
   char*                     registrationId;
   char*                     field;
   char*                     attribute;
+  char*                     entityId;
+  char*                     oldValue;
+  char*                     newValue;
+  char*                     datasetId;
 } OrionldProblemDetails;
 
 
@@ -81,6 +85,38 @@ extern void pdField(const char* fieldName);
 // pdAttribute - add value for OrionldProblemDetails::attribute
 //
 extern void pdAttribute(const char* attrName);
+
+
+
+// -----------------------------------------------------------------------------
+//
+// pdEntityId - add value for OrionldProblemDetails::entityId
+//
+extern void pdEntityId(const char* entityId);
+
+
+
+// -----------------------------------------------------------------------------
+//
+// pdOldValue - add value for OrionldProblemDetails::pdOldValue
+//
+extern void pdOldValue(const char* oldValue);
+
+
+
+// -----------------------------------------------------------------------------
+//
+// pdNewValue - add value for OrionldProblemDetails::pdNewValue
+//
+extern void pdNewValue(const char* newValue);
+
+
+
+// -----------------------------------------------------------------------------
+//
+// pdDatasetId - add value for OrionldProblemDetails::datasetId
+//
+extern void pdDatasetId(const char* datasetId);
 
 
 

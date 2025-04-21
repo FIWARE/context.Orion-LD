@@ -112,6 +112,8 @@ bool dbModelFromApiEntity(KjNode* entityP, KjNode* dbEntityP, bool creation, con
     }
   }
 
+  KjNode* datasets = (dbEntityP != NULL)? kjLookup(dbEntityP, "@datasets") : NULL;
+
   //
   // Create the "attrs" field and move all attributes from entityP to there ("attrs")
   // Then move "attrs" inside entityP
@@ -184,7 +186,7 @@ bool dbModelFromApiEntity(KjNode* entityP, KjNode* dbEntityP, bool creation, con
     bool ignore = false;
 
     next = attrP->next;
-    if (dbModelFromApiAttribute(attrP, dbAttrsP, attrAddedV, attrRemovedV, &ignore, false) == false)
+    if (dbModelFromApiAttribute(attrP, dbAttrsP, attrAddedV, attrRemovedV, &ignore, false, datasets) == false)
     {
       if (ignore == true)
         kjChildRemove(attrsP, attrP);

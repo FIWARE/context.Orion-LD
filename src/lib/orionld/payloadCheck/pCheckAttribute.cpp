@@ -299,8 +299,8 @@ inline bool pCheckAttributeString
   //
   // If all those are fulfilled, then the value (object) of the Relationship will be modified
   //
-  if ((orionldState.out.format == RF_SIMPLIFIED)                      &&
-      (orionldState.serviceP->serviceRoutine  == orionldPatchEntity2) &&
+  if ((orionldState.out.format                == RF_SIMPLIFIED)        &&
+      (orionldState.serviceP->serviceRoutine  == orionldPatchEntity2)  &&
       (attrTypeFromDb                         == Relationship))
   {
     if (pCheckUri(attrP->value.s, attrP->name, true) == false)
@@ -859,6 +859,31 @@ static bool isGeoJsonValue(KjNode* valueP)
 }
 
 
+
+// -----------------------------------------------------------------------------
+//
+// datasetInstances -
+//
+static int datasetInstances(KjNode* attrArrayP, const char* datasetId)
+{
+  int instances = 0;
+
+  for (KjNode* aInstanceP = attrArrayP->value.firstChildP; aInstanceP != NULL; aInstanceP = aInstanceP->next)
+  {
+    KjNode* datasetIdP = kjLookup(aInstanceP, "datasetId");
+
+    if (datasetIdP == NULL)
+      continue;
+
+    if ((datasetIdP->type == KjString) && (strcmp(datasetIdP->value.s, datasetId) == 0))
+      instances += 1;
+  }
+
+  return instances;
+}
+
+
+
 // -----------------------------------------------------------------------------
 //
 // multiAttributeArray -
@@ -868,21 +893,39 @@ bool multiAttributeArray(KjNode* attrArrayP, bool* errorP)
   int datasets = 0;
   int objects  = 0;
 
+  kjTreeLog(attrArrayP, "Attr Array", LmtDbModel);
+
   for (KjNode* aInstanceP = attrArrayP->value.firstChildP; aInstanceP != NULL; aInstanceP = aInstanceP->next)
   {
     if (aInstanceP->type != KjObject)
+    {
+      LM_T(LmtDbModel, ("Instance is not an object"));
       return false;
+    }
 
     KjNode* datasetIdP = kjLookup(aInstanceP, "datasetId");
 
     if (datasetIdP != NULL)
+    {
       ++datasets;
+
+      if (datasetInstances(attrArrayP, datasetIdP->value.s) > 1)
+      {
+        orionldError(OrionldBadRequestData, "More than one attribute instance with one and the same datasetId", attrArrayP->name, 400);
+        pdDatasetId(datasetIdP->value.s);
+        *errorP = true;
+        return false;
+      }
+    }
 
     ++objects;
   }
 
   if (datasets == 0)
+  {
+    LM_T(LmtDbModel, ("no datasets"));
     return false;
+  }
 
   if (objects - datasets > 1)  // More than one object without datasetId field
   {
@@ -891,6 +934,7 @@ bool multiAttributeArray(KjNode* attrArrayP, bool* errorP)
     return false;
   }
 
+  LM_T(LmtDbModel, ("dataset array recognized"));
   return true;
 }
 
@@ -909,6 +953,7 @@ bool deletionWithTypePresent(KjNode* attrP, KjNode* typeP)
     valueP = kjLookup(attrP, "value");
     if ((valueP != NULL) && (valueP->type == KjString) && (strcmp(valueP->value.s, "urn:ngsi-ld:null") == 0))
     {
+      LM_T(LmtAttrNames, ("Marking '%s' for REMOVAL", attrP->name));
       attrP->type = KjNull;
       return true;
     }
@@ -1283,7 +1328,10 @@ static bool pCheckAttributeObject
     next = fieldP->next;
 
     if ((fieldP->type == KjString) && (strcmp(fieldP->value.s, "urn:ngsi-ld:null") == 0))
+    {
+      LM_T(LmtAttrNames, ("Marking '%s' of '%s' for REMOVAL", fieldP->name, attrP->name));
       fieldP->type = KjNull;
+    }
 
     if (fieldP->type == KjNull)
     {
@@ -1591,6 +1639,7 @@ bool pCheckAttribute
   // "Direct" Deletion?
   if ((attrP->type == KjString) && (strcmp(attrP->value.s, "urn:ngsi-ld:null") == 0))
   {
+    LM_T(LmtAttrNames, ("Marking '%s' for REMOVAL", attrP->name));
     attrP->type = KjNull;
     return true;
   }
@@ -1606,8 +1655,10 @@ bool pCheckAttribute
   {
     bool error = false;
 
+    LM_T(LmtDbModel, ("It's an Attribute and it is an Array - datasets?"));
     if (multiAttributeArray(attrP, &error) == true)
     {
+      LM_T(LmtDbModel, ("Yes, datasets"));
       for (KjNode* aInstanceP = attrP->value.firstChildP; aInstanceP != NULL; aInstanceP = aInstanceP->next)
       {
         // Do I need the attribute instance in the DB?

@@ -44,8 +44,8 @@ orionldStart CB -experimental
 # 13. Attempt to PUT E1 with both id and @id - both matching the entity id in the URL PATH - see error
 # 14. Attempt to PUT E1 with both type and @type - see error
 # 15. Attempt to PUT E1 with an entity type that contains a forbidden character - see error
-# 16. Attempt to PUT E1 with an attribute as an object with datasetId - see 501 (for now at least)
-# 17. Attempt to PUT E1 with an attribute as an array with datasetId - see 501 (for now at least)
+# 16. Attempt to PUT E1 with an attribute as an array with duplicated datasetId - see error
+# 17. Attempt to PUT E1 with an attribute as an array with duplicated default instance - see error
 # 18. Attempt to PUT E1 with a duplicated attribute A1 - see error
 #
 
@@ -237,24 +237,8 @@ orionCurl --url /ngsi-ld/v1/entities/urn:E1 -X PUT --payload "$payload"
 echo
 echo
 
-
-echo "16. Attempt to PUT E1 with an attribute as an object with datasetId - see 501 (for now at least)"
-echo "================================================================================================"
-payload='{
-  "id": "urn:E1",
-  "type": "T",
-  "A1": {
-    "value": 1,
-    "datasetId": "urn:dataset:1"
-  }
-}'
-orionCurl --url /ngsi-ld/v1/entities/urn:E1 -X PUT --payload "$payload"
-echo
-echo
-
-
-echo "17. Attempt to PUT E1 with an attribute as an array with datasetId - see 501 (for now at least)"
-echo "==============================================================================================="
+echo "16. Attempt to PUT E1 with an attribute as an array with duplicated datasetId - see error"
+echo "========================================================================================="
 payload='{
   "id": "urn:E1",
   "type": "T",
@@ -262,6 +246,33 @@ payload='{
     {
       "value": 1,
       "datasetId": "urn:dataset:1"
+    },
+    {
+      "value": 2,
+      "datasetId": "urn:dataset:1"
+    }
+  ]
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:E1 -X PUT --payload "$payload"
+echo
+echo
+
+
+echo "17. Attempt to PUT E1 with an attribute as an array with duplicated default instance - see error"
+echo "================================================================================================"
+payload='{
+  "id": "urn:E1",
+  "type": "T",
+  "A1": [
+    {
+      "value": 1
+    },
+    {
+      "value": 2,
+      "datasetId": "urn:dataset:1"
+    },
+    {
+      "value": 3
     }
   ]
 }'
@@ -483,31 +494,32 @@ Date: REGEX(.*)
 }
 
 
-16. Attempt to PUT E1 with an attribute as an object with datasetId - see 501 (for now at least)
-================================================================================================
-HTTP/1.1 501 Not Implemented
-Content-Length: 139
+16. Attempt to PUT E1 with an attribute as an array with duplicated datasetId - see error
+=========================================================================================
+HTTP/1.1 400 Bad Request
+Content-Length: 223
 Content-Type: application/json
 Date: REGEX(.*)
 
 {
-    "detail": "datasetId",
-    "title": "Not Implemented (for this request type)",
-    "type": "https://uri.etsi.org/ngsi-ld/errors/OperationNotSupported"
+    "datasetId": "urn:dataset:1",
+    "detail": "https://uri.etsi.org/ngsi-ld/default-context/A1",
+    "title": "More than one attribute instance with one and the same datasetId",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/BadRequestData"
 }
 
 
-17. Attempt to PUT E1 with an attribute as an array with datasetId - see 501 (for now at least)
-===============================================================================================
-HTTP/1.1 501 Not Implemented
-Content-Length: 139
+17. Attempt to PUT E1 with an attribute as an array with duplicated default instance - see error
+================================================================================================
+HTTP/1.1 400 Bad Request
+Content-Length: 179
 Content-Type: application/json
 Date: REGEX(.*)
 
 {
-    "detail": "datasetId",
-    "title": "Not Implemented (for this request type)",
-    "type": "https://uri.etsi.org/ngsi-ld/errors/OperationNotSupported"
+    "detail": "https://uri.etsi.org/ngsi-ld/default-context/A1",
+    "title": "More than one default attribute in dataset array",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/BadRequestData"
 }
 
 
@@ -527,4 +539,4 @@ Date: REGEX(.*)
 
 --TEARDOWN--
 brokerStop CB
-dbDrop CB
+#dbDrop CB
