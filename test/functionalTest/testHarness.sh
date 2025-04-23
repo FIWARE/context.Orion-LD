@@ -185,6 +185,7 @@ function usage()
   echo "$sfile [-u (usage)]"
   echo "$empty [-v (verbose)]"
   echo "$empty [-t (trace level for broker)]"
+  echo "$empty [-kt (ktrace level for broker)]"
   echo "$empty [--loud (loud - see travis extra info)]"
   echo "$empty [-ld (only ngsild tests)]"
   echo "$empty [-troe (only ngsild TRoE (Temporal Representation of Entities) tests)]"
@@ -215,6 +216,7 @@ function usage()
   echo ""
   echo "Env Vars:"
   echo "CB_TRACELEVELS:          the trace-level string, as used with -t for the broker"
+  echo "CB_KTRACELEVELS:         the ktrace-level string, as used with -kt for the broker"
   echo "CB_MAX_TRIES:            the number of tries before giving up on a failing test case"
   echo "CB_SKIP_LIST:            default value for option --skipList"
   echo "CB_SKIP_FUNC_TESTS:      comma-separated list of names of func tests to skip"
@@ -566,6 +568,7 @@ do
   if   [ "$1" == "-u" ];             then usage 0;
   elif [ "$1" == "-v" ];             then verbose=on;
   elif [ "$1" == "-t" ];             then export CB_TRACELEVELS="$2"; shift;
+  elif [ "$1" == "-kt" ];            then export CB_KTRACELEVELS="$2"; shift;
   elif [ "$1" == "-eb" ];            then externalBroker=ON;
   elif [ "$1" == "-tk" ];            then CB_DIFF_TOOL=tkdiff;
   elif [ "$1" == "-meld" ];          then CB_DIFF_TOOL=meld;

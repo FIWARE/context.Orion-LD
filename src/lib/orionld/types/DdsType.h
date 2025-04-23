@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_
-#define SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_
+#ifndef SRC_LIB_ORIONLD_TYPES_DDSTYPE_H_
+#define SRC_LIB_ORIONLD_TYPES_DDSTYPE_H_
 
 /*
 *
-* Copyright 2022 FIWARE Foundation e.V.
+* Copyright 2025 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -28,28 +28,16 @@
 
 
 
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 //
-// Trace Levels -
+// DdsType -
 //
-typedef enum OrionldTraceLevels
+typedef struct DdsType
 {
-  StMhdInit         = 100,
-  StSR              = 101,
+  char*           typeName;
+  char*           type;
+  char*           topic;
+  struct DdsType* next;
+} DdsType;
 
-  StRequest         = 200,
-  StDds             = 201,
-  StDdsPublish      = 202,
-  StDdsNotification = 203,
-  StDdsLibInfo      = 204,
-  StDdsLibDebug     = 205,
-  StDdsConfig       = 206,
-  StServiceRoutines = 207,
-  StDdsTypes        = 208,
-  StDdsTypeCache    = 209,
-
-  StDump            = 300,
-  StDdsDump         = 301
-} OrionldTraceLevels;
-
-#endif  // SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_
+#endif  // SRC_LIB_ORIONLD_TYPES_DDSTYPE_H_

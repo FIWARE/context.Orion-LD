@@ -29,6 +29,7 @@ SET (SOURCES
   ddsAttributeCreate.cpp
   ddsPublishAttribute.cpp
   ddsPublishAttributes.cpp
+  ddsTypes.cpp
 )
 
 # Include directories

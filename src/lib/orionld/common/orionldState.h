@@ -640,6 +640,7 @@ extern char                localIpAndPort[135];    // Local address for X-Forwar
 extern unsigned long long  inReqPayloadMaxSize;
 extern unsigned long long  outReqMsgMaxSize;
 extern bool                extras;
+extern char                kTraceLevels[256];
 
 
 

@@ -568,6 +568,11 @@ function orionldStart
     extraParams="-logLevel DEBUG -t $CB_TRACELEVELS "${extraParams}
   fi
 
+  if [ "$CB_KTRACELEVELS" != "" ]
+  then
+    extraParams="$extraParams -kt $CB_KTRACELEVELS"
+  fi
+
   echo extraParams: $extraParams > /tmp/orionldStart
 
   if [ "$role" == "CB" ]
