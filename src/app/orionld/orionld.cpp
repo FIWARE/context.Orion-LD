@@ -255,6 +255,7 @@ char            defaultUserContextUrl[256];
 bool            ddsSupport       = false;
 char            configFile[512];
 bool            extras;
+char            kTraceLevels[256];
 
 
 
@@ -354,6 +355,8 @@ bool            extras;
 #define PAGE_SIZE_DESC         "default page size (no of entities, subscriptions, registrations)"
 #define DUC_URL_DESC           "URL to default user context"
 #define EXTRAS_DESC            "Extra stuff, non-NGSI-LD, like 'origin' in subs/regs"
+#define KTRACE_LEVELS_DESC     "K-Trace levels"
+
 
 
 // -----------------------------------------------------------------------------
@@ -458,10 +461,11 @@ PaArgument paArgs[] =
   { "-noprom",                &noprom,                  "NO_PROM",                   PaBool,    PaHid,  false,            false,  true,             NO_PROM_DESC             },
   { "-noArrayReduction",      &noArrayReduction,        "NO_ARRAY_REDUCTION",        PaBool,    PaHid,  false,            false,  true,             NO_ARR_REDUCT_DESC       },
   { "-extras",                &extras,                  "EXTRAS",                    PaBool,    PaHid,  false,            false,  true,             EXTRAS_DESC              },
-  { "-subordinateEndpoint",   &subordinateEndpoint,     "SUBORDINATE_ENDPOINT",      PaStr,     PaOpt,  _i "",           PaNL,   PaNL,             SUBORDINATE_ENDPOINT_DESC },
-  { "-pageSize",              &pageSize,                "PAGE_SIZE",                 PaInt,     PaOpt,  20,              1,      1000,             PAGE_SIZE_DESC            },
-  { "-configFile",            configFile,               "CONFIG_FILE",               PaString,  PaOpt,  _i "",             PaNL,   PaNL,             CONFIG_FILE_DESC        },
-  { "-duc",                   defaultUserContextUrl,    "DUC_URL",                   PaString,  PaOpt,  _i "",             PaNL,   PaNL,             DUC_URL_DESC            },
+  { "-subordinateEndpoint",   &subordinateEndpoint,     "SUBORDINATE_ENDPOINT",      PaStr,     PaOpt,  _i "",             PaNL,  PaNL,             SUBORDINATE_ENDPOINT_DESC },
+  { "-pageSize",              &pageSize,                "PAGE_SIZE",                 PaInt,     PaOpt,  20,                   1,  1000,             PAGE_SIZE_DESC            },
+  { "-configFile",            configFile,               "CONFIG_FILE",               PaString,  PaOpt,  _i "",             PaNL,  PaNL,             CONFIG_FILE_DESC          },
+  { "-duc",                   defaultUserContextUrl,    "DUC_URL",                   PaString,  PaOpt,  _i "",             PaNL,  PaNL,             DUC_URL_DESC              },
+  { "-kt",                    kTraceLevels,             "KTRACE_LEVELS",             PaString,  PaOpt,  _i "",             PaNL,  PaNL,             KTRACE_LEVELS_DESC        },
 
   PA_END_OF_ARGS
 };
@@ -1073,7 +1077,6 @@ int main(int argC, char* argV[])
   // Initializing the new logging library, kTrace
   //
   KBool          kLogToScreen = KTRUE;
-  char*          kTraceLevels = (char*) "0-5000";
   char*          kLogLevel    = (char*) "DEBUG";
   KBool          kVerbose     = KTRUE;
   KBool          kDebug       = KTRUE;

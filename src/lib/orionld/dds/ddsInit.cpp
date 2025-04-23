@@ -23,6 +23,7 @@
 * Author: Ken Zangelin
 */
 #include <unistd.h>                                         // access
+#include <stdlib.h>                                         // malloc
 #include <memory>                                           // for std::unique_ptr
 
 #include "ddsenabler/dds_enabler_runner.hpp"                // dds enabler
@@ -37,10 +38,12 @@ extern "C"
 
 #include "logMsg/logMsg.h"                                  // lmOut
 
+#include "orionld/types/DdsType.h"                          // DdsType
 #include "orionld/common/traceLevels.h"                     // kjTreeLog2
 #include "orionld/common/orionldState.h"                    // configFile
 #include "orionld/kjTree/kjNavigate.h"                      // kjNavigate
 #include "orionld/dds/kjTreeLog.h"                          // kjTreeLog2
+#include "orionld/dds/ddsTypes.h"                           // ddsTypeNotification, ddsTypeLookup
 #include "orionld/dds/ddsNotification.h"                    // ddsNotification
 #include "orionld/dds/ddsCategoryToKlogSeverity.h"          // ddsCategoryToKlogSeverity
 #include "orionld/dds/ddsInit.h"                            // Own interface
@@ -57,37 +60,18 @@ std::unique_ptr<eprosima::ddsenabler::DDSEnabler>  ddsEnabler;
 
 // -----------------------------------------------------------------------------
 //
-// ddsTypeNotification -
-//
-static void ddsTypeNotification
-(
-  const char*           typeName,
-  const char*           serializedType,
-  const unsigned char*  serializedTypeInternal,
-  uint32_t              serializedTypeInternalSize,
-  const char*           dataPlaceholder
-)
-{
-  KT_T(StDds, "----------------------------------------");
-  KT_T(StDds, "Got a type notification:");
-  KT_T(StDds, "o typeName:                    %s", typeName);
-  KT_T(StDds, "o serializedType:              %s", serializedType);
-  KT_T(StDds, "o serializedTypeInternal:      %s", serializedTypeInternal);
-  KT_T(StDds, "o serializedTypeInternalSize:  %d", serializedTypeInternalSize);
-  KT_T(StDds, "o dataPlaceholder:             %s", dataPlaceholder);
-  KT_T(StDds, "Nothing done, for now at least");
-  KT_T(StDds, "----------------------------------------");
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
 // ddsTopicNotification -
 //
 static void ddsTopicNotification(const char* topicName, const char* typeName, const char* serializedQos)
 {
   KT_T(StDds, "Got a topic notification ('%s', '%s', '%s')", topicName, typeName, serializedQos);
+
+  DdsType* typeP = ddsTypeLookup(typeName);
+
+  if (typeP != NULL)
+    typeP->topic = strdup(topicName);
+
+  ddsTypeList();
 }
 
 
@@ -96,9 +80,14 @@ static void ddsTopicNotification(const char* topicName, const char* typeName, co
 //
 // ddsTypeRequest -
 //
-static void ddsTypeRequest(const char* typeName, unsigned char*& serializedTypeInternal, uint32_t& serializedTypeInternalSize)
+static void ddsTypeRequest
+(
+  const char*      typeName,
+  unsigned char*&  serializedTypeInternal,
+  uint32_t&        serializedTypeInternalSize
+)
 {
-  KT_T(StDds, "Got a type request callback ('%s', '%s', %d)", typeName, serializedTypeInternal, serializedTypeInternalSize);
+  KT_T(StDdsTypes, "Got a type request callback ('%s', '%s', %d)", typeName, serializedTypeInternal, serializedTypeInternalSize);
 }
 
 

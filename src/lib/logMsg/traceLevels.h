@@ -189,7 +189,7 @@ typedef enum TraceLevels
   //
   // DDS
   //
-  LmtDds     = 240,                    // DDS
+  LmtDds     = 240,                    // DDS General
 
   LmtCurl    = 250,                    // CURL library
   LmtToDo,                             // To Do list
