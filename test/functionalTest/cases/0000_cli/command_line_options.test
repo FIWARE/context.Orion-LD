@@ -107,5 +107,6 @@ Usage: orionld  [option '-U' (extended usage)]
                 [option '-pageSize' <default page size (no of entities, subscriptions, registrations)>]
                 [option '-configFile' <Path to configuration file>]
                 [option '-duc' <URL to default user context>]
+                [option '-kt' <K-Trace levels>]
 
 --TEARDOWN--
