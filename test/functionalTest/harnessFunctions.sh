@@ -838,6 +838,8 @@ function brokerStop
 #
 function ftClientStart()
 {
+  ftClientStop
+
   _port=7701
   _verbose=""
   _traceLevels=""

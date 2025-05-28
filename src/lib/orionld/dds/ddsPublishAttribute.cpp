@@ -132,6 +132,8 @@ void ddsPublishAttribute(char* topic, const char* attrName, KjNode* attrP, bool 
   DdsType* typeP = ddsTypeLookupByTopic(topic);
   KjNode*  itemP = valueP->value.firstChildP;
   KjNode*  next;
+  int      itemsToPublish = 0;
+  int      itemsToIgnore  = 0;
 
   while (itemP != NULL)
   {
@@ -142,9 +144,18 @@ void ddsPublishAttribute(char* topic, const char* attrName, KjNode* attrP, bool 
     {
       KT_T(StDdsTypes, "Not publishing the value field '%s' as it is not part of the DDS type '%s' (%s)", item, typeP->typeName, typeP->type);
       kjChildRemove(valueP, itemP);
+      ++itemsToIgnore;
     }
+    else
+      ++itemsToPublish;
 
     itemP = next;
+  }
+
+  if (itemsToPublish == 0)
+  {
+    KT_T(StDdsTypes, "Nothing to publish, %d value fields ignored", itemsToIgnore);
+    return;
   }
 
   int   serialiedSize = kjFastRenderSize(valueP);

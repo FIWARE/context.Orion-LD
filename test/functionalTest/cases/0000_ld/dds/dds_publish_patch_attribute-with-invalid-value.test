@@ -21,7 +21,7 @@
 # VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
 
 --NAME--
-the test client publishes on DDS, the broker receives DDS notifications and creates/updates the corresponding NGSI-LD entities
+Update an attribute value (via HTTP) that does not coincide with its DDS structure
 
 --SHELL-INIT--
 $REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" --ddsTopic "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.orionld
@@ -29,21 +29,20 @@ $REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,s
 dbInit CB
 pgInit $CB_DB_NAME
 orionldStart CB -mongocOnly -wip dds
-ftClientStop
 ftClientStart -t 0-5000
 
 --SHELL--
 
 #
-# 01. Ask FT to publish an entity urn:ngsi-ld:camera:cam1 on topic 'P1'
+# 01. Ask FT to publish an entity urn:ngsi-ld:camera:cam1 on topic 'P1' (attribute 'shutterSpeed')
 # 02. GET urn:ngsi-ld:camera:cam1 from CB
-# 03. PATCH the attribute shutterSpeed of urn:ngsi-ld:camera:cam1
+# 03. PATCH the attribute shutterSpeed of urn:ngsi-ld:camera:cam1 with an invalid value
 # 04. GET urn:ngsi-ld:camera:cam1 from CB, see the update
-# 05. Dump the ftClient for DDS notifications - see the PATCH in DDS
+# 05. Dump the ftClient for DDS notifications - see no PATCH in DDS
 #
 
-echo "01. Ask FT to publish an entity urn:ngsi-ld:camera:cam1 on topic 'P1'"
-echo "====================================================================="
+echo "01. Ask FT to publish an entity urn:ngsi-ld:camera:cam1 on topic 'P1' (attribute 'shutterSpeed')"
+echo "================================================================================================"
 payload='{
   "s": "111"
 }'
@@ -59,18 +58,11 @@ echo
 echo
 
 
-echo "03. PATCH the attribute shutterSpeed of urn:ngsi-ld:camera:cam1"
-echo "==============================================================="
+echo "03. PATCH the attribute shutterSpeed of urn:ngsi-ld:camera:cam1 with an invalid value"
+echo "====================================================================================="
 payload='{
   "value": {
-    "s": "333",
-    "b": true,
-    "f": 3.333,
-    "i": 3,
-    "ia": [
-      3,
-      3
-    ]
+    "z": 1
   }
 }'
 orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:camera:cam1/attrs/shutterSpeed -X PATCH --payload "$payload"
@@ -85,8 +77,8 @@ echo
 echo
 
 
-echo "05. Dump the ftClient for DDS notifications - see the PATCH in DDS"
-echo "=================================================================="
+echo "05. Dump the ftClient for DDS notifications - see no PATCH in DDS"
+echo "================================================================="
 sleep 1
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
 echo
@@ -94,8 +86,8 @@ echo
 
 
 --REGEXPECT--
-01. Ask FT to publish an entity urn:ngsi-ld:camera:cam1 on topic 'P1'
-=====================================================================
+01. Ask FT to publish an entity urn:ngsi-ld:camera:cam1 on topic 'P1' (attribute 'shutterSpeed')
+================================================================================================
 HTTP/1.1 204 No Content
 Date: REGEX(.*)
 
@@ -148,8 +140,8 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 }
 
 
-03. PATCH the attribute shutterSpeed of urn:ngsi-ld:camera:cam1
-===============================================================
+03. PATCH the attribute shutterSpeed of urn:ngsi-ld:camera:cam1 with an invalid value
+=====================================================================================
 HTTP/1.1 204 No Content
 Date: REGEX(.*)
 
@@ -184,14 +176,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         },
         "type": "Property",
         "value": {
-            "b": true,
-            "f": 3.333,
-            "i": 3,
-            "ia": [
-                3,
-                3
-            ],
-            "s": "333"
+            "z": 1
         },
         "xId": {
             "type": "Property",
@@ -202,8 +187,8 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 }
 
 
-05. Dump the ftClient for DDS notifications - see the PATCH in DDS
-==================================================================
+05. Dump the ftClient for DDS notifications - see no PATCH in DDS
+=================================================================
 HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
 Date: REGEX(.*)
@@ -221,25 +206,6 @@ Date: REGEX(.*)
             0
           ],
           "s": "111"
-        }
-      },
-      "type": "NgsildSample"
-    },
-    "id": "REGEX(.*)",
-    "type": "fastdds"
-  },
-  {
-    "P1": {
-      "data": {
-        "REGEX(.*)": {
-          "b": true,
-          "f": 3.333,
-          "i": 3,
-          "ia": [
-            3,
-            3
-          ],
-          "s": "333"
         }
       },
       "type": "NgsildSample"
