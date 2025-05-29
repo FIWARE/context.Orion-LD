@@ -47,6 +47,7 @@ extern "C"
 #include "orionld/payloadCheck/pCheckEntityType.h"               // pCheckEntityType
 #include "orionld/payloadCheck/pCheckEntity.h"                   // pCheckEntity
 #include "orionld/notifications/previousValues.h"                // previousValues
+#include "orionld/dds/ddsPublishAttribute.h"                     // ddsPublishAttribute
 #include "orionld/serviceRoutines/orionldPutEntity.h"            // Own Interface
 
 
@@ -219,6 +220,17 @@ bool orionldPutEntity(void)
   orionldState.alterations->alteredAttributes           = 0;
   orionldState.alterations->alteredAttributeV           = NULL;
   orionldState.alterations->next                        = NULL;
+
+  if (ddsSupport == true)
+  {
+    for (KjNode* attrP = orionldState.requestTree->value.firstChildP; attrP != NULL; attrP = attrP->next)
+    {
+      if (strcmp(attrP->name, "id")   == 0) continue;
+      if (strcmp(attrP->name, "type") == 0) continue;
+
+      ddsPublishAttribute(entityId, attrP->name, attrP, false);
+    }
+  }
 
   //
   // Is the entity id inside orionldState.requestTree?
