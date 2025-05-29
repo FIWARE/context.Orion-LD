@@ -57,6 +57,7 @@ extern "C"
 #include "orionld/distOp/distOpListRelease.h"                    // distOpListRelease
 #include "orionld/distOp/distOpSuccess.h"                        // distOpSuccess
 #include "orionld/distOp/distOpFailure.h"                        // distOpFailure
+#include "orionld/dds/ddsPublishAttribute.h"                     // ddsPublishAttribute
 #include "orionld/serviceRoutines/orionldPostEntity.h"           // Own Interface
 
 
@@ -333,7 +334,6 @@ bool orionldPostEntity(void)
     }
   }
 
-#if 0
   //
   // We publish on DDS if 'ddsSupport' is on.
   // BUT, we don't publish if the info comes from DDS, obviously!
@@ -347,10 +347,9 @@ bool orionldPostEntity(void)
       if (strcmp(attrP->name, "type") == 0) continue;
 
       if (kjLookup(orionldState.requestTree, attrP->name) != NULL)
-        ddsPublishAttribute(ddsTopicType, orionldState.alterations->entityType, orionldState.alterations->entityId, attrP);
+        ddsPublishAttribute(orionldState.alterations->entityId, attrP->name, attrP, false);
     }
   }
-#endif
 
   if (attrExists->value.firstChildP != NULL)
   {
