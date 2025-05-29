@@ -443,10 +443,7 @@ bool orionldPatchEntity(void)
       strncpy(eqName, attrP->name, sizeof(eqName) - 1);
       dotForEq(eqName);
       if (kjLookup(orionldState.requestTree, eqName) != NULL)
-      {
-        LM_W(("Publishing attribute '%s'", attrP->name));
         ddsPublishAttribute(entityId, attrP->name, attrP, false);
-      }
     }
   }
 
