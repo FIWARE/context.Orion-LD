@@ -27,7 +27,6 @@ Update an attribute value (via HTTP) that does not coincide with its DDS structu
 $REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" --ddsTopic "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.orionld
 $REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" --ddsTopic "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.ftClient
 dbInit CB
-pgInit $CB_DB_NAME
 orionldStart CB -mongocOnly -wip dds
 ftClientStart -t 0-5000
 

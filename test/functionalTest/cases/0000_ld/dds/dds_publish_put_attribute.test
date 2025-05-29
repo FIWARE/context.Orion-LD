@@ -21,7 +21,7 @@
 # VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
 
 --NAME--
-the test client publishes on DDS, the broker receives DDS notifications and creates/updates the corresponding NGSI-LD entities
+PUT Attribute propagated to DDS system
 
 --SHELL-INIT--
 $REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" --ddsTopic "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.orionld
@@ -36,9 +36,9 @@ ftClientStart -t 0-5000
 #
 # 01. Ask FT to publish an entity urn:ngsi-ld:camera:cam1 on topic 'P1'
 # 02. GET urn:ngsi-ld:camera:cam1 from CB
-# 03. PATCH the attribute shutterSpeed of urn:ngsi-ld:camera:cam1
+# 03. PUT the attribute shutterSpeed of urn:ngsi-ld:camera:cam1
 # 04. GET urn:ngsi-ld:camera:cam1 from CB, see the update
-# 05. Dump the ftClient for DDS notifications - see the PATCH in DDS
+# 05. Dump the ftClient for DDS notifications - see the PUT in DDS
 #
 
 echo "01. Ask FT to publish an entity urn:ngsi-ld:camera:cam1 on topic 'P1'"
@@ -58,8 +58,8 @@ echo
 echo
 
 
-echo "03. PATCH the attribute shutterSpeed of urn:ngsi-ld:camera:cam1"
-echo "==============================================================="
+echo "03. PUT the attribute shutterSpeed of urn:ngsi-ld:camera:cam1"
+echo "============================================================="
 payload='{
   "value": {
     "s": "333",
@@ -72,7 +72,7 @@ payload='{
     ]
   }
 }'
-orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:camera:cam1/attrs/shutterSpeed -X PATCH --payload "$payload"
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:camera:cam1/attrs/shutterSpeed -X PUT --payload "$payload"
 echo
 echo
 
@@ -84,8 +84,8 @@ echo
 echo
 
 
-echo "05. Dump the ftClient for DDS notifications - see the PATCH in DDS"
-echo "=================================================================="
+echo "05. Dump the ftClient for DDS notifications - see the PUT in DDS"
+echo "================================================================"
 sleep 1
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
 echo
@@ -147,8 +147,8 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 }
 
 
-03. PATCH the attribute shutterSpeed of urn:ngsi-ld:camera:cam1
-===============================================================
+03. PUT the attribute shutterSpeed of urn:ngsi-ld:camera:cam1
+=============================================================
 HTTP/1.1 204 No Content
 Date: REGEX(.*)
 
@@ -169,18 +169,6 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     },
     "id": "urn:ngsi-ld:camera:cam1",
     "shutterSpeed": {
-        "ddsDataType": {
-            "type": "Property",
-            "value": "NgsildSample"
-        },
-        "participantId": {
-            "type": "Property",
-            "value": "REGEX(.*)"
-        },
-        "publishedAt": {
-            "type": "Property",
-            "value": REGEX(.*)
-        },
         "type": "Property",
         "value": {
             "b": true,
@@ -191,18 +179,14 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
                 3
             ],
             "s": "333"
-        },
-        "xId": {
-            "type": "Property",
-            "value": "REGEX(.*)"
         }
     },
     "type": "Camera"
 }
 
 
-05. Dump the ftClient for DDS notifications - see the PATCH in DDS
-==================================================================
+05. Dump the ftClient for DDS notifications - see the PUT in DDS
+================================================================
 HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
 Date: REGEX(.*)
