@@ -70,6 +70,7 @@ extern "C"
 #include "orionld/dds/kjTreeLog.h"                               // kjTreeLog2
 #include "orionld/dds/ddsEntityCreateFromAttribute.h"            // ddsEntityCreateFromAttribute
 #include "orionld/dds/ddsAttributeCreate.h"                      // ddsAttributeCreate
+#include "orionld/dds/ddsPublishAttribute.h"                     // ddsPublishAttribute
 #include "orionld/notifications/alteration.h"                    // alteration
 #include "orionld/notifications/previousValuePopulate.h"         // previousValuePopulate
 #include "orionld/notifications/sysAttrsStrip.h"                 // sysAttrsStrip
@@ -261,7 +262,7 @@ bool orionldPutAttribute(void)
 
   //
   // Is a DDS notification the source of this update?
-  // For now, distOps for DDS notifications is not enabled
+  // If so, and if the entity doesn't exist, redirect to different servide routine (oprionldPostEntities)
   //
   if ((orionldState.ddsSample == true) && (dbEntityP == NULL))
     return ddsEntityCreateFromAttribute(orionldState.requestTree, entityId, attrName);
@@ -440,7 +441,6 @@ bool orionldPutAttribute(void)
       orionldError(OrionldResourceNotFound, "Attribute Dataset Instance Not Found", attrName, 404);
   }
 
-  LM_T(LmtSR, ("dbEntityP at %p", dbEntityP));
 
   //
   // Local DB processing
@@ -448,38 +448,29 @@ bool orionldPutAttribute(void)
   double createdAt = 0;
   if (dbEntityP != NULL)
   {
-    LM_T(LmtSR, ("dbEntityP at %p", dbEntityP));
     //
     // Need to keep the initial attribute (orionldState.requestTree) for notifications, TRoE, DDS
     // So, we close the payload to create thje DB modeled attribute
     //
     KjNode* dbAttributeP = kjClone(orionldState.kjsonP, orionldState.requestTree);
-    LM_T(LmtSR, ("dbEntityP at %p", dbEntityP));
 
     // The attribute name needs to be in DB format (replace dots for '=')
     dbAttributeP->name = attrLongNameEq;
-    LM_T(LmtSR, ("dbEntityP at %p", dbEntityP));
 
     bool  r      = false;
     char* detail = (char*) "all good";
 
-    LM_T(LmtSR, ("dbEntityP at %p", dbEntityP));
     if (dbAttrDatasetP != NULL)  // dataset instance to be replaced
     {
-      LM_T(LmtSR, ("dbEntityP at %p", dbEntityP));
       // Need the createdAt from the DB, as it must stay intact
       KjNode* createdAtP  = kjLookup(dbAttrDatasetP, "createdAt");
 
       createdAt   = (createdAtP != NULL)? createdAtP->value.f : 0;
-      LM_T(LmtSR, ("dbEntityP at %p", dbEntityP));
       dbModelAttributeCreatedAtSet(dbAttributeP, createdAt, "createdAt");
-      LM_T(LmtSR, ("dbEntityP at %p", dbEntityP));
 
       KjNode* modifiedAtP = kjFloat(orionldState.kjsonP, "modifiedAt", orionldState.requestTime);
       kjChildAdd(dbAttributeP, modifiedAtP);
-      LM_T(LmtSR, ("dbEntityP at %p", dbEntityP));
       datasetInstanceReplace(dbAttrDatasetV, dbAttrDatasetP, dbAttributeP);
-      LM_T(LmtSR, ("dbEntityP at %p", dbEntityP));
 
       char datasetPath[512];
       snprintf(datasetPath, sizeof(datasetPath) - 1, "@datasets.%s", attrLongNameEq);
@@ -487,7 +478,6 @@ bool orionldPutAttribute(void)
     }
     else if (dbAttrP != NULL)  // Default attribute is being replaced
     {
-  LM_T(LmtSR, ("dbEntityP at %p", dbEntityP));
       // Need the createdAt from the DB, as it must stay intact
       KjNode* creDateP = kjLookup(dbAttrP, "creDate");
       createdAt  = (creDateP != NULL)? creDateP->value.f : 0;
@@ -513,6 +503,10 @@ bool orionldPutAttribute(void)
     else
       orionldState.httpStatusCode = 204;
   }
+
+  // DDS
+  if ((ddsSupport == true) && (orionldState.ddsSample == false))  // NOT Coming in from DDS
+    ddsPublishAttribute(entityId, attrName, orionldState.requestTree, false);
 
  response:
   // TRoE+Alterations needs the expanded attribute name for the payload body
