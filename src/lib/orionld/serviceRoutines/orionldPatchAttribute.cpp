@@ -479,7 +479,7 @@ bool orionldPatchAttribute(void)
             if (attrP != NULL)
             {
               KT_T(StDds, "Publishing '%s' on DDS", attrP->name);
-              ddsPublishAttribute(NULL, shortName, attrP, false);
+              ddsPublishAttribute(entityId, shortName, attrP, false);
             }
             else
               KT_W("Can't find attribute '%s' in finalApiEntityWithoutSysAttrsP", shortName);

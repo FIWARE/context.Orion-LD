@@ -769,7 +769,7 @@ bool orionldPatchEntity2(void)
     if ((ddsSupport == true) && (orionldState.alterations != NULL))
     {
       orionldState.requestTree = patchTree;
-      ddsPublishAttributes(incoming, dbAttrsP);
+      ddsPublishAttributes(entityId, incoming, dbAttrsP);
     }
   }
 

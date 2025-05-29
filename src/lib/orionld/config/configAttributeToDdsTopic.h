@@ -32,6 +32,6 @@
 //
 // configAttributeToDdsTopic -
 //
-extern char* configAttributeToDdsTopic(const char* attributeShortName);
+extern char* configAttributeToDdsTopic(const char* entityId, const char* attributeShortName);
 
 #endif  // SRC_LIB_ORIONLD_CONFIG_CONFIGATTRIBUTETODDSTOPIC_H_

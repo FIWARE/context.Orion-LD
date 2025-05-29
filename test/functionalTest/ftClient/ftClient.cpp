@@ -177,7 +177,9 @@ extern KjNode* ddsDumpArray;
 //
 static void ddsNotification(const char* topicName, const char* json, int64_t publishTime)
 {
+  KT_T(StDdsDump, "**********************************************************************************");
   KT_T(StDdsDump, "Got a notification on topic '%s' (json: %s)", topicName, json);
+  KT_T(StDdsDump, "**********************************************************************************");
 
   orionldStateInit(NULL);
   KjNode* dump = kjParse(orionldState.kjsonP, (char*) json);

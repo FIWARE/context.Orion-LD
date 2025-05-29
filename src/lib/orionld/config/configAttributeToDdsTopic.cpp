@@ -32,6 +32,7 @@ extern "C"
 #include "ktrace/kTrace.h"                                    // trace messages - ktrace library
 }
 
+#include "orionld/common/traceLevels.h"                       // KT tracelevels
 #include "orionld/config/configInit.h"                        // configTree
 #include "orionld/kjTree/kjNavigate.h"                        // kjNavigate
 #include "orionld/dds/kjTreeLog.h"                            // kjTreeLog2
@@ -43,7 +44,7 @@ extern "C"
 //
 // configAttributeToDdsTopic -
 //
-char* configAttributeToDdsTopic(const char* attributeShortName)
+char* configAttributeToDdsTopic(const char* entityId, const char* attributeShortName)
 {
   if (configTree == NULL)
     return NULL;  // No error - it's OK to not have a DDS Config File
@@ -52,14 +53,18 @@ char* configAttributeToDdsTopic(const char* attributeShortName)
   static KjNode* topicsP = kjNavigate(configTree, path, NULL, NULL);
 
   if (topicsP == NULL)
-    KT_RE(NULL, "the field dds/ngsild/topic not found in DDS config file (looking for attribute '%s')", attributeShortName);
+    KT_RE(NULL, "the field dds/ngsild/topic not found in DDS config file (looking for attribute '%s' of entity '%s')", attributeShortName, entityId);
 
   for (KjNode* topicP = topicsP->value.firstChildP; topicP != NULL; topicP = topicP->next)
   {
     KjNode* attrNodeP = kjLookup(topicP, "attribute");
+    KjNode* entityIdP = kjLookup(topicP, "entityId");
 
-    if ((attrNodeP != NULL) && (strcmp(attrNodeP->value.s, attributeShortName) == 0))
-      return topicP->name;
+    if ((entityIdP != NULL) && (strcmp(entityIdP->value.s, entityId) == 0))
+    {
+      if ((attrNodeP != NULL) && (strcmp(attrNodeP->value.s, attributeShortName) == 0))
+        return topicP->name;
+    }
   }
 
   return NULL;

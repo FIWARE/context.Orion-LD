@@ -34,7 +34,6 @@ extern "C"
 #include "orionld/common/orionldPatchApply.h"                    // orionldPatchApply
 #include "orionld/common/eqForDot.h"                             // eqForDot
 #include "orionld/common/traceLevels.h"                          // KT_T trace levels
-#include "orionld/config/configAttributeToDdsTopic.h"            // configAttributeToDdsTopic
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
 #include "orionld/dds/ddsPublishAttribute.h"                     // ddsPublishAttribute
 
@@ -48,7 +47,7 @@ extern "C"
 //   This function is used for the service routine "PATCH /entities/{entityId}",
 //   where the final attribute is still not known - need to merge it with the DB content.
 //
-void ddsPublishAttributes(KjNode* incoming, KjNode* dbAttrsP)
+void ddsPublishAttributes(const char* entityId, KjNode* incoming, KjNode* dbAttrsP)
 {
   KT_T(StDds, "Pushing attributes to DDS");
 
@@ -73,12 +72,8 @@ void ddsPublishAttributes(KjNode* incoming, KjNode* dbAttrsP)
     char*        longName  = kaStrdup(&orionldState.kalloc, attrP->name);
     eqForDot(longName);
 
-    char*  shortName = orionldContextItemAliasLookup(orionldState.contextP, longName, NULL, NULL);
-    char*  topic     = configAttributeToDdsTopic(shortName);
+    char* shortName = orionldContextItemAliasLookup(orionldState.contextP, longName, NULL, NULL);
 
-    if (topic != NULL)
-      ddsPublishAttribute(topic, shortName, attrP, false);
-    else
-      KT_T(StDds, "Nothing to be published (attribute '%s' not in config file)", shortName);
+    ddsPublishAttribute(entityId, shortName, attrP, false);
   }
 }

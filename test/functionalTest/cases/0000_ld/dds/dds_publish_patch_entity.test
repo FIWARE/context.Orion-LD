@@ -1,0 +1,445 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+The broker pushes to DDS via PATCH /entities/{entityId}/attrs
+
+--SHELL-INIT--
+$REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" --ddsTopic "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.orionld
+$REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" --ddsTopic "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.ftClient
+dbInit CB
+orionldStart CB -mongocOnly -wip dds
+ftClientStart -t 0-5000
+
+--SHELL--
+
+#
+# 01. Ask FT to publish an entity urn:ngsi-ld:camera:cam1 on topic 'P1'
+# 02. GET urn:ngsi-ld:camera:cam1 from CB
+# 03. PATCH urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value
+# 04. GET urn:ngsi-ld:camera:cam1 from CB, see the update
+# 05. Dump/Reset the ftClient for DDS notifications - see the PATCH in DDS
+# 06. PATCH urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value + one more to be stripped away
+# 07. GET urn:ngsi-ld:camera:cam1 from CB, see the update
+# 08. Dump/Reset the ftClient for DDS notifications - see the PATCH in DDS
+# 09. PATCH urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value except for one missing field - no DDS publish
+# 10. GET urn:ngsi-ld:camera:cam1 from CB, see the update
+# 11. Dump/Reset the ftClient for DDS notifications - see no update in DDS
+#
+
+echo "01. Ask FT to publish an entity urn:ngsi-ld:camera:cam1 on topic 'P1'"
+echo "====================================================================="
+payload='{
+  "s": "step 01"
+}'
+orionCurl --url '/dds/pub?ddsTopicType=xyz&entityId=urn:ngsi-ld:camera:cam1&entityType=T&ddsTopicName=P1' --port $FT_PORT --payload "$payload"
+echo
+echo
+
+
+echo "02. GET urn:ngsi-ld:camera:cam1 from CB"
+echo "======================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:camera:cam1
+echo
+echo
+
+
+echo "03. PATCH urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value"
+echo "=========================================================================="
+payload='{
+  "shutterSpeed": {
+    "value": {
+      "s": "step 03",
+      "i": 3,
+      "f": 3.3,
+      "b": true,
+      "ia": [ 3, 3 ]
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:camera:cam1/attrs -X PATCH --payload "$payload"
+echo
+echo
+
+
+echo "04. GET urn:ngsi-ld:camera:cam1 from CB, see the update"
+echo "======================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:camera:cam1
+echo
+echo
+
+
+echo "05. Dump/Reset the ftClient for DDS notifications - see the PATCH in DDS"
+echo "========================================================================"
+sleep 1
+orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
+orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck -X DELETE
+echo
+echo
+
+
+echo "06. PATCH urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value + one more to be stripped away"
+echo "========================================================================================================="
+payload='{
+  "shutterSpeed": {
+    "value": {
+      "s": "step 06",
+      "i": 6,
+      "f": 6.6,
+      "b": false,
+      "ia": [ 6, 6 ],
+      "nada": 66
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:camera:cam1/attrs -X PATCH --payload "$payload"
+echo
+echo
+
+
+echo "07. GET urn:ngsi-ld:camera:cam1 from CB, see the update"
+echo "======================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:camera:cam1
+echo
+echo
+
+
+echo "08. Dump/Reset the ftClient for DDS notifications - see the PATCH in DDS"
+echo "========================================================================"
+sleep 1
+orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
+orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck -X DELETE
+echo
+echo
+
+
+echo "09. PATCH urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value except for one missing field - no DDS publish"
+echo "========================================================================================================================"
+payload='{
+  "shutterSpeed": {
+    "value": {
+      "s": "step 09",
+      "f": 9.9,
+      "b": true,
+      "ia": [ 9, 9 ]
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:camera:cam1/attrs -X PATCH --payload "$payload"
+echo
+echo
+
+
+echo "10. GET urn:ngsi-ld:camera:cam1 from CB, see the update"
+echo "======================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:camera:cam1
+echo
+echo
+
+
+echo "11. Dump/Reset the ftClient for DDS notifications - see no update in DDS"
+echo "========================================================================"
+sleep 1
+orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
+orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck -X DELETE
+echo
+echo
+
+
+--REGEXPECT--
+01. Ask FT to publish an entity urn:ngsi-ld:camera:cam1 on topic 'P1'
+=====================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+02. GET urn:ngsi-ld:camera:cam1 from CB
+=======================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+    },
+    "id": "urn:ngsi-ld:camera:cam1",
+    "shutterSpeed": {
+        "ddsDataType": {
+            "type": "Property",
+            "value": "NgsildSample"
+        },
+        "participantId": {
+            "type": "Property",
+            "value": "REGEX(.*)"
+        },
+        "publishedAt": {
+            "type": "Property",
+            "value": REGEX(.*)
+        },
+        "type": "Property",
+        "value": {
+            "b": false,
+            "f": 0,
+            "i": 0,
+            "ia": [
+                0,
+                0
+            ],
+            "s": "step 01"
+        },
+        "xId": {
+            "type": "Property",
+            "value": "REGEX(.*)"
+        }
+    },
+    "type": "Camera"
+}
+
+
+03. PATCH urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value
+==========================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+04. GET urn:ngsi-ld:camera:cam1 from CB, see the update
+=======================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+    },
+    "id": "urn:ngsi-ld:camera:cam1",
+    "shutterSpeed": {
+        "type": "Property",
+        "value": {
+            "b": true,
+            "f": 3.3,
+            "i": 3,
+            "ia": [
+                3,
+                3
+            ],
+            "s": "step 03"
+        }
+    },
+    "type": "Camera"
+}
+
+
+05. Dump/Reset the ftClient for DDS notifications - see the PATCH in DDS
+========================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Date: REGEX(.*)
+
+[
+  {
+    "P1": {
+      "data": {
+        "REGEX(.*)": {
+          "b": false,
+          "f": 0,
+          "i": 0,
+          "ia": [
+            0,
+            0
+          ],
+          "s": "step 01"
+        }
+      },
+      "type": "NgsildSample"
+    },
+    "id": "REGEX(.*)",
+    "type": "fastdds"
+  },
+  {
+    "P1": {
+      "data": {
+        "REGEX(.*)": {
+          "b": true,
+          "f": 3.3,
+          "i": 3,
+          "ia": [
+            3,
+            3
+          ],
+          "s": "step 03"
+        }
+      },
+      "type": "NgsildSample"
+    },
+    "id": "REGEX(.*)",
+    "type": "fastdds"
+  }
+]
+
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Date: REGEX(.*)
+
+
+
+
+06. PATCH urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value + one more to be stripped away
+=========================================================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+07. GET urn:ngsi-ld:camera:cam1 from CB, see the update
+=======================================================
+HTTP/1.1 200 OK
+Content-Length: 200
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+    },
+    "id": "urn:ngsi-ld:camera:cam1",
+    "shutterSpeed": {
+        "type": "Property",
+        "value": {
+            "b": false,
+            "f": 6.6,
+            "i": 6,
+            "ia": [
+                6,
+                6
+            ],
+            "nada": 66,
+            "s": "step 06"
+        }
+    },
+    "type": "Camera"
+}
+
+
+08. Dump/Reset the ftClient for DDS notifications - see the PATCH in DDS
+========================================================================
+HTTP/1.1 200 OK
+Content-Length: 356
+Date: REGEX(.*)
+
+[
+  {
+    "P1": {
+      "data": {
+        "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0": {
+          "b": false,
+          "f": 6.6,
+          "i": 6,
+          "ia": [
+            6,
+            6
+          ],
+          "s": "step 06"
+        }
+      },
+      "type": "NgsildSample"
+    },
+    "id": "REGEX(.*)",
+    "type": "fastdds"
+  }
+]
+
+HTTP/1.1 200 OK
+Content-Length: 0
+Date: REGEX(.*)
+
+
+
+
+09. PATCH urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value except for one missing field - no DDS publish
+========================================================================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+10. GET urn:ngsi-ld:camera:cam1 from CB, see the update
+=======================================================
+HTTP/1.1 200 OK
+Content-Length: 183
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+    },
+    "id": "urn:ngsi-ld:camera:cam1",
+    "shutterSpeed": {
+        "type": "Property",
+        "value": {
+            "b": true,
+            "f": 9.9,
+            "ia": [
+                9,
+                9
+            ],
+            "s": "step 09"
+        }
+    },
+    "type": "Camera"
+}
+
+
+11. Dump/Reset the ftClient for DDS notifications - see no update in DDS
+========================================================================
+HTTP/1.1 200 OK
+Content-Length: 0
+Date: REGEX(.*)
+
+
+HTTP/1.1 200 OK
+Content-Length: 0
+Date: REGEX(.*)
+
+
+
+
+--TEARDOWN--
+ftClientStop
+brokerStop
+dbDrop CB
+rm -f $HOME/.orionld
+rm -f $HOME/.ftClient
