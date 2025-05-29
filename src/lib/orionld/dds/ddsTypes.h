@@ -65,4 +65,36 @@ extern void ddsTypeNotification
   const char*           dataPlaceholder
 );
 
+
+
+// -----------------------------------------------------------------------------
+//
+// ddsTypeSerialized -
+//
+extern char* ddsTypeSerialized(const char* serializedType, char* result, int resultLen);
+
+
+
+// -----------------------------------------------------------------------------
+//
+// typeItemArraySort -
+//
+extern void typeItemArraySort(char** itemV, int items);
+
+
+
+// -----------------------------------------------------------------------------
+//
+// typeItemArraySize -
+//
+extern int typeItemArraySize(char** itemV, int items);
+
+
+
+// -----------------------------------------------------------------------------
+//
+// typeItemArraySerialize -
+//
+extern char* typeItemArraySerialize(char* s, char** itemV, int items);
+
 #endif  // SRC_LIB_ORIONLD_DDS_DDSTYPES_H_

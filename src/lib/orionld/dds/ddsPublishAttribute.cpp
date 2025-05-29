@@ -40,7 +40,7 @@ extern "C"
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
 #include "orionld/kjTree/kjChildCount.h"                         // kjChildCount
 #include "orionld/dds/ddsInit.h"                                 // ddsEnabler
-#include "orionld/dds/ddsTypes.h"                                // ddsTypeLookupByTopic
+#include "orionld/dds/ddsTypes.h"                                // ddsTypeLookupByTopic, typeItemArraySort, typeItemArraySize, typeItemArraySerialize
 #include "orionld/dds/kjTreeLog.h"                               // kjTreeLog2
 #include "orionld/dds/ddsPublishAttribute.h"                     // Own interface
 
@@ -87,6 +87,65 @@ const char* itemSerialize(KjNode* itemP)
 
 
 
+// -----------------------------------------------------------------------------
+//
+// kjDdsType -
+//
+static char* kjDdsType(KjNode* valueP, char* buf, int bufSize)
+{
+  // 1. No of members in valueP
+  // 2. Allocate array of char*
+  // 3. Loop valueP and fill in the array (e.g. "abc": 12 => L:12)  => Similar to ddsTypeItem
+  // 4. Sort the array  => typeItemArraySort
+  // 5. Make sure the size of 'buf' is enough => typeItemArraySize
+  // 6. Render the array info 'buf'
+
+  int    members = kjChildCount(valueP);
+  char** itemV   = (char**) kaAlloc(&orionldState.kalloc, members * sizeof(char*));
+  int    itemNo  = 0;
+
+  for (KjNode* itemP = valueP->value.firstChildP; itemP != NULL; itemP = itemP->next)
+  {
+    int   len  = strlen(itemP->name) + 10;
+    char* item = kaAlloc(&orionldState.kalloc, len);
+    char  type = 'C';
+
+    if      (itemP->type == KjString)  type = 'S';
+    else if (itemP->type == KjInt)     type = 'L';
+    else if (itemP->type == KjFloat)   type = 'D';
+    else if (itemP->type == KjBoolean) type = 'B';
+
+    if (itemP->type == KjArray)
+    {
+      char    type  = 'C';
+      KjNode* child = itemP->value.firstChildP;
+
+      if      (child->type == KjString)  type = 'S';
+      else if (child->type == KjInt)     type = 'L';
+      else if (child->type == KjFloat)   type = 'D';
+      else if (child->type == KjBoolean) type = 'B';
+
+      int arrayItems = kjChildCount(itemP);
+      snprintf(item, len - 1, "%c:%s[%d];", type, itemP->name, arrayItems);
+    }
+    else
+      snprintf(item, len - 1, "%c:%s;", type, itemP->name);
+
+    itemV[itemNo++] = item;
+  }
+
+  typeItemArraySort(itemV, itemNo);
+
+  int sizeNeeded = typeItemArraySize(itemV, itemNo);
+
+  if (sizeNeeded >= bufSize)
+    KT_X(1, "Need %d bytes to serialize DDS type, I only have - please fix and recompile!", sizeNeeded, bufSize);
+
+  return typeItemArraySerialize(buf, itemV, itemNo);
+}
+
+
+
 // ----------------------------------------------------------------------------
 //
 // ddsPublishAttribute -
@@ -94,12 +153,20 @@ const char* itemSerialize(KjNode* itemP)
 // What is published over DDS is the "value" field of the attribute.
 // For now, sub-attributes are not used in DDS.
 //
-void ddsPublishAttribute(char* topic, const char* attrName, KjNode* attrP, bool isValue)
+void ddsPublishAttribute(const char* entityId, const char* attrName, KjNode* attrP, bool isValue)
 {
+  char* shortName = orionldContextItemAliasLookup(orionldState.contextP, attrName, NULL, NULL);
+  char* topic     = configAttributeToDdsTopic(entityId, shortName);
+
+  if (topic == NULL)
+  {
+    KT_T(StDds, "Nothing to be published (attribute '%s' not in config file)", shortName);
+    return;
+  }
+
   KT_T(StDds, "Pushing attribute '%s' (%s) to DDS topic '%s'", attrName, attrP->name, topic);
 
   KjNode* valueP = (isValue == true)? attrP : kjLookup(attrP, "value");
-
   if (valueP == NULL)
     KT_RVE("Attribute '%s' doesn't have a value!'", attrName);
 
@@ -113,18 +180,6 @@ void ddsPublishAttribute(char* topic, const char* attrName, KjNode* attrP, bool 
 
   if ((isValue == false) && (valueP == NULL))
     KT_RVE("The field named 'value' missing in the merged attribute");
-
-  if (topic == NULL)
-  {
-    char* shortName = orionldContextItemAliasLookup(orionldState.contextP, attrName, NULL, NULL);
-
-    topic = configAttributeToDdsTopic(shortName);
-    if (topic == NULL)
-    {
-      KT_T(StDds, "Nothing to be published (attribute '%s' not in config file)", shortName);
-      return;
-    }
-  }
 
   //
   // Strip something away?
@@ -158,6 +213,16 @@ void ddsPublishAttribute(char* topic, const char* attrName, KjNode* attrP, bool 
     return;
   }
 
+  // Now, is the value struct according to DDS ?
+  char  serializedV[1024];  // Hopefully enough
+  char* serialized = kjDdsType(valueP, serializedV, sizeof(serializedV));
+
+  if (strcmp(serialized, typeP->type) != 0)
+    KT_RVE("Not publishing attribute '%s' of entity '%s' on DDS as types differ: expected from DDS: '%s', got via HTTP: '%s'", attrName, entityId, typeP->type, serialized);
+
+  //
+  // All good, lets serialize and send to the DDS Enabler
+  //
   int   serialiedSize = kjFastRenderSize(valueP);
   char  buf[1024];
   char* bufP    = buf;
@@ -170,7 +235,7 @@ void ddsPublishAttribute(char* topic, const char* attrName, KjNode* attrP, bool 
   }
 
   kjFastRender(valueP, bufP);
-  KT_T(StDds, "Publishing attribute '%s' on DDS topic '%s'. Value: %s", attrName, topic, bufP);
 
+  KT_T(StDds, "Publishing attribute '%s' on DDS topic '%s'. Value: %s", attrName, topic, bufP);
   ddsEnabler->publish(topic, bufP);
 }

@@ -40,6 +40,6 @@ extern "C"
 //   This function is used for the service routine "PATCH /entities/{entityId}",
 //   where the final attribute is still not known - need to merge it with the DB content.
 //
-extern void ddsPublishAttributes(KjNode* incoming, KjNode* dbAttrsP);
+extern void ddsPublishAttributes(const char* entityId, KjNode* incoming, KjNode* dbAttrsP);
 
 #endif  // SRC_LIB_ORIONLD_DDS_DDSPUBLISHATTRIBUTES_H_

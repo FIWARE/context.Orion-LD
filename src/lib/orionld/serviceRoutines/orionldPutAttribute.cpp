@@ -291,7 +291,7 @@ bool orionldPutAttribute(void)
   int     distOps404s = 0;
   int     distOps204s = 0;
   int     distOps     = 0;
-  DistOp* otherP   = NULL;
+  DistOp* otherP      = NULL;
 
   if ((orionldState.distributed == true) && (orionldState.uriParams.local == false))
   {

@@ -48,7 +48,7 @@ static char* ddsTypeItem(char* typeItemP)
   int   len = strlen(typeItemP) - 1;
 
   if      (strncmp(typeItemP, "string ",  7) == 0) snprintf(out, len, "S:%s", &typeItemP[7]);
-  else if (strncmp(typeItemP, "int ",     4) == 0) snprintf(out, len, "I:%s", &typeItemP[4]);
+  else if (strncmp(typeItemP, "int ",     4) == 0) snprintf(out, len, "L:%s", &typeItemP[4]);
   else if (strncmp(typeItemP, "long ",    5) == 0) snprintf(out, len, "L:%s", &typeItemP[5]);
   else if (strncmp(typeItemP, "double ",  7) == 0) snprintf(out, len, "D:%s", &typeItemP[7]);
   else if (strncmp(typeItemP, "boolean ", 8) == 0) snprintf(out, len, "B:%s", &typeItemP[8]);
@@ -62,7 +62,7 @@ static char* ddsTypeItem(char* typeItemP)
 //
 // typeItemArraySort -
 //
-static void typeItemArraySort(char** itemV, int items)
+void typeItemArraySort(char** itemV, int items)
 {
   for (int fromIx = 0; fromIx < items; fromIx++)
   {
@@ -90,7 +90,7 @@ static void typeItemArraySort(char** itemV, int items)
 //
 // typeItemArraySize -
 //
-static int typeItemArraySize(char** itemV, int items)
+int typeItemArraySize(char** itemV, int items)
 {
   int size = 0;
 
@@ -110,7 +110,7 @@ static int typeItemArraySize(char** itemV, int items)
 //
 // typeItemArraySerialize -
 //
-static char* typeItemArraySerialize(char* s, char** itemV, int items)
+char* typeItemArraySerialize(char* s, char** itemV, int items)
 {
   int sIx = 1;
 
@@ -221,27 +221,10 @@ void ddsTypeList(void)
 
 // -----------------------------------------------------------------------------
 //
-// ddsTypeNotification -
+// ddsTypeSerialized -
 //
-void ddsTypeNotification
-(
-  const char*           typeName,
-  const char*           serializedType,
-  const unsigned char*  serializedTypeInternal,
-  uint32_t              serializedTypeInternalSize,
-  const char*           dataPlaceholder
-)
+char* ddsTypeSerialized(const char* serializedType, char* result, int resultLen)
 {
-  KT_T(StDdsTypes, "----------------------------------------");
-  KT_T(StDdsTypes, "Got a type notification:");
-  KT_T(StDdsTypes, "o typeName:                    %s", typeName);
-  KT_T(StDdsTypes, "o serializedType:              %s", serializedType);
-  KT_T(StDdsTypes, "o serializedTypeInternal:      %s", serializedTypeInternal);
-  KT_T(StDdsTypes, "o serializedTypeInternalSize:  %d", serializedTypeInternalSize);
-  KT_T(StDdsTypes, "o dataPlaceholder:             %s", dataPlaceholder);
-  KT_T(StDdsTypes, "Nothing done, for now at least");
-  KT_T(StDdsTypes, "----------------------------------------");
-
   //
   // The type (serializedType) comes in as a string, e.g.:
   //
@@ -291,9 +274,38 @@ void ddsTypeNotification
   }
 
   typeItemArraySort(itemV, itemIx);
-  int   size       = typeItemArraySize(itemV, itemIx);
-  char* s          = (char*) malloc(size);
-  char* serialized = typeItemArraySerialize(s, itemV, itemIx);
 
+  int   size = typeItemArraySize(itemV, itemIx);
+  char* s    = (resultLen < size)? (char*) malloc(size) : result;
+
+  return typeItemArraySerialize(s, itemV, itemIx);
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// ddsTypeNotification -
+//
+void ddsTypeNotification
+(
+  const char*           typeName,
+  const char*           serializedType,
+  const unsigned char*  serializedTypeInternal,
+  uint32_t              serializedTypeInternalSize,
+  const char*           dataPlaceholder
+)
+{
+  KT_T(StDdsTypes, "----------------------------------------");
+  KT_T(StDdsTypes, "Got a type notification:");
+  KT_T(StDdsTypes, "o typeName:                    %s", typeName);
+  KT_T(StDdsTypes, "o serializedType:              %s", serializedType);
+  KT_T(StDdsTypes, "o serializedTypeInternal:      %s", serializedTypeInternal);
+  KT_T(StDdsTypes, "o serializedTypeInternalSize:  %d", serializedTypeInternalSize);
+  KT_T(StDdsTypes, "o dataPlaceholder:             %s", dataPlaceholder);
+  KT_T(StDdsTypes, "Nothing done, for now at least");
+  KT_T(StDdsTypes, "----------------------------------------");
+
+  char* serialized = ddsTypeSerialized(serializedType, NULL, 0);  // buffer is malloqued by ddsTypeSerialized
   ddsTypeAdd(typeName, serialized);
 }

@@ -65,6 +65,7 @@ extern "C"
 #include "orionld/notifications/sysAttrsStrip.h"                 // sysAttrsStrip
 #include "orionld/kjTree/kjSort.h"                               // kjStringArraySort
 #include "orionld/kjTree/kjChildCount.h"                         // kjChildCount
+#include "orionld/dds/ddsPublishAttribute.h"                     // ddsPublishAttribute
 #include "orionld/serviceRoutines/orionldPatchEntity.h"          // Own interface
 
 
@@ -423,13 +424,15 @@ bool orionldPatchEntity(void)
   alterationP = alteration(entityId, entityType, finalApiEntityP, incomingP, dbEntityP);
   alterationP->finalApiEntityWithSysAttrsP = finalApiEntityWithSysAttrs;
 
-#if 0
+  //
   // We publish on DDS if 'ddsSupport' is on.
   // BUT, we don't publish if the info comes from DDS, obviously!
+  //
   if ((ddsSupport == true) && (orionldState.ddsSample == false))
   {
     kjTreeLog(finalApiEntityP, "finalApiEntityP", LmtSR);
     kjTreeLog(orionldState.requestTree, "orionldState.requestTree", LmtSR);
+
     // Only publish those attributes that have been modified
     for (KjNode* attrP = finalApiEntityP->value.firstChildP; attrP != NULL; attrP = attrP->next)
     {
@@ -442,11 +445,10 @@ bool orionldPatchEntity(void)
       if (kjLookup(orionldState.requestTree, eqName) != NULL)
       {
         LM_W(("Publishing attribute '%s'", attrP->name));
-        ddsPublishAttribute(ddsTopicType, entityType, entityId, attrP);
+        ddsPublishAttribute(entityId, attrP->name, attrP, false);
       }
     }
   }
-#endif
 
   //
   // For TRoE we need:
