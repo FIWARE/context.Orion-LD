@@ -24,7 +24,9 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // trace messages - ktrace library
 #include "kalloc/kaAlloc.h"                                    // kaAlloc
+#include "kalloc/kaStrdup.h"                                   // kaStrdup
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjLookup.h"                                    // kjLookup
 #include "kjson/kjBuilder.h"                                   // kjArray, ...
@@ -35,6 +37,8 @@ extern "C"
 
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/common/orionldError.h"                       // orionldError
+#include "orionld/common/traceLevels.h"                        // Stdds, ...
+#include "orionld/common/eqForDot.h"                           // eqForDot
 #include "orionld/common/entityLookupById.h"                   // entityLookupBy_id_Id
 #include "orionld/common/entitySuccessPush.h"                  // entitySuccessPush
 #include "orionld/common/tenantList.h"                         // tenant0
@@ -49,6 +53,7 @@ extern "C"
 #include "orionld/mongoc/mongocEntitiesQuery.h"                // mongocEntitiesQuery
 #include "orionld/mongoc/mongocEntitiesUpsert.h"               // mongocEntitiesUpsert
 #include "orionld/notifications/alteration.h"                  // alteration
+#include "orionld/dds/ddsPublishAttribute.h"                   // ddsPublishAttribute
 #include "orionld/serviceRoutines/orionldPostBatchUpdate.h"    // Own interface
 
 
@@ -199,12 +204,42 @@ bool orionldPostBatchUpdate(void)
   //
   if (dbUpdateArray->value.firstChildP != NULL)
   {
+    // mongocEntitiesUpsert removes the _id field of the entities, so, we must clone, in case DDS is in use
+    KjNode* dbUpdateArrayCloned = (ddsSupport == true)? kjClone(orionldState.kjsonP, dbUpdateArray) : NULL;
+
     int r = mongocEntitiesUpsert(NULL, dbUpdateArray);
 
     if (r == false)
     {
       orionldError(OrionldInternalError, "Database Error", "mongocEntitiesUpsert failed", 500);
       return false;
+    }
+
+    // DDS?
+    if (ddsSupport == true)
+    {
+      for (KjNode* entityP = dbUpdateArrayCloned->value.firstChildP; entityP != NULL; entityP = entityP->next)
+      {
+        KjNode* attrsP = kjLookup(entityP, "attrs");
+        KjNode* _idP   = kjLookup(entityP, "_id");
+        KjNode* idP    = (_idP != NULL)? kjLookup(_idP, "id") : NULL;
+
+        if (attrsP == NULL) continue;
+        if (idP    == NULL) continue;
+
+        for (KjNode* attrP = attrsP->value.firstChildP; attrP != NULL; attrP = attrP->next)
+        {
+          if (strcmp(attrP->name, "type")    == 0) continue;
+          if (strcmp(attrP->name, "creDate") == 0) continue;
+          if (strcmp(attrP->name, "modDate") == 0) continue;
+
+          char* attrNameDots = kaStrdup(&orionldState.kalloc, attrP->name);
+          eqForDot(attrNameDots);
+
+          KT_T(StDds, "Attribute '%s' of entity '%s' to be published on DDS", attrNameDots, idP->value.s);
+          ddsPublishAttribute(idP->value.s, attrNameDots, attrP, false);
+        }
+      }
     }
   }
 

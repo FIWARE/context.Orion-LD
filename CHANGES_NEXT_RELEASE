@@ -15,11 +15,13 @@
 
 ## DDS
   #XXXX: The broker is now aware of DDS types
+  #XXXX: Updates that don't follow 
   #XXXX: Updates on attributes tied to DDS that don't coincide with the value structure are not published in DDS
   #XXXX: DDS support for PATCH /ngsi-ld/v1/entities/{entityId}/attrs
   #XXXX: DDS support for POST /ngsi-ld/v1/entities/{entityId}/attrs
   #XXXX: DDS support for PUT /ngsi-ld/v1/entities/{entityId}/attrs/{attrName}
   #XXXX: DDS support for PUT /ngsi-ld/v1/entities/{entityId}
+  #XXXX: DDS support for POST /ngsi-ld/v1/entityOperations/update
 
 ## Notes
 * Fixing the issue #1760, Orion-LD is now more strict about the syntax in the HTTP Link header for @contexts.
