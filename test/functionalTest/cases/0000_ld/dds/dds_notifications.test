@@ -28,7 +28,7 @@ $REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,s
 $REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" --ddsTopic "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.ftClient
 dbInit CB
 pgInit $CB_DB_NAME
-orionldStart CB -mongocOnly -wip dds -troe
+orionldStart CB -mongocOnly -wip dds -troe -kt 0-5000
 ftClientStart -t 0-5000
 
 --SHELL--
@@ -49,7 +49,7 @@ ftClientStart -t 0-5000
 # 11. See attributes in the temporal database
 #
 # Later:
-# 21. Kill the broker and empty its databae, then restart the broker again
+# 21. Kill the broker and empty its database, then restart the broker again
 # 22. Query the broker for all its entities, see all three - should be present due to the DDS discovery 
 #
 
