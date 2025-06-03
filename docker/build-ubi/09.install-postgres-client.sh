@@ -31,9 +31,9 @@ yum -y install blas libdap SuperLU lapack armadillo hdf5 xerces-c gdal-libs
 
 dnf -y module disable postgresql
 
-yum -y --nogpgcheck install postgresql12 postgresql12-contrib
+yum -y --nogpgcheck install postgresql13 postgresql13-contrib
 
 echo "---------- Install  postgres ----------"
-yum -y install libpqxx-devel postgresql12-devel postgresql12-libs
+yum -y install libpqxx-devel postgresql13-devel postgresql13-libs
 
 echo "---------- install-postgres-client.sh is DONE ----------"
