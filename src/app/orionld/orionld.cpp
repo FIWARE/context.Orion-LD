@@ -100,6 +100,7 @@ extern "C"
 #include "metricsMgr/metricsMgr.h"
 #include "logSummary/logSummary.h"
 
+#include "orionld/common/pqHeader.h"                          // Postgres header
 #include "orionld/common/orionldTenantInit.h"                 // orionldTenantInit
 #include "orionld/common/orionldState.h"                      // orionldStateRelease, kalloc, ...
 #include "orionld/common/tenantList.h"                        // tenantList, tenant0
@@ -132,7 +133,7 @@ extern "C"
 #include "orionld/socketService/socketServiceRun.h"           // socketServiceRun
 
 #include "orionld/troe/troeInit.h"                            // troeInit
-#include "orionld/troe/pgVersionGet.h"                        // pgVersionGet
+#include "orionld/troe/pgVersionGet.h"                        // pgVersionGet, pgVersionToString
 #include "orionld/troe/pgConnectionPoolsFree.h"               // pgConnectionPoolsFree
 #include "orionld/troe/pgConnectionPoolsPresent.h"            // pgConnectionPoolsPresent
 #include "orionld/distOp/distOpInit.h"                        // distOpInit
@@ -1430,7 +1431,16 @@ int main(int argC, char* argV[])
   LM_K(("  Distributed Subscriptions: %s", (distSubsEnabled    == true)? "Enabled" : "Disabled"));
 
   if (troe)
+  {
+    // Postgres Server
     LM_K(("  Postgres Server Version:   %s", postgresServerVersion));
+
+    // Postgres Client Lib
+    int     pgLibVersion = PQlibVersion();
+    char    pgLibVersionString[32];
+    pgVersionToString(pgLibVersion, pgLibVersionString, sizeof(pgLibVersionString));
+    LM_K(("  Postgres Client Version:   %s", pgLibVersionString));
+  }
 
   LM_K(("  Mongo Server Version:      %s", mongocServerVersion));
 
