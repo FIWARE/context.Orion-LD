@@ -29,7 +29,7 @@ $REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,s
 dbInit CB
 orionldStart CB -mongocOnly -wip dds
 ftClientStop
-ftClientStart -t 0-5000
+ftClientStart -t 0-5000 -v
 
 --SHELL--
 
@@ -128,8 +128,8 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             "f": 0,
             "i": 0,
             "ia": [
-                0,
-                0
+                1,
+                2
             ],
             "s": "abc"
         },
@@ -182,8 +182,8 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             "f": 0,
             "i": 0,
             "ia": [
-                0,
-                0
+                1,
+                2
             ],
             "s": "def"
         },
@@ -211,8 +211,8 @@ Date: REGEX(.*)
           "f": 0,
           "i": 0,
           "ia": [
-            0,
-            0
+            1,
+            2
           ],
           "s": "abc"
         }
@@ -230,8 +230,8 @@ Date: REGEX(.*)
           "f": 0,
           "i": 0,
           "ia": [
-            0,
-            0
+            1,
+            2
           ],
           "s": "def"
         }

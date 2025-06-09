@@ -118,9 +118,11 @@ char* typeItemArraySerialize(char* s, char** itemV, int items)
   for (int ix = 0; ix < items; ix++)
   {
     int len = strlen(itemV[ix]);
+    // KT_T(StDds, "item %d: '%s'", ix, itemV[ix]);
     strcpy(&s[sIx], itemV[ix]);
     sIx += len;
   }
+  s[sIx] = 0;
 
   return s;
 }
@@ -228,6 +230,7 @@ char* ddsTypeSerialized(const char* serializedType, char* result, int resultLen)
   //
   // The type (serializedType) comes in as a string, e.g.:
   //
+  // @extensibility(APPENDABLE)
   // struct NgsildSample
   // {
   //   string s;
@@ -252,7 +255,7 @@ char* ddsTypeSerialized(const char* serializedType, char* result, int resultLen)
     {
       *stP = 0;
 
-      if (nls >= 2)
+      if (nls >= 3)
       {
         if (strcmp(lineStart, "};") != 0)
         {
@@ -261,6 +264,7 @@ char* ddsTypeSerialized(const char* serializedType, char* result, int resultLen)
             ++lineStart;
 
           itemV[itemIx++] = ddsTypeItem(lineStart);
+          // KT_T(StDds, "Item %d: '%s'", itemIx, itemV[itemIx-1]);
         }
         else
           break;
@@ -303,9 +307,10 @@ void ddsTypeNotification
   KT_T(StDdsTypes, "o serializedTypeInternal:      %s", serializedTypeInternal);
   KT_T(StDdsTypes, "o serializedTypeInternalSize:  %d", serializedTypeInternalSize);
   KT_T(StDdsTypes, "o dataPlaceholder:             %s", dataPlaceholder);
-  KT_T(StDdsTypes, "Nothing done, for now at least");
   KT_T(StDdsTypes, "----------------------------------------");
 
-  char* serialized = ddsTypeSerialized(serializedType, NULL, 0);  // buffer is malloqued by ddsTypeSerialized
+  char* serialized = ddsTypeSerialized(serializedType, NULL, 0);  // buffer is allocated by ddsTypeSerialized
+  KT_T(StDdsTypes, "Adding DDS type '%s', serialized to '%s'", typeName, serialized);
+
   ddsTypeAdd(typeName, serialized);
 }

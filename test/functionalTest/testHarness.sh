@@ -316,6 +316,16 @@ function exitFunction()
               # fi
           fi
 
+          if [ -s /tmp/Orion-LD.log ]
+          then
+              echo "orionld K log file"
+              echo "-------------------------------------------------"
+              cat /tmp/Orion-LD.log
+              echo "-------------------------------------------------"
+              echo
+              echo
+          fi
+
           if [ -f /tmp/accumulator_9997_stderr ]
           then
               echo "/tmp/accumulator_9997_stderr:"
@@ -410,6 +420,16 @@ function exitFunction()
               echo "Errors and warnings from the orionld log file"
               echo "-------------------------------------------------"
               cat /tmp/orionld.err-warn.log
+              echo "-------------------------------------------------"
+              echo
+              echo
+          fi
+
+          if [ -s /tmp/Orion-LD.log ]
+          then
+              echo "orionld K log file"
+              echo "-------------------------------------------------"
+              cat /tmp/Orion-LD.log
               echo "-------------------------------------------------"
               echo
               echo

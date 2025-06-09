@@ -69,6 +69,7 @@ void ddsNotification(const char* topicName, const char* json, int64_t publishTim
   if (attrShortName == NULL)
   {
     KT_W("Topic '%s' not found in the config file - redirect to default DDS entity", topicName);
+
     entityId      = (char*) "urn:ngsi-ld:dds:default";
     entityType    = (char*) "DDS";
     attrShortName = (char*) topicName;

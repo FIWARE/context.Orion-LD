@@ -44,12 +44,13 @@ typedef enum OrionldTraceLevels
   StDdsLibInfo      = 204,
   StDdsLibDebug     = 205,
   StDdsConfig       = 206,
-  StServiceRoutines = 207,
-  StDdsTypes        = 208,
-  StDdsTypeCache    = 209,
+  StDdsTypes        = 207,
+  StDdsTypeCache    = 208,
 
-  StDump            = 300,
-  StDdsDump         = 301
+  StServiceRoutines = 300,
+
+  StDump            = 400,
+  StDdsDump         = 401
 } OrionldTraceLevels;
 
 #endif  // SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_

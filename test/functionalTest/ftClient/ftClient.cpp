@@ -236,13 +236,24 @@ void ddsTopicNotification(const char* topicName, const char* typeName, const cha
 
 
 
+// #define NEW_EPROSIMA_LIB
+
+#ifdef NEW_EPROSIMA_LIB
+#define RETURN_TYPE       bool
+#define RETURN_STATEMENT  return true
+#else
+#define RETURN_TYPE void
+#define RETURN_STATEMENT  return
+#endif
+
 // -----------------------------------------------------------------------------
 //
 // ddsTypeRequest -
 //
-void ddsTypeRequest(const char* typeName, unsigned char*& serializedTypeInternal, uint32_t& serializedTypeInternalSize)
+static RETURN_TYPE ddsTypeRequest(const char* typeName, unsigned char*& serializedTypeInternal, uint32_t& serializedTypeInternalSize)
 {
   KT_T(StDds, "Got a type request callback ('%s', '%s', %d)", typeName, serializedTypeInternal, serializedTypeInternalSize);
+  RETURN_STATEMENT;
 }
 
 
@@ -251,9 +262,10 @@ void ddsTypeRequest(const char* typeName, unsigned char*& serializedTypeInternal
 //
 // ddsTopicRequest -
 //
-void ddsTopicRequest(const char* topicName, char*& typeName, char*& serializedQos)
+static RETURN_TYPE ddsTopicRequest(const char* topicName, char*& typeName, char*& serializedQos)
 {
   KT_T(StDds, "Got a type request callback ('%s', '%s', '%s')", topicName, typeName, serializedQos);
+  RETURN_STATEMENT;
 }
 
 
@@ -338,7 +350,27 @@ int main(int argC, char* argV[])
   mhdInit(ldPort);
 
   KT_D("Calling create_dds_enabler('%s')", configFileP);
-  bool r = eprosima::ddsenabler::create_dds_enabler(configFileP,
+  eprosima::utils::Log::ReportFilenames(true);
+
+#ifdef NEW_EPROSIMA_LIB
+  eprosima::ddsenabler::participants::ddsCallbacks callbacks =
+  {
+    ddsNotification,
+    ddsTypeNotification,
+    ddsTopicNotification,
+    ddsTypeRequest,
+    ddsTopicRequest,
+    ddsLog
+  };
+  eprosima::ddsenabler::participants::serviceCallbacks serviceCallbacks;
+  eprosima::ddsenabler::participants::actionCallbacks  actionCallbacks;
+  bool r = eprosima::ddsenabler::create_dds_enabler(configFile,
+                                                    callbacks,
+                                                    serviceCallbacks,
+                                                    actionCallbacks,
+                                                    ddsEnabler);
+#else
+  bool r = eprosima::ddsenabler::create_dds_enabler(configFile,
                                                     ddsNotification,
                                                     ddsTypeNotification,
                                                     ddsTopicNotification,
@@ -346,6 +378,7 @@ int main(int argC, char* argV[])
                                                     ddsTopicRequest,
                                                     ddsLog,
                                                     ddsEnabler);
+#endif
 
   if (r == false)
     KT_X(1, "Unable to create the DDS Enabler");

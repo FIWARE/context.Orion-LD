@@ -183,28 +183,46 @@ bool NgsildPublisher::publish(const char* entityType, const char* entityId, cons
   KT_V("f:     %f", f);
   KT_V("b:     %d", b);
 
-  if (s != NULL) entity_.s(s);
+  const std::array<int32_t, 2> ia = { 1, 2 };
+  if (s != NULL)
+    entity_.s(s);
+  else
+    entity_.s("none");
+
   entity_.i(i);
   entity_.f(f);
   entity_.b(b);
+  entity_.ia(ia);
 
-  eprosima::fastdds::dds::ReturnCode_t rc = writer_->write(&entity_);
+  int ret = false;
 
-  if (rc != eprosima::fastdds::dds::RETCODE_OK)
+  attempts = 0;
+  while (attempts < 2)
   {
-    KT_E("Not able to publish");
-    return false;
+    KT_W("KZ: Attempt %d on topic '%s'", attempts, topicName);
+    eprosima::fastdds::dds::ReturnCode_t rc = writer_->write(&entity_);
+
+    if (rc != eprosima::fastdds::dds::RETCODE_OK)
+      KT_E("KZ: Not able to publish");
+    else
+    {
+      eprosima::fastdds::dds::Duration_t    duration(0, 1000000000);  // 1 second
+      eprosima::fastdds::dds::ReturnCode_t  r = writer_->wait_for_acknowledgments(duration);
+
+      if (r == eprosima::fastdds::dds::RETCODE_OK)
+      {
+        KT_V("KZ: writer has successfully published an attribute");
+        ret = true;
+        break;
+      }
+      else if  (r == eprosima::fastdds::dds::RETCODE_TIMEOUT)
+        KT_W("KZ: wait_for_acknowledgments timed out (1 second!)");
+      else
+        KT_E("KZ: wait_for_acknowledgments failed with error %d", r);
+    }
+
+    ++attempts;
   }
 
-  eprosima::fastdds::dds::Duration_t    duration(0, 10000000);  // 0.01 seconds
-  eprosima::fastdds::dds::ReturnCode_t  r = writer_->wait_for_acknowledgments(duration);
-
-  if (r == eprosima::fastdds::dds::RETCODE_OK)
-    KT_V("writer has successfully published an entity");
-  else if  (r == eprosima::fastdds::dds::RETCODE_TIMEOUT)
-    KT_W("wait_for_acknowledgments timed out (10 milliseconds)");
-  else
-    KT_E("wait_for_acknowledgments failed with error %d", r);
-
-  return true;
+  return ret;
 }
