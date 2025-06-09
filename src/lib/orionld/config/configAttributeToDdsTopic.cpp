@@ -47,7 +47,7 @@ extern "C"
 char* configAttributeToDdsTopic(const char* entityId, const char* attributeShortName)
 {
   if (configTree == NULL)
-    return NULL;  // No error - it's OK to not have a DDS Config File
+    KT_RE(NULL, "No Config File");
 
   const char*    path[4] = { "dds", "ngsild", "topics", NULL };
   static KjNode* topicsP = kjNavigate(configTree, path, NULL, NULL);
