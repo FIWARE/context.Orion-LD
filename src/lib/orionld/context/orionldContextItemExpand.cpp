@@ -70,6 +70,12 @@ char* orionldContextItemExpand
   if (contextP == NULL)
     contextP = orionldCoreContextP;
 
+  if (strcmp(shortName, "ngsildproof") == 0)
+  {
+    LM_T(LmtExpand, ("Not expanding '%s' - special sub-attribute", shortName));
+    return (char*) shortName;
+  }
+
   if ((colonP = strchr((char*) shortName, ':')) != NULL)
   {
     char* longName = orionldContextPrefixExpand(contextP, shortName, colonP);

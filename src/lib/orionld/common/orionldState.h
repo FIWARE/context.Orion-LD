@@ -254,6 +254,7 @@ typedef struct OrionldStateIn
   bool      aerOS;           // Special treatment for aerOS specific features
   bool      arrayConcat;     // Concatenate arrays in PATCH Entity2
   char*     wip;
+  char*     test;
 
   // Incoming payload
   char*     payload;
