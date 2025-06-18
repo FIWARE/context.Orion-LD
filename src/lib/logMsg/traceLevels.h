@@ -160,6 +160,7 @@ typedef enum TraceLevels
   LmtMqtt = 205,                       // MQTT notifications
   LmtQ,                                // Query Language
   LmtQ2,                               // Query Language: qVariableFix
+  LmtQ3,                               // Query Language: qVariableFix
   LmtCsf,                              // CSF - 'q' for registrations
   LmtPgPool,                           // Postgres Connection Pool
   LmtTenants = 210,                    // Well, tenants :)

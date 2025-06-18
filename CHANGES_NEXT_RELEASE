@@ -6,22 +6,24 @@
   #1778: Not all fields were forwarded for subordinate subscriptions
 
 ## New Features:
+  #XXXX: Support for ngsildProof as sub-attribute
   #XXXX: Support for filtering of what entities are to be pushed to historical database (config file)
-  #XXXX: Support for datasetId URI param for Query/Retrieve Entities
-  #XXXX: Support for datasetId for POST Query
-  #XXXX: Support for datasetId for DELETE Attribute
-  #XXXX: Support for datasetId for PUT Attribute
-  #XXXX: Support for datasetId for PUT Entity
+
+## Multi-Attribute (datasetId)
+  o Support for datasetId URI param for Query/Retrieve Entities
+  o Support for datasetId for POST Query
+  o Support for datasetId for DELETE Attribute
+  o Support for datasetId for PUT Attribute
+  o Support for datasetId for PUT Entity
 
 ## DDS
-  #XXXX: The broker is now aware of DDS types
-  #XXXX: Updates that don't follow 
-  #XXXX: Updates on attributes tied to DDS that don't coincide with the value structure are not published in DDS
-  #XXXX: DDS support for PATCH /ngsi-ld/v1/entities/{entityId}/attrs
-  #XXXX: DDS support for POST /ngsi-ld/v1/entities/{entityId}/attrs
-  #XXXX: DDS support for PUT /ngsi-ld/v1/entities/{entityId}/attrs/{attrName}
-  #XXXX: DDS support for PUT /ngsi-ld/v1/entities/{entityId}
-  #XXXX: DDS support for POST /ngsi-ld/v1/entityOperations/update
+  o The broker is now aware of DDS types
+  o Updates on attributes tied to DDS that don't coincide with the value structure are not published over DDS
+  o DDS support for PATCH /ngsi-ld/v1/entities/{entityId}/attrs
+  o DDS support for POST /ngsi-ld/v1/entities/{entityId}/attrs
+  o DDS support for PUT /ngsi-ld/v1/entities/{entityId}/attrs/{attrName}
+  o DDS support for PUT /ngsi-ld/v1/entities/{entityId}
+  o DDS support for POST /ngsi-ld/v1/entityOperations/update
 
 ## Notes
 * Fixing the issue #1760, Orion-LD is now more strict about the syntax in the HTTP Link header for @contexts.

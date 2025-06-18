@@ -33,10 +33,13 @@ extern "C"
 #include "logMsg/logMsg.h"                                     // LM_*
 
 #include "orionld/types/QNode.h"                               // QNode
+#include "orionld/types/OrionLdRestService.h"                  // OrionLdRestService
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/common/dotForEq.h"                           // dotForEq
 #include "orionld/context/orionldAttributeExpand.h"            // orionldAttributeExpand
 #include "orionld/context/orionldSubAttributeExpand.h"         // orionldSubAttributeExpand
+#include "orionld/serviceRoutines/orionldPostSubscriptions.h"  // orionldPostSubscriptions
+#include "orionld/serviceRoutines/orionldPatchSubscription.h"  // orionldPatchSubscription
 #include "orionld/q/qVariableFix.h"                            // Own interface
 
 
@@ -109,45 +112,51 @@ char* qVariableFix(char* varPathIn, bool forDb, bool* isMdP, char** detailsP)
     //
     char* attrArray[10];
     int   items    = kStringSplit(attrPath, '.', attrArray, 10);
-    bool  addValue = true;
+    bool  addValue = forDb;
 
-    if (items > 1)
-    {
+    LM_T(LmtQ2, ("Attr Path Items: %d", items));
+    if ((items == 2) && ((strcmp(attrArray[1], "createdAt") == 0) || (strcmp(attrArray[1], "modifiedAt") == 0)))
+      isMd = false;
+    else if (items > 1)
       isMd   = true;
-      *isMdP = true;
-    }
+
+    *isMdP = isMd;
+    LM_T(LmtQ2, ("isMd: %s", (isMd == true)? "true" : "false"));
 
     // Special case: createdAt, modifiedAt, observedAt
     // Entities, Attributes and sub-attributes have creDate/modDate in the DB
     // Deeper levels use createdAt/modifiedAy
     //
+    bool isCreatedAt  = (strcmp(attrArray[items - 1], "createdAt")  == 0);
+    bool isModifiedAt = (strcmp(attrArray[items - 1], "modifiedAt") == 0);
+    bool isObservedAt = (strcmp(attrArray[items - 1], "observedAt") == 0);
+    bool isTimestamp  = isCreatedAt || isModifiedAt || isObservedAt;
+
+    if ((forDb == true) && (isCreatedAt || isModifiedAt))
+    {
+      addValue = false;
+
+      if (isCreatedAt)
+        attrArray[items - 1] = (char*) "creDate";
+      else if (isModifiedAt)
+        attrArray[items - 1] = (char*) "modDate";
+    }
+    bool inSubscription = (orionldState.serviceP->serviceRoutine == orionldPostSubscriptions) || (orionldState.serviceP->serviceRoutine == orionldPatchSubscription);
+    if (inSubscription)
+    {
+      if (isObservedAt == true)
+        addValue = false;
+      else
+        addValue = true;
+    }
+
     for (int ix = 0; ix < items; ix++)
     {
-      if (forDb == true)
-      {
-        if (strcmp(attrArray[ix], "createdAt") == 0)
-        {
-          if (ix < 3)
-            attrArray[ix] = (char*) "creDate";
-          addValue = false;
-          continue;
-        }
-        else if (strcmp(attrArray[ix], "modifiedAt") == 0)
-        {
-          if (ix < 3)
-            attrArray[ix] = (char*) "modDate";
-          addValue = false;
-          continue;
-        }
-        else if (strcmp(attrArray[ix], "observedAt") == 0)
-        {
-          addValue = true;
-          continue;
-        }
-      }
-
+      LM_T(LmtQ2, ("Attr Item %d: '%s'", ix, attrArray[ix]));
       if (ix == 0)
         attrArray[ix] = orionldAttributeExpand(orionldState.contextP, attrArray[ix], true, NULL);
+      else if ((isTimestamp == true) && (ix == (items - 1)))
+      {}  // Not expanding timestamps
       else
         attrArray[ix] = orionldSubAttributeExpand(orionldState.contextP, attrArray[ix], true, NULL);
 
@@ -185,6 +194,7 @@ char* qVariableFix(char* varPathIn, bool forDb, bool* isMdP, char** detailsP)
         }
         else if ((isMd == true) && (ix == 1))
         {
+          LM_T(LmtQ2, ("Adding '.md' to the path"));
           snprintf(&path[last], pathLen - last, ".md");
           last += 3;
         }
@@ -209,7 +219,7 @@ char* qVariableFix(char* varPathIn, bool forDb, bool* isMdP, char** detailsP)
 
     LM_T(LmtQ, ("Final path: '%s'", path));
     LM_T(LmtQ, ("*************************************************************************************"));
-    LM_T(LmtQ2, ("NEW Returning '%s' (forDb: '%s')", path, (forDb == true)? "true" : "false"));
+    LM_T(LmtQ3, ("NEW Returning '%s' (forDb: '%s')", path, (forDb == true)? "true" : "false"));
     return path;
   }
   else
@@ -480,7 +490,7 @@ char* qVariableFix(char* varPathIn, bool forDb, bool* isMdP, char** detailsP)
         snprintf(fullPath, sizeof(fullPath) - 1, "%s.%s", longName, mdNameP);
     }
 
-    LM_T(LmtQ2, ("OLD Returning '%s' (forDb: '%s')", fullPath, (forDb == true)? "true" : "false"));
+    LM_T(LmtQ3, ("OLD Returning '%s' (forDb: '%s')", fullPath, (forDb == true)? "true" : "false"));
     return kaStrdup(&orionldState.kalloc, fullPath);
   }
 }
