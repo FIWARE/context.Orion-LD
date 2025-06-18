@@ -1,0 +1,313 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+GET Entities by type
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -mongocOnly
+
+--SHELL--
+
+#
+# 01. Create an entity urn:E1 with an attribute A1 that has an ngsildproof sub-attribute
+# 02. GET the entity, see the ngsildproof sub-attribute "the way we want it"
+# 03. See the entity in the database
+# 04. Create an entity urn:E2 with an attribute A1 that has an ngsildproof sub-attribute, different value
+# 05. Query over A1.ngsildproof, see only urn:E1
+#
+
+
+echo "01. Create an entity urn:E1 with an attribute A1 that has an ngsildproof sub-attribute"
+echo "======================================================================================"
+payload='{
+  "id": "urn:E1",
+  "type": "T",
+  "A1": {
+    "type": "Property",
+    "value": 1,
+    "ngsildproof": {
+      "type": "Property",
+      "entityIdSealed": "urn:E1",
+      "entityTypeSealed": "T",
+      "value": {
+        "type": "DataIntegrityProof",
+        "created": "2025-01-27T21:02:24Z",
+        "verificationMethod": "https://example.edu/issuers/565049#z6MkwXG2WjeQnN....Hc6SaVWoT",
+        "cryptosuite": "eddsa-rdfc-2022",
+        "proofPurpose": "assertionMethod",
+        "proofValue": "z3XrH3diVCqpVHXkE7WbnictqyQCkJBGTx....NRTzmuoWU1Y2FyqGfSV9eS"
+      }
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "02. GET the entity, see the ngsildproof sub-attribute 'the way we want it'"
+echo "=========================================================================="
+orionCurl --url /ngsi-ld/v1/entities?type=T
+echo
+echo
+
+
+echo "03. See the entity in the database"
+echo "=================================="
+mongoCmd2 ftest "db.entities.findOne()"
+echo
+echo
+
+
+echo "04. Create an entity urn:E2 with an attribute A1 that has an ngsildproof sub-attribute, different value"
+echo "======================================================================================================="
+payload='{
+  "id": "urn:E2",
+  "type": "T",
+  "A1": {
+    "type": "Property",
+    "value": 1,
+    "ngsildproof": {
+      "type": "Property",
+      "entityIdSealed": "urn:E2",
+      "entityTypeSealed": "T",
+      "value": {
+        "type": "DataIntegrityProof",
+        "created": "2025-02-27T21:02:24Z",
+        "verificationMethod": "https://example.edu/issuers/565049#z6MkwXG2WjeQnN....Hc6SaVWoT",
+        "cryptosuite": "eddsa-rdfc-2022",
+        "proofPurpose": "assertionMethod",
+        "proofValue": "z3XrH3diVCqpVHXkE7WbnictqyQCkJBGTx....NRTzmuoWU1Y2FyqGfSV9eT"
+      }
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "05. Query over A1.ngsildproof, see only urn:E1"
+echo "=============================================="
+orionCurl --url '/ngsi-ld/v1/entities?q=A1.ngsildproof\[proofValue\]==%22z3XrH3diVCqpVHXkE7WbnictqyQCkJBGTx....NRTzmuoWU1Y2FyqGfSV9eS%22'
+echo
+echo
+
+
+echo "05. Query for existence of A1.ngsildproof - see both entities"
+echo "============================================================="
+orionCurl --url '/ngsi-ld/v1/entities?q=A1.ngsildproof'
+echo
+echo
+
+
+--REGEXPECT--
+01. Create an entity urn:E1 with an attribute A1 that has an ngsildproof sub-attribute
+======================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E1
+
+
+
+02. GET the entity, see the ngsildproof sub-attribute 'the way we want it'
+==========================================================================
+HTTP/1.1 200 OK
+Content-Length: 395
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "A1": {
+            "ngsildproof": {
+                "type": "Property",
+                "value": {
+                    "created": "2025-01-27T21:02:24Z",
+                    "cryptosuite": "eddsa-rdfc-2022",
+                    "proofPurpose": "assertionMethod",
+                    "proofValue": "z3XrH3diVCqpVHXkE7WbnictqyQCkJBGTx....NRTzmuoWU1Y2FyqGfSV9eS",
+                    "type": "DataIntegrityProof",
+                    "verificationMethod": "https://example.edu/issuers/565049#z6MkwXG2WjeQnN....Hc6SaVWoT"
+                }
+            },
+            "type": "Property",
+            "value": 1
+        },
+        "id": "urn:E1",
+        "type": "T"
+    }
+]
+
+
+03. See the entity in the database
+==================================
+MongoDB shell version REGEX(.*)
+connecting to: REGEX(.*)
+MongoDB server version: REGEX(.*)
+{
+	"_id" : {
+		"id" : "urn:E1",
+		"type" : "https://uri.etsi.org/ngsi-ld/default-context/T",
+		"servicePath" : "/"
+	},
+	"attrNames" : [
+		"https://uri.etsi.org/ngsi-ld/default-context/A1"
+	],
+	"attrs" : {
+		"https://uri=etsi=org/ngsi-ld/default-context/A1" : {
+			"type" : "Property",
+			"creDate" : REGEX(.*),
+			"modDate" : REGEX(.*),
+			"value" : 1,
+			"mdNames" : [
+				"ngsildproof"
+			],
+			"md" : {
+				"ngsildproof" : {
+					"type" : "Property",
+					"https://uri.etsi.org/ngsi-ld/default-context/entityIdSealed" : {
+						"type" : "Property",
+						"value" : "urn:E1"
+					},
+					"https://uri.etsi.org/ngsi-ld/default-context/entityTypeSealed" : {
+						"type" : "Property",
+						"value" : "T"
+					},
+					"value" : {
+						"type" : "DataIntegrityProof",
+						"created" : "2025-01-27T21:02:24Z",
+						"verificationMethod" : "https://example.edu/issuers/565049#z6MkwXG2WjeQnN....Hc6SaVWoT",
+						"cryptosuite" : "eddsa-rdfc-2022",
+						"proofPurpose" : "assertionMethod",
+						"proofValue" : "z3XrH3diVCqpVHXkE7WbnictqyQCkJBGTx....NRTzmuoWU1Y2FyqGfSV9eS"
+					},
+					"createdAt" : REGEX(.*),
+					"modifiedAt" : REGEX(.*)
+				}
+			}
+		}
+	},
+	"creDate" : REGEX(.*),
+	"modDate" : REGEX(.*),
+	"lastCorrelator" : ""
+}
+bye
+
+
+04. Create an entity urn:E2 with an attribute A1 that has an ngsildproof sub-attribute, different value
+=======================================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E2
+
+
+
+05. Query over A1.ngsildproof, see only urn:E1
+==============================================
+HTTP/1.1 200 OK
+Content-Length: 395
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "A1": {
+            "ngsildproof": {
+                "type": "Property",
+                "value": {
+                    "created": "2025-01-27T21:02:24Z",
+                    "cryptosuite": "eddsa-rdfc-2022",
+                    "proofPurpose": "assertionMethod",
+                    "proofValue": "z3XrH3diVCqpVHXkE7WbnictqyQCkJBGTx....NRTzmuoWU1Y2FyqGfSV9eS",
+                    "type": "DataIntegrityProof",
+                    "verificationMethod": "https://example.edu/issuers/565049#z6MkwXG2WjeQnN....Hc6SaVWoT"
+                }
+            },
+            "type": "Property",
+            "value": 1
+        },
+        "id": "urn:E1",
+        "type": "T"
+    }
+]
+
+
+05. Query for existence of A1.ngsildproof - see both entities
+=============================================================
+HTTP/1.1 200 OK
+Content-Length: 789
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "A1": {
+            "ngsildproof": {
+                "type": "Property",
+                "value": {
+                    "created": "2025-01-27T21:02:24Z",
+                    "cryptosuite": "eddsa-rdfc-2022",
+                    "proofPurpose": "assertionMethod",
+                    "proofValue": "z3XrH3diVCqpVHXkE7WbnictqyQCkJBGTx....NRTzmuoWU1Y2FyqGfSV9eS",
+                    "type": "DataIntegrityProof",
+                    "verificationMethod": "https://example.edu/issuers/565049#z6MkwXG2WjeQnN....Hc6SaVWoT"
+                }
+            },
+            "type": "Property",
+            "value": 1
+        },
+        "id": "urn:E1",
+        "type": "T"
+    },
+    {
+        "A1": {
+            "ngsildproof": {
+                "type": "Property",
+                "value": {
+                    "created": "2025-02-27T21:02:24Z",
+                    "cryptosuite": "eddsa-rdfc-2022",
+                    "proofPurpose": "assertionMethod",
+                    "proofValue": "z3XrH3diVCqpVHXkE7WbnictqyQCkJBGTx....NRTzmuoWU1Y2FyqGfSV9eT",
+                    "type": "DataIntegrityProof",
+                    "verificationMethod": "https://example.edu/issuers/565049#z6MkwXG2WjeQnN....Hc6SaVWoT"
+                }
+            },
+            "type": "Property",
+            "value": 1
+        },
+        "id": "urn:E2",
+        "type": "T"
+    }
+]
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB

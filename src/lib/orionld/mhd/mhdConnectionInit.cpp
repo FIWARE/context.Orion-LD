@@ -547,6 +547,13 @@ MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
     return MHD_YES;
   }
 
+  // Test parameter, always valid
+  if (strcmp(key, "test") == 0)
+  {
+    orionldState.in.test = (char*) value;
+    return MHD_YES;
+  }
+
   //
   // Forbidden characters in URI param value - not for NGSI-LD - for now at least ...
   //
