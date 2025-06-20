@@ -49,9 +49,7 @@ KjNode* deleteDdsDump(int* statusCodeP)
   if (ddsDumpArray != NULL)
     kjFree(ddsDumpArray);  // Crash!
 
-  KT_T(StRequest, "Resetting DDS Dump");
   ddsDumpArray = NULL;
-  KT_T(StRequest, "Resetting DDS Dump");
 
   *statusCodeP = 200;
   return NULL;

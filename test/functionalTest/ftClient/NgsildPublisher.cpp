@@ -50,7 +50,7 @@ extern "C"
 
 #include "orionld/common/traceLevels.h"                     // Trace Levels
 #include "orionld/common/orionldState.h"                    // orionldState
-#include "ftClient/NgsildPublisher.h"                    // NgsildPublisher
+#include "ftClient/NgsildPublisher.h"                       // NgsildPublisher
 #include "orionld/dds/kjTreeLog.h"                          // kjTreeLog2
 
 
@@ -217,6 +217,12 @@ bool NgsildPublisher::publish(const char* entityType, const char* entityId, cons
       }
       else if  (r == eprosima::fastdds::dds::RETCODE_TIMEOUT)
         KT_W("KZ: wait_for_acknowledgments timed out (1 second!)");
+      else if (r == 1)
+      {
+        KT_W("KZ: wait_for_acknowledgments reports error 1 but that's OK according to eProsima");
+        ret = true;
+        break;
+      }
       else
         KT_E("KZ: wait_for_acknowledgments failed with error %d", r);
     }
