@@ -108,5 +108,6 @@ Usage: orionld  [option '-U' (extended usage)]
                 [option '-configFile' <Path to configuration file>]
                 [option '-duc' <URL to default user context>]
                 [option '-kt' <K-Trace levels>]
+                [option '-kToScreen' (K-Trace to stdout)]
 
 --TEARDOWN--
