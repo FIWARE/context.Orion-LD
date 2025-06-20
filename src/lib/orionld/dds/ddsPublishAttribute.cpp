@@ -218,7 +218,7 @@ void ddsPublishAttribute(const char* entityId, const char* attrName, KjNode* att
   char* serialized = kjDdsType(valueP, serializedV, sizeof(serializedV));
 
   if (strcmp(serialized, typeP->type) != 0)
-    KT_RVE("Not publishing attribute '%s' of entity '%s' on DDS as types differ: expected from DDS: '%s', got via HTTP: '%s'", attrName, entityId, typeP->type, serialized);
+    KT_W("Publishing attribute '%s' of entity '%s' on DDS even though types differ: expected from DDS: '%s', got via HTTP: '%s'", attrName, entityId, typeP->type, serialized);
 
   //
   // All good, lets serialize and send to the DDS Enabler
