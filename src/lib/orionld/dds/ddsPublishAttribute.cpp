@@ -45,7 +45,7 @@ extern "C"
 #include "orionld/dds/ddsPublishAttribute.h"                     // Own interface
 
 
-
+#if 0
 // ----------------------------------------------------------------------------
 //
 // itemSerialize -
@@ -143,7 +143,7 @@ static char* kjDdsType(KjNode* valueP, char* buf, int bufSize)
 
   return typeItemArraySerialize(buf, itemV, itemNo);
 }
-
+#endif
 
 
 // ----------------------------------------------------------------------------
@@ -181,6 +181,7 @@ void ddsPublishAttribute(const char* entityId, const char* attrName, KjNode* att
   if ((isValue == false) && (valueP == NULL))
     KT_RVE("The field named 'value' missing in the merged attribute");
 
+#if 0
   //
   // Strip something away?
   //
@@ -218,7 +219,8 @@ void ddsPublishAttribute(const char* entityId, const char* attrName, KjNode* att
   char* serialized = kjDdsType(valueP, serializedV, sizeof(serializedV));
 
   if (strcmp(serialized, typeP->type) != 0)
-    KT_W("Publishing attribute '%s' of entity '%s' on DDS even though types differ: expected from DDS: '%s', got via HTTP: '%s'", attrName, entityId, typeP->type, serialized);
+    KT_RVE("Not publishing attribute '%s' of entity '%s' on DDS as types differ: expected from DDS: '%s', got via HTTP: '%s'", attrName, entityId, typeP->type, serialized);
+#endif
 
   //
   // All good, lets serialize and send to the DDS Enabler

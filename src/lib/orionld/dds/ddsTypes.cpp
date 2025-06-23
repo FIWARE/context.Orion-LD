@@ -37,7 +37,7 @@ extern "C"
 #include "orionld/dds/ddsTypes.h"                           // Own interface
 
 
-
+#if 0
 // -----------------------------------------------------------------------------
 //
 // ddsTypeItem -
@@ -284,7 +284,7 @@ char* ddsTypeSerialized(const char* serializedType, char* result, int resultLen)
 
   return typeItemArraySerialize(s, itemV, itemIx);
 }
-
+#endif
 
 
 // -----------------------------------------------------------------------------
@@ -301,7 +301,7 @@ void ddsTypeNotification
 )
 {
   KT_T(StDdsTypes, "----------------------------------------");
-  KT_T(StDdsTypes, "Got a type notification:");
+  KT_T(StDdsTypes, "Got a type notification:  (doing nothing with it)");
   KT_T(StDdsTypes, "o typeName:                    %s", typeName);
   KT_T(StDdsTypes, "o serializedType:              %s", serializedType);
   KT_T(StDdsTypes, "o serializedTypeInternal:      %s", serializedTypeInternal);
@@ -309,8 +309,10 @@ void ddsTypeNotification
   KT_T(StDdsTypes, "o dataPlaceholder:             %s", dataPlaceholder);
   KT_T(StDdsTypes, "----------------------------------------");
 
+#if 0
   char* serialized = ddsTypeSerialized(serializedType, NULL, 0);  // buffer is allocated by ddsTypeSerialized
   KT_T(StDdsTypes, "Adding DDS type '%s', serialized to '%s'", typeName, serialized);
 
   ddsTypeAdd(typeName, serialized);
+#endif
 }
