@@ -32,9 +32,8 @@ orionldStart CB
 #
 # 01. Create the entity 'EntityForQuery2345' from the test 'Query Entity. JSON. Default @context' of contextConsumption/query_entities_test.js
 # 01b. See the entity in the DB
-# 02. NGSI-LD Test Suite Case 042: Query by condition over observedAt - NEW qVariableFix
-# 03. NGSI-LD Test Suite Case 042: Query by condition over observedAt - OLD qVariableFix
-# 04. NGSI-LD Test Suite Case 042: Query by condition over observedAt - without quotes
+# 02. NGSI-LD Test Suite Case 042: Query by condition over observedAt
+# 03. NGSI-LD Test Suite Case 042: Query by condition over observedAt - without quotes
 #
 
 echo "01. Create the entity 'EntityForQuery2345' from the test 'Query Entity. JSON. Default @context' of contextConsumption/query_entities_test.js"
@@ -91,21 +90,14 @@ echo
 echo
 
 
-echo "02. NGSI-LD Test Suite Case 042: Query by condition over observedAt - NEW qVariableFix"
-echo "======================================================================================"
+echo "02. NGSI-LD Test Suite Case 042: Query by condition over observedAt"
+echo "==================================================================="
 orionCurl --url '/ngsi-ld/v1/entities?type=T_Query&q=P100.observedAt>%222018-12-03T12:05:06.000Z%22'
 echo
 echo
 
 
-echo "03. NGSI-LD Test Suite Case 042: Query by condition over observedAt - OLD qVariableFix"
-echo "======================================================================================"
-orionCurl --url '/ngsi-ld/v1/entities?type=T_Query&q=P100.observedAt>%222018-12-03T12:05:06.000Z%22&test=qVariableFix-OLD'
-echo
-echo
-
-
-echo "04. NGSI-LD Test Suite Case 042: Query by condition over observedAt - without quotes"
+echo "03. NGSI-LD Test Suite Case 042: Query by condition over observedAt - without quotes"
 echo "===================================================================================="
 orionCurl --url '/ngsi-ld/v1/entities?type=T_Query&q=P100.observedAt>2018-12-03T12:05:06.000Z'
 echo
@@ -220,8 +212,8 @@ MongoDB server version: REGEX(.*)
 bye
 
 
-02. NGSI-LD Test Suite Case 042: Query by condition over observedAt - NEW qVariableFix
-======================================================================================
+02. NGSI-LD Test Suite Case 042: Query by condition over observedAt
+===================================================================
 HTTP/1.1 200 OK
 Content-Length: 540
 Content-Type: application/json
@@ -275,62 +267,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 ]
 
 
-03. NGSI-LD Test Suite Case 042: Query by condition over observedAt - OLD qVariableFix
-======================================================================================
-HTTP/1.1 200 OK
-Content-Length: 540
-Content-Type: application/json
-Date: REGEX(.*)
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
-
-[
-    {
-        "P1": {
-            "type": "Property",
-            "value": 45
-        },
-        "P100": {
-            "P1_P1": {
-                "type": "Property",
-                "value": 0.79
-            },
-            "P1_R1": {
-                "object": "urn:ngsi-ld:T2:6789",
-                "type": "Relationship"
-            },
-            "observedAt": "2018-12-04T12:05:06.789Z",
-            "type": "Property",
-            "value": 12
-        },
-        "R100": {
-            "R1_P1": {
-                "type": "Property",
-                "value": false
-            },
-            "R1_R1": {
-                "object": "urn:ngsi-ld:T3:A2345",
-                "type": "Relationship"
-            },
-            "object": "urn:ngsi-ld:T2:6789",
-            "type": "Relationship"
-        },
-        "id": "urn:ngsi-ld:T_Query:EntityForQuery2345",
-        "location": {
-            "type": "GeoProperty",
-            "value": {
-                "coordinates": [
-                    -30.01,
-                    75.01
-                ],
-                "type": "Point"
-            }
-        },
-        "type": "T_Query"
-    }
-]
-
-
-04. NGSI-LD Test Suite Case 042: Query by condition over observedAt - without quotes
+03. NGSI-LD Test Suite Case 042: Query by condition over observedAt - without quotes
 ====================================================================================
 HTTP/1.1 200 OK
 Content-Length: 540

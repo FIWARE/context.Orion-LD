@@ -39,7 +39,7 @@ extern "C"
 #include "orionld/mhd/mhdRequest.h"                              // Own interface
 
 
-__thread int mhdCalls = 0;
+static int mhdCalls = 0;
 
 
 
@@ -62,14 +62,14 @@ MHD_Result mhdRequest
   void**           con_cls
 )
 {
-  ++mhdCalls;
   if (mhdCalls > 50)
     KT_X(1, "More than 50 MHD calls");
 
   if (*con_cls == NULL)
   {
+    ++mhdCalls;
     KT_T(StRequest, "=======================================================================================");
-    KT_T(StRequest, "Incoming request: %s %s, type I (*con_cls == %p)", method, url, *con_cls);
+    KT_T(StRequest, "KZ: Incoming request %d: %s %s, type I (*con_cls == %p)", mhdCalls, method, url, *con_cls);
     KT_T(StRequest, "=======================================================================================");
     KT_T(StRequest, "");
     *con_cls = &cls;  // to "acknowledge" the first call
@@ -78,13 +78,13 @@ MHD_Result mhdRequest
   }
   else if (*upload_data_size != 0)
   {
-    KT_T(StRequest, "Incoming request: %s %s, type II - body (*con_cls == %p)", method, url, *con_cls);
+    KT_T(StRequest, "Request: %s %s, type II - body (*con_cls == %p)", method, url, *con_cls);
     return mhdRequestBodyF(upload_data_size, upload_data);
   }
   else
   {
-    KT_T(StRequest, "Incoming request: %s %s, type III - last call (*con_cls == %p)", method, url, *con_cls);
-    KT_T(StRequest, "Incoming request: %s %s", method, url);
+    KT_T(StRequest, "Request: %s %s, type III - last call (*con_cls == %p)", method, url, *con_cls);
+    KT_T(StRequest, "Request: %s %s", method, url);
     *upload_data_size = 0;  // Mark the request as "finished"
 
     int            statusCode;
@@ -97,10 +97,13 @@ MHD_Result mhdRequest
     else
       responseLen = strlen(response);
 
-    KT_T(StRequest, "Response(%d bytes): '%s'", responseLen, response);
+    KT_T(StRequest, "Response (%d bytes): '%s'", responseLen, response);
     r = MHD_create_response_from_buffer(responseLen, response, MHD_RESPMEM_MUST_COPY);
     MHD_queue_response(connection, statusCode, r);
     MHD_destroy_response(r);
+
+    if (responseLen > 0)
+      bzero(response, responseLen);
   }
 
   return MHD_YES;

@@ -47,8 +47,9 @@ payload='{
   "s": "111"
 }'
 orionCurl --url '/dds/pub?ddsTopicType=xyz&entityId=urn:ngsi-ld:camera:cam1&entityType=T&ddsTopicName=P1' --port $FT_PORT --payload "$payload"
-echo
-echo
+
+# The ftClient gets a callback on the topic for its own request - deleting it
+orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck -X DELETE
 
 
 echo "02. GET urn:ngsi-ld:camera:cam1 from CB"
@@ -98,6 +99,9 @@ echo
 HTTP/1.1 204 No Content
 Date: REGEX(.*)
 
+HTTP/1.1 200 OK
+Content-Length: 0
+Date: REGEX(.*)
 
 
 02. GET urn:ngsi-ld:camera:cam1 from CB
@@ -208,25 +212,6 @@ Content-Length: REGEX(.*)
 Date: REGEX(.*)
 
 [
-  {
-    "P1": {
-      "data": {
-        "REGEX(.*)": {
-          "b": false,
-          "f": 0,
-          "i": 0,
-          "ia": [
-            1,
-            2
-          ],
-          "s": "111"
-        }
-      },
-      "type": "NgsildSample"
-    },
-    "id": "REGEX(.*)",
-    "type": "fastdds"
-  },
   {
     "P1": {
       "data": {

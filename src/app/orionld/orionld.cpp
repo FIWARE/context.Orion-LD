@@ -256,6 +256,7 @@ char            defaultUserContextUrl[256];
 bool            ddsSupport       = false;
 char            configFile[512];
 bool            extras;
+bool            kToScreen        = false;
 char            kTraceLevels[256];
 
 
@@ -357,6 +358,7 @@ char            kTraceLevels[256];
 #define DUC_URL_DESC           "URL to default user context"
 #define EXTRAS_DESC            "Extra stuff, non-NGSI-LD, like 'origin' in subs/regs"
 #define KTRACE_LEVELS_DESC     "K-Trace levels"
+#define KTOSCREEN_DESC         "K-Trace to stdout"
 
 
 
@@ -467,6 +469,7 @@ PaArgument paArgs[] =
   { "-configFile",            configFile,               "CONFIG_FILE",               PaString,  PaOpt,  _i "",             PaNL,  PaNL,             CONFIG_FILE_DESC          },
   { "-duc",                   defaultUserContextUrl,    "DUC_URL",                   PaString,  PaOpt,  _i "",             PaNL,  PaNL,             DUC_URL_DESC              },
   { "-kt",                    kTraceLevels,             "KTRACE_LEVELS",             PaString,  PaOpt,  _i "",             PaNL,  PaNL,             KTRACE_LEVELS_DESC        },
+  { "-kToScreen",             &kToScreen,               "KTOSCREEN",                 PaBool,    PaOpt,  false,            false,  true,             KTOSCREEN_DESC            },
 
   PA_END_OF_ARGS
 };
@@ -1250,6 +1253,8 @@ int main(int argC, char* argV[])
   // This call redirects all log messages from the K-libs to the brokers log file.
   //
   kInit(libLogFunction);
+  if (kToScreen == true)
+    ktToScreen = KTRUE;
 
 
   //
