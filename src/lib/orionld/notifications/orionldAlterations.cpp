@@ -121,6 +121,8 @@ OrionldAlteration* orionldAlterations(char* entityId, char* entityType, KjNode* 
   OrionldAlteration* aeP   = (OrionldAlteration*) kaAlloc(&orionldState.kalloc, sizeof(OrionldAlteration));
   int                attrs = 0;
 
+  aeP->finalApiEntityP = attrsP;
+
   // Count deleted attributes - if replace
   if ((replace == true) && (dbAttrsP != NULL))  // dbAttrsP might be NULL - if the entity has no attributes in DB
   {

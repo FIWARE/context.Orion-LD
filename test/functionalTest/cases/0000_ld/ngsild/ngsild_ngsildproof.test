@@ -26,6 +26,7 @@ GET Entities by type
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -mongocOnly
+ftClientStart -t 0-5000
 
 --SHELL--
 
@@ -38,8 +39,10 @@ orionldStart CB -mongocOnly
 # 05. Query for existence of A1.ngsildproof - see both entities
 # 06. Create an entity urn:E3 with two attributes A1 and A2, both as empty as can be 
 # 07. GET urn:E3, see attributes A1 and A2
-# 08. PATCH urn:E3, giving ngsildproof sub-attributes to A1 and A2
-# 09. GET urn:E3, see attributes A1 and A2 with their ngsildproof sub-attributes
+# 08. Create a subscription on changes in A1
+# 09. PATCH urn:E3, giving ngsildproof sub-attributes to A1 and A2
+# 10. GET urn:E3, see attributes A1 and A2 with their ngsildproof sub-attributes
+# 11. Dump ftClient to see one notification
 #
 
 echo "01. Create an entity urn:E1 with an attribute A1 that has an ngsildproof sub-attribute"
@@ -146,7 +149,30 @@ echo
 echo
 
 
-echo "08. PATCH urn:E3, giving ngsildproof sub-attributes to A1 and A2"
+echo "08. Create a subscription on changes in A1"
+echo "=========================================="
+payload='{
+  "id": "urn:s1",
+  "type": "Subscription",
+  "entities": [
+    {
+      "type": "T"
+    }
+  ],
+  "watchedAttributes": [ "A1", "A2" ],
+  "notification": {
+    "endpoint": {
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
+    },
+    "format": "concise"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload"
+echo
+echo
+
+
+echo "09. PATCH urn:E3, giving ngsildproof sub-attributes to A1 and A2"
 echo "================================================================"
 payload='{
   "A1": {
@@ -182,14 +208,21 @@ payload='{
     }
   }
 }'
-orionCurl --url /ngsi-ld/v1/entities/urn:E3 -X PATCH --payload "$payload"
+orionCurl --url /ngsi-ld/v1/entities/urn:E3/attrs -X PATCH --payload "$payload"
 echo
 echo
 
 
-echo "09. GET urn:E3, see attributes A1 and A2 with their ngsildproof sub-attributes"
+echo "10. GET urn:E3, see attributes A1 and A2 with their ngsildproof sub-attributes"
 echo "=============================================================================="
 orionCurl --url /ngsi-ld/v1/entities/urn:E3
+echo
+echo
+
+
+echo "11. Dump ftClient to see one notification"
+echo "========================================="
+orionCurl --url /dump --port $FT_PORT --noPayloadCheck
 echo
 echo
 
@@ -411,14 +444,23 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 }
 
 
-08. PATCH urn:E3, giving ngsildproof sub-attributes to A1 and A2
+08. Create a subscription on changes in A1
+==========================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/subscriptions/urn:s1
+
+
+
+09. PATCH urn:E3, giving ngsildproof sub-attributes to A1 and A2
 ================================================================
 HTTP/1.1 204 No Content
 Date: REGEX(.*)
 
 
 
-09. GET urn:E3, see attributes A1 and A2 with their ngsildproof sub-attributes
+10. GET urn:E3, see attributes A1 and A2 with their ngsildproof sub-attributes
 ==============================================================================
 HTTP/1.1 200 OK
 Content-Length: 788
@@ -460,6 +502,66 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "id": "urn:E3",
     "type": "T"
 }
+
+
+11. Dump ftClient to see one notification
+=========================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Date: REGEX(.*)
+
+POST /notify?subscriptionId=urn:s1
+Content-Length: REGEX(.*)
+Content-Type: application/json
+User-Agent: orionld/REGEX(.*)
+Host: REGEX(.*)
+Accept: application/json
+Ngsild-Attribute-Format: Concise
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+  "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+  "type": "Notification",
+  "subscriptionId": "urn:s1",
+  "notifiedAt": "202REGEX(.*)Z",
+  "data": [
+    {
+      "id": "urn:E3",
+      "type": "T",
+      "A1": {
+        "value": "A1 in step 08",
+        "ngsildproof": {
+          "entityIdSealed": "urn:E3",
+          "entityTypeSealed": "T",
+          "value": {
+            "type": "DataIntegrityProof",
+            "created": "202REGEX(.*)Z",
+            "verificationMethod": "https://example.edu/issuers/565049#z6MkwXG2WjeQnN....Hc6SaVWoT",
+            "cryptosuite": "eddsa-rdfc-2022",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z3XrH3diVCqpVHXkE7WbnictqyQCkJBGTx....NRTzmuoWU1Y2FyqGfSV9eT"
+          }
+        }
+      },
+      "A2": {
+        "value": "A2 in step 08",
+        "ngsildproof": {
+          "entityIdSealed": "urn:E3",
+          "entityTypeSealed": "T",
+          "value": {
+            "type": "DataIntegrityProof",
+            "created": "202REGEX(.*)Z",
+            "verificationMethod": "https://example.edu/issuers/565049#z6MkwXG2WjeQnN....Hc6SaVWoT",
+            "cryptosuite": "eddsa-rdfc-2022",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z3XrH3diVCqpVHXkE7WbnictqyQCkJBGTx....NRTzmuoWU1Y2FyqGfSV9eT"
+          }
+        }
+      }
+    }
+  ]
+}
+
 
 
 --TEARDOWN--
