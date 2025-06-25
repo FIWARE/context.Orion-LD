@@ -26,20 +26,24 @@ GET Entities by type
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -mongocOnly
+ftClientStart -t 0-5000
 
 --SHELL--
 
 #
 # 01. Create an entity urn:E1 with an attribute A1 that has an ngsildproof sub-attribute
 # 02. GET the entity, see the ngsildproof sub-attribute "the way we want it"
-# 02b. See the entity in the database
-# 03. Create an entity urn:E2 with an attribute A1 that has an ngsildproof sub-attribute, different value
-# 04. Query over A1.ngsildproof, see only urn:E1
-# 05. Query for existence of A1.ngsildproof - see both entities
-# 06. Create an entity urn:E3 with two attributes A1 and A2, both as empty as can be 
-# 07. GET urn:E3, see attributes A1 and A2
-# 08. PATCH urn:E3, giving ngsildproof sub-attributes to A1 and A2
-# 09. GET urn:E3, see attributes A1 and A2 with their ngsildproof sub-attributes
+# 03. Retrieve the entity, see the ngsildproof sub-attribute 'the way we want it'"
+# 03b. See the entity in the database
+# 04. Create an entity urn:E2 with an attribute A1 that has an ngsildproof sub-attribute, different value
+# 05. Query over A1.ngsildproof, see only urn:E1
+# 06. Query for existence of A1.ngsildproof - see both entities
+# 07. Create an entity urn:E3 with two attributes A1 and A2, both as empty as can be 
+# 08. GET urn:E3, see attributes A1 and A2
+# 09. Create a subscription on changes in A1
+# 10. PATCH urn:E3, giving ngsildproof sub-attributes to A1 and A2
+# 11. GET urn:E3, see attributes A1 and A2 with their ngsildproof sub-attributes
+# 11b. Dump ftClient to see one notification
 #
 
 echo "01. Create an entity urn:E1 with an attribute A1 that has an ngsildproof sub-attribute"
@@ -77,14 +81,21 @@ echo
 echo
 
 
-echo "02b. See the entity in the database"
+echo "03. Retrieve the entity, see the ngsildproof sub-attribute 'the way we want it'"
+echo "==============================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1
+echo
+echo
+
+
+echo "03b. See the entity in the database"
 echo "==================================="
 mongoCmd2 ftest "db.entities.findOne()"
 echo
 echo
 
 
-echo "03. Create an entity urn:E2 with an attribute A1 that has an ngsildproof sub-attribute, different value"
+echo "04. Create an entity urn:E2 with an attribute A1 that has an ngsildproof sub-attribute, different value"
 echo "======================================================================================================="
 payload='{
   "id": "urn:E2",
@@ -112,21 +123,21 @@ echo
 echo
 
 
-echo "04. Query over A1.ngsildproof, see only urn:E1"
+echo "05. Query over A1.ngsildproof, see only urn:E1"
 echo "=============================================="
 orionCurl --url '/ngsi-ld/v1/entities?q=A1.ngsildproof\[proofValue\]==%22z3XrH3diVCqpVHXkE7WbnictqyQCkJBGTx....NRTzmuoWU1Y2FyqGfSV9eS%22'
 echo
 echo
 
 
-echo "05. Query for existence of A1.ngsildproof - see both entities"
+echo "06. Query for existence of A1.ngsildproof - see both entities"
 echo "============================================================="
 orionCurl --url '/ngsi-ld/v1/entities?q=A1.ngsildproof'
 echo
 echo
 
 
-echo "06. Create an entity urn:E3 with two attributes A1 and A2, both as empty as can be"
+echo "07. Create an entity urn:E3 with two attributes A1 and A2, both as empty as can be"
 echo "=================================================================================="
 payload='{
   "id": "urn:E3",
@@ -139,14 +150,37 @@ echo
 echo
 
 
-echo "07. GET urn:E3, see attributes A1 and A2"
+echo "08. GET urn:E3, see attributes A1 and A2"
 echo "========================================"
 orionCurl --url /ngsi-ld/v1/entities/urn:E3?local=true
 echo
 echo
 
 
-echo "08. PATCH urn:E3, giving ngsildproof sub-attributes to A1 and A2"
+echo "09. Create a subscription on changes in A1"
+echo "=========================================="
+payload='{
+  "id": "urn:s1",
+  "type": "Subscription",
+  "entities": [
+    {
+      "type": "T"
+    }
+  ],
+  "watchedAttributes": [ "A1", "A2" ],
+  "notification": {
+    "endpoint": {
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
+    },
+    "format": "concise"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload"
+echo
+echo
+
+
+echo "10. PATCH urn:E3, giving ngsildproof sub-attributes to A1 and A2"
 echo "================================================================"
 payload='{
   "A1": {
@@ -182,14 +216,21 @@ payload='{
     }
   }
 }'
-orionCurl --url /ngsi-ld/v1/entities/urn:E3 -X PATCH --payload "$payload"
+orionCurl --url /ngsi-ld/v1/entities/urn:E3/attrs -X PATCH --payload "$payload"
 echo
 echo
 
 
-echo "09. GET urn:E3, see attributes A1 and A2 with their ngsildproof sub-attributes"
+echo "11. GET urn:E3, see attributes A1 and A2 with their ngsildproof sub-attributes"
 echo "=============================================================================="
 orionCurl --url /ngsi-ld/v1/entities/urn:E3
+echo
+echo
+
+
+echo "11b. Dump ftClient to see one notification"
+echo "=========================================="
+orionCurl --url /dump --port $FT_PORT --noPayloadCheck
 echo
 echo
 
@@ -207,7 +248,7 @@ Location: /ngsi-ld/v1/entities/urn:E1
 02. GET the entity, see the ngsildproof sub-attribute 'the way we want it'
 ==========================================================================
 HTTP/1.1 200 OK
-Content-Length: 395
+Content-Length: 500
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -216,6 +257,14 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     {
         "A1": {
             "ngsildproof": {
+                "entityIdSealed": {
+                    "type": "Property",
+                    "value": "urn:E1"
+                },
+                "entityTypeSealed": {
+                    "type": "Property",
+                    "value": "T"
+                },
                 "type": "Property",
                 "value": {
                     "created": "2025-01-27T21:02:24Z",
@@ -235,7 +284,44 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 ]
 
 
-02b. See the entity in the database
+03. Retrieve the entity, see the ngsildproof sub-attribute 'the way we want it'
+===============================================================================
+HTTP/1.1 200 OK
+Content-Length: 498
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "A1": {
+        "ngsildproof": {
+            "entityIdSealed": {
+                "type": "Property",
+                "value": "urn:E1"
+            },
+            "entityTypeSealed": {
+                "type": "Property",
+                "value": "T"
+            },
+            "type": "Property",
+            "value": {
+                "created": "2025-01-27T21:02:24Z",
+                "cryptosuite": "eddsa-rdfc-2022",
+                "proofPurpose": "assertionMethod",
+                "proofValue": "z3XrH3diVCqpVHXkE7WbnictqyQCkJBGTx....NRTzmuoWU1Y2FyqGfSV9eS",
+                "type": "DataIntegrityProof",
+                "verificationMethod": "https://example.edu/issuers/565049#z6MkwXG2WjeQnN....Hc6SaVWoT"
+            }
+        },
+        "type": "Property",
+        "value": 1
+    },
+    "id": "urn:E1",
+    "type": "T"
+}
+
+
+03b. See the entity in the database
 ===================================
 MongoDB shell version REGEX(.*)
 connecting to: REGEX(.*)
@@ -290,7 +376,7 @@ MongoDB server version: REGEX(.*)
 bye
 
 
-03. Create an entity urn:E2 with an attribute A1 that has an ngsildproof sub-attribute, different value
+04. Create an entity urn:E2 with an attribute A1 that has an ngsildproof sub-attribute, different value
 =======================================================================================================
 HTTP/1.1 201 Created
 Content-Length: 0
@@ -299,10 +385,10 @@ Location: /ngsi-ld/v1/entities/urn:E2
 
 
 
-04. Query over A1.ngsildproof, see only urn:E1
+05. Query over A1.ngsildproof, see only urn:E1
 ==============================================
 HTTP/1.1 200 OK
-Content-Length: 395
+Content-Length: 500
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -311,6 +397,14 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     {
         "A1": {
             "ngsildproof": {
+                "entityIdSealed": {
+                    "type": "Property",
+                    "value": "urn:E1"
+                },
+                "entityTypeSealed": {
+                    "type": "Property",
+                    "value": "T"
+                },
                 "type": "Property",
                 "value": {
                     "created": "2025-01-27T21:02:24Z",
@@ -330,10 +424,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 ]
 
 
-05. Query for existence of A1.ngsildproof - see both entities
+06. Query for existence of A1.ngsildproof - see both entities
 =============================================================
 HTTP/1.1 200 OK
-Content-Length: 789
+Content-Length: 999
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -342,6 +436,14 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     {
         "A1": {
             "ngsildproof": {
+                "entityIdSealed": {
+                    "type": "Property",
+                    "value": "urn:E1"
+                },
+                "entityTypeSealed": {
+                    "type": "Property",
+                    "value": "T"
+                },
                 "type": "Property",
                 "value": {
                     "created": "2025-01-27T21:02:24Z",
@@ -361,6 +463,14 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     {
         "A1": {
             "ngsildproof": {
+                "entityIdSealed": {
+                    "type": "Property",
+                    "value": "urn:E2"
+                },
+                "entityTypeSealed": {
+                    "type": "Property",
+                    "value": "T"
+                },
                 "type": "Property",
                 "value": {
                     "created": "2025-02-27T21:02:24Z",
@@ -380,7 +490,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 ]
 
 
-06. Create an entity urn:E3 with two attributes A1 and A2, both as empty as can be
+07. Create an entity urn:E3 with two attributes A1 and A2, both as empty as can be
 ==================================================================================
 HTTP/1.1 201 Created
 Content-Length: 0
@@ -389,7 +499,7 @@ Location: /ngsi-ld/v1/entities/urn:E3
 
 
 
-07. GET urn:E3, see attributes A1 and A2
+08. GET urn:E3, see attributes A1 and A2
 ========================================
 HTTP/1.1 200 OK
 Content-Length: 112
@@ -411,17 +521,26 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 }
 
 
-08. PATCH urn:E3, giving ngsildproof sub-attributes to A1 and A2
+09. Create a subscription on changes in A1
+==========================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/subscriptions/urn:s1
+
+
+
+10. PATCH urn:E3, giving ngsildproof sub-attributes to A1 and A2
 ================================================================
 HTTP/1.1 204 No Content
 Date: REGEX(.*)
 
 
 
-09. GET urn:E3, see attributes A1 and A2 with their ngsildproof sub-attributes
+11. GET urn:E3, see attributes A1 and A2 with their ngsildproof sub-attributes
 ==============================================================================
 HTTP/1.1 200 OK
-Content-Length: 788
+Content-Length: 998
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -429,6 +548,14 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 {
     "A1": {
         "ngsildproof": {
+            "entityIdSealed": {
+                "type": "Property",
+                "value": "urn:E3"
+            },
+            "entityTypeSealed": {
+                "type": "Property",
+                "value": "T"
+            },
             "type": "Property",
             "value": {
                 "created": "2025-02-27T21:02:24Z",
@@ -444,6 +571,14 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     },
     "A2": {
         "ngsildproof": {
+            "entityIdSealed": {
+                "type": "Property",
+                "value": "urn:E3"
+            },
+            "entityTypeSealed": {
+                "type": "Property",
+                "value": "T"
+            },
             "type": "Property",
             "value": {
                 "created": "2025-02-27T21:02:24Z",
@@ -460,6 +595,66 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "id": "urn:E3",
     "type": "T"
 }
+
+
+11b. Dump ftClient to see one notification
+==========================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Date: REGEX(.*)
+
+POST /notify?subscriptionId=urn:s1
+Content-Length: REGEX(.*)
+Content-Type: application/json
+User-Agent: orionld/REGEX(.*)
+Host: REGEX(.*)
+Accept: application/json
+Ngsild-Attribute-Format: Concise
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+  "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+  "type": "Notification",
+  "subscriptionId": "urn:s1",
+  "notifiedAt": "202REGEX(.*)Z",
+  "data": [
+    {
+      "id": "urn:E3",
+      "type": "T",
+      "A1": {
+        "value": "A1 in step 08",
+        "ngsildproof": {
+          "entityIdSealed": "urn:E3",
+          "entityTypeSealed": "T",
+          "value": {
+            "type": "DataIntegrityProof",
+            "created": "202REGEX(.*)Z",
+            "verificationMethod": "https://example.edu/issuers/565049#z6MkwXG2WjeQnN....Hc6SaVWoT",
+            "cryptosuite": "eddsa-rdfc-2022",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z3XrH3diVCqpVHXkE7WbnictqyQCkJBGTx....NRTzmuoWU1Y2FyqGfSV9eT"
+          }
+        }
+      },
+      "A2": {
+        "value": "A2 in step 08",
+        "ngsildproof": {
+          "entityIdSealed": "urn:E3",
+          "entityTypeSealed": "T",
+          "value": {
+            "type": "DataIntegrityProof",
+            "created": "202REGEX(.*)Z",
+            "verificationMethod": "https://example.edu/issuers/565049#z6MkwXG2WjeQnN....Hc6SaVWoT",
+            "cryptosuite": "eddsa-rdfc-2022",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z3XrH3diVCqpVHXkE7WbnictqyQCkJBGTx....NRTzmuoWU1Y2FyqGfSV9eT"
+          }
+        }
+      }
+    }
+  ]
+}
+
 
 
 --TEARDOWN--

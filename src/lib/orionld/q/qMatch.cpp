@@ -97,7 +97,7 @@ bool qMatch(QNode* qP, KjNode* attributesP, bool eqNames)
     // If it does not, then the result is always "false" (except for the case "q=!P1", of course :))
     //
     bool     isTimestamp = false;
-    KjNode*  lhsNode     = kjNavigate2(attributesP, longName, &isTimestamp);
+    KjNode*  lhsNode     = (attributesP != NULL)? kjNavigate2(attributesP, longName, &isTimestamp) : NULL;
 
     //
     // If Left-Hand-Side does not exist - MATCH for op "NotExist" and No Match for all other operations

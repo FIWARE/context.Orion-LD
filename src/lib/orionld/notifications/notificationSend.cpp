@@ -288,14 +288,16 @@ static void attributeFix(KjNode* attrP, CachedSubscription* subP)
     if ((subP->renderFormat != RF_SIMPLIFIED) && (subP->showChanges == true))
       previousValueAdd(attrP, attrLongName);
 
-    LM_T(LmtPatchEntity, ("Fixing attribute '%s' (JSON type: %s)", attrP->name, kjValueType(attrP->type)));
     for (KjNode* saP = attrP->value.firstChildP; saP != NULL; saP = saP->next)
     {
+      if (strcmp(saP->name, "type")        == 0) continue;
       if (strcmp(saP->name, "value")       == 0) continue;
       if (strcmp(saP->name, "object")      == 0) continue;
       if (strcmp(saP->name, "languageMap") == 0) continue;
       if (strcmp(saP->name, "vocab")       == 0) continue;
       if (strcmp(saP->name, "unitCode")    == 0) continue;
+      if (strcmp(saP->name, "createdAt")   == 0) continue;
+      if (strcmp(saP->name, "modifiedAt")  == 0) continue;
 
       eqForDot(saP->name);
       saP->name = orionldContextItemAliasLookup(subP->contextP, saP->name, NULL, NULL);
@@ -306,6 +308,29 @@ static void attributeFix(KjNode* attrP, CachedSubscription* subP)
           attributeToSimplified(saP, subP->lang.c_str());
         else if (subP->renderFormat == RF_CONCISE)
           attributeToConcise(saP, &asSimplified, subP->lang.c_str());  // asSimplified is not used down here
+
+        // Sub-sub-attrs
+        for (KjNode* ssaP = saP->value.firstChildP; ssaP != NULL; ssaP = ssaP->next)
+        {
+          if (strcmp(ssaP->name, "type")        == 0) continue;
+          if (strcmp(ssaP->name, "value")       == 0) continue;
+          if (strcmp(ssaP->name, "object")      == 0) continue;
+          if (strcmp(ssaP->name, "languageMap") == 0) continue;
+          if (strcmp(ssaP->name, "vocab")       == 0) continue;
+          if (strcmp(ssaP->name, "createdAt")   == 0) continue;
+          if (strcmp(ssaP->name, "modifiedAt")  == 0) continue;
+
+          eqForDot(ssaP->name);
+          ssaP->name = orionldContextItemAliasLookup(subP->contextP, ssaP->name, NULL, NULL);
+
+          if (ssaP->type == KjObject)
+          {
+            if (subP->renderFormat == RF_SIMPLIFIED)
+              attributeToSimplified(ssaP, subP->lang.c_str());
+            else if (subP->renderFormat == RF_CONCISE)
+              attributeToConcise(ssaP, &asSimplified, subP->lang.c_str());  // asSimplified is not used down here
+          }
+        }
       }
     }
   }

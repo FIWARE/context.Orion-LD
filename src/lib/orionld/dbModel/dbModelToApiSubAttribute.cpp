@@ -135,39 +135,46 @@ KjNode* dbModelToApiSubAttribute2(KjNode* dbSubAttributeP, bool sysAttrs, Orionl
   else
     kjChildAdd(subAttrP, typeP);  // No "type" if CONCISE
 
-  KjNode* nodeP = dbSubAttributeP->value.firstChildP;
+  KjNode* dbSubSubAttrP = dbSubAttributeP->value.firstChildP;
   KjNode* next;
-  while (nodeP != NULL)
+  while (dbSubSubAttrP != NULL)
   {
-    next = nodeP->next;
+    next = dbSubSubAttrP->next;
 
-    if (strcmp(nodeP->name, "value") == 0)
+    if (strcmp(dbSubSubAttrP->name, "value") == 0)
     {
-      if      (subAttrType == Relationship)        nodeP->name = (char*) "object";
-      else if (subAttrType == LanguageProperty)    nodeP->name = (char*) "languageMap";
-      else if (subAttrType == VocabularyProperty)  nodeP->name = (char*) "vocab";
-      else if (subAttrType == JsonProperty)        nodeP->name = (char*) "json";
+      if      (subAttrType == Relationship)        dbSubSubAttrP->name = (char*) "object";
+      else if (subAttrType == LanguageProperty)    dbSubSubAttrP->name = (char*) "languageMap";
+      else if (subAttrType == VocabularyProperty)  dbSubSubAttrP->name = (char*) "vocab";
+      else if (subAttrType == JsonProperty)        dbSubSubAttrP->name = (char*) "json";
 
-      kjChildAdd(subAttrP, nodeP);
+      kjChildAdd(subAttrP, dbSubSubAttrP);
     }
-    else if (strcmp(nodeP->name, "observedAt") == 0)
-      kjChildAdd(subAttrP, nodeP);
-    else if (strcmp(nodeP->name, "unitCode") == 0)
-      kjChildAdd(subAttrP, nodeP);
-    else if (sysAttrs == true)
+    else if (strcmp(dbSubSubAttrP->name, "observedAt") == 0)
+      kjChildAdd(subAttrP, dbSubSubAttrP);
+    else if (strcmp(dbSubSubAttrP->name, "unitCode") == 0)
+      kjChildAdd(subAttrP, dbSubSubAttrP);
+    else if ((strcmp(dbSubSubAttrP->name, "createdAt") == 0) || (strcmp(dbSubSubAttrP->name, "modifiedAt") == 0))
     {
-      if ((strcmp(nodeP->name, "createdAt") == 0) || (strcmp(nodeP->name, "modifiedAt") == 0))
+      if (sysAttrs == true)
       {
         char* dateTimeBuf = kaAlloc(&orionldState.kalloc, 32);
-        numberToDate(nodeP->value.f, dateTimeBuf, 32);
-        nodeP->value.s    = dateTimeBuf;
-        nodeP->type       = KjString;
+        numberToDate(dbSubSubAttrP->value.f, dateTimeBuf, 32);
+        dbSubSubAttrP->value.s    = dateTimeBuf;
+        dbSubSubAttrP->type       = KjString;
 
-        kjChildAdd(subAttrP, nodeP);
+        kjChildAdd(subAttrP, dbSubSubAttrP);
       }
     }
+    else
+    {
+      LM_W(("Adding the sub-sub-attribute '%s'", dbSubSubAttrP->name));
+      KjNode* apiSubSubAttrP = dbModelToApiSubAttribute2(dbSubSubAttrP, sysAttrs, renderFormat, lang, pdP);
+      if (apiSubSubAttrP != NULL)
+        kjChildAdd(subAttrP, apiSubSubAttrP);
+    }
 
-    nodeP = next;
+    dbSubSubAttrP = next;
   }
 
   return subAttrP;
