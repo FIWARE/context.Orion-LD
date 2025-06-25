@@ -61,6 +61,50 @@ echo
 
 
 --REGEXPECT--
+01. GET all entities from the broker
+====================================
+HTTP/1.1 200 OK
+Content-Length: 417
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "armReach": {
+            "ddsTypeName": {
+                "type": "Property",
+                "value": "NgsildSample"
+            },
+            "type": "Property",
+            "value": "uninitialized"
+        },
+        "ddsType": {
+            "type": "Property",
+            "value": "fastdds"
+        },
+        "id": "urn:ngsi-ld:arm:arm1",
+        "type": "Arm"
+    },
+    {
+        "ddsType": {
+            "type": "Property",
+            "value": "fastdds"
+        },
+        "id": "urn:ngsi-ld:camera:cam1",
+        "shutterSpeed": {
+            "ddsTypeName": {
+                "type": "Property",
+                "value": "NgsildSample"
+            },
+            "type": "Property",
+            "value": "uninitialized"
+        },
+        "type": "Camera"
+    }
+]
+
+
 --TEARDOWN--
 ftClientStop
 ftClientStop --port $FT2_PORT

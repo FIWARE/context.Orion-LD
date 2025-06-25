@@ -46,6 +46,7 @@ extern "C"
 #include "orionld/dds/kjTreeLog.h"                          // kjTreeLog2
 #include "orionld/dds/ddsTypes.h"                           // ddsTypeNotification, ddsTypeLookup
 #include "orionld/dds/ddsNotification.h"                    // ddsNotification
+#include "orionld/dds/ddsTopicNotification.h"               // ddsTopicNotification
 #include "orionld/dds/ddsCategoryToKlogSeverity.h"          // ddsCategoryToKlogSeverity
 #include "orionld/dds/ddsInit.h"                            // Own interface
 
@@ -57,25 +58,6 @@ extern "C"
 //
 std::unique_ptr<eprosima::ddsenabler::DDSEnabler>  ddsEnabler;
 
-
-
-// -----------------------------------------------------------------------------
-//
-// ddsTopicNotification -
-//
-static void ddsTopicNotification(const char* topicName, const char* typeName, const char* serializedQos)
-{
-  KT_T(StDds, "Got a topic notification (topic: '%s', type: '%s', qos: '%s')", topicName, typeName, serializedQos);
-
-#if 0
-  DdsType* typeP = ddsTypeLookup(typeName);
-
-  if (typeP != NULL)
-    typeP->topic = strdup(topicName);
-
-  ddsTypeList();
-#endif
-}
 
 
 // #define NEW_EPROSIMA_LIB
