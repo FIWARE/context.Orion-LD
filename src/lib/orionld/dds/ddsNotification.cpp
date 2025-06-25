@@ -38,9 +38,7 @@ extern "C"
 #include "orionld/config/configDdsTopicToAttribute.h"       // configDdsTopicToAttribute
 #include "orionld/service/orionldServiceInit.h"             // orionldRestServiceV
 #include "orionld/serviceRoutines/orionldPutAttribute.h"    // orionldPutAttribute
-#include "orionld/mongoc/mongocConnectionRelease.h"         // mongocConnectionRelease
 #include "orionld/context/orionldContextItemExpand.h"       // orionldContextItemExpand
-#include "orionld/notifications/orionldAlterationsTreat.h"  // orionldAlterationsTreat
 #include "orionld/service/serviceLookupByServiceRoutine.h"  // serviceLookupByServiceRoutine
 #include "orionld/dds/kjTreeLog.h"                          // kjTreeLog2
 #include "orionld/dds/ddsNotification.h"                    // Own interface

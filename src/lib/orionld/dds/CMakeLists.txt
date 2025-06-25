@@ -31,6 +31,7 @@ SET (SOURCES
   ddsPublishAttributes.cpp
   ddsTypes.cpp
   ddsPrePopulateDb.cpp
+  ddsTopicNotification.cpp
 )
 
 # Include directories

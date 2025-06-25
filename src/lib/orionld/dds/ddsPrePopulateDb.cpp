@@ -131,7 +131,7 @@ static void* ddsPrePopulateDbInThread(void* vP)
 
   pickList.array[0] = (char*) "id";
   pickList.array[1] = (char*) "type";
-  
+
   for (KjNode* topic = topics->value.firstChildP; topic != NULL; topic = topic->next)
   {
     KT_T(StDdsPrePopulate, "Topic '%s'", topic->name);
@@ -239,7 +239,7 @@ static void* ddsPrePopulateDbInThread(void* vP)
       dbModelFromApiEntity(entity, NULL, true, entityId, entityType);
       kjChildAdd(dbCreateV, entity);
     }
-    else if (attributeExists == false) // Add the attribute to existing entity
+    else if (attributeExists == false)  // Add the attribute to existing entity
     {
       KjNode* newDbAttrNamesV = kjArray(orionldState.kjsonP, NULL);
       KjNode* newDbAttrName   = kjString(orionldState.kjsonP, NULL, eqName);
