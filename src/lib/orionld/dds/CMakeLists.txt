@@ -30,6 +30,7 @@ SET (SOURCES
   ddsPublishAttribute.cpp
   ddsPublishAttributes.cpp
   ddsTypes.cpp
+  ddsPrePopulateDb.cpp
 )
 
 # Include directories

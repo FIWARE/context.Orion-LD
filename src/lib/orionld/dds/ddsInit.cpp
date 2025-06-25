@@ -39,9 +39,10 @@ extern "C"
 #include "logMsg/logMsg.h"                                  // lmOut
 
 #include "orionld/types/DdsType.h"                          // DdsType
-#include "orionld/common/traceLevels.h"                     // kjTreeLog2
+#include "orionld/common/traceLevels.h"                     // Trace levels for KTrace
 #include "orionld/common/orionldState.h"                    // configFile
 #include "orionld/kjTree/kjNavigate.h"                      // kjNavigate
+#include "orionld/dds/ddsPrePopulateDb.h"                   // ddsPrePopulateDb
 #include "orionld/dds/kjTreeLog.h"                          // kjTreeLog2
 #include "orionld/dds/ddsTypes.h"                           // ddsTypeNotification, ddsTypeLookup
 #include "orionld/dds/ddsNotification.h"                    // ddsNotification
@@ -144,6 +145,8 @@ static void ddsLog(const char* fileName, int lineNo, const char* funcName, int c
 //
 int ddsInit(Kjson* kjP)
 {
+  ddsPrePopulateDb();
+
   KT_T(StDds, "Calling create_dds_enabler('%s')", configFile);
 
   eprosima::utils::Log::ReportFilenames(true);
