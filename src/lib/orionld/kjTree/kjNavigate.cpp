@@ -22,6 +22,7 @@
 *
 * Author: Ken Zangelin
 */
+#include <string.h>                                              // strncpy
 #include <unistd.h>                                              // NULL
 
 extern "C"
@@ -113,8 +114,11 @@ static int dotCount(char* s)
 //
 // kjNavigate2 - prepared for db-model, but also OK without
 //
-KjNode* kjNavigate2(KjNode* treeP, char* path, bool* isTimestampP)
+KjNode* kjNavigate2(KjNode* treeP, const char* pathIn, bool* isTimestampP)
 {
+  char path[512];
+  strncpy(path, pathIn, sizeof(path) - 1);
+
   LM_T(LmtCsf, ("Looking for '%s'", path));
   kjTreeLog(treeP, "In this tree", LmtCsf);
 
@@ -138,11 +142,14 @@ KjNode* kjNavigate2(KjNode* treeP, char* path, bool* isTimestampP)
   //
   // Is it a timestamp?   (if so, an ISO8601 string must be turned into a float/integer to be compared
   //
-  char* lastComponent = compV[components - 1];
-  if ((strcmp(lastComponent, "observedAt") == 0) || (strcmp(lastComponent, "modifiedAt") == 0) || (strcmp(lastComponent, "createdAt") == 0))
-    *isTimestampP = true;
-  else
-    *isTimestampP = false;
+  if (isTimestampP != NULL)
+  {
+    char* lastComponent = compV[components - 1];
+    if ((strcmp(lastComponent, "observedAt") == 0) || (strcmp(lastComponent, "modifiedAt") == 0) || (strcmp(lastComponent, "createdAt") == 0))
+      *isTimestampP = true;
+    else
+      *isTimestampP = false;
+  }
 
   compV[components] = NULL;
 

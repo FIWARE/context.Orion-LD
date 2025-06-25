@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_KJTREE_KJNAVIGATE_H_
-#define SRC_LIB_ORIONLD_KJTREE_KJNAVIGATE_H_
+#ifndef SRC_LIB_ORIONLD_DDS_DDSPREPOPULATEDB_H_
+#define SRC_LIB_ORIONLD_DDS_DDSPREPOPULATEDB_H_
 
 /*
 *
-* Copyright 2022 FIWARE Foundation e.V.
+* Copyright 2025 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,35 +25,13 @@
 *
 * Author: Ken Zangelin
 */
-extern "C"
-{
-#include "kjson/KjNode.h"                                        // KjNode
-}
 
 
 
 // -----------------------------------------------------------------------------
 //
-// kjNavigate -
+// ddsPrePopulateDb -
 //
-// FIXME: move to kjson library
-//
-extern KjNode* kjNavigate(KjNode* treeP, const char** pathCompV, KjNode** parentPP, bool* onlyLastMissingP);
+extern void ddsPrePopulateDb(void);
 
-
-
-// -----------------------------------------------------------------------------
-//
-// kjNavigate - true Kj-Tree navigation
-//
-extern KjNode* kjNavigate(KjNode* treeP, char** compV);
-
-
-
-// -----------------------------------------------------------------------------
-//
-// kjNavigate2 - prepared for db-model, but also OK without
-//
-extern KjNode* kjNavigate2(KjNode* treeP, const char* path, bool* isTimestampP);
-
-#endif  // SRC_LIB_ORIONLD_KJTREE_KJNAVIGATE_H_
+#endif  // SRC_LIB_ORIONLD_DDS_DDSPREPOPULATEDB_H_

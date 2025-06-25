@@ -64,8 +64,6 @@ bool ddsAttributeCreate(KjNode* attrNodeP, const char* entityType, const char* a
   orionldState.serviceP = serviceLookupByServiceRoutine(orionldPostEntity, HTTP_POST);
 
   // And we call it
-  KT_T(StServiceRoutines, "Calling orionldPostEntity");
   bool b = orionldPostEntity();
-  KT_T(StServiceRoutines, "Back from orionldPostEntity (returned %s)", (b == true)? "true" : "false");
   return b;
 }

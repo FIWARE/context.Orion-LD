@@ -168,7 +168,6 @@ KjNode* dbModelToApiSubAttribute2(KjNode* dbSubAttributeP, bool sysAttrs, Orionl
     }
     else
     {
-      LM_W(("Adding the sub-sub-attribute '%s'", dbSubSubAttrP->name));
       KjNode* apiSubSubAttrP = dbModelToApiSubAttribute2(dbSubSubAttrP, sysAttrs, renderFormat, lang, pdP);
       if (apiSubSubAttrP != NULL)
         kjChildAdd(subAttrP, apiSubSubAttrP);

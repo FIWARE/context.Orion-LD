@@ -55,7 +55,7 @@ int ddsEntityCreateFromAttribute(KjNode* attrNodeP, const char* entityId, const 
   kjChildAdd(orionldState.requestTree, attributeP);
 
   kjTreeLog2(orionldState.requestTree, "Input KjNode tree to orionldPostEntities", StDds);
-  KT_T(StServiceRoutines, "Calling orionldPostEntities");
+  KT_T(StDdsSrCalls, "Calling orionldPostEntities");
 
   //
   // We change the service routine
@@ -64,7 +64,7 @@ int ddsEntityCreateFromAttribute(KjNode* attrNodeP, const char* entityId, const 
 
   // And we call it
   bool x = orionldPostEntities();
-  KT_T(StServiceRoutines, "Back from orionldPostEntities (returned %s)", (x == true)? "true" : "false");
+  KT_T(StDdsSrCalls, "Back from orionldPostEntities (returned %s)", (x == true)? "true" : "false");
 
   return 0;
 }

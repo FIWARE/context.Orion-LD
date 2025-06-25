@@ -107,7 +107,7 @@ bool mongocEntitiesUpsert(KjNode* createArrayP, KjNode* updateArrayP)
 
   bson_error_t error;
   bson_t       reply;
-  bool r = mongoc_bulk_operation_execute(bulkP, &reply, &error);
+  bool         r = mongoc_bulk_operation_execute(bulkP, &reply, &error);
 
   if (r == false)
   {
