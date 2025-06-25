@@ -65,13 +65,14 @@ std::unique_ptr<eprosima::ddsenabler::DDSEnabler>  ddsEnabler;
 static void ddsTopicNotification(const char* topicName, const char* typeName, const char* serializedQos)
 {
   KT_T(StDds, "Got a topic notification ('%s', '%s', '%s')", topicName, typeName, serializedQos);
-
+#if 0
   DdsType* typeP = ddsTypeLookup(typeName);
 
   if (typeP != NULL)
     typeP->topic = strdup(topicName);
 
   ddsTypeList();
+#endif
 }
 
 
