@@ -82,7 +82,7 @@ static KjNode* kjDbEntityLookupInArray(KjNode* entityV, const char* entityId)
 static KjNode* kjDbAttrLookupInDbEntity(KjNode* dbEntityP, const char* longAttrName)
 {
   char eqName[512];
-  strncpy(eqName, longAttrName, sizeof(eqName) -1);
+  strncpy(eqName, longAttrName, sizeof(eqName));
 
   const char* compV[3]  = { "attrs", eqName, NULL };
   KjNode*     attrNodeP = kjNavigate(dbEntityP, compV, NULL, NULL);
