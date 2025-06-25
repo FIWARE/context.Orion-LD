@@ -1,0 +1,70 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Test of pre-population of entities from config file
+
+--SHELL-INIT--
+$REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" --ddsTopic "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.orionld
+$REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" --ddsTopic "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.ftClient
+ftClientStop
+ftClientStart -t 0-5000
+ftClientStart -t 0-5000 --port $FT2_PORT --logDir $FT2_LOG_DIR
+#
+# 01. Ask FT1 to publish on P1 (FT2 will receive?)
+# 02. Ask FT2 to publish on P2 (FT1 will receive?)
+#
+payload='{
+  "s": "pre 01"
+}'
+orionCurl --url '/dds/pub?ddsTopicType=xyz&entityId=urn:ngsi-ld:camera:cam1&entityType=T&ddsTopicName=P1' --port $FT_PORT --payload "$payload"
+
+payload='{
+  "s": "pre 02"
+}'
+orionCurl --url '/dds/pub?ddsTopicType=xyz&entityId=urn:ngsi-ld:camera:cam1&entityType=T&ddsTopicName=P2' --port $FT2_PORT --payload "$payload"
+
+
+dbInit CB
+orionldStart CB -mongocOnly -wip dds
+
+--SHELL--
+
+#
+# 01. GET all entities from the broker
+#
+
+echo "01. GET all entities from the broker"
+echo "===================================="
+orionCurl --url /ngsi-ld/v1/entities?local=true
+echo
+echo
+
+
+--REGEXPECT--
+--TEARDOWN--
+ftClientStop
+ftClientStop --port $FT2_PORT
+brokerStop
+dbDrop CB
+rm -f $HOME/.orionld
+rm -f $HOME/.ftClient
