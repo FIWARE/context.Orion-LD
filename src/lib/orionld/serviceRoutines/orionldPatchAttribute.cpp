@@ -471,7 +471,7 @@ bool orionldPatchAttribute(void)
           KjNode* finalApiEntityWithoutSysAttrsP = kjClone(orionldState.kjsonP, finalApiEntityWithSysAttrsP);
           sysAttrsStrip(finalApiEntityWithoutSysAttrsP);
 
-          if (ddsSupport == true)
+          if ((ddsSupport == true) && (orionldState.ddsSample == false))
           {
             char*   shortName = orionldContextItemAliasLookup(orionldState.contextP, orionldState.wildcard[1], NULL, NULL);
             KjNode* attrP     = kjLookup(finalApiEntityWithoutSysAttrsP, orionldState.wildcard[1]);
