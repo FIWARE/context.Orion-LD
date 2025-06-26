@@ -75,11 +75,12 @@
 #include "orionld/serviceRoutines/orionldGetTemporalEntity.h"
 #include "orionld/serviceRoutines/orionldPostTemporalQuery.h"
 #include "orionld/serviceRoutines/orionldPostTemporalEntities.h"
-#include "orionld/serviceRoutines/orionldDeleteTemporalAttribute.h"          // orionldDeleteTemporalAttribute
-#include "orionld/serviceRoutines/orionldDeleteTemporalAttributeInstance.h"  // orionldDeleteTemporalAttributeInstance
-#include "orionld/serviceRoutines/orionldDeleteTemporalEntity.h"             // orionldDeleteTemporalEntity
-#include "orionld/serviceRoutines/orionldPatchTemporalAttributeInstance.h"   // orionldPatchTemporalAttributeInstance
-#include "orionld/serviceRoutines/orionldPostTemporalAttributes.h"           // orionldPostTemporalAttributes
+#include "orionld/serviceRoutines/orionldDeleteTemporalAttribute.h"
+#include "orionld/serviceRoutines/orionldDeleteTemporalAttributeInstance.h"
+#include "orionld/serviceRoutines/orionldDeleteTemporalEntity.h"
+#include "orionld/serviceRoutines/orionldPatchTemporalAttributeInstance.h"
+#include "orionld/serviceRoutines/orionldPostTemporalAttributes.h"
+#include "orionld/serviceRoutines/orionldGetDdsTopics.h"
 
 #include "orionld/types/OrionLdRestService.h"      // OrionLdRestServiceSimplified
 #include "orionld/orionldRestServices.h"           // Own Interface
@@ -112,6 +113,7 @@ static OrionLdRestServiceSimplified getServiceV[] =
   { "/ngsi-ld/ex/v1/version",              orionldGetVersion          },
   { "/ngsi-ld/ex/v1/tenants",              orionldGetTenants          },
   { "/ngsi-ld/ex/v1/dbIndexes",            orionldGetDbIndexes        },
+  { "/ngsi-ld/ex/v1/dds/topics",           orionldGetDdsTopics        },
 };
 static const int getServices = (sizeof(getServiceV) / sizeof(getServiceV[0]));
 

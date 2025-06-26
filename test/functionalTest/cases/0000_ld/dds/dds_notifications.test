@@ -65,6 +65,7 @@ echo
 
 echo "02. Ask FT to publish an entity urn:E2 on topic 'P2'"
 echo "===================================================="
+sleep .1
 payload='{
   "i": 2,
   "s": "step 02"
@@ -76,6 +77,7 @@ echo
 
 echo "03. Ask FT to publish an entity urn:E3 on topic 'P3'"
 echo "===================================================="
+sleep .1
 payload='{
   "f": 3.14,
   "s": "step 03"
@@ -87,6 +89,7 @@ echo
 
 echo "04. Ask FT to publish an entity urn:E4 on topic 'P4'"
 echo "===================================================="
+sleep .1
 payload='{
   "s": "step 04",
   "i": 4,
