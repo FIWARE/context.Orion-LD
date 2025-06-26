@@ -43,6 +43,7 @@ extern "C"
 #include "orionld/config/configInit.h"                      // configTree
 #include "orionld/kjTree/kjNavigate.h"                      // kjNavigate2
 #include "orionld/kjTree/kjChildCount.h"                    // kjChildCount
+#include "orionld/kjTree/kjEntityIdLookupInEntityArray.h"   // kjEntityIdLookupInEntityArray
 #include "orionld/context/orionldCoreContext.h"             // orionldCoreContextP
 #include "orionld/context/orionldContextItemExpand.h"       // orionldContextItemExpand
 #include "orionld/context/orionldAttributeExpand.h"         // orionldAttributeExpand
@@ -185,6 +186,8 @@ static void* ddsPrePopulateDbInThread(void* vP)
       continue;
     }
 
+    KT_T(StDdsPrePopulate, "Entity '%s'. Attribute '%s'", entityId, attrName);
+
     char*  longEntityType  = orionldContextItemExpand(orionldCoreContextP, entityType, true, NULL);
     char*  longAttrName    = orionldAttributeExpand(orionldCoreContextP, attrName, true, NULL);
     bool   entityExists    = false;  // Initialized to false, assuming the entity does not already exist in the brokers DB
@@ -205,11 +208,29 @@ static void* ddsPrePopulateDbInThread(void* vP)
         if (kjDbAttrLookupInDbEntity(dbEntityP, eqName) != NULL)
           attributeExists = true;
 
-        KT_T(StDdsPrePopulate, "Entity '%s' EXISTS, Attribute '%s' $s", entityId, longAttrName);
+        KT_T(StDdsPrePopulate, "Entity '%s' EXISTS, Attribute '%s' %s", entityId, longAttrName, (attributeExists == true)? "EXISTS" : "DOESN'T EXIST");
       }
     }
 
+    //
+    // Must also look in the dbCreateV - might be there are more than one attribute for the same entity in the config file
+    //
+    KjNode* preEntityP = NULL;
+    if (entityExists == false)
+    {
+      preEntityP = kjDbEntityLookupInArray(dbCreateV, entityId);
+      if (preEntityP != NULL)
+      {
+        entityExists = true;
+        KT_T(StDdsPrePopulate, "Found entity '%s' in dbCreateV array", entityId);
+      }
+      else
+        KT_T(StDdsPrePopulate, "Did not find entity '%s' in dbCreateV array", entityId);
+    }
+
+    //
     // Create or Update (or nothing) - depending on entityExists and attributeExists
+    //
     if (entityExists == false)
     {
       KjNode* entity         = kjObject(orionldState.kjsonP, NULL);
@@ -238,31 +259,51 @@ static void* ddsPrePopulateDbInThread(void* vP)
 
       dbModelFromApiEntity(entity, NULL, true, entityId, entityType);
       kjChildAdd(dbCreateV, entity);
+      KT_T(StDdsPrePopulate, "Added entity '%s' to dbCreateV array", entityId);
+      // kjTreeLog2(dbCreateV, "dbCreateV", StDdsPrePopulate);
     }
     else if (attributeExists == false)  // Add the attribute to existing entity
     {
-      KjNode* newDbAttrNamesV = kjArray(orionldState.kjsonP, NULL);
-      KjNode* newDbAttrName   = kjString(orionldState.kjsonP, NULL, eqName);
-      KjNode* attribute       = kjObject(orionldState.kjsonP, longAttrName);
-      KjNode* attrType        = kjString(orionldState.kjsonP, "type", "Property");
-      KjNode* attrValue       = kjString(orionldState.kjsonP, "value", "uninitialized");
-      bool    r;
+      if (preEntityP == NULL)  // Meaning, the entity exists in the DB - call mongocAttributesAdd directly
+      {
+        KT_T(StDdsPrePopulate, "Attribute '%s' of '%s' doesn't exist", attrName, entityId);
+        KjNode* newDbAttrNamesV = kjArray(orionldState.kjsonP, NULL);
+        KjNode* newDbAttrName   = kjString(orionldState.kjsonP, NULL, eqName);
+        KjNode* attribute       = kjObject(orionldState.kjsonP, longAttrName);
+        KjNode* attrType        = kjString(orionldState.kjsonP, "type", "Property");
+        KjNode* attrValue       = kjString(orionldState.kjsonP, "value", "uninitialized");
+        bool    r;
 
-      kjChildAdd(attribute, attrType);
-      kjChildAdd(attribute, attrValue);
+        kjChildAdd(attribute, attrType);
+        kjChildAdd(attribute, attrValue);
+        kjChildAdd(newDbAttrNamesV, newDbAttrName);
 
-      kjChildAdd(newDbAttrNamesV, newDbAttrName);
+        dbModelFromApiAttribute(attribute, NULL, NULL, NULL, NULL, NULL, NULL);
+        r = mongocAttributesAdd(entityId, newDbAttrNamesV, attribute, true);
+        if (r != true)
+          KT_E("Error adding attribute '%s' to '%s'", attribute->name, entityId);
+      }
+      else
+      {
+        KT_T(StDdsPrePopulate, "Adding attribute '%s' to Pre-Entity '%s'", attrName, entityId);
+        KjNode* attribute      = kjObject(orionldState.kjsonP, longAttrName);
+        KjNode* attrType       = kjString(orionldState.kjsonP, "type", "Property");
+        KjNode* attrValue      = kjString(orionldState.kjsonP, "value", "uninitialized");
 
-      dbModelFromApiAttribute(attribute, NULL, NULL, NULL, NULL, NULL, NULL);
-      r = mongocAttributesAdd(entityId, newDbAttrNamesV, attribute, true);
-      if (r != true)
-        KT_E("Error adding attribute '%s' to '%s'", attribute->name, entityId);
+        kjChildAdd(attribute, attrType);
+        kjChildAdd(attribute, attrValue);
+
+        dbModelFromApiAttribute(attribute, NULL, NULL, NULL, NULL, NULL, NULL);
+        KjNode* attrsP = kjLookup(preEntityP, "attrs");
+
+        kjChildAdd(attrsP, attribute);
+      }
     }
   }
 
   if (dbCreateV->value.firstChildP != NULL)
   {
-    kjTreeLog2(dbCreateV, "dbCreateV", StDdsPrePopulate);
+    // kjTreeLog2(dbCreateV, "dbCreateV", StDdsPrePopulate);
     mongocEntitiesUpsert(dbCreateV, NULL);
   }
 

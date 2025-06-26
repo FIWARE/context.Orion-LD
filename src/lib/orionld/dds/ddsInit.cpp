@@ -42,6 +42,7 @@ extern "C"
 #include "orionld/common/traceLevels.h"                     // Trace levels for KTrace
 #include "orionld/common/orionldState.h"                    // configFile
 #include "orionld/kjTree/kjNavigate.h"                      // kjNavigate
+#include "orionld/config/configDdsTopicToAttribute.h"       // configDdsTopicToAttribute
 #include "orionld/dds/ddsPrePopulateDb.h"                   // ddsPrePopulateDb
 #include "orionld/dds/kjTreeLog.h"                          // kjTreeLog2
 #include "orionld/dds/ddsTypes.h"                           // ddsTypeNotification, ddsTypeLookup
@@ -94,6 +95,14 @@ static RETURN_TYPE ddsTypeRequest  // DdsTypeQuery
 static RETURN_TYPE ddsTopicRequest(const char* topicName, char*& typeName, char*& serializedQos)  // DdsTopicRequest
 {
   KT_T(StDds, "Got a type request callback ('%s', '%s', '%s')", topicName, typeName, serializedQos);
+
+  char* entityId      = NULL;
+  char* entityType    = NULL;
+  char* attrShortName = configDdsTopicToAttribute(topicName, &entityId, &entityType);
+
+  if (attrShortName == NULL)
+    typeName = NULL;
+  // else, look up the ddsTypeName of the attribute IN MONGO !!!   Better add it to config file in ddsTopicNotification
   RETURN_STATEMENT;
 }
 

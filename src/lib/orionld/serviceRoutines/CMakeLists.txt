@@ -79,6 +79,7 @@ SET (SOURCES
     orionldPostTemporalAttributes.cpp
     orionldDeleteEntities.cpp
     orionldGetInfo.cpp
+    orionldGetDdsTopics.cpp
 )
 
 # Include directories

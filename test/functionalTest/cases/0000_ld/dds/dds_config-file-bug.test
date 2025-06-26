@@ -1,0 +1,222 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Test of config file parsing
+
+--SHELL-INIT--
+echo '{
+  "dds": {
+    "ddsmodule": {
+      "dds": {
+        "domain": 0,
+        "allowlist": [
+          {
+            "name": "*"
+          }
+        ],
+        "blocklist": [
+          {
+            "name": "add_blocked_topics_list_here"
+          }
+        ]
+      },
+      "topics": {
+        "name": "*",
+        "qos": {
+          "durability": "TRANSIENT_LOCAL",
+          "reliability": "RELIABLE",
+          "history-depth": 20
+        }
+      },
+      "ddsenabler": null,
+      "specs": {
+        "threads": 12,
+        "logging": {
+          "stdout": false,
+          "verbosity": "info"
+        }
+      }
+    },
+    "ngsild": {
+      "topics": {
+        "rt/chatter": {
+          "entityType": "Chatter",
+          "entityId": "urn:ngsi-ld:chatter:1",
+          "attribute": "text"
+        },
+        "rt/chatter_2": {
+          "entityType": "Robot",
+          "entityId": "urn:ngsi-ld:chatter:2",
+          "attribute": "pose"
+        },
+        "rt/turtle1/pose": {
+          "entityType": "Robot",
+          "entityId": "urn:ngsi-ld:robot:1",
+          "attribute": "pose"
+        },
+        "rt/turtle1/cmd_vel": {
+          "entityType": "Robot",
+          "entityId": "urn:ngsi-ld:robot:1",
+          "attribute": "velocityCommand"
+        },
+        "rt/chatter_3": {
+          "entityType": "Robot",
+          "entityId": "urn:ngsi-ld:chatter:3",
+          "attribute": "pose"
+        }
+      }
+    }
+  }
+}' > $HOME/.orionld
+
+dbInit CB
+orionldStart CB -mongocOnly -wip dds
+
+--SHELL--
+
+#
+# 01. Ask the broker for all its DDS topics
+# 02. GET all entities - make sure to see 4 entities and that urn:ngsi-ld:robot:1 has 2 attributes
+#
+echo "01. Ask the broker for all its DDS topics"
+echo "========================================="
+orionCurl --url /ngsi-ld/ex/v1/dds/topics
+echo
+echo
+
+
+echo "02. GET all entities - make sure to see 4 entities and that urn:ngsi-ld:robot:1 has 2 attributes"
+echo "================================================================================================"
+orionCurl --url /ngsi-ld/v1/entities?local=true
+echo
+echo
+
+
+--REGEXPECT--
+01. Ask the broker for all its DDS topics
+=========================================
+HTTP/1.1 200 OK
+Content-Length: 477
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "rt/chatter": {
+        "attribute": "text",
+        "entityId": "urn:ngsi-ld:chatter:1",
+        "entityType": "Chatter"
+    },
+    "rt/chatter_2": {
+        "attribute": "pose",
+        "entityId": "urn:ngsi-ld:chatter:2",
+        "entityType": "Robot"
+    },
+    "rt/chatter_3": {
+        "attribute": "pose",
+        "entityId": "urn:ngsi-ld:chatter:3",
+        "entityType": "Robot"
+    },
+    "rt/turtle1/cmd_vel": {
+        "attribute": "velocityCommand",
+        "entityId": "urn:ngsi-ld:robot:1",
+        "entityType": "Robot"
+    },
+    "rt/turtle1/pose": {
+        "attribute": "pose",
+        "entityId": "urn:ngsi-ld:robot:1",
+        "entityType": "Robot"
+    }
+}
+
+
+02. GET all entities - make sure to see 4 entities and that urn:ngsi-ld:robot:1 has 2 attributes
+================================================================================================
+HTTP/1.1 200 OK
+Content-Length: 643
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "ddsType": {
+            "type": "Property",
+            "value": "fastdds"
+        },
+        "id": "urn:ngsi-ld:chatter:1",
+        "text": {
+            "type": "Property",
+            "value": "uninitialized"
+        },
+        "type": "Chatter"
+    },
+    {
+        "ddsType": {
+            "type": "Property",
+            "value": "fastdds"
+        },
+        "id": "urn:ngsi-ld:chatter:2",
+        "pose": {
+            "type": "Property",
+            "value": "uninitialized"
+        },
+        "type": "Robot"
+    },
+    {
+        "ddsType": {
+            "type": "Property",
+            "value": "fastdds"
+        },
+        "id": "urn:ngsi-ld:chatter:3",
+        "pose": {
+            "type": "Property",
+            "value": "uninitialized"
+        },
+        "type": "Robot"
+    },
+    {
+        "ddsType": {
+            "type": "Property",
+            "value": "fastdds"
+        },
+        "id": "urn:ngsi-ld:robot:1",
+        "pose": {
+            "type": "Property",
+            "value": "uninitialized"
+        },
+        "type": "Robot",
+        "velocityCommand": {
+            "type": "Property",
+            "value": "uninitialized"
+        }
+    }
+]
+
+
+--TEARDOWN--
+ftClientStop
+brokerStop
+dbDrop CB
+pgDrop $CB_DB_NAME
+rm -f $HOME/.orionld
+rm -f $HOME/.ftClient

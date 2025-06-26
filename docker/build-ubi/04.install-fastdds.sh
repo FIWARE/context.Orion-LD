@@ -131,7 +131,7 @@ cd /opt/Fast-DDS
 git clone https://github.com/eProsima/FIWARE-DDS-Enabler.git
 cd FIWARE-DDS-Enabler
 git fetch -a
-git checkout feature/publish
+git checkout feature/publish  # Version from 2025-06-26
 
 # ./install_dds_module.sh
 
