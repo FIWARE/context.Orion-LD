@@ -565,9 +565,25 @@ bool orionldPatchEntity2(void)
   }
 
   char*    entityId    = orionldState.wildcard[0];
-  char*    entityType  = orionldState.uriParams.type;
+  char*    entityType  = NULL;
   KjNode*  dbEntityP;
 
+  //
+  // If the entity type is set as URI param (only ONE), then it will be used, but first it needs to be expanded.
+  // In the case the entity "entityId" exists, but with another type, it is not considered a hit - 404
+  //
+  if (orionldState.in.typeList.items > 0)
+  {
+    if (orionldState.in.typeList.items == 1)
+      entityType = orionldState.in.typeList.array[0];
+    else
+    {
+      orionldError(OrionldBadRequestData, "Invalid URI param (type)", "more than one entity type", 400);
+      return false;
+    }
+  }
+
+  LM_T(LmtSR, ("entityType: '%s'", entityType));
   dbEntityP = mongocEntityLookup(entityId, entityType, NULL, NULL, NULL);
 
   if ((dbEntityP == NULL) && (orionldState.distributed == false))

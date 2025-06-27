@@ -1,0 +1,169 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Issue #1803 - update an entity using Real PATCH and with entity type given
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -experimental
+
+--SHELL--
+#
+# 01. Create an entity urn:ngsi-ld:test:1, type T,  with two attributes
+# 02. Retrieve the entity, with entity type given
+# 03. Attempt to retrieve the entity, with erroneous entity type given - see 404
+# 04. PATCH the entity, with entity type given (issue 1803 says it's a 404 Not Found)
+# 05. Retrieve the entity, with entity type given and see the PATCH from step 03
+#
+
+echo "01. Create an entity urn:ngsi-ld:test:1, type T,  with two attributes"
+echo "====================================================================="
+payload='{
+    "id": "urn:ngsi-ld:test:1",
+    "type": "T",
+    "attr1": {
+        "type": "Property",
+        "value": 2532
+    },
+    "attr2": {
+        "type": "Property",
+        "value": "amazing!!"
+    }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "02. Retrieve the entity, with entity type given"
+echo "==============================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:test:1?type=T
+echo
+echo
+
+
+echo "03. Attempt to retrieve the entity, with erroneous entity type given - see 404"
+echo "=============================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:test:1?type=S
+echo
+echo
+
+
+echo "04. PATCH the entity, with entity type given (issue 1803 says it's a 404 Not Found)"
+echo "==================================================================================="
+payload='{
+  "attr1": {
+    "value": "Step 03"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:test:1?type=T -X PATCH --payload "$payload"
+echo
+echo
+
+
+echo "05. Retrieve the entity, with entity type given and see the PATCH from step 03"
+echo "=============================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:test:1?type=T
+echo
+echo
+
+
+
+--REGEXPECT--
+01. Create an entity urn:ngsi-ld:test:1, type T,  with two attributes
+=====================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:test:1
+
+
+
+02. Retrieve the entity, with entity type given
+===============================================
+HTTP/1.1 200 OK
+Content-Length: 127
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "attr1": {
+        "type": "Property",
+        "value": 2532
+    },
+    "attr2": {
+        "type": "Property",
+        "value": "amazing!!"
+    },
+    "id": "urn:ngsi-ld:test:1",
+    "type": "T"
+}
+
+
+03. Attempt to retrieve the entity, with erroneous entity type given - see 404
+==============================================================================
+HTTP/1.1 404 Not Found
+Content-Length: 120
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "urn:ngsi-ld:test:1",
+    "title": "Entity Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
+}
+
+
+04. PATCH the entity, with entity type given (issue 1803 says it's a 404 Not Found)
+===================================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+05. Retrieve the entity, with entity type given and see the PATCH from step 03
+==============================================================================
+HTTP/1.1 200 OK
+Content-Length: 132
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "attr1": {
+        "type": "Property",
+        "value": "Step 03"
+    },
+    "attr2": {
+        "type": "Property",
+        "value": "amazing!!"
+    },
+    "id": "urn:ngsi-ld:test:1",
+    "type": "T"
+}
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
