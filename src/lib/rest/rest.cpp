@@ -1620,7 +1620,6 @@ static MHD_Result connectionTreat
   //
   // Check Content-Type and Content-Length for GET/DELETE requests
   //
-  LM_W(("orionldState.in.contentType: %s", mimeType(orionldState.in.contentType)));
   if ((orionldState.in.contentType != MT_NOTGIVEN) && (orionldState.in.contentType != MT_NONE) && (orionldState.in.contentLength == 0) && ((orionldState.verb == HTTP_GET) || (orionldState.verb == HTTP_DELETE)))
   {
     const char*  details = "Orion accepts no payload for GET/DELETE requests. HTTP header Content-Type is thus forbidden";

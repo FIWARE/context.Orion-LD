@@ -119,13 +119,11 @@ Please check [quay.io](https://quay.io/repository/fiware/orion-ld?tab=tags) or [
 -   [Temporal Representation](doc/manuals-ld/troe.md)
 -   [The Broker as Context Server](doc/manuals-ld/contextServer.md)
 -   [Roadmap](doc/roadmap.md)
+-   [Functional Test Suite](doc/manuals-ld/functionalTests.md)
 
 A Test Suite for NGSI-LD compliant brokers can be found [here](https://github.com/fiware/NGSI-LD_Tests).
 This test suite is deprecated in favor of the newer [ETSI NGSI-LD API Conformance Test Suite](https://forge.etsi.org/rep/cim/ngsi-ld-test-suite).
 (Orion-LD passed about 95% of the test cases of this older deprecated test suite, but that was quite a few years ago.)
 
-About the ETSI funded conformance test suite, a third TTF (Testing Task force) is currently in progress, to improve on overall coverage and to
-aggregate conformance tests for distributed operations.
-This third TTF is expected to finish in May 2025 and by then, the ETSI NGSI-LD conformance test suite should be fully operational,
-and thus test results for Orion-LD can and will be published.
-A fourth TTF is already approved by ETSI and will start pretty much as soon as the third TTF ends
+The ETSI funded conformance test suite is now mature enough to be used, and especially to be included in github actions for every PR.
+However, quite some work needs to be done for this and that work hasn't even been initiated yet.

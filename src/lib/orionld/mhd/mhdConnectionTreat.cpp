@@ -474,78 +474,6 @@ char* pCheckLinkHeader(char* link)
 
 // -----------------------------------------------------------------------------
 //
-// linkContext
-//
-static bool linkContextGet(char* link)
-{
-  //
-  // NOTE:
-  //   The HTTP headers live in the thread. Once the thread dies, the memory is freed.
-  //   When calling orionldContextFromUrl, the URL must be properly allocated.
-  //   As it will be inserted in the Context Cache, that must survive requests, it must be
-  //   allocated in the global allocation buffer 'kalloc', not the thread-local 'orionldState.kalloc'.
-  //   This is done by the function orionldContextCreate.
-  //
-
-  orionldState.contextP = orionldContextFromUrl(link, NULL);
-  if (orionldState.contextP == NULL)
-    LM_RE(false, ("orionldContextFromUrl returned NULL - no context!"));
-
-  orionldState.link = orionldState.contextP->url;
-
-  return true;
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
-// linkGet -
-//
-static bool linkHeaderTreat(char* linkHeader)
-{
-  LM_T(LmtLinkHeader, ("link: '%s'", linkHeader));
-
-  char* linkV[32];
-  int   links   = kStringSplit(linkHeader, ',', linkV, K_VEC_SIZE(linkV));
-  bool  linkSet = false;
-
-  for (int ix = 0; ix < links; ix++)
-  {
-    if (strstr(linkV[ix], "rel=\"http://www.w3.org/ns/json-ld#context\";") != NULL)
-    {
-      LM_T(LmtLinkHeader, ("Got an @context Link header: '%s'", linkV[ix]));
-
-      if (linkSet == true)
-      {
-        orionldError(OrionldInternalError, "Invalid NGSI-LD request", "@context given more than once in a Link header", 400);
-        return false;
-      }
-
-      orionldState.link = pCheckLinkHeader(linkV[ix]);
-      if (orionldState.link == NULL)
-        LM_RE(false, ("pCheckLinkHeader failed"));  // ProblemDetails set by pCheckLinkHeader
-
-      if (linkContextGet(orionldState.link) == false)  // Lookup/Download if necessary
-        LM_RE(false, ("linkContextGet failed"));
-
-      linkSet = true;
-    }
-    else if (strstr(linkV[ix], "rel=\"next\"") != NULL)
-      LM_T(LmtLinkHeader, ("Received a 'next' Link header - ignoring it"));
-    else if (strstr(linkV[ix], "rel=\"previous\"") != NULL)
-      LM_T(LmtLinkHeader, ("Received a 'previous' Link header - ignoring it"));
-    else
-      LM_W(("Unrecognized Link header: '%s'", linkV[ix]));
-  }
-
-  return true;
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
 // coreContextToResponse -
 //
 static void coreContextToResponse(KjNode* responseP)
@@ -1327,18 +1255,7 @@ MHD_Result mhdConnectionTreat(void)
   //
   if ((orionldState.serviceP->options & ORIONLD_SERVICE_OPTION_NO_CONTEXT_NEEDED) == 0)
   {
-    if (orionldState.linkHttpHeaderPresent == true)
-    {
-      if (linkHeaderTreat(orionldState.link) == false)  // Lookup/Download if necessary
-      {
-        LM_W(("linkGet failed"));
-        goto respond;
-      }
-    }
-
-    //
-    // Treat inline context
-    //
+    // Treat inline context?
     if (orionldState.payloadContextNode != NULL)
     {
       bool implicitlyCreated = false;

@@ -49,9 +49,11 @@ extern "C"
 #include "orionld/common/dateTime.h"                             // dateTimeFromString
 #include "orionld/common/forbidden.h"                            // forbidden
 #include "orionld/http/verbGet.h"                                // verbGet
+#include "orionld/context/orionldContextFromUrl.h"               // orionldContextFromUrl
 #include "orionld/service/orionldServiceInit.h"                  // orionldRestServiceV
 #include "orionld/service/orionldServiceLookup.h"                // orionldServiceLookup
 #include "orionld/serviceRoutines/orionldBadVerb.h"              // orionldBadVerb
+#include "orionld/serviceRoutines/orionldDeleteEntity.h"         // orionldDeleteEntity
 #include "orionld/payloadCheck/pCheckUri.h"                      // pCheckUri
 #include "orionld/entityMaps/entityMapLookup.h"                  // entityMapLookup
 #include "orionld/mhd/mhdConnectionInit.h"                       // Own interface
@@ -343,6 +345,155 @@ bool pCheckTenantName(const char* dbName)
 
 // -----------------------------------------------------------------------------
 //
+// linkHeaderParse -
+//
+// Example headers:
+//   Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+//
+bool linkHeaderParse(char* value, char** linkP, char** relP, char** typeP)
+{
+  // 1. Find start/end of the link
+  char* linkStart = strchr(value, '<');
+  char* linkEnd   = (linkStart != NULL)? strchr(linkStart, '>') : NULL;
+
+  if ((linkStart == NULL) || (linkEnd == NULL))
+    LM_RE(false, ("invalid Link header value - no valid link value found", value));
+
+  ++linkStart;
+
+  // 2. Find start/end of 'rel'
+  char* relStart = strstr(linkEnd, "rel=\"");
+  char* relEnd   = (relStart != NULL)? strstr(&relStart[5], "\"") : NULL;
+
+  if ((relStart == NULL) || (relEnd == NULL))
+    LM_RE(false, ("invalid Link header value - no valid 'rel' value found", value));
+
+  relStart += 5;
+
+  // 3. Find start/end of 'type'
+  char* typeStart = strstr(relEnd, "type=\"");
+  char* typeEnd   = (typeStart != NULL)? strchr(&typeStart[6], '"') : NULL;
+
+  if (typeStart != NULL)
+  {
+    typeStart += 6;
+    if (typeEnd != NULL)
+      *typeEnd = 0;
+  }
+
+  *linkEnd = 0;
+  *relEnd  = 0;
+
+  LM_T(LmtLinkHeader, ("link: '%s'", linkStart));
+  LM_T(LmtLinkHeader, ("rel:  '%s'", relStart));
+  LM_T(LmtLinkHeader, ("type: '%s'", typeStart));
+
+  *linkP = linkStart;
+  *relP  = relStart;
+  *typeP = typeStart;
+
+  return true;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// linkContextGet
+//
+static bool linkContextGet(char* link)
+{
+  //
+  // NOTE:
+  //   The HTTP headers live in the thread. Once the thread dies, the memory is freed.
+  //   When calling orionldContextFromUrl, the URL must be properly allocated.
+  //   As it will be inserted in the Context Cache, that must survive requests, it must be
+  //   allocated in the global allocation buffer 'kalloc', not the thread-local 'orionldState.kalloc'.
+  //   This is done by the function orionldContextCreate.
+  //
+
+  orionldState.contextP = orionldContextFromUrl(link, NULL);
+  if (orionldState.contextP == NULL)
+    LM_RE(false, ("orionldContextFromUrl returned NULL - no context!"));
+
+  orionldState.link = orionldState.contextP->url;
+
+  return true;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// linkHeaderTreat -
+//
+static void linkHeaderTreat(char* value)
+{
+  if ((orionldState.serviceP != NULL) && (orionldState.serviceP->serviceRoutine == orionldDeleteEntity))
+    return;  // orionldDeleteEntity doesn't use the @contest - will not even try to download it
+
+  char* link = NULL;
+  char* rel  = NULL;
+  char* type = NULL;
+
+  LM_T(LmtLinkHeader, ("Got a Link header: '%s'", value));
+
+  // It's a comma-separated list
+  char* start             = (char*) value;
+  bool  linkContextBefore = (orionldState.link != NULL);
+
+  while (start != NULL)
+  {
+    char* comma = strchr(start, ',');
+    char* next  = comma;
+
+    if (comma != NULL)
+    {
+      *comma = 0;
+      ++next;
+    }
+
+    bool r = linkHeaderParse((char*) start, &link, &rel, &type);
+    if (r == true)
+    {
+      LM_T(LmtLinkHeader, ("Got a Link header: '%s', '%s', '%s'", link, rel, type));
+
+      if (strcmp(rel, "next") == 0)
+        LM_T(LmtLinkHeader, ("Next Link: '%s", link));
+      else if (strcmp(rel, "prev") == 0)
+        LM_T(LmtLinkHeader, ("Prev Link: '%s", link));
+      else if (link == NULL)  // Assuming context link header
+        orionldError(OrionldInternalError, "Invalid NGSI-LD request", "Link header without link", 400);
+      else if (strcmp(rel, "http://www.w3.org/ns/json-ld#context") == 0)
+      {
+        if (orionldState.link == NULL)
+        {
+          orionldState.link                  = link;
+          orionldState.linkHttpHeaderPresent = true;
+
+          if (pCheckUri(orionldState.link, "Link", true) == false)
+            LM_W(("pCheckLinkHeader failed"));  // ProblemDetails set by pCheckLinkHeader
+          else if (linkContextGet(orionldState.link) == false)  // Lookup/Download if necessary
+            LM_E(("linkContextGet failed"));
+        }
+        else
+        {
+          if (linkContextBefore == false)
+            orionldError(OrionldInternalError, "Invalid NGSI-LD request", "@context given more than once in a Link header", 400);
+          else
+            orionldError(OrionldInternalError, "Invalid NGSI-LD request", "@context given in more than one Link header", 400);
+        }
+      }
+    }
+
+    start = next;
+  }
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // orionldHttpHeaderReceive -
 //
 static MHD_Result orionldHttpHeaderReceive(void* cbDataP, MHD_ValueKind kind, const char* key, const char* value)
@@ -437,20 +588,7 @@ static MHD_Result orionldHttpHeaderReceive(void* cbDataP, MHD_ValueKind kind, co
     orionldState.in.contentTypeString = (char*) value;
   }
   else if (strcasecmp(key, "Link") == 0)
-  {
-    LM_T(LmtLinkHeader, ("Got a Link header: '%s'", orionldState.link));
-
-    if (strstr(value, "rel=\"http://www.w3.org/ns/json-ld#context\";") != NULL)
-    {
-      if (orionldState.link == NULL)
-      {
-        orionldState.link                  = (char*) value;
-        orionldState.linkHttpHeaderPresent = true;
-      }
-      else
-        orionldError(OrionldInternalError, "Invalid NGSI-LD request", "@context given in more than one Link header", 400);
-    }
-  }
+    linkHeaderTreat((char*) value);
   else if ((strcasecmp(key, "Fiware-Service") == 0) || (strcasecmp(key, "NGSILD-Tenant") == 0))
   {
     if (multitenancy == true)  // Has the broker been started with multi-tenancy enabled (it's disabled by default)
