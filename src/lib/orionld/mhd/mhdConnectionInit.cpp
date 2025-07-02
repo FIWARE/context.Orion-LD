@@ -357,7 +357,10 @@ bool linkHeaderParse(char* value, char** linkP, char** relP, char** typeP)
   char* linkEnd   = (linkStart != NULL)? strchr(linkStart, '>') : NULL;
 
   if ((linkStart == NULL) || (linkEnd == NULL))
-    LM_RE(false, ("invalid Link header value - no valid link value found", value));
+  {
+    orionldError(OrionldInvalidRequest, "Invalid NGSI-LD request", "invalid Link header value - no valid link value found", 400);
+    return false;
+  }
 
   ++linkStart;
 
@@ -366,7 +369,10 @@ bool linkHeaderParse(char* value, char** linkP, char** relP, char** typeP)
   char* relEnd   = (relStart != NULL)? strstr(&relStart[5], "\"") : NULL;
 
   if ((relStart == NULL) || (relEnd == NULL))
-    LM_RE(false, ("invalid Link header value - no valid 'rel' value found", value));
+  {
+    orionldError(OrionldInvalidRequest, "Invalid NGSI-LD request", "invalid Link header value - no valid 'rel' value found", 400);
+    return false;
+  }
 
   relStart += 5;
 
@@ -379,6 +385,12 @@ bool linkHeaderParse(char* value, char** linkP, char** relP, char** typeP)
     typeStart += 6;
     if (typeEnd != NULL)
       *typeEnd = 0;
+    else
+    {
+      // The 'type' part isn't mandatory (AFAIK), but, if it's present, its end quotes must be there
+      orionldError(OrionldInvalidRequest, "Invalid NGSI-LD request", "invalid Link header value - no valid 'type' value found", 400);
+      return false;
+    }
   }
 
   *linkEnd = 0;
@@ -414,7 +426,13 @@ static bool linkContextGet(char* link)
 
   orionldState.contextP = orionldContextFromUrl(link, NULL);
   if (orionldState.contextP == NULL)
+  {
+    // Mark error unless already marked
+    if (orionldState.httpStatusCode < 300)
+      orionldError(OrionldInternalError, "Unknown error", "Unknown error getting @context via Link header", 500);
+
     LM_RE(false, ("orionldContextFromUrl returned NULL - no context!"));
+  }
 
   orionldState.link = orionldState.contextP->url;
 
@@ -474,7 +492,13 @@ static void linkHeaderTreat(char* value)
           if (pCheckUri(orionldState.link, "Link", true) == false)
             LM_W(("pCheckLinkHeader failed"));  // ProblemDetails set by pCheckLinkHeader
           else if (linkContextGet(orionldState.link) == false)  // Lookup/Download if necessary
+          {
             LM_E(("linkContextGet failed"));
+
+            // Mark error unless already marked
+            if (orionldState.httpStatusCode < 300)
+              orionldError(OrionldInternalError, "Unknown error", "Unknown error getting @context via Link header", 500);
+          }
         }
         else
         {
@@ -1365,7 +1389,7 @@ MHD_Result mhdConnectionInit
   //
   MHD_get_connection_values(connection, MHD_HEADER_KIND, orionldHttpHeaderReceive, NULL);
 
-  if (orionldState.httpStatusCode != 200)
+  if (orionldState.httpStatusCode > 207)
   {
     LM_W(("Error detected in a HTTP header: %s: %s", orionldState.pd.title, orionldState.pd.detail));
     return MHD_YES;  // orionldHttpHeaderReceive sets the error

@@ -327,7 +327,11 @@ OrionldContext* orionldContextFromUrl(char* url, char* id)
     LM_T(LmtCoreContext, ("Downloaded the context '%s'", url));
     contextP = orionldContextFromBuffer(url, OrionldContextDownloaded, id, buffer);
     if (contextP == NULL)
+    {
       LM_E(("Context Error (%s: %s)", orionldState.pd.title, orionldState.pd.detail));
+      if (orionldState.pd.status < 300)  // Error not filled in
+        orionldError(OrionldLdContextNotAvailable, "Unable to download context", url, 503);
+    }
   }
   else
     LM_E(("Context Error (%s: %s)", orionldState.pd.title, orionldState.pd.detail));

@@ -34,6 +34,7 @@ extern "C"
 #include "orionld/types/OrionldResponseErrorType.h"              // OrionldResponseErrorType
 #include "orionld/types/OrionldHttpHeader.h"
 #include "orionld/common/orionldState.h"                         // orionldState, contextDownloadAttempts, ...
+#include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/common/urlParse.h"                             // urlParse
 #include "orionld/common/orionldRequestSend.h"                   // orionldRequestSend
 #include "orionld/context/orionldContextDownload.h"              // Own interface
@@ -121,13 +122,13 @@ char* orionldContextDownload(const char* url)
 
   if (reqOk == false)  // && (downloadFailed == true)? - could get better error handling with 'downloadFailed'
   {
-    orionldState.pd.type   = OrionldLdContextNotAvailable;
-    orionldState.pd.title  = (char*) "Unable to download context";
-    orionldState.pd.detail = (char*) url;
-    orionldState.pd.status = 503;
+    if (orionldState.pd.status < 300)  // Error not filled in
+      orionldError(OrionldLdContextNotAvailable, "Unable to download context", url, 503);
 
     return NULL;
   }
+  else
+    orionldState.httpStatusCode = 200;
 
   return orionldState.httpResponse.buf;
 }
