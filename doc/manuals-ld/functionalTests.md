@@ -27,7 +27,7 @@ alias ft=test/functionalTest/testHarness.sh
 ```
 
 ## Installation
-See the corresponding installation guides of functional tests, e.g. for [Ubuntu 20.04](manuals-ld/installation-guide-functional-tests-ubuntu20.04.1.md).
+See the corresponding installation guides of functional tests, e.g. for [Ubuntu 20.04](installation-guide-functional-tests-ubuntu20.04.1.md).
 ## Running the Functional Test suite
 The test suite must be started from the repo root directory, as it assumes the test cases are found under `test/functionalTest/cases`
 If `testHarness.sh` is started without and options, the complete suite (all test cases) will be executed:
