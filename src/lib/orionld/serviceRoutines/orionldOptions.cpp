@@ -64,8 +64,13 @@ static char* orionldAllowedVerbs(char* verbList, int len, char* serviceUrlPath, 
       // PATCH Entity2 is only active if broker is started with -experimental
       if ((serviceP->serviceRoutine == orionldPatchEntity2) && (experimental == false))
         continue;
+
       // PUT Entity is only active if broker is started with -experimental
       if ((serviceP->serviceRoutine == orionldPutEntity) && (experimental == false))
+        continue;
+
+      // If not implemented, not a match
+      if ((serviceP->notImplemented == true) || (serviceP->mintaka == true))
         continue;
 
       bitmask |= (1 << verbNo);
