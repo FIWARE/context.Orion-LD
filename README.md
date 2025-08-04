@@ -62,8 +62,7 @@ For source code contributions, please see the [Contribution guidelines](doc/manu
 Its payloads are encoded as [linked data](https://en.wikipedia.org/wiki/Linked_data) using JSON.
 
 The NGSI-LD Specification is regularly updated and published by ETSI.
-The latest specification is [version 1.8.1](https://www.etsi.org/deliver/etsi_gs/CIM/001_099/009/01.08.01_60/gs_cim009v010801p.pdf), published in March 2024.
-The next release, version 1.9.1, is expected for March 2025.
+The latest specification is [version 1.9.1](https://www.etsi.org/deliver/etsi_gs/CIM/001_099/009/01.09.01_60/gs_CIM009v010901p.pdf), published in July 2025.
 
 A few presentations on NGSI-LD:
 * [NGSI-LD Overview](https://docs.google.com/presentation/d/1tgh6gBdcZHRPU_ehM7M5rGCI83CrYimCwJXxzRI5GDg)
@@ -84,7 +83,7 @@ If so, please use the original [Orion](https://github.com/telefonicaid/fiware-or
 | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
 
 ## NGSI-LD Context Broker Feature Comparison
-An Excel file detailing the current compatibility of the development version of the Orion-LD Context Broker against the features (up to v1.8.1) of the API specification can be downloaded [here](https://docs.google.com/spreadsheets/d/18tq0_PZFl5WCfYUElcdI6M3Vlin4hP-M).
+An Excel file detailing the current compatibility of the development version of the Orion-LD Context Broker against the features of the API specification can be downloaded [here](https://docs.google.com/spreadsheets/d/18tq0_PZFl5WCfYUElcdI6M3Vlin4hP-M).
 
 
 ## Test and Deployment of Orion-LD
