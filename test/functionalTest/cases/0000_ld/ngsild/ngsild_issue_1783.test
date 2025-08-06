@@ -1,0 +1,4319 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Issue #1783 - entity query with application/geo+json
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -experimental -wip entityMaps -forwarding -t 0-255
+
+--SHELL--
+
+#
+# 00. Request with body but a non-existing service (used to crash the broker)
+# 01. Create a number of entities from issue #1783
+# 02. Query the broker for all those entities, with application/geo+json - the issue says the broker crashes
+#
+
+echo "00. Request with body but a non-existing service (used to crash the broker)"
+echo "==========================================================================="
+payload='[
+ {
+    "id": "urn:ngsi-ld:Animal:cow001",
+    "type": "Animal",
+    "heartRate": {
+      "type": "Property",
+      "value": 51,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35257,
+          52.51139
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person001"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2019-01-22T00:00:00.000Z"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 772,
+      "unitCode": "KGM"
+    },
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Beany"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Male"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "maleAdult"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "active",
+      "observedAt": "2024-01-01T15:00:00.000Z"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "M-bull001-Beany"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:003"
+    },
+    "comment": {
+      "type": "Property",
+      "value": "Please check hooves.",
+      "observedAt": "2024-01-01T15:00:00.000Z"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow002",
+    "type": "Animal",
+    "heartRate": {
+      "type": "Property",
+      "value": 52,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35252,
+          52.51237
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:004"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person002"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2020-02-04T00:00:00.000Z"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 362,
+      "unitCode": "KGM"
+    },
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Trotter"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "active",
+      "observedAt": "2024-01-01T15:00:00.000Z"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow002-Trotter"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow003",
+    "type": "Animal",
+    "heartRate": {
+      "type": "Property",
+      "value": 52,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35188,
+          52.51155
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:004"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person001"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2019-01-15T00:00:00.000Z"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 449,
+      "unitCode": "KGM"
+    },
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Petal"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "active",
+      "observedAt": "2024-01-01T15:00:00.000Z"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow003-Petal"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow004",
+    "type": "Animal",
+    "heartRate": {
+      "type": "Property",
+      "value": 52,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35246,
+          52.51108
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:004"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person002"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2020-08-18T00:00:00.000Z"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 367,
+      "unitCode": "KGM"
+    },
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "name": {
+      "type": "Property",
+      "value": "River"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "active",
+      "observedAt": "2024-01-01T15:00:00.000Z"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow004-River"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow005",
+    "type": "Animal",
+    "heartRate": {
+      "type": "Property",
+      "value": 70,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35198,
+          52.51297
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:004"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person002"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2020-05-04T00:00:00.000Z"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 435,
+      "unitCode": "KGM"
+    },
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Sun"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "active",
+      "observedAt": "2024-01-01T15:00:00.000Z"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow005-Sun"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow006",
+    "type": "Animal",
+    "heartRate": {
+      "type": "Property",
+      "value": 52,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35215,
+          52.51269
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2019-06-09T00:00:00.000Z"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 478,
+      "unitCode": "KGM"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow006-Twilight"
+    },
+    "comment": {
+      "type": "Property",
+      "value": "Needs to see the vet.",
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Oats"
+    },
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Twilight"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "healthCondition": {
+      "type": "VocabProperty",
+      "vocab": "healthy",
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "noStatus",
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Building:barn002"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:001"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow007",
+    "type": "Animal",
+    "heartRate": {
+      "type": "Property",
+      "value": 55,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.3517,
+          52.51153
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:003"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person002"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2018-03-27T00:00:00.000Z"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 346,
+      "unitCode": "KGM"
+    },
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Diamond"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "active",
+      "observedAt": "2024-01-01T15:00:00.000Z"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow007-Diamond"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow008",
+    "type": "Animal",
+    "heartRate": {
+      "type": "Property",
+      "value": 51,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35145,
+          52.51234
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:006"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person002"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2021-05-17T00:00:00.000Z"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 407,
+      "unitCode": "KGM"
+    },
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Pollen"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "inHeat",
+      "observedAt": "2024-01-01T15:00:00.000Z"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow008-Pollen"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow009",
+    "type": "Animal",
+    "heartRate": {
+      "type": "Property",
+      "value": 51,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35227,
+          52.51129
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:006"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person002"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2018-02-07T00:00:00.000Z"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 324,
+      "unitCode": "KGM"
+    },
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Juicey"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "active",
+      "observedAt": "2024-01-01T15:00:00.000Z"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow009-Juicey"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow010",
+    "type": "Animal",
+    "heartRate": {
+      "type": "Property",
+      "value": 54,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35177,
+          52.51166
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:005"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person001"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2020-06-22T00:00:00.000Z"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 489,
+      "unitCode": "KGM"
+    },
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Tulip"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "active",
+      "observedAt": "2024-01-01T15:00:00.000Z"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow010-Tulip"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow011",
+    "type": "Animal",
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Oats"
+    },
+    "heartRate": {
+      "type": "Property",
+      "value": 50,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35196,
+          52.51287
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:003"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person002"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2018-03-19T00:00:00.000Z"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 411,
+      "unitCode": "KGM"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "inCalf"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow011-Oats"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow012",
+    "type": "Animal",
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Rain"
+    },
+    "heartRate": {
+      "type": "Property",
+      "value": 55,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35298,
+          52.51121
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:004"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person001"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2021-02-15T00:00:00.000Z"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 387,
+      "unitCode": "KGM"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "inactive"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow012-Rain"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow013",
+    "type": "Animal",
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Silver"
+    },
+    "heartRate": {
+      "type": "Property",
+      "value": 53,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35132,
+          52.51194
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:005"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person001"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Hay"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2019-09-08T00:00:00.000Z"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 463,
+      "unitCode": "KGM"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "active"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow013-Silver"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow014",
+    "type": "Animal",
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Stamps"
+    },
+    "heartRate": {
+      "type": "Property",
+      "value": 52,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35105,
+          52.51254
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:006"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person002"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2020-03-24T00:00:00.000Z"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 391,
+      "unitCode": "KGM"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "active"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow014-Stamps"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow015",
+    "type": "Animal",
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Button"
+    },
+    "heartRate": {
+      "type": "Property",
+      "value": 54,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35225,
+          52.51299
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:005"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person001"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2018-06-03T00:00:00.000Z"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 333,
+      "unitCode": "KGM"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "inHeat"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow015-Button"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow016",
+    "type": "Animal",
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Lacey"
+    },
+    "heartRate": {
+      "type": "Property",
+      "value": 55,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.351,
+          52.51133
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:006"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person001"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2021-04-11T00:00:00.000Z"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 471,
+      "unitCode": "KGM"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "inCalf"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow016-Lacey"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow017",
+    "type": "Animal",
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Fisher"
+    },
+    "heartRate": {
+      "type": "Property",
+      "value": 54,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35134,
+          52.51149
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:004"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person001"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2020-02-17T00:00:00.000Z"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 373,
+      "unitCode": "KGM"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "active"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow017-Fisher"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow018",
+    "type": "Animal",
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Rice"
+    },
+    "heartRate": {
+      "type": "Property",
+      "value": 54,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35144,
+          52.51179
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:003"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person002"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2021-03-05T00:00:00.000Z"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 455,
+      "unitCode": "KGM"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "active"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow018-Rice"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow019",
+    "type": "Animal",
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Eenie"
+    },
+    "heartRate": {
+      "type": "Property",
+      "value": 54,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35259,
+          52.51252
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:003"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person002"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Hay"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2019-07-15T00:00:00.000Z"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 452,
+      "unitCode": "KGM"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "active"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow019-Eenie"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow020",
+    "type": "Animal",
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Chalky"
+    },
+    "heartRate": {
+      "type": "Property",
+      "value": 54,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35148,
+          52.5118
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:005"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person002"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2020-08-12T00:00:00.000Z"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 338,
+      "unitCode": "KGM"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "active"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow020-Chalky"
+    }
+  }
+]'
+orionCurl --url /ngsi-ld/v1/entityOperations --payload "$payload"
+echo
+echo
+
+
+echo "01. Create a number of entities from issue #1783"
+echo "================================================"
+payload='[
+ {
+    "id": "urn:ngsi-ld:Animal:cow001",
+    "type": "Animal",
+    "heartRate": {
+      "type": "Property",
+      "value": 51,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35257,
+          52.51139
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person001"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2019-01-22T00:00:00.000Z"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 772,
+      "unitCode": "KGM"
+    },
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Beany"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Male"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "maleAdult"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "active",
+      "observedAt": "2024-01-01T15:00:00.000Z"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "M-bull001-Beany"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:003"
+    },
+    "comment": {
+      "type": "Property",
+      "value": "Please check hooves.",
+      "observedAt": "2024-01-01T15:00:00.000Z"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow002",
+    "type": "Animal",
+    "heartRate": {
+      "type": "Property",
+      "value": 52,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35252,
+          52.51237
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:004"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person002"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2020-02-04T00:00:00.000Z"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 362,
+      "unitCode": "KGM"
+    },
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Trotter"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "active",
+      "observedAt": "2024-01-01T15:00:00.000Z"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow002-Trotter"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow003",
+    "type": "Animal",
+    "heartRate": {
+      "type": "Property",
+      "value": 52,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35188,
+          52.51155
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:004"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person001"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2019-01-15T00:00:00.000Z"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 449,
+      "unitCode": "KGM"
+    },
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Petal"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "active",
+      "observedAt": "2024-01-01T15:00:00.000Z"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow003-Petal"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow004",
+    "type": "Animal",
+    "heartRate": {
+      "type": "Property",
+      "value": 52,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35246,
+          52.51108
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:004"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person002"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2020-08-18T00:00:00.000Z"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 367,
+      "unitCode": "KGM"
+    },
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "name": {
+      "type": "Property",
+      "value": "River"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "active",
+      "observedAt": "2024-01-01T15:00:00.000Z"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow004-River"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow005",
+    "type": "Animal",
+    "heartRate": {
+      "type": "Property",
+      "value": 70,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35198,
+          52.51297
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:004"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person002"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2020-05-04T00:00:00.000Z"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 435,
+      "unitCode": "KGM"
+    },
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Sun"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "active",
+      "observedAt": "2024-01-01T15:00:00.000Z"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow005-Sun"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow006",
+    "type": "Animal",
+    "heartRate": {
+      "type": "Property",
+      "value": 52,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35215,
+          52.51269
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2019-06-09T00:00:00.000Z"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 478,
+      "unitCode": "KGM"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow006-Twilight"
+    },
+    "comment": {
+      "type": "Property",
+      "value": "Needs to see the vet.",
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Oats"
+    },
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Twilight"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "healthCondition": {
+      "type": "VocabProperty",
+      "vocab": "healthy",
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "noStatus",
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Building:barn002"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:001"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow007",
+    "type": "Animal",
+    "heartRate": {
+      "type": "Property",
+      "value": 55,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.3517,
+          52.51153
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:003"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person002"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2018-03-27T00:00:00.000Z"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 346,
+      "unitCode": "KGM"
+    },
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Diamond"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "active",
+      "observedAt": "2024-01-01T15:00:00.000Z"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow007-Diamond"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow008",
+    "type": "Animal",
+    "heartRate": {
+      "type": "Property",
+      "value": 51,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35145,
+          52.51234
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:006"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person002"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2021-05-17T00:00:00.000Z"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 407,
+      "unitCode": "KGM"
+    },
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Pollen"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "inHeat",
+      "observedAt": "2024-01-01T15:00:00.000Z"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow008-Pollen"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow009",
+    "type": "Animal",
+    "heartRate": {
+      "type": "Property",
+      "value": 51,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35227,
+          52.51129
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:006"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person002"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2018-02-07T00:00:00.000Z"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 324,
+      "unitCode": "KGM"
+    },
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Juicey"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "active",
+      "observedAt": "2024-01-01T15:00:00.000Z"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow009-Juicey"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow010",
+    "type": "Animal",
+    "heartRate": {
+      "type": "Property",
+      "value": 54,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35177,
+          52.51166
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:005"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person001"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2020-06-22T00:00:00.000Z"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 489,
+      "unitCode": "KGM"
+    },
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Tulip"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "active",
+      "observedAt": "2024-01-01T15:00:00.000Z"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow010-Tulip"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow011",
+    "type": "Animal",
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Oats"
+    },
+    "heartRate": {
+      "type": "Property",
+      "value": 50,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35196,
+          52.51287
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:003"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person002"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2018-03-19T00:00:00.000Z"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 411,
+      "unitCode": "KGM"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "inCalf"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow011-Oats"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow012",
+    "type": "Animal",
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Rain"
+    },
+    "heartRate": {
+      "type": "Property",
+      "value": 55,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35298,
+          52.51121
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:004"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person001"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2021-02-15T00:00:00.000Z"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 387,
+      "unitCode": "KGM"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "inactive"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow012-Rain"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow013",
+    "type": "Animal",
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Silver"
+    },
+    "heartRate": {
+      "type": "Property",
+      "value": 53,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35132,
+          52.51194
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:005"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person001"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Hay"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2019-09-08T00:00:00.000Z"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 463,
+      "unitCode": "KGM"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "active"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow013-Silver"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow014",
+    "type": "Animal",
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Stamps"
+    },
+    "heartRate": {
+      "type": "Property",
+      "value": 52,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35105,
+          52.51254
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:006"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person002"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2020-03-24T00:00:00.000Z"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 391,
+      "unitCode": "KGM"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "active"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow014-Stamps"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow015",
+    "type": "Animal",
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Button"
+    },
+    "heartRate": {
+      "type": "Property",
+      "value": 54,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35225,
+          52.51299
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:005"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person001"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2018-06-03T00:00:00.000Z"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 333,
+      "unitCode": "KGM"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "inHeat"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow015-Button"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow016",
+    "type": "Animal",
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Lacey"
+    },
+    "heartRate": {
+      "type": "Property",
+      "value": 55,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.351,
+          52.51133
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:006"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person001"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2021-04-11T00:00:00.000Z"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 471,
+      "unitCode": "KGM"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "inCalf"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow016-Lacey"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow017",
+    "type": "Animal",
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Fisher"
+    },
+    "heartRate": {
+      "type": "Property",
+      "value": 54,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35134,
+          52.51149
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:004"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person001"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2020-02-17T00:00:00.000Z"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 373,
+      "unitCode": "KGM"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "active"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow017-Fisher"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow018",
+    "type": "Animal",
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Rice"
+    },
+    "heartRate": {
+      "type": "Property",
+      "value": 54,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35144,
+          52.51179
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:003"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person002"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2021-03-05T00:00:00.000Z"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 455,
+      "unitCode": "KGM"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "active"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow018-Rice"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow019",
+    "type": "Animal",
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Eenie"
+    },
+    "heartRate": {
+      "type": "Property",
+      "value": 54,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35259,
+          52.51252
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:003"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person002"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Hay"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2019-07-15T00:00:00.000Z"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 452,
+      "unitCode": "KGM"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "active"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow019-Eenie"
+    }
+  },
+  {
+    "id": "urn:ngsi-ld:Animal:cow020",
+    "type": "Animal",
+    "species": {
+      "type": "Property",
+      "value": "dairy cattle"
+    },
+    "name": {
+      "type": "Property",
+      "value": "Chalky"
+    },
+    "heartRate": {
+      "type": "Property",
+      "value": 54,
+      "unitCode": "5K"
+    },
+    "location": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          13.35148,
+          52.5118
+        ]
+      },
+      "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:AgriParcel:005"
+    },
+    "ownedBy": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:Person:person002"
+    },
+    "fedWith": {
+      "type": "Property",
+      "value": "Grass"
+    },
+    "birthdate": {
+      "type": "Property",
+      "value": "2020-08-12T00:00:00.000Z"
+    },
+    "sex": {
+      "type": "VocabProperty",
+      "vocab": "Female"
+    },
+    "phenologicalCondition": {
+      "type": "VocabProperty",
+      "vocab": "femaleAdult"
+    },
+    "weight": {
+      "type": "Property",
+      "value": 338,
+      "unitCode": "KGM"
+    },
+    "reproductiveCondition": {
+      "type": "VocabProperty",
+      "vocab": "active"
+    },
+    "legalId": {
+      "type": "Property",
+      "value": "F-cow020-Chalky"
+    }
+  }
+]'
+orionCurl --url /ngsi-ld/v1/entityOperations/create --payload "$payload"
+echo
+echo
+
+
+echo "02. Query the broker for all those entities, with application/geo+json - the issue says the broker crashes"
+echo "=========================================================================================================="
+orionCurl --url /ngsi-ld/v1/entities?local=true --out application/geo+json
+echo
+echo
+
+--REGEXPECT--
+00. Request with body but a non-existing service (used to crash the broker)
+===========================================================================
+HTTP/1.1 404 Not Found
+Content-Length: 131
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "/ngsi-ld/v1/entityOperations",
+    "title": "Service Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
+}
+
+
+01. Create a number of entities from issue #1783
+================================================
+HTTP/1.1 201 Created
+Content-Length: 561
+Content-Type: application/json
+Date: REGEX(.*)
+
+[
+    "urn:ngsi-ld:Animal:cow001",
+    "urn:ngsi-ld:Animal:cow002",
+    "urn:ngsi-ld:Animal:cow003",
+    "urn:ngsi-ld:Animal:cow004",
+    "urn:ngsi-ld:Animal:cow005",
+    "urn:ngsi-ld:Animal:cow006",
+    "urn:ngsi-ld:Animal:cow007",
+    "urn:ngsi-ld:Animal:cow008",
+    "urn:ngsi-ld:Animal:cow009",
+    "urn:ngsi-ld:Animal:cow010",
+    "urn:ngsi-ld:Animal:cow011",
+    "urn:ngsi-ld:Animal:cow012",
+    "urn:ngsi-ld:Animal:cow013",
+    "urn:ngsi-ld:Animal:cow014",
+    "urn:ngsi-ld:Animal:cow015",
+    "urn:ngsi-ld:Animal:cow016",
+    "urn:ngsi-ld:Animal:cow017",
+    "urn:ngsi-ld:Animal:cow018",
+    "urn:ngsi-ld:Animal:cow019",
+    "urn:ngsi-ld:Animal:cow020"
+]
+
+
+02. Query the broker for all those entities, with application/geo+json - the issue says the broker crashes
+==========================================================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/geo+json
+Date: REGEX(.*)
+
+{
+    "features": [
+        {
+            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
+            "geometry": {
+                "coordinates": [
+                    13.35257,
+                    52.51139
+                ],
+                "type": "Point"
+            },
+            "id": "urn:ngsi-ld:Animal:cow001",
+            "properties": {
+                "birthdate": {
+                    "type": "Property",
+                    "value": "2019-01-22T00:00:00.000Z"
+                },
+                "comment": {
+                    "observedAt": "2024-01-01T15:00:00.000Z",
+                    "type": "Property",
+                    "value": "Please check hooves."
+                },
+                "fedWith": {
+                    "type": "Property",
+                    "value": "Grass"
+                },
+                "heartRate": {
+                    "type": "Property",
+                    "unitCode": "5K",
+                    "value": 51
+                },
+                "legalId": {
+                    "type": "Property",
+                    "value": "M-bull001-Beany"
+                },
+                "locatedAt": {
+                    "object": "urn:ngsi-ld:AgriParcel:003",
+                    "type": "Relationship"
+                },
+                "location": {
+                    "observedAt": "2024-02-02T15:00:00.000Z",
+                    "type": "GeoProperty",
+                    "value": {
+                        "coordinates": [
+                            13.35257,
+                            52.51139
+                        ],
+                        "type": "Point"
+                    }
+                },
+                "name": {
+                    "type": "Property",
+                    "value": "Beany"
+                },
+                "ownedBy": {
+                    "object": "urn:ngsi-ld:Person:person001",
+                    "type": "Relationship"
+                },
+                "phenologicalCondition": {
+                    "type": "VocabProperty",
+                    "vocab": "maleAdult"
+                },
+                "reproductiveCondition": {
+                    "observedAt": "2024-01-01T15:00:00.000Z",
+                    "type": "VocabProperty",
+                    "vocab": "active"
+                },
+                "sex": {
+                    "type": "VocabProperty",
+                    "vocab": "Male"
+                },
+                "species": {
+                    "type": "Property",
+                    "value": "dairy cattle"
+                },
+                "type": "Animal",
+                "weight": {
+                    "type": "Property",
+                    "unitCode": "KGM",
+                    "value": 772
+                }
+            },
+            "type": "Feature"
+        },
+        {
+            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
+            "geometry": {
+                "coordinates": [
+                    13.35252,
+                    52.51237
+                ],
+                "type": "Point"
+            },
+            "id": "urn:ngsi-ld:Animal:cow002",
+            "properties": {
+                "birthdate": {
+                    "type": "Property",
+                    "value": "2020-02-04T00:00:00.000Z"
+                },
+                "fedWith": {
+                    "type": "Property",
+                    "value": "Grass"
+                },
+                "heartRate": {
+                    "type": "Property",
+                    "unitCode": "5K",
+                    "value": 52
+                },
+                "legalId": {
+                    "type": "Property",
+                    "value": "F-cow002-Trotter"
+                },
+                "locatedAt": {
+                    "object": "urn:ngsi-ld:AgriParcel:004",
+                    "type": "Relationship"
+                },
+                "location": {
+                    "observedAt": "2024-02-02T15:00:00.000Z",
+                    "type": "GeoProperty",
+                    "value": {
+                        "coordinates": [
+                            13.35252,
+                            52.51237
+                        ],
+                        "type": "Point"
+                    }
+                },
+                "name": {
+                    "type": "Property",
+                    "value": "Trotter"
+                },
+                "ownedBy": {
+                    "object": "urn:ngsi-ld:Person:person002",
+                    "type": "Relationship"
+                },
+                "phenologicalCondition": {
+                    "type": "VocabProperty",
+                    "vocab": "femaleAdult"
+                },
+                "reproductiveCondition": {
+                    "observedAt": "2024-01-01T15:00:00.000Z",
+                    "type": "VocabProperty",
+                    "vocab": "active"
+                },
+                "sex": {
+                    "type": "VocabProperty",
+                    "vocab": "Female"
+                },
+                "species": {
+                    "type": "Property",
+                    "value": "dairy cattle"
+                },
+                "type": "Animal",
+                "weight": {
+                    "type": "Property",
+                    "unitCode": "KGM",
+                    "value": 362
+                }
+            },
+            "type": "Feature"
+        },
+        {
+            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
+            "geometry": {
+                "coordinates": [
+                    13.35188,
+                    52.51155
+                ],
+                "type": "Point"
+            },
+            "id": "urn:ngsi-ld:Animal:cow003",
+            "properties": {
+                "birthdate": {
+                    "type": "Property",
+                    "value": "2019-01-15T00:00:00.000Z"
+                },
+                "fedWith": {
+                    "type": "Property",
+                    "value": "Grass"
+                },
+                "heartRate": {
+                    "type": "Property",
+                    "unitCode": "5K",
+                    "value": 52
+                },
+                "legalId": {
+                    "type": "Property",
+                    "value": "F-cow003-Petal"
+                },
+                "locatedAt": {
+                    "object": "urn:ngsi-ld:AgriParcel:004",
+                    "type": "Relationship"
+                },
+                "location": {
+                    "observedAt": "2024-02-02T15:00:00.000Z",
+                    "type": "GeoProperty",
+                    "value": {
+                        "coordinates": [
+                            13.35188,
+                            52.51155
+                        ],
+                        "type": "Point"
+                    }
+                },
+                "name": {
+                    "type": "Property",
+                    "value": "Petal"
+                },
+                "ownedBy": {
+                    "object": "urn:ngsi-ld:Person:person001",
+                    "type": "Relationship"
+                },
+                "phenologicalCondition": {
+                    "type": "VocabProperty",
+                    "vocab": "femaleAdult"
+                },
+                "reproductiveCondition": {
+                    "observedAt": "2024-01-01T15:00:00.000Z",
+                    "type": "VocabProperty",
+                    "vocab": "active"
+                },
+                "sex": {
+                    "type": "VocabProperty",
+                    "vocab": "Female"
+                },
+                "species": {
+                    "type": "Property",
+                    "value": "dairy cattle"
+                },
+                "type": "Animal",
+                "weight": {
+                    "type": "Property",
+                    "unitCode": "KGM",
+                    "value": 449
+                }
+            },
+            "type": "Feature"
+        },
+        {
+            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
+            "geometry": {
+                "coordinates": [
+                    13.35246,
+                    52.51108
+                ],
+                "type": "Point"
+            },
+            "id": "urn:ngsi-ld:Animal:cow004",
+            "properties": {
+                "birthdate": {
+                    "type": "Property",
+                    "value": "2020-08-18T00:00:00.000Z"
+                },
+                "fedWith": {
+                    "type": "Property",
+                    "value": "Grass"
+                },
+                "heartRate": {
+                    "type": "Property",
+                    "unitCode": "5K",
+                    "value": 52
+                },
+                "legalId": {
+                    "type": "Property",
+                    "value": "F-cow004-River"
+                },
+                "locatedAt": {
+                    "object": "urn:ngsi-ld:AgriParcel:004",
+                    "type": "Relationship"
+                },
+                "location": {
+                    "observedAt": "2024-02-02T15:00:00.000Z",
+                    "type": "GeoProperty",
+                    "value": {
+                        "coordinates": [
+                            13.35246,
+                            52.51108
+                        ],
+                        "type": "Point"
+                    }
+                },
+                "name": {
+                    "type": "Property",
+                    "value": "River"
+                },
+                "ownedBy": {
+                    "object": "urn:ngsi-ld:Person:person002",
+                    "type": "Relationship"
+                },
+                "phenologicalCondition": {
+                    "type": "VocabProperty",
+                    "vocab": "femaleAdult"
+                },
+                "reproductiveCondition": {
+                    "observedAt": "2024-01-01T15:00:00.000Z",
+                    "type": "VocabProperty",
+                    "vocab": "active"
+                },
+                "sex": {
+                    "type": "VocabProperty",
+                    "vocab": "Female"
+                },
+                "species": {
+                    "type": "Property",
+                    "value": "dairy cattle"
+                },
+                "type": "Animal",
+                "weight": {
+                    "type": "Property",
+                    "unitCode": "KGM",
+                    "value": 367
+                }
+            },
+            "type": "Feature"
+        },
+        {
+            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
+            "geometry": {
+                "coordinates": [
+                    13.35198,
+                    52.51297
+                ],
+                "type": "Point"
+            },
+            "id": "urn:ngsi-ld:Animal:cow005",
+            "properties": {
+                "birthdate": {
+                    "type": "Property",
+                    "value": "2020-05-04T00:00:00.000Z"
+                },
+                "fedWith": {
+                    "type": "Property",
+                    "value": "Grass"
+                },
+                "heartRate": {
+                    "type": "Property",
+                    "unitCode": "5K",
+                    "value": 70
+                },
+                "legalId": {
+                    "type": "Property",
+                    "value": "F-cow005-Sun"
+                },
+                "locatedAt": {
+                    "object": "urn:ngsi-ld:AgriParcel:004",
+                    "type": "Relationship"
+                },
+                "location": {
+                    "observedAt": "2024-02-02T15:00:00.000Z",
+                    "type": "GeoProperty",
+                    "value": {
+                        "coordinates": [
+                            13.35198,
+                            52.51297
+                        ],
+                        "type": "Point"
+                    }
+                },
+                "name": {
+                    "type": "Property",
+                    "value": "Sun"
+                },
+                "ownedBy": {
+                    "object": "urn:ngsi-ld:Person:person002",
+                    "type": "Relationship"
+                },
+                "phenologicalCondition": {
+                    "type": "VocabProperty",
+                    "vocab": "femaleAdult"
+                },
+                "reproductiveCondition": {
+                    "observedAt": "2024-01-01T15:00:00.000Z",
+                    "type": "VocabProperty",
+                    "vocab": "active"
+                },
+                "sex": {
+                    "type": "VocabProperty",
+                    "vocab": "Female"
+                },
+                "species": {
+                    "type": "Property",
+                    "value": "dairy cattle"
+                },
+                "type": "Animal",
+                "weight": {
+                    "type": "Property",
+                    "unitCode": "KGM",
+                    "value": 435
+                }
+            },
+            "type": "Feature"
+        },
+        {
+            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
+            "geometry": {
+                "coordinates": [
+                    13.35215,
+                    52.51269
+                ],
+                "type": "Point"
+            },
+            "id": "urn:ngsi-ld:Animal:cow006",
+            "properties": {
+                "birthdate": {
+                    "type": "Property",
+                    "value": "2019-06-09T00:00:00.000Z"
+                },
+                "comment": {
+                    "observedAt": "2024-02-02T15:00:00.000Z",
+                    "type": "Property",
+                    "value": "Needs to see the vet."
+                },
+                "fedWith": {
+                    "type": "Property",
+                    "value": "Oats"
+                },
+                "healthCondition": {
+                    "observedAt": "2024-02-02T15:00:00.000Z",
+                    "type": "VocabProperty",
+                    "vocab": "healthy"
+                },
+                "heartRate": {
+                    "type": "Property",
+                    "unitCode": "5K",
+                    "value": 52
+                },
+                "legalId": {
+                    "type": "Property",
+                    "value": "F-cow006-Twilight"
+                },
+                "locatedAt": {
+                    "object": "urn:ngsi-ld:Building:barn002",
+                    "type": "Relationship"
+                },
+                "location": {
+                    "observedAt": "2024-02-02T15:00:00.000Z",
+                    "type": "GeoProperty",
+                    "value": {
+                        "coordinates": [
+                            13.35215,
+                            52.51269
+                        ],
+                        "type": "Point"
+                    }
+                },
+                "name": {
+                    "type": "Property",
+                    "value": "Twilight"
+                },
+                "ownedBy": {
+                    "object": "urn:ngsi-ld:Person:001",
+                    "type": "Relationship"
+                },
+                "phenologicalCondition": {
+                    "type": "VocabProperty",
+                    "vocab": "femaleAdult"
+                },
+                "reproductiveCondition": {
+                    "observedAt": "2024-02-02T15:00:00.000Z",
+                    "type": "VocabProperty",
+                    "vocab": "noStatus"
+                },
+                "sex": {
+                    "type": "VocabProperty",
+                    "vocab": "Female"
+                },
+                "species": {
+                    "type": "Property",
+                    "value": "dairy cattle"
+                },
+                "type": "Animal",
+                "weight": {
+                    "type": "Property",
+                    "unitCode": "KGM",
+                    "value": 478
+                }
+            },
+            "type": "Feature"
+        },
+        {
+            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
+            "geometry": {
+                "coordinates": [
+                    13.3517,
+                    52.51153
+                ],
+                "type": "Point"
+            },
+            "id": "urn:ngsi-ld:Animal:cow007",
+            "properties": {
+                "birthdate": {
+                    "type": "Property",
+                    "value": "2018-03-27T00:00:00.000Z"
+                },
+                "fedWith": {
+                    "type": "Property",
+                    "value": "Grass"
+                },
+                "heartRate": {
+                    "type": "Property",
+                    "unitCode": "5K",
+                    "value": 55
+                },
+                "legalId": {
+                    "type": "Property",
+                    "value": "F-cow007-Diamond"
+                },
+                "locatedAt": {
+                    "object": "urn:ngsi-ld:AgriParcel:003",
+                    "type": "Relationship"
+                },
+                "location": {
+                    "observedAt": "2024-02-02T15:00:00.000Z",
+                    "type": "GeoProperty",
+                    "value": {
+                        "coordinates": [
+                            13.3517,
+                            52.51153
+                        ],
+                        "type": "Point"
+                    }
+                },
+                "name": {
+                    "type": "Property",
+                    "value": "Diamond"
+                },
+                "ownedBy": {
+                    "object": "urn:ngsi-ld:Person:person002",
+                    "type": "Relationship"
+                },
+                "phenologicalCondition": {
+                    "type": "VocabProperty",
+                    "vocab": "femaleAdult"
+                },
+                "reproductiveCondition": {
+                    "observedAt": "2024-01-01T15:00:00.000Z",
+                    "type": "VocabProperty",
+                    "vocab": "active"
+                },
+                "sex": {
+                    "type": "VocabProperty",
+                    "vocab": "Female"
+                },
+                "species": {
+                    "type": "Property",
+                    "value": "dairy cattle"
+                },
+                "type": "Animal",
+                "weight": {
+                    "type": "Property",
+                    "unitCode": "KGM",
+                    "value": 346
+                }
+            },
+            "type": "Feature"
+        },
+        {
+            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
+            "geometry": {
+                "coordinates": [
+                    13.35145,
+                    52.51234
+                ],
+                "type": "Point"
+            },
+            "id": "urn:ngsi-ld:Animal:cow008",
+            "properties": {
+                "birthdate": {
+                    "type": "Property",
+                    "value": "2021-05-17T00:00:00.000Z"
+                },
+                "fedWith": {
+                    "type": "Property",
+                    "value": "Grass"
+                },
+                "heartRate": {
+                    "type": "Property",
+                    "unitCode": "5K",
+                    "value": 51
+                },
+                "legalId": {
+                    "type": "Property",
+                    "value": "F-cow008-Pollen"
+                },
+                "locatedAt": {
+                    "object": "urn:ngsi-ld:AgriParcel:006",
+                    "type": "Relationship"
+                },
+                "location": {
+                    "observedAt": "2024-02-02T15:00:00.000Z",
+                    "type": "GeoProperty",
+                    "value": {
+                        "coordinates": [
+                            13.35145,
+                            52.51234
+                        ],
+                        "type": "Point"
+                    }
+                },
+                "name": {
+                    "type": "Property",
+                    "value": "Pollen"
+                },
+                "ownedBy": {
+                    "object": "urn:ngsi-ld:Person:person002",
+                    "type": "Relationship"
+                },
+                "phenologicalCondition": {
+                    "type": "VocabProperty",
+                    "vocab": "femaleAdult"
+                },
+                "reproductiveCondition": {
+                    "observedAt": "2024-01-01T15:00:00.000Z",
+                    "type": "VocabProperty",
+                    "vocab": "inHeat"
+                },
+                "sex": {
+                    "type": "VocabProperty",
+                    "vocab": "Female"
+                },
+                "species": {
+                    "type": "Property",
+                    "value": "dairy cattle"
+                },
+                "type": "Animal",
+                "weight": {
+                    "type": "Property",
+                    "unitCode": "KGM",
+                    "value": 407
+                }
+            },
+            "type": "Feature"
+        },
+        {
+            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
+            "geometry": {
+                "coordinates": [
+                    13.35227,
+                    52.51129
+                ],
+                "type": "Point"
+            },
+            "id": "urn:ngsi-ld:Animal:cow009",
+            "properties": {
+                "birthdate": {
+                    "type": "Property",
+                    "value": "2018-02-07T00:00:00.000Z"
+                },
+                "fedWith": {
+                    "type": "Property",
+                    "value": "Grass"
+                },
+                "heartRate": {
+                    "type": "Property",
+                    "unitCode": "5K",
+                    "value": 51
+                },
+                "legalId": {
+                    "type": "Property",
+                    "value": "F-cow009-Juicey"
+                },
+                "locatedAt": {
+                    "object": "urn:ngsi-ld:AgriParcel:006",
+                    "type": "Relationship"
+                },
+                "location": {
+                    "observedAt": "2024-02-02T15:00:00.000Z",
+                    "type": "GeoProperty",
+                    "value": {
+                        "coordinates": [
+                            13.35227,
+                            52.51129
+                        ],
+                        "type": "Point"
+                    }
+                },
+                "name": {
+                    "type": "Property",
+                    "value": "Juicey"
+                },
+                "ownedBy": {
+                    "object": "urn:ngsi-ld:Person:person002",
+                    "type": "Relationship"
+                },
+                "phenologicalCondition": {
+                    "type": "VocabProperty",
+                    "vocab": "femaleAdult"
+                },
+                "reproductiveCondition": {
+                    "observedAt": "2024-01-01T15:00:00.000Z",
+                    "type": "VocabProperty",
+                    "vocab": "active"
+                },
+                "sex": {
+                    "type": "VocabProperty",
+                    "vocab": "Female"
+                },
+                "species": {
+                    "type": "Property",
+                    "value": "dairy cattle"
+                },
+                "type": "Animal",
+                "weight": {
+                    "type": "Property",
+                    "unitCode": "KGM",
+                    "value": 324
+                }
+            },
+            "type": "Feature"
+        },
+        {
+            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
+            "geometry": {
+                "coordinates": [
+                    13.35177,
+                    52.51166
+                ],
+                "type": "Point"
+            },
+            "id": "urn:ngsi-ld:Animal:cow010",
+            "properties": {
+                "birthdate": {
+                    "type": "Property",
+                    "value": "2020-06-22T00:00:00.000Z"
+                },
+                "fedWith": {
+                    "type": "Property",
+                    "value": "Grass"
+                },
+                "heartRate": {
+                    "type": "Property",
+                    "unitCode": "5K",
+                    "value": 54
+                },
+                "legalId": {
+                    "type": "Property",
+                    "value": "F-cow010-Tulip"
+                },
+                "locatedAt": {
+                    "object": "urn:ngsi-ld:AgriParcel:005",
+                    "type": "Relationship"
+                },
+                "location": {
+                    "observedAt": "2024-02-02T15:00:00.000Z",
+                    "type": "GeoProperty",
+                    "value": {
+                        "coordinates": [
+                            13.35177,
+                            52.51166
+                        ],
+                        "type": "Point"
+                    }
+                },
+                "name": {
+                    "type": "Property",
+                    "value": "Tulip"
+                },
+                "ownedBy": {
+                    "object": "urn:ngsi-ld:Person:person001",
+                    "type": "Relationship"
+                },
+                "phenologicalCondition": {
+                    "type": "VocabProperty",
+                    "vocab": "femaleAdult"
+                },
+                "reproductiveCondition": {
+                    "observedAt": "2024-01-01T15:00:00.000Z",
+                    "type": "VocabProperty",
+                    "vocab": "active"
+                },
+                "sex": {
+                    "type": "VocabProperty",
+                    "vocab": "Female"
+                },
+                "species": {
+                    "type": "Property",
+                    "value": "dairy cattle"
+                },
+                "type": "Animal",
+                "weight": {
+                    "type": "Property",
+                    "unitCode": "KGM",
+                    "value": 489
+                }
+            },
+            "type": "Feature"
+        },
+        {
+            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
+            "geometry": {
+                "coordinates": [
+                    13.35196,
+                    52.51287
+                ],
+                "type": "Point"
+            },
+            "id": "urn:ngsi-ld:Animal:cow011",
+            "properties": {
+                "birthdate": {
+                    "type": "Property",
+                    "value": "2018-03-19T00:00:00.000Z"
+                },
+                "fedWith": {
+                    "type": "Property",
+                    "value": "Grass"
+                },
+                "heartRate": {
+                    "type": "Property",
+                    "unitCode": "5K",
+                    "value": 50
+                },
+                "legalId": {
+                    "type": "Property",
+                    "value": "F-cow011-Oats"
+                },
+                "locatedAt": {
+                    "object": "urn:ngsi-ld:AgriParcel:003",
+                    "type": "Relationship"
+                },
+                "location": {
+                    "observedAt": "2024-02-02T15:00:00.000Z",
+                    "type": "GeoProperty",
+                    "value": {
+                        "coordinates": [
+                            13.35196,
+                            52.51287
+                        ],
+                        "type": "Point"
+                    }
+                },
+                "name": {
+                    "type": "Property",
+                    "value": "Oats"
+                },
+                "ownedBy": {
+                    "object": "urn:ngsi-ld:Person:person002",
+                    "type": "Relationship"
+                },
+                "phenologicalCondition": {
+                    "type": "VocabProperty",
+                    "vocab": "femaleAdult"
+                },
+                "reproductiveCondition": {
+                    "type": "VocabProperty",
+                    "vocab": "inCalf"
+                },
+                "sex": {
+                    "type": "VocabProperty",
+                    "vocab": "Female"
+                },
+                "species": {
+                    "type": "Property",
+                    "value": "dairy cattle"
+                },
+                "type": "Animal",
+                "weight": {
+                    "type": "Property",
+                    "unitCode": "KGM",
+                    "value": 411
+                }
+            },
+            "type": "Feature"
+        },
+        {
+            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
+            "geometry": {
+                "coordinates": [
+                    13.35298,
+                    52.51121
+                ],
+                "type": "Point"
+            },
+            "id": "urn:ngsi-ld:Animal:cow012",
+            "properties": {
+                "birthdate": {
+                    "type": "Property",
+                    "value": "2021-02-15T00:00:00.000Z"
+                },
+                "fedWith": {
+                    "type": "Property",
+                    "value": "Grass"
+                },
+                "heartRate": {
+                    "type": "Property",
+                    "unitCode": "5K",
+                    "value": 55
+                },
+                "legalId": {
+                    "type": "Property",
+                    "value": "F-cow012-Rain"
+                },
+                "locatedAt": {
+                    "object": "urn:ngsi-ld:AgriParcel:004",
+                    "type": "Relationship"
+                },
+                "location": {
+                    "observedAt": "2024-02-02T15:00:00.000Z",
+                    "type": "GeoProperty",
+                    "value": {
+                        "coordinates": [
+                            13.35298,
+                            52.51121
+                        ],
+                        "type": "Point"
+                    }
+                },
+                "name": {
+                    "type": "Property",
+                    "value": "Rain"
+                },
+                "ownedBy": {
+                    "object": "urn:ngsi-ld:Person:person001",
+                    "type": "Relationship"
+                },
+                "phenologicalCondition": {
+                    "type": "VocabProperty",
+                    "vocab": "femaleAdult"
+                },
+                "reproductiveCondition": {
+                    "type": "VocabProperty",
+                    "vocab": "inactive"
+                },
+                "sex": {
+                    "type": "VocabProperty",
+                    "vocab": "Female"
+                },
+                "species": {
+                    "type": "Property",
+                    "value": "dairy cattle"
+                },
+                "type": "Animal",
+                "weight": {
+                    "type": "Property",
+                    "unitCode": "KGM",
+                    "value": 387
+                }
+            },
+            "type": "Feature"
+        },
+        {
+            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
+            "geometry": {
+                "coordinates": [
+                    13.35132,
+                    52.51194
+                ],
+                "type": "Point"
+            },
+            "id": "urn:ngsi-ld:Animal:cow013",
+            "properties": {
+                "birthdate": {
+                    "type": "Property",
+                    "value": "2019-09-08T00:00:00.000Z"
+                },
+                "fedWith": {
+                    "type": "Property",
+                    "value": "Hay"
+                },
+                "heartRate": {
+                    "type": "Property",
+                    "unitCode": "5K",
+                    "value": 53
+                },
+                "legalId": {
+                    "type": "Property",
+                    "value": "F-cow013-Silver"
+                },
+                "locatedAt": {
+                    "object": "urn:ngsi-ld:AgriParcel:005",
+                    "type": "Relationship"
+                },
+                "location": {
+                    "observedAt": "2024-02-02T15:00:00.000Z",
+                    "type": "GeoProperty",
+                    "value": {
+                        "coordinates": [
+                            13.35132,
+                            52.51194
+                        ],
+                        "type": "Point"
+                    }
+                },
+                "name": {
+                    "type": "Property",
+                    "value": "Silver"
+                },
+                "ownedBy": {
+                    "object": "urn:ngsi-ld:Person:person001",
+                    "type": "Relationship"
+                },
+                "phenologicalCondition": {
+                    "type": "VocabProperty",
+                    "vocab": "femaleAdult"
+                },
+                "reproductiveCondition": {
+                    "type": "VocabProperty",
+                    "vocab": "active"
+                },
+                "sex": {
+                    "type": "VocabProperty",
+                    "vocab": "Female"
+                },
+                "species": {
+                    "type": "Property",
+                    "value": "dairy cattle"
+                },
+                "type": "Animal",
+                "weight": {
+                    "type": "Property",
+                    "unitCode": "KGM",
+                    "value": 463
+                }
+            },
+            "type": "Feature"
+        },
+        {
+            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
+            "geometry": {
+                "coordinates": [
+                    13.35105,
+                    52.51254
+                ],
+                "type": "Point"
+            },
+            "id": "urn:ngsi-ld:Animal:cow014",
+            "properties": {
+                "birthdate": {
+                    "type": "Property",
+                    "value": "2020-03-24T00:00:00.000Z"
+                },
+                "fedWith": {
+                    "type": "Property",
+                    "value": "Grass"
+                },
+                "heartRate": {
+                    "type": "Property",
+                    "unitCode": "5K",
+                    "value": 52
+                },
+                "legalId": {
+                    "type": "Property",
+                    "value": "F-cow014-Stamps"
+                },
+                "locatedAt": {
+                    "object": "urn:ngsi-ld:AgriParcel:006",
+                    "type": "Relationship"
+                },
+                "location": {
+                    "observedAt": "2024-02-02T15:00:00.000Z",
+                    "type": "GeoProperty",
+                    "value": {
+                        "coordinates": [
+                            13.35105,
+                            52.51254
+                        ],
+                        "type": "Point"
+                    }
+                },
+                "name": {
+                    "type": "Property",
+                    "value": "Stamps"
+                },
+                "ownedBy": {
+                    "object": "urn:ngsi-ld:Person:person002",
+                    "type": "Relationship"
+                },
+                "phenologicalCondition": {
+                    "type": "VocabProperty",
+                    "vocab": "femaleAdult"
+                },
+                "reproductiveCondition": {
+                    "type": "VocabProperty",
+                    "vocab": "active"
+                },
+                "sex": {
+                    "type": "VocabProperty",
+                    "vocab": "Female"
+                },
+                "species": {
+                    "type": "Property",
+                    "value": "dairy cattle"
+                },
+                "type": "Animal",
+                "weight": {
+                    "type": "Property",
+                    "unitCode": "KGM",
+                    "value": 391
+                }
+            },
+            "type": "Feature"
+        },
+        {
+            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
+            "geometry": {
+                "coordinates": [
+                    13.35225,
+                    52.51299
+                ],
+                "type": "Point"
+            },
+            "id": "urn:ngsi-ld:Animal:cow015",
+            "properties": {
+                "birthdate": {
+                    "type": "Property",
+                    "value": "2018-06-03T00:00:00.000Z"
+                },
+                "fedWith": {
+                    "type": "Property",
+                    "value": "Grass"
+                },
+                "heartRate": {
+                    "type": "Property",
+                    "unitCode": "5K",
+                    "value": 54
+                },
+                "legalId": {
+                    "type": "Property",
+                    "value": "F-cow015-Button"
+                },
+                "locatedAt": {
+                    "object": "urn:ngsi-ld:AgriParcel:005",
+                    "type": "Relationship"
+                },
+                "location": {
+                    "observedAt": "2024-02-02T15:00:00.000Z",
+                    "type": "GeoProperty",
+                    "value": {
+                        "coordinates": [
+                            13.35225,
+                            52.51299
+                        ],
+                        "type": "Point"
+                    }
+                },
+                "name": {
+                    "type": "Property",
+                    "value": "Button"
+                },
+                "ownedBy": {
+                    "object": "urn:ngsi-ld:Person:person001",
+                    "type": "Relationship"
+                },
+                "phenologicalCondition": {
+                    "type": "VocabProperty",
+                    "vocab": "femaleAdult"
+                },
+                "reproductiveCondition": {
+                    "type": "VocabProperty",
+                    "vocab": "inHeat"
+                },
+                "sex": {
+                    "type": "VocabProperty",
+                    "vocab": "Female"
+                },
+                "species": {
+                    "type": "Property",
+                    "value": "dairy cattle"
+                },
+                "type": "Animal",
+                "weight": {
+                    "type": "Property",
+                    "unitCode": "KGM",
+                    "value": 333
+                }
+            },
+            "type": "Feature"
+        },
+        {
+            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
+            "geometry": {
+                "coordinates": [
+                    13.351,
+                    52.51133
+                ],
+                "type": "Point"
+            },
+            "id": "urn:ngsi-ld:Animal:cow016",
+            "properties": {
+                "birthdate": {
+                    "type": "Property",
+                    "value": "2021-04-11T00:00:00.000Z"
+                },
+                "fedWith": {
+                    "type": "Property",
+                    "value": "Grass"
+                },
+                "heartRate": {
+                    "type": "Property",
+                    "unitCode": "5K",
+                    "value": 55
+                },
+                "legalId": {
+                    "type": "Property",
+                    "value": "F-cow016-Lacey"
+                },
+                "locatedAt": {
+                    "object": "urn:ngsi-ld:AgriParcel:006",
+                    "type": "Relationship"
+                },
+                "location": {
+                    "observedAt": "2024-02-02T15:00:00.000Z",
+                    "type": "GeoProperty",
+                    "value": {
+                        "coordinates": [
+                            13.351,
+                            52.51133
+                        ],
+                        "type": "Point"
+                    }
+                },
+                "name": {
+                    "type": "Property",
+                    "value": "Lacey"
+                },
+                "ownedBy": {
+                    "object": "urn:ngsi-ld:Person:person001",
+                    "type": "Relationship"
+                },
+                "phenologicalCondition": {
+                    "type": "VocabProperty",
+                    "vocab": "femaleAdult"
+                },
+                "reproductiveCondition": {
+                    "type": "VocabProperty",
+                    "vocab": "inCalf"
+                },
+                "sex": {
+                    "type": "VocabProperty",
+                    "vocab": "Female"
+                },
+                "species": {
+                    "type": "Property",
+                    "value": "dairy cattle"
+                },
+                "type": "Animal",
+                "weight": {
+                    "type": "Property",
+                    "unitCode": "KGM",
+                    "value": 471
+                }
+            },
+            "type": "Feature"
+        },
+        {
+            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
+            "geometry": {
+                "coordinates": [
+                    13.35134,
+                    52.51149
+                ],
+                "type": "Point"
+            },
+            "id": "urn:ngsi-ld:Animal:cow017",
+            "properties": {
+                "birthdate": {
+                    "type": "Property",
+                    "value": "2020-02-17T00:00:00.000Z"
+                },
+                "fedWith": {
+                    "type": "Property",
+                    "value": "Grass"
+                },
+                "heartRate": {
+                    "type": "Property",
+                    "unitCode": "5K",
+                    "value": 54
+                },
+                "legalId": {
+                    "type": "Property",
+                    "value": "F-cow017-Fisher"
+                },
+                "locatedAt": {
+                    "object": "urn:ngsi-ld:AgriParcel:004",
+                    "type": "Relationship"
+                },
+                "location": {
+                    "observedAt": "2024-02-02T15:00:00.000Z",
+                    "type": "GeoProperty",
+                    "value": {
+                        "coordinates": [
+                            13.35134,
+                            52.51149
+                        ],
+                        "type": "Point"
+                    }
+                },
+                "name": {
+                    "type": "Property",
+                    "value": "Fisher"
+                },
+                "ownedBy": {
+                    "object": "urn:ngsi-ld:Person:person001",
+                    "type": "Relationship"
+                },
+                "phenologicalCondition": {
+                    "type": "VocabProperty",
+                    "vocab": "femaleAdult"
+                },
+                "reproductiveCondition": {
+                    "type": "VocabProperty",
+                    "vocab": "active"
+                },
+                "sex": {
+                    "type": "VocabProperty",
+                    "vocab": "Female"
+                },
+                "species": {
+                    "type": "Property",
+                    "value": "dairy cattle"
+                },
+                "type": "Animal",
+                "weight": {
+                    "type": "Property",
+                    "unitCode": "KGM",
+                    "value": 373
+                }
+            },
+            "type": "Feature"
+        },
+        {
+            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
+            "geometry": {
+                "coordinates": [
+                    13.35144,
+                    52.51179
+                ],
+                "type": "Point"
+            },
+            "id": "urn:ngsi-ld:Animal:cow018",
+            "properties": {
+                "birthdate": {
+                    "type": "Property",
+                    "value": "2021-03-05T00:00:00.000Z"
+                },
+                "fedWith": {
+                    "type": "Property",
+                    "value": "Grass"
+                },
+                "heartRate": {
+                    "type": "Property",
+                    "unitCode": "5K",
+                    "value": 54
+                },
+                "legalId": {
+                    "type": "Property",
+                    "value": "F-cow018-Rice"
+                },
+                "locatedAt": {
+                    "object": "urn:ngsi-ld:AgriParcel:003",
+                    "type": "Relationship"
+                },
+                "location": {
+                    "observedAt": "2024-02-02T15:00:00.000Z",
+                    "type": "GeoProperty",
+                    "value": {
+                        "coordinates": [
+                            13.35144,
+                            52.51179
+                        ],
+                        "type": "Point"
+                    }
+                },
+                "name": {
+                    "type": "Property",
+                    "value": "Rice"
+                },
+                "ownedBy": {
+                    "object": "urn:ngsi-ld:Person:person002",
+                    "type": "Relationship"
+                },
+                "phenologicalCondition": {
+                    "type": "VocabProperty",
+                    "vocab": "femaleAdult"
+                },
+                "reproductiveCondition": {
+                    "type": "VocabProperty",
+                    "vocab": "active"
+                },
+                "sex": {
+                    "type": "VocabProperty",
+                    "vocab": "Female"
+                },
+                "species": {
+                    "type": "Property",
+                    "value": "dairy cattle"
+                },
+                "type": "Animal",
+                "weight": {
+                    "type": "Property",
+                    "unitCode": "KGM",
+                    "value": 455
+                }
+            },
+            "type": "Feature"
+        },
+        {
+            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
+            "geometry": {
+                "coordinates": [
+                    13.35259,
+                    52.51252
+                ],
+                "type": "Point"
+            },
+            "id": "urn:ngsi-ld:Animal:cow019",
+            "properties": {
+                "birthdate": {
+                    "type": "Property",
+                    "value": "2019-07-15T00:00:00.000Z"
+                },
+                "fedWith": {
+                    "type": "Property",
+                    "value": "Hay"
+                },
+                "heartRate": {
+                    "type": "Property",
+                    "unitCode": "5K",
+                    "value": 54
+                },
+                "legalId": {
+                    "type": "Property",
+                    "value": "F-cow019-Eenie"
+                },
+                "locatedAt": {
+                    "object": "urn:ngsi-ld:AgriParcel:003",
+                    "type": "Relationship"
+                },
+                "location": {
+                    "observedAt": "2024-02-02T15:00:00.000Z",
+                    "type": "GeoProperty",
+                    "value": {
+                        "coordinates": [
+                            13.35259,
+                            52.51252
+                        ],
+                        "type": "Point"
+                    }
+                },
+                "name": {
+                    "type": "Property",
+                    "value": "Eenie"
+                },
+                "ownedBy": {
+                    "object": "urn:ngsi-ld:Person:person002",
+                    "type": "Relationship"
+                },
+                "phenologicalCondition": {
+                    "type": "VocabProperty",
+                    "vocab": "femaleAdult"
+                },
+                "reproductiveCondition": {
+                    "type": "VocabProperty",
+                    "vocab": "active"
+                },
+                "sex": {
+                    "type": "VocabProperty",
+                    "vocab": "Female"
+                },
+                "species": {
+                    "type": "Property",
+                    "value": "dairy cattle"
+                },
+                "type": "Animal",
+                "weight": {
+                    "type": "Property",
+                    "unitCode": "KGM",
+                    "value": 452
+                }
+            },
+            "type": "Feature"
+        },
+        {
+            "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
+            "geometry": {
+                "coordinates": [
+                    13.35148,
+                    52.5118
+                ],
+                "type": "Point"
+            },
+            "id": "urn:ngsi-ld:Animal:cow020",
+            "properties": {
+                "birthdate": {
+                    "type": "Property",
+                    "value": "2020-08-12T00:00:00.000Z"
+                },
+                "fedWith": {
+                    "type": "Property",
+                    "value": "Grass"
+                },
+                "heartRate": {
+                    "type": "Property",
+                    "unitCode": "5K",
+                    "value": 54
+                },
+                "legalId": {
+                    "type": "Property",
+                    "value": "F-cow020-Chalky"
+                },
+                "locatedAt": {
+                    "object": "urn:ngsi-ld:AgriParcel:005",
+                    "type": "Relationship"
+                },
+                "location": {
+                    "observedAt": "2024-02-02T15:00:00.000Z",
+                    "type": "GeoProperty",
+                    "value": {
+                        "coordinates": [
+                            13.35148,
+                            52.5118
+                        ],
+                        "type": "Point"
+                    }
+                },
+                "name": {
+                    "type": "Property",
+                    "value": "Chalky"
+                },
+                "ownedBy": {
+                    "object": "urn:ngsi-ld:Person:person002",
+                    "type": "Relationship"
+                },
+                "phenologicalCondition": {
+                    "type": "VocabProperty",
+                    "vocab": "femaleAdult"
+                },
+                "reproductiveCondition": {
+                    "type": "VocabProperty",
+                    "vocab": "active"
+                },
+                "sex": {
+                    "type": "VocabProperty",
+                    "vocab": "Female"
+                },
+                "species": {
+                    "type": "Property",
+                    "value": "dairy cattle"
+                },
+                "type": "Animal",
+                "weight": {
+                    "type": "Property",
+                    "unitCode": "KGM",
+                    "value": 338
+                }
+            },
+            "type": "Feature"
+        }
+    ],
+    "type": "FeatureCollection"
+}
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB

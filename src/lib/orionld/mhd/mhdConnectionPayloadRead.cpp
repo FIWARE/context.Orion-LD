@@ -47,6 +47,13 @@ MHD_Result mhdConnectionPayloadRead
 {
   size_t  dataLen = *upload_data_size;
 
+  // Special case when the service isn't found - need to just eat the payload body
+  if (orionldState.serviceP == NULL)
+  {
+    *upload_data_size = 0;  // Acknowledge the data and return
+    return MHD_YES;
+  }
+
   //
   // If the HTTP header says the request is bigger than inReqPayloadMaxSize,
   // just silently "eat" the entire message.

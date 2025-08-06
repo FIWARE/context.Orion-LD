@@ -6,6 +6,7 @@
   #1778: Not all fields were forwarded for subordinate subscriptions
   #1803: Entity not found when adding the type in PATCH requests  
   #XXXX: Fixed a bug for the Allow header in a response for OPTIONS, erroneously including verbs that give a 501
+  #XXXX: Fixed a bug that made the broker crash servicing a request with a non-existing service (URL PATH => 404) and a large payload body
 
 ## New Features:
   #XXXX: Support for ngsildProof as sub-attribute
