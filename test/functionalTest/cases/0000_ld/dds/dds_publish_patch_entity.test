@@ -38,12 +38,12 @@ ftClientStart -t 0-5000
 # 03. PATCH urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value
 # 04. GET urn:ngsi-ld:camera:cam1 from CB, see the update
 # 05. Dump/Reset the ftClient for DDS notifications - see the PATCH in DDS
-# 06. PATCH urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value + one more to be stripped away
+# 06. PATCH urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value + one more => no DDS publish
 # 07. GET urn:ngsi-ld:camera:cam1 from CB, see the update
-# 08. Dump/Reset the ftClient for DDS notifications - see the PATCH in DDS
-# 09. PATCH urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value except for one missing field - no DDS publish
+# 08. Dump/Reset the ftClient for DDS notifications - see no PATCH in DDS
+# 09. PATCH urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value except for one missing field => DDS publish
 # 10. GET urn:ngsi-ld:camera:cam1 from CB, see the update
-# 11. Dump/Reset the ftClient for DDS notifications - see no update in DDS
+# 11. Dump/Reset the ftClient for DDS notifications - see the update in DDS
 #
 
 echo "01. Ask FT to publish an entity urn:ngsi-ld:camera:cam1 on topic 'P1'"
@@ -90,7 +90,7 @@ echo
 
 echo "05. Dump/Reset the ftClient for DDS notifications - see the PATCH in DDS"
 echo "========================================================================"
-sleep 1
+sleep 2
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
 sleep .1
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck -X DELETE
@@ -98,8 +98,8 @@ echo
 echo
 
 
-echo "06. PATCH urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value + one more to be stripped away"
-echo "========================================================================================================="
+echo "06. PATCH urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value + one more => no DDS publish"
+echo "======================================================================================================="
 payload='{
   "shutterSpeed": {
     "value": {
@@ -124,18 +124,16 @@ echo
 echo
 
 
-echo "08. Dump/Reset the ftClient for DDS notifications - see the PATCH in DDS"
-echo "========================================================================"
+echo "08. Dump/Reset the ftClient for DDS notifications - see no PATCH in DDS"
+echo "======================================================================="
 sleep 1
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
-sleep .1
-orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck -X DELETE
 echo
 echo
 
 
-echo "09. PATCH urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value except for one missing field - no DDS publish"
-echo "========================================================================================================================"
+echo "09. PATCH urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value except for one missing field => DDS publish"
+echo "======================================================================================================================"
 payload='{
   "shutterSpeed": {
     "value": {
@@ -158,12 +156,10 @@ echo
 echo
 
 
-echo "11. Dump/Reset the ftClient for DDS notifications - see no update in DDS"
-echo "========================================================================"
+echo "11. Dump/Reset the ftClient for DDS notifications - see the update in DDS"
+echo "========================================================================="
 sleep 1
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
-sleep .1
-orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck -X DELETE
 echo
 echo
 
@@ -299,8 +295,8 @@ Date: REGEX(.*)
 
 
 
-06. PATCH urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value + one more to be stripped away
-=========================================================================================================
+06. PATCH urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value + one more => no DDS publish
+=======================================================================================================
 HTTP/1.1 204 No Content
 Date: REGEX(.*)
 
@@ -338,34 +334,8 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 }
 
 
-08. Dump/Reset the ftClient for DDS notifications - see the PATCH in DDS
-========================================================================
-HTTP/1.1 200 OK
-Content-Length: 356
-Date: REGEX(.*)
-
-[
-  {
-    "P1": {
-      "data": {
-        "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0": {
-          "b": false,
-          "f": 6.6,
-          "i": 6,
-          "ia": [
-            6,
-            6
-          ],
-          "s": "step 06"
-        }
-      },
-      "type": "NgsildSample"
-    },
-    "id": "REGEX(.*)",
-    "type": "fastdds"
-  }
-]
-
+08. Dump/Reset the ftClient for DDS notifications - see no PATCH in DDS
+=======================================================================
 HTTP/1.1 200 OK
 Content-Length: 0
 Date: REGEX(.*)
@@ -373,8 +343,8 @@ Date: REGEX(.*)
 
 
 
-09. PATCH urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value except for one missing field - no DDS publish
-========================================================================================================================
+09. PATCH urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value except for one missing field => DDS publish
+======================================================================================================================
 HTTP/1.1 204 No Content
 Date: REGEX(.*)
 
@@ -410,17 +380,33 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 }
 
 
-11. Dump/Reset the ftClient for DDS notifications - see no update in DDS
-========================================================================
+11. Dump/Reset the ftClient for DDS notifications - see the update in DDS
+=========================================================================
 HTTP/1.1 200 OK
-Content-Length: 0
+Content-Length: REGEX(.*)
 Date: REGEX(.*)
 
-
-HTTP/1.1 200 OK
-Content-Length: 0
-Date: REGEX(.*)
-
+[
+  {
+    "P1": {
+      "data": {
+        "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0": {
+          "b": true,
+          "f": 9.9,
+          "i": 0,
+          "ia": [
+            9,
+            9
+          ],
+          "s": "step 09"
+        }
+      },
+      "type": "NgsildSample"
+    },
+    "id": "REGEX(.*)",
+    "type": "fastdds"
+  }
+]
 
 
 
