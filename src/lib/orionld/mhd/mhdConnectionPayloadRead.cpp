@@ -47,6 +47,30 @@ MHD_Result mhdConnectionPayloadRead
 {
   size_t  dataLen = *upload_data_size;
 
+#if 0
+  // Special case when the service isn't found - need to just eat the payload body
+  //
+  // This outdeffed part is needed for the broker not to crash when a (possible large) payload body
+  // is supplied for a service that does not exist, for example "POST /ngsi-ld/v1/entityOperations" (note that "/create" is missing)
+  //
+  // However, including this piece of code messes up the brokers DDS functionality.
+  //
+  // In the failing DDS functests (due to undeffing what's below), this function (mhdConnectionPayloadRead) isn't even called.
+  // As there are so many (hundreds) valgrind errors in eProsima's DDS libraries, I can't even debug this.
+  //
+  // So, for now, not including it.
+  //
+  // DDS functionality is way more importante than a bug that no external user has even found yet (fount it myself by mistake).
+  // I had to remove a part (step 00) of the functest "ngsild_issue_1783.test" testing this fix, that is now outdeffed.
+  //
+  if (orionldState.serviceP == NULL)
+  {
+    LM_W(("Acknowledge the data and return"));
+    *upload_data_size = 0;  // Acknowledge the data and return
+    return MHD_YES;
+  }
+#endif
+
   //
   // If the HTTP header says the request is bigger than inReqPayloadMaxSize,
   // just silently "eat" the entire message.
