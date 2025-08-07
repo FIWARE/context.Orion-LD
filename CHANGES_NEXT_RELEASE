@@ -1,36 +1,5 @@
 ## Fixed Issues:
-  #1673: Fixed a bug about not taken the entity type into account (if given as URI param) for PATCH Attribute
-  #1673: PATCH Entity (w/o /attrs) giving a 404 response (it was 204, which is erroneous) when there is no local match and no registrations match
-  #1760: Support for multiple Link headers
-  #1773: PATCH Attribute didn't implement VocabProperty (and the broker crashed when attempting to update a VocabProperty)
-  #1778: Not all fields were forwarded for subordinate subscriptions
-  #1803: Entity not found when adding the type in PATCH requests  
-  #XXXX: Fixed a bug for the Allow header in a response for OPTIONS, erroneously including verbs that give a 501
-
 ## New Features:
-  #XXXX: Support for ngsildProof as sub-attribute
-  #XXXX: Support for filtering of what entities are to be pushed to historical database (via config file)
-
 ## Multi-Attribute (datasetId)
-  o Support for datasetId URI param for Query/Retrieve Entities
-  o Support for datasetId for POST Query
-  o Support for datasetId for DELETE Attribute
-  o Support for datasetId for PUT Attribute
-  o Support for datasetId for PUT Entity
-
 ## DDS
-  o The broker is now aware of DDS types
-  o Updates on attributes tied to DDS that don't coincide with the value structure are not published over DDS
-  o DDS support for PATCH /ngsi-ld/v1/entities/{entityId}/attrs
-  o DDS support for POST /ngsi-ld/v1/entities/{entityId}/attrs
-  o DDS support for PUT /ngsi-ld/v1/entities/{entityId}/attrs/{attrName}
-  o DDS support for PUT /ngsi-ld/v1/entities/{entityId}
-  o DDS support for POST /ngsi-ld/v1/entityOperations/update
-
 ## Notes
-* Fixing the issue #1760, Orion-LD is now more strict about the syntax in the HTTP Link header for @contexts.
-  Before this fix, the following Link header was acepted:
-    Link: <URL to user context>
-  That's not valid HTTP, so now, after the fix, the link header must have the 'rel' property set to exactly "http://www.w3.org/ns/json-ld#context":
-    Link: <URL to user context>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
-  [ No check is made for the 'type' property' ]
