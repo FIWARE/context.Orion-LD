@@ -102,7 +102,7 @@ echo
 
 echo "05. Query the broker for all its entities, see three (urn:ngsi-ld:camera:cam1, urn:ngsi-ld:arm:arm1, and the default entity)"
 echo "============================================================================================================================"
-sleep 2
+sleep 4
 orionCurl --url /ngsi-ld/v1/entities?local=true
 echo
 echo
@@ -148,7 +148,7 @@ echo
 
 echo "09. Dump the ftClient to see the notification"
 echo "============================================="
-sleep 1
+sleep 2
 orionCurl --url /dump --port $FT_PORT --noPayloadCheck
 echo
 echo
@@ -223,6 +223,43 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 [
     {
+        "armReach": {
+            "ddsTypeName": {
+                "type": "Property",
+                "value": "NgsildSample"
+            },
+            "participantId": {
+                "type": "Property",
+                "value": "REGEX(.*)"
+            },
+            "publishedAt": {
+                "type": "Property",
+                "value": REGEX(.*)
+            },
+            "type": "Property",
+            "value": {
+                "b": false,
+                "f": 0,
+                "i": 2,
+                "ia": [
+                    0,
+                    0
+                ],
+                "s": "step 02"
+            },
+            "xId": {
+                "type": "Property",
+                "value": "REGEX(.*)"
+            }
+        },
+        "ddsType": {
+            "type": "Property",
+            "value": "fastdds"
+        },
+        "id": "urn:ngsi-ld:arm:arm1",
+        "type": "Arm"
+    },
+    {
         "ddsType": {
             "type": "Property",
             "value": "fastdds"
@@ -258,43 +295,6 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             }
         },
         "type": "Camera"
-    },
-    {
-        "armReach": {
-            "ddsDataType": {
-                "type": "Property",
-                "value": "NgsildSample"
-            },
-            "participantId": {
-                "type": "Property",
-                "value": "REGEX(.*)"
-            },
-            "publishedAt": {
-                "type": "Property",
-                "value": REGEX(.*)
-            },
-            "type": "Property",
-            "value": {
-                "b": false,
-                "f": 0,
-                "i": 2,
-                "ia": [
-                    0,
-                    0
-                ],
-                "s": "step 02"
-            },
-            "xId": {
-                "type": "Property",
-                "value": "REGEX(.*)"
-            }
-        },
-        "ddsType": {
-            "type": "Property",
-            "value": "fastdds"
-        },
-        "id": "urn:ngsi-ld:arm:arm1",
-        "type": "Arm"
     },
     {
         "P3": {
