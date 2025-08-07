@@ -55,7 +55,13 @@ void configInit(Kjson* kjP, char* configFile)
     {
       snprintf(configFile, 511, "%s/.orionld", home);
       if (access(configFile, R_OK) != 0)
-        return;  // It's OK to not have a config file
+      {
+        // It's OK to not have a config file, as lonmg as DDS is not turned on
+        if (ddsSupport == true)
+          LM_X(1, ("DDS functionality demands a configuration file"));
+
+        return;
+      }
     }
   }
 

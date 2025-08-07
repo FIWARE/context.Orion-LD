@@ -22,7 +22,7 @@
 *
 * Author: Ken Zangelin
 */
-#include <unistd.h>                                         // NULL
+#include <unistd.h>                                         // NULL, getcwd
 
 extern "C"
 {
@@ -54,7 +54,10 @@ int configLoad(Kjson* kjP, const char* configFile)
   int   bufLen = 0;
 
   if (kFileRead((char*) "", (char*) configFile, &buf, &bufLen) != 0)
-    KT_RE(1, "Error reading the configuration file '%s'", configFile);
+  {
+    char wd[512];
+    KT_RE(1, "Error reading the configuration file '%s/%s'", getcwd(wd, sizeof(wd) - 1), configFile);
+  }
 
   configTree = kjParse(kjP, buf);
   if (configTree == NULL)
