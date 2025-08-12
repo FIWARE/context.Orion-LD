@@ -1,0 +1,491 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Issue #1814
+
+--SHELL-INIT--
+dbInit CB
+dbInit CP1
+orionldStart CB -experimental -forwarding -wip entityMaps
+orionldStart CP1 -experimental
+
+--SHELL--
+
+#
+# 01. Create an entity 'cow001' of type 'Animal' on CP1
+# 02. Create a registration for 'Animal' in CB for CP1
+# 03. Query cb for all entities of type 'Animal' - see 'cow001' from CP1 
+# 04. As step 03, but add an attrs filter for 'location' - see 'cow001' from CP1 (the issue #1814 says it's a 404 Not Found)
+# 05. As step 03, but with Accept: application/geo+json - see 'cow001' from CP1 (the issue #1814 says location is NULL)
+# 06. Retrieve 'cow001' from CB (forward to CP1), with 'attrs=location' as issue 1814 suggests
+# 07. Retrieve 'cow001' from CB (forward to CP1), with 'Accept: application/geo+json' as issue 1814 suggests
+#
+
+echo "01. Create an entity 'cow001' of type 'Animal' on CP1"
+echo "===================================================="
+payload='{
+    "id": "urn:ngsi-ld:Animal:cow001",
+    "type": "Animal",
+    "species": {
+        "type": "Property",
+        "value": "dairy cattle"
+    },
+    "name": {
+        "type": "Property",
+        "value": "Beany"
+    },
+    "heartRate": {
+        "type": "Property",
+        "value": 51,
+        "unitCode": "5K"
+    },
+    "location": {
+        "type": "GeoProperty",
+        "value": {
+            "type": "Point",
+            "coordinates": [
+                13.35257,
+                52.51139
+            ]
+        },
+        "observedAt": "2024-02-02T15:00:00.000Z"
+    },
+    "locatedAt": {
+        "type": "Relationship",
+        "object": "urn:ngsi-ld:AgriParcel:004"
+    },
+    "ownedBy": {
+        "type": "Relationship",
+        "object": "urn:ngsi-ld:Person:person001"
+    },
+    "fedWith": {
+        "type": "Property",
+        "value": "Hay"
+    },
+    "birthdate": {
+        "type": "Property",
+        "value": "2019-01-22T00:00:00.000Z"
+    },
+    "sex": {
+        "type": "VocabProperty",
+        "vocab": "Male"
+    },
+    "phenologicalCondition": {
+        "type": "VocabProperty",
+        "vocab": "maleAdult"
+    },
+    "reproductiveCondition": {
+        "type": "VocabProperty",
+        "vocab": "active"
+    },
+    "weight": {
+        "type": "Property",
+        "value": 772,
+        "unitCode": "KGM"
+    },
+    "legalId": {
+        "type": "Property",
+        "value": "M-bull001-Beany"
+    }
+}'
+orionCurl --url /ngsi-ld/v1/entities/ --payload "$payload" --port $CP1_PORT
+echo
+echo
+
+
+echo "02. Create a registration for 'Animal' in CB for CP1"
+echo "===================================================="
+payload='{
+  "type": "ContextSourceRegistration",
+  "information": [
+    {
+      "entities": [
+        {
+          "type": "Animal"
+        }
+      ]
+    }
+  ],
+  "mode": "inclusive",
+  "operations": [ "federationOps" ],
+  "endpoint": "localhost:'$CP1_PORT'"
+}'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload"
+echo
+echo
+
+
+echo "03. Query cb for all entities of type 'Animal' - see 'cow001' from CP1"
+echo "======================================================================"
+orionCurl --url /ngsi-ld/v1/entities?type=Animal
+echo
+echo
+
+
+echo "04. As step 03, but add an attrs filter for 'location' - see 'cow001' from CP1 (the issue #1814 says it's a 404 Not Found)"
+echo "======================================================================e==================================================="
+orionCurl --url '/ngsi-ld/v1/entities?type=Animal&attrs=location'
+echo
+echo
+
+
+echo "05. As step 03, but with Accept: application/geo+json - see 'cow001' from CP1 (the issue #1814 says location is NULL)"
+echo "====================================================================================================================="
+orionCurl --url /ngsi-ld/v1/entities?type=Animal --out application/geo+json
+echo
+echo
+
+
+echo "06. Retrieve 'cow001' from CB (forward to CP1), with 'attrs=location' as issue 1814 suggests"
+echo "============================================================================================"
+orionCurl --url '/ngsi-ld/v1/entities/urn:ngsi-ld:Animal:cow001?type=Animal&attrs=location'
+echo
+echo
+
+
+echo "07. Retrieve 'cow001' from CB (forward to CP1), with 'Accept: application/geo+json' as issue 1814 suggests"
+echo "=========================================================================================================="
+orionCurl --url '/ngsi-ld/v1/entities/urn:ngsi-ld:Animal:cow001?type=Animal' --out application/geo+json
+echo
+echo
+
+
+
+--REGEXPECT--
+01. Create an entity 'cow001' of type 'Animal' on CP1
+====================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:Animal:cow001
+
+
+
+02. Create a registration for 'Animal' in CB for CP1
+====================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/csourceRegistrations/REGEX(.*)
+
+
+
+03. Query cb for all entities of type 'Animal' - see 'cow001' from CP1
+======================================================================
+HTTP/1.1 200 OK
+Content-Length: 894
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+NGSILD-EntityMap: urn:ngsi-ld:entity-map:REGEX(.*)
+
+[
+    {
+        "birthdate": {
+            "type": "Property",
+            "value": "2019-01-22T00:00:00.000Z"
+        },
+        "fedWith": {
+            "type": "Property",
+            "value": "Hay"
+        },
+        "heartRate": {
+            "type": "Property",
+            "unitCode": "5K",
+            "value": 51
+        },
+        "id": "urn:ngsi-ld:Animal:cow001",
+        "legalId": {
+            "type": "Property",
+            "value": "M-bull001-Beany"
+        },
+        "locatedAt": {
+            "object": "urn:ngsi-ld:AgriParcel:004",
+            "type": "Relationship"
+        },
+        "location": {
+            "observedAt": "2024-02-02T15:00:00.000Z",
+            "type": "GeoProperty",
+            "value": {
+                "coordinates": [
+                    13.35257,
+                    52.51139
+                ],
+                "type": "Point"
+            }
+        },
+        "name": {
+            "type": "Property",
+            "value": "Beany"
+        },
+        "ownedBy": {
+            "object": "urn:ngsi-ld:Person:person001",
+            "type": "Relationship"
+        },
+        "phenologicalCondition": {
+            "type": "VocabProperty",
+            "vocab": "maleAdult"
+        },
+        "reproductiveCondition": {
+            "type": "VocabProperty",
+            "vocab": "active"
+        },
+        "sex": {
+            "type": "VocabProperty",
+            "vocab": "Male"
+        },
+        "species": {
+            "type": "Property",
+            "value": "dairy cattle"
+        },
+        "type": "Animal",
+        "weight": {
+            "type": "Property",
+            "unitCode": "KGM",
+            "value": 772
+        }
+    }
+]
+
+
+04. As step 03, but add an attrs filter for 'location' - see 'cow001' from CP1 (the issue #1814 says it's a 404 Not Found)
+======================================================================e===================================================
+HTTP/1.1 200 OK
+Content-Length: 185
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+NGSILD-EntityMap: urn:ngsi-ld:entity-map:REGEX(.*)
+
+[
+    {
+        "id": "urn:ngsi-ld:Animal:cow001",
+        "location": {
+            "observedAt": "2024-02-02T15:00:00.000Z",
+            "type": "GeoProperty",
+            "value": {
+                "coordinates": [
+                    13.35257,
+                    52.51139
+                ],
+                "type": "Point"
+            }
+        },
+        "type": "Animal"
+    }
+]
+
+
+05. As step 03, but with Accept: application/geo+json - see 'cow001' from CP1 (the issue #1814 says location is NULL)
+=====================================================================================================================
+HTTP/1.1 200 OK
+Content-Length: 894
+Content-Type: application/geo+json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+NGSILD-EntityMap: urn:ngsi-ld:entity-map:REGEX(.*)
+
+[
+    {
+        "birthdate": {
+            "type": "Property",
+            "value": "2019-01-22T00:00:00.000Z"
+        },
+        "fedWith": {
+            "type": "Property",
+            "value": "Hay"
+        },
+        "heartRate": {
+            "type": "Property",
+            "unitCode": "5K",
+            "value": 51
+        },
+        "id": "urn:ngsi-ld:Animal:cow001",
+        "legalId": {
+            "type": "Property",
+            "value": "M-bull001-Beany"
+        },
+        "locatedAt": {
+            "object": "urn:ngsi-ld:AgriParcel:004",
+            "type": "Relationship"
+        },
+        "location": {
+            "observedAt": "2024-02-02T15:00:00.000Z",
+            "type": "GeoProperty",
+            "value": {
+                "coordinates": [
+                    13.35257,
+                    52.51139
+                ],
+                "type": "Point"
+            }
+        },
+        "name": {
+            "type": "Property",
+            "value": "Beany"
+        },
+        "ownedBy": {
+            "object": "urn:ngsi-ld:Person:person001",
+            "type": "Relationship"
+        },
+        "phenologicalCondition": {
+            "type": "VocabProperty",
+            "vocab": "maleAdult"
+        },
+        "reproductiveCondition": {
+            "type": "VocabProperty",
+            "vocab": "active"
+        },
+        "sex": {
+            "type": "VocabProperty",
+            "vocab": "Male"
+        },
+        "species": {
+            "type": "Property",
+            "value": "dairy cattle"
+        },
+        "type": "Animal",
+        "weight": {
+            "type": "Property",
+            "unitCode": "KGM",
+            "value": 772
+        }
+    }
+]
+
+
+06. Retrieve 'cow001' from CB (forward to CP1), with 'attrs=location' as issue 1814 suggests
+============================================================================================
+HTTP/1.1 200 OK
+Content-Length: 183
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "id": "urn:ngsi-ld:Animal:cow001",
+    "location": {
+        "observedAt": "2024-02-02T15:00:00.000Z",
+        "type": "GeoProperty",
+        "value": {
+            "coordinates": [
+                13.35257,
+                52.51139
+            ],
+            "type": "Point"
+        }
+    },
+    "type": "Animal"
+}
+
+
+07. Retrieve 'cow001' from CB (forward to CP1), with 'Accept: application/geo+json' as issue 1814 suggests
+==========================================================================================================
+HTTP/1.1 200 OK
+Content-Length: 1064
+Content-Type: application/geo+json
+Date: REGEX(.*)
+
+{
+    "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
+    "geometry": {
+        "coordinates": [
+            13.35257,
+            52.51139
+        ],
+        "type": "Point"
+    },
+    "id": "urn:ngsi-ld:Animal:cow001",
+    "properties": {
+        "birthdate": {
+            "type": "Property",
+            "value": "2019-01-22T00:00:00.000Z"
+        },
+        "fedWith": {
+            "type": "Property",
+            "value": "Hay"
+        },
+        "heartRate": {
+            "type": "Property",
+            "unitCode": "5K",
+            "value": 51
+        },
+        "legalId": {
+            "type": "Property",
+            "value": "M-bull001-Beany"
+        },
+        "locatedAt": {
+            "object": "urn:ngsi-ld:AgriParcel:004",
+            "type": "Relationship"
+        },
+        "location": {
+            "observedAt": "2024-02-02T15:00:00.000Z",
+            "type": "GeoProperty",
+            "value": {
+                "coordinates": [
+                    13.35257,
+                    52.51139
+                ],
+                "type": "Point"
+            }
+        },
+        "name": {
+            "type": "Property",
+            "value": "Beany"
+        },
+        "ownedBy": {
+            "object": "urn:ngsi-ld:Person:person001",
+            "type": "Relationship"
+        },
+        "phenologicalCondition": {
+            "type": "VocabProperty",
+            "vocab": "maleAdult"
+        },
+        "reproductiveCondition": {
+            "type": "VocabProperty",
+            "vocab": "active"
+        },
+        "sex": {
+            "type": "VocabProperty",
+            "vocab": "Male"
+        },
+        "species": {
+            "type": "Property",
+            "value": "dairy cattle"
+        },
+        "type": "Animal",
+        "weight": {
+            "type": "Property",
+            "unitCode": "KGM",
+            "value": 772
+        }
+    },
+    "type": "Feature"
+}
+
+
+--TEARDOWN--
+brokerStop CB
+brokerStop CP1
+dbDrop CB
+dbDrop CP1
