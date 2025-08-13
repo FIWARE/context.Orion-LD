@@ -160,6 +160,8 @@ typedef struct OrionLdRestServiceSimplifiedVector
 #define ORIONLD_URIPARAM_REVERSE              (UINT64_C(1) << 43)
 #define ORIONLD_URIPARAM_PICK                 (UINT64_C(1) << 44)
 #define ORIONLD_URIPARAM_DATASETID_LIST       (UINT64_C(1) << 45)
+#define ORIONLD_URIPARAM_JOIN                 (UINT64_C(1) << 46)
+#define ORIONLD_URIPARAM_JOINLEVEL            (UINT64_C(1) << 47)
 
 
 

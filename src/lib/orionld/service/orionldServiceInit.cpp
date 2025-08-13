@@ -268,6 +268,8 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
     serviceP->uriParams |= ORIONLD_URIPARAM_TYPELIST;
     serviceP->uriParams |= ORIONLD_URIPARAM_DATASETID;
     serviceP->uriParams |= ORIONLD_URIPARAM_DATASETID_LIST;
+    serviceP->uriParams |= ORIONLD_URIPARAM_JOIN;
+    serviceP->uriParams |= ORIONLD_URIPARAM_JOINLEVEL;
   }
   else if (serviceP->serviceRoutine == orionldDeleteEntity)
   {

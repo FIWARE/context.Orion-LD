@@ -28,6 +28,7 @@
 extern "C"
 {
 #include "kbase/kMacros.h"                                       // K_FT, K_VEC_SIZE
+#include "ktrace/kTrace.h"                                       // KT_T, ...
 #include "kbase/kTime.h"                                         // kTimeGet, kTimeDiff
 #include "kalloc/kaAlloc.h"                                      // kaAlloc
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
@@ -48,6 +49,7 @@ extern "C"
 #include "orionld/common/stringStrip.h"                          // stringStrip
 #include "orionld/common/dateTime.h"                             // dateTimeFromString
 #include "orionld/common/forbidden.h"                            // forbidden
+#include "orionld/common/traceLevels.h"                          // K-Trace trace levels
 #include "orionld/http/verbGet.h"                                // verbGet
 #include "orionld/context/orionldContextFromUrl.h"               // orionldContextFromUrl
 #include "orionld/service/orionldServiceInit.h"                  // orionldRestServiceV
@@ -1164,6 +1166,34 @@ MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
   {
     orionldState.uriParams.type = (char*) value;
   }
+  else if (strcmp(key, "join") == 0)
+  {
+    orionldState.uriParams.join  = (char*) value;
+    orionldState.uriParams.mask |= ORIONLD_URIPARAM_JOIN;
+
+    orionldState.in.linkedEntities = true;
+
+    if      (strcmp(value, "flat")    == 0) orionldState.in.flat           = true;
+    else if (strcmp(value, "inline")  == 0) orionldState.in.flat           = false;
+    else
+    {
+      if (strcmp(value, "@none")   != 0)
+        orionldError(OrionldBadRequestData, "Invalid value for uri parameter /join/", value, 400);
+
+      return MHD_YES;
+    }
+
+    if (orionldState.uriParams.joinLevel == 0)  // Hasn't been initialized yet
+      orionldState.uriParams.joinLevel = 1;     // Default value is 1
+  }
+  else if (strcmp(key, "joinLevel") == 0)
+  {
+    orionldState.uriParams.joinLevel  = atoi(value);
+    orionldState.uriParams.mask      |= ORIONLD_URIPARAM_JOINLEVEL;
+
+    if (orionldState.uriParams.joinLevel < 0)
+      orionldError(OrionldBadRequestData, "Invalid value for uri parameter /joinLevel/", value, 400);
+  }
   else
   {
     orionldError(OrionldBadRequestData, "Unknown URI parameter", key, 400);
@@ -1258,6 +1288,7 @@ MHD_Result mhdConnectionInit
 
   // if ((requestNo % 100 == 0) || (requestNo == 1))
   LM_K(("------------------------- Servicing NGSI-LD request %03d: %s %s --------------------------", requestNo, method, url));  // if not REQUEST_PERFORMANCE
+  KT_T(StRequest, "------------------------- Servicing NGSI-LD request %03d: %s %s --------------------------", requestNo, method, url);
 
   //
   // 2. Prepare orionldState
