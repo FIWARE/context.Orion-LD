@@ -33,7 +33,7 @@ extern "C"
 #include "orionld/types/EntityLink.h"                            // EntityLink
 #include "orionld/common/traceLevels.h"                          // KTrace Levels
 #include "orionld/common/orionldState.h"                         // orionldState
-#include "orionld/serviceRoutines/orionldGetEntity.h"           // orionldGetEntity
+#include "orionld/serviceRoutines/orionldGetEntity.h"            // orionldGetEntity
 #include "orionld/linkedEntities/eLinkDebug.h"                   // eLinkDebug
 #include "orionld/linkedEntities/eLinkInlineExpand.h"            // Own interface
 
@@ -41,9 +41,9 @@ extern "C"
 
 // -----------------------------------------------------------------------------
 //
-// eLinkEntityRetrieved -
+// eLinkEntityLookup -
 //
-static bool eLinkEntityRetrieved(KjNode* entityV, const char* entityId)
+static KjNode* eLinkEntityLookup(KjNode* entityV, const char* entityId)
 {
   for (KjNode* entityP = entityV->value.firstChildP; entityP != NULL; entityP = entityP->next)
   {
@@ -52,11 +52,11 @@ static bool eLinkEntityRetrieved(KjNode* entityV, const char* entityId)
     if (idP != NULL)
     {
      if (strcmp(idP->value.s, entityId) == 0)
-        return true;
+        return entityP;
     }
   }
 
-  return false;
+  return NULL;
 }
 
 
@@ -82,8 +82,10 @@ static KjNode* eLinkEntityRetrieve(KjNode* entityV, const char* entityId, KjNode
   // Calling the service routine to retrieve the entity in question
   // UNLESS we have already retrieved the entity
   //
-  if (eLinkEntityRetrieved(entityV, entityId) == true)
-    return NULL;
+  KjNode* eP = eLinkEntityLookup(entityV, entityId);
+
+  if (eP != NULL)
+    return eP;
 
   if (orionldGetEntity() == true)
   {

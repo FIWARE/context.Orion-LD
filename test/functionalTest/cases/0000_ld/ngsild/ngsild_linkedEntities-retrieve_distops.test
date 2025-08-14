@@ -336,7 +336,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 05. Retrieve the entity urn:E1 with ?join=inline
 ===============================================
 HTTP/1.1 200 OK
-Content-Length: 648
+Content-Length: 969
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -347,7 +347,32 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "value": 1
     },
     "R0": {
+        "entity": {
+            "P1": {
+                "type": "Property",
+                "value": 1
+            },
+            "R0": {
+                "object": "urn:E1",
+                "type": "Relationship"
+            },
+            "R1": {
+                "object": "urn:E2",
+                "type": "Relationship"
+            },
+            "R2": {
+                "object": "urn:E3",
+                "type": "Relationship"
+            },
+            "R3": {
+                "object": "urn:E4",
+                "type": "Relationship"
+            },
+            "id": "urn:E1",
+            "type": "T"
+        },
         "object": "urn:E1",
+        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
         "type": "Relationship"
     },
     "R1": {

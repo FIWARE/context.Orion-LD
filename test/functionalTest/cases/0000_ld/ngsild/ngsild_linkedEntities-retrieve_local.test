@@ -51,6 +51,9 @@ payload='{
   "R1": {
     "object": "urn:E2"
   },
+  "R1.2": {
+    "object": "urn:E2"
+  },
   "R2": {
     "object": "urn:E3"
   },
@@ -102,7 +105,7 @@ echo
 
 
 echo "04. Retrieve the entity urn:E1 with ?join=inline"
-echo "==============================================="
+echo "================================================"
 orionCurl --url /ngsi-ld/v1/entities/urn:E1?join=inline
 echo
 echo
@@ -201,7 +204,7 @@ Location: /ngsi-ld/v1/entities/urn:E4
 03. Retrieve the entity urn:E1 with ?join=flat
 ==============================================
 HTTP/1.1 200 OK
-Content-Length: 437
+Content-Length: 486
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -217,6 +220,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             "type": "Relationship"
         },
         "R1": {
+            "object": "urn:E2",
+            "type": "Relationship"
+        },
+        "R1.2": {
             "object": "urn:E2",
             "type": "Relationship"
         },
@@ -259,9 +266,9 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 
 04. Retrieve the entity urn:E1 with ?join=inline
-===============================================
+================================================
 HTTP/1.1 200 OK
-Content-Length: 648
+Content-Length: 1200
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -272,10 +279,52 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "value": 1
     },
     "R0": {
+        "entity": {
+            "P1": {
+                "type": "Property",
+                "value": 1
+            },
+            "R0": {
+                "object": "urn:E1",
+                "type": "Relationship"
+            },
+            "R1": {
+                "object": "urn:E2",
+                "type": "Relationship"
+            },
+            "R1.2": {
+                "object": "urn:E2",
+                "type": "Relationship"
+            },
+            "R2": {
+                "object": "urn:E3",
+                "type": "Relationship"
+            },
+            "R3": {
+                "object": "urn:E4",
+                "type": "Relationship"
+            },
+            "id": "urn:E1",
+            "type": "T"
+        },
         "object": "urn:E1",
+        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
         "type": "Relationship"
     },
     "R1": {
+        "entity": {
+            "P1": {
+                "type": "Property",
+                "value": 2
+            },
+            "id": "urn:E2",
+            "type": "T"
+        },
+        "object": "urn:E2",
+        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+        "type": "Relationship"
+    },
+    "R1.2": {
         "entity": {
             "P1": {
                 "type": "Property",
@@ -347,7 +396,7 @@ Date: REGEX(.*)
 08. Retrieve the entity urn:E1 with ?join=flat (joinLevel == 1 by default)
 ==========================================================================
 HTTP/1.1 200 OK
-Content-Length: 558
+Content-Length: 607
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -363,6 +412,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             "type": "Relationship"
         },
         "R1": {
+            "object": "urn:E2",
+            "type": "Relationship"
+        },
+        "R1.2": {
             "object": "urn:E2",
             "type": "Relationship"
         },
@@ -419,7 +472,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 09. Retrieve the entity urn:E1 with ?join=flat and joinLevel=2
 ==============================================================
 HTTP/1.1 200 OK
-Content-Length: 620
+Content-Length: 669
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -435,6 +488,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             "type": "Relationship"
         },
         "R1": {
+            "object": "urn:E2",
+            "type": "Relationship"
+        },
+        "R1.2": {
             "object": "urn:E2",
             "type": "Relationship"
         },
@@ -499,7 +556,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 10. Retrieve the entity urn:E1 with ?join=inline and joinLevel=10
 =================================================================
 HTTP/1.1 200 OK
-Content-Length: 973
+Content-Length: 3712
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -510,10 +567,74 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "value": 1
     },
     "R0": {
+        "entity": {
+            "P1": {
+                "type": "Property",
+                "value": 1
+            },
+            "R0": {
+                "object": "urn:E1",
+                "type": "Relationship"
+            },
+            "R1": {
+                "object": "urn:E2",
+                "type": "Relationship"
+            },
+            "R1.2": {
+                "object": "urn:E2",
+                "type": "Relationship"
+            },
+            "R2": {
+                "object": "urn:E3",
+                "type": "Relationship"
+            },
+            "R3": {
+                "object": "urn:E4",
+                "type": "Relationship"
+            },
+            "R5": {
+                "entity": {
+                    "R1": {
+                        "entity": {
+                            "P1": {
+                                "type": "Property",
+                                "value": 6
+                            },
+                            "id": "urn:E6",
+                            "type": "T"
+                        },
+                        "object": "urn:E6",
+                        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                        "type": "Relationship"
+                    },
+                    "id": "urn:E5",
+                    "type": "T"
+                },
+                "object": "urn:E5",
+                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                "type": "Relationship"
+            },
+            "id": "urn:E1",
+            "type": "T"
+        },
         "object": "urn:E1",
+        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
         "type": "Relationship"
     },
     "R1": {
+        "entity": {
+            "P1": {
+                "type": "Property",
+                "value": 2
+            },
+            "id": "urn:E2",
+            "type": "T"
+        },
+        "object": "urn:E2",
+        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+        "type": "Relationship"
+    },
+    "R1.2": {
         "entity": {
             "P1": {
                 "type": "Property",
@@ -582,4 +703,3 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 --TEARDOWN--
 brokerStop CB
 dbDrop CB
-

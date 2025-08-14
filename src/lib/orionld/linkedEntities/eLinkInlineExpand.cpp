@@ -28,6 +28,7 @@ extern "C"
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjChildAdd, ...
+#include "kjson/kjClone.h"                                       // kjClone
 }
 
 #include "orionld/types/EntityLink.h"                            // EntityLink
@@ -65,6 +66,9 @@ void eLinkInlineExpand(void)
   EntityLink* next;
   EntityLink* eLinkP = orionldState.eLinkList;
 
+  //
+  // Going over the list of entities, adding each entity to where (to which attribute) they belong
+  //
   while (eLinkP != NULL)
   {
     next = eLinkP->next;
@@ -76,11 +80,12 @@ void eLinkInlineExpand(void)
     KT_T(StLinkedInline, "Linked Entity '%s' to be moved to Relationship '%s'", eId, aName);
 
     // Add eLinkP as the value of a subAttribute named 'entity' of attrP
-    eLinkP->entityP->name = (char*) "entity";
-    kjChildAdd(eLinkP->attrP, eLinkP->entityP);
+    KjNode* eP = kjClone(orionldState.kjsonP, eLinkP->entityP);
+    eP->name = (char*) "entity";
+    kjChildAdd(eLinkP->attrP, eP);
 
     // Add also an "objectType" sub-attribute (the entity type of the references entity)
-    KjNode* typeP = kjLookup(eLinkP->entityP, "type");
+    KjNode* typeP = kjLookup(eP, "type");
     if (typeP != NULL)
     {
       char *  typeLongName = orionldContextItemExpand(orionldState.contextP, typeP->value.s, true, NULL);
