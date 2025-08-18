@@ -1,6 +1,6 @@
 /*
 *
-* Copyright 2022 FIWARE Foundation e.V.
+* Copyright 2025 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -32,29 +32,29 @@ extern "C"
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/common/numberToDate.h"                         // numberToDate
-#include "orionld/dbModel/dbModelToUnitCode.h"                   // Own interface
+#include "orionld/dbModel/dbModelToObjectType.h"                 // Own interface
 
 
 
 // -----------------------------------------------------------------------------
 //
-// dbModelToUnitCode -
+// dbModelToObjectType -
 //
-KjNode* dbModelToUnitCode(KjNode* dbUnitCodeP)
+KjNode* dbModelToObjectType(KjNode* dbObjectTypeP)
 {
-  if (dbUnitCodeP->type == KjObject)
+  if (dbObjectTypeP->type == KjObject)
   {
-    KjNode* valueP = kjLookup(dbUnitCodeP, "value");
+    KjNode* valueP = kjLookup(dbObjectTypeP, "value");
 
     if (valueP != NULL)
     {
-      valueP->name = (char*) "unitCode";
+      valueP->name = (char*) "objectType";
       return valueP;
     }
   }
-  else if (dbUnitCodeP->type == KjString)
-    return dbUnitCodeP;
+  else if (dbObjectTypeP->type == KjString)
+    return dbObjectTypeP;
 
-  orionldError(OrionldInternalError, "Database Error", "Invalid unitCode in DB", 500);
-  return kjString(orionldState.kjsonP, "unitCode", "ERROR");
+  orionldError(OrionldInternalError, "Database Error", "Invalid objectType in DB", 500);
+  return kjString(orionldState.kjsonP, "objectType", "ERROR");
 }

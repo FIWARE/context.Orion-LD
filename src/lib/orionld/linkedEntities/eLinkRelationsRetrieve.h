@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_
-#define SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_
+#ifndef SRC_LIB_ORIONLD_LINKEDENTITIES_ELINKRELATIONSRETRIEVE_H_
+#define SRC_LIB_ORIONLD_LINKEDENTITIES_ELINKRELATIONSRETRIEVE_H_
 
 /*
 *
-* Copyright 2022 FIWARE Foundation e.V.
+* Copyright 2025 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,36 +25,17 @@
 *
 * Author: Ken Zangelin
 */
-
-
-
-// ----------------------------------------------------------------------------
-//
-// Trace Levels -
-//
-typedef enum OrionldTraceLevels
+extern "C"
 {
-  StMhdInit         = 100,
-  StSR              = 101,
+#include "kjson/KjNode.h"                                        // KjNode
+}
 
-  StRequest         = 200,
 
-  StDds             = 201,
-  StDdsPublish      = 202,
-  StDdsNotification = 203,
-  StDdsLibInfo      = 204,
-  StDdsLibDebug     = 205,
-  StDdsConfig       = 206,
-  StDdsTypes        = 207,
-  StDdsTypeCache    = 208,
-  StDdsPrePopulate  = 209,
-  StDdsSrCalls      = 210,
 
-  StLinked          = 300,
-  StLinkedInline    = 301,
+// -----------------------------------------------------------------------------
+//
+// eLinkDebug -
+//
+extern void eLinkRelationsRetrieve(KjNode* entityV, KjNode* entityP, int level);
 
-  StDump            = 900,
-  StDdsDump         = 901
-} OrionldTraceLevels;
-
-#endif  // SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_
+#endif  // SRC_LIB_ORIONLD_LINKEDENTITIES_ELINKRELATIONSRETRIEVE_H_

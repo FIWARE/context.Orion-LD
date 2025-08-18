@@ -1,0 +1,325 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Linked Entity Retrieval with a pair of entities that have relationships refering to each other
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -mongocOnly
+
+--SHELL--
+
+#
+# 01. Create an entity urn:E1 with a relationship R1 referencing entity urn:E2
+# 02. Create an entity urn:E2 with a relationship R1 referencing entity urn:E1, making an infinite loop
+# 03. Retrieve urn:E1 with ?join=flat
+# 04. Retrieve urn:E1 with ?join=inline (default joinLevel is 1)
+# 05. Retrieve urn:E1 with ?join=inline&joinLevel=2, see 2 levels
+# 06. Retrieve urn:E1 with ?join=inline&joinLevel=5, see 5 levels
+#
+
+echo "01. Create an entity urn:E1 with a relationship R1 referencing entity urn:E2"
+echo "============================================================================"
+payload='{
+  "id": "urn:E1",
+  "type": "T",
+  "P1": 1,
+  "R1": {
+    "object": "urn:E2"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities -X POST --payload "$payload"
+echo
+echo
+
+
+echo "02. Create an entity urn:E2 with a relationship R1 referencing entity urn:E1, making an infinite loop"
+echo "====================================================================================================="
+payload='{
+  "id": "urn:E2",
+  "type": "T",
+  "P1": 2,
+  "R1": {
+    "object": "urn:E1"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities -X POST --payload "$payload"
+echo
+echo
+
+
+echo "03. Retrieve urn:E1 with ?join=flat"
+echo "==================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1?join=flat
+echo
+echo
+
+
+echo "04. Retrieve urn:E1 with ?join=inline (default joinLevel is 1)"
+echo "=============================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1?join=inline
+echo
+echo
+
+echo "05. Retrieve urn:E1 with ?join=inline&joinLevel=2, see 2 levels"
+echo "==============================================================="
+orionCurl --url '/ngsi-ld/v1/entities/urn:E1?join=inline&joinLevel=2'
+echo
+echo
+
+
+echo "06. Retrieve urn:E1 with ?join=inline&joinLevel=5, see 5 levels"
+echo "==============================================================="
+orionCurl --url '/ngsi-ld/v1/entities/urn:E1?join=inline&joinLevel=5'
+echo
+echo
+
+
+--REGEXPECT--
+01. Create an entity urn:E1 with a relationship R1 referencing entity urn:E2
+============================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E1
+
+
+
+02. Create an entity urn:E2 with a relationship R1 referencing entity urn:E1, making an infinite loop
+=====================================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E2
+
+
+
+03. Retrieve urn:E1 with ?join=flat
+===================================
+HTTP/1.1 200 OK
+Content-Length: 219
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "P1": {
+            "type": "Property",
+            "value": 1
+        },
+        "R1": {
+            "object": "urn:E2",
+            "type": "Relationship"
+        },
+        "id": "urn:E1",
+        "type": "T"
+    },
+    {
+        "P1": {
+            "type": "Property",
+            "value": 2
+        },
+        "R1": {
+            "object": "urn:E1",
+            "type": "Relationship"
+        },
+        "id": "urn:E2",
+        "type": "T"
+    }
+]
+
+
+04. Retrieve urn:E1 with ?join=inline (default joinLevel is 1)
+==============================================================
+HTTP/1.1 200 OK
+Content-Length: 288
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "P1": {
+        "type": "Property",
+        "value": 1
+    },
+    "R1": {
+        "entity": {
+            "P1": {
+                "type": "Property",
+                "value": 2
+            },
+            "R1": {
+                "object": "urn:E1",
+                "type": "Relationship"
+            },
+            "id": "urn:E2",
+            "type": "T"
+        },
+        "object": "urn:E2",
+        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+        "type": "Relationship"
+    },
+    "id": "urn:E1",
+    "type": "T"
+}
+
+
+05. Retrieve urn:E1 with ?join=inline&joinLevel=2, see 2 levels
+===============================================================
+HTTP/1.1 200 OK
+Content-Length: 468
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "P1": {
+        "type": "Property",
+        "value": 1
+    },
+    "R1": {
+        "entity": {
+            "P1": {
+                "type": "Property",
+                "value": 2
+            },
+            "R1": {
+                "entity": {
+                    "P1": {
+                        "type": "Property",
+                        "value": 1
+                    },
+                    "R1": {
+                        "object": "urn:E2",
+                        "type": "Relationship"
+                    },
+                    "id": "urn:E1",
+                    "type": "T"
+                },
+                "object": "urn:E1",
+                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                "type": "Relationship"
+            },
+            "id": "urn:E2",
+            "type": "T"
+        },
+        "object": "urn:E2",
+        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+        "type": "Relationship"
+    },
+    "id": "urn:E1",
+    "type": "T"
+}
+
+
+06. Retrieve urn:E1 with ?join=inline&joinLevel=5, see 5 levels
+===============================================================
+HTTP/1.1 200 OK
+Content-Length: 1008
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "P1": {
+        "type": "Property",
+        "value": 1
+    },
+    "R1": {
+        "entity": {
+            "P1": {
+                "type": "Property",
+                "value": 2
+            },
+            "R1": {
+                "entity": {
+                    "P1": {
+                        "type": "Property",
+                        "value": 1
+                    },
+                    "R1": {
+                        "entity": {
+                            "P1": {
+                                "type": "Property",
+                                "value": 2
+                            },
+                            "R1": {
+                                "entity": {
+                                    "P1": {
+                                        "type": "Property",
+                                        "value": 1
+                                    },
+                                    "R1": {
+                                        "entity": {
+                                            "P1": {
+                                                "type": "Property",
+                                                "value": 2
+                                            },
+                                            "R1": {
+                                                "object": "urn:E1",
+                                                "type": "Relationship"
+                                            },
+                                            "id": "urn:E2",
+                                            "type": "T"
+                                        },
+                                        "object": "urn:E2",
+                                        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                        "type": "Relationship"
+                                    },
+                                    "id": "urn:E1",
+                                    "type": "T"
+                                },
+                                "object": "urn:E1",
+                                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                "type": "Relationship"
+                            },
+                            "id": "urn:E2",
+                            "type": "T"
+                        },
+                        "object": "urn:E2",
+                        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                        "type": "Relationship"
+                    },
+                    "id": "urn:E1",
+                    "type": "T"
+                },
+                "object": "urn:E1",
+                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                "type": "Relationship"
+            },
+            "id": "urn:E2",
+            "type": "T"
+        },
+        "object": "urn:E2",
+        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+        "type": "Relationship"
+    },
+    "id": "urn:E1",
+    "type": "T"
+}
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB

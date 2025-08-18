@@ -27,9 +27,11 @@
 extern "C"
 {
 #include "kbase/kMacros.h"                                       // K_FT
+#include "ktrace/kTrace.h"                                       // KTrace
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjParse.h"                                       // kjParse
 #include "kjson/kjLookup.h"                                      // kjLookup
+#include "kjson/kjClone.h"                                       // kjClone
 #include "kjson/kjBuilder.h"                                     // kjChildRemove, kjChildAdd, kjArray, ...
 }
 
@@ -41,6 +43,7 @@ extern "C"
 #include "orionld/common/tenantList.h"                           // tenant0
 #include "orionld/common/pick.h"                                 // pickForEntity
 #include "orionld/common/datasetEntityFix.h"                     // datasetEntityFix
+#include "orionld/common/traceLevels.h"                          // KTrace Levels
 #include "orionld/context/orionldEntityExpand.h"                 // orionldEntityExpand
 #include "orionld/context/orionldEntityCompact.h"                // orionldEntityCompact
 #include "orionld/payloadCheck/pCheckUri.h"                      // pCheckUri
@@ -60,6 +63,8 @@ extern "C"
 #include "orionld/distOp/distOpListRelease.h"                    // distOpListRelease
 #include "orionld/distOp/xForwardedForCompose.h"                 // xForwardedForCompose
 #include "orionld/distOp/viaCompose.h"                           // viaCompose
+#include "orionld/linkedEntities/eLinkRelationsRetrieve.h"       // eLinkRelationsRetrieve
+#include "orionld/linkedEntities/eLinkInlineExpand.h"            // eLinkInlineExpand
 #include "orionld/serviceRoutines/orionldGetEntity.h"            // Own interface
 
 
@@ -76,6 +81,9 @@ extern "C"
 //
 bool orionldGetEntity(void)
 {
+  KT_T(StLinked, "Getting Entity '%s'", orionldState.wildcard[0]);
+  LM_T(LmtSR, ("Getting Entity '%s'", orionldState.wildcard[0]));
+
   if ((experimental == false) || (orionldState.in.legacy != NULL))                      // If Legacy header - use old implementation
     return legacyGetEntity();
 
@@ -418,6 +426,28 @@ bool orionldGetEntity(void)
 
   if (orionldState.uriParams.datasetId != NULL)
     datasetEntityFix(orionldState.responseTree);
+
+  // If Linked Entities, call eLinkRelationsRetrieve only ONCE
+  if ((orionldState.in.linkedEntities == true) && (orionldState.uriParams.joinLevel > 0) && (orionldState.eLinkEntityV == NULL))
+  {
+    KjNode* entityP = orionldState.responseTree;
+    KT_T(StLinked, "---------------------- Linked Entities  ----------------------");
+
+    // Get all entities in an array (?join=flat). If ?join=inline, the array is modified into an object
+    orionldState.eLinkEntityV = kjArray(orionldState.kjsonP, NULL);
+
+    kjChildAdd(orionldState.eLinkEntityV, entityP);
+    eLinkRelationsRetrieve(orionldState.eLinkEntityV, entityP, 0);
+
+    if (orionldState.in.flat == false)
+    {
+      KjNode* clone = kjClone(orionldState.kjsonP, entityP);
+      eLinkInlineExpand(clone, 0);
+      orionldState.responseTree = clone;
+    }
+    else
+      orionldState.responseTree = orionldState.eLinkEntityV;
+  }
 
   return true;
 }

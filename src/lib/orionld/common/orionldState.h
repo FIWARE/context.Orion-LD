@@ -42,6 +42,7 @@ extern "C"
 #include "kjson/KjNode.h"                                        // KjNode
 }
 
+#include "orionld/types/ApiVersion.h"                            // ApiVersion
 #include "orionld/types/OrionldResponseBuffer.h"                 // OrionldResponseBuffer
 #include "orionld/types/OrionldProblemDetails.h"                 // OrionldProblemDetails
 #include "orionld/types/OrionldGeoIndex.h"                       // OrionldGeoIndex
@@ -59,7 +60,7 @@ extern "C"
 #include "orionld/types/OrionldRenderFormat.h"                   // OrionldRenderFormat
 #include "orionld/types/OrionldMimeType.h"                       // MimeType
 #include "orionld/types/QNode.h"                                 // QNode
-#include "orionld/types/ApiVersion.h"                            // ApiVersion
+#include "orionld/types/EntityLink.h"                            // EntityLink
 #include "orionld/common/performance.h"                          // REQUEST_PERFORMANCE
 #include "orionld/kjTree/kjTreeLog.h"                            // Because it is so often used but then removed again ...
 
@@ -171,6 +172,8 @@ typedef struct OrionldUriParams
   bool      entityMap;
   char*     format;
   char*     csf;
+  char*     join;
+  int       joinLevel;
 
   OrionldContextKind kind;
 
@@ -273,6 +276,10 @@ typedef struct OrionldStateIn
   StringArray  pickList;
   StringArray  expandValuesList;
   StringArray  datasetIdList;
+
+  // Processed URI params for Linked Entities
+  bool         linkedEntities;
+  bool         flat;
 
   // Entity Map
   EntityMap* entityMap;
@@ -504,6 +511,10 @@ typedef struct OrionldConnectionState
 
   // Previous Values
   KjNode* previousValues;
+
+  // Linked Entities
+  KjNode*     eLinkEntityV;
+  EntityLink* eLinkList;
 
   //
   // Error Handling

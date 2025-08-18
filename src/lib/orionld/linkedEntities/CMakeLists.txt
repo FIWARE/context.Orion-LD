@@ -1,4 +1,4 @@
-# Copyright 2022 FIWARE Foundation e.V.
+# Copyright 2025 FIWARE Foundation e.V.
 #
 # This file is part of Orion-LD Context Broker.
 #
@@ -21,36 +21,9 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
 
 SET (SOURCES
-    dbModelFromApiEntity.cpp
-    dbModelFromApiAttribute.cpp
-    dbModelFromApiSubAttribute.cpp
-    dbModelToApiEntity.cpp
-    dbModelToApiAttribute.cpp
-    dbModelToApiSubAttribute.cpp
-    dbModelFromApiSubscription.cpp
-    dbModelToApiSubscription.cpp
-    dbModelPathComponentsSplit.cpp
-    dbModelValueStrip.cpp
-    dbModelFromApiKeyValues.cpp
-    dbModelFromGeometry.cpp
-    dbModelFromGeorel.cpp
-    dbModelFromApiCoordinates.cpp
-    dbModelToObservedAt.cpp
-    dbModelToUnitCode.cpp
-    dbModelToObjectType.cpp
-    dbModelFromApiAttributeDatasetArray.cpp
-    dbModelToApiGeometry.cpp
-    dbModelToApiGeorel.cpp
-    dbModelToApiCoordinates.cpp
-    dbModelToApiGeoQ.cpp
-    dbModelFromApiRegistration.cpp
-    dbModelToApiRegistration.cpp
-    dbModelEntityTypeLookup.cpp
-    dbModelAttributeCreatedAtLookup.cpp
-    dbModelAttributeCreatedAtSet.cpp
-    dbModelAttributeLookup.cpp
-    dbModelToEntityIdAndTypeObject.cpp
-    dbModelAttributePublishedAtLookup.cpp
+    eLinkInlineExpand.cpp
+    eLinkDebug.cpp
+    eLinkRelationsRetrieve.cpp
 )
 
 # Include directories
@@ -60,4 +33,4 @@ include_directories("${PROJECT_SOURCE_DIR}/src/lib")
 
 # Library declaration
 # -----------------------------------------------------------------
-ADD_LIBRARY(orionld_dbModel STATIC ${SOURCES})
+ADD_LIBRARY(orionld_linkedEntities STATIC ${SOURCES})

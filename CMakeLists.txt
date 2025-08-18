@@ -195,6 +195,7 @@ SET (ORION_LIBS
     orionld_mhd
     orionld_service
     orionld_serviceRoutines
+    orionld_linkedEntities
     orionld_distOp
     orionld_regMatch
     orionld_distOp
@@ -413,6 +414,7 @@ if (error EQUAL 0)
   ADD_SUBDIRECTORY(src/lib/orionld/http)
   ADD_SUBDIRECTORY(src/lib/orionld/prometheus)
   ADD_SUBDIRECTORY(src/lib/orionld/legacyDriver)
+  ADD_SUBDIRECTORY(src/lib/orionld/linkedEntities)
   ADD_SUBDIRECTORY(src/lib/mongoBackend)
   ADD_SUBDIRECTORY(src/lib/cache)
   ADD_SUBDIRECTORY(src/lib/alarmMgr)

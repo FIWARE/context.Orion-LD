@@ -1,6 +1,6 @@
 /*
 *
-* Copyright 2022 FIWARE Foundation e.V.
+* Copyright 2025 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -24,37 +24,32 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KTrace
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
-#include "kjson/kjBuilder.h"                                     // kjChildRemove. kjString, ...
 }
 
-#include "orionld/common/orionldState.h"                         // orionldState
-#include "orionld/common/orionldError.h"                         // orionldError
-#include "orionld/common/numberToDate.h"                         // numberToDate
-#include "orionld/dbModel/dbModelToUnitCode.h"                   // Own interface
+#include "orionld/common/traceLevels.h"                          // KTrace Levels
+#include "orionld/linkedEntities/eLinkDebug.h"                   // Own interface
 
 
 
 // -----------------------------------------------------------------------------
 //
-// dbModelToUnitCode -
+// eLinkDebug -
 //
-KjNode* dbModelToUnitCode(KjNode* dbUnitCodeP)
+void eLinkDebug(KjNode* entityV, const char* what)
 {
-  if (dbUnitCodeP->type == KjObject)
+  KT_T(StLinked, "Entity Array (%s)", what);
+  KT_T(StLinked, "--------------------------------------------------------------------------------");
+
+  for (KjNode* entityP = entityV->value.firstChildP; entityP != NULL; entityP = entityP->next)
   {
-    KjNode* valueP = kjLookup(dbUnitCodeP, "value");
+    KjNode* idP = kjLookup(entityP, "id");
 
-    if (valueP != NULL)
-    {
-      valueP->name = (char*) "unitCode";
-      return valueP;
-    }
+    if (idP != NULL)
+      KT_T(StLinked, "  o %s", idP->value.s);
   }
-  else if (dbUnitCodeP->type == KjString)
-    return dbUnitCodeP;
 
-  orionldError(OrionldInternalError, "Database Error", "Invalid unitCode in DB", 500);
-  return kjString(orionldState.kjsonP, "unitCode", "ERROR");
+  KT_T(StLinked, "--------------------------------------------------------------------------------");
 }
