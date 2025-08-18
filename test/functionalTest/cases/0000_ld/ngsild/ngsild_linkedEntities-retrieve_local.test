@@ -40,6 +40,8 @@ orionldStart CB -mongocOnly
 # 08. Retrieve the entity urn:E1 with ?join=flat (joinLevel == 1 by default)
 # 09. Retrieve the entity urn:E1 with ?join=flat and joinLevel=2
 # 10. Retrieve the entity urn:E1 with ?join=inline and joinLevel=10
+# 11. Retrieve the entity urn:E1 with ?join=flat and format=concise
+# 12. Retrieve the entity urn:E1 with ?join=inline and format=concise
 #
 
 echo "01. Create an entity urn:E1 with 3 relationships, R2, R3, and R4 (referencing entities urn:E2, urn:E3, and urn:E4)"
@@ -166,6 +168,20 @@ echo
 echo "10. Retrieve the entity urn:E1 with ?join=inline and joinLevel=10"
 echo "================================================================="
 orionCurl --url '/ngsi-ld/v1/entities/urn:E1?join=inline&joinLevel=10'
+echo
+echo
+
+
+echo "11. Retrieve the entity urn:E1 with ?join=flat and format=concise"
+echo "================================================================="
+orionCurl --url '/ngsi-ld/v1/entities/urn:E1?join=flat&format=concise&joinLevel=3'
+echo
+echo
+
+
+echo "12. Retrieve the entity urn:E1 with ?join=inline and format=concise"
+echo "<==================================================================="
+orionCurl --url '/ngsi-ld/v1/entities/urn:E1?join=inline&joinLevel=2&format=concise'
 echo
 echo
 
@@ -1450,6 +1466,219 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "object": "urn:E5",
         "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
         "type": "Relationship"
+    },
+    "id": "urn:E1",
+    "type": "T"
+}
+
+
+11. Retrieve the entity urn:E1 with ?join=flat and format=concise
+=================================================================
+HTTP/1.1 200 OK
+Content-Length: 375
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "P1": 1,
+        "R0": {
+            "object": "urn:E1"
+        },
+        "R1": {
+            "object": "urn:E2"
+        },
+        "R1.2": {
+            "object": "urn:E2"
+        },
+        "R2": {
+            "object": "urn:E3"
+        },
+        "R3": {
+            "object": "urn:E4"
+        },
+        "R5": {
+            "object": "urn:E5"
+        },
+        "id": "urn:E1",
+        "type": "T"
+    },
+    {
+        "P1": 2,
+        "id": "urn:E2",
+        "type": "T"
+    },
+    {
+        "P1": 3,
+        "id": "urn:E3",
+        "type": "T"
+    },
+    {
+        "P1": 4,
+        "id": "urn:E4",
+        "type": "T"
+    },
+    {
+        "R1": {
+            "object": "urn:E6"
+        },
+        "id": "urn:E5",
+        "type": "T"
+    },
+    {
+        "P1": 6,
+        "id": "urn:E6",
+        "type": "T"
+    }
+]
+
+
+12. Retrieve the entity urn:E1 with ?join=inline and format=concise
+<===================================================================
+HTTP/1.1 200 OK
+Content-Length: 1890
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "P1": 1,
+    "R0": {
+        "entity": {
+            "P1": 1,
+            "R0": {
+                "entity": {
+                    "P1": 1,
+                    "R0": {
+                        "object": "urn:E1"
+                    },
+                    "R1": {
+                        "object": "urn:E2"
+                    },
+                    "R1.2": {
+                        "object": "urn:E2"
+                    },
+                    "R2": {
+                        "object": "urn:E3"
+                    },
+                    "R3": {
+                        "object": "urn:E4"
+                    },
+                    "R5": {
+                        "object": "urn:E5"
+                    },
+                    "id": "urn:E1",
+                    "type": "T"
+                },
+                "object": "urn:E1",
+                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T"
+            },
+            "R1": {
+                "entity": {
+                    "P1": 2,
+                    "id": "urn:E2",
+                    "type": "T"
+                },
+                "object": "urn:E2",
+                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T"
+            },
+            "R1.2": {
+                "entity": {
+                    "P1": 2,
+                    "id": "urn:E2",
+                    "type": "T"
+                },
+                "object": "urn:E2",
+                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T"
+            },
+            "R2": {
+                "entity": {
+                    "P1": 3,
+                    "id": "urn:E3",
+                    "type": "T"
+                },
+                "object": "urn:E3",
+                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T"
+            },
+            "R3": {
+                "entity": {
+                    "P1": 4,
+                    "id": "urn:E4",
+                    "type": "T"
+                },
+                "object": "urn:E4",
+                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T"
+            },
+            "R5": {
+                "entity": {
+                    "R1": {
+                        "object": "urn:E6"
+                    },
+                    "id": "urn:E5",
+                    "type": "T"
+                },
+                "object": "urn:E5",
+                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T"
+            },
+            "id": "urn:E1",
+            "type": "T"
+        },
+        "object": "urn:E1",
+        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T"
+    },
+    "R1": {
+        "entity": {
+            "P1": 2,
+            "id": "urn:E2",
+            "type": "T"
+        },
+        "object": "urn:E2",
+        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T"
+    },
+    "R1.2": {
+        "entity": {
+            "P1": 2,
+            "id": "urn:E2",
+            "type": "T"
+        },
+        "object": "urn:E2",
+        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T"
+    },
+    "R2": {
+        "entity": {
+            "P1": 3,
+            "id": "urn:E3",
+            "type": "T"
+        },
+        "object": "urn:E3",
+        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T"
+    },
+    "R3": {
+        "entity": {
+            "P1": 4,
+            "id": "urn:E4",
+            "type": "T"
+        },
+        "object": "urn:E4",
+        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T"
+    },
+    "R5": {
+        "entity": {
+            "R1": {
+                "entity": {
+                    "P1": 6,
+                    "id": "urn:E6",
+                    "type": "T"
+                },
+                "object": "urn:E6",
+                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T"
+            },
+            "id": "urn:E5",
+            "type": "T"
+        },
+        "object": "urn:E5",
+        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T"
     },
     "id": "urn:E1",
     "type": "T"

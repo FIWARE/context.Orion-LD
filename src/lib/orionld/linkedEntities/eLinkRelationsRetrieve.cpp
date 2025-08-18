@@ -34,6 +34,7 @@ extern "C"
 #include "orionld/types/EntityLink.h"                            // EntityLink
 #include "orionld/common/traceLevels.h"                          // KTrace Levels
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/context/orionldContextItemExpand.h"            // orionldContextItemExpand
 #include "orionld/serviceRoutines/orionldGetEntity.h"            // orionldGetEntity
 #include "orionld/kjTree/kjEntityIdLookupInEntityArray.h"        // kjEntityIdLookupInEntityArray
 #include "orionld/linkedEntities/eLinkDebug.h"                   // eLinkDebug
@@ -60,7 +61,7 @@ static KjNode* eLinkEntityRetrieve(KjNode* entityV, const char* entityId, const 
     // orionldGetEntity uses orionldState.in.typeList, so, need to fill that in ...
     orionldState.in.typeList.items    = 1;
     orionldState.in.typeList.array    = (char**) kaAlloc(&orionldState.kalloc, sizeof(char*) * 1);
-    orionldState.in.typeList.array[0] = (char*) entityType;
+    orionldState.in.typeList.array[0] = orionldContextItemExpand(orionldState.contextP, entityType, true, NULL);
   }
 
   // We have to change the URL PATH as well, as it is used during distops

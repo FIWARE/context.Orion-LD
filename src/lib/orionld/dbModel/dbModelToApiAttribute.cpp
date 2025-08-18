@@ -160,6 +160,8 @@ void dbModelToApiAttribute(KjNode* dbAttrP, bool sysAttrs, bool eqsForDots)
         subP->type     = KjString;
         subP->value.s  = dateTimeBuf;
       }
+      else if (strcmp(subP->name, "objectType") == 0)
+        subP->value.s  = orionldContextItemAliasLookup(orionldState.contextP, valueP->value.s, NULL, NULL);
       else
         dbModelToApiSubAttribute(subP);
     }
