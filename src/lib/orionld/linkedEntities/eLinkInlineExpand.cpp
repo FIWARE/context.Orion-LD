@@ -77,7 +77,7 @@ void eLinkInlineExpand(KjNode* entityP, int level)
     KjNode* eLinkP = kjEntityIdLookupInEntityArray(orionldState.eLinkEntityV, objectP->value.s);
     if (eLinkP == NULL)
     {
-      KT_E("Can't find the entity '%s' in array of linked entities");
+      KT_E("Can't find the entity '%s' in array of linked entities", objectP->value.s);
       continue;
     }
     KjNode* clonedLinkP = kjClone(orionldState.kjsonP, eLinkP);

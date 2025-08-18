@@ -141,7 +141,7 @@ bye
 02. GET the entity and make sure objectType is correct
 ======================================================
 HTTP/1.1 200 OK
-Content-Length: 170
+Content-Length: 125
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -153,7 +153,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     },
     "R1": {
         "object": "urn:E2",
-        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+        "objectType": "T",
         "type": "Relationship"
     },
     "id": "urn:E1",
@@ -173,7 +173,7 @@ Location: /ngsi-ld/v1/entities/urn:E2
 04. Retrieve urn:E1 with join=inline, make sure objectType is correct
 =====================================================================
 HTTP/1.1 200 OK
-Content-Length: 241
+Content-Length: 196
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -193,7 +193,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             "type": "T"
         },
         "object": "urn:E2",
-        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+        "objectType": "T",
         "type": "Relationship"
     },
     "id": "urn:E1",
