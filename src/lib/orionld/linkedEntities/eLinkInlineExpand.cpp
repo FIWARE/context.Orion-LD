@@ -33,13 +33,14 @@ extern "C"
 
 #include "orionld/types/EntityLink.h"                            // EntityLink
 #include "orionld/dds/kjTreeLog.h"                               // kjTreeLog2
+#include "orionld/kjTree/kjEntityIdLookupInEntityArray.h"        // kjEntityIdLookupInEntityArray
 #include "orionld/common/traceLevels.h"                          // KTrace Levels
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/context/orionldContextItemExpand.h"            // orionldContextItemExpand
 #include "orionld/linkedEntities/eLinkInlineExpand.h"            // Own interface
 
 
-extern KjNode* eLinkEntityLookup(KjNode* entityV, const char* entityId);  // FIXME: Own module
+
 // -----------------------------------------------------------------------------
 //
 // eLinkInlineExpand -
@@ -73,7 +74,7 @@ void eLinkInlineExpand(KjNode* entityP, int level)
 
     KT_T(StLinkedInline, "Found a relationship '%s'", attrP->name);
     KT_T(StLinkedInline, "orionldState.eLinkEntityV at %p", orionldState.eLinkEntityV);
-    KjNode* eLinkP = eLinkEntityLookup(orionldState.eLinkEntityV, objectP->value.s);
+    KjNode* eLinkP = kjEntityIdLookupInEntityArray(orionldState.eLinkEntityV, objectP->value.s);
     if (eLinkP == NULL)
     {
       KT_E("Can't find the entity '%s' in array of linked entities");
