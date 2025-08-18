@@ -34,7 +34,7 @@ extern "C"
 
 // -----------------------------------------------------------------------------
 //
-// eLinkDebug -
+// eLinkRelationsRetrieve -
 //
 extern void eLinkRelationsRetrieve(KjNode* entityV, KjNode* entityP, int level);
 

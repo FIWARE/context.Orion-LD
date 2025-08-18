@@ -25,6 +25,7 @@
 extern "C"
 {
 #include "ktrace/kTrace.h"                                       // KTrace
+#include "kalloc/kaAlloc.h"                                      // kaAlloc
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjChildAdd, ...
@@ -34,6 +35,7 @@ extern "C"
 #include "orionld/common/traceLevels.h"                          // KTrace Levels
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/serviceRoutines/orionldGetEntity.h"            // orionldGetEntity
+#include "orionld/kjTree/kjEntityIdLookupInEntityArray.h"        // kjEntityIdLookupInEntityArray
 #include "orionld/linkedEntities/eLinkDebug.h"                   // eLinkDebug
 #include "orionld/linkedEntities/eLinkInlineExpand.h"            // Own interface
 
@@ -41,37 +43,25 @@ extern "C"
 
 // -----------------------------------------------------------------------------
 //
-// eLinkEntityLookup -
-//
-KjNode* eLinkEntityLookup(KjNode* entityV, const char* entityId)
-{
-  for (KjNode* entityP = entityV->value.firstChildP; entityP != NULL; entityP = entityP->next)
-  {
-    KjNode* idP = kjLookup(entityP, "id");
-
-    if (idP != NULL)
-    {
-     if (strcmp(idP->value.s, entityId) == 0)
-        return entityP;
-    }
-  }
-
-  return NULL;
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
 // eLinkEntityRetrieve -
 //
-static KjNode* eLinkEntityRetrieve(KjNode* entityV, const char* entityId, KjNode* attrP)
+static KjNode* eLinkEntityRetrieve(KjNode* entityV, const char* entityId, const char* entityType)
 {
   KT_T(StLinked, "--------- Retreiving linked entity '%s'", entityId);
 
   // Preparing orionldState and calling orionldGetEntity again
   orionldState.responseTree = NULL;
   orionldState.wildcard[0]  = (char*) entityId;
+
+  if (entityType != NULL)
+  {
+    orionldState.uriParams.type = (char*) entityType;
+
+    // orionldGetEntity uses orionldState.in.typeList, so, need to fill that in ...
+    orionldState.in.typeList.items    = 1;
+    orionldState.in.typeList.array    = (char**) kaAlloc(&orionldState.kalloc, sizeof(char*) * 1);
+    orionldState.in.typeList.array[0] = (char*) entityType;
+  }
 
   // We have to change the URL PATH as well, as it is used during distops
   char urlPath[256];
@@ -82,7 +72,7 @@ static KjNode* eLinkEntityRetrieve(KjNode* entityV, const char* entityId, KjNode
   // Calling the service routine to retrieve the entity in question
   // UNLESS we have already retrieved the entity
   //
-  KjNode* eP = eLinkEntityLookup(entityV, entityId);
+  KjNode* eP = kjEntityIdLookupInEntityArray(entityV, entityId);
 
   if (eP != NULL)
     return eP;
@@ -98,31 +88,6 @@ static KjNode* eLinkEntityRetrieve(KjNode* entityV, const char* entityId, KjNode
   }
 
   return NULL;
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
-// eLinkPairAdd -
-//
-static void eLinkPairAdd(KjNode* entityP, KjNode* attrP)
-{
-  EntityLink* eLinkP = (EntityLink*) kaAlloc(&orionldState.kalloc, sizeof(EntityLink));
-
-  eLinkP->entityP = entityP;
-  eLinkP->attrP   = attrP;
-  eLinkP->next    = orionldState.eLinkList;
-
-  orionldState.eLinkList = eLinkP;
-
-  // <DEBUG>
-  KjNode*       idP    = kjLookup(eLinkP->entityP, "id");
-  const char*   eId    = (idP != NULL)? idP->value.s : "noname";
-  const char*   aName  = eLinkP->attrP->name;
-
-  KT_T(StLinkedInline, "Added an EntityLink, entityP (%s) at %p and attrP (%s) at %p", eId, eLinkP->entityP, aName, eLinkP->attrP);
-  // </DEBUG>
 }
 
 
@@ -174,27 +139,24 @@ void eLinkRelationsRetrieve(KjNode* entityV, KjNode* entityP, int level)
     if (objectP == NULL)
       continue;
 
+    KjNode*     objectTypeP = kjLookup(attrP, "objectType");
+    const char* objectType  = (objectTypeP != NULL)? objectTypeP->value.s : NULL;
+
     if (objectP->type == KjString)
     {
       KT_T(StLinked, "The entity '%s' is referenced by the attribute '%s' at %p (need to save this attr pointer for inline mode)", objectP->value.s, attrP->name);
-      current = eLinkEntityRetrieve(entityV, objectP->value.s, attrP);
+      current = eLinkEntityRetrieve(entityV, objectP->value.s, objectType);
       if (current != NULL)
-      {
         lastInLevel = current;
-        eLinkPairAdd(current, attrP);
-      }
     }
     else if (objectP->type == KjArray)
     {
       for (KjNode* eIdP = objectP->value.firstChildP; eIdP != NULL; eIdP = eIdP->next)
       {
         KT_T(StLinked, "The entity '%s' is referenced by the attribute '%s' at %p (need to save this attr pointer for inline mode)", eIdP->value.s, attrP->name);
-        current = eLinkEntityRetrieve(entityV, eIdP->value.s, attrP);
+        current = eLinkEntityRetrieve(entityV, eIdP->value.s, objectType);
         if (current != NULL)
-        {
           lastInLevel = current;
-          eLinkPairAdd(current, attrP);
-        }
       }
     }
   }
