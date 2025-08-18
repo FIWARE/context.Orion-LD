@@ -104,31 +104,6 @@ static KjNode* eLinkEntityRetrieve(KjNode* entityV, const char* entityId, KjNode
 
 // -----------------------------------------------------------------------------
 //
-// eLinkPairAdd -
-//
-static void eLinkPairAdd(KjNode* entityP, KjNode* attrP)
-{
-  EntityLink* eLinkP = (EntityLink*) kaAlloc(&orionldState.kalloc, sizeof(EntityLink));
-
-  eLinkP->entityP = entityP;
-  eLinkP->attrP   = attrP;
-  eLinkP->next    = orionldState.eLinkList;
-
-  orionldState.eLinkList = eLinkP;
-
-  // <DEBUG>
-  KjNode*       idP    = kjLookup(eLinkP->entityP, "id");
-  const char*   eId    = (idP != NULL)? idP->value.s : "noname";
-  const char*   aName  = eLinkP->attrP->name;
-
-  KT_T(StLinkedInline, "Added an EntityLink, entityP (%s) at %p and attrP (%s) at %p", eId, eLinkP->entityP, aName, eLinkP->attrP);
-  // </DEBUG>
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
 // eLinkRelationsRetrieve -
 //
 void eLinkRelationsRetrieve(KjNode* entityV, KjNode* entityP, int level)
@@ -179,10 +154,7 @@ void eLinkRelationsRetrieve(KjNode* entityV, KjNode* entityP, int level)
       KT_T(StLinked, "The entity '%s' is referenced by the attribute '%s' at %p (need to save this attr pointer for inline mode)", objectP->value.s, attrP->name);
       current = eLinkEntityRetrieve(entityV, objectP->value.s, attrP);
       if (current != NULL)
-      {
         lastInLevel = current;
-        eLinkPairAdd(current, attrP);
-      }
     }
     else if (objectP->type == KjArray)
     {
@@ -191,10 +163,7 @@ void eLinkRelationsRetrieve(KjNode* entityV, KjNode* entityP, int level)
         KT_T(StLinked, "The entity '%s' is referenced by the attribute '%s' at %p (need to save this attr pointer for inline mode)", eIdP->value.s, attrP->name);
         current = eLinkEntityRetrieve(entityV, eIdP->value.s, attrP);
         if (current != NULL)
-        {
           lastInLevel = current;
-          eLinkPairAdd(current, attrP);
-        }
       }
     }
   }

@@ -514,7 +514,6 @@ typedef struct OrionldConnectionState
 
   // Linked Entities
   KjNode*     eLinkEntityV;
-  EntityLink* eLinkList;
 
   //
   // Error Handling
