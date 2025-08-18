@@ -32,68 +32,77 @@ extern "C"
 }
 
 #include "orionld/types/EntityLink.h"                            // EntityLink
+#include "orionld/dds/kjTreeLog.h"                               // kjTreeLog2
 #include "orionld/common/traceLevels.h"                          // KTrace Levels
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/context/orionldContextItemExpand.h"            // orionldContextItemExpand
 #include "orionld/linkedEntities/eLinkInlineExpand.h"            // Own interface
 
 
-
+extern KjNode* eLinkEntityLookup(KjNode* entityV, const char* entityId);  // FIXME: Own module
 // -----------------------------------------------------------------------------
 //
 // eLinkInlineExpand -
 //
-void eLinkInlineExpand(void)
+void eLinkInlineExpand(KjNode* entityP, int level)
 {
-  // <DEBUG>
-  for (EntityLink* eLinkP = orionldState.eLinkList; eLinkP != NULL; eLinkP = eLinkP->next)
+  KT_T(StLinkedInline, "Level = %d", level);
+
+  if (level >= orionldState.uriParams.joinLevel)
+    return;
+
+  if (entityP->type == KjArray)
   {
-    KT_T(StLinkedInline, "--------------------------------");
-    KT_T(StLinkedInline, "eLinkP at %p", eLinkP);
-    KT_T(StLinkedInline, "eLinkP->entityP at %p", eLinkP->entityP);
-    KjNode*       idP    = kjLookup(eLinkP->entityP, "id");
-    KT_T(StLinkedInline, "idP at %p", idP);
-    const char*   eId    = (idP != NULL)? idP->value.s : "noname";
-    KT_T(StLinkedInline, "eId: '%s'", eId);
-    const char*   aName  = eLinkP->attrP->name;
-    KT_T(StLinkedInline, "attr: '%s'", aName);
-
-    KT_T(StLinkedInline, "* Got a Linked Entity '%s' of Relationship '%s'", eId, aName);
-    KT_T(StLinkedInline, "--------------------------------");
-  }
-  // </DEBUG>
-
-  EntityLink* next;
-  EntityLink* eLinkP = orionldState.eLinkList;
-
-  //
-  // Going over the list of entities, adding each entity to where (to which attribute) they belong
-  //
-  while (eLinkP != NULL)
-  {
-    next = eLinkP->next;
-
-    KjNode*       idP    = kjLookup(eLinkP->entityP, "id");
-    const char*   eId    = (idP != NULL)? idP->value.s : "noname";
-    const char*   aName  = eLinkP->attrP->name;
-
-    KT_T(StLinkedInline, "Linked Entity '%s' to be moved to Relationship '%s'", eId, aName);
-
-    // Add eLinkP as the value of a subAttribute named 'entity' of attrP
-    KjNode* eP = kjClone(orionldState.kjsonP, eLinkP->entityP);
-    eP->name = (char*) "entity";
-    kjChildAdd(eLinkP->attrP, eP);
-
-    // Add also an "objectType" sub-attribute (the entity type of the references entity)
-    KjNode* typeP = kjLookup(eP, "type");
-    if (typeP != NULL)
+    KT_T(StLinkedInline, "It's an Array of entities - recursive call for each of the entities");
+    for (KjNode* eP = entityP->value.firstChildP; eP != NULL; eP = eP->next)
     {
-      char *  typeLongName = orionldContextItemExpand(orionldState.contextP, typeP->value.s, true, NULL);
-      KjNode* objectTypeP  = kjString(orionldState.kjsonP, "objectType", typeLongName);
+      eLinkInlineExpand(eP, level + 1);
+    }
+    return;
+  }
 
-      kjChildAdd(eLinkP->attrP,  objectTypeP);
+  KT_T(StLinkedInline, "It's a single Entity");
+  for (KjNode* attrP = entityP->value.firstChildP; attrP != NULL; attrP = attrP->next)
+  {
+    if (attrP->type != KjObject)
+      continue;
+
+    KjNode* objectP = kjLookup(attrP, "object");
+    if (objectP == NULL)  // Not a Relationship
+      continue;
+
+    KT_T(StLinkedInline, "Found a relationship '%s'", attrP->name);
+    KT_T(StLinkedInline, "orionldState.eLinkEntityV at %p", orionldState.eLinkEntityV);
+    KjNode* eLinkP = eLinkEntityLookup(orionldState.eLinkEntityV, objectP->value.s);
+    if (eLinkP == NULL)
+    {
+      KT_E("Can't find the entity '%s' in array of linked entities");
+      continue;
+    }
+    KjNode* clonedLinkP = kjClone(orionldState.kjsonP, eLinkP);
+
+    KT_T(StLinkedInline, "Found the related entity '%s', inlining it inside the attribute '%s'", objectP->value.s, attrP->name);
+    kjTreeLog2(clonedLinkP, "Cloned Entity", StLinkedInline);
+    // Add eLinkP as the value of a subAttribute named 'entity' of attrP
+    clonedLinkP->name = (char*) "entity";
+    kjChildAdd(attrP, clonedLinkP);
+
+    //
+    // Add also an "objectType" sub-attribute (the entity type of the referenced entity)
+    // Unless it's already there
+    //
+    if (kjLookup(attrP, "objectType") == NULL)
+    {
+      KjNode* typeP = kjLookup(clonedLinkP, "type");
+      if (typeP != NULL)
+      {
+        char *  typeLongName = orionldContextItemExpand(orionldState.contextP, typeP->value.s, true, NULL);
+        KjNode* objectTypeP  = kjString(orionldState.kjsonP, "objectType", typeLongName);
+        kjChildAdd(attrP,  objectTypeP);
+      }
     }
 
-    eLinkP = next;
+    // And finally, recursively call eLinkInlineExpand for the new entity included
+    eLinkInlineExpand(clonedLinkP, level + 1);
   }
 }

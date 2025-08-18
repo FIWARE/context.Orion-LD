@@ -1,6 +1,3 @@
-#ifndef SRC_LIB_ORIONLD_LINKEDENTITIES_ELINKINLINEEXPAND_H_
-#define SRC_LIB_ORIONLD_LINKEDENTITIES_ELINKINLINEEXPAND_H_
-
 /*
 *
 * Copyright 2025 FIWARE Foundation e.V.
@@ -28,14 +25,36 @@
 extern "C"
 {
 #include "kjson/KjNode.h"                                        // KjNode
+#include "kjson/kjLookup.h"                                      // kjLookup
+#include "kjson/kjBuilder.h"                                     // kjChildRemove. kjString, ...
 }
+
+#include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/orionldError.h"                         // orionldError
+#include "orionld/common/numberToDate.h"                         // numberToDate
+#include "orionld/dbModel/dbModelToObjectType.h"                 // Own interface
 
 
 
 // -----------------------------------------------------------------------------
 //
-// eLinkInlineExpand -
+// dbModelToObjectType -
 //
-extern void eLinkInlineExpand(KjNode* entityP, int level);
+KjNode* dbModelToObjectType(KjNode* dbObjectTypeP)
+{
+  if (dbObjectTypeP->type == KjObject)
+  {
+    KjNode* valueP = kjLookup(dbObjectTypeP, "value");
 
-#endif  // SRC_LIB_ORIONLD_LINKEDENTITIES_ELINKINLINEEXPAND_H_
+    if (valueP != NULL)
+    {
+      valueP->name = (char*) "objectType";
+      return valueP;
+    }
+  }
+  else if (dbObjectTypeP->type == KjString)
+    return dbObjectTypeP;
+
+  orionldError(OrionldInternalError, "Database Error", "Invalid objectType in DB", 500);
+  return kjString(orionldState.kjsonP, "objectType", "ERROR");
+}

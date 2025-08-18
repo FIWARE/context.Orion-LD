@@ -1,0 +1,206 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Checks for objectType, the new sub-attribute used for linked entities
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -mongocOnly
+
+--SHELL--
+
+#
+# 01. Create an entity urn:E1 with a relationship R1 referencing entity urn:E2 and with an objectType == T
+# 02. GET the entity and make sure objectType is correct
+# 03. Create an entity urn:E2
+# 04. Retrieve urn:E1 with join=inline, make sure objectType is correct
+#
+
+echo "01. Create an entity urn:E1 with a relationship R1 referencing entity urn:E2 and with an objectType == T"
+echo "========================================================================================================"
+payload='{
+  "id": "urn:E1",
+  "type": "T",
+  "P1": 1,
+  "R1": {
+    "object": "urn:E2",
+    "objectType": "T"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities -X POST --payload "$payload"
+echo
+echo
+
+
+echo "01b. See the entity in the database"
+echo "==================================="
+mongoCmd2 ftest "db.entities.findOne()"
+echo
+echo
+
+
+echo "02. GET the entity and make sure objectType is correct"
+echo "======================================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:E1?local=true
+echo
+echo
+
+
+echo "03. Create an entity urn:E2"
+echo "==========================="
+payload='{
+  "id": "urn:E2",
+  "type": "T",
+  "P1": 2
+}'
+orionCurl --url /ngsi-ld/v1/entities -X POST --payload "$payload"
+echo
+echo
+
+
+echo "04. Retrieve urn:E1 with join=inline, make sure objectType is correct"
+echo "====================================================================="
+orionCurl --url '/ngsi-ld/v1/entities/urn:E1?local=true&join=inline'
+echo
+echo
+
+
+--REGEXPECT--
+01. Create an entity urn:E1 with a relationship R1 referencing entity urn:E2 and with an objectType == T
+========================================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E1
+
+
+
+01b. See the entity in the database
+===================================
+MongoDB shell version REGEX(.*)
+connecting to: REGEX(.*)
+MongoDB server version: REGEX(.*)
+{
+	"_id" : {
+		"id" : "urn:E1",
+		"type" : "https://uri.etsi.org/ngsi-ld/default-context/T",
+		"servicePath" : "/"
+	},
+	"attrNames" : [
+		"https://uri.etsi.org/ngsi-ld/default-context/P1",
+		"https://uri.etsi.org/ngsi-ld/default-context/R1"
+	],
+	"attrs" : {
+		"https://uri=etsi=org/ngsi-ld/default-context/P1" : {
+			"type" : "Property",
+			"creDate" : REGEX(.*),
+			"modDate" : REGEX(.*),
+			"value" : 1,
+			"mdNames" : [ ]
+		},
+		"https://uri=etsi=org/ngsi-ld/default-context/R1" : {
+			"type" : "Relationship",
+			"creDate" : REGEX(.*),
+			"modDate" : REGEX(.*),
+			"value" : "urn:E2",
+			"mdNames" : [
+				"objectType"
+			],
+			"md" : {
+				"objectType" : "https://uri.etsi.org/ngsi-ld/default-context/T"
+			}
+		}
+	},
+	"creDate" : REGEX(.*),
+	"modDate" : REGEX(.*),
+	"lastCorrelator" : ""
+}
+bye
+
+
+02. GET the entity and make sure objectType is correct
+======================================================
+HTTP/1.1 200 OK
+Content-Length: 170
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "P1": {
+        "type": "Property",
+        "value": 1
+    },
+    "R1": {
+        "object": "urn:E2",
+        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+        "type": "Relationship"
+    },
+    "id": "urn:E1",
+    "type": "T"
+}
+
+
+03. Create an entity urn:E2
+===========================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E2
+
+
+
+04. Retrieve urn:E1 with join=inline, make sure objectType is correct
+=====================================================================
+HTTP/1.1 200 OK
+Content-Length: 241
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "P1": {
+        "type": "Property",
+        "value": 1
+    },
+    "R1": {
+        "entity": {
+            "P1": {
+                "type": "Property",
+                "value": 2
+            },
+            "id": "urn:E2",
+            "type": "T"
+        },
+        "object": "urn:E2",
+        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+        "type": "Relationship"
+    },
+    "id": "urn:E1",
+    "type": "T"
+}
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB

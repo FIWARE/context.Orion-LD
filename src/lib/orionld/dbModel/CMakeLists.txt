@@ -37,6 +37,7 @@ SET (SOURCES
     dbModelFromApiCoordinates.cpp
     dbModelToObservedAt.cpp
     dbModelToUnitCode.cpp
+    dbModelToObjectType.cpp
     dbModelFromApiAttributeDatasetArray.cpp
     dbModelToApiGeometry.cpp
     dbModelToApiGeorel.cpp

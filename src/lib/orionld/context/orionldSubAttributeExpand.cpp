@@ -38,7 +38,7 @@
 //
 // This function expands unless:
 //   - has already been expanded
-//   - is a special sub-attribute such as 'location', 'datasetyId', ...
+//   - is a special sub-attribute such as 'location', 'datasetId', ...
 //
 char* orionldSubAttributeExpand
 (
@@ -54,6 +54,7 @@ char* orionldSubAttributeExpand
   if      (strcmp(shortName, "type")        == 0) return shortName;
   else if (strcmp(shortName, "value")       == 0) return shortName;
   else if (strcmp(shortName, "object")      == 0) return shortName;
+  else if (strcmp(shortName, "objectType")  == 0) return shortName;
   else if (strcmp(shortName, "languageMap") == 0) return shortName;
   else if (strcmp(shortName, "createdAt")   == 0) return shortName;
   else if (strcmp(shortName, "modifiedAt")  == 0) return shortName;

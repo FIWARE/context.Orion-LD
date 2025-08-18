@@ -798,6 +798,23 @@ bool unitCodeCheck(KjNode* unitCodeP)
 
 // -----------------------------------------------------------------------------
 //
+// objectTypeCheck -
+//
+bool objectTypeCheck(KjNode* objectTypeP)
+{
+  if (objectTypeP->type != KjString)
+  {
+    orionldError(OrionldBadRequestData, "Invalid JSON type - not a string", objectTypeP->name, 400);
+    return false;
+  }
+
+  return true;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // timestampCheck -
 //
 bool timestampCheck(KjNode* fieldP)
@@ -1417,6 +1434,21 @@ static bool pCheckAttributeObject
     {
       if (datasetIdCheck(fieldP) == false)
         return false;
+    }
+    else if (strcmp(fieldP->name, "objectType") == 0)
+    {
+      if (((attributeType == Relationship) || (attributeType == NoAttributeType)) && ((attrTypeFromDb == Relationship) || (attrTypeFromDb == NoAttributeType)))
+      {
+        if (objectTypeCheck(fieldP) == false)
+          return false;
+
+        fieldP->value.s = orionldContextItemExpand(orionldState.contextP, fieldP->value.s, true, NULL);
+      }
+      else
+      {
+        orionldError(OrionldBadRequestData, "Invalid member /objectType/", "valid for Relationship attributes only", 400);
+        return false;
+      }
     }
     else if (strcmp(fieldP->name, "unitCode") == 0)
     {

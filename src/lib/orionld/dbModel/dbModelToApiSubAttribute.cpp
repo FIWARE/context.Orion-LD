@@ -42,6 +42,7 @@ extern "C"
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
 #include "orionld/dbModel/dbModelToObservedAt.h"                 // dbModelToObservedAt
 #include "orionld/dbModel/dbModelToUnitCode.h"                   // dbModelToUnitCode
+#include "orionld/dbModel/dbModelToObjectType.h"                 // dbModelToObjectType
 #include "orionld/dbModel/dbModelToApiSubAttribute.h"            // Own interface
 
 
@@ -102,6 +103,8 @@ KjNode* dbModelToApiSubAttribute2(KjNode* dbSubAttributeP, bool sysAttrs, Orionl
     return dbModelToObservedAt(dbSubAttributeP);
   else if (strcmp(dbSubAttributeP->name, "unitCode") == 0)
     return dbModelToUnitCode(dbSubAttributeP);
+  else if (strcmp(dbSubAttributeP->name, "objectType") == 0)
+    return dbModelToObjectType(dbSubAttributeP);
 
   char*   longName = kaStrdup(&orionldState.kalloc, dbSubAttributeP->name);
   eqForDot(longName);
@@ -153,6 +156,8 @@ KjNode* dbModelToApiSubAttribute2(KjNode* dbSubAttributeP, bool sysAttrs, Orionl
     else if (strcmp(dbSubSubAttrP->name, "observedAt") == 0)
       kjChildAdd(subAttrP, dbSubSubAttrP);
     else if (strcmp(dbSubSubAttrP->name, "unitCode") == 0)
+      kjChildAdd(subAttrP, dbSubSubAttrP);
+    else if (strcmp(dbSubSubAttrP->name, "objectType") == 0)
       kjChildAdd(subAttrP, dbSubSubAttrP);
     else if ((strcmp(dbSubSubAttrP->name, "createdAt") == 0) || (strcmp(dbSubSubAttrP->name, "modifiedAt") == 0))
     {

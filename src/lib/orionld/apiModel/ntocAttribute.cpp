@@ -107,6 +107,7 @@ void ntocAttribute(KjNode* attrP, const char* lang, bool sysAttrs)
     if (strcmp(fieldP->name, "unitCode")    == 0)  continue;
     if (strcmp(fieldP->name, "datasetId")   == 0)  continue;
     if (strcmp(fieldP->name, "lang")        == 0)  continue;
+    if (strcmp(fieldP->name, "objectType")  == 0)  continue;
 
     ntocSubAttribute(fieldP, lang, sysAttrs);
   }

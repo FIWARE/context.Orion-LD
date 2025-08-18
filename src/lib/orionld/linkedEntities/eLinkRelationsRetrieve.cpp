@@ -43,7 +43,7 @@ extern "C"
 //
 // eLinkEntityLookup -
 //
-static KjNode* eLinkEntityLookup(KjNode* entityV, const char* entityId)
+KjNode* eLinkEntityLookup(KjNode* entityV, const char* entityId)
 {
   for (KjNode* entityP = entityV->value.firstChildP; entityP != NULL; entityP = entityP->next)
   {

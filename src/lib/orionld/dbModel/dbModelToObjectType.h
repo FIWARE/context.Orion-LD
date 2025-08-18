@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_LINKEDENTITIES_ELINKINLINEEXPAND_H_
-#define SRC_LIB_ORIONLD_LINKEDENTITIES_ELINKINLINEEXPAND_H_
+#ifndef SRC_LIB_ORIONLD_DBMODEL_DBMODELTOOBJECTTYPE_H_
+#define SRC_LIB_ORIONLD_DBMODEL_DBMODELTOOBJECTTYPE_H_
 
 /*
 *
-* Copyright 2025 FIWARE Foundation e.V.
+* Copyright 2022 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -34,8 +34,8 @@ extern "C"
 
 // -----------------------------------------------------------------------------
 //
-// eLinkInlineExpand -
+// dbModelToObjectType -
 //
-extern void eLinkInlineExpand(KjNode* entityP, int level);
+extern KjNode* dbModelToObjectType(KjNode* dbObjectTypeP);
 
-#endif  // SRC_LIB_ORIONLD_LINKEDENTITIES_ELINKINLINEEXPAND_H_
+#endif  // SRC_LIB_ORIONLD_DBMODEL_DBMODELTOOBJECTTYPE_H_

@@ -31,6 +31,7 @@ extern "C"
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjParse.h"                                       // kjParse
 #include "kjson/kjLookup.h"                                      // kjLookup
+#include "kjson/kjClone.h"                                       // kjClone
 #include "kjson/kjBuilder.h"                                     // kjChildRemove, kjChildAdd, kjArray, ...
 }
 
@@ -440,8 +441,9 @@ bool orionldGetEntity(void)
 
     if (orionldState.in.flat == false)
     {
-      eLinkInlineExpand();
-      orionldState.responseTree = entityP;
+      KjNode* clone = kjClone(orionldState.kjsonP, entityP);
+      eLinkInlineExpand(clone, 0);
+      orionldState.responseTree = clone;
     }
     else
       orionldState.responseTree = orionldState.eLinkEntityV;

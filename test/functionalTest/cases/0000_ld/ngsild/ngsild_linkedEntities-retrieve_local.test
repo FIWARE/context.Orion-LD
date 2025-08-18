@@ -556,7 +556,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 10. Retrieve the entity urn:E1 with ?join=inline and joinLevel=10
 =================================================================
 HTTP/1.1 200 OK
-Content-Length: 3712
+Content-Length: 12482
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -573,23 +573,779 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
                 "value": 1
             },
             "R0": {
+                "entity": {
+                    "P1": {
+                        "type": "Property",
+                        "value": 1
+                    },
+                    "R0": {
+                        "entity": {
+                            "P1": {
+                                "type": "Property",
+                                "value": 1
+                            },
+                            "R0": {
+                                "entity": {
+                                    "P1": {
+                                        "type": "Property",
+                                        "value": 1
+                                    },
+                                    "R0": {
+                                        "entity": {
+                                            "P1": {
+                                                "type": "Property",
+                                                "value": 1
+                                            },
+                                            "R0": {
+                                                "entity": {
+                                                    "P1": {
+                                                        "type": "Property",
+                                                        "value": 1
+                                                    },
+                                                    "R0": {
+                                                        "entity": {
+                                                            "P1": {
+                                                                "type": "Property",
+                                                                "value": 1
+                                                            },
+                                                            "R0": {
+                                                                "entity": {
+                                                                    "P1": {
+                                                                        "type": "Property",
+                                                                        "value": 1
+                                                                    },
+                                                                    "R0": {
+                                                                        "entity": {
+                                                                            "P1": {
+                                                                                "type": "Property",
+                                                                                "value": 1
+                                                                            },
+                                                                            "R0": {
+                                                                                "entity": {
+                                                                                    "P1": {
+                                                                                        "type": "Property",
+                                                                                        "value": 1
+                                                                                    },
+                                                                                    "R0": {
+                                                                                        "object": "urn:E1",
+                                                                                        "type": "Relationship"
+                                                                                    },
+                                                                                    "R1": {
+                                                                                        "object": "urn:E2",
+                                                                                        "type": "Relationship"
+                                                                                    },
+                                                                                    "R1.2": {
+                                                                                        "object": "urn:E2",
+                                                                                        "type": "Relationship"
+                                                                                    },
+                                                                                    "R2": {
+                                                                                        "object": "urn:E3",
+                                                                                        "type": "Relationship"
+                                                                                    },
+                                                                                    "R3": {
+                                                                                        "object": "urn:E4",
+                                                                                        "type": "Relationship"
+                                                                                    },
+                                                                                    "R5": {
+                                                                                        "object": "urn:E5",
+                                                                                        "type": "Relationship"
+                                                                                    },
+                                                                                    "id": "urn:E1",
+                                                                                    "type": "T"
+                                                                                },
+                                                                                "object": "urn:E1",
+                                                                                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                                                "type": "Relationship"
+                                                                            },
+                                                                            "R1": {
+                                                                                "entity": {
+                                                                                    "P1": {
+                                                                                        "type": "Property",
+                                                                                        "value": 2
+                                                                                    },
+                                                                                    "id": "urn:E2",
+                                                                                    "type": "T"
+                                                                                },
+                                                                                "object": "urn:E2",
+                                                                                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                                                "type": "Relationship"
+                                                                            },
+                                                                            "R1.2": {
+                                                                                "entity": {
+                                                                                    "P1": {
+                                                                                        "type": "Property",
+                                                                                        "value": 2
+                                                                                    },
+                                                                                    "id": "urn:E2",
+                                                                                    "type": "T"
+                                                                                },
+                                                                                "object": "urn:E2",
+                                                                                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                                                "type": "Relationship"
+                                                                            },
+                                                                            "R2": {
+                                                                                "entity": {
+                                                                                    "P1": {
+                                                                                        "type": "Property",
+                                                                                        "value": 3
+                                                                                    },
+                                                                                    "id": "urn:E3",
+                                                                                    "type": "T"
+                                                                                },
+                                                                                "object": "urn:E3",
+                                                                                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                                                "type": "Relationship"
+                                                                            },
+                                                                            "R3": {
+                                                                                "entity": {
+                                                                                    "P1": {
+                                                                                        "type": "Property",
+                                                                                        "value": 4
+                                                                                    },
+                                                                                    "id": "urn:E4",
+                                                                                    "type": "T"
+                                                                                },
+                                                                                "object": "urn:E4",
+                                                                                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                                                "type": "Relationship"
+                                                                            },
+                                                                            "R5": {
+                                                                                "entity": {
+                                                                                    "R1": {
+                                                                                        "object": "urn:E6",
+                                                                                        "type": "Relationship"
+                                                                                    },
+                                                                                    "id": "urn:E5",
+                                                                                    "type": "T"
+                                                                                },
+                                                                                "object": "urn:E5",
+                                                                                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                                                "type": "Relationship"
+                                                                            },
+                                                                            "id": "urn:E1",
+                                                                            "type": "T"
+                                                                        },
+                                                                        "object": "urn:E1",
+                                                                        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                                        "type": "Relationship"
+                                                                    },
+                                                                    "R1": {
+                                                                        "entity": {
+                                                                            "P1": {
+                                                                                "type": "Property",
+                                                                                "value": 2
+                                                                            },
+                                                                            "id": "urn:E2",
+                                                                            "type": "T"
+                                                                        },
+                                                                        "object": "urn:E2",
+                                                                        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                                        "type": "Relationship"
+                                                                    },
+                                                                    "R1.2": {
+                                                                        "entity": {
+                                                                            "P1": {
+                                                                                "type": "Property",
+                                                                                "value": 2
+                                                                            },
+                                                                            "id": "urn:E2",
+                                                                            "type": "T"
+                                                                        },
+                                                                        "object": "urn:E2",
+                                                                        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                                        "type": "Relationship"
+                                                                    },
+                                                                    "R2": {
+                                                                        "entity": {
+                                                                            "P1": {
+                                                                                "type": "Property",
+                                                                                "value": 3
+                                                                            },
+                                                                            "id": "urn:E3",
+                                                                            "type": "T"
+                                                                        },
+                                                                        "object": "urn:E3",
+                                                                        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                                        "type": "Relationship"
+                                                                    },
+                                                                    "R3": {
+                                                                        "entity": {
+                                                                            "P1": {
+                                                                                "type": "Property",
+                                                                                "value": 4
+                                                                            },
+                                                                            "id": "urn:E4",
+                                                                            "type": "T"
+                                                                        },
+                                                                        "object": "urn:E4",
+                                                                        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                                        "type": "Relationship"
+                                                                    },
+                                                                    "R5": {
+                                                                        "entity": {
+                                                                            "R1": {
+                                                                                "entity": {
+                                                                                    "P1": {
+                                                                                        "type": "Property",
+                                                                                        "value": 6
+                                                                                    },
+                                                                                    "id": "urn:E6",
+                                                                                    "type": "T"
+                                                                                },
+                                                                                "object": "urn:E6",
+                                                                                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                                                "type": "Relationship"
+                                                                            },
+                                                                            "id": "urn:E5",
+                                                                            "type": "T"
+                                                                        },
+                                                                        "object": "urn:E5",
+                                                                        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                                        "type": "Relationship"
+                                                                    },
+                                                                    "id": "urn:E1",
+                                                                    "type": "T"
+                                                                },
+                                                                "object": "urn:E1",
+                                                                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                                "type": "Relationship"
+                                                            },
+                                                            "R1": {
+                                                                "entity": {
+                                                                    "P1": {
+                                                                        "type": "Property",
+                                                                        "value": 2
+                                                                    },
+                                                                    "id": "urn:E2",
+                                                                    "type": "T"
+                                                                },
+                                                                "object": "urn:E2",
+                                                                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                                "type": "Relationship"
+                                                            },
+                                                            "R1.2": {
+                                                                "entity": {
+                                                                    "P1": {
+                                                                        "type": "Property",
+                                                                        "value": 2
+                                                                    },
+                                                                    "id": "urn:E2",
+                                                                    "type": "T"
+                                                                },
+                                                                "object": "urn:E2",
+                                                                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                                "type": "Relationship"
+                                                            },
+                                                            "R2": {
+                                                                "entity": {
+                                                                    "P1": {
+                                                                        "type": "Property",
+                                                                        "value": 3
+                                                                    },
+                                                                    "id": "urn:E3",
+                                                                    "type": "T"
+                                                                },
+                                                                "object": "urn:E3",
+                                                                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                                "type": "Relationship"
+                                                            },
+                                                            "R3": {
+                                                                "entity": {
+                                                                    "P1": {
+                                                                        "type": "Property",
+                                                                        "value": 4
+                                                                    },
+                                                                    "id": "urn:E4",
+                                                                    "type": "T"
+                                                                },
+                                                                "object": "urn:E4",
+                                                                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                                "type": "Relationship"
+                                                            },
+                                                            "R5": {
+                                                                "entity": {
+                                                                    "R1": {
+                                                                        "entity": {
+                                                                            "P1": {
+                                                                                "type": "Property",
+                                                                                "value": 6
+                                                                            },
+                                                                            "id": "urn:E6",
+                                                                            "type": "T"
+                                                                        },
+                                                                        "object": "urn:E6",
+                                                                        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                                        "type": "Relationship"
+                                                                    },
+                                                                    "id": "urn:E5",
+                                                                    "type": "T"
+                                                                },
+                                                                "object": "urn:E5",
+                                                                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                                "type": "Relationship"
+                                                            },
+                                                            "id": "urn:E1",
+                                                            "type": "T"
+                                                        },
+                                                        "object": "urn:E1",
+                                                        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                        "type": "Relationship"
+                                                    },
+                                                    "R1": {
+                                                        "entity": {
+                                                            "P1": {
+                                                                "type": "Property",
+                                                                "value": 2
+                                                            },
+                                                            "id": "urn:E2",
+                                                            "type": "T"
+                                                        },
+                                                        "object": "urn:E2",
+                                                        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                        "type": "Relationship"
+                                                    },
+                                                    "R1.2": {
+                                                        "entity": {
+                                                            "P1": {
+                                                                "type": "Property",
+                                                                "value": 2
+                                                            },
+                                                            "id": "urn:E2",
+                                                            "type": "T"
+                                                        },
+                                                        "object": "urn:E2",
+                                                        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                        "type": "Relationship"
+                                                    },
+                                                    "R2": {
+                                                        "entity": {
+                                                            "P1": {
+                                                                "type": "Property",
+                                                                "value": 3
+                                                            },
+                                                            "id": "urn:E3",
+                                                            "type": "T"
+                                                        },
+                                                        "object": "urn:E3",
+                                                        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                        "type": "Relationship"
+                                                    },
+                                                    "R3": {
+                                                        "entity": {
+                                                            "P1": {
+                                                                "type": "Property",
+                                                                "value": 4
+                                                            },
+                                                            "id": "urn:E4",
+                                                            "type": "T"
+                                                        },
+                                                        "object": "urn:E4",
+                                                        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                        "type": "Relationship"
+                                                    },
+                                                    "R5": {
+                                                        "entity": {
+                                                            "R1": {
+                                                                "entity": {
+                                                                    "P1": {
+                                                                        "type": "Property",
+                                                                        "value": 6
+                                                                    },
+                                                                    "id": "urn:E6",
+                                                                    "type": "T"
+                                                                },
+                                                                "object": "urn:E6",
+                                                                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                                "type": "Relationship"
+                                                            },
+                                                            "id": "urn:E5",
+                                                            "type": "T"
+                                                        },
+                                                        "object": "urn:E5",
+                                                        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                        "type": "Relationship"
+                                                    },
+                                                    "id": "urn:E1",
+                                                    "type": "T"
+                                                },
+                                                "object": "urn:E1",
+                                                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                "type": "Relationship"
+                                            },
+                                            "R1": {
+                                                "entity": {
+                                                    "P1": {
+                                                        "type": "Property",
+                                                        "value": 2
+                                                    },
+                                                    "id": "urn:E2",
+                                                    "type": "T"
+                                                },
+                                                "object": "urn:E2",
+                                                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                "type": "Relationship"
+                                            },
+                                            "R1.2": {
+                                                "entity": {
+                                                    "P1": {
+                                                        "type": "Property",
+                                                        "value": 2
+                                                    },
+                                                    "id": "urn:E2",
+                                                    "type": "T"
+                                                },
+                                                "object": "urn:E2",
+                                                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                "type": "Relationship"
+                                            },
+                                            "R2": {
+                                                "entity": {
+                                                    "P1": {
+                                                        "type": "Property",
+                                                        "value": 3
+                                                    },
+                                                    "id": "urn:E3",
+                                                    "type": "T"
+                                                },
+                                                "object": "urn:E3",
+                                                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                "type": "Relationship"
+                                            },
+                                            "R3": {
+                                                "entity": {
+                                                    "P1": {
+                                                        "type": "Property",
+                                                        "value": 4
+                                                    },
+                                                    "id": "urn:E4",
+                                                    "type": "T"
+                                                },
+                                                "object": "urn:E4",
+                                                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                "type": "Relationship"
+                                            },
+                                            "R5": {
+                                                "entity": {
+                                                    "R1": {
+                                                        "entity": {
+                                                            "P1": {
+                                                                "type": "Property",
+                                                                "value": 6
+                                                            },
+                                                            "id": "urn:E6",
+                                                            "type": "T"
+                                                        },
+                                                        "object": "urn:E6",
+                                                        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                        "type": "Relationship"
+                                                    },
+                                                    "id": "urn:E5",
+                                                    "type": "T"
+                                                },
+                                                "object": "urn:E5",
+                                                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                "type": "Relationship"
+                                            },
+                                            "id": "urn:E1",
+                                            "type": "T"
+                                        },
+                                        "object": "urn:E1",
+                                        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                        "type": "Relationship"
+                                    },
+                                    "R1": {
+                                        "entity": {
+                                            "P1": {
+                                                "type": "Property",
+                                                "value": 2
+                                            },
+                                            "id": "urn:E2",
+                                            "type": "T"
+                                        },
+                                        "object": "urn:E2",
+                                        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                        "type": "Relationship"
+                                    },
+                                    "R1.2": {
+                                        "entity": {
+                                            "P1": {
+                                                "type": "Property",
+                                                "value": 2
+                                            },
+                                            "id": "urn:E2",
+                                            "type": "T"
+                                        },
+                                        "object": "urn:E2",
+                                        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                        "type": "Relationship"
+                                    },
+                                    "R2": {
+                                        "entity": {
+                                            "P1": {
+                                                "type": "Property",
+                                                "value": 3
+                                            },
+                                            "id": "urn:E3",
+                                            "type": "T"
+                                        },
+                                        "object": "urn:E3",
+                                        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                        "type": "Relationship"
+                                    },
+                                    "R3": {
+                                        "entity": {
+                                            "P1": {
+                                                "type": "Property",
+                                                "value": 4
+                                            },
+                                            "id": "urn:E4",
+                                            "type": "T"
+                                        },
+                                        "object": "urn:E4",
+                                        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                        "type": "Relationship"
+                                    },
+                                    "R5": {
+                                        "entity": {
+                                            "R1": {
+                                                "entity": {
+                                                    "P1": {
+                                                        "type": "Property",
+                                                        "value": 6
+                                                    },
+                                                    "id": "urn:E6",
+                                                    "type": "T"
+                                                },
+                                                "object": "urn:E6",
+                                                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                                "type": "Relationship"
+                                            },
+                                            "id": "urn:E5",
+                                            "type": "T"
+                                        },
+                                        "object": "urn:E5",
+                                        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                        "type": "Relationship"
+                                    },
+                                    "id": "urn:E1",
+                                    "type": "T"
+                                },
+                                "object": "urn:E1",
+                                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                "type": "Relationship"
+                            },
+                            "R1": {
+                                "entity": {
+                                    "P1": {
+                                        "type": "Property",
+                                        "value": 2
+                                    },
+                                    "id": "urn:E2",
+                                    "type": "T"
+                                },
+                                "object": "urn:E2",
+                                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                "type": "Relationship"
+                            },
+                            "R1.2": {
+                                "entity": {
+                                    "P1": {
+                                        "type": "Property",
+                                        "value": 2
+                                    },
+                                    "id": "urn:E2",
+                                    "type": "T"
+                                },
+                                "object": "urn:E2",
+                                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                "type": "Relationship"
+                            },
+                            "R2": {
+                                "entity": {
+                                    "P1": {
+                                        "type": "Property",
+                                        "value": 3
+                                    },
+                                    "id": "urn:E3",
+                                    "type": "T"
+                                },
+                                "object": "urn:E3",
+                                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                "type": "Relationship"
+                            },
+                            "R3": {
+                                "entity": {
+                                    "P1": {
+                                        "type": "Property",
+                                        "value": 4
+                                    },
+                                    "id": "urn:E4",
+                                    "type": "T"
+                                },
+                                "object": "urn:E4",
+                                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                "type": "Relationship"
+                            },
+                            "R5": {
+                                "entity": {
+                                    "R1": {
+                                        "entity": {
+                                            "P1": {
+                                                "type": "Property",
+                                                "value": 6
+                                            },
+                                            "id": "urn:E6",
+                                            "type": "T"
+                                        },
+                                        "object": "urn:E6",
+                                        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                        "type": "Relationship"
+                                    },
+                                    "id": "urn:E5",
+                                    "type": "T"
+                                },
+                                "object": "urn:E5",
+                                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                "type": "Relationship"
+                            },
+                            "id": "urn:E1",
+                            "type": "T"
+                        },
+                        "object": "urn:E1",
+                        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                        "type": "Relationship"
+                    },
+                    "R1": {
+                        "entity": {
+                            "P1": {
+                                "type": "Property",
+                                "value": 2
+                            },
+                            "id": "urn:E2",
+                            "type": "T"
+                        },
+                        "object": "urn:E2",
+                        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                        "type": "Relationship"
+                    },
+                    "R1.2": {
+                        "entity": {
+                            "P1": {
+                                "type": "Property",
+                                "value": 2
+                            },
+                            "id": "urn:E2",
+                            "type": "T"
+                        },
+                        "object": "urn:E2",
+                        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                        "type": "Relationship"
+                    },
+                    "R2": {
+                        "entity": {
+                            "P1": {
+                                "type": "Property",
+                                "value": 3
+                            },
+                            "id": "urn:E3",
+                            "type": "T"
+                        },
+                        "object": "urn:E3",
+                        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                        "type": "Relationship"
+                    },
+                    "R3": {
+                        "entity": {
+                            "P1": {
+                                "type": "Property",
+                                "value": 4
+                            },
+                            "id": "urn:E4",
+                            "type": "T"
+                        },
+                        "object": "urn:E4",
+                        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                        "type": "Relationship"
+                    },
+                    "R5": {
+                        "entity": {
+                            "R1": {
+                                "entity": {
+                                    "P1": {
+                                        "type": "Property",
+                                        "value": 6
+                                    },
+                                    "id": "urn:E6",
+                                    "type": "T"
+                                },
+                                "object": "urn:E6",
+                                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                                "type": "Relationship"
+                            },
+                            "id": "urn:E5",
+                            "type": "T"
+                        },
+                        "object": "urn:E5",
+                        "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
+                        "type": "Relationship"
+                    },
+                    "id": "urn:E1",
+                    "type": "T"
+                },
                 "object": "urn:E1",
+                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
                 "type": "Relationship"
             },
             "R1": {
+                "entity": {
+                    "P1": {
+                        "type": "Property",
+                        "value": 2
+                    },
+                    "id": "urn:E2",
+                    "type": "T"
+                },
                 "object": "urn:E2",
+                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
                 "type": "Relationship"
             },
             "R1.2": {
+                "entity": {
+                    "P1": {
+                        "type": "Property",
+                        "value": 2
+                    },
+                    "id": "urn:E2",
+                    "type": "T"
+                },
                 "object": "urn:E2",
+                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
                 "type": "Relationship"
             },
             "R2": {
+                "entity": {
+                    "P1": {
+                        "type": "Property",
+                        "value": 3
+                    },
+                    "id": "urn:E3",
+                    "type": "T"
+                },
                 "object": "urn:E3",
+                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
                 "type": "Relationship"
             },
             "R3": {
+                "entity": {
+                    "P1": {
+                        "type": "Property",
+                        "value": 4
+                    },
+                    "id": "urn:E4",
+                    "type": "T"
+                },
                 "object": "urn:E4",
+                "objectType": "https://uri.etsi.org/ngsi-ld/default-context/T",
                 "type": "Relationship"
             },
             "R5": {
