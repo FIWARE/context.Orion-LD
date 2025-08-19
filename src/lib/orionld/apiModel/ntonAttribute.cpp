@@ -83,6 +83,7 @@ void ntonAttribute(KjNode* attrP, const char* lang, bool sysAttrs)
     if (strcmp(fieldP->name, "datasetId")   == 0)  continue;
     if (strcmp(fieldP->name, "lang")        == 0)  continue;
     if (strcmp(fieldP->name, "objectType")  == 0)  continue;
+    if (strcmp(fieldP->name, "valueType")   == 0)  continue;
 
     LM_T(LmtFormat, ("Calling ntonSubAttribute for '%s'", fieldP->name));
     ntonSubAttribute(fieldP, lang, sysAttrs);

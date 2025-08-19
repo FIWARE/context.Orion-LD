@@ -162,6 +162,8 @@ void dbModelToApiAttribute(KjNode* dbAttrP, bool sysAttrs, bool eqsForDots)
       }
       else if (strcmp(subP->name, "objectType") == 0)
         subP->value.s  = orionldContextItemAliasLookup(orionldState.contextP, valueP->value.s, NULL, NULL);
+      else if (strcmp(subP->name, "valueType") == 0)
+        subP->value.s  = orionldContextItemAliasLookup(orionldState.contextP, valueP->value.s, NULL, NULL);
       else
         dbModelToApiSubAttribute(subP);
     }

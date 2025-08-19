@@ -32,22 +32,22 @@ extern "C"
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
-#include "orionld/dbModel/dbModelToObjectType.h"                 // Own interface
+#include "orionld/dbModel/dbModelToValueType.h"                  // Own interface
 
 
 
 // -----------------------------------------------------------------------------
 //
-// dbModelToObjectType -
+// dbModelToValueType -
 //
-KjNode* dbModelToObjectType(KjNode* dbObjectTypeP)
+KjNode* dbModelToValueType(KjNode* dbValueTypeP)
 {
-  if (dbObjectTypeP->type == KjString)
+  if (dbValueTypeP->type == KjString)
   {
-    dbObjectTypeP->value.s = orionldContextItemAliasLookup(orionldState.contextP, dbObjectTypeP->value.s, NULL, NULL);
-    return dbObjectTypeP;
+    dbValueTypeP->value.s = orionldContextItemAliasLookup(orionldState.contextP, dbValueTypeP->value.s, NULL, NULL);
+    return dbValueTypeP;
   }
 
-  orionldError(OrionldInternalError, "Database Error", "Invalid objectType in DB", 500);
-  return kjString(orionldState.kjsonP, "objectType", "ERROR");
+  orionldError(OrionldInternalError, "Database Error", "Invalid valueType in DB", 500);
+  return kjString(orionldState.kjsonP, "valueType", "ERROR");
 }

@@ -815,6 +815,23 @@ bool objectTypeCheck(KjNode* objectTypeP)
 
 // -----------------------------------------------------------------------------
 //
+// valueTypeCheck -
+//
+bool valueTypeCheck(KjNode* valueTypeP)
+{
+  if (valueTypeP->type != KjString)
+  {
+    orionldError(OrionldBadRequestData, "Invalid JSON type - not a string", valueTypeP->name, 400);
+    return false;
+  }
+
+  return true;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // timestampCheck -
 //
 bool timestampCheck(KjNode* fieldP)
@@ -1447,6 +1464,21 @@ static bool pCheckAttributeObject
       else
       {
         orionldError(OrionldBadRequestData, "Invalid member /objectType/", "valid for Relationship attributes only", 400);
+        return false;
+      }
+    }
+    else if (strcmp(fieldP->name, "valueType") == 0)
+    {
+      if (((attributeType != Relationship) || (attributeType == NoAttributeType)) && ((attrTypeFromDb != Relationship) || (attrTypeFromDb == NoAttributeType)))
+      {
+        if (valueTypeCheck(fieldP) == false)
+          return false;
+
+        fieldP->value.s = orionldContextItemExpand(orionldState.contextP, fieldP->value.s, true, NULL);
+      }
+      else
+      {
+        orionldError(OrionldBadRequestData, "Invalid member /valueType/", "valid for Properties only", 400);
         return false;
       }
     }
