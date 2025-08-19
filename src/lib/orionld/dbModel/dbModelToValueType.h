@@ -1,6 +1,9 @@
+#ifndef SRC_LIB_ORIONLD_DBMODEL_DBMODELTOVALUETYPE_H_
+#define SRC_LIB_ORIONLD_DBMODEL_DBMODELTOVALUETYPE_H_
+
 /*
 *
-* Copyright 2025 FIWARE Foundation e.V.
+* Copyright 2022 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,29 +28,14 @@
 extern "C"
 {
 #include "kjson/KjNode.h"                                        // KjNode
-#include "kjson/kjLookup.h"                                      // kjLookup
-#include "kjson/kjBuilder.h"                                     // kjChildRemove. kjString, ...
 }
-
-#include "orionld/common/orionldState.h"                         // orionldState
-#include "orionld/common/orionldError.h"                         // orionldError
-#include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
-#include "orionld/dbModel/dbModelToObjectType.h"                 // Own interface
 
 
 
 // -----------------------------------------------------------------------------
 //
-// dbModelToObjectType -
+// dbModelToValueType -
 //
-KjNode* dbModelToObjectType(KjNode* dbObjectTypeP)
-{
-  if (dbObjectTypeP->type == KjString)
-  {
-    dbObjectTypeP->value.s = orionldContextItemAliasLookup(orionldState.contextP, dbObjectTypeP->value.s, NULL, NULL);
-    return dbObjectTypeP;
-  }
+extern KjNode* dbModelToValueType(KjNode* dbValueTypeP);
 
-  orionldError(OrionldInternalError, "Database Error", "Invalid objectType in DB", 500);
-  return kjString(orionldState.kjsonP, "objectType", "ERROR");
-}
+#endif  // SRC_LIB_ORIONLD_DBMODEL_DBMODELTOVALUETYPE_H_

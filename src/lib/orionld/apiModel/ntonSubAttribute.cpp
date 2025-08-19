@@ -67,6 +67,7 @@ void ntonSubAttribute(KjNode* saP, const char* lang, bool sysAttrs)
     if (strcmp(fieldP->name, "unitCode")    == 0)  continue;
     if (strcmp(fieldP->name, "lang")        == 0)  continue;
     if (strcmp(fieldP->name, "objectType")  == 0)  continue;
+    if (strcmp(fieldP->name, "valueType")   == 0)  continue;
 
     ntonSubAttribute(fieldP, lang, sysAttrs);
   }

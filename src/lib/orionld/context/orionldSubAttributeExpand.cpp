@@ -63,6 +63,7 @@ char* orionldSubAttributeExpand
   else if (strcmp(shortName, "unitCode")    == 0) return shortName;
   else if (strcmp(shortName, "coordinates") == 0) return shortName;
   else if (strcmp(shortName, "ngsildproof") == 0) return shortName;
+  else if (strcmp(shortName, "valueType")   == 0) return shortName;
 
   return orionldContextItemExpand(contextP, shortName, useDefaultUrlIfNotFound, contextItemPP);
 }

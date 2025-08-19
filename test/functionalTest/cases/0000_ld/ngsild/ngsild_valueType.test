@@ -1,0 +1,193 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Checks for valueType, special sub-attribute for properties
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -mongocOnly
+
+--SHELL--
+
+#
+# 01.  Create an entity urn:E1 with a property P1 with a valueType 'Integer'
+# 01b. See the entity in the database
+# 02.  GET the entity and make sure valueType is correct
+# 03.  Attempt to create a Relationship with a valueType
+# 04.  Attempt to create a Property with a valueType that is not a JSON String
+#
+
+echo "01. Create an entity urn:E1 with a property P1 with a valueType 'Integer'"
+echo "========================================================================="
+payload='{
+  "id": "urn:E1",
+  "type": "T",
+  "P1": {
+    "value": 1,
+    "valueType": "Integer"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities -X POST --payload "$payload"
+echo
+echo
+
+
+echo "01b. See the entity in the database"
+echo "==================================="
+mongoCmd2 ftest "db.entities.findOne()"
+echo
+echo
+
+
+echo "02. GET the entity and make sure valueType is correct"
+echo "======================================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:E1?local=true
+echo
+echo
+
+
+echo "03. Attempt to create a Relationship with a valueType"
+echo "====================================================="
+payload='{
+  "id": "urn:E2",
+  "type": "T",
+  "R1": {
+    "object": "urn:E2",
+    "valueType": "Integer"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities -X POST --payload "$payload"
+echo
+echo
+
+
+echo "04. Attempt to create a Property with a valueType that is not a JSON String"
+echo "==========================================================================="
+payload='{
+  "id": "urn:E3",
+  "type": "T",
+  "P1": {
+    "value": 1,
+    "valueType": 4
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities -X POST --payload "$payload"
+echo
+echo
+
+
+--REGEXPECT--
+01. Create an entity urn:E1 with a property P1 with a valueType 'Integer'
+=========================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E1
+
+
+
+01b. See the entity in the database
+===================================
+MongoDB shell version REGEX(.*)
+connecting to: REGEX(.*)
+MongoDB server version: REGEX(.*)
+{
+	"_id" : {
+		"id" : "urn:E1",
+		"type" : "https://uri.etsi.org/ngsi-ld/default-context/T",
+		"servicePath" : "/"
+	},
+	"attrNames" : [
+		"https://uri.etsi.org/ngsi-ld/default-context/P1"
+	],
+	"attrs" : {
+		"https://uri=etsi=org/ngsi-ld/default-context/P1" : {
+			"type" : "Property",
+			"creDate" : REGEX(.*),
+			"modDate" : REGEX(.*),
+			"value" : 1,
+			"mdNames" : [
+				"valueType"
+			],
+			"md" : {
+				"valueType" : "https://uri.etsi.org/ngsi-ld/default-context/Integer"
+			}
+		}
+	},
+	"creDate" : REGEX(.*),
+	"modDate" : REGEX(.*),
+	"lastCorrelator" : ""
+}
+bye
+
+
+02. GET the entity and make sure valueType is correct
+======================================================
+HTTP/1.1 200 OK
+Content-Length: 83
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "P1": {
+        "type": "Property",
+        "value": 1,
+        "valueType": "Integer"
+    },
+    "id": "urn:E1",
+    "type": "T"
+}
+
+
+03. Attempt to create a Relationship with a valueType
+=====================================================
+HTTP/1.1 400 Bad Request
+Content-Length: 135
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "valid for Properties only",
+    "title": "Invalid member /valueType/",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/BadRequestData"
+}
+
+
+04. Attempt to create a Property with a valueType that is not a JSON String
+===========================================================================
+HTTP/1.1 400 Bad Request
+Content-Length: 125
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "valueType",
+    "title": "Invalid JSON type - not a string",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/BadRequestData"
+}
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB

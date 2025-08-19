@@ -43,6 +43,7 @@ extern "C"
 #include "orionld/dbModel/dbModelToObservedAt.h"                 // dbModelToObservedAt
 #include "orionld/dbModel/dbModelToUnitCode.h"                   // dbModelToUnitCode
 #include "orionld/dbModel/dbModelToObjectType.h"                 // dbModelToObjectType
+#include "orionld/dbModel/dbModelToValueType.h"                  // dbModelToValueType
 #include "orionld/dbModel/dbModelToApiSubAttribute.h"            // Own interface
 
 
@@ -105,6 +106,8 @@ KjNode* dbModelToApiSubAttribute2(KjNode* dbSubAttributeP, bool sysAttrs, Orionl
     return dbModelToUnitCode(dbSubAttributeP);
   else if (strcmp(dbSubAttributeP->name, "objectType") == 0)
     return dbModelToObjectType(dbSubAttributeP);
+  else if (strcmp(dbSubAttributeP->name, "valueType") == 0)
+    return dbModelToValueType(dbSubAttributeP);
 
   char*   longName = kaStrdup(&orionldState.kalloc, dbSubAttributeP->name);
   eqForDot(longName);

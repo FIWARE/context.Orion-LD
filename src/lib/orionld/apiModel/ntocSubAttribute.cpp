@@ -87,6 +87,7 @@ void ntocSubAttribute(KjNode* saP, const char* lang, bool sysAttrs)
     if (strcmp(fieldP->name, "languageMap") == 0)  continue;
     if (strcmp(fieldP->name, "lang")        == 0)  continue;
     if (strcmp(fieldP->name, "objectType")  == 0)  continue;
+    if (strcmp(fieldP->name, "valueType")   == 0)  continue;
 
     ntocSubAttribute(fieldP, lang, sysAttrs);
   }
