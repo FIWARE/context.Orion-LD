@@ -1,6 +1,7 @@
 ## Fixed Issues:
 ## New Features:
   #XXXX Support for Linked Entities for Entity Retrieval
+  #XXXX Support for Linked Entities for Entity Query (not the query language though)
 
 ## Multi-Attribute (datasetId)
 ## DDS

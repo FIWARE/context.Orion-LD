@@ -38,18 +38,18 @@ extern "C"
 //
 // eLinkDebug -
 //
-void eLinkDebug(KjNode* entityV, const char* what)
+void eLinkDebug(KjNode* entityV, const char* what, OrionldTraceLevels tLev)
 {
-  KT_T(StLinked, "Entity Array (%s)", what);
-  KT_T(StLinked, "--------------------------------------------------------------------------------");
+  KT_T(tLev, "%s", what);
+  KT_T(tLev, "--------------------------------------------------------------------------------");
 
   for (KjNode* entityP = entityV->value.firstChildP; entityP != NULL; entityP = entityP->next)
   {
     KjNode* idP = kjLookup(entityP, "id");
 
     if (idP != NULL)
-      KT_T(StLinked, "  o %s", idP->value.s);
+      KT_T(tLev, "  o %s", idP->value.s);
   }
 
-  KT_T(StLinked, "--------------------------------------------------------------------------------");
+  KT_T(tLev, "--------------------------------------------------------------------------------");
 }
