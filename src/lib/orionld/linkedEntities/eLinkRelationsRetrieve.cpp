@@ -37,7 +37,6 @@ extern "C"
 #include "orionld/context/orionldContextItemExpand.h"            // orionldContextItemExpand
 #include "orionld/serviceRoutines/orionldGetEntity.h"            // orionldGetEntity
 #include "orionld/kjTree/kjEntityIdLookupInEntityArray.h"        // kjEntityIdLookupInEntityArray
-#include "orionld/linkedEntities/eLinkDebug.h"                   // eLinkDebug
 #include "orionld/linkedEntities/eLinkInlineExpand.h"            // Own interface
 
 
@@ -78,8 +77,10 @@ static KjNode* eLinkEntityRetrieve(KjNode* entityV, const char* entityId, const 
   if (eP != NULL)
     return eP;
 
+  int httpStatusCode = orionldState.httpStatusCode;  // orionldGetEntity may alter the HTTP Status Code
   if (orionldGetEntity() == true)
   {
+    orionldState.httpStatusCode = httpStatusCode;
     if ((orionldState.httpStatusCode == 200) && (orionldState.responseTree != NULL))
     {
       KT_T(StLinked, "Adding entity '%s' to the entity array (need the attribute as well, for inline format)", entityId);
@@ -88,6 +89,7 @@ static KjNode* eLinkEntityRetrieve(KjNode* entityV, const char* entityId, const 
     }
   }
 
+  orionldState.httpStatusCode = httpStatusCode;
   return NULL;
 }
 
@@ -161,7 +163,6 @@ void eLinkRelationsRetrieve(KjNode* entityV, KjNode* entityP, int level)
       }
     }
   }
-  eLinkDebug(entityV, "After adding referenced entities");
 
 
   // -----------------------------------------------------------------------------

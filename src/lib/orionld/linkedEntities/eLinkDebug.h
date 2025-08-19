@@ -30,12 +30,14 @@ extern "C"
 #include "kjson/KjNode.h"                                        // KjNode
 }
 
+#include "orionld/common/traceLevels.h"                          // KTrace Levels
+
 
 
 // -----------------------------------------------------------------------------
 //
 // eLinkDebug -
 //
-extern void eLinkDebug(KjNode* entityV, const char* what);
+extern void eLinkDebug(KjNode* entityV, const char* what, OrionldTraceLevels tLev);
 
 #endif  // SRC_LIB_ORIONLD_LINKEDENTITIES_ELINKDEBUG_H_

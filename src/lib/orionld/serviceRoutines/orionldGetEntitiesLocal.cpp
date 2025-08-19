@@ -27,6 +27,7 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                          // KTrace
 #include "kjson/KjNode.h"                                           // KjNode
 #include "kjson/kjBuilder.h"                                        // kjString, kjObject, kjChildAdd, kjChildRemove
 #include "kjson/kjLookup.h"                                         // kjLookup
@@ -39,13 +40,19 @@ extern "C"
 #include "orionld/types/OrionldGeoInfo.h"                           // OrionldGeoInfo
 #include "orionld/types/QNode.h"                                    // QNode
 #include "orionld/common/orionldState.h"                            // orionldState
+#include "orionld/common/traceLevels.h"                             // KTrace Levels
 #include "orionld/common/pick.h"                                    // pickForEntityArray
 #include "orionld/common/datasetEntityFix.h"                        // datasetEntityFix
+#include "orionld/dds/kjTreeLog.h"                                  // kjTreeLog2
 #include "orionld/context/orionldContextItemExpand.h"               // orionldContextItemExpand
 #include "orionld/mongoc/mongocEntitiesQuery.h"                     // mongocEntitiesQuery
 #include "orionld/kjTree/kjChildPrepend.h"                          // kjChildPrepend
+#include "orionld/kjTree/kjEntityIdLookupInEntityArray.h"           // kjEntityIdLookupInEntityArray
 #include "orionld/dbModel/dbModelToApiEntity.h"                     // dbModelToApiEntity2
 #include "orionld/dbModel/dbModelToEntityIdAndTypeObject.h"         // dbModelToEntityIdAndTypeObject
+#include "orionld/linkedEntities/eLinkRelationsRetrieve.h"          // eLinkRelationsRetrieve
+#include "orionld/linkedEntities/eLinkInlineExpand.h"               // eLinkInlineExpand
+#include "orionld/linkedEntities/eLinkDebug.h"                      // eLinkDebug
 #include "orionld/serviceRoutines/orionldGetEntitiesLocal.h"        // Own interface
 
 
@@ -270,6 +277,38 @@ bool orionldGetEntitiesLocal
   kjTreeLog(orionldState.responseTree, "Response Tree", LmtPick);
   if (orionldState.in.pickList.items > 0)
     pickForEntityArray();
+
+  //
+  // If Linked Entities, call eLinkRelationsRetrieve
+  //
+  if ((orionldState.in.linkedEntities == true) && (orionldState.uriParams.joinLevel > 0))
+  {
+    // orionldState.responseTree must be saved as eLinkEntityRetrieve sets it to NULL before calling orionldGetEntity
+    KjNode* responseTree = orionldState.responseTree;
+    KT_T(StLinked, "---------------------- Linked Entities  ----------------------");
+
+    // First, clone the entire array of entities into orionldState.eLinkEntityV
+    orionldState.eLinkEntityV = kjClone(orionldState.kjsonP, responseTree);
+
+    // Get all entities in an array (?join=flat). If ?join=inline, the array is modified into an object
+    for (KjNode* entityP = responseTree->value.firstChildP; entityP != NULL; entityP = entityP->next)
+    {
+      KT_T(StLinked, "Retreiving related entities for entity %p", entityP);
+      eLinkRelationsRetrieve(orionldState.eLinkEntityV, entityP, 0);
+    }
+
+    if (orionldState.in.flat == false)
+    {
+      for (KjNode* entityP = responseTree->value.firstChildP; entityP != NULL; entityP = entityP->next)
+      {
+        eLinkInlineExpand(entityP, 0);
+      }
+    }
+    else
+      responseTree = orionldState.eLinkEntityV;
+
+    orionldState.responseTree = responseTree;
+  }
 
   return true;
 }
