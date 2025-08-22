@@ -51,6 +51,7 @@
 #include "orionld/serviceRoutines/orionldDeleteEntities.h"           // orionldDeleteEntities
 #include "orionld/serviceRoutines/orionldPatchAttribute.h"           // orionldPatchAttribute
 #include "orionld/serviceRoutines/orionldPutAttribute.h"             // orionldPutAttribute
+#include "orionld/serviceRoutines/orionldGetAttribute.h"             // orionldGetAttribute
 #include "orionld/serviceRoutines/orionldDeleteAttribute.h"          // orionldDeleteAttribute
 #include "orionld/serviceRoutines/orionldPostSubscriptions.h"        // orionldPostSubscriptions
 #include "orionld/serviceRoutines/orionldGetSubscriptions.h"         // orionldGetSubscriptions
@@ -308,6 +309,16 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
 
     serviceP->uriParams |= ORIONLD_URIPARAM_TYPELIST;
     serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
+  }
+  else if (serviceP->serviceRoutine == orionldGetAttribute)
+  {
+    serviceP->options   |= ORIONLD_SERVICE_OPTION_EXPAND_ATTR;
+
+    serviceP->uriParams |= ORIONLD_URIPARAM_OPTIONS;
+    serviceP->uriParams |= ORIONLD_URIPARAM_FORMAT;
+    serviceP->uriParams |= ORIONLD_URIPARAM_TYPELIST;
+    serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
+    serviceP->uriParams |= ORIONLD_URIPARAM_LANG;
   }
   else if (serviceP->serviceRoutine == orionldPutAttribute)
   {

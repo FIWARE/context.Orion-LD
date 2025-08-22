@@ -32,6 +32,7 @@
 #include "orionld/serviceRoutines/orionldPostRegistrations.h"
 #include "orionld/serviceRoutines/orionldGetEntity.h"
 #include "orionld/serviceRoutines/orionldGetEntities.h"
+#include "orionld/serviceRoutines/orionldGetAttribute.h"
 #include "orionld/serviceRoutines/orionldGetEntityTypes.h"
 #include "orionld/serviceRoutines/orionldPostBatchDelete.h"
 #include "orionld/serviceRoutines/orionldGetSubscriptions.h"
@@ -94,6 +95,7 @@
 static OrionLdRestServiceSimplified getServiceV[] =
 {
   { "/ngsi-ld/ex/v1/ping",                 orionldGetPing             },
+  { "/ngsi-ld/v1/entities/*/attrs/*",      orionldGetAttribute        },
   { "/ngsi-ld/v1/entities/*",              orionldGetEntity           },
   { "/ngsi-ld/v1/entities",                orionldGetEntities         },
   { "/ngsi-ld/v1/entityMaps/*",            orionldGetEntityMap        },
