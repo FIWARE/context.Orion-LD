@@ -1467,6 +1467,14 @@ MHD_Result mhdConnectionTreat(void)
   //
   // Enqueue response
   //
+  if (orionldState.verb == HTTP_HEAD)
+  {
+    orionldState.responseTree = NULL;
+
+    if (orionldState.httpStatusCode == 200)
+      orionldState.httpStatusCode = 204;
+  }
+
   mhdReply(orionldState.responseTree);    // orionldState.responsePayload freed and NULLed by mhdReply()
 
   PERFORMANCE(requestPartEnd);

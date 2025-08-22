@@ -1401,6 +1401,7 @@ MHD_Result mhdConnectionInit
       (orionldState.verb != HTTP_DELETE)  &&
       (orionldState.verb != HTTP_PATCH)   &&
       (orionldState.verb != HTTP_PUT)     &&
+      (orionldState.verb != HTTP_HEAD)    &&
       (orionldState.verb != HTTP_OPTIONS))
   {
     orionldError(OrionldBadRequestData, "Verb not supported by NGSI-LD", method, 400);
