@@ -3,6 +3,7 @@
   #XXXX Support for Linked Entities for Entity Retrieval
   #XXXX Support for Linked Entities for Entity Query (not the query language though)
   #XXXX Support for the 'valueType' sub-attribute for properties
+  #XXXX Support for the HEAD HTTP method
 
 ## Multi-Attribute (datasetId)
 ## DDS

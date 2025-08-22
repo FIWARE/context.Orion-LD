@@ -58,6 +58,8 @@ Verb verbGet(const char* method)
 
     if ((c0 == 'P') && (c1 == 'O') && (c2 == 'S') && (c3 == 'T') && (c4 == 0))
       return HTTP_POST;
+    if ((c0 == 'H') && (c1 == 'E') && (c2 == 'A') && (c3 == 'D') && (c4 == 0))
+      return HTTP_HEAD;
   }
   else if (sLen == 6)
   {

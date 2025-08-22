@@ -241,7 +241,7 @@ OrionLdRestServiceSimplifiedVector restServiceVV[] =
   { postServiceV,     postServices     },
   { deleteServiceV,   deleteServices   },
   { patchServiceV,    patchServices    },
-  { NULL,             0                },
+  { getServiceV,      getServices      },
   { optionsServiceV,  optionsServices  },
   { NULL,             0                },
   { NULL,             0                }
