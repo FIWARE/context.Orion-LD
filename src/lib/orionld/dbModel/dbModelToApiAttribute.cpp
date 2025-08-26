@@ -38,10 +38,14 @@ extern "C"
 #include "orionld/types/OrionldRenderFormat.h"                   // OrionldRenderFormat
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
+#include "orionld/common/traceLevels.h"                          // KTrace trace levels
 #include "orionld/common/numberToDate.h"                         // numberToDate
 #include "orionld/common/eqForDot.h"                             // eqForDot
 #include "orionld/common/langStringExtract.h"                    // langValueFix
+#include "orionld/dds/kjTreeLog.h"                               // kjTreeLog2
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
+#include "orionld/serviceRoutines/orionldGetAttribute.h"         // orionldGetAttribute
+#include "orionld/types/OrionLdRestService.h"                    // OrionLdRestService
 #include "orionld/kjTree/kjTreeLog.h"                            // kjTreeLog
 #include "orionld/kjTree/kjAttributeNormalizedToSimplified.h"    // kjAttributeNormalizedToSimplified
 #include "orionld/kjTree/kjAttributeNormalizedToConcise.h"       // kjAttributeNormalizedToConcise
@@ -249,6 +253,30 @@ void dbModelToApiLangPropertySimplified(KjNode* dbAttrP, const char* lang)
 
 // -----------------------------------------------------------------------------
 //
+// valueFieldName - FIXME: to its own module common/valueFieldName.cpp/h ?
+//
+static char* valueFieldName(KjNode* attrP)
+{
+  KjNode* typeP = kjLookup(attrP, "type");
+
+  if (typeP != NULL)
+  {
+    if      (strcmp(typeP->value.s, "Property")         == 0) return (char*) "value";
+    else if (strcmp(typeP->value.s, "Relationship")     == 0) return (char*) "object";
+    else if (strcmp(typeP->value.s, "GeoProperty")      == 0) return (char*) "value";
+    else if (strcmp(typeP->value.s, "VocabProperty")    == 0) return (char*) "vocab";
+    else if (strcmp(typeP->value.s, "LanguageProperty") == 0) return (char*) "languageMap";
+  }
+  else
+    LM_W(("No type in the attribute"));
+
+  return (char*) "value";
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // dbModelToApiAttribute2 -
 //
 KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs, OrionldRenderFormat renderFormat, const char* lang, bool compacted, OrionldProblemDetails* pdP)
@@ -445,8 +473,28 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
     }
     else
     {
-      // "Steal" the value node and rename it to have the attribute's name instead - that's all that's needed for SIMPLIFIED FORMAT
-      attrP = kjLookup(dbAttrP, "value");  // In the DB, all attributes have the "value" name.
+      KjNode* valueP = kjLookup(dbAttrP, "value");
+
+      kjTreeLog2(dbAttrP, "BEFORE", StSR);
+
+      if (orionldState.serviceP->serviceRoutine != orionldGetAttribute)
+      {
+        // "Steal" the value node and rename it to have the attribute's name instead - that's all that's needed for SIMPLIFIED FORMAT
+        attrP = valueP;  // In the DB, all attributes have the "value" name.
+      }
+      else
+      {
+        // Remove everything except the value, and change its name to "@none" - really, use attrTypeNodeP and get the name of the value field
+        char* valueName = valueFieldName(dbAttrP);
+
+        dbAttrP->value.firstChildP = valueP;
+        dbAttrP->lastChild         = valueP;
+        valueP->next               = NULL;
+        valueP->name               = valueName;
+        attrP = dbAttrP;
+      }
+
+      kjTreeLog2(attrP, "AFTER", StSR);
     }
 
     attrP->name = shortName;

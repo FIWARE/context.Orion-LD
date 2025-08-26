@@ -36,15 +36,66 @@ orionldStart CB -experimental
 # 03. GET the attribute p_i in Concise format
 # 04. GET the attribute p_i in Simplified format
 #
-# 11. GET the attribute p_o (it's a property with a JSON Object value)
-# 12. GET the attribute p_o with sysAttrs
-# 13. GET the attribute p_o in Concise format
-# 14. GET the attribute p_o in Simplified format
+# 11. GET the attribute p_f (it's a property with a JSON Float value)
+# 12. GET the attribute p_f with sysAttrs
+# 13. GET the attribute p_f in Concise format
+# 14. GET the attribute p_f in Simplified format
 #
-# 21. GET the attribute r_s (it's a relationship with a JSON String value)
-# 22. GET the attribute r_s with sysAttrs
-# 23. GET the attribute r_s in Concise format
-# 24. GET the attribute r_s in Simplified format
+# 21. GET the attribute p_b (it's a property with a JSON Boolean value)
+# 22. GET the attribute p_b with sysAttrs
+# 23. GET the attribute p_b in Concise format
+# 24. GET the attribute p_b in Simplified format
+#
+# 31. GET the attribute p_s (it's a property with a JSON String value)
+# 32. GET the attribute p_s with sysAttrs
+# 33. GET the attribute p_s in Concise format
+# 34. GET the attribute p_s in Simplified format
+#
+# 41. GET the attribute p_o (it's a property with a JSON Object value)
+# 42. GET the attribute p_o with sysAttrs
+# 43. GET the attribute p_o in Concise format
+# 44. GET the attribute p_o in Simplified format
+#
+# 51. GET the attribute p_a (it's a property with a JSON Array value)
+# 52. GET the attribute p_a with sysAttrs
+# 53. GET the attribute p_a in Concise format
+# 54. GET the attribute p_a in Simplified format
+#
+# 61. GET the attribute r_s (it's a relationship with a JSON String value)
+# 62. GET the attribute r_s with sysAttrs
+# 63. GET the attribute r_s in Concise format
+# 64. GET the attribute r_s in Simplified format
+#
+# 71. GET the attribute r_a (it's a relationship with a JSON Array value)
+# 72. GET the attribute r_a with sysAttrs
+# 73. GET the attribute r_a in Concise format
+# 74. GET the attribute r_a in Simplified format
+#
+# 81. GET the attribute v_s (it's a Vocab with a JSON String value)
+# 82. GET the attribute v_s with sysAttrs
+# 83. GET the attribute v_s in Concise format
+# 84. GET the attribute v_s in Simplified format   ------------- FAILS !!!
+#
+# 91. GET the attribute v_a (it's a Vocab with a JSON Array value)
+# 92. GET the attribute v_a with sysAttrs
+# 93. GET the attribute v_a in Concise format
+# 94. GET the attribute v_a in Simplified format   ------------- FAILS !!!
+#
+# 101. GET the attribute l_s (it's a Lang with a JSON String value)
+# 102. GET the attribute l_s with sysAttrs
+# 103. GET the attribute l_s in Concise format
+# 104. GET the attribute l_s in Simplified format   ------------- FAILS !!!
+#
+# 111. GET the attribute l_a (it's a Lang with a JSON Array value)
+# 112. GET the attribute l_a with sysAttrs
+# 113. GET the attribute l_a in Concise format
+# 114. GET the attribute l_a in Simplified format  ------------- FAILS !!!
+#
+# 121. GET the attribute j_o (it's a JsonProperty with a JSON Object value)
+# 122. GET the attribute j_o with sysAttrs
+# 123. GET the attribute j_o in Concise format
+# 124. GET the attribute j_o in Simplified format   ------------- FAILS !!!
+#
 #
 
 echo "00. Create an entity urn:E1 with one attribute per type"
@@ -57,6 +108,21 @@ payload='{
     "value": 12,
     "xtra": 1
   },
+  "p_f": {
+    "type": "Property",
+    "value": 3.14,
+    "xtra": 1
+  },
+  "p_b": {
+    "type": "Property",
+    "value": true,
+    "xtra": 1
+  },
+  "p_s": {
+    "type": "Property",
+    "value": "A String",
+    "xtra": 1
+  },
   "p_o": {
     "type": "Property",
     "value": {
@@ -65,14 +131,56 @@ payload='{
     },
     "xtra": 1
   },
+  "p_a": {
+    "type": "Property",
+    "value": [ "an", "array" ],
+    "xtra": 1
+  },
   "r_s": {
     "type": "Relationship",
     "object": "urn:E2",
     "xtra": 1
   },
-  "v": {
+  "r_a": {
+    "type": "Relationship",
+    "object": [ "urn:E2", "urn:E3" ],
+    "xtra": 1
+  },
+  "v_s": {
     "type": "VocabularyProperty",
-    "vocab": "sensor"
+    "vocab": "sensor",
+    "xtra": 1
+  },
+  "v_a": {
+    "type": "VocabularyProperty",
+    "vocab": [ "sensor", "sensor2" ],
+    "xtra": 1
+  },
+  "l_s": {
+    "type": "LanguageProperty",
+    "languageMap": {
+      "en": "one",
+      "es": "uno",
+      "sv": "ett"
+    },
+    "xtra": 1
+  },
+  "l_a": {
+    "type": "LanguageProperty",
+    "languageMap": {
+      "en": [ "one", "two" ],
+      "es": [ "uno", "dos" ],
+      "sv": [ "ett", "tva" ]
+    },
+    "xtra": 1
+  },
+  "j_o": {
+    "type": "JsonProperty",
+    "json": {
+      "this": 2,
+      "is": 3
+    },
+    "xtra": 1
   }
 }'
 orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
@@ -108,58 +216,337 @@ echo
 echo
 
 
-echo "11. GET the attribute p_o (it's a property with a JSON Object value)"
+echo "11. GET the attribute p_f (it's a property with a JSON Float value)"
+echo "==================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/p_f
+echo
+echo
+
+echo "12. GET the attribute p_f with sysAttrs"
+echo "======================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/p_f?options=sysAttrs
+echo
+echo
+
+
+echo "13. GET the attribute p_f in Concise format"
+echo "==========================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/p_f?format=concise
+echo
+echo
+
+
+echo "14. GET the attribute p_f in Simplified format"
+echo "=============================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/p_f?format=simplified
+echo
+echo
+
+
+echo "21. GET the attribute p_b (it's a property with a JSON Boolean value)"
+echo "====================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/p_b
+echo
+echo
+
+
+echo "22. GET the attribute p_b with sysAttrs"
+echo "======================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/p_b?options=sysAttrs
+echo
+echo
+
+
+echo "23. GET the attribute p_b in Concise format"
+echo "==========================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/p_b?format=concise
+echo
+echo
+
+
+echo "24. GET the attribute p_b in Simplified format"
+echo "=============================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/p_b?format=simplified
+echo
+echo
+
+
+echo "31. GET the attribute p_s (it's a property with a JSON Object value)"
+echo "===================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/p_s
+echo
+echo
+
+
+echo "32. GET the attribute p_s with sysAttrs"
+echo "======================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/p_s?options=sysAttrs
+echo
+echo
+
+
+echo "33. GET the attribute p_s in Concise format"
+echo "==========================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/p_s?format=concise
+echo
+echo
+
+
+echo "34. GET the attribute p_s in Simplified format"
+echo "=============================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/p_s?format=simplified
+echo
+echo
+
+
+echo "41. GET the attribute p_o (it's a property with a JSON Object value)"
 echo "===================================================================="
 orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/p_o
 echo
 echo
 
 
-echo "12. GET the attribute p_o with sysAttrs"
+echo "42. GET the attribute p_o with sysAttrs"
 echo "======================================="
 orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/p_o?options=sysAttrs
 echo
 echo
 
 
-echo "13. GET the attribute p_o in Concise format"
+echo "43. GET the attribute p_o in Concise format"
 echo "==========================================="
 orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/p_o?format=concise
 echo
 echo
 
 
-echo "14. GET the attribute p_o in Simplified format"
+echo "44. GET the attribute p_o in Simplified format"
 echo "=============================================="
 orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/p_o?format=simplified
 echo
 echo
 
 
-echo "21. GET the attribute r_s (it's a relationship with a JSON String value)"
+echo "51. GET the attribute p_a (it's a property with a JSON Array value)"
+echo "==================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/p_a
+echo
+echo
+
+
+echo "52. GET the attribute p_a with sysAttrs"
+echo "======================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/p_a?options=sysAttrs
+echo
+echo
+
+
+echo "53. GET the attribute p_a in Concise format"
+echo "==========================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/p_a?format=concise
+echo
+echo
+
+
+echo "54. GET the attribute p_a in Simplified format"
+echo "=============================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/p_a?format=simplified
+echo
+echo
+
+
+echo "61. GET the attribute r_s (it's a relationship with a JSON String value)"
 echo "========================================================================"
 orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/r_s
 echo
 echo
 
 
-echo "22. GET the attribute r_s with sysAttrs"
+echo "62. GET the attribute r_s with sysAttrs"
 echo "======================================="
 orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/r_s?options=sysAttrs
 echo
 echo
 
 
-echo "23. GET the attribute r_s in Concise format"
+echo "63. GET the attribute r_s in Concise format"
 echo "==========================================="
 orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/r_s?format=concise
 echo
 echo
 
 
-echo "24. GET the attribute r_s in Simplified format"
+echo "64. GET the attribute r_s in Simplified format"
 echo "=============================================="
 orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/r_s?format=simplified
+echo
+echo
+
+
+echo "71. GET the attribute r_a (it's a relationship with a JSON Array value)"
+echo "======================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/r_a
+echo
+echo
+
+
+echo "72. GET the attribute r_a with sysAttrs"
+echo "======================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/r_a?options=sysAttrs
+echo
+echo
+
+
+echo "73. GET the attribute r_a in Concise format"
+echo "==========================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/r_a?format=concise
+echo
+echo
+
+
+echo "74. GET the attribute r_a in Simplified format"
+echo "=============================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/r_a?format=simplified
+echo
+echo
+
+
+echo "81. GET the attribute v_s (it's a Vocab with a JSON String value)"
+echo "================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/v_s
+echo
+echo
+
+
+echo "82. GET the attribute v_s with sysAttrs"
+echo "======================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/v_s?options=sysAttrs
+echo
+echo
+
+
+echo "83. GET the attribute v_s in Concise format"
+echo "==========================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/v_s?format=concise
+echo
+echo
+
+
+echo "84. GET the attribute v_s in Simplified format"
+echo "=============================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/v_s?format=simplified
+echo
+echo
+
+
+echo "91. GET the attribute v_a (it's a Vocab with a JSON Array value)"
+echo "================================================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/v_a
+echo
+echo
+
+
+echo "92. GET the attribute v_a with sysAttrs"
+echo "======================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/v_a?options=sysAttrs
+echo
+echo
+
+
+echo "93. GET the attribute v_a in Concise format"
+echo "==========================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/v_a?format=concise
+echo
+echo
+
+
+echo "94. GET the attribute v_a in Simplified format"
+echo "=============================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/v_a?format=simplified
+echo
+echo
+
+
+echo "101. GET the attribute l_s (it's a Lang with a JSON String value)"
+echo "================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/l_s
+echo
+echo
+
+
+echo "102. GET the attribute l_s with sysAttrs"
+echo "========================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/l_s?options=sysAttrs
+echo
+echo
+
+
+echo "103. GET the attribute l_s in Concise format"
+echo "============================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/l_s?format=concise
+echo
+echo
+
+
+echo "104. GET the attribute l_s in Simplified format"
+echo "==============================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/l_s?format=simplified
+echo
+echo
+
+
+echo "111. GET the attribute l_a (it's a Lang with a JSON Array value)"
+echo "================================================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/l_a
+echo
+echo
+
+
+echo "112. GET the attribute l_a with sysAttrs"
+echo "========================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/l_a?options=sysAttrs
+echo
+echo
+
+
+echo "113. GET the attribute l_a in Concise format"
+echo "============================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/l_a?format=concise
+echo
+echo
+
+
+echo "114. GET the attribute l_a in Simplified format"
+echo "==============================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/l_a?format=simplified
+echo
+echo
+
+
+echo "121. GET the attribute j_o (it's a JsonProperty with a JSON Object value)"
+echo "========================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/j_o
+echo
+echo
+
+
+echo "122. GET the attribute j_o with sysAttrs"
+echo "========================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/j_o?options=sysAttrs
+echo
+echo
+
+
+echo "123. GET the attribute j_o in Concise format"
+echo "============================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/j_o?format=concise
+echo
+echo
+
+
+echo "124. GET the attribute j_o in Simplified format"
+echo "==============================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1/attrs/j_o?format=simplified
 echo
 echo
 
@@ -241,7 +628,208 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 }
 
 
-11. GET the attribute p_o (it's a property with a JSON Object value)
+11. GET the attribute p_f (it's a property with a JSON Float value)
+===================================================================
+HTTP/1.1 200 OK
+Content-Length: 69
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "type": "Property",
+    "value": 3.14,
+    "xtra": {
+        "type": "Property",
+        "value": 1
+    }
+}
+
+
+12. GET the attribute p_f with sysAttrs
+=======================================
+HTTP/1.1 200 OK
+Content-Length: 227
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "createdAt": "202REGEX(.*)Z",
+    "modifiedAt": "202REGEX(.*)Z",
+    "type": "Property",
+    "value": 3.14,
+    "xtra": {
+        "createdAt": "202REGEX(.*)Z",
+        "modifiedAt": "202REGEX(.*)Z",
+        "type": "Property",
+        "value": 1
+    }
+}
+
+
+13. GET the attribute p_f in Concise format
+===========================================
+HTTP/1.1 200 OK
+Content-Length: 23
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "value": 3.14,
+    "xtra": 1
+}
+
+
+14. GET the attribute p_f in Simplified format
+==============================================
+HTTP/1.1 200 OK
+Content-Length: 14
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "value": 3.14
+}
+
+
+21. GET the attribute p_b (it's a property with a JSON Boolean value)
+=====================================================================
+HTTP/1.1 200 OK
+Content-Length: 69
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "type": "Property",
+    "value": true,
+    "xtra": {
+        "type": "Property",
+        "value": 1
+    }
+}
+
+
+22. GET the attribute p_b with sysAttrs
+=======================================
+HTTP/1.1 200 OK
+Content-Length: 227
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "createdAt": "202REGEX(.*)Z",
+    "modifiedAt": "202REGEX(.*)Z",
+    "type": "Property",
+    "value": true,
+    "xtra": {
+        "createdAt": "202REGEX(.*)Z",
+        "modifiedAt": "202REGEX(.*)Z",
+        "type": "Property",
+        "value": 1
+    }
+}
+
+
+23. GET the attribute p_b in Concise format
+===========================================
+HTTP/1.1 200 OK
+Content-Length: 23
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "value": true,
+    "xtra": 1
+}
+
+
+24. GET the attribute p_b in Simplified format
+==============================================
+HTTP/1.1 200 OK
+Content-Length: 14
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "value": true
+}
+
+
+31. GET the attribute p_s (it's a property with a JSON Object value)
+====================================================================
+HTTP/1.1 200 OK
+Content-Length: 75
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "type": "Property",
+    "value": "A String",
+    "xtra": {
+        "type": "Property",
+        "value": 1
+    }
+}
+
+
+32. GET the attribute p_s with sysAttrs
+=======================================
+HTTP/1.1 200 OK
+Content-Length: 233
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "createdAt": "202REGEX(.*)Z",
+    "modifiedAt": "202REGEX(.*)Z",
+    "type": "Property",
+    "value": "A String",
+    "xtra": {
+        "createdAt": "202REGEX(.*)Z",
+        "modifiedAt": "202REGEX(.*)Z",
+        "type": "Property",
+        "value": 1
+    }
+}
+
+
+33. GET the attribute p_s in Concise format
+===========================================
+HTTP/1.1 200 OK
+Content-Length: 29
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "value": "A String",
+    "xtra": 1
+}
+
+
+34. GET the attribute p_s in Simplified format
+==============================================
+HTTP/1.1 200 OK
+Content-Length: 20
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "value": "A String"
+}
+
+
+41. GET the attribute p_o (it's a property with a JSON Object value)
 ====================================================================
 HTTP/1.1 200 OK
 Content-Length: 81
@@ -262,7 +850,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 }
 
 
-12. GET the attribute p_o with sysAttrs
+42. GET the attribute p_o with sysAttrs
 =======================================
 HTTP/1.1 200 OK
 Content-Length: 239
@@ -271,23 +859,23 @@ Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
-    "createdAt": "REGEX(.*)",
-    "modifiedAt": "REGEX(.*)",
+    "createdAt": "202REGEX(.*)Z",
+    "modifiedAt": "202REGEX(.*)Z",
     "type": "Property",
     "value": {
         "f": 3.14,
         "i": 1
     },
     "xtra": {
-        "createdAt": "REGEX(.*)",
-        "modifiedAt": "REGEX(.*)",
+        "createdAt": "202REGEX(.*)Z",
+        "modifiedAt": "202REGEX(.*)Z",
         "type": "Property",
         "value": 1
     }
 }
 
 
-13. GET the attribute p_o in Concise format
+43. GET the attribute p_o in Concise format
 ===========================================
 HTTP/1.1 200 OK
 Content-Length: 35
@@ -304,7 +892,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 }
 
 
-14. GET the attribute p_o in Simplified format
+44. GET the attribute p_o in Simplified format
 ==============================================
 HTTP/1.1 200 OK
 Content-Length: 26
@@ -320,7 +908,86 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 }
 
 
-21. GET the attribute r_s (it's a relationship with a JSON String value)
+51. GET the attribute p_a (it's a property with a JSON Array value)
+===================================================================
+HTTP/1.1 200 OK
+Content-Length: 79
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "type": "Property",
+    "value": [
+        "an",
+        "array"
+    ],
+    "xtra": {
+        "type": "Property",
+        "value": 1
+    }
+}
+
+
+52. GET the attribute p_a with sysAttrs
+=======================================
+HTTP/1.1 200 OK
+Content-Length: 237
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "createdAt": "202REGEX(.*)Z",
+    "modifiedAt": "202REGEX(.*)Z",
+    "type": "Property",
+    "value": [
+        "an",
+        "array"
+    ],
+    "xtra": {
+        "createdAt": "202REGEX(.*)Z",
+        "modifiedAt": "202REGEX(.*)Z",
+        "type": "Property",
+        "value": 1
+    }
+}
+
+
+53. GET the attribute p_a in Concise format
+===========================================
+HTTP/1.1 200 OK
+Content-Length: 33
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "value": [
+        "an",
+        "array"
+    ],
+    "xtra": 1
+}
+
+
+54. GET the attribute p_a in Simplified format
+==============================================
+HTTP/1.1 200 OK
+Content-Length: 24
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "value": [
+        "an",
+        "array"
+    ]
+}
+
+
+61. GET the attribute r_s (it's a relationship with a JSON String value)
 ========================================================================
 HTTP/1.1 200 OK
 Content-Length: 78
@@ -338,7 +1005,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 }
 
 
-22. GET the attribute r_s with sysAttrs
+62. GET the attribute r_s with sysAttrs
 =======================================
 HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
@@ -347,20 +1014,20 @@ Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
-    "createdAt": "REGEX(.*)",
-    "modifiedAt": "REGEX(.*)",
+    "createdAt": "202REGEX(.*)Z",
+    "modifiedAt": "202REGEX(.*)Z",
     "object": "urn:E2",
     "type": "Relationship",
     "xtra": {
-        "createdAt": "REGEX(.*)",
-        "modifiedAt": "REGEX(.*)",
+        "createdAt": "202REGEX(.*)Z",
+        "modifiedAt": "202REGEX(.*)Z",
         "type": "Property",
         "value": 1
     }
 }
 
 
-23. GET the attribute r_s in Concise format
+63. GET the attribute r_s in Concise format
 ===========================================
 HTTP/1.1 200 OK
 Content-Length: 28
@@ -374,7 +1041,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 }
 
 
-24. GET the attribute r_s in Simplified format
+64. GET the attribute r_s in Simplified format
 ==============================================
 HTTP/1.1 200 OK
 Content-Length: 19
@@ -384,6 +1051,512 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
     "object": "urn:E2"
+}
+
+
+71. GET the attribute r_a (it's a relationship with a JSON Array value)
+=======================================================================
+HTTP/1.1 200 OK
+Content-Length: 89
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "object": [
+        "urn:E2",
+        "urn:E3"
+    ],
+    "type": "Relationship",
+    "xtra": {
+        "type": "Property",
+        "value": 1
+    }
+}
+
+
+72. GET the attribute r_a with sysAttrs
+=======================================
+HTTP/1.1 200 OK
+Content-Length: 247
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "createdAt": "202REGEX(.*)Z",
+    "modifiedAt": "202REGEX(.*)Z",
+    "object": [
+        "urn:E2",
+        "urn:E3"
+    ],
+    "type": "Relationship",
+    "xtra": {
+        "createdAt": "202REGEX(.*)Z",
+        "modifiedAt": "202REGEX(.*)Z",
+        "type": "Property",
+        "value": 1
+    }
+}
+
+
+73. GET the attribute r_a in Concise format
+===========================================
+HTTP/1.1 200 OK
+Content-Length: 39
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "object": [
+        "urn:E2",
+        "urn:E3"
+    ],
+    "xtra": 1
+}
+
+
+74. GET the attribute r_a in Simplified format
+==============================================
+HTTP/1.1 200 OK
+Content-Length: 30
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "object": [
+        "urn:E2",
+        "urn:E3"
+    ]
+}
+
+
+81. GET the attribute v_s (it's a Vocab with a JSON String value)
+=================================================================
+HTTP/1.1 200 OK
+Content-Length: 78
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "type": "VocabProperty",
+    "vocab": "sensor",
+    "xtra": {
+        "type": "Property",
+        "value": 1
+    }
+}
+
+
+82. GET the attribute v_s with sysAttrs
+=======================================
+HTTP/1.1 200 OK
+Content-Length: 236
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "createdAt": "202REGEX(.*)Z",
+    "modifiedAt": "202REGEX(.*)Z",
+    "type": "VocabProperty",
+    "vocab": "sensor",
+    "xtra": {
+        "createdAt": "202REGEX(.*)Z",
+        "modifiedAt": "202REGEX(.*)Z",
+        "type": "Property",
+        "value": 1
+    }
+}
+
+
+83. GET the attribute v_s in Concise format
+===========================================
+HTTP/1.1 200 OK
+Content-Length: 27
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "vocab": "sensor",
+    "xtra": 1
+}
+
+
+84. GET the attribute v_s in Simplified format
+==============================================
+HTTP/1.1 200 OK
+Content-Length: 18
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "vocab": "sensor"
+}
+
+
+91. GET the attribute v_a (it's a Vocab with a JSON Array value)
+================================================================
+HTTP/1.1 200 OK
+Content-Length: 90
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "type": "VocabProperty",
+    "vocab": [
+        "sensor",
+        "sensor2"
+    ],
+    "xtra": {
+        "type": "Property",
+        "value": 1
+    }
+}
+
+
+92. GET the attribute v_a with sysAttrs
+=======================================
+HTTP/1.1 200 OK
+Content-Length: 248
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "createdAt": "202REGEX(.*)Z",
+    "modifiedAt": "202REGEX(.*)Z",
+    "type": "VocabProperty",
+    "vocab": [
+        "sensor",
+        "sensor2"
+    ],
+    "xtra": {
+        "createdAt": "202REGEX(.*)Z",
+        "modifiedAt": "202REGEX(.*)Z",
+        "type": "Property",
+        "value": 1
+    }
+}
+
+
+93. GET the attribute v_a in Concise format
+===========================================
+HTTP/1.1 200 OK
+Content-Length: 39
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "vocab": [
+        "sensor",
+        "sensor2"
+    ],
+    "xtra": 1
+}
+
+
+94. GET the attribute v_a in Simplified format
+==============================================
+HTTP/1.1 200 OK
+Content-Length: 30
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "vocab": [
+        "sensor",
+        "sensor2"
+    ]
+}
+
+
+101. GET the attribute l_s (it's a Lang with a JSON String value)
+=================================================================
+HTTP/1.1 200 OK
+Content-Length: 113
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "languageMap": {
+        "en": "one",
+        "es": "uno",
+        "sv": "ett"
+    },
+    "type": "LanguageProperty",
+    "xtra": {
+        "type": "Property",
+        "value": 1
+    }
+}
+
+
+102. GET the attribute l_s with sysAttrs
+========================================
+HTTP/1.1 200 OK
+Content-Length: 271
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "createdAt": "202REGEX(.*)Z",
+    "languageMap": {
+        "en": "one",
+        "es": "uno",
+        "sv": "ett"
+    },
+    "modifiedAt": "202REGEX(.*)Z",
+    "type": "LanguageProperty",
+    "xtra": {
+        "createdAt": "202REGEX(.*)Z",
+        "modifiedAt": "202REGEX(.*)Z",
+        "type": "Property",
+        "value": 1
+    }
+}
+
+
+103. GET the attribute l_s in Concise format
+============================================
+HTTP/1.1 200 OK
+Content-Length: 59
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "languageMap": {
+        "en": "one",
+        "es": "uno",
+        "sv": "ett"
+    },
+    "xtra": 1
+}
+
+
+104. GET the attribute l_s in Simplified format
+===============================================
+HTTP/1.1 200 OK
+Content-Length: 50
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "languageMap": {
+        "en": "one",
+        "es": "uno",
+        "sv": "ett"
+    }
+}
+
+
+111. GET the attribute l_a (it's a Lang with a JSON Array value)
+================================================================
+HTTP/1.1 200 OK
+Content-Length: 137
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "languageMap": {
+        "en": [
+            "one",
+            "two"
+        ],
+        "es": [
+            "uno",
+            "dos"
+        ],
+        "sv": [
+            "ett",
+            "tva"
+        ]
+    },
+    "type": "LanguageProperty",
+    "xtra": {
+        "type": "Property",
+        "value": 1
+    }
+}
+
+
+112. GET the attribute l_a with sysAttrs
+========================================
+HTTP/1.1 200 OK
+Content-Length: 295
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "createdAt": "202REGEX(.*)Z",
+    "languageMap": {
+        "en": [
+            "one",
+            "two"
+        ],
+        "es": [
+            "uno",
+            "dos"
+        ],
+        "sv": [
+            "ett",
+            "tva"
+        ]
+    },
+    "modifiedAt": "202REGEX(.*)Z",
+    "type": "LanguageProperty",
+    "xtra": {
+        "createdAt": "202REGEX(.*)Z",
+        "modifiedAt": "202REGEX(.*)Z",
+        "type": "Property",
+        "value": 1
+    }
+}
+
+
+113. GET the attribute l_a in Concise format
+============================================
+HTTP/1.1 200 OK
+Content-Length: 83
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "languageMap": {
+        "en": [
+            "one",
+            "two"
+        ],
+        "es": [
+            "uno",
+            "dos"
+        ],
+        "sv": [
+            "ett",
+            "tva"
+        ]
+    },
+    "xtra": 1
+}
+
+
+114. GET the attribute l_a in Simplified format
+===============================================
+HTTP/1.1 200 OK
+Content-Length: 74
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "languageMap": {
+        "en": [
+            "one",
+            "two"
+        ],
+        "es": [
+            "uno",
+            "dos"
+        ],
+        "sv": [
+            "ett",
+            "tva"
+        ]
+    }
+}
+
+
+121. GET the attribute j_o (it's a JsonProperty with a JSON Object value)
+=========================================================================
+HTTP/1.1 200 OK
+Content-Length: 85
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "json": {
+        "is": 3,
+        "this": 2
+    },
+    "type": "JsonProperty",
+    "xtra": {
+        "type": "Property",
+        "value": 1
+    }
+}
+
+
+122. GET the attribute j_o with sysAttrs
+========================================
+HTTP/1.1 200 OK
+Content-Length: 243
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "createdAt": "202REGEX(.*)Z",
+    "json": {
+        "is": 3,
+        "this": 2
+    },
+    "modifiedAt": "202REGEX(.*)Z",
+    "type": "JsonProperty",
+    "xtra": {
+        "createdAt": "202REGEX(.*)Z",
+        "modifiedAt": "202REGEX(.*)Z",
+        "type": "Property",
+        "value": 1
+    }
+}
+
+
+123. GET the attribute j_o in Concise format
+============================================
+HTTP/1.1 200 OK
+Content-Length: 35
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "json": {
+        "is": 3,
+        "this": 2
+    },
+    "xtra": 1
+}
+
+
+124. GET the attribute j_o in Simplified format
+===============================================
+HTTP/1.1 200 OK
+Content-Length: 26
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "json": {
+        "is": 3,
+        "this": 2
+    }
 }
 
 

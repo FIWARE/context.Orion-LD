@@ -46,30 +46,6 @@ extern "C"
 
 // -----------------------------------------------------------------------------
 //
-// valueFieldName - FIXME: to its own module common/valueFieldName.cpp/h
-//
-static char* valueFieldName(KjNode* attrP)
-{
-  KjNode* typeP = kjLookup(attrP, "type");
-
-  if (typeP != NULL)
-  {
-    if      (strcmp(typeP->value.s, "Property")         == 0) return (char*) "value";
-    else if (strcmp(typeP->value.s, "Relationship")     == 0) return (char*) "object";
-    else if (strcmp(typeP->value.s, "GeoProperty")      == 0) return (char*) "value";
-    else if (strcmp(typeP->value.s, "VocabProperty")    == 0) return (char*) "vocab";
-    else if (strcmp(typeP->value.s, "LanguageProperty") == 0) return (char*) "languageMap";
-  }
-  else
-    KT_W("KZ: No type in the attribute");
-
-  return (char*) "value";
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
 // orionldGetAttribute -
 //
 bool orionldGetAttribute(void)
@@ -133,50 +109,9 @@ bool orionldGetAttribute(void)
     return false;
   }
 
-  kjTreeLog2(dbAttrP, "DB Model", StSR);
   OrionldProblemDetails pd;
-  KjNode* apiAttrP = dbModelToApiAttribute2(dbAttrP, NULL, orionldState.uriParamOptions.sysAttrs, orionldState.out.format, orionldState.uriParams.lang, false, &pd);
-
-  if (orionldState.out.format == RF_SIMPLIFIED)
-  {
-    orionldState.responseTree = kjObject(orionldState.kjsonP, NULL);
-
-    apiAttrP->name = valueFieldName(dbAttrP);
-    kjChildAdd(orionldState.responseTree, apiAttrP);
-  }
-  else
-    orionldState.responseTree = apiAttrP;
-
-  kjTreeLog2(apiAttrP, "API Model", StSR);
-
-#if 0
-  //
-  // Transform the attribute according to orionldState.out.format, lang, and sysAttrs
-  //
-  char* lang     = orionldState.uriParams.lang;
-  bool  sysAttrs = orionldState.uriParamOptions.sysAttrs;
-
-
-  //
-  // Set the responseTree KjNode pointer to point to the attribute (mongocEntityLookup returns the entire entity)
-  //
-  if (typeP != NULL)
-  {
-    if (orionldState.out.format == RF_SIMPLIFIED)
-    {
-      // Get the value (or object or ...)
-
-      orionldState.responseTree = kjObject(orionldState.kjsonP, NULL);
-      kjChildAdd(orionldState.responseTree, valueP);
-    }
-    else if (orionldState.out.format == RF_CONCISE)
-    {
-      // kjChildRemove(apiAttrP, typeP);
-      ntocAttribute(apiAttrP, lang, sysAttrs);
-    }
-  }
-#endif
-
+  orionldState.responseTree   = dbModelToApiAttribute2(dbAttrP, NULL, orionldState.uriParamOptions.sysAttrs, orionldState.out.format, orionldState.uriParams.lang, false, &pd);
   orionldState.httpStatusCode = 200;
+
   return true;
 }
