@@ -412,12 +412,18 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
   bool    conciseAsKeyValues = false;
   KjNode* attrTypeNodeP      = kjLookup(dbAttrP, "type");
 
-  if ((attrTypeNodeP != NULL) && (strcmp(attrTypeNodeP->value.s, "VocabularyProperty") == 0))
+  if (attrTypeNodeP == NULL)
+  {
+    LM_E(("Database Error (attribute without type in database)", dbAttrP->name));
+    orionldError(OrionldInternalError, "Database Error (attribute without type in database)", dbAttrP->name, 500);
+    return NULL;
+  }
+
+  if (strcmp(attrTypeNodeP->value.s, "VocabularyProperty") == 0)
     attrTypeNodeP->value.s = (char*) "VocabProperty";
 
   if ((renderFormat == RF_CONCISE) && (sysAttrs == false))
   {
-    attrTypeNodeP = kjLookup(dbAttrP, "type");
     if ((strcmp(attrTypeNodeP->value.s, "Property") == 0) || (strcmp(attrTypeNodeP->value.s, "GeoProperty") == 0))
     {
       KjNode* mdP = kjLookup(dbAttrP, "md");
@@ -428,9 +434,6 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
 
   if ((renderFormat == RF_SIMPLIFIED) || (conciseAsKeyValues == true))
   {
-    if (attrTypeNodeP == NULL)
-      attrTypeNodeP = kjLookup(dbAttrP, "type");
-
     if (strcmp(attrTypeNodeP->value.s, "LanguageProperty") == 0)
     {
       dbModelToApiLangPropertySimplified(dbAttrP, lang);
@@ -503,21 +506,14 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
   {
     kjTreeLog(dbAttrP, "DB Attr", LmtSR);
     KjNode* mdsP    = NULL;
-    KjNode* typeP   = (attrTypeNodeP == NULL)? kjLookup(dbAttrP, "type") : attrTypeNodeP;
 
-    if (typeP == NULL)
-    {
-      LM_E(("Database Error (attribute without type in database)", dbAttrP->name));
-      orionldError(OrionldInternalError, "Database Error (attribute without type in database)", dbAttrP->name, 500);
-      return NULL;
-    }
     attrP = kjObject(orionldState.kjsonP, shortName);
 
-    OrionldAttributeType attrType = orionldAttributeType(typeP->value.s);
-    kjChildRemove(dbAttrP, typeP);
+    OrionldAttributeType attrType = orionldAttributeType(attrTypeNodeP->value.s);
+    kjChildRemove(dbAttrP, attrTypeNodeP);
 
     if (renderFormat == RF_NORMALIZED)  // For CONCISE we don't want the attribute type
-      kjChildAdd(attrP, typeP);
+      kjChildAdd(attrP, attrTypeNodeP);
 
     KjNode* nodeP = dbAttrP->value.firstChildP;
     KjNode* next;
@@ -555,7 +551,7 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
             KjNode* langNodeP = kjLookup(nodeP, lang);
 
             if (renderFormat == RF_NORMALIZED)  // For CONCISE the attribute type is not present
-              typeP->value.s = (char*) "Property";
+              attrTypeNodeP->value.s = (char*) "Property";
 
             if (langNodeP == NULL)
               langNodeP = kjLookup(nodeP, "@none");  // Try @none if not found
