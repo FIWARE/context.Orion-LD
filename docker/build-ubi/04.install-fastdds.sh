@@ -34,7 +34,7 @@ mkdir /opt/Fast-DDS
 cd /opt/Fast-DDS
 git clone https://github.com/eProsima/foonathan_memory_vendor.git
 cd foonathan_memory_vendor
-git checkout master
+git checkout v1.3.1
 mkdir build
 cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_SHARED_LIBS=ON
@@ -47,7 +47,7 @@ cmake --build . --target install
 cd /opt/Fast-DDS
 git clone https://github.com/eProsima/Fast-CDR.git
 cd Fast-CDR
-git checkout master
+git checkout v2.3.0
 mkdir build
 cd build
 cmake ..
@@ -60,7 +60,7 @@ cmake --build . --target install
 cd /opt/Fast-DDS
 git clone https://github.com/eProsima/Fast-DDS.git
 cd Fast-DDS
-git checkout feature/json-deserialize
+git checkout v3.3.0
 mkdir build
 cd build
 
@@ -80,7 +80,7 @@ cmake --build . --target install
 cd /opt/Fast-DDS
 git clone https://github.com/eProsima/dev-utils.git
 cd dev-utils
-git checkout main
+git checkout v1.3.0
 
 mkdir -p build/cmake_utils
 cd build/cmake_utils
@@ -100,7 +100,7 @@ cmake --build . --target install
 cd /opt/Fast-DDS
 git clone https://github.com/eProsima/DDS-Pipe.git
 cd DDS-Pipe
-git checkout efc83a42e9bc8922ecd84a0e424ccd2e4fddd50e
+git checkout v1.3.0
 
 
 cd ddspipe_core
@@ -131,7 +131,7 @@ cd /opt/Fast-DDS
 git clone https://github.com/eProsima/FIWARE-DDS-Enabler.git
 cd FIWARE-DDS-Enabler
 git fetch -a
-git checkout feature/publish  # Version from 2025-06-26
+git checkout v1.0.0
 
 # ./install_dds_module.sh
 
