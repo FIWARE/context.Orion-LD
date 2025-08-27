@@ -31,6 +31,7 @@ SET (SOURCES
     orionldGetEntitiesPage.cpp
     orionldGetEntitiesLocal.cpp
     orionldGetEntity.cpp
+    orionldGetAttribute.cpp
     orionldGetEntityMap.cpp
     orionldDeleteEntityMap.cpp
     orionldGetSubscriptions.cpp

@@ -38,10 +38,14 @@ extern "C"
 #include "orionld/types/OrionldRenderFormat.h"                   // OrionldRenderFormat
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
+#include "orionld/common/traceLevels.h"                          // KTrace trace levels
 #include "orionld/common/numberToDate.h"                         // numberToDate
 #include "orionld/common/eqForDot.h"                             // eqForDot
 #include "orionld/common/langStringExtract.h"                    // langValueFix
+#include "orionld/dds/kjTreeLog.h"                               // kjTreeLog2
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
+#include "orionld/serviceRoutines/orionldGetAttribute.h"         // orionldGetAttribute
+#include "orionld/types/OrionLdRestService.h"                    // OrionLdRestService
 #include "orionld/kjTree/kjTreeLog.h"                            // kjTreeLog
 #include "orionld/kjTree/kjAttributeNormalizedToSimplified.h"    // kjAttributeNormalizedToSimplified
 #include "orionld/kjTree/kjAttributeNormalizedToConcise.h"       // kjAttributeNormalizedToConcise
@@ -68,7 +72,7 @@ void dbModelToApiAttribute(KjNode* dbAttrP, bool sysAttrs, bool eqsForDots)
   // But, if I do that here, then PATCH Entity2 stops working - it NEEDS the = for it's TREE thingy ...
   // Other service routines, like BATCH Upsert, need the eqForDot to be done, so ...
   //
-  // if (eqsForDots == true)  // Only PATCH Entity2 sets eqsForDots == false - also doewsn't for for ~10 functests
+  // if (eqsForDots == true)  // Only PATCH Entity2 sets eqsForDots == false - also doesn't for for ~10 functests
   //   eqForDot(dbAttrP->name);
 
   for (unsigned int ix = 0; ix < K_VEC_SIZE(unwanted); ix++)
@@ -249,6 +253,30 @@ void dbModelToApiLangPropertySimplified(KjNode* dbAttrP, const char* lang)
 
 // -----------------------------------------------------------------------------
 //
+// valueFieldName - FIXME: to its own module common/valueFieldName.cpp/h ?
+//
+static char* valueFieldName(KjNode* attrP)
+{
+  KjNode* typeP = kjLookup(attrP, "type");
+
+  if (typeP != NULL)
+  {
+    if      (strcmp(typeP->value.s, "Property")         == 0) return (char*) "value";
+    else if (strcmp(typeP->value.s, "Relationship")     == 0) return (char*) "object";
+    else if (strcmp(typeP->value.s, "GeoProperty")      == 0) return (char*) "value";
+    else if (strcmp(typeP->value.s, "VocabProperty")    == 0) return (char*) "vocab";
+    else if (strcmp(typeP->value.s, "LanguageProperty") == 0) return (char*) "languageMap";
+  }
+  else
+    LM_W(("No type in the attribute"));
+
+  return (char*) "value";
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // dbModelToApiAttribute2 -
 //
 KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs, OrionldRenderFormat renderFormat, const char* lang, bool compacted, OrionldProblemDetails* pdP)
@@ -384,12 +412,18 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
   bool    conciseAsKeyValues = false;
   KjNode* attrTypeNodeP      = kjLookup(dbAttrP, "type");
 
-  if ((attrTypeNodeP != NULL) && (strcmp(attrTypeNodeP->value.s, "VocabularyProperty") == 0))
+  if (attrTypeNodeP == NULL)
+  {
+    LM_E(("Database Error (attribute without type in database)", dbAttrP->name));
+    orionldError(OrionldInternalError, "Database Error (attribute without type in database)", dbAttrP->name, 500);
+    return NULL;
+  }
+
+  if (strcmp(attrTypeNodeP->value.s, "VocabularyProperty") == 0)
     attrTypeNodeP->value.s = (char*) "VocabProperty";
 
   if ((renderFormat == RF_CONCISE) && (sysAttrs == false))
   {
-    attrTypeNodeP = kjLookup(dbAttrP, "type");
     if ((strcmp(attrTypeNodeP->value.s, "Property") == 0) || (strcmp(attrTypeNodeP->value.s, "GeoProperty") == 0))
     {
       KjNode* mdP = kjLookup(dbAttrP, "md");
@@ -400,9 +434,6 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
 
   if ((renderFormat == RF_SIMPLIFIED) || (conciseAsKeyValues == true))
   {
-    if (attrTypeNodeP == NULL)
-      attrTypeNodeP = kjLookup(dbAttrP, "type");
-
     if (strcmp(attrTypeNodeP->value.s, "LanguageProperty") == 0)
     {
       dbModelToApiLangPropertySimplified(dbAttrP, lang);
@@ -445,8 +476,28 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
     }
     else
     {
-      // "Steal" the value node and rename it to have the attribute's name instead - that's all that's needed for SIMPLIFIED FORMAT
-      attrP = kjLookup(dbAttrP, "value");  // In the DB, all attributes have the "value" name.
+      KjNode* valueP = kjLookup(dbAttrP, "value");
+
+      kjTreeLog2(dbAttrP, "BEFORE", StSR);
+
+      if (orionldState.serviceP->serviceRoutine != orionldGetAttribute)
+      {
+        // "Steal" the value node and rename it to have the attribute's name instead - that's all that's needed for SIMPLIFIED FORMAT
+        attrP = valueP;  // In the DB, all attributes have the "value" name.
+      }
+      else
+      {
+        // Remove everything except the value, and change its name to "@none" - really, use attrTypeNodeP and get the name of the value field
+        char* valueName = valueFieldName(dbAttrP);
+
+        dbAttrP->value.firstChildP = valueP;
+        dbAttrP->lastChild         = valueP;
+        valueP->next               = NULL;
+        valueP->name               = valueName;
+        attrP = dbAttrP;
+      }
+
+      kjTreeLog2(attrP, "AFTER", StSR);
     }
 
     attrP->name = shortName;
@@ -455,21 +506,14 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
   {
     kjTreeLog(dbAttrP, "DB Attr", LmtSR);
     KjNode* mdsP    = NULL;
-    KjNode* typeP   = (attrTypeNodeP == NULL)? kjLookup(dbAttrP, "type") : attrTypeNodeP;
 
-    if (typeP == NULL)
-    {
-      LM_E(("Database Error (attribute without type in database)", dbAttrP->name));
-      orionldError(OrionldInternalError, "Database Error (attribute without type in database)", dbAttrP->name, 500);
-      return NULL;
-    }
     attrP = kjObject(orionldState.kjsonP, shortName);
 
-    OrionldAttributeType attrType = orionldAttributeType(typeP->value.s);
-    kjChildRemove(dbAttrP, typeP);
+    OrionldAttributeType attrType = orionldAttributeType(attrTypeNodeP->value.s);
+    kjChildRemove(dbAttrP, attrTypeNodeP);
 
     if (renderFormat == RF_NORMALIZED)  // For CONCISE we don't want the attribute type
-      kjChildAdd(attrP, typeP);
+      kjChildAdd(attrP, attrTypeNodeP);
 
     KjNode* nodeP = dbAttrP->value.firstChildP;
     KjNode* next;
@@ -507,7 +551,7 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
             KjNode* langNodeP = kjLookup(nodeP, lang);
 
             if (renderFormat == RF_NORMALIZED)  // For CONCISE the attribute type is not present
-              typeP->value.s = (char*) "Property";
+              attrTypeNodeP->value.s = (char*) "Property";
 
             if (langNodeP == NULL)
               langNodeP = kjLookup(nodeP, "@none");  // Try @none if not found

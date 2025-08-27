@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_
-#define SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_
+#ifndef SRC_LIB_ORIONLD_SERVICEROUTINES_ORIONLDGETATTRIBUTE_H_
+#define SRC_LIB_ORIONLD_SERVICEROUTINES_ORIONLDGETATTRIBUTE_H_
 
 /*
 *
-* Copyright 2022 FIWARE Foundation e.V.
+* Copyright 2025 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -30,32 +30,8 @@
 
 // ----------------------------------------------------------------------------
 //
-// Trace Levels -
+// orionldGetAttribute -
 //
-typedef enum OrionldTraceLevels
-{
-  StMhdInit         = 100,
+extern bool orionldGetAttribute(void);
 
-  StRequest         = 200,
-  StSR              = 201,
-
-  StDds             = 1001,
-  StDdsPublish      = 1002,
-  StDdsNotification = 1003,
-  StDdsLibInfo      = 1004,
-  StDdsLibDebug     = 1005,
-  StDdsConfig       = 1006,
-  StDdsTypes        = 1007,
-  StDdsTypeCache    = 1008,
-  StDdsPrePopulate  = 1009,
-  StDdsSrCalls      = 1010,
-
-  StLinked          = 300,
-  StLinkedInline    = 301,
-  StLinkedInline2   = 302,
-
-  StDump            = 5001,
-  StDdsDump         = 5002
-} OrionldTraceLevels;
-
-#endif  // SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_
+#endif  // SRC_LIB_ORIONLD_SERVICEROUTINES_ORIONLDGETATTRIBUTE_H_

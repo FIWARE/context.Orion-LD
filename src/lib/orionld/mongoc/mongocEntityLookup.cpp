@@ -51,8 +51,10 @@ extern "C"
 //   * orionldPostEntities - Only to make sure the entity does not already exists (mongocEntityExists should be implemented and used instead)
 //   * orionldPostEntity   - The entire DB Entity is needed as it is later used as base for the "merge" with the payload body
 //   * orionldGetEntity    - filtering over attributes (?attrs=A1,A2,...An&?geometryProperty=GP)
+//   * orionldGetAttribute -
 //
 // So, this function is QUITE NEEDED, just as it is.
+// And, BTW, mongocEntityRetrieve is ONLY used by Legacy GET Entity
 //
 // The other one, mongocEntityRetrieve, does much more than just DB. It needs to be be REMOVED.
 // mongocEntityRetrieve is only used by legacyGetEntity() which is being deprecated anyway.
