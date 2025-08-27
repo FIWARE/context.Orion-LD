@@ -67,6 +67,7 @@ KjNode* postDdsPub(int* statusCodeP)
   }
 
   KT_V("Publishing on DDS for the topic %s:%s", ddsTopicType, ddsTopicName);
+  kjTreeLog2(orionldState.requestTree, "Publish Body", StDds);
   // orionldState.requestTree->name = (char*) ddsTopicName;
   ddsPublishEntity(ddsTopicType, ddsTopicName, entityType, entityId, orionldState.requestTree);
 

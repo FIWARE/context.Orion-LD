@@ -236,24 +236,19 @@ void ddsTopicNotification(const char* topicName, const char* typeName, const cha
 
 
 
-// #define NEW_EPROSIMA_LIB
-
-#ifdef NEW_EPROSIMA_LIB
-#define RETURN_TYPE       bool
-#define RETURN_STATEMENT  return true
-#else
-#define RETURN_TYPE void
-#define RETURN_STATEMENT  return
-#endif
-
 // -----------------------------------------------------------------------------
 //
 // ddsTypeRequest -
 //
-static RETURN_TYPE ddsTypeRequest(const char* typeName, unsigned char*& serializedTypeInternal, uint32_t& serializedTypeInternalSize)
+static bool ddsTypeRequest
+(
+  const char*                               typeName,
+  std::unique_ptr<const unsigned char []>&  serializedTypeInternal,
+  uint32_t&                                 serializedTypeInternalSize
+)
 {
-  KT_T(StDds, "Got a type request callback ('%s', '%s', %d)", typeName, serializedTypeInternal, serializedTypeInternalSize);
-  RETURN_STATEMENT;
+  KT_T(StDds, "Got a type request callback ('%s', %d)", typeName, serializedTypeInternalSize);
+  return true;
 }
 
 
@@ -262,10 +257,10 @@ static RETURN_TYPE ddsTypeRequest(const char* typeName, unsigned char*& serializ
 //
 // ddsTopicRequest -
 //
-static RETURN_TYPE ddsTopicRequest(const char* topicName, char*& typeName, char*& serializedQos)
+static bool ddsTopicRequest(const char* topicName, std::string& typeName, std::string& serializedQos)
 {
-  KT_T(StDds, "Got a type request callback ('%s', '%s', '%s')", topicName, typeName, serializedQos);
-  RETURN_STATEMENT;
+  KT_T(StDds, "Got a type request callback ('%s', '%s', '%s')", topicName, typeName.c_str(), serializedQos.c_str());
+  return true;
 }
 
 
@@ -287,7 +282,7 @@ static void ddsLog(const char* fileName, int lineNo, const char* funcName, int c
 
 
 
-std::unique_ptr<eprosima::ddsenabler::DDSEnabler> ddsEnabler;
+std::shared_ptr<eprosima::ddsenabler::DDSEnabler> ddsEnabler;
 // -----------------------------------------------------------------------------
 //
 // main -
@@ -349,36 +344,26 @@ int main(int argC, char* argV[])
 
   mhdInit(ldPort);
 
-  KT_D("Calling create_dds_enabler('%s')", configFileP);
+  KT_W("Calling create_dds_enabler('%s')", configFileP);
   eprosima::utils::Log::ReportFilenames(true);
 
-#ifdef NEW_EPROSIMA_LIB
-  eprosima::ddsenabler::participants::ddsCallbacks callbacks =
+  eprosima::ddsenabler::DdsCallbacks callbacks =
   {
-    ddsNotification,
     ddsTypeNotification,
     ddsTopicNotification,
+    ddsNotification,
     ddsTypeRequest,
-    ddsTopicRequest,
-    ddsLog
+    ddsTopicRequest
   };
-  eprosima::ddsenabler::participants::serviceCallbacks serviceCallbacks;
-  eprosima::ddsenabler::participants::actionCallbacks  actionCallbacks;
-  bool r = eprosima::ddsenabler::create_dds_enabler(configFile,
-                                                    callbacks,
-                                                    serviceCallbacks,
-                                                    actionCallbacks,
+  eprosima::ddsenabler::CallbackSet callbackSet =
+  {
+    ddsLog,
+    callbacks
+  };
+  KT_W("configFile: '%s'", configFileP);
+  bool r = eprosima::ddsenabler::create_dds_enabler(configFileP,
+                                                    callbackSet,
                                                     ddsEnabler);
-#else
-  bool r = eprosima::ddsenabler::create_dds_enabler(configFile,
-                                                    ddsNotification,
-                                                    ddsTypeNotification,
-                                                    ddsTopicNotification,
-                                                    ddsTypeRequest,
-                                                    ddsTopicRequest,
-                                                    ddsLog,
-                                                    ddsEnabler);
-#endif
 
   if (r == false)
     KT_X(1, "Unable to create the DDS Enabler");

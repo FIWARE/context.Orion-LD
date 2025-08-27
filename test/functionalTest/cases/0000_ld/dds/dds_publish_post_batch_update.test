@@ -41,9 +41,9 @@ ftClientStart -t 0-5000
 # 06. POST urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value + one more => no DDS publish
 # 07. GET urn:ngsi-ld:camera:cam1 from CB, see the update
 # 08. Dump/Reset the ftClient for DDS notifications - see no PATCH in DDS
-# 09. POST urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value except for one missing field => DDS publish
+# 09. POST urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value except for one missing field => no DDS publish
 # 10. GET urn:ngsi-ld:camera:cam1 from CB, see the update
-# 11. Dump/Reset the ftClient for DDS notifications - see the update in DDS
+# 11. Dump/Reset the ftClient for DDS notifications - see no update in DDS
 #
 
 echo "01. Ask FT to publish an entity urn:ngsi-ld:camera:cam1 on topic 'P1'"
@@ -94,7 +94,7 @@ echo
 
 echo "05. Dump/Reset the ftClient for DDS notifications - see the PATCH in DDS"
 echo "========================================================================"
-sleep 1
+sleep 2
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck -X DELETE
 echo
@@ -138,8 +138,8 @@ echo
 echo
 
 
-echo "09. POST urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value except for one missing field => DDS publish"
-echo "====================================================================================================================="
+echo "09. POST urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value except for one missing field => no DDS publish"
+echo "========================================================================================================================"
 payload='[
   {
     "id": "urn:ngsi-ld:camera:cam1",
@@ -165,9 +165,38 @@ echo
 echo
 
 
-echo "11. Dump/Reset the ftClient for DDS notifications - see the update in DDS"
-echo "========================================================================="
-sleep 1
+echo "11. Dump/Reset the ftClient for DDS notifications - see no update in DDS"
+echo "========================================================================"
+#sleep 1
+orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
+echo
+echo
+
+
+echo "12. POST urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value => DDS publish"
+echo "========================================================================================"
+payload='[
+  {
+    "id": "urn:ngsi-ld:camera:cam1",
+    "shutterSpeed": {
+      "value": {
+        "s": "step 12",
+        "f": 12.12,
+        "b": false,
+        "ia": [ 12, 12 ],
+        "i": 12
+      }
+    }
+  }
+]'
+orionCurl --url /ngsi-ld/v1/entityOperations/update --payload "$payload"
+echo
+echo
+
+
+echo "13. Dump/Reset the ftClient for DDS notifications see the update in DDS"
+echo "======================================================================="
+#sleep 1
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
 echo
 echo
@@ -352,8 +381,8 @@ Date: REGEX(.*)
 
 
 
-09. POST urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value except for one missing field => DDS publish
-=====================================================================================================================
+09. POST urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value except for one missing field => no DDS publish
+========================================================================================================================
 HTTP/1.1 204 No Content
 Date: REGEX(.*)
 
@@ -389,8 +418,24 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 }
 
 
-11. Dump/Reset the ftClient for DDS notifications - see the update in DDS
-=========================================================================
+11. Dump/Reset the ftClient for DDS notifications - see no update in DDS
+========================================================================
+HTTP/1.1 200 OK
+Content-Length: 0
+Date: REGEX(.*)
+
+
+
+
+12. POST urn:ngsi-ld:camera:cam1, attribute shutterSpeed - complete value => DDS publish
+========================================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+13. Dump/Reset the ftClient for DDS notifications see the update in DDS
+=======================================================================
 HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
 Date: REGEX(.*)
@@ -400,14 +445,14 @@ Date: REGEX(.*)
     "P1": {
       "data": {
         "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0": {
-          "b": true,
-          "f": 9.9,
-          "i": 0,
+          "b": false,
+          "f": 12.12,
+          "i": 12,
           "ia": [
-            9,
-            9
+            12,
+            12
           ],
-          "s": "step 09"
+          "s": "step 12"
         }
       },
       "type": "NgsildSample"

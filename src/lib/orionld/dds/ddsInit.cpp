@@ -25,6 +25,7 @@
 #include <unistd.h>                                         // access
 #include <stdlib.h>                                         // malloc
 #include <memory>                                           // for std::unique_ptr
+#include <string>                                           // for std::string
 
 #include "ddsenabler/dds_enabler_runner.hpp"                // dds enabler
 
@@ -57,33 +58,23 @@ extern "C"
 //
 // ddsEnabler -
 //
-std::unique_ptr<eprosima::ddsenabler::DDSEnabler>  ddsEnabler;
+std::shared_ptr<eprosima::ddsenabler::DDSEnabler>  ddsEnabler;
 
 
-
-// #define NEW_EPROSIMA_LIB
-
-#ifdef NEW_EPROSIMA_LIB
-#define RETURN_TYPE       bool
-#define RETURN_STATEMENT  return true
-#else
-#define RETURN_TYPE void
-#define RETURN_STATEMENT  return
-#endif
 
 // -----------------------------------------------------------------------------
 //
 // ddsTypeRequest -
 //
-static RETURN_TYPE ddsTypeRequest  // DdsTypeQuery
+static bool ddsTypeRequest  // DdsTypeQuery
 (
-  const char*      typeName,
-  unsigned char*&  serializedTypeInternal,
-  uint32_t&        serializedTypeInternalSize
+  const char*                              typeName,
+  std::unique_ptr<const unsigned char[]>&  serializedTypeInternal,
+  uint32_t&                                serializedTypeInternalSize
 )
 {
-  KT_T(StDdsTypes, "Got a type query/request callback ('%s', '%s', %d)", typeName, serializedTypeInternal, serializedTypeInternalSize);
-  RETURN_STATEMENT;;
+  KT_T(StDdsTypes, "Got a type query/request callback ('%s', %d)", typeName, serializedTypeInternalSize);
+  return true;;
 }
 
 
@@ -92,18 +83,18 @@ static RETURN_TYPE ddsTypeRequest  // DdsTypeQuery
 //
 // ddsTopicRequest -
 //
-static RETURN_TYPE ddsTopicRequest(const char* topicName, char*& typeName, char*& serializedQos)  // DdsTopicRequest
+static bool ddsTopicRequest(const char* topicName, std::string& typeName, std::string& serializedQos)  // DdsTopicRequest
 {
-  KT_T(StDds, "Got a type request callback ('%s', '%s', '%s')", topicName, typeName, serializedQos);
+  KT_T(StDds, "Got a type request callback ('%s', '%s', '%s')", topicName, typeName, serializedQos.c_str());
 
   char* entityId      = NULL;
   char* entityType    = NULL;
   char* attrShortName = configDdsTopicToAttribute(topicName, &entityId, &entityType);
 
   if (attrShortName == NULL)
-    typeName = NULL;
+    typeName = "";
   // else, look up the ddsTypeName of the attribute IN MONGO !!!   Better add it to config file in ddsTopicNotification
-  RETURN_STATEMENT;
+  return true;
 }
 
 
@@ -143,33 +134,24 @@ int ddsInit(Kjson* kjP)
 
   eprosima::utils::Log::ReportFilenames(true);
 
-#ifdef NEW_EPROSIMA_LIB
-  eprosima::ddsenabler::participants::ddsCallbacks callbacks =
+  eprosima::ddsenabler::DdsCallbacks callbacks =
   {
-    ddsNotification,
     ddsTypeNotification,
     ddsTopicNotification,
+    ddsNotification,
     ddsTypeRequest,
-    ddsTopicRequest,
-    ddsLog
+    ddsTopicRequest
   };
-  eprosima::ddsenabler::participants::serviceCallbacks serviceCallbacks;
-  eprosima::ddsenabler::participants::actionCallbacks  actionCallbacks;
+  eprosima::ddsenabler::CallbackSet callbackSet =
+  {
+    ddsLog,
+    callbacks
+  };
+
+
   bool r = eprosima::ddsenabler::create_dds_enabler(configFile,
-                                                    callbacks,
-                                                    serviceCallbacks,
-                                                    actionCallbacks,
+                                                    callbackSet,
                                                     ddsEnabler);
-#else
-  bool r = eprosima::ddsenabler::create_dds_enabler(configFile,
-                                                    ddsNotification,
-                                                    ddsTypeNotification,
-                                                    ddsTopicNotification,
-                                                    ddsTypeRequest,
-                                                    ddsTopicRequest,
-                                                    ddsLog,
-                                                    ddsEnabler);
-#endif
 
   if (r == false)
     KT_X(1, "Unable to create the DDS Enabler");

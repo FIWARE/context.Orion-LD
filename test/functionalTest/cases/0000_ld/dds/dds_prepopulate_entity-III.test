@@ -27,9 +27,9 @@ Test of pre-population of entities from config file
 $REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" --ddsTopic "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.orionld
 $REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" --ddsTopic "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.ftClient
 ftClientStop
-ftClientStart -t 0-5000
+ftClientStart -t 0-5000 -v
 dbInit CB
-orionldStart CB -mongocOnly -wip dds
+orionldStart CB -mongocOnly -wip dds -kt 0-5000
 
 --SHELL--
 #
@@ -37,10 +37,10 @@ orionldStart CB -mongocOnly -wip dds
 #   At startup, the broker pre-populates all entities/attributes found in the config file, field dds.ngsild.topics
 #
 # 01. GET all entities from the broker - make sure all entities/attributes from the config file are present
-# 02. Ask the ftClient to publish on topic P1 => update the value of shutterSpeed of urn:ngsi-ld:camera:cam1
-# 03. Retrieve urn:ngsi-ld:camera:cam1 from the broker and see the update from ftClient via DDS
-# 04. PATCH urn:ngsi-ld:camera:cam1, changing the value of shutterSpeed - the ftClient should get the sample
-# 05. DDS-Dump the ftClient and see the PATCH from step 04
+# 01b. Ask the ftClient to publish on topic P1 => update the value of shutterSpeed of urn:ngsi-ld:camera:cam1
+# 02. Retrieve urn:ngsi-ld:camera:cam1 from the broker and see the update from ftClient via DDS
+# 03. PATCH urn:ngsi-ld:camera:cam1, changing the value of shutterSpeed - the ftClient should get the sample
+# 03b. DDS-Dump the ftClient and see the PATCH from step 04
 #
 
 echo "01. GET all entities from the broker - make sure all entities/attributes from the config file are present"
@@ -50,8 +50,8 @@ echo
 echo
 
 
-echo "02. Ask the ftClient to publish on topic P1 => update the value of shutterSpeed of urn:ngsi-ld:camera:cam1"
-echo "=========================================================================================================="
+echo "01b. Ask the ftClient to publish on topic P1 => update the value of shutterSpeed of urn:ngsi-ld:camera:cam1"
+echo "==========================================================================================================="
 payload='{
   "s": "step 02"
 }'
@@ -60,7 +60,7 @@ echo
 echo
 
 
-echo "03. Retrieve urn:ngsi-ld:camera:cam1 from the broker and see the update from ftClient via DDS"
+echo "02. Retrieve urn:ngsi-ld:camera:cam1 from the broker and see the update from ftClient via DDS"
 echo "============================================================================================="
 sleep .3
 orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:camera:cam1
@@ -68,12 +68,16 @@ echo
 echo
 
 
-echo "04. PATCH urn:ngsi-ld:camera:cam1, changing the value of shutterSpeed - the ftClient should get the sample"
+echo "03. PATCH urn:ngsi-ld:camera:cam1, changing the value of shutterSpeed - the ftClient should get the sample"
 echo "=========================================================================================================="
 payload='{
   "shutterSpeed": {
     "value": {
-      "s": "step 04"
+      "s": "step 04",
+      "i": 4,
+      "f": 4.4,
+      "b": true,
+      "ia": [ 4, 4 ]
     }
   }
 }'
@@ -82,9 +86,9 @@ echo
 echo
 
 
-echo "05. DDS-Dump the ftClient and see the PATCH from step 04"
-echo "========================================================"
-sleep .3
+echo "03b. DDS-Dump the ftClient and see the PATCH from step 04"
+echo "========================================================="
+sleep 1
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
 echo
 echo
@@ -127,14 +131,14 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 ]
 
 
-02. Ask the ftClient to publish on topic P1 => update the value of shutterSpeed of urn:ngsi-ld:camera:cam1
-==========================================================================================================
+01b. Ask the ftClient to publish on topic P1 => update the value of shutterSpeed of urn:ngsi-ld:camera:cam1
+===========================================================================================================
 HTTP/1.1 204 No Content
 Date: REGEX(.*)
 
 
 
-03. Retrieve urn:ngsi-ld:camera:cam1 from the broker and see the update from ftClient via DDS
+02. Retrieve urn:ngsi-ld:camera:cam1 from the broker and see the update from ftClient via DDS
 =============================================================================================
 HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
@@ -181,15 +185,15 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 }
 
 
-04. PATCH urn:ngsi-ld:camera:cam1, changing the value of shutterSpeed - the ftClient should get the sample
+03. PATCH urn:ngsi-ld:camera:cam1, changing the value of shutterSpeed - the ftClient should get the sample
 ==========================================================================================================
 HTTP/1.1 204 No Content
 Date: REGEX(.*)
 
 
 
-05. DDS-Dump the ftClient and see the PATCH from step 04
-========================================================
+03b. DDS-Dump the ftClient and see the PATCH from step 04
+=========================================================
 HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
 Date: REGEX(.*)
@@ -218,12 +222,12 @@ Date: REGEX(.*)
     "P1": {
       "data": {
         "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0": {
-          "b": false,
-          "f": 0,
-          "i": 0,
+          "b": true,
+          "f": 4.4,
+          "i": 4,
           "ia": [
-            0,
-            0
+            4,
+            4
           ],
           "s": "step 04"
         }
