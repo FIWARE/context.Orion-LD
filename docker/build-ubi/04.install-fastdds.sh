@@ -20,21 +20,27 @@
 # For those usages not covered by this license please contact with
 # iot_support at tid dot es
 
+echo -e "\e[1;32m Builder: installing DDS Libraries \e[0m"
 dnf config-manager --set-enabled powertools
 
 yum -y install tinyxml2-devel boost-devel yaml-cpp-devel yaml-cpp
-yum -y --nogpgcheck install https://dl.fedoraproject.org/pub/fedora/linux/releases/39/Everything/x86_64/os/Packages/a/asio-devel-1.28.1-2.fc39.x86_64.rpm
 
+echo -e "\e[1;32m Builder: installing ASIO for DDS Libraries \e[0m"
+# yum -y --nogpgcheck install https://dl.fedoraproject.org/pub/fedora/linux/releases/39/Everything/x86_64/os/Packages/a/asio-devel-1.28.1-2.fc39.x86_64.rpm
+wget https://ftp.rpmfind.net/linux/opensuse/ports/i586/tumbleweed/repo/oss/i586/asio-devel-1.30.2-1.3.i586.rpm --no-check-certificate
+rpm -i asio-devel-1.30.2-1.3.i586.rpm
+echo -e "\e[1;32m Builder: installed ASIO for DDS Libraries \e[0m"
 # Fast-DDS
 mkdir /opt/Fast-DDS
 
 #
 # foonathan_memory_vendor
 #
+echo "04.install-fastdds.sh: foonathan_memory_vendor"
 cd /opt/Fast-DDS
 git clone https://github.com/eProsima/foonathan_memory_vendor.git
 cd foonathan_memory_vendor
-git checkout master
+git checkout v1.3.1
 mkdir build
 cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_SHARED_LIBS=ON
@@ -44,10 +50,11 @@ cmake --build . --target install
 #
 # Fast-CDR
 #
+echo "04.install-fastdds.sh: Fast-CDR"
 cd /opt/Fast-DDS
 git clone https://github.com/eProsima/Fast-CDR.git
 cd Fast-CDR
-git checkout master
+git checkout v2.3.0
 mkdir build
 cd build
 cmake ..
@@ -57,10 +64,11 @@ cmake --build . --target install
 #
 # Fast-DDS
 #
+echo "04.install-fastdds.sh: Fast-DDS"
 cd /opt/Fast-DDS
 git clone https://github.com/eProsima/Fast-DDS.git
 cd Fast-DDS
-git checkout feature/json-deserialize
+git checkout v3.3.0
 mkdir build
 cd build
 
@@ -77,16 +85,19 @@ cmake --build . --target install
 #
 # DDS Dev Utils (2 packages in one)
 #
+echo "04.install-fastdds.sh: dev-utils"
 cd /opt/Fast-DDS
 git clone https://github.com/eProsima/dev-utils.git
 cd dev-utils
-git checkout main
+git checkout v1.3.0
 
+echo "04.install-fastdds.sh: cmake_utils"
 mkdir -p build/cmake_utils
 cd build/cmake_utils
 cmake ../../cmake_utils
 cmake --build . --target install
 
+echo "04.install-fastdds.sh: cpp_utils"
 cd -
 mkdir -p build/cpp_utils
 cd build/cpp_utils
@@ -97,24 +108,28 @@ cmake --build . --target install
 #
 # DDS Pipe (3 packages in one)
 #
+echo "04.install-fastdds.sh: DDS-Pipe"
 cd /opt/Fast-DDS
 git clone https://github.com/eProsima/DDS-Pipe.git
 cd DDS-Pipe
-git checkout efc83a42e9bc8922ecd84a0e424ccd2e4fddd50e
+git checkout v1.3.0
 
 
+echo "04.install-fastdds.sh: ddspipe_core"
 cd ddspipe_core
 mkdir build
 cd build
 cmake ..
 cmake --build . --target install
 
+echo "04.install-fastdds.sh: ddspipe_participants"
 cd ../../ddspipe_participants
 mkdir build
 cd build
 cmake ..
 cmake --build . --target install
 
+echo "04.install-fastdds.sh: ddspipe_yaml"
 cd ../../ddspipe_yaml
 mkdir build
 cd build
@@ -125,29 +140,34 @@ cmake --build . --target install
 #
 # DDS Enabler
 #
+echo "04.install-fastdds.sh: FIWARE-DDS-Enabler"
 yum -y install lz4-devel libzstd-devel
 
 cd /opt/Fast-DDS
 git clone https://github.com/eProsima/FIWARE-DDS-Enabler.git
 cd FIWARE-DDS-Enabler
-git fetch -a
-git checkout feature/publish  # Version from 2025-06-26
+git checkout v1.0.0
 
 # ./install_dds_module.sh
 
+echo "04.install-fastdds.sh: ddsenabler_participants"
 mkdir -p build/ddsenabler_participants
 cd build/ddsenabler_participants
 cmake ../../ddsenabler_participants
 cmake --build . --target install
 cd ../..
 
+echo "04.install-fastdds.sh: ddsenabler_yaml"
 mkdir -p build/ddsenabler_yaml
 cd build/ddsenabler_yaml
 cmake ../../ddsenabler_yaml
 cmake --build . --target install
 cd ../..
  
+echo "04.install-fastdds.sh: ddsenabler"
 mkdir -p build/ddsenabler
 cd build/ddsenabler
 cmake ../../ddsenabler
 cmake --build . --target install
+
+echo "04.install-fastdds.sh: DONE"
