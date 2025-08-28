@@ -844,12 +844,14 @@ function ftClientStart()
   _verbose=""
   _traceLevels=""
   _logDir=""
+  _dds=""
 
   while [ "$#" != 0 ]
   do
     if   [ "$1" == "--port" ];            then _port=$2; shift;
     elif [ "$1" == "--logDir" ];          then _logDir="--logDir $2"; shift;
     elif [ "$1" == "--verbose" ];         then _verbose="-v";
+    elif [ "$1" == "--dds" ];             then _dds="--dds";
     elif [ "$1" == "-v" ];                then _verbose="-v";
     elif [ "$1" == "-t" ];                then _traceLevels="-t $2"; shift;
     else
@@ -880,7 +882,7 @@ function ftClientStart()
 
   logMsg "Starting the FT Client on port $_port ($_verbose $_traceLevels)"
   which ftClient >> $LOG_FILE
-  ftClient --port $_port $_verbose $_traceLevels $_logDir &
+  ftClient --port $_port $_verbose $_traceLevels $_logDir $_dds &
 
   _port=0
   _verbose=""

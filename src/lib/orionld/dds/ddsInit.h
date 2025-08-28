@@ -38,7 +38,7 @@ extern "C"
 //
 // ddsEnabler -
 //
-extern std::unique_ptr<eprosima::ddsenabler::DDSEnabler>  ddsEnabler;
+extern std::shared_ptr<eprosima::ddsenabler::DDSEnabler>  ddsEnabler;
 
 
 
