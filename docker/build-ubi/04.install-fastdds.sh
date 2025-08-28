@@ -28,7 +28,7 @@ yum -y install tinyxml2-devel boost-devel yaml-cpp-devel yaml-cpp
 echo -e "\e[1;32m Builder: installing ASIO for DDS Libraries \e[0m"
 # yum -y --nogpgcheck install https://dl.fedoraproject.org/pub/fedora/linux/releases/39/Everything/x86_64/os/Packages/a/asio-devel-1.28.1-2.fc39.x86_64.rpm
 wget https://ftp.rpmfind.net/linux/opensuse/ports/i586/tumbleweed/repo/oss/i586/asio-devel-1.30.2-1.3.i586.rpm --no-check-certificate
-yum -y --nogpgcheck asio-devel-1.30.2-1.3.i586.rpm
+rpm -i asio-devel-1.30.2-1.3.i586.rpm
 echo -e "\e[1;32m Builder: installed ASIO for DDS Libraries \e[0m"
 # Fast-DDS
 mkdir /opt/Fast-DDS
