@@ -171,5 +171,3 @@ cmake ../../ddsenabler
 cmake --build . --target install
 
 echo "04.install-fastdds.sh: DONE"
-
-eturn 0
