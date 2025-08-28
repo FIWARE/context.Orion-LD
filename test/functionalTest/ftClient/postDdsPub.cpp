@@ -39,6 +39,7 @@ extern "C"
 
 
 extern __thread KjNode* uriParams;
+extern bool             ddsSupport;
 
 
 
@@ -48,6 +49,12 @@ extern __thread KjNode* uriParams;
 //
 KjNode* postDdsPub(int* statusCodeP)
 {
+  if (ddsSupport == false)
+  {
+    *statusCodeP = 501;
+    return ftErrorResponse(501, "DDS Support not enabled", "restart with --dds");
+  }
+
   kjTreeLog2(uriParams, "uriParams", StDds);
 
   KjNode*      ddsTopicTypeNodeP  = (uriParams         != NULL)? kjLookup(uriParams, "ddsTopicType") : NULL;

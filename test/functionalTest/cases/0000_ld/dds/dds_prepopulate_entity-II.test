@@ -27,8 +27,9 @@ Test of pre-population of entities from config file
 $REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" --ddsTopic "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.orionld
 $REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" --ddsTopic "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.ftClient
 ftClientStop
-ftClientStart -t 0-5000
-ftClientStart -t 0-5000 --port $FT2_PORT --logDir $FT2_LOG_DIR
+ftClientStart -t 0-5000 --dds
+ftClientStart -t 0-5000 --port $FT2_PORT --logDir $FT2_LOG_DIR --dds
+
 #
 # 01. Ask FT1 to publish on P1 (FT2 will receive?)
 # 02. Ask FT2 to publish on P2 (FT1 will receive?)

@@ -29,7 +29,7 @@ $REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,s
 dbInit CB
 orionldStart CB -mongocOnly -wip dds
 ftClientStop
-ftClientStart -t 0-5000
+ftClientStart -t 0-5000 --dds
 
 --SHELL--
 

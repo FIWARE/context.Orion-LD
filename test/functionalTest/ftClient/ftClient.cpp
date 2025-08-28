@@ -79,6 +79,7 @@ unsigned int         mhdMaxConnections;
 bool                 distributed;
 unsigned long long   inReqPayloadMaxSize  = 64 * 1024;
 char                 configFile[512];
+bool                 ddsSupport       = false;
 
 
 
@@ -97,6 +98,7 @@ KArg kargs[] =
   { "--logToScreen",      "-ls",    KaBool,    &logToScreen,          KaOpt, KFALSE,     KA_NL,    KA_NL,      "log to screen"                                     },
   { "--fixme",            "-fix",   KaBool,    &fixme,                KaOpt, KFALSE,     KA_NL,    KA_NL,      "FIXME messages"                                    },
   { "--config",           "-cfg",   KaString,  &configFile,           KaOpt, NULL,       KA_NL,    KA_NL,      "Config File"                                       },
+  { "--dds",              "-dds",   KaBool,    &ddsSupport,           KaOpt, KFALSE,     KA_NL,    KA_NL,      "DDS Support"                                       },
 
   //
   // Broker options
@@ -242,9 +244,9 @@ void ddsTopicNotification(const char* topicName, const char* typeName, const cha
 //
 static bool ddsTypeRequest
 (
-  const char*                               typeName,
-  std::unique_ptr<const unsigned char []>&  serializedTypeInternal,
-  uint32_t&                                 serializedTypeInternalSize
+  const char*                             typeName,
+  std::unique_ptr<const unsigned char[]>& serializedTypeInternal,
+  uint32_t&                               serializedTypeInternalSize
 )
 {
   KT_T(StDds, "Got a type request callback ('%s', %d)", typeName, serializedTypeInternalSize);
@@ -344,31 +346,31 @@ int main(int argC, char* argV[])
 
   mhdInit(ldPort);
 
-  KT_W("Calling create_dds_enabler('%s')", configFileP);
-  eprosima::utils::Log::ReportFilenames(true);
-
-  eprosima::ddsenabler::DdsCallbacks callbacks =
+  if (ddsSupport == true)
   {
-    ddsTypeNotification,
-    ddsTopicNotification,
-    ddsNotification,
-    ddsTypeRequest,
-    ddsTopicRequest
-  };
-  eprosima::ddsenabler::CallbackSet callbackSet =
-  {
-    ddsLog,
-    callbacks
-  };
-  KT_W("configFile: '%s'", configFileP);
-  bool r = eprosima::ddsenabler::create_dds_enabler(configFileP,
-                                                    callbackSet,
-                                                    ddsEnabler);
+    eprosima::utils::Log::ReportFilenames(true);
+    eprosima::ddsenabler::DdsCallbacks callbacks =
+      {
+        ddsTypeNotification,
+        ddsTopicNotification,
+        ddsNotification,
+        ddsTypeRequest,
+        ddsTopicRequest
+      };
+    eprosima::ddsenabler::CallbackSet callbackSet =
+      {
+        ddsLog,
+        callbacks
+      };
+    bool r = eprosima::ddsenabler::create_dds_enabler(configFileP,
+                                                      callbackSet,
+                                                      ddsEnabler);
 
-  if (r == false)
-    KT_X(1, "Unable to create the DDS Enabler");
+    if (r == false)
+      KT_X(1, "Unable to create the DDS Enabler");
 
-  KT_D("DDS Enabler created");
+    KT_D("DDS Enabler created");
+  }
 
   while (1)
   {

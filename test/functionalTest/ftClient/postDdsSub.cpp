@@ -45,6 +45,7 @@ extern "C"
 //  ddsDumpArray - accumulating data from DDS notifications
 //
 extern KjNode* ddsDumpArray;
+extern bool    ddsSupport;
 
 
 
@@ -100,6 +101,12 @@ extern __thread KjNode* uriParams;
 //
 KjNode* postDdsSub(int* statusCodeP)
 {
+  if (ddsSupport == false)
+  {
+    *statusCodeP = 501;
+    return ftErrorResponse(501, "DDS Support not enabled", "restart with --dds");
+  }
+
 #if 0
   KjNode*      ddsTopicTypeNodeP  = (uriParams         != NULL)? kjLookup(uriParams, "ddsTopicType") : NULL;
   const char*  ddsTopicType       = (ddsTopicTypeNodeP != NULL)? ddsTopicTypeNodeP->value.s : NULL;
