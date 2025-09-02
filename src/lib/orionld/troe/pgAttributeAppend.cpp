@@ -232,7 +232,7 @@ void pgAttributeAppend
         LM_W(("TRoE buffer to small for string attribute value, truncating"));
         // String in buf will be no valid SQL insert command. So truncate valueNodeP->value.s to fit into buf
         int max_value_length = bufSize - (chars_written - strlen(valueNodeP->value.s)) - 1; // -1 for null terminator
-        snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, '%s', 'String', '%.*s', null, null, null, null, null, null, null, null, null, '%s')",
+        snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, '%s', 'String', '%.*s', null, null, null, null, null, null, null, null, null, null, '%s')",
                comma, instanceId, attributeName, opMode, entityId, observedAt, hasSubProperties, unitCode, datasetId, max_value_length, valueNodeP->value.s, orionldState.requestTimeString);
       } 
     }
