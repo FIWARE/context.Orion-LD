@@ -220,7 +220,7 @@ static void ddsTypeNotification
   KT_T(StDds, "o serializedType:              %s", serializedType);
   KT_T(StDds, "o serializedTypeInternal:      %s", serializedTypeInternal);
   KT_T(StDds, "o serializedTypeInternalSize:  %d", serializedTypeInternalSize);
-  KT_T(StDds, "o dataPlaceholder:             %s", dataPlaceholder);
+  KT_T(StDds, "o dataPlaceholder:             %s", dataPlaceholder);              // NOTE: use this field for 'DDS Type Awareness'
   KT_T(StDds, "Nothing done, for now at least");
   KT_T(StDds, "----------------------------------------");
 }
