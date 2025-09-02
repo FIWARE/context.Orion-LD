@@ -36,7 +36,6 @@ MAX_TRIES=${CB_MAX_TRIES:-3}
 export CB_CONTEXT_SERVER_DELAY=${CB_CONTEXT_SERVER_DELAY:-3}
 
 
-
 # -----------------------------------------------------------------------------
 #
 # Log file for debugging
@@ -987,7 +986,6 @@ function fileCleanup()
   then
     olddir=$PWD
     cd $dir
-
     rm $filename.name               2> /dev/null
     rm $filename.shellInit          2> /dev/null
     rm $filename.shellInit.*        2> /dev/null
@@ -1003,6 +1001,7 @@ function fileCleanup()
     rm $filename.regexpect.sorted   2> /dev/null
     rm $filename.blockSortDiff.out  2> /dev/null
     rm $filename.diff               2> /dev/null
+    rm $filename.$BROKER.log        2> /dev/null
 
     cd /tmp
     \rm -f accumulator_*_stdout
@@ -1416,7 +1415,7 @@ function runTest()
     file=$(basename $path .test)
     if [ -f /tmp/$BROKER.log ]
     then
-      cp /tmp/$BROKER.log $file.$BROKER.log
+      cp /tmp/$BROKER.log $dirname/$file.$BROKER.log
     fi
     runTestStatus="test-failed"
   fi
