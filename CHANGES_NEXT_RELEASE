@@ -1,10 +1,12 @@
 ## Fixed Issues:
+  #XXXX: Relationships that are arrays were not saved to Postgres
+
 ## New Features:
-  #XXXX Support for Linked Entities for Entity Retrieval
-  #XXXX Support for Linked Entities for Entity Query (not the query language though)
-  #XXXX Support for the 'valueType' sub-attribute for properties
-  #XXXX Support for the HEAD HTTP method
-  #XXXX Support for GET Attribute (local only and no support for datasetId)
+  #XXXX: Support for Linked Entities for Entity Retrieval
+  #XXXX: Support for Linked Entities for Entity Query (not the query language though)
+  #XXXX: Support for the 'valueType' sub-attribute for properties
+  #XXXX: Support for the HEAD HTTP method
+  #XXXX: Support for GET Attribute (local only and no support for datasetId)
 
 ## Multi-Attribute (datasetId)
 ## DDS

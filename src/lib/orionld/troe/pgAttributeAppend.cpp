@@ -125,23 +125,18 @@ void pgAttributeAppend
       snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, '%s', 'Relationship', '%s', null, null, null, null, null, null, null, null, null, null, '%s')",
                comma, instanceId, attributeName, opMode, entityId, observedAt, hasSubProperties, unitCode, datasetId, valueNodeP->value.s, orionldState.requestTimeString);
     }
-#if 0
-    else
+    else if (valueNodeP->type == KjArray)
     {
-      //
-      // FIXME: Right now, we can't enter here. See 'skip' variable in pgAttributeBuild()
-      //
-
-      // WARNING: If an attribute is HUGE, it may not have room enough in a buffer allocated by kaAlloc (there's a max-size)
-      int          renderedValueSize   = kjFastRenderSize(valueNodeP);
-      char*        renderedValue       = kaAlloc(&orionldState.kalloc, renderedValueSize);
+      int    renderedValueSize = kjFastRenderSize(valueNodeP);
+      char*  renderedValue     = kaAlloc(&orionldState.kalloc, renderedValueSize);
 
       kjFastRender(valueNodeP, renderedValue);
 
-      snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, '%s', 'RelationshipArray', null, null, null, null, '%s', null, null, null, null, null, null, '%s')",
+      snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, '%s', 'Relationship', null, null, null, null, '%s', null, null, null, null, null, null, '%s')",
                comma, instanceId, attributeName, opMode, entityId, observedAt, hasSubProperties, unitCode, datasetId, renderedValue, orionldState.requestTimeString);
     }
-#endif
+    else
+      LM_W(("Relationships of type '%s' aren't allowed", kjValueType(valueNodeP->type)));
   }
   else if (strcmp(type, "GeoProperty") == 0)
   {
@@ -225,19 +220,17 @@ void pgAttributeAppend
   {
     if (valueNodeP->type == KjString)
     {
-      long neededSize = strlen(attributeName) + strlen(valueNodeP->value.s) + 512; // +512 for the rest of the string
-      
+      long neededSize = strlen(attributeName) + strlen(valueNodeP->value.s) + 512;  // + 512 for the rest of the string
+
       // try to write into buf, if not enough space, allocate a new buffer
-     
-      if (neededSize >= bufSize) 
+      if (neededSize >= bufSize)
       {
         buf = kaAlloc(&orionldState.kalloc, neededSize);
         bufSize = neededSize;
       }
-      
+
       snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, '%s', 'String', '%s', null, null, null, null, null, null, null, null, null, null, '%s')",
                comma, instanceId, attributeName, opMode, entityId, observedAt, hasSubProperties, unitCode, datasetId, valueNodeP->value.s, orionldState.requestTimeString);
-
     }
     else if (valueNodeP->type == KjBoolean)
     {
@@ -268,13 +261,13 @@ void pgAttributeAppend
       int          renderedValueSize   = kjFastRenderSize(valueNodeP);
       char*        renderedValue       = kaAlloc(&orionldState.kalloc, renderedValueSize);
 
-      // if kaAlloc returns null-pointer, the attribute is to huge -> do not try to write to null-pointer, report error and return
+      // if kaAlloc returns null-pointer, the attribute is too big -> do not try to write to null-pointer, report error and return
       if (renderedValue == NULL)
       {
-        LM_E(("error allocating %d for attribute value", renderedValueSize));
+        LM_E(("error allocating %d bytes for attribute value", renderedValueSize));
         return;
       }
-      
+
       kjFastRender(valueNodeP, renderedValue);
 
       snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, '%s', 'Compound', null, null, null, null, '%s', null, null, null, null, null, null, '%s')",
