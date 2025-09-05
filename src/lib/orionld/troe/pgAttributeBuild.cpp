@@ -158,8 +158,10 @@ bool pgAttributeBuild
     {
       if (nodeP->type == KjString)
         valueNodeP = nodeP;
+      else if (nodeP->type == KjArray)
+        valueNodeP = nodeP;
       else
-        skip = (char*) "RelationshipArray";
+        skip = (char*) "RelationshipInvalidJsonType";
     }
     else if (strcmp(nodeP->name, "languageMap") == 0)  skip = (char*) "LanguageProperty";
     else if (strcmp(nodeP->name, "vocab")       == 0)  skip = (char*) "VocabProperty";
