@@ -225,16 +225,19 @@ void pgAttributeAppend
   {
     if (valueNodeP->type == KjString)
     {
-      int chars_written = snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, '%s', 'String', '%s', null, null, null, null, null, null, null, null, null, null, '%s')",
-               comma, instanceId, attributeName, opMode, entityId, observedAt, hasSubProperties, unitCode, datasetId, valueNodeP->value.s, orionldState.requestTimeString);
-      if (chars_written >= bufSize) 
+      long neededSize = strlen(attributeName) + strlen(valueNodeP->value.s) + 512; // +512 for the rest of the string
+      
+      // try to write into buf, if not enough space, allocate a new buffer
+     
+      if (neededSize >= bufSize) 
       {
-        LM_W(("TRoE buffer to small for string attribute value, truncating"));
-        // String in buf will be no valid SQL insert command. So truncate valueNodeP->value.s to fit into buf
-        int max_value_length = bufSize - (chars_written - strlen(valueNodeP->value.s)) - 1; // -1 for null terminator
-        snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, '%s', 'String', '%.*s', null, null, null, null, null, null, null, null, null, null, '%s')",
-               comma, instanceId, attributeName, opMode, entityId, observedAt, hasSubProperties, unitCode, datasetId, max_value_length, valueNodeP->value.s, orionldState.requestTimeString);
-      } 
+        buf = kaAlloc(&orionldState.kalloc, neededSize);
+        bufSize = neededSize;
+      }
+      
+      snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, '%s', 'String', '%s', null, null, null, null, null, null, null, null, null, null, '%s')",
+               comma, instanceId, attributeName, opMode, entityId, observedAt, hasSubProperties, unitCode, datasetId, valueNodeP->value.s, orionldState.requestTimeString);
+
     }
     else if (valueNodeP->type == KjBoolean)
     {
