@@ -569,7 +569,7 @@ bool distOpSend(DistOp* distOpP, const char* dateHeader, const char* xForwardedF
 
   if (orionldState.uriParams.offset != 0)
   {
-    char offsetStr[12];
+    char offsetStr[32];
     snprintf(offsetStr, sizeof(offsetStr), "%d", orionldState.uriParams.offset);
     uriParamAdd(&urlParts, "offset", offsetStr, -1);
   }
