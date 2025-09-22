@@ -560,7 +560,7 @@ bool distOpSend(DistOp* distOpP, const char* dateHeader, const char* xForwardedF
     }
   }
 
-  if (orionldState.uriParams.limit != 20)
+  if ((orionldState.uriParams.limit != 20) && (orionldState.uriParams.limit >= 1))
   {
     char limitStr[32];
     snprintf(limitStr, sizeof(limitStr), "%d", orionldState.uriParams.limit);
