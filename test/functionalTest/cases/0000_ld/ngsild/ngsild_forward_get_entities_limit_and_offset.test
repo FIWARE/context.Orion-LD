@@ -1,0 +1,455 @@
+# Copyright 2023 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+NGSI-LD Forward of GET /entities
+
+--SHELL-INIT--
+dbInit CB
+dbInit CP1
+orionldStart CB -forwarding -experimental -wip entityMaps
+orionldStart CP1 -experimental
+
+--SHELL--
+
+#
+# 01. Create entities E00-E09 in CB
+# 02. Create entities E10-E19 in CP1
+# 05. Query CB for all local entities - see E00-E09
+#
+# 06. Create a registration for all CP1 entities in CB
+# 09. Create a registration for E1 and E2 in CP3, using 2 information array items
+# 10. Local query on CB for all entities of type T, with pick=id
+# 11. Query CB for all entities (they're all type 'T')
+# 12. See the entity map
+# 13. Query using the entity map I got from step 11
+#
+
+echo "01. Create entities E00-E09 in CB"
+echo "================================="
+typeset -i eNo
+eNo=0
+
+while [ $eNo -le 9 ]
+do
+  eId=$(printf "urn:cb:entities:E%02d" $eNo)
+  eNo=$eNo+1
+
+  payload='{
+    "id": "'$eId'",
+    "type": "T",
+    "A1": {
+      "type": "Property",
+      "value": "E'$eNo':A1"
+    }
+  }'
+  orionCurl --url /ngsi-ld/v1/entities --payload "$payload" | grep 'Location:'
+done
+echo
+echo
+
+
+echo "02. Create entities E10-E19 in CP1"
+echo "=================================="
+eNo=10
+
+while [ $eNo -le 49 ]
+do
+  eId=$(printf "urn:cp1:entities:E%02d" $eNo)
+  eNo=$eNo+1
+
+  payload='{
+    "id": "'$eId'",
+    "type": "X",
+    "A1": {
+      "type": "Property",
+      "value": "E'$eNo':A1"
+    }
+  }'
+  orionCurl --url /ngsi-ld/v1/entities --payload "$payload" --port $CP1_PORT | grep 'Location:'
+done
+echo
+echo
+
+
+echo "03. Create a registration Reg1 for all CP1 entities in CB"
+echo "========================================================="
+payload='{
+  "id": "urn:Reg1",
+  "type": "ContextSourceRegistration",
+  "information": [
+    {
+      "entities": [
+        {
+          "type": "X"
+        }
+      ]
+    }
+  ],
+  "endpoint": "http://localhost:'$CP1_PORT'"
+}'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload"
+echo
+echo
+
+
+echo "04. Local query on CB for all entities of type T, with pick=id"
+echo "=============================================================="
+orionCurl --url '/ngsi-ld/v1/entities?type=T&pick=id&local=true'
+echo
+echo
+
+echo "05. Query CB for all entities type 'X'"
+echo "===================================================="
+orionCurl --url '/ngsi-ld/v1/entities?type=X&count=true&offset=0&limit=25' 
+echo
+echo
+
+
+--REGEXPECT--
+01. Create entities E00-E09 in CB
+=================================
+Location: /ngsi-ld/v1/entities/urn:cb:entities:E00
+Location: /ngsi-ld/v1/entities/urn:cb:entities:E01
+Location: /ngsi-ld/v1/entities/urn:cb:entities:E02
+Location: /ngsi-ld/v1/entities/urn:cb:entities:E03
+Location: /ngsi-ld/v1/entities/urn:cb:entities:E04
+Location: /ngsi-ld/v1/entities/urn:cb:entities:E05
+Location: /ngsi-ld/v1/entities/urn:cb:entities:E06
+Location: /ngsi-ld/v1/entities/urn:cb:entities:E07
+Location: /ngsi-ld/v1/entities/urn:cb:entities:E08
+Location: /ngsi-ld/v1/entities/urn:cb:entities:E09
+
+
+02. Create entities E10-E19 in CP1
+==================================
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E10
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E11
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E12
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E13
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E14
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E15
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E16
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E17
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E18
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E19
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E20
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E21
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E22
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E23
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E24
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E25
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E26
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E27
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E28
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E29
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E30
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E31
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E32
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E33
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E34
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E35
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E36
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E37
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E38
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E39
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E40
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E41
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E42
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E43
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E44
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E45
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E46
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E47
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E48
+Location: /ngsi-ld/v1/entities/urn:cp1:entities:E49
+
+
+03. Create a registration Reg1 for all CP1 entities in CB
+=========================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/csourceRegistrations/urn:Reg1
+
+
+
+04. Local query on CB for all entities of type T, with pick=id
+==============================================================
+HTTP/1.1 200 OK
+Content-Length: 291
+Content-Type: application/json
+Date: REGEX(.*)
+
+[
+    {
+        "id": "urn:cb:entities:E00"
+    },
+    {
+        "id": "urn:cb:entities:E01"
+    },
+    {
+        "id": "urn:cb:entities:E02"
+    },
+    {
+        "id": "urn:cb:entities:E03"
+    },
+    {
+        "id": "urn:cb:entities:E04"
+    },
+    {
+        "id": "urn:cb:entities:E05"
+    },
+    {
+        "id": "urn:cb:entities:E06"
+    },
+    {
+        "id": "urn:cb:entities:E07"
+    },
+    {
+        "id": "urn:cb:entities:E08"
+    },
+    {
+        "id": "urn:cb:entities:E09"
+    }
+]
+
+
+05. Query CB for all entities type 'X'
+====================================================
+HTTP/1.1 200 OK
+Content-Length: 2076
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+NGSILD-EntityMap: urn:ngsi-ld:entity-map:REGEX(.*)
+NGSILD-Results-Count: 40
+
+[
+    {
+        "A1": {
+            "type": "Property",
+            "value": "E11:A1"
+        },
+        "id": "urn:cp1:entities:E10",
+        "type": "X"
+    },
+    {
+        "A1": {
+            "type": "Property",
+            "value": "E12:A1"
+        },
+        "id": "urn:cp1:entities:E11",
+        "type": "X"
+    },
+    {
+        "A1": {
+            "type": "Property",
+            "value": "E13:A1"
+        },
+        "id": "urn:cp1:entities:E12",
+        "type": "X"
+    },
+    {
+        "A1": {
+            "type": "Property",
+            "value": "E14:A1"
+        },
+        "id": "urn:cp1:entities:E13",
+        "type": "X"
+    },
+    {
+        "A1": {
+            "type": "Property",
+            "value": "E15:A1"
+        },
+        "id": "urn:cp1:entities:E14",
+        "type": "X"
+    },
+    {
+        "A1": {
+            "type": "Property",
+            "value": "E16:A1"
+        },
+        "id": "urn:cp1:entities:E15",
+        "type": "X"
+    },
+    {
+        "A1": {
+            "type": "Property",
+            "value": "E17:A1"
+        },
+        "id": "urn:cp1:entities:E16",
+        "type": "X"
+    },
+    {
+        "A1": {
+            "type": "Property",
+            "value": "E18:A1"
+        },
+        "id": "urn:cp1:entities:E17",
+        "type": "X"
+    },
+    {
+        "A1": {
+            "type": "Property",
+            "value": "E19:A1"
+        },
+        "id": "urn:cp1:entities:E18",
+        "type": "X"
+    },
+    {
+        "A1": {
+            "type": "Property",
+            "value": "E20:A1"
+        },
+        "id": "urn:cp1:entities:E19",
+        "type": "X"
+    },
+    {
+        "A1": {
+            "type": "Property",
+            "value": "E21:A1"
+        },
+        "id": "urn:cp1:entities:E20",
+        "type": "X"
+    },
+    {
+        "A1": {
+            "type": "Property",
+            "value": "E22:A1"
+        },
+        "id": "urn:cp1:entities:E21",
+        "type": "X"
+    },
+    {
+        "A1": {
+            "type": "Property",
+            "value": "E23:A1"
+        },
+        "id": "urn:cp1:entities:E22",
+        "type": "X"
+    },
+    {
+        "A1": {
+            "type": "Property",
+            "value": "E24:A1"
+        },
+        "id": "urn:cp1:entities:E23",
+        "type": "X"
+    },
+    {
+        "A1": {
+            "type": "Property",
+            "value": "E25:A1"
+        },
+        "id": "urn:cp1:entities:E24",
+        "type": "X"
+    },
+    {
+        "A1": {
+            "type": "Property",
+            "value": "E26:A1"
+        },
+        "id": "urn:cp1:entities:E25",
+        "type": "X"
+    },
+    {
+        "A1": {
+            "type": "Property",
+            "value": "E27:A1"
+        },
+        "id": "urn:cp1:entities:E26",
+        "type": "X"
+    },
+    {
+        "A1": {
+            "type": "Property",
+            "value": "E28:A1"
+        },
+        "id": "urn:cp1:entities:E27",
+        "type": "X"
+    },
+    {
+        "A1": {
+            "type": "Property",
+            "value": "E29:A1"
+        },
+        "id": "urn:cp1:entities:E28",
+        "type": "X"
+    },
+    {
+        "A1": {
+            "type": "Property",
+            "value": "E30:A1"
+        },
+        "id": "urn:cp1:entities:E29",
+        "type": "X"
+    },
+    {
+        "A1": {
+            "type": "Property",
+            "value": "E31:A1"
+        },
+        "id": "urn:cp1:entities:E30",
+        "type": "X"
+    },
+    {
+        "A1": {
+            "type": "Property",
+            "value": "E32:A1"
+        },
+        "id": "urn:cp1:entities:E31",
+        "type": "X"
+    },
+    {
+        "A1": {
+            "type": "Property",
+            "value": "E33:A1"
+        },
+        "id": "urn:cp1:entities:E32",
+        "type": "X"
+    },
+    {
+        "A1": {
+            "type": "Property",
+            "value": "E34:A1"
+        },
+        "id": "urn:cp1:entities:E33",
+        "type": "X"
+    },
+    {
+        "A1": {
+            "type": "Property",
+            "value": "E35:A1"
+        },
+        "id": "urn:cp1:entities:E34",
+        "type": "X"
+    }
+]
+
+
+--TEARDOWN---
+brokerStop CB
+brokerStop CP1
+dbDrop CB
+dbDrop CP1
