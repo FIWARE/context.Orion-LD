@@ -560,6 +560,20 @@ bool distOpSend(DistOp* distOpP, const char* dateHeader, const char* xForwardedF
     }
   }
 
+  if (orionldState.uriParams.limit != 20)
+  {
+    char limitStr[32];
+    snprintf(limitStr, sizeof(limitStr), "%d", orionldState.uriParams.limit);
+    uriParamAdd(&urlParts, "limit", limitStr, -1); 
+  }
+
+  if (orionldState.uriParams.offset != 0)
+  {
+    char offsetStr[12];
+    snprintf(offsetStr, sizeof(offsetStr), "%d", orionldState.uriParams.offset);
+    uriParamAdd(&urlParts, "offset", offsetStr, -1);
+  }
+  
   if ((local == true) || (distOpP->regP->localOnly == true))
     uriParamAdd(&urlParts, "local=true", NULL, 10);
 
