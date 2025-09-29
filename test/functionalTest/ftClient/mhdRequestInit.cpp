@@ -31,6 +31,7 @@ extern "C"
 }
 
 #include "common/orionldState.h"                            // orionldState, orionldStateInit
+#include "common/traceLevels.h"                             // KTrace levels
 #include "http/verbGet.h"                                   // verbGet
 
 
@@ -50,7 +51,7 @@ __thread KjNode*        uriParams    = NULL;
 //
 static MHD_Result headerReceive(void* cbDataP, MHD_ValueKind kind, const char* key, const char* value)
 {
-  KT_V("Got an HTTP Header: '%s': '%s'", key, value);
+  KT_T(StRequestHeaders, "Got an HTTP Header: '%s': '%s'", key, value);
 
   KjNode* headerP = kjString(NULL, key, value);
   kjChildAdd(httpHeaders, headerP);
@@ -66,7 +67,7 @@ static MHD_Result headerReceive(void* cbDataP, MHD_ValueKind kind, const char* k
 //
 MHD_Result uriParamReceive(void* cbDataP, MHD_ValueKind kind, const char* key, const char* value)
 {
-  KT_V("Got a URL Parameter: '%s': '%s'", key, value);
+  KT_T(StRequestParams, "Got a URL Parameter: '%s': '%s'", key, value);
 
   KjNode* paramP = kjString(NULL, key, value);
   kjChildAdd(uriParams, paramP);

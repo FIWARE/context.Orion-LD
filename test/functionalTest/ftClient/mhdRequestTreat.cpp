@@ -106,7 +106,7 @@ char* mhdRequestTreat(int* statusCodeP)
   // Parse the incoming payload body, if present
   if (orionldState.in.payload != NULL)
   {
-    KT_T(StRequest, "Parsing incoming payload body '%s'", orionldState.in.payload);
+    KT_V("Got a payload body '%s'", orionldState.in.payload);
     orionldState.requestTree = kjParse(orionldState.kjsonP, orionldState.in.payload);
     KT_T(StRequest, "payloadTree at %p ", orionldState.requestTree);
   }
