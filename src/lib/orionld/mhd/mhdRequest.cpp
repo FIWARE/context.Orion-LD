@@ -68,10 +68,9 @@ MHD_Result mhdRequest
   if (*con_cls == NULL)
   {
     ++mhdCalls;
-    KT_T(StRequest, "=======================================================================================");
-    KT_T(StRequest, "KZ: Incoming request %d: %s %s, type I (*con_cls == %p)", mhdCalls, method, url, *con_cls);
-    KT_T(StRequest, "=======================================================================================");
-    KT_T(StRequest, "");
+    KT_V("");
+    KT_V("=======================================================================================");
+    KT_V("Request No %02d: %s %s, type I (*con_cls == %p)", mhdCalls, method, url, *con_cls);
     *con_cls = &cls;  // to "acknowledge" the first call
 
     return mhdRequestInitF(connection, url, method, version, con_cls);

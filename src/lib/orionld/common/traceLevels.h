@@ -37,7 +37,9 @@ typedef enum OrionldTraceLevels
   StMhdInit         = 100,
 
   StRequest         = 200,
-  StSR              = 201,
+  StRequestHeaders  = 201,
+  StRequestParams   = 202,
+  StSR              = 210,
 
   StDds             = 1001,
   StDdsPublish      = 1002,
