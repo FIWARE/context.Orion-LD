@@ -141,12 +141,12 @@ cmake --build . --target install
 # DDS Enabler
 #
 echo "04.install-fastdds.sh: FIWARE-DDS-Enabler"
-yum -y install lz4-devel libzstd-devel
+yum -y install lz4-devel libzstd-devel json-devel
 
 cd /opt/Fast-DDS
 git clone https://github.com/eProsima/FIWARE-DDS-Enabler.git
 cd FIWARE-DDS-Enabler
-git checkout v1.0.0
+git checkout feature/services_actions
 
 # ./install_dds_module.sh
 
