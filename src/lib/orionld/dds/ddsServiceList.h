@@ -1,5 +1,5 @@
-#ifndef SRC_LIB_ORIONLD_DDS_DDSTOPICNOTIFICATION_H_
-#define SRC_LIB_ORIONLD_DDS_DDSTOPICNOTIFICATION_H_
+#ifndef SRC_LIB_ORIONLD_DDS_DDSSERVICELIST_H_
+#define SRC_LIB_ORIONLD_DDS_DDSSERVICELIST_H_
 
 /*
 *
@@ -25,14 +25,23 @@
 *
 * Author: Ken Zangelin
 */
-#include "ddsenabler_participants/Callbacks.hpp"            // eprosima::ddsenabler::participants::TopicInfo
+extern "C"
+{
+#include "ktrace/ktTraceLevelCheck.h"                       // ktTraceLevelCheck
+}
+
+// -----------------------------------------------------------------------------
+//
+// ddsServiceList -
+//
+#define ddsServiceList(traceLevel) do { if (ktTraceLevelCheck(traceLevel) == true) ddsServiceListFunction(__FILE__, __LINE__, __FUNCTION__, traceLevel); } while (0)
 
 
 
 // -----------------------------------------------------------------------------
 //
-// ddsTopicNotification -
+// ddsServiceList
 //
-extern void ddsTopicNotification(const char* topicName, const eprosima::ddsenabler::participants::TopicInfo& topicInfo);
+extern void ddsServiceListFunction(const char* path, int lineNo, const char* functionName, int traceLevel);
 
-#endif  // SRC_LIB_ORIONLD_DDS_DDSTOPICNOTIFICATION_H_
+#endif  // SRC_LIB_ORIONLD_DDS_DDSSERVICELIST_H_

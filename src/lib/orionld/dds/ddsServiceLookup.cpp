@@ -1,6 +1,3 @@
-#ifndef SRC_LIB_ORIONLD_DDS_DDSTOPICNOTIFICATION_H_
-#define SRC_LIB_ORIONLD_DDS_DDSTOPICNOTIFICATION_H_
-
 /*
 *
 * Copyright 2025 FIWARE Foundation e.V.
@@ -25,14 +22,23 @@
 *
 * Author: Ken Zangelin
 */
-#include "ddsenabler_participants/Callbacks.hpp"            // eprosima::ddsenabler::participants::TopicInfo
+#include <string.h>                                         // strcmp
+#include "orionld/types/DdsService.h"                       // DdsService
+#include "orionld/common/orionldState.h"                    // ddsServices
 
 
 
 // -----------------------------------------------------------------------------
 //
-// ddsTopicNotification -
+// ddsServiceLookup
 //
-extern void ddsTopicNotification(const char* topicName, const eprosima::ddsenabler::participants::TopicInfo& topicInfo);
+DdsService* ddsServiceLookup(const char* name)
+{
+  for (DdsService* sP = ddsServices; sP != NULL; sP = sP->next)
+  {
+    if (strcmp(sP->name, name) == 0)
+      return sP;
+  }
 
-#endif  // SRC_LIB_ORIONLD_DDS_DDSTOPICNOTIFICATION_H_
+  return NULL;
+}

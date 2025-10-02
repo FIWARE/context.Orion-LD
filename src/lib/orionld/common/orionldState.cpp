@@ -40,6 +40,7 @@ extern "C"
 #include "orionld/types/OrionldTenant.h"                         // OrionldTenant
 #include "orionld/types/QNode.h"                                 // QNode
 #include "orionld/types/PernotSubCache.h"                        // PernotSubCache
+#include "orionld/types/DdsService.h"                            // DdsService
 #include "orionld/db/dbConfiguration.h"                          // DB_DRIVER_MONGOC
 #include "orionld/context/orionldCoreContext.h"                  // orionldCoreContext, ORIONLD_CORE_CONTEXT_URL_V*
 #include "orionld/common/numberToDate.h"                         // numberToDate
@@ -114,6 +115,8 @@ bool              distSubsEnabled   = false;
 OrionldContext*   defaultUserContextP = NULL;
 int               pageSize            = 20;
 char              userAgentHeaderValue[32];
+DdsService*       ddsServices         = NULL;
+
 
 
 //

@@ -1,5 +1,5 @@
-#ifndef SRC_LIB_ORIONLD_DDS_DDSTOPICNOTIFICATION_H_
-#define SRC_LIB_ORIONLD_DDS_DDSTOPICNOTIFICATION_H_
+#ifndef SRC_LIB_ORIONLD_TYPES_DDSSERVICE_H_
+#define SRC_LIB_ORIONLD_TYPES_DDSSERVICE_H_
 
 /*
 *
@@ -25,14 +25,21 @@
 *
 * Author: Ken Zangelin
 */
-#include "ddsenabler_participants/Callbacks.hpp"            // eprosima::ddsenabler::participants::TopicInfo
 
 
 
 // -----------------------------------------------------------------------------
 //
-// ddsTopicNotification -
+// DdsService -
 //
-extern void ddsTopicNotification(const char* topicName, const eprosima::ddsenabler::participants::TopicInfo& topicInfo);
+typedef struct DdsService
+{
+  char*               name;
+  char*               requestType;
+  char*               requestQoS;
+  char*               replyType;
+  char*               replyQoS;
+  struct DdsService*  next;
+} DdsService;
 
-#endif  // SRC_LIB_ORIONLD_DDS_DDSTOPICNOTIFICATION_H_
+#endif  // SRC_LIB_ORIONLD_TYPES_DDSSERVICE_H_

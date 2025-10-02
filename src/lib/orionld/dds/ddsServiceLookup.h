@@ -1,5 +1,5 @@
-#ifndef SRC_LIB_ORIONLD_DDS_DDSTOPICNOTIFICATION_H_
-#define SRC_LIB_ORIONLD_DDS_DDSTOPICNOTIFICATION_H_
+#ifndef SRC_LIB_ORIONLD_DDS_DDSSERVICELOOKUP_H_
+#define SRC_LIB_ORIONLD_DDS_DDSSERVICELOOKUP_H_
 
 /*
 *
@@ -25,14 +25,14 @@
 *
 * Author: Ken Zangelin
 */
-#include "ddsenabler_participants/Callbacks.hpp"            // eprosima::ddsenabler::participants::TopicInfo
+#include "orionld/types/DdsService.h"                       // DdsService
 
 
 
 // -----------------------------------------------------------------------------
 //
-// ddsTopicNotification -
+// ddsServiceLookup
 //
-extern void ddsTopicNotification(const char* topicName, const eprosima::ddsenabler::participants::TopicInfo& topicInfo);
+extern DdsService* ddsServiceLookup(const char* name);
 
-#endif  // SRC_LIB_ORIONLD_DDS_DDSTOPICNOTIFICATION_H_
+#endif  // SRC_LIB_ORIONLD_DDS_DDSSERVICELOOKUP_H_

@@ -1,6 +1,3 @@
-#ifndef SRC_LIB_ORIONLD_DDS_DDSTOPICNOTIFICATION_H_
-#define SRC_LIB_ORIONLD_DDS_DDSTOPICNOTIFICATION_H_
-
 /*
 *
 * Copyright 2025 FIWARE Foundation e.V.
@@ -25,14 +22,39 @@
 *
 * Author: Ken Zangelin
 */
-#include "ddsenabler_participants/Callbacks.hpp"            // eprosima::ddsenabler::participants::TopicInfo
+#include <stdlib.h>                                         // malloc
+#include <string.h>                                         // strdup
+
+#include "orionld/types/DdsService.h"                       // DdsService
+#include "orionld/common/orionldState.h"                    // ddsServices
 
 
 
 // -----------------------------------------------------------------------------
 //
-// ddsTopicNotification -
+// ddsServiceCreate
 //
-extern void ddsTopicNotification(const char* topicName, const eprosima::ddsenabler::participants::TopicInfo& topicInfo);
+DdsService* ddsServiceCreate
+(
+  const char* name,
+  const char* requestType,
+  const char* requestQoS,
+  const char* replyType,
+  const char* replyQoS
+)
+{
+  DdsService* sP = (DdsService*) malloc(sizeof(DdsService));
 
-#endif  // SRC_LIB_ORIONLD_DDS_DDSTOPICNOTIFICATION_H_
+  sP->name        = strdup(name);
+  sP->requestType = strdup(requestType);
+  sP->requestQoS  = strdup(requestQoS);
+  sP->replyType   = strdup(replyType);
+  sP->replyQoS    = strdup(replyQoS);
+
+  // Add it to the linked list
+  // FIXME: Semaphore!
+  sP->next    = ddsServices;
+  ddsServices = sP;
+
+  return sP;
+}
