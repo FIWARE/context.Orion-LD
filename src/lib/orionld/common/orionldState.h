@@ -61,6 +61,7 @@ extern "C"
 #include "orionld/types/OrionldMimeType.h"                       // MimeType
 #include "orionld/types/QNode.h"                                 // QNode
 #include "orionld/types/EntityLink.h"                            // EntityLink
+#include "orionld/types/DdsService.h"                            // DdsService
 #include "orionld/common/performance.h"                          // REQUEST_PERFORMANCE
 #include "orionld/kjTree/kjTreeLog.h"                            // Because it is so often used but then removed again ...
 
@@ -645,6 +646,7 @@ extern bool              noArrayReduction;         // Used by arrayReduce in pCh
 extern int               pageSize;                 // Pagination limit
 extern char              defaultUserContextUrl[256];
 extern OrionldContext*   defaultUserContextP;
+extern DdsService*       ddsServices;
 
 extern char                localIpAndPort[135];    // Local address for X-Forwarded-For (from orionld.cpp)
 extern unsigned long long  inReqPayloadMaxSize;
