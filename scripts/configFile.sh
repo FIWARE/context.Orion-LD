@@ -22,9 +22,14 @@
 
 declare -A ddsTopicV
 typeset -i ddsTopicIx
+ddsTopicIx=-1
+
+declare -A ddsServiceV
+typeset -i ddsServiceIx
+ddsServiceIx=-1
+
 declare -A troeV
 typeset -i troeIx
-ddsTopicIx=-1
 troeIx=-1
 
 
@@ -40,6 +45,7 @@ function usage()
   empty=$(echo $sfile | tr 'a-zA-z/0-9.:' ' ')
   echo "$sfile [-u (usage)]"
   echo "$empty [--ddsTopic <topic>,<entity type>,<entity id>,<attribute name>]"
+  echo "$empty [--ddsService <topic>,<entity type>,<entity id>,<attribute name>]"
   echo "$empty [--troe <id,idPattern,type1+type2+...typeN,attribute1+attribute2+...attributeN>]"
   echo
   exit $1
@@ -58,6 +64,12 @@ do
     then
         ddsTopicIx=$ddsTopicIx+1
         ddsTopicV[$ddsTopicIx]="$2"
+        shift
+        shift
+    elif [ "$1" == "--ddsService" ]
+    then
+        ddsServiceIx=$ddsServiceIx+1
+        ddsServiceV[$ddsServiceIx]="$2"
         shift
         shift
     elif [ "$1" == "--troe" ]
@@ -140,10 +152,45 @@ then
     done
 fi
 
+echo '      },'
+echo '      "services": {'
+
+#
+# DDS Services
+#
+if [ $ddsServiceIx -gt -1 ]
+then
+    ix=0
+    while [ $ix -le $ddsServiceIx ]
+    do
+        items=${ddsServiceV[$ix]}
+
+        service=$(echo $items | awk -F, '{ print $1 }')
+        eType=$(echo $items | awk -F, '{ print $2 }')
+        eId=$(echo   $items | awk -F, '{ print $3 }')
+        attr=$(echo  $items | awk -F, '{ print $4 }')
+
+        if [ $ix != $ddsServiceIx ]
+        then
+            comma=','
+        else
+            comma=''
+        fi
+
+        echo '        "'$service'": {'
+        echo '          "entityType": "'$eType'",'
+        echo '          "entityId": "'$eId'",'
+        echo '          "attribute": "'$attr'"'
+        echo '        }'$comma
+
+        ix=$ix+1
+    done
+fi
 
 echo '      }'
 echo '    }'
-
+echo '  },'
+echo '  "troe": {'
 
 function asArrayItems()
 {
@@ -172,9 +219,6 @@ function asArrayItems()
     done
 }
 
-
-echo '  },'
-echo '  "troe": {'
 
 if [ $troeIx -gt -1 ]
 then

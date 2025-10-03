@@ -1,0 +1,301 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Different languages in user contexts
+
+--SHELL-INIT--
+dbInit CB
+dbDrop orionld
+dbDrop CB
+orionldStart CB
+
+--SHELL--
+
+#
+# 01. Create a context in the broker - with English short names
+# 02. Create a context in the broker - with Spanish short names
+# 03. Create a context in the broker - with Swedish short names
+# 04. Create an entity with two attributes using the English @context
+# 05. See the entity in the database
+# 06. Retrieve the entity, also using the English @context
+# 07. Retrieve the entity, using the Spanish @context
+# 08. Retrieve the entity, using the Swedish @context
+# 09. Retrieve the entity, using no user @context
+#
+
+echo "01. Create a context in the broker - with English short names"
+echo "============================================================="
+payload='{
+  "@context": {
+    "speed": "urn:ngsi-ld:attributes/SPEED",
+    "owner": "urn:ngsi-ld:attributes/OWNER"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/jsonldContexts --payload "$payload"
+enContext="/"$(echo "$_responseHeaders" | grep Location: | awk -F:9999/ '{ print $2 }' | tr -d "\r\n")
+echo
+echo
+
+
+echo "02. Create a context in the broker - with Spanish short names"
+echo "============================================================="
+payload='{
+  "@context": {
+    "velocidad": "urn:ngsi-ld:attributes/SPEED",
+    "dueño": "urn:ngsi-ld:attributes/OWNER"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/jsonldContexts --payload "$payload"
+esContext="/"$(echo "$_responseHeaders" | grep Location: | awk -F:9999/ '{ print $2 }' | tr -d "\r\n")
+echo
+echo
+
+
+echo "03. Create a context in the broker - with Swedish short names"
+echo "============================================================="
+payload='{
+  "@context": {
+    "hastighet": "urn:ngsi-ld:attributes/SPEED",
+    "ägare": "urn:ngsi-ld:attributes/OWNER"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/jsonldContexts --payload "$payload"
+swContext="/"$(echo "$_responseHeaders" | grep Location: | awk -F:9999/ '{ print $2 }' | tr -d "\r\n")
+echo
+echo
+
+
+echo "04. Create an entity with two attributes using the English @context"
+echo "==================================================================="
+payload='{
+  "id": "urn:E1",
+  "type": "Vehicle",
+  "speed": 90,
+  "owner": "My father"
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" -H 'Link: <http://localhost:9999'$enContext'>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
+echo
+echo
+
+
+echo "05. See the entity in the database"
+echo "=================================="
+mongoCmd2 ftest "db.entities.findOne()"
+echo
+echo
+
+
+echo "06. Retrieve the entity, also using the English @context"
+echo "========================================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:E1 -H 'Link: <http://localhost:9999'$enContext'>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
+echo
+echo
+
+
+echo "07. Retrieve the entity, using the Spanish @context"
+echo "==================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1 -H 'Link: <http://localhost:9999'$esContext'>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
+echo
+echo
+
+
+echo "08. Retrieve the entity, using the Swedish @context"
+echo "==================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1 -H 'Link: <http://localhost:9999'$swContext'>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
+echo
+echo
+
+
+echo "09. Retrieve the entity, using no user @context"
+echo "==============================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:E1
+echo
+echo
+
+
+--REGEXPECT--
+01. Create a context in the broker - with English short names
+=============================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: REGEX(.*)
+
+
+
+02. Create a context in the broker - with Spanish short names
+=============================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: REGEX(.*)
+
+
+
+03. Create a context in the broker - with Swedish short names
+=============================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: REGEX(.*)
+
+
+
+04. Create an entity with two attributes using the English @context
+===================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E1
+
+
+
+05. See the entity in the database
+==================================
+MongoDB shell version REGEX(.*)
+connecting to: REGEX(.*)
+MongoDB server version: REGEX(.*)
+{
+	"_id" : {
+		"id" : "urn:E1",
+		"type" : "https://uri.etsi.org/ngsi-ld/default-context/Vehicle",
+		"servicePath" : "/"
+	},
+	"attrNames" : [
+		"urn:ngsi-ld:attributes/SPEED",
+		"urn:ngsi-ld:attributes/OWNER"
+	],
+	"attrs" : {
+		"urn:ngsi-ld:attributes/SPEED" : {
+			"type" : "Property",
+			"creDate" : REGEX(.*),
+			"modDate" : REGEX(.*),
+			"value" : 90,
+			"mdNames" : [ ]
+		},
+		"urn:ngsi-ld:attributes/OWNER" : {
+			"type" : "Property",
+			"creDate" : REGEX(.*),
+			"modDate" : REGEX(.*),
+			"value" : "My father",
+			"mdNames" : [ ]
+		}
+	},
+	"creDate" : REGEX(.*),
+	"modDate" : REGEX(.*),
+	"lastCorrelator" : ""
+}
+bye
+
+
+06. Retrieve the entity, also using the English @context
+========================================================
+HTTP/1.1 200 OK
+Content-Length: 119
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <http://localhost:9999/ngsi-ld/v1/jsonldContexts/REGEX(.*)
+
+{
+    "id": "urn:E1",
+    "owner": {
+        "type": "Property",
+        "value": "My father"
+    },
+    "speed": {
+        "type": "Property",
+        "value": 90
+    },
+    "type": "Vehicle"
+}
+
+
+07. Retrieve the entity, using the Spanish @context
+===================================================
+HTTP/1.1 200 OK
+Content-Length: 124
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <http://localhost:9999/ngsi-ld/v1/jsonldContexts/REGEX(.*)
+
+{
+    "dueREGEX(.*)o": {
+        "type": "Property",
+        "value": "My father"
+    },
+    "id": "urn:E1",
+    "type": "Vehicle",
+    "velocidad": {
+        "type": "Property",
+        "value": 90
+    }
+}
+
+
+08. Retrieve the entity, using the Swedish @context
+===================================================
+HTTP/1.1 200 OK
+Content-Length: 124
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <http://localhost:9999/ngsi-ld/v1/jsonldContexts/REGEX(.*)
+
+{
+    "hastighet": {
+        "type": "Property",
+        "value": 90
+    },
+    "id": "urn:E1",
+    "type": "Vehicle",
+    "REGEX(.*)gare": {
+        "type": "Property",
+        "value": "My father"
+    }
+}
+
+
+09. Retrieve the entity, using no user @context
+===============================================
+HTTP/1.1 200 OK
+Content-Length: 165
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "id": "urn:E1",
+    "type": "Vehicle",
+    "urn:ngsi-ld:attributes/OWNER": {
+        "type": "Property",
+        "value": "My father"
+    },
+    "urn:ngsi-ld:attributes/SPEED": {
+        "type": "Property",
+        "value": 90
+    }
+}
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
