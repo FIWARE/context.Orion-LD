@@ -32,6 +32,6 @@
 //
 // ddsPrePopulateDb -
 //
-extern void ddsPrePopulateDb(void);
+extern void ddsPrePopulateDb(const char* what);
 
 #endif  // SRC_LIB_ORIONLD_DDS_DDSPREPOPULATEDB_H_

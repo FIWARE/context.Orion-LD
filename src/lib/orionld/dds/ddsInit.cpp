@@ -311,7 +311,8 @@ bool ddsActionQuery
 //
 int ddsInit(Kjson* kjP)
 {
-  ddsPrePopulateDb();
+  ddsPrePopulateDb("topics");
+  ddsPrePopulateDb("services");
 
   KT_T(StDds, "Calling create_dds_enabler('%s')", configFile);
 

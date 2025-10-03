@@ -1,0 +1,359 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Test of pre-population of services from config file
+
+--SHELL-INIT--
+$REPO_HOME/scripts/configFile.sh --ddsService "S1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" --ddsService "S2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.orionld
+$REPO_HOME/scripts/configFile.sh --ddsService "S1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" --ddsService "S2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.ftClient
+ftClientStop
+ftClientStart -t 0-5000 --dds
+dbInit CB
+orionldStart CB -mongocOnly -wip dds
+
+--SHELL--
+
+#
+# During startup, the broker looks in its DDS config file and creates entities that don't exist (urn:ngsi-ld:camera:cam1 and urn:ngsi-ld:camera:cam1)
+# In this test case it's about DDS Services
+#
+# Checking the startup code worked:
+# 01. GET urn:ngsi-ld:camera:cam1 from CB and make sure it exists with type 'Camera' and attr 'shutterSpeed' with uninitialized value
+# 02. GET urn:ngsi-ld:arm:arm1 from CB and make sure it exists with type 'Arm' and attr 'armReach' with uninitialized value
+#
+# Preparation for next test:
+# 03. Patch shutterSpeed of urn:ngsi-ld:camera:cam1
+# 04. Remove armReach from urn:ngsi-ld:arm:arm1
+# 05. GET all entities, make sure the changes in step 3-4 are there
+#
+# 06. Kill and restart the broker
+#
+# On startup, the broker must:
+# - leave urn:ngsi-ld:camera:cam1 as is (as both entity and attribute exist)
+# - modify urn:ngsi-ld:arm:arm1, adding armReach with uninitialized value
+#
+# 07. GET urn:ngsi-ld:camera:cam1 from CB and make sure it exists with type 'Camera' and attr 'shutterSpeed' with the value from step 03
+# 08. GET urn:ngsi-ld:arm:arm1 from CB and make sure it exists with type 'Arm' and attr 'armReach' with uninitialized value
+#
+# Preparation for next test:
+# 09. DELETE urn:ngsi-ld:camera:cam1
+#
+# 10. Kill and restart the broker
+#
+# On startup, the broker must;
+# - create urn:ngsi-ld:camera:cam1
+# - leave urn:ngsi-ld:arm:arm1 as is (as both entity and attribute exist)
+#
+# 11. GET urn:ngsi-ld:camera:cam1 from CB and make sure it exists with type 'Camera' and attr 'shutterSpeed' with uninitialized value
+# 12. GET urn:ngsi-ld:arm:arm1 from CB and make sure it exists with type 'Arm' and attr 'armReach' with uninitialized value
+#
+
+echo "01. GET urn:ngsi-ld:camera:cam1 from CB and make sure it exists with type 'Camera' and attr 'shutterSpeed' with uninitialized value"
+echo "==================================================================================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:camera:cam1
+echo
+echo
+
+
+echo "02. GET urn:ngsi-ld:arm:arm1 from CB and make sure it exists with type 'Arm' and attr 'armReach' with uninitialized value"
+echo "========================================================================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:arm:arm1
+echo
+echo
+
+
+echo "03. Patch shutterSpeed of urn:ngsi-ld:camera:cam1"
+echo "================================================="
+payload='{
+  "shutterSpeed": 3
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:camera:cam1 -X PATCH --payload "$payload"
+echo
+echo
+
+
+echo "04. Remove armReach from urn:ngsi-ld:arm:arm1"
+echo "============================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:arm:arm1/attrs/armReach -X DELETE
+echo
+echo
+
+
+echo "05. GET all entities, make sure the changes in step 3-4 are there"
+echo "================================================================="
+orionCurl --url /ngsi-ld/v1/entities?local=true
+echo
+echo
+
+
+echo "06. Kill and restart the broker"
+echo "==============================="
+brokerStop CB
+orionldStart CB -mongocOnly -wip dds > /tmp/null
+echo
+echo
+
+
+echo "07. GET urn:ngsi-ld:camera:cam1 from CB and make sure it exists with type 'Camera' and attr 'shutterSpeed' with the value from step 03"
+echo "======================================================================================================================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:camera:cam1
+echo
+echo
+
+
+echo "08. GET urn:ngsi-ld:arm:arm1 from CB and make sure it exists with type 'Arm' and attr 'armReach' with uninitialized value"
+echo "========================================================================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:arm:arm1
+echo
+echo
+
+
+echo "09. DELETE urn:ngsi-ld:camera:cam1"
+echo "=================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:camera:cam1 -X DELETE
+echo
+echo
+
+
+echo "10. Kill and restart the broker"
+echo "==============================="
+brokerStop CB
+orionldStart CB -mongocOnly -wip dds > /tmp/null
+echo
+echo
+
+
+echo "11. GET urn:ngsi-ld:camera:cam1 from CB and make sure it exists with type 'Camera' and attr 'shutterSpeed' with uninitialized value"
+echo "==================================================================================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:camera:cam1
+echo
+echo
+
+
+echo "12. GET urn:ngsi-ld:arm:arm1 from CB and make sure it exists with type 'Arm' and attr 'armReach' with uninitialized value"
+echo "========================================================================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:arm:arm1
+echo
+echo
+
+
+--REGEXPECT--
+01. GET urn:ngsi-ld:camera:cam1 from CB and make sure it exists with type 'Camera' and attr 'shutterSpeed' with uninitialized value
+===================================================================================================================================
+HTTP/1.1 200 OK
+Content-Length: 155
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+    },
+    "id": "urn:ngsi-ld:camera:cam1",
+    "shutterSpeed": {
+        "type": "Property",
+        "value": "uninitialized"
+    },
+    "type": "Camera"
+}
+
+
+02. GET urn:ngsi-ld:arm:arm1 from CB and make sure it exists with type 'Arm' and attr 'armReach' with uninitialized value
+=========================================================================================================================
+HTTP/1.1 200 OK
+Content-Length: 145
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "armReach": {
+        "type": "Property",
+        "value": "uninitialized"
+    },
+    "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+    },
+    "id": "urn:ngsi-ld:arm:arm1",
+    "type": "Arm"
+}
+
+
+03. Patch shutterSpeed of urn:ngsi-ld:camera:cam1
+=================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+04. Remove armReach from urn:ngsi-ld:arm:arm1
+=============================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+05. GET all entities, make sure the changes in step 3-4 are there
+=================================================================
+HTTP/1.1 200 OK
+Content-Length: 234
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "ddsType": {
+            "type": "Property",
+            "value": "fastdds"
+        },
+        "id": "urn:ngsi-ld:arm:arm1",
+        "type": "Arm"
+    },
+    {
+        "ddsType": {
+            "type": "Property",
+            "value": "fastdds"
+        },
+        "id": "urn:ngsi-ld:camera:cam1",
+        "shutterSpeed": {
+            "type": "Property",
+            "value": 3
+        },
+        "type": "Camera"
+    }
+]
+
+
+06. Kill and restart the broker
+===============================
+
+
+07. GET urn:ngsi-ld:camera:cam1 from CB and make sure it exists with type 'Camera' and attr 'shutterSpeed' with the value from step 03
+======================================================================================================================================
+HTTP/1.1 200 OK
+Content-Length: 141
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+    },
+    "id": "urn:ngsi-ld:camera:cam1",
+    "shutterSpeed": {
+        "type": "Property",
+        "value": 3
+    },
+    "type": "Camera"
+}
+
+
+08. GET urn:ngsi-ld:arm:arm1 from CB and make sure it exists with type 'Arm' and attr 'armReach' with uninitialized value
+=========================================================================================================================
+HTTP/1.1 200 OK
+Content-Length: 145
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "armReach": {
+        "type": "Property",
+        "value": "uninitialized"
+    },
+    "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+    },
+    "id": "urn:ngsi-ld:arm:arm1",
+    "type": "Arm"
+}
+
+
+09. DELETE urn:ngsi-ld:camera:cam1
+==================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+10. Kill and restart the broker
+===============================
+
+
+11. GET urn:ngsi-ld:camera:cam1 from CB and make sure it exists with type 'Camera' and attr 'shutterSpeed' with uninitialized value
+===================================================================================================================================
+HTTP/1.1 200 OK
+Content-Length: 155
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+    },
+    "id": "urn:ngsi-ld:camera:cam1",
+    "shutterSpeed": {
+        "type": "Property",
+        "value": "uninitialized"
+    },
+    "type": "Camera"
+}
+
+
+12. GET urn:ngsi-ld:arm:arm1 from CB and make sure it exists with type 'Arm' and attr 'armReach' with uninitialized value
+=========================================================================================================================
+HTTP/1.1 200 OK
+Content-Length: 145
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "armReach": {
+        "type": "Property",
+        "value": "uninitialized"
+    },
+    "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+    },
+    "id": "urn:ngsi-ld:arm:arm1",
+    "type": "Arm"
+}
+
+
+--TEARDOWN--
+ftClientStop
+brokerStop
+dbDrop CB
+#rm -f $HOME/.orionld
+#rm -f $HOME/.ftClient
