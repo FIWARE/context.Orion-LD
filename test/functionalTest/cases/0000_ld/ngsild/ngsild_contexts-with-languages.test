@@ -139,7 +139,7 @@ echo
 HTTP/1.1 201 Created
 Content-Length: 0
 Date: REGEX(.*)
-Location: http://tux:9999/ngsi-ld/v1/jsonldContexts/REGEX(.*)
+Location: REGEX(.*)
 
 
 
@@ -148,7 +148,7 @@ Location: http://tux:9999/ngsi-ld/v1/jsonldContexts/REGEX(.*)
 HTTP/1.1 201 Created
 Content-Length: 0
 Date: REGEX(.*)
-Location: http://tux:9999/ngsi-ld/v1/jsonldContexts/REGEX(.*)
+Location: REGEX(.*)
 
 
 
@@ -157,7 +157,7 @@ Location: http://tux:9999/ngsi-ld/v1/jsonldContexts/REGEX(.*)
 HTTP/1.1 201 Created
 Content-Length: 0
 Date: REGEX(.*)
-Location: http://tux:9999/ngsi-ld/v1/jsonldContexts/REGEX(.*)
+Location: REGEX(.*)
 
 
 
@@ -239,7 +239,7 @@ Date: REGEX(.*)
 Link: <http://localhost:9999/ngsi-ld/v1/jsonldContexts/REGEX(.*)
 
 {
-    "due\u00f1o": {
+    "dueREGEX(.*)o": {
         "type": "Property",
         "value": "My father"
     },
@@ -267,7 +267,7 @@ Link: <http://localhost:9999/ngsi-ld/v1/jsonldContexts/REGEX(.*)
     },
     "id": "urn:E1",
     "type": "Vehicle",
-    "\u00e4gare": {
+    "REGEX(.*)gare": {
         "type": "Property",
         "value": "My father"
     }
