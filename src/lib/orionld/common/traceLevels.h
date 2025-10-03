@@ -41,6 +41,10 @@ typedef enum OrionldTraceLevels
   StRequestParams   = 202,
   StSR              = 210,
 
+  StLinked          = 300,
+  StLinkedInline    = 301,
+  StLinkedInline2   = 302,
+
   StDds             = 1001,
   StDdsPublish      = 1002,
   StDdsNotification = 1003,
@@ -51,13 +55,12 @@ typedef enum OrionldTraceLevels
   StDdsTypeCache    = 1008,
   StDdsPrePopulate  = 1009,
   StDdsSrCalls      = 1010,
+  StDdsService      = 1020,
+  StDdsServiceList  = 1021,
+  StDdsAction       = 1030,
 
-  StLinked          = 300,
-  StLinkedInline    = 301,
-  StLinkedInline2   = 302,
-
-  StDump            = 5001,
-  StDdsDump         = 5002
+  StDump            = 2001,
+  StDdsDump         = 2002
 } OrionldTraceLevels;
 
 #endif  // SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_
