@@ -45,6 +45,8 @@ typedef enum OrionldTraceLevels
   StLinkedInline    = 301,
   StLinkedInline2   = 302,
 
+  StMongoc          = 400,
+
   StDds             = 1001,
   StDdsPublish      = 1002,
   StDdsNotification = 1003,

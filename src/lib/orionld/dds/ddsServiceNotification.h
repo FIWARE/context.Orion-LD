@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_CONFIG_CONFIGLOAD_H_
-#define SRC_LIB_ORIONLD_CONFIG_CONFIGLOAD_H_
+#ifndef SRC_LIB_ORIONLD_DDS_DDSSERVICENOTIFICATION_H_
+#define SRC_LIB_ORIONLD_DDS_DDSSERVICENOTIFICATION_H_
 
 /*
 *
-* Copyright 2024 FIWARE Foundation e.V.
+* Copyright 2025 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,18 +25,14 @@
 *
 * Author: Ken Zangelin
 */
-extern "C"
-{
-#include "kjson/kjson.h"                                    // Kjson
-#include "kjson/KjNode.h"                                   // KjNode
-}
+#include "ddsenabler/dds_enabler_runner.hpp"                // dds enabler
 
 
 
 // -----------------------------------------------------------------------------
 //
-// configLoad -
+// ddsServiceNotification -
 //
-extern int configLoad(Kjson* kjP, const char* configFile);
+extern void ddsServiceNotification(const char* serviceName, const eprosima::ddsenabler::participants::ServiceInfo& serviceInfo);
 
-#endif  // SRC_LIB_ORIONLD_CONFIG_CONFIGLOAD_H_
+#endif  // SRC_LIB_ORIONLD_DDS_DDSSERVICENOTIFICATION_H_

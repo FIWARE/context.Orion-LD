@@ -584,6 +584,7 @@ extern __thread OrionldConnectionState orionldState;
 //
 extern char              configFile[512];
 extern char*             configFileP;
+extern KjNode*           configTree;
 extern char*             coreContextUrl;
 extern const char*       builtinCoreContext;
 extern char              orionldHostName[128];

@@ -32,6 +32,7 @@ extern "C"
 #include "ktrace/kTrace.h"                                    // trace messages - ktrace library
 }
 
+#include "orionld/common/orionldState.h"                      // configTree
 #include "orionld/common/traceLevels.h"                       // KT tracelevels
 #include "orionld/config/configInit.h"                        // configTree
 #include "orionld/kjTree/kjNavigate.h"                        // kjNavigate
