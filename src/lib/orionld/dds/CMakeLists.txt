@@ -32,6 +32,7 @@ SET (SOURCES
   ddsTypes.cpp
   ddsPrePopulateDb.cpp
   ddsTopicNotification.cpp
+  ddsServiceNotification.cpp
   ddsServiceListFunction.cpp
   ddsServiceCreate.cpp
   ddsServiceLookup.cpp

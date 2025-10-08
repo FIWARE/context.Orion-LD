@@ -137,7 +137,7 @@ bool orionldPostEntities(void)
   if ((orionldState.ddsSample == true) && (orionldState.ddsType != NULL))
   {
     //
-    // Adding special atrtribute 'ddsType' - must be normalized (it's after payload check)
+    // Adding special attribute 'ddsType' - must be normalized (it's after payload check)
     //
     KjNode* ddsTypeObjectNodeP = kjObject(orionldState.kjsonP, "ddsType");
     KjNode* valueNodeP         = kjString(orionldState.kjsonP, "value", orionldState.ddsType);

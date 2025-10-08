@@ -33,8 +33,6 @@
 extern "C"
 {
 #include "ktrace/kTrace.h"                                  // trace messages - ktrace library
-#include "kbase/kStringSplit.h"                             // kStringSplit
-#include "kjson/kjson.h"                                    // Kjson
 #include "kjson/KjNode.h"                                   // KjNode
 }
 
@@ -43,8 +41,7 @@ extern "C"
 #include "orionld/types/DdsType.h"                          // DdsType
 #include "orionld/types/DdsService.h"                       // DdsService
 #include "orionld/common/traceLevels.h"                     // Trace levels for KTrace
-#include "orionld/common/orionldState.h"                    // configFile, ddsServices
-#include "orionld/kjTree/kjNavigate.h"                      // kjNavigate
+#include "orionld/common/orionldState.h"                    // configFile, configTree, ddsServices
 #include "orionld/config/configDdsTopicToAttribute.h"       // configDdsTopicToAttribute
 #include "orionld/dds/ddsPrePopulateDb.h"                   // ddsPrePopulateDb
 #include "orionld/dds/kjTreeLog.h"                          // kjTreeLog2
@@ -52,9 +49,8 @@ extern "C"
 #include "orionld/dds/ddsTypes.h"                           // ddsTypeNotification, ddsTypeLookup
 #include "orionld/dds/ddsNotification.h"                    // ddsNotification
 #include "orionld/dds/ddsTopicNotification.h"               // ddsTopicNotification
+#include "orionld/dds/ddsServiceNotification.h"             // ddsServiceNotification
 #include "orionld/dds/ddsCategoryToKlogSeverity.h"          // ddsCategoryToKlogSeverity
-#include "orionld/dds/ddsServiceCreate.h"                   // ddsServiceCreate
-#include "orionld/dds/ddsServiceLookup.h"                   // ddsServiceLookup
 #include "orionld/dds/ddsInit.h"                            // Own interface
 
 
@@ -120,35 +116,6 @@ static void ddsLog(const char* fileName, int lineNo, const char* funcName, int c
 #else
   lmOut((char*) msg, severity, filename, lineNo, funcname, level);
 #endif
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
-// ddsServiceNotification -
-//
-void ddsServiceNotification(const char* serviceName, const eprosima::ddsenabler::participants::ServiceInfo& serviceInfo)
-{
-  KT_T(StDdsService, "Got a Service Notification (serviceName: %s)", serviceName);
-  KT_T(StDdsService, "- requestTopic.type: '%s'", serviceInfo.request.type_name.c_str());
-  KT_T(StDdsService, "- requestTopic.qos:  '%s'", serviceInfo.request.serialized_qos.c_str());
-  KT_T(StDdsService, "- replyTopic.type:   '%s'", serviceInfo.reply.type_name.c_str());
-  KT_T(StDdsService, "- replyTopic.qos:    '%s'", serviceInfo.reply.serialized_qos.c_str());
-
-  //
-  // Create the service unless it already exists
-  //
-  if (ddsServiceLookup(serviceName) == NULL)
-  {
-    ddsServiceCreate(serviceName,
-                     serviceInfo.request.type_name.c_str(),
-                     serviceInfo.request.serialized_qos.c_str(),
-                     serviceInfo.reply.type_name.c_str(),
-                     serviceInfo.reply.serialized_qos.c_str());
-
-    // FIXME: Create the entity in the DB
-  }
 }
 
 

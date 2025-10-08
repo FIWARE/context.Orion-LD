@@ -1,0 +1,83 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Test of pre-population of services from DDS
+
+--SHELL-INIT--
+$REPO_HOME/scripts/configFile.sh --ddsService "add_two_ints_server/list_parameters,ListParam,urn:ngsi-ld:list:params,add_two_ints-listParams" > $HOME/.orionld
+dbInit CB
+orionldStart CB -mongocOnly -wip dds,entityMaps
+
+--SHELL--
+
+#
+# Before starting the broker (meaning, before running this test), prepare this way:
+#   docker run -it --rm --net=host --ipc=host --privileged -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix eprosima/vulcanexus:jazzy-desktop
+#   source /opt/vulcanexus/jazzy/setup.bash
+#   ros2 run demo_nodes_cpp add_two_ints_server
+#
+# That way, when the broker starts, 8 services enters the broker via DDS callbacks.
+# If in the config file (only 'add_two_ints_server/list_parameters' is there), the entity/attribute is created. If not, the serviceName is used
+# as attribute name and added to the default DDS entity.
+#
+# After startup, the broker is queried for all its entities - two are found (urn:ngsi-ld:list:params and urn:ngsi-ld:dds:default)
+#
+# 01. GET all entities from the broker
+#
+
+echo "01. GET all entities from the broker"
+echo "===================================="
+orionCurl --url /ngsi-ld/v1/entities?local=true
+echo
+echo
+
+
+--REGEXPECT--
+01. GET all entities from the broker
+====================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "add_two_ints-listParams": {
+            "type": "Property",
+            "value": "uninitialized"
+        },
+        "ddsType": {
+            "type": "Property",
+            "value": "fastdds"
+        },
+        "id": "urn:ngsi-ld:list:params",
+        "type": "ListParam"
+    }
+]
+
+
+--TEARDOWN--
+brokerStop
+dbDrop CB
+rm -f $HOME/.orionld

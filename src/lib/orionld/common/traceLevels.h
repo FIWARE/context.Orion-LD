@@ -34,33 +34,37 @@
 //
 typedef enum OrionldTraceLevels
 {
-  StMhdInit         = 100,
+  StMhdInit                 = 100,
 
-  StRequest         = 200,
-  StRequestHeaders  = 201,
-  StRequestParams   = 202,
-  StSR              = 210,
+  StRequest                 = 200,
+  StRequestHeaders          = 201,
+  StRequestParams           = 202,
+  StSR                      = 210,
 
-  StLinked          = 300,
-  StLinkedInline    = 301,
-  StLinkedInline2   = 302,
+  StLinked                  = 300,
+  StLinkedInline            = 301,
+  StLinkedInline2           = 302,
 
-  StDds             = 1001,
-  StDdsPublish      = 1002,
-  StDdsNotification = 1003,
-  StDdsLibInfo      = 1004,
-  StDdsLibDebug     = 1005,
-  StDdsConfig       = 1006,
-  StDdsTypes        = 1007,
-  StDdsTypeCache    = 1008,
-  StDdsPrePopulate  = 1009,
-  StDdsSrCalls      = 1010,
-  StDdsService      = 1020,
-  StDdsServiceList  = 1021,
-  StDdsAction       = 1030,
+  StMongoc                  = 400,
 
-  StDump            = 2001,
-  StDdsDump         = 2002
+  StDds                     = 1001,
+  StDdsPublish              = 1002,
+  StDdsNotification         = 1003,
+  StDdsLibInfo              = 1004,
+  StDdsLibDebug             = 1005,
+  StDdsConfig               = 1006,
+  StDdsTypes                = 1007,
+  StDdsTypeCache            = 1008,
+  StDdsPrePopulate          = 1009,
+  StDdsSrCalls              = 1010,
+  StDdsService              = 1020,
+  StDdsServiceList          = 1021,
+  StDdsServicePrepopulate   = 1022,
+
+  StDdsAction               = 1030,
+
+  StDump                    = 2001,
+  StDdsDump                 = 2002
 } OrionldTraceLevels;
 
 #endif  // SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_

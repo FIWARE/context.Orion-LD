@@ -35,14 +35,6 @@ extern "C"
 
 // -----------------------------------------------------------------------------
 //
-// configTree -
-//
-extern KjNode* configTree;
-
-
-
-// -----------------------------------------------------------------------------
-//
 // configInit -
 //
 extern void configInit(Kjson* kjP, char* configFile);
