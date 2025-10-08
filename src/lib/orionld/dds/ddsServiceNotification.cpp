@@ -35,11 +35,80 @@ extern "C"
 #include "orionld/common/traceLevels.h"                     // Trace levels for KTrace
 #include "orionld/common/orionldState.h"                    // orionldStateInit
 #include "orionld/common/tenantList.h"                      // tenant0
+#include "orionld/context/orionldCoreContext.h"             // orionldCoreContext
+#include "orionld/context/orionldAttributeExpand.h"         // orionldAttributeExpand
+#include "orionld/context/orionldContextItemExpand.h"       // orionldContextItemExpand
 #include "orionld/mongoc/mongocEntityGet.h"                 // mongocEntityGet
 #include "orionld/kjTree/kjNavigate.h"                      // kjNavigate
+#include "orionld/serviceRoutines/orionldPostEntities.h"    // orionldPostEntities
+#include "orionld/serviceRoutines/orionldPostEntity.h"      // orionldPostEntity
+#include "orionld/serviceRoutines/orionldPutAttribute.h"    // orionldPutAttribute
+#include "orionld/service/serviceLookupByServiceRoutine.h"  // serviceLookupByServiceRoutine
 #include "orionld/dds/kjTreeLog.h"                          // kjTreeLog2
 #include "orionld/dds/ddsServiceCreate.h"                   // ddsServiceCreate
 #include "orionld/dds/ddsServiceLookup.h"                   // ddsServiceLookup
+
+
+
+// -----------------------------------------------------------------------------
+//
+// ddsEntity -
+//
+static KjNode* ddsEntity(const char* entityId, const char* entityType, const char* attributeName)
+{
+  char*   typeLongName = orionldContextItemExpand(orionldState.contextP, entityType, true, NULL);
+  KjNode* eP           = kjObject(orionldState.kjsonP, NULL);
+  KjNode* attrP        = kjObject(orionldState.kjsonP, attributeName);
+  KjNode* attrTypeP    = kjString(orionldState.kjsonP, "type", "Property");
+  KjNode* attrValueP   = kjString(orionldState.kjsonP, "value", "not initialized");
+
+  orionldState.payloadIdNode   = kjString(orionldState.kjsonP, "id", entityId);
+  orionldState.payloadTypeNode = kjString(orionldState.kjsonP, "type", typeLongName);
+
+  kjChildAdd(eP, attrP);
+  kjChildAdd(attrP, attrTypeP);
+  kjChildAdd(attrP, attrValueP);
+
+  return eP;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// ddsAttribute -
+//
+static KjNode* ddsAttribute(const char* attributeName)
+{
+  KjNode* body         = kjObject(orionldState.kjsonP, NULL);
+  KjNode* attrP        = kjObject(orionldState.kjsonP, attributeName);
+  KjNode* attrTypeP    = kjString(orionldState.kjsonP, "type", "Property");
+  KjNode* attrValueP   = kjString(orionldState.kjsonP, "value", "not initialized");
+
+  kjChildAdd(body, attrP);
+  kjChildAdd(attrP, attrTypeP);
+  kjChildAdd(attrP, attrValueP);
+
+  return body;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// ddsAttributeValues -
+//
+static KjNode* ddsAttributeValues(void)
+{
+  KjNode* body         = kjObject(orionldState.kjsonP, NULL);
+  KjNode* attrTypeP    = kjString(orionldState.kjsonP, "type", "Property");
+  KjNode* attrValueP   = kjString(orionldState.kjsonP, "value", "not initialized");
+
+  kjChildAdd(body, attrTypeP);
+  kjChildAdd(body, attrValueP);
+
+  return body;
+}
 
 
 
@@ -51,22 +120,62 @@ void ddsEntityAttributeUpsert(const char* entityId, const char* entityType, cons
 {
   // 01. Initialize, so orionldState+kjson lib can be used
   orionldStateInit(NULL);
-  orionldState.tenantP = &tenant0;
+  orionldState.tenantP         = &tenant0;
+  orionldState.contextP        = orionldCoreContextP;
+  orionldState.ddsSample       = true;
+  orionldState.uriParams.local = true;  // For now, all DDS data is "local only"
 
   // 02. Does the entity exist?
   KT_T(StDdsService, "Getting entity '%s' from mongo", entityId);
   KjNode* dbEntity = mongocEntityGet(entityId, NULL);
   KT_T(StDdsService, "Got entity '%s' from mongo: %p", entityId, dbEntity);
 
-  // 03. If it exists, add the attribute
+  // 03. If the entity exists, add the attribute
+  //     If not, add the entire entity
   if (dbEntity == NULL)
   {
-    KT_T(StDdsService, "The entity '%s' doesn't exist - creating it", entityId);
+    KT_T(StDdsServicePrepopulate, "The entity '%s' doesn't exist - creating it", entityId);
+    orionldState.serviceP    = serviceLookupByServiceRoutine(orionldPostEntities, HTTP_POST);
+    orionldState.requestTree = ddsEntity(entityId, entityType, attributeName);
+
+    KT_T(StDdsServicePrepopulate, "Calling orionldPostEntities");
+    orionldPostEntities();
   }
   else
   {
-    KT_T(StDdsService, "The entity '%s' exists - what about the attribute '%s'?", entityId, attributeName);
-    kjTreeLog2(dbEntity, "DB Entity", StDdsService);
+    KT_T(StDdsServicePrepopulate, "The entity '%s' exists - what about the attribute '%s'?", entityId, attributeName);
+    kjTreeLog2(dbEntity, "DB Entity", StDdsServicePrepopulate);
+
+    char*       attrLongName  = orionldAttributeExpand(orionldState.contextP, attributeName, true, NULL);
+    const char* compV[5]      = { "attrNames", attrLongName, NULL };
+    KjNode*     aP            = kjNavigate(configTree, compV, NULL, NULL);
+
+    orionldState.wildcard[0] = (char*) entityId;
+
+    //
+    // Lookup attribute 'attributeName'
+    // If already exists, overwrite (PUT Attribute)
+    // If not, POST /entities/entityId/attrs
+    //
+
+    if (aP == NULL)
+    {
+      orionldState.serviceP    = serviceLookupByServiceRoutine(orionldPostEntity, HTTP_POST);
+      orionldState.requestTree = ddsAttribute(attributeName);
+
+      KT_T(StDdsServicePrepopulate, "The attribute '%s' doesn't exist - alling orionldPostEntity", attributeName);
+      orionldPostEntity();
+    }
+    else
+    {
+      orionldState.wildcard[1]         = (char*) attributeName;
+      orionldState.in.pathAttrExpanded = attrLongName;
+      orionldState.serviceP            = serviceLookupByServiceRoutine(orionldPutAttribute, HTTP_PUT);
+      orionldState.requestTree         = ddsAttributeValues();
+
+      KT_T(StDdsServicePrepopulate, "The attribute '%s' exists - calling orionldPutAttribute", attributeName);
+      orionldPutAttribute();
+    }
   }
 }
 
@@ -103,8 +212,7 @@ void ddsServiceNotification(const char* serviceName, const eprosima::ddsenabler:
     char*       entityType    = (char*) "DDS";
     char*       attributeName = (char*) serviceName;
     const char* compV[5]      = { "dds", "ngsild", "services", serviceName, NULL };
-
-    KjNode* sP = kjNavigate(configTree, compV, NULL, NULL);
+    KjNode*     sP            = kjNavigate(configTree, compV, NULL, NULL);
 
     if (sP != NULL)
     {
@@ -119,7 +227,7 @@ void ddsServiceNotification(const char* serviceName, const eprosima::ddsenabler:
     }
     else
       KT_T(StDdsService, "Did not find service '%s' in config file", serviceName);
-    
+
     KT_T(StDdsService, "Create entity '%s' (type '%s') with attribute '%s' to DB", entityId, entityType, attributeName);
     ddsEntityAttributeUpsert(entityId, entityType, attributeName);
   }

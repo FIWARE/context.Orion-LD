@@ -24,7 +24,7 @@
 Test of pre-population of services from DDS
 
 --SHELL-INIT--
-$REPO_HOME/scripts/configFile.sh --ddsService "add_two_ints_server/list_parameters,ListParam,urn:ngsi-ld:list:params,add_two_int" > $HOME/.orionld
+$REPO_HOME/scripts/configFile.sh --ddsService "add_two_ints_server/list_parameters,ListParam,urn:ngsi-ld:list:params,add_two_ints-listParams" > $HOME/.orionld
 dbInit CB
 orionldStart CB -mongocOnly -wip dds,entityMaps
 
