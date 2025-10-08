@@ -53,6 +53,30 @@ echo
 
 
 --REGEXPECT--
+01. GET all entities from the broker
+====================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "add_two_ints-listParams": {
+            "type": "Property",
+            "value": "uninitialized"
+        },
+        "ddsType": {
+            "type": "Property",
+            "value": "fastdds"
+        },
+        "id": "urn:ngsi-ld:list:params",
+        "type": "ListParam"
+    }
+]
+
+
 --TEARDOWN--
 brokerStop
 dbDrop CB
