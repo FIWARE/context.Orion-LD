@@ -25,10 +25,12 @@
 extern "C"
 {
 #include "ktrace/kTrace.h"                                  // trace messages - ktrace library
+#include "ktrace/ktTraceLevelCheck.h"                       // ktTraceLevelCheck
 }
 
 #include "orionld/types/DdsService.h"                       // DdsService
 #include "orionld/common/orionldState.h"                    // ddsServices
+#include "orionld/common/fileName.h"                        // fileName
 
 
 
@@ -38,21 +40,29 @@ extern "C"
 //
 void ddsServiceListFunction(const char* path, int lineNo, const char* functionName, int traceLevel)
 {
-  int count = 0;
+  if (ktTraceLevelCheck(traceLevel) == false)
+    return;
+
+  char* fileNameOnly = fileName(path);
+  int   count = 0;
+
   for (DdsService* sP = ddsServices; sP != NULL; sP = sP->next)
   {
     ++count;
   }
-  KT_T(traceLevel, "There are %d DDS Services known to the system", count);
+  ktOut(fileNameOnly, lineNo, functionName, 'T', traceLevel, "There are %d DDS Services known to the system", count);
 
   for (DdsService* sP = ddsServices; sP != NULL; sP = sP->next)
   {
-    KT_T(traceLevel, "--------------------------------------------------------------------------------");
-    KT_T(traceLevel, "Service Name: '%s'", sP->name);
-    KT_T(traceLevel, "Request Type: '%s'", sP->requestType);
-    KT_T(traceLevel, "Reply Type:   '%s'", sP->replyType);
+    ktOut(fileNameOnly, lineNo, functionName, 'T', traceLevel, "--------------------------------------------------------------------------------");
+    ktOut(fileNameOnly, lineNo, functionName, 'T', traceLevel, "Service Name:   '%s'", sP->name);
+    ktOut(fileNameOnly, lineNo, functionName, 'T', traceLevel, "Request Type:   '%s'", sP->requestType);
+    ktOut(fileNameOnly, lineNo, functionName, 'T', traceLevel, "Reply Type:     '%s'", sP->replyType);
+    ktOut(fileNameOnly, lineNo, functionName, 'T', traceLevel, "Entity Id:      '%s'", sP->entityId);
+    ktOut(fileNameOnly, lineNo, functionName, 'T', traceLevel, "Entity Type:    '%s'", sP->entityType);
+    ktOut(fileNameOnly, lineNo, functionName, 'T', traceLevel, "Attribute Name: '%s'", sP->attributeName);
   }
 
   if (count > 0)
-    KT_T(traceLevel, "--------------------------------------------------------------------------------");
+    ktOut(fileNameOnly, lineNo, functionName, 'T', traceLevel, "--------------------------------------------------------------------------------");
 }

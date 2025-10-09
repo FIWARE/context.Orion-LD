@@ -1,5 +1,5 @@
-#ifndef SRC_LIB_ORIONLD_DDS_DDSPUBLISHATTRIBUTE_H_
-#define SRC_LIB_ORIONLD_DDS_DDSPUBLISHATTRIBUTE_H_
+#ifndef SRC_LIB_ORIONLD_DDS_DDSSERVICE_H_
+#define SRC_LIB_ORIONLD_DDS_DDSSERVICE_H_
 
 /*
 *
@@ -27,18 +27,17 @@
 */
 extern "C"
 {
-#include "kjson/KjNode.h"                                        // KjNode
+#include "kjson/KjNode.h"                                   // KjNode
 }
 
+#include "orionld/types/DdsService.h"                       // DdsService
 
 
-// ----------------------------------------------------------------------------
-//
-// ddsPublishAttribute -
-//
-// What is published over DDS is the "value" field of the attribute.
-// For now, sub-attributes are not used in DDS.
-//
-extern void ddsPublishAttribute(const char* entityId, char* attrShortName, KjNode* attrP, bool isValue);
 
-#endif  // SRC_LIB_ORIONLD_DDS_DDSPUBLISHATTRIBUTE_H_
+// -----------------------------------------------------------------------------
+//
+// ddsService
+//
+extern void ddsService(DdsService* serviceP, KjNode* attributeValueP);
+
+#endif  // SRC_LIB_ORIONLD_DDS_DDSSERVICE_H_

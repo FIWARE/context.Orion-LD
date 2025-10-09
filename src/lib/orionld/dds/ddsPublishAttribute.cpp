@@ -26,6 +26,7 @@ extern "C"
 {
 #include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kalloc/kaAlloc.h"                                      // kaAlloc
+#include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjRender.h"                                      // kjFastRender
@@ -36,12 +37,16 @@ extern "C"
 #include "orionld/types/DdsType.h"                               // DdsType
 #include "orionld/common/traceLevels.h"                          // KT_T trace levels
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/eqForDot.h"                             // eqForDot
 #include "orionld/config/configAttributeToDdsTopic.h"            // configAttributeToDdsTopic
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
 #include "orionld/kjTree/kjChildCount.h"                         // kjChildCount
 #include "orionld/dds/ddsInit.h"                                 // ddsEnabler
 #include "orionld/dds/ddsTypes.h"                                // ddsTypeLookupByTopic, typeItemArraySort, typeItemArraySize, typeItemArraySerialize
 #include "orionld/dds/kjTreeLog.h"                               // kjTreeLog2
+#include "orionld/dds/ddsServiceLookup.h"                        // ddsServiceLookup
+#include "orionld/dds/ddsServiceLookupByAttributeName.h"         // ddsServiceLookupByAttributeName
+#include "orionld/dds/ddsService.h"                              // ddsService
 #include "orionld/dds/ddsPublishAttribute.h"                     // Own interface
 
 
@@ -146,6 +151,7 @@ static char* kjDdsType(KjNode* valueP, char* buf, int bufSize)
 #endif
 
 
+
 // ----------------------------------------------------------------------------
 //
 // ddsPublishAttribute -
@@ -153,22 +159,11 @@ static char* kjDdsType(KjNode* valueP, char* buf, int bufSize)
 // What is published over DDS is the "value" field of the attribute.
 // For now, sub-attributes are not used in DDS.
 //
-void ddsPublishAttribute(const char* entityId, const char* attrName, KjNode* attrP, bool isValue)
+void ddsPublishAttribute(const char* entityId, char* attrShortName, KjNode* attrP, bool isValue)
 {
-  char* shortName = orionldContextItemAliasLookup(orionldState.contextP, attrName, NULL, NULL);
-  char* topic     = configAttributeToDdsTopic(entityId, shortName);
-
-  if (topic == NULL)
-  {
-    KT_T(StDds, "Nothing to be published (attribute '%s' not in config file)", shortName);
-    return;
-  }
-
-  KT_T(StDds, "Pushing attribute '%s' (%s) to DDS topic '%s'", attrName, attrP->name, topic);
-
   KjNode* valueP = (isValue == true)? attrP : kjLookup(attrP, "value");
   if (valueP == NULL)
-    KT_RVE("Attribute '%s' doesn't have a value!'", attrName);
+    KT_RVE("Attribute '%s' doesn't have a value!'", attrShortName);
 
   if (valueP->type != KjObject)
   {
@@ -177,6 +172,38 @@ void ddsPublishAttribute(const char* entityId, const char* attrName, KjNode* att
   }
 
   kjTreeLog2(valueP, "Attr Value", StDds);
+
+  //
+  // Might be 'attrShortName' is not a shortname ...
+  // In the worst case, it's even a long name with '=' instead of '.' (coming from the database)
+  //
+  char* attrLongName  = kaStrdup(&orionldState.kalloc, attrShortName);
+  eqForDot(attrLongName);
+  attrShortName       = orionldContextItemAliasLookup(orionldState.contextP, attrShortName, NULL, NULL);
+  char* topic         = configAttributeToDdsTopic(entityId, attrShortName);
+
+  KT_T(StDdsService, "attrShortName:  '%s'", attrShortName);
+
+  if (topic == NULL)
+  {
+    KT_T(StDdsService, "No topic found, might be a Service");
+    DdsService* sP = ddsServiceLookupByAttributeName(attrShortName);
+    KT_T(StDdsService, "service at %p", sP);
+    KT_T(StDdsService, "attrP at %p", attrP);
+
+    if (sP == NULL)
+      KT_T(StDds, "Nothing to be published (attribute '%s' not in config file)", attrShortName);
+    else
+    {
+      KjNode* attributeValueP = kjLookup(attrP, "value");
+      KT_T(StDds, "attributeValueP at %p", attributeValueP);
+      ddsService(sP, attributeValueP);
+    }
+
+    return;
+  }
+
+  KT_T(StDds, "Pushing attribute '%s' (%s) to DDS topic '%s'", attrShortName, attrP->name, topic);
 
   if ((isValue == false) && (valueP == NULL))
     KT_RVE("The field named 'value' missing in the merged attribute");
@@ -219,7 +246,7 @@ void ddsPublishAttribute(const char* entityId, const char* attrName, KjNode* att
   char* serialized = kjDdsType(valueP, serializedV, sizeof(serializedV));
 
   if (strcmp(serialized, typeP->type) != 0)
-    KT_RVE("Not publishing attribute '%s' of entity '%s' on DDS as types differ: expected from DDS: '%s', got via HTTP: '%s'", attrName, entityId, typeP->type, serialized);
+    KT_RVE("Not publishing attribute '%s' of entity '%s' on DDS as types differ: expected from DDS: '%s', got via HTTP: '%s'", attrShortName, entityId, typeP->type, serialized);
 #endif
 
   //
@@ -238,6 +265,6 @@ void ddsPublishAttribute(const char* entityId, const char* attrName, KjNode* att
 
   kjFastRender(valueP, bufP);
 
-  KT_T(StDds, "Publishing attribute '%s' on DDS topic '%s'. Value: %s", attrName, topic, bufP);
+  KT_T(StDds, "Publishing attribute '%s' on DDS topic '%s'. Value: %s", attrShortName, topic, bufP);
   ddsEnabler->publish(topic, bufP);
 }

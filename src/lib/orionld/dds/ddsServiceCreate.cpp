@@ -24,6 +24,7 @@
 */
 #include <stdlib.h>                                         // malloc
 #include <string.h>                                         // strdup
+#include <strings.h>                                        // bzero
 
 #include "orionld/types/DdsService.h"                       // DdsService
 #include "orionld/common/orionldState.h"                    // ddsServices
@@ -40,16 +41,24 @@ DdsService* ddsServiceCreate
   const char* requestType,
   const char* requestQoS,
   const char* replyType,
-  const char* replyQoS
+  const char* replyQoS,
+  const char* entityId,
+  const char* entityType,
+  const char* attributeName
 )
 {
   DdsService* sP = (DdsService*) malloc(sizeof(DdsService));
 
-  sP->name        = strdup(name);
-  sP->requestType = strdup(requestType);
-  sP->requestQoS  = strdup(requestQoS);
-  sP->replyType   = strdup(replyType);
-  sP->replyQoS    = strdup(replyQoS);
+  bzero(sP, sizeof(DdsService));
+
+  sP->name = strdup(name);
+  if (requestType   != NULL) sP->requestType   = strdup(requestType);
+  if (requestQoS    != NULL) sP->requestQoS    = strdup(requestQoS);
+  if (replyType     != NULL) sP->replyType     = strdup(replyType);
+  if (replyQoS      != NULL) sP->replyQoS      = strdup(replyQoS);
+  if (entityId      != NULL) sP->entityId      = strdup(entityId);
+  if (entityType    != NULL) sP->entityType    = strdup(entityType);
+  if (attributeName != NULL) sP->attributeName = strdup(attributeName);
 
   // Add it to the linked list
   // FIXME: Semaphore!
@@ -57,4 +66,25 @@ DdsService* ddsServiceCreate
   ddsServices = sP;
 
   return sP;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// ddsServiceInfoAdd -
+//
+void ddsServiceInfoAdd
+(
+  DdsService* sP,
+  const char* requestType,
+  const char* requestQoS,
+  const char* replyType,
+  const char* replyQoS
+)
+{
+  if (requestType   != NULL) sP->requestType   = strdup(requestType);
+  if (requestQoS    != NULL) sP->requestQoS    = strdup(requestQoS);
+  if (replyType     != NULL) sP->replyType     = strdup(replyType);
+  if (replyQoS      != NULL) sP->replyQoS      = strdup(replyQoS);
 }

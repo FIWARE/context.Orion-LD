@@ -31,8 +31,8 @@
 
 // -----------------------------------------------------------------------------
 //
-// ddsServiceLookup
+// ddsServiceLookup -
 //
-extern DdsService* ddsServiceLookup(const char* name);
+extern DdsService* ddsServiceLookup(const char* serviceName);
 
 #endif  // SRC_LIB_ORIONLD_DDS_DDSSERVICELOOKUP_H_

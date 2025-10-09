@@ -25,6 +25,7 @@
 *
 * Author: Ken Zangelin
 */
+#include <stdint.h>                                              // types: uint64_t, ...
 
 
 
@@ -35,10 +36,14 @@
 typedef struct DdsService
 {
   char*               name;
+  char*               entityId;
+  char*               entityType;
+  char*               attributeName;
   char*               requestType;
   char*               requestQoS;
   char*               replyType;
   char*               replyQoS;
+  uint64_t            requestId;
   struct DdsService*  next;
 } DdsService;
 

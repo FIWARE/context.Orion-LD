@@ -1,6 +1,3 @@
-#ifndef SRC_LIB_ORIONLD_DDS_DDSPUBLISHATTRIBUTE_H_
-#define SRC_LIB_ORIONLD_DDS_DDSPUBLISHATTRIBUTE_H_
-
 /*
 *
 * Copyright 2025 FIWARE Foundation e.V.
@@ -25,20 +22,29 @@
 *
 * Author: Ken Zangelin
 */
-extern "C"
+#include <string.h>                                         // strcmp
+#include "orionld/types/DdsService.h"                       // DdsService
+#include "orionld/common/orionldState.h"                    // ddsServices
+
+
+
+// -----------------------------------------------------------------------------
+//
+// ddsServiceLookupByAttributeName
+//
+// FIXME:
+//   Add attribute name, entity id and entity type to struct DdsService (from Config File)
+//
+DdsService* ddsServiceLookupByAttributeName(const char* attrShortName)
 {
-#include "kjson/KjNode.h"                                        // KjNode
+  for (DdsService* sP = ddsServices; sP != NULL; sP = sP->next)
+  {
+    if (sP->attributeName == NULL)
+      continue;
+
+    if (strcmp(sP->attributeName, attrShortName) == 0)
+      return sP;
+  }
+
+  return NULL;
 }
-
-
-
-// ----------------------------------------------------------------------------
-//
-// ddsPublishAttribute -
-//
-// What is published over DDS is the "value" field of the attribute.
-// For now, sub-attributes are not used in DDS.
-//
-extern void ddsPublishAttribute(const char* entityId, char* attrShortName, KjNode* attrP, bool isValue);
-
-#endif  // SRC_LIB_ORIONLD_DDS_DDSPUBLISHATTRIBUTE_H_

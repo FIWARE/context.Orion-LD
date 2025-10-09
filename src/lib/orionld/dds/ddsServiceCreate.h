@@ -39,6 +39,24 @@ extern DdsService* ddsServiceCreate
   const char* requestType,
   const char* requestQoS,
   const char* replyType,
+  const char* replyQoS,
+  const char* entityId,
+  const char* entityType,
+  const char* attributeName
+);
+
+
+
+// -----------------------------------------------------------------------------
+//
+// ddsServiceInfoAdd -
+//
+extern void ddsServiceInfoAdd
+(
+  DdsService* sP,
+  const char* requestType,
+  const char* requestQoS,
+  const char* replyType,
   const char* replyQoS
 );
 

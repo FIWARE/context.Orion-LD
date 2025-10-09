@@ -42,19 +42,35 @@ orionldStart CB -mongocOnly -wip dds,entityMaps
 #
 # After startup, the broker is queried for all its entities - two are found (urn:ngsi-ld:list:params and urn:ngsi-ld:dds:default)
 #
-# 01. GET all entities from the broker
+# 01. GET all entities from the broker - to check the prepopulation (the test fails if demo_nodes_cpp is running)
+# 02. PATCH add_two_ints-listParams of the entity urn:ngsi-ld:list:params - triggers a service where the broker is the client
 #
 
-echo "01. GET all entities from the broker"
-echo "===================================="
+echo "01. GET all entities from the broker - to check the prepopulation (the test fails if demo_nodes_cpp is running)"
+echo "==============================================================================================================="
 orionCurl --url /ngsi-ld/v1/entities?local=true
 echo
 echo
 
 
+echo "02. PATCH add_two_ints-listParams of the entity urn:ngsi-ld:list:params - triggers a service where the broker is the client"
+echo "==========================================================================================================================="
+payload='{
+  "add_two_ints-listParams": {
+    "value": {
+      "depth": 2,
+      "prefixes": [ 1, 2, 3 ]
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:list:params?local=true --payload "$payload" -X PATCH
+echo
+echo
+
+
 --REGEXPECT--
-01. GET all entities from the broker
-====================================
+01. GET all entities from the broker - to check the prepopulation (the test fails if demo_nodes_cpp is running)
+===============================================================================================================
 HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
 Content-Type: application/json
@@ -75,6 +91,13 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "type": "ListParam"
     }
 ]
+
+
+02. PATCH add_two_ints-listParams of the entity urn:ngsi-ld:list:params - triggers a service where the broker is the client
+===========================================================================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
 
 
 --TEARDOWN--
