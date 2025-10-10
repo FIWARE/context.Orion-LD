@@ -24,7 +24,7 @@
 Test of pre-population of services from DDS
 
 --SHELL-INIT--
-$REPO_HOME/scripts/configFile.sh --ddsService "add_two_ints_server/list_parameters,ListParam,urn:ngsi-ld:list:params,add_two_ints-listParams" > $HOME/.orionld
+$REPO_HOME/scripts/configFile.sh --ddsService "add_two_ints,Service,urn:ngsi-ld:two-ints,dds_add_two_ints" > $HOME/.orionld
 dbInit CB
 orionldStart CB -mongocOnly -wip dds,entityMaps
 
@@ -40,10 +40,10 @@ orionldStart CB -mongocOnly -wip dds,entityMaps
 # If in the config file (only 'add_two_ints_server/list_parameters' is there), the entity/attribute is created. If not, the serviceName is used
 # as attribute name and added to the default DDS entity.
 #
-# After startup, the broker is queried for all its entities - two are found (urn:ngsi-ld:list:params and urn:ngsi-ld:dds:default)
+# After startup, the broker is queried for all its entities - two are found (urn:ngsi-ld:two-ints and urn:ngsi-ld:dds:default)
 #
 # 01. GET all entities from the broker - to check the prepopulation (the test fails if demo_nodes_cpp is running)
-# 02. PATCH add_two_ints-listParams of the entity urn:ngsi-ld:list:params - triggers a service where the broker is the client
+# 02. PATCH add_two_ints-listParams of the entity urn:ngsi-ld:two-ints - triggers a service where the broker is the client
 #
 
 echo "01. GET all entities from the broker - to check the prepopulation (the test fails if demo_nodes_cpp is running)"
@@ -53,17 +53,17 @@ echo
 echo
 
 
-echo "02. PATCH add_two_ints-listParams of the entity urn:ngsi-ld:list:params - triggers a service where the broker is the client"
-echo "==========================================================================================================================="
+echo "02. PATCH add_two_ints-listParams of the entity urn:ngsi-ld:two-ints - triggers a service where the broker is the client"
+echo "========================================================================================================================"
 payload='{
-  "add_two_ints-listParams": {
+  "dds_add_two_ints": {
     "value": {
-      "depth": 2,
-      "prefixes": [ 1, 2, 3 ]
+      "a": 6,
+      "b": 9
     }
   }
 }'
-orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:list:params?local=true --payload "$payload" -X PATCH
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:two-ints?local=true --payload "$payload" -X PATCH
 echo
 echo
 
@@ -79,22 +79,22 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 [
     {
-        "add_two_ints-listParams": {
-            "type": "Property",
-            "value": "uninitialized"
-        },
         "ddsType": {
             "type": "Property",
             "value": "fastdds"
         },
-        "id": "urn:ngsi-ld:list:params",
-        "type": "ListParam"
+        "dds_add_two_ints": {
+            "type": "Property",
+            "value": "uninitialized"
+        },
+        "id": "urn:ngsi-ld:two-ints",
+        "type": "Service"
     }
 ]
 
 
-02. PATCH add_two_ints-listParams of the entity urn:ngsi-ld:list:params - triggers a service where the broker is the client
-===========================================================================================================================
+02. PATCH add_two_ints-listParams of the entity urn:ngsi-ld:two-ints - triggers a service where the broker is the client
+========================================================================================================================
 HTTP/1.1 204 No Content
 Date: REGEX(.*)
 
@@ -103,4 +103,4 @@ Date: REGEX(.*)
 --TEARDOWN--
 brokerStop
 dbDrop CB
-rm -f $HOME/.orionld
+#rm -f $HOME/.orionld

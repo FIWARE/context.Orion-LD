@@ -31,20 +31,33 @@
 
 // -----------------------------------------------------------------------------
 //
+// DdsServiceInstance -
+//
+typedef struct DdsServiceInstance
+{
+  uint64_t                    requestId;
+  struct DdsServiceInstance*  next;
+} DdsServiceInstance;
+
+
+
+// -----------------------------------------------------------------------------
+//
 // DdsService -
 //
 typedef struct DdsService
 {
-  char*               name;
-  char*               entityId;
-  char*               entityType;
-  char*               attributeName;
-  char*               requestType;
-  char*               requestQoS;
-  char*               replyType;
-  char*               replyQoS;
-  uint64_t            requestId;
-  struct DdsService*  next;
+  char*                name;
+  char*                entityId;
+  char*                entityType;
+  char*                attributeName;
+  char*                requestType;
+  char*                requestQoS;
+  char*                replyType;
+  char*                replyQoS;
+  uint64_t             requestId;
+  DdsServiceInstance*  instances;
+  struct DdsService*   next;
 } DdsService;
 
 #endif  // SRC_LIB_ORIONLD_TYPES_DDSSERVICE_H_

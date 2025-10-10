@@ -41,6 +41,7 @@ extern "C"
 #include "orionld/dds/ddsInit.h"                                 // ddsEnabler
 
 
+
 // -----------------------------------------------------------------------------
 //
 // ddsService
@@ -53,7 +54,16 @@ void ddsService(DdsService* serviceP, KjNode* attributeValueP)
   kjFastRender(attributeValueP, json);
 
   KT_T(StDdsService, "Servicing '%s'", serviceP->name);
-  serviceP->requestId = 0x12341234;
-  ddsEnabler->send_service_request(serviceP->name, json, serviceP->requestId, eprosima::ddsenabler::participants::RPC_PROTOCOL::ROS2);
-  KT_T(StDdsService, "Started Service '%s' (req id: %llu)", serviceP->name, serviceP->requestId);
+
+  //
+  // Create the instance and add it to the 'instances' list
+  //
+  DdsServiceInstance* dsiP = (DdsServiceInstance*) malloc(sizeof(DdsServiceInstance));
+  dsiP->requestId     = 0;
+  dsiP->next          = serviceP->instances;
+  serviceP->instances = dsiP;
+
+  // Start the service
+  ddsEnabler->send_service_request(serviceP->name, json, dsiP->requestId, eprosima::ddsenabler::participants::RPC_PROTOCOL::ROS2);
+  KT_T(StDdsService, "Started Service '%s' (req id: %llu)", serviceP->name, dsiP->requestId);
 }

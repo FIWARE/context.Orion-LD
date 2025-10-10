@@ -23,7 +23,7 @@
 * Author: Ken Zangelin
 */
 #include <unistd.h>                                         // access
-#include <stdlib.h>                                         // malloc
+#include <stdlib.h>                                         // malloc, free
 #include <memory>                                           // for std::unique_ptr
 #include <string>                                           // for std::string
 
@@ -46,6 +46,7 @@ extern "C"
 #include "orionld/dds/ddsPrePopulateDb.h"                   // ddsPrePopulateDb
 #include "orionld/dds/kjTreeLog.h"                          // kjTreeLog2
 #include "orionld/dds/ddsServiceList.h"                     // ddsServiceList
+#include "orionld/dds/ddsServiceLookup.h"                   // ddsServiceLookup
 #include "orionld/dds/ddsTypes.h"                           // ddsTypeNotification, ddsTypeLookup
 #include "orionld/dds/ddsNotification.h"                    // ddsNotification
 #include "orionld/dds/ddsTopicNotification.h"               // ddsTopicNotification
@@ -149,7 +150,31 @@ void ddsServiceReplyNotification
   int64_t     publishTime
 )
 {
-  KT_T(StDdsService, "Got a Service Reply Notification (action: '%s', req: %lld): '%s'", serviceName, requestId, json);
+  KT_T(StDdsService, "Got a Service Reply Notification (service: '%s', req: %lld): '%s'", serviceName, requestId, json);
+
+  DdsService* serviceP = ddsServiceLookup(serviceName);
+  if (serviceP == NULL)
+    KT_W("Service '%s' not found", serviceName);
+
+  // Lookup the instance and remove it
+  DdsServiceInstance* prev = NULL;
+  for (DdsServiceInstance* dsiP = serviceP->instances; dsiP != NULL; dsiP = dsiP->next)
+  {
+    if (dsiP->requestId == requestId)
+    {
+      if (prev != NULL)
+        prev->next = dsiP->next;
+      else
+        serviceP->instances = dsiP->next;
+
+      free(dsiP);
+
+      KT_T(StDdsService, "Found the instance '%llu' of service '%s' and removed it", requestId, serviceName);
+      return;
+    }
+  }
+
+  KT_W("Instance '%llu' of service '%s' not found", requestId, serviceName);
 }
 
 
