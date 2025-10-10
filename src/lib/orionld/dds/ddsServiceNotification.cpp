@@ -45,7 +45,7 @@ extern "C"
 #include "orionld/serviceRoutines/orionldPutAttribute.h"    // orionldPutAttribute
 #include "orionld/service/serviceLookupByServiceRoutine.h"  // serviceLookupByServiceRoutine
 #include "orionld/dds/kjTreeLog.h"                          // kjTreeLog2
-#include "orionld/dds/ddsServiceCreate.h"                   // ddsServiceCreate
+#include "orionld/dds/ddsServiceCreate.h"                   // ddsServiceCreate, ddsServiceInfoAdd
 #include "orionld/dds/ddsServiceLookup.h"                   // ddsServiceLookup
 
 
@@ -195,14 +195,9 @@ void ddsServiceNotification(const char* serviceName, const eprosima::ddsenabler:
   //
   // Create the service unless it already exists
   //
-  if (ddsServiceLookup(serviceName) == NULL)
+  DdsService* serviceP = ddsServiceLookup(serviceName);
+  if (serviceP == NULL)
   {
-    ddsServiceCreate(serviceName,
-                     serviceInfo.request.type_name.c_str(),
-                     serviceInfo.request.serialized_qos.c_str(),
-                     serviceInfo.reply.type_name.c_str(),
-                     serviceInfo.reply.serialized_qos.c_str());
-
     //
     //   Lookup $serviceName in the config file - get attribute name, entity id and entity type.
     //   Then create the entity/attribute in the DB if need be.
@@ -212,23 +207,48 @@ void ddsServiceNotification(const char* serviceName, const eprosima::ddsenabler:
     char*       entityType    = (char*) "DDS";
     char*       attributeName = (char*) serviceName;
     const char* compV[5]      = { "dds", "ngsild", "services", serviceName, NULL };
-    KjNode*     sP            = kjNavigate(configTree, compV, NULL, NULL);
+    KjNode*     sNodeP        = kjNavigate(configTree, compV, NULL, NULL);
 
-    if (sP != NULL)
+    if (sNodeP != NULL)
     {
-      KT_T(StDdsService, "Found service '%s' in config file", serviceName);
-      KjNode* eIdNodeP   = kjLookup(sP, "entityId");
-      KjNode* eTypeNodeP = kjLookup(sP, "entityType");
-      KjNode* attrNodeP  = kjLookup(sP, "attribute");
+      KT_T(StDdsService, "KZ: Found service '%s' in config file", serviceName);
+      KjNode* eIdNodeP   = kjLookup(sNodeP, "entityId");
+      KjNode* eTypeNodeP = kjLookup(sNodeP, "entityType");
+      KjNode* attrNodeP  = kjLookup(sNodeP, "attribute");
 
       if (eIdNodeP   != NULL)    entityId      = eIdNodeP->value.s;
       if (eTypeNodeP != NULL)    entityType    = eTypeNodeP->value.s;
       if (attrNodeP  != NULL)    attributeName = attrNodeP->value.s;
+
+      ddsServiceCreate(serviceName,
+                       serviceInfo.request.type_name.c_str(),
+                       serviceInfo.request.serialized_qos.c_str(),
+                       serviceInfo.reply.type_name.c_str(),
+                       serviceInfo.reply.serialized_qos.c_str(),
+                       entityId,
+                       entityType,
+                       attributeName);
     }
     else
-      KT_T(StDdsService, "Did not find service '%s' in config file", serviceName);
+    {
+      KT_T(StDdsService, "KZ: Did not find service '%s' in config file", serviceName);
+      ddsServiceCreate(serviceName,
+                       serviceInfo.request.type_name.c_str(),
+                       serviceInfo.request.serialized_qos.c_str(),
+                       serviceInfo.reply.type_name.c_str(),
+                       serviceInfo.reply.serialized_qos.c_str(),
+                       NULL,
+                       NULL,
+                       NULL);
+    }
 
-    KT_T(StDdsService, "Create entity '%s' (type '%s') with attribute '%s' to DB", entityId, entityType, attributeName);
+    KT_T(StDdsService, "KZ: Adding attribute '%s' to entity '%s' (type '%s') in DB", attributeName, entityId, entityType);
     ddsEntityAttributeUpsert(entityId, entityType, attributeName);
   }
+  else
+    ddsServiceInfoAdd(serviceP,
+                     serviceInfo.request.type_name.c_str(),
+                     serviceInfo.request.serialized_qos.c_str(),
+                     serviceInfo.reply.type_name.c_str(),
+                     serviceInfo.reply.serialized_qos.c_str());
 }

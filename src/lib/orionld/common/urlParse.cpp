@@ -167,7 +167,7 @@ bool urlParse
   if (url[urlIx] == '/')
   {
     *urlPathPP = (char*) &url[urlIx];
-    LM_T(LmtAlt, ("Got an URL PATH: '%s'", *urlPathPP));
+    LM_T(LmtAlt, ("Got a URL PATH: '%s'", *urlPathPP));
   }
   else
   {

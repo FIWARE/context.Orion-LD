@@ -9,7 +9,7 @@
   #XXXX: Support for GET Attribute (local only and no support for datasetId)
 
 ## DDS
-  #XXXX: The broker is now aware of DDS Services (only aware, not treating them)
+  #XXXX: Support for DDS Services
 
 ## Multi-Attribute (datasetId)
 ## Notes

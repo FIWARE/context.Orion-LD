@@ -52,6 +52,8 @@ extern "C"
 #include "orionld/mongoc/mongocEntitiesQuery.h"             // mongocEntitiesQuery
 #include "orionld/mongoc/mongocEntitiesUpsert.h"            // mongocEntitiesUpsert
 #include "orionld/mongoc/mongocAttributesAdd.h"             // mongocAttributesAdd
+#include "orionld/dds/ddsServiceLookup.h"                   // ddsServiceLookup
+#include "orionld/dds/ddsServiceCreate.h"                   // ddsServiceCreate
 #include "orionld/dds/kjTreeLog.h"                          // kjTreeLog2
 
 
@@ -102,9 +104,10 @@ static void* ddsPrePopulateDbInThread(void* vP)
   char* what       = (char*) vP;
   char* concept    = what;
   char* configPath = NULL;
+  bool  isService  = false;
 
-  if      (strcmp(what, "topics")   == 0) configPath = (char*) "dds.ngsild.topics";
-  else if (strcmp(what, "services") == 0) configPath = (char*) "dds.ngsild.services";
+  if      (strcmp(what, "topics")   == 0) { configPath = (char*) "dds.ngsild.topics"; }
+  else if (strcmp(what, "services") == 0) { configPath = (char*) "dds.ngsild.services"; isService = true; }
   else
     KT_X(1, "Invalid input for ddsPrePopulateDb: '%s'", what);
 
@@ -154,7 +157,7 @@ static void* ddsPrePopulateDbInThread(void* vP)
 
     if ((entityType == NULL) || (entityId == NULL) || (attrName == NULL))
     {
-      KT_W("Topic '%s' is incomplete in the config file (entityType: '%s', entityId: '%s', attribute: '%s')", topic->name, entityType, entityId, attrName);
+      KT_W("Topic/Service '%s' is incomplete in the config file (entityType: '%s', entityId: '%s', attribute: '%s')", topic->name, entityType, entityId, attrName);
       continue;
     }
 
@@ -163,6 +166,12 @@ static void* ddsPrePopulateDbInThread(void* vP)
 
     pickList.array[pickList.items] = entityId;
     ++pickList.items;
+
+    if (isService == true)
+    {
+      if (ddsServiceLookup(topic->name) == NULL)
+        ddsServiceCreate(topic->name, NULL, NULL, NULL, NULL, entityId, entityType, attrName);
+    }
   }
 
   KT_T(StDdsPrePopulate, "-------------------------------------------------------------");

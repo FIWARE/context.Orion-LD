@@ -33,9 +33,11 @@ SET (SOURCES
   ddsPrePopulateDb.cpp
   ddsTopicNotification.cpp
   ddsServiceNotification.cpp
+  ddsService.cpp
   ddsServiceListFunction.cpp
   ddsServiceCreate.cpp
   ddsServiceLookup.cpp
+  ddsServiceLookupByAttributeName.cpp
 )
 
 # Include directories
