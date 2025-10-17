@@ -37,6 +37,7 @@
 extern "C"
 {
 #include "kbase/version.h"                                     // kbaseVersion
+#include "ktrace/ktraceVersion.h"                              // ktraceVersion
 #include "kalloc/version.h"                                    // kallocVersion
 #include "khash/version.h"                                     // khashVersion
 #include "kjson/version.h"                                     // kjsonVersion
@@ -103,6 +104,8 @@ bool orionldGetVersion(void)
 
   // K-Lib versions
   nodeP = kjString(orionldState.kjsonP, "kbase version", kbaseVersion);
+  kjChildAdd(orionldState.responseTree, nodeP);
+  nodeP = kjString(orionldState.kjsonP, "ktrace version", ktraceVersion);
   kjChildAdd(orionldState.responseTree, nodeP);
   nodeP = kjString(orionldState.kjsonP, "kalloc version", kallocVersion);
   kjChildAdd(orionldState.responseTree, nodeP);

@@ -69,6 +69,7 @@ Date: REGEX(.*)
   "Orion-LD version": REGEX(.*),
   "based on orion": "1.15.0-next",
   "kbase version": "0.8.2",
+  "ktrace version": REGEX(.*),
   "kalloc version": "0.8",
   "khash version": "0.8",
   "kjson version": "0.8.3",

@@ -84,6 +84,7 @@ Date: REGEX(.*)
     "kalloc version": "REGEX(.*)",
     "kbase version": "REGEX(.*)",
     "khash version": "REGEX(.*)",
+    "ktrace version": REGEX(.*),
     "kjson version": "REGEX(.*)",
     "libcurl version": "REGEX(.*)",
     "libuuid version": "REGEX(.*)",
