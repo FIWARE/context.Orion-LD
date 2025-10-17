@@ -418,7 +418,7 @@ static void ddsActionStatusNotification
 (
   const char*  actionName,
   const eprosima::ddsenabler::participants::UUID&  goalId,
-  eprosima::ddsenabler::participants::STATUS_CODE  statusCode,
+  eprosima::ddsenabler::participants::StatusCode   statusCode,
   const char*  statusMessage,
   int64_t      publishTime
 )
