@@ -37,6 +37,7 @@ extern "C"
 #include "orionld/types/DistOpType.h"                            // DistOpType
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/distOp/distOpListsMerge.h"                     // distOpListsMerge
+#include "orionld/distOp/distOpsSend.h"                          // distOpsSend
 #include "orionld/distOp/distOpSend.h"                           // distOpSend
 #include "orionld/distOp/xForwardedForCompose.h"                 // xForwardedForCompose
 #include "orionld/distOp/viaCompose.h"                           // viaCompose
@@ -137,6 +138,10 @@ DistOp* distOpRequests(char* entityId, char* entityType, DistOpType operation, K
   if (distOpList == NULL)
     return NULL;
 
+  // FIXME: Here I could probably just call distOpsSend().
+  // Not really, as the last part about "Anything left for a local entity?"
+  // I'd need to fix that first, before I can call distOpsSend().
+
   // Now that we've found all matching registrations we can add ourselves to the X-forwarded-For header
   char* xff = xForwardedForCompose(orionldState.in.xForwardedFor, localIpAndPort);
   char* via = viaCompose(orionldState.in.via, brokerId);
@@ -185,12 +190,19 @@ DistOp* distOpRequests(char* entityId, char* entityType, DistOpType operation, K
         }
       }
 
-      if ((++loops >= 50) && ((loops % 25) == 0))
+      if ((++loops >= 1000) && ((loops % 100) == 0))
         LM_W(("curl_multi_perform doesn't seem to finish ... (%d loops)", loops));
+
+      if (loops > 3000)
+      {
+        LM_E(("Internal Error (curl hard timeout at 3000 loops)"));
+        break;
+      }
     }
 
-    if (loops >= 100)
+    if (loops >= 1000)
       LM_W(("curl_multi_perform finally finished!   (%d loops)", loops));
+
 
     // Anything left for a local entity?
     if (payloadBody->value.firstChildP != NULL)
