@@ -1,9 +1,6 @@
-#ifndef SRC_LIB_ORIONLD_CONFIG_CONFIGLOAD_H_
-#define SRC_LIB_ORIONLD_CONFIG_CONFIGLOAD_H_
-
 /*
 *
-* Copyright 2024 FIWARE Foundation e.V.
+* Copyright 2025 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,18 +22,29 @@
 *
 * Author: Ken Zangelin
 */
-extern "C"
-{
-#include "kjson/kjson.h"                                    // Kjson
-#include "kjson/KjNode.h"                                   // KjNode
-}
+#include <string.h>                                         // strcmp
+#include "orionld/types/DdsService.h"                       // DdsService
+#include "orionld/common/orionldState.h"                    // ddsServices
 
 
 
 // -----------------------------------------------------------------------------
 //
-// configLoad -
+// ddsServiceLookupByAttributeName
 //
-extern int configLoad(Kjson* kjP, const char* configFile);
+// FIXME:
+//   Add attribute name, entity id and entity type to struct DdsService (from Config File)
+//
+DdsService* ddsServiceLookupByAttributeName(const char* attrShortName)
+{
+  for (DdsService* sP = ddsServices; sP != NULL; sP = sP->next)
+  {
+    if (sP->attributeName == NULL)
+      continue;
 
-#endif  // SRC_LIB_ORIONLD_CONFIG_CONFIGLOAD_H_
+    if (strcmp(sP->attributeName, attrShortName) == 0)
+      return sP;
+  }
+
+  return NULL;
+}

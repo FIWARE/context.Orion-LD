@@ -305,6 +305,7 @@ Date: REGEX(.*)
   "Orion-LD version": REGEX(.*),
   "based on orion": REGEX(.*),
   "kbase version": REGEX(.*),
+  "ktrace version": "REGEX(.*)"
   "kalloc version": REGEX(.*),
   "khash version": REGEX(.*),
   "kjson version": REGEX(.*),

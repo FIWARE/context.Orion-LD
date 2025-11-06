@@ -31,6 +31,7 @@
 #include <memory>                                           // for std::unique_ptr
 
 #include "ddsenabler/dds_enabler_runner.hpp"                // dds enabler
+#include "ddsenabler_participants/RpcTypes.hpp"             // eprosima::ddsenabler::participants::UUID
 
 extern "C"
 {
@@ -231,9 +232,9 @@ static void ddsTypeNotification
 //
 // ddsTopicNotification -
 //
-void ddsTopicNotification(const char* topicName, const char* typeName, const char* serializedQos)
+void ddsTopicNotification(const char* topicName, const eprosima::ddsenabler::participants::TopicInfo& topicInfo)
 {
-  KT_T(StDds, "Got a topic notification ('%s', '%s', '%s')", topicName, typeName, serializedQos);
+  KT_T(StDds, "Got a topic notification ('%s', '%s', '%s')", topicName, topicInfo.type_name, topicInfo.serialized_qos);
 }
 
 
@@ -257,11 +258,11 @@ static bool ddsTypeRequest
 
 // -----------------------------------------------------------------------------
 //
-// ddsTopicRequest -
+// ddsTopicQuery -
 //
-static bool ddsTopicRequest(const char* topicName, std::string& typeName, std::string& serializedQos)
+static bool ddsTopicQuery(const char* topicName, eprosima::ddsenabler::participants::TopicInfo& topicInfo)
 {
-  KT_T(StDds, "Got a type request callback ('%s', '%s', '%s')", topicName, typeName.c_str(), serializedQos.c_str());
+  KT_T(StDds, "Got a Topic Query callback (topic: '%s', type: '%s')", topicName, topicInfo.type_name.c_str());
   return true;
 }
 
@@ -280,6 +281,165 @@ static void ddsLog(const char* fileName, int lineNo, const char* funcName, int c
   char* funcname = (funcName != NULL)? (char*) funcName : (char*) "no-funcname";
 
   ktOut(filename, lineNo, funcname,  severity, level, msg);
+}
+
+
+// -----------------------------------------------------------------------------
+//
+// ddsServiceNotification -
+//
+static void ddsServiceNotification(const char* serviceName, const eprosima::ddsenabler::participants::ServiceInfo& serviceInfo)
+{
+  KT_T(StDds, "Got a Service Notification (action: %s)", serviceName);
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// ddsServiceRequestNotification -
+//
+static void ddsServiceRequestNotification
+(
+  const char* serviceName,
+  const char* json,
+  uint64_t    requestId,
+  int64_t     publishTime
+)
+{
+  KT_T(StDds, "Got a Service Request Notification (action: '%s', req: %lld): '%s'", serviceName, requestId, json);
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// ddsServiceReplyNotification -
+//
+static void ddsServiceReplyNotification
+(
+  const char* serviceName,
+  const char* json,
+  uint64_t    requestId,
+  int64_t     publishTime
+)
+{
+  KT_T(StDds, "Got a Service Reply Notification (action: '%s', req: %lld): '%s'", serviceName, requestId, json);
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// ddsActionNotification -
+//
+static void ddsActionNotification(const char* actionName, const eprosima::ddsenabler::participants::ActionInfo& actionInfo)
+{
+  KT_T(StDds, "Got an Action Notification (action: %s)", actionName);
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// ddsActionGoalRequestNotification -
+//
+static bool ddsActionGoalRequestNotification
+(
+  const char* actionName,
+  const char* json,
+  const eprosima::ddsenabler::participants::UUID& goalId,
+  int64_t     publishTime
+)
+{
+  KT_T(StDds, "Got an Action Goal Request Notification (action: '%s'): '%s'", actionName, json);
+  return false;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// ddsActionFeedbackNotification -
+//
+static void ddsActionFeedbackNotification
+(
+  const char* actionName,
+  const char* json,
+  const eprosima::ddsenabler::participants::UUID& goalId,
+  int64_t     publishTime
+)
+{
+  KT_T(StDds, "Got an Action Goal Request Notification (action: '%s'): '%s'", actionName, json);
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// ddsActionCancelRequestNotification -
+//
+static void ddsActionCancelRequestNotification
+(
+  const char* actionName,
+  const eprosima::ddsenabler::participants::UUID& goalId,
+  int64_t     timestamp,
+  uint64_t    requestId,
+  int64_t     publishTime
+)
+{
+  KT_T(StDds, "Got an Action Cancel Request Notification (action: %s)", actionName);
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// ddsActionResultNotification -
+//
+static void ddsActionResultNotification
+(
+  const char* actionName,
+  const char* json,
+  const eprosima::ddsenabler::participants::UUID& goalId,
+  int64_t     publishTime
+)
+{
+  KT_T(StDds, "Got an Action Result Notification (action: '%s'): '%s'", actionName, json);
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// ddsActionStatusNotification -
+//
+static void ddsActionStatusNotification
+(
+  const char*  actionName,
+  const eprosima::ddsenabler::participants::UUID&  goalId,
+  eprosima::ddsenabler::participants::StatusCode   statusCode,
+  const char*  statusMessage,
+  int64_t      publishTime
+)
+{
+  KT_T(StDds, "Got an Action Status Notification (action: %s, status %d): %s", actionName, statusCode, statusMessage);
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// ddsActionQuery -
+//
+static bool ddsActionQuery
+(
+  const char* actionName,
+  eprosima::ddsenabler::participants::ActionInfo& actionInfo
+)
+{
+  KT_T(StDds, "Got an Action Query (action: %s)", actionName);
+  return false;
 }
 
 
@@ -349,23 +509,40 @@ int main(int argC, char* argV[])
   if (ddsSupport == true)
   {
     eprosima::utils::Log::ReportFilenames(true);
-    eprosima::ddsenabler::DdsCallbacks callbacks =
-      {
-        ddsTypeNotification,
-        ddsTopicNotification,
-        ddsNotification,
-        ddsTypeRequest,
-        ddsTopicRequest
-      };
-    eprosima::ddsenabler::CallbackSet callbackSet =
-      {
-        ddsLog,
-        callbacks
-      };
-    bool r = eprosima::ddsenabler::create_dds_enabler(configFileP,
-                                                      callbackSet,
-                                                      ddsEnabler);
 
+    eprosima::ddsenabler::DdsCallbacks callbacks =
+    {
+      ddsTypeNotification,
+      ddsTopicNotification,
+      ddsNotification,
+      ddsTypeRequest,
+      ddsTopicQuery
+    };
+    eprosima::ddsenabler::ServiceCallbacks serviceCallbacks =
+    {
+      ddsServiceNotification,
+      ddsServiceRequestNotification,
+      ddsServiceReplyNotification
+    };
+    eprosima::ddsenabler::ActionCallbacks actionCallbacks =
+    {
+      ddsActionNotification,
+      ddsActionGoalRequestNotification,
+      ddsActionFeedbackNotification,
+      ddsActionCancelRequestNotification,
+      ddsActionResultNotification,
+      ddsActionStatusNotification,
+      ddsActionQuery
+    };
+    eprosima::ddsenabler::CallbackSet callbackSet =
+    {
+      ddsLog,
+      callbacks,
+      serviceCallbacks,
+      actionCallbacks
+    };
+
+    bool r = eprosima::ddsenabler::create_dds_enabler(configFileP, callbackSet, ddsEnabler);
     if (r == false)
       KT_X(1, "Unable to create the DDS Enabler");
 

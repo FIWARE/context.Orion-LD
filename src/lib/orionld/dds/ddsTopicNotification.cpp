@@ -29,6 +29,8 @@ extern "C"
 #include "kjson/kjBuilder.h"                                // kjObject, kjChildAdd
 }
 
+#include "ddsenabler_participants/Callbacks.hpp"            // eprosima::ddsenabler::participants::TopicInfo
+
 #include "orionld/types/OrionLdRestService.h"               // OrionLdRestService, OrionLdRestServiceVector, OrionldServiceRoutine
 #include "orionld/common/traceLevels.h"                     // Trace levels for KTrace
 #include "orionld/common/orionldState.h"                    // orionldState, kjTreeLog
@@ -45,13 +47,14 @@ extern "C"
 //
 // ddsTopicNotification -
 //
-void ddsTopicNotification(const char* topicName, const char* typeName, const char* serializedQos)
+void ddsTopicNotification(const char* topicName, const eprosima::ddsenabler::participants::TopicInfo& topicInfo)
 {
-  KT_T(StDds, "Got a topic notification (topic: '%s', type: '%s', qos: '%s')", topicName, typeName, serializedQos);
-
   char* entityId      = NULL;
   char* entityType    = NULL;
   char* attrShortName = configDdsTopicToAttribute(topicName, &entityId, &entityType);
+  char* topicType     = (char*) topicInfo.type_name.c_str();
+
+  KT_T(StDds, "Got a topic notification (topic: '%s', type: '%s', qos: '%s')", topicName, topicType, topicInfo.serialized_qos.c_str());
 
   if (attrShortName == NULL)
   {
@@ -59,11 +62,11 @@ void ddsTopicNotification(const char* topicName, const char* typeName, const cha
     return;
   }
 
-  KT_T(StDds, "Add sub-attribute 'ddsTypeName': '%s', to attribute '%s' of entity '%s'", typeName, attrShortName, entityId);
+  KT_T(StDds, "Add sub-attribute 'ddsTypeName': '%s', to attribute '%s' of entity '%s'", topicType, attrShortName, entityId);
   orionldStateInit(NULL);
 
   KjNode* payloadBody = kjObject(orionldState.kjsonP, NULL);
-  KjNode* ddsTypeName = kjString(orionldState.kjsonP, "ddsTypeName", typeName);
+  KjNode* ddsTypeName = kjString(orionldState.kjsonP, "ddsTypeName", topicType);
 
   kjChildAdd(payloadBody, ddsTypeName);
 

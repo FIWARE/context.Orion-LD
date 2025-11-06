@@ -38,13 +38,15 @@ ftClientStart -t 0-5000 -v --dds
 # 02. GET urn:ngsi-ld:camera:cam1 from CB
 # 03. PATCH urn:ngsi-ld:camera:cam1, attribute shutterSpeed
 # 04. GET urn:ngsi-ld:camera:cam1 from CB, see the update
-# 05. Dump the ftClient for DDS notifications - see the PATCH in DDS
+# 05. Dump/Reset the ftClient for DDS notifications - see the PATCH in DDS
+# 06. PATCH urn:ngsi-ld:camera:cam1, adding an attribute A1 - nothing published in DDS (A1 is not in config file)
+# 07. Dump the ftClient for DDS notifications - see nothing
 #
 
 echo "01. Ask FT to publish an entity urn:ngsi-ld:camera:cam1 on topic 'P1'"
 echo "====================================================================="
 payload='{
-  "s": "abc"
+  "s": "step 1"
 }'
 orionCurl --url '/dds/pub?ddsTopicType=xyz&entityId=urn:ngsi-ld:camera:cam1&entityType=T&ddsTopicName=P1' --port $FT_PORT --payload "$payload"
 
@@ -64,7 +66,7 @@ echo "========================================================="
 payload='{
   "shutterSpeed": {
     "value": {
-      "s": "def"
+      "s": "step 3"
     }
   }
 }'
@@ -80,8 +82,29 @@ echo
 echo
 
 
-echo "05. Dump the ftClient for DDS notifications - see the PATCH in DDS"
-echo "=================================================================="
+echo "05. Dump/Reset the ftClient for DDS notifications - see the PATCH in DDS"
+echo "========================================================================"
+sleep 2
+orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
+orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck -X DELETE
+echo
+echo
+
+
+echo "06. PATCH urn:ngsi-ld:camera:cam1, adding an attribute A1 - nothing published in DDS (A1 is not in config file)"
+echo "==============================================================================================================="
+payload='{
+  "A1": {
+    "value": "step 6"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:camera:cam1 -X PATCH --payload "$payload"
+echo
+echo
+
+
+echo "07. Dump the ftClient for DDS notifications - see nothing"
+echo "========================================================="
 sleep 1
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
 echo
@@ -135,7 +158,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
                 1,
                 2
             ],
-            "s": "abc"
+            "s": "step 1"
         },
         "xId": {
             "type": "Property",
@@ -189,7 +212,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
                 1,
                 2
             ],
-            "s": "def"
+            "s": "step 3"
         },
         "xId": {
             "type": "Property",
@@ -200,8 +223,8 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 }
 
 
-05. Dump the ftClient for DDS notifications - see the PATCH in DDS
-==================================================================
+05. Dump/Reset the ftClient for DDS notifications - see the PATCH in DDS
+========================================================================
 HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
 Date: REGEX(.*)
@@ -218,7 +241,7 @@ Date: REGEX(.*)
             1,
             2
           ],
-          "s": "def"
+          "s": "step 3"
         }
       },
       "type": "NgsildSample"
@@ -227,6 +250,27 @@ Date: REGEX(.*)
     "type": "fastdds"
   }
 ]
+
+HTTP/1.1 200 OK
+Content-Length: 0
+Date: REGEX(.*)
+
+
+
+
+06. PATCH urn:ngsi-ld:camera:cam1, adding an attribute A1 - nothing published in DDS (A1 is not in config file)
+===============================================================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+07. Dump the ftClient for DDS notifications - see nothing
+=========================================================
+HTTP/1.1 200 OK
+Content-Length: 0
+Date: REGEX(.*)
+
 
 
 

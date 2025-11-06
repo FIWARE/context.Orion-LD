@@ -169,9 +169,13 @@ DistOp* regMatchForEntityCreation
       {
         doP->error            = true;
         doP->errorType        = OrionldAlreadyExists;
+        // doP->errorSubType     = registration-not-supporting-operation
         doP->title            = (char*) "Operation not supported";
         doP->detail           = (char*) "A matching exclusive registration forbids the Operation";
         doP->httpResponseCode = 409;
+        // doP->entityId   = entityId;
+        // doP->entityType = entityType;
+        // doP->registrationId = regP->registrationId;
       }
     }
 

@@ -229,6 +229,13 @@ void pgAttributeAppend
         bufSize = neededSize;
       }
 
+      if (buf == NULL)
+      {
+        buf = (char*) malloc(neededSize + 1024);
+        bufSize = neededSize + 1024 - 1;
+        orionldStateDelayedFreeEnqueue(buf);
+      }
+
       snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, '%s', 'String', '%s', null, null, null, null, null, null, null, null, null, null, '%s')",
                comma, instanceId, attributeName, opMode, entityId, observedAt, hasSubProperties, unitCode, datasetId, valueNodeP->value.s, orionldState.requestTimeString);
     }
@@ -275,9 +282,9 @@ void pgAttributeAppend
     }
   }
 
-  if (buf[0] == 0)
+  if ((buf == NULL) || (buf[0] == 0))
   {
-    LM_W(("TROE: To Be Implemented"));
+    LM_W(("TROE: too big attribute value? (nothing written to history DB)"));
     return;
   }
 

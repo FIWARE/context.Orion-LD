@@ -25,6 +25,7 @@
 *
 * Author: Ken Zangelin
 */
+#include "ddsenabler_participants/Callbacks.hpp"            // eprosima::ddsenabler::participants::TopicInfo
 
 
 
@@ -32,6 +33,6 @@
 //
 // ddsTopicNotification -
 //
-extern void ddsTopicNotification(const char* topicName, const char* typeName, const char* serializedQos);
+extern void ddsTopicNotification(const char* topicName, const eprosima::ddsenabler::participants::TopicInfo& topicInfo);
 
 #endif  // SRC_LIB_ORIONLD_DDS_DDSTOPICNOTIFICATION_H_

@@ -554,6 +554,11 @@ function localBrokerStop
 #
 function orionldStart
 {
+  if [ "$CB_EXTERNAL_BROKER" == "ON" ]
+  then
+    return
+  fi
+
   role=$1
   shift
 

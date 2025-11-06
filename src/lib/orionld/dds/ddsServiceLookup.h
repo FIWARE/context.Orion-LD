@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_CONFIG_CONFIGLOAD_H_
-#define SRC_LIB_ORIONLD_CONFIG_CONFIGLOAD_H_
+#ifndef SRC_LIB_ORIONLD_DDS_DDSSERVICELOOKUP_H_
+#define SRC_LIB_ORIONLD_DDS_DDSSERVICELOOKUP_H_
 
 /*
 *
-* Copyright 2024 FIWARE Foundation e.V.
+* Copyright 2025 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,18 +25,14 @@
 *
 * Author: Ken Zangelin
 */
-extern "C"
-{
-#include "kjson/kjson.h"                                    // Kjson
-#include "kjson/KjNode.h"                                   // KjNode
-}
+#include "orionld/types/DdsService.h"                       // DdsService
 
 
 
 // -----------------------------------------------------------------------------
 //
-// configLoad -
+// ddsServiceLookup -
 //
-extern int configLoad(Kjson* kjP, const char* configFile);
+extern DdsService* ddsServiceLookup(const char* serviceName);
 
-#endif  // SRC_LIB_ORIONLD_CONFIG_CONFIGLOAD_H_
+#endif  // SRC_LIB_ORIONLD_DDS_DDSSERVICELOOKUP_H_

@@ -1438,9 +1438,8 @@ MHD_Result mhdConnectionInit
     return MHD_YES;
   }
 
-  // Check that GET/DELETE has no payload
-  // Check that POST/PUT/PATCH has payload
-  // Check validity of tenant
+  // FIXME: Check that GET/DELETE has no payload body
+  // Check that POST/PUT/PATCH has payload body
   // Check Accept header
   // Check URL path is OK
 

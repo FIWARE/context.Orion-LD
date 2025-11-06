@@ -8,6 +8,8 @@
   #XXXX: Support for the HEAD HTTP method
   #XXXX: Support for GET Attribute (local only and no support for datasetId)
 
-## Multi-Attribute (datasetId)
 ## DDS
+  #XXXX: Support for DDS Services
+
+## Multi-Attribute (datasetId)
 ## Notes

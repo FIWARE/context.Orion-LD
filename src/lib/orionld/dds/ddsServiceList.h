@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_CONFIG_CONFIGLOAD_H_
-#define SRC_LIB_ORIONLD_CONFIG_CONFIGLOAD_H_
+#ifndef SRC_LIB_ORIONLD_DDS_DDSSERVICELIST_H_
+#define SRC_LIB_ORIONLD_DDS_DDSSERVICELIST_H_
 
 /*
 *
-* Copyright 2024 FIWARE Foundation e.V.
+* Copyright 2025 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -27,16 +27,21 @@
 */
 extern "C"
 {
-#include "kjson/kjson.h"                                    // Kjson
-#include "kjson/KjNode.h"                                   // KjNode
+#include "ktrace/ktTraceLevelCheck.h"                       // ktTraceLevelCheck
 }
+
+// -----------------------------------------------------------------------------
+//
+// ddsServiceList -
+//
+#define ddsServiceList(traceLevel) do { if (ktTraceLevelCheck(traceLevel) == true) ddsServiceListFunction(__FILE__, __LINE__, __FUNCTION__, traceLevel); } while (0)
 
 
 
 // -----------------------------------------------------------------------------
 //
-// configLoad -
+// ddsServiceList
 //
-extern int configLoad(Kjson* kjP, const char* configFile);
+extern void ddsServiceListFunction(const char* path, int lineNo, const char* functionName, int traceLevel);
 
-#endif  // SRC_LIB_ORIONLD_CONFIG_CONFIGLOAD_H_
+#endif  // SRC_LIB_ORIONLD_DDS_DDSSERVICELIST_H_

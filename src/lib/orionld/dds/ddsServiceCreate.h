@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_CONFIG_CONFIGLOAD_H_
-#define SRC_LIB_ORIONLD_CONFIG_CONFIGLOAD_H_
+#ifndef SRC_LIB_ORIONLD_DDS_DDSSERVICECREATE_H_
+#define SRC_LIB_ORIONLD_DDS_DDSSERVICECREATE_H_
 
 /*
 *
-* Copyright 2024 FIWARE Foundation e.V.
+* Copyright 2025 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,18 +25,39 @@
 *
 * Author: Ken Zangelin
 */
-extern "C"
-{
-#include "kjson/kjson.h"                                    // Kjson
-#include "kjson/KjNode.h"                                   // KjNode
-}
+#include "orionld/types/DdsService.h"                       // DdsService
 
 
 
 // -----------------------------------------------------------------------------
 //
-// configLoad -
+// ddsServiceCreate
 //
-extern int configLoad(Kjson* kjP, const char* configFile);
+extern DdsService* ddsServiceCreate
+(
+  const char* name,
+  const char* requestType,
+  const char* requestQoS,
+  const char* replyType,
+  const char* replyQoS,
+  const char* entityId,
+  const char* entityType,
+  const char* attributeName
+);
 
-#endif  // SRC_LIB_ORIONLD_CONFIG_CONFIGLOAD_H_
+
+
+// -----------------------------------------------------------------------------
+//
+// ddsServiceInfoAdd -
+//
+extern void ddsServiceInfoAdd
+(
+  DdsService* sP,
+  const char* requestType,
+  const char* requestQoS,
+  const char* replyType,
+  const char* replyQoS
+);
+
+#endif  // SRC_LIB_ORIONLD_DDS_DDSSERVICECREATE_H_

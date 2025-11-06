@@ -105,6 +105,7 @@ extern "C"
 #include "orionld/common/orionldState.h"                      // orionldStateRelease, kalloc, ...
 #include "orionld/common/tenantList.h"                        // tenantList, tenant0
 #include "orionld/common/branchName.h"                        // ORIONLD_BRANCH
+#include "orionld/common/traceLevels.h"                       // KTrace levels
 #include "orionld/config/configInit.h"                        // configInit
 #include "orionld/prometheus/promInit.h"                      // promInit
 #include "orionld/mongoc/mongocInit.h"                        // mongocInit
@@ -138,6 +139,7 @@ extern "C"
 #include "orionld/troe/pgConnectionPoolsPresent.h"            // pgConnectionPoolsPresent
 #include "orionld/distOp/distOpInit.h"                        // distOpInit
 #include "orionld/dds/ddsInit.h"                              // ddsInit
+#include "orionld/dds/ddsServiceList.h"                       // ddsServiceList
 
 #include "orionld/version.h"
 #include "orionld/orionRestServices.h"
@@ -1471,7 +1473,11 @@ int main(int argC, char* argV[])
     pernotLoopStart();
 
   if (ddsSupport == true)
+  {
     ddsInit(kjsonP);
+    // usleep(200000);
+    // ddsServiceList(StDdsServiceList);
+  }
 
   if (socketService == true)
   {

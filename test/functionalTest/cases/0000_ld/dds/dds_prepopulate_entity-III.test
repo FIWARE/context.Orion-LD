@@ -40,7 +40,7 @@ orionldStart CB -mongocOnly -wip dds -kt 0-5000
 # 01b. Ask the ftClient to publish on topic P1 => update the value of shutterSpeed of urn:ngsi-ld:camera:cam1
 # 02. Retrieve urn:ngsi-ld:camera:cam1 from the broker and see the update from ftClient via DDS
 # 03. PATCH urn:ngsi-ld:camera:cam1, changing the value of shutterSpeed - the ftClient should get the sample
-# 03b. DDS-Dump the ftClient and see the PATCH from step 04
+# 03b. DDS-Dump the ftClient and see the PATCH from step 03
 #
 
 echo "01. GET all entities from the broker - make sure all entities/attributes from the config file are present"
@@ -86,9 +86,9 @@ echo
 echo
 
 
-echo "03b. DDS-Dump the ftClient and see the PATCH from step 04"
+echo "03b. DDS-Dump the ftClient and see the PATCH from step 03"
 echo "========================================================="
-sleep 1
+sleep 2
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
 echo
 echo
@@ -192,7 +192,7 @@ Date: REGEX(.*)
 
 
 
-03b. DDS-Dump the ftClient and see the PATCH from step 04
+03b. DDS-Dump the ftClient and see the PATCH from step 03
 =========================================================
 HTTP/1.1 200 OK
 Content-Length: REGEX(.*)

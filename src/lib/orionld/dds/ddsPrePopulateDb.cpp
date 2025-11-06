@@ -52,6 +52,8 @@ extern "C"
 #include "orionld/mongoc/mongocEntitiesQuery.h"             // mongocEntitiesQuery
 #include "orionld/mongoc/mongocEntitiesUpsert.h"            // mongocEntitiesUpsert
 #include "orionld/mongoc/mongocAttributesAdd.h"             // mongocAttributesAdd
+#include "orionld/dds/ddsServiceLookup.h"                   // ddsServiceLookup
+#include "orionld/dds/ddsServiceCreate.h"                   // ddsServiceCreate
 #include "orionld/dds/kjTreeLog.h"                          // kjTreeLog2
 
 
@@ -99,6 +101,16 @@ static KjNode* kjDbAttrLookupInDbEntity(KjNode* dbEntityP, const char* longAttrN
 //
 static void* ddsPrePopulateDbInThread(void* vP)
 {
+  char* what       = (char*) vP;
+  char* concept    = what;
+  char* configPath = NULL;
+  bool  isService  = false;
+
+  if      (strcmp(what, "topics")   == 0) { configPath = (char*) "dds.ngsild.topics"; }
+  else if (strcmp(what, "services") == 0) { configPath = (char*) "dds.ngsild.services"; isService = true; }
+  else
+    KT_X(1, "Invalid input for ddsPrePopulateDb: '%s'", what);
+
   // Allocate kjson
   char kallocBuffer[2048];
 
@@ -109,15 +121,15 @@ static void* ddsPrePopulateDbInThread(void* vP)
   orionldState.kjsonP = kjBufferCreate(&kjson, &kalloc);
   orionldState.tenantP = &tenant0;
 
-  KjNode* topics = kjNavigate2(configTree, "dds.ngsild.topics", NULL);
+  KjNode* topics = kjNavigate2(configTree, configPath, NULL);
 
   if (topics == NULL)
   {
-    KT_W("No DDS Topics for NGSILD (dds.ngsild.topics) in the config file ...");
+    KT_W("No DDS Topics for NGSILD (%s) in the config file ...", configPath);
     return NULL;
   }
 
-  kjTreeLog2(topics, "topics", StDdsPrePopulate);
+  kjTreeLog2(topics, concept, StDdsPrePopulate);
   KT_T(StDdsPrePopulate, "-------------------------------------------------------------");
 
   int         entities = kjChildCount(topics);
@@ -135,7 +147,7 @@ static void* ddsPrePopulateDbInThread(void* vP)
 
   for (KjNode* topic = topics->value.firstChildP; topic != NULL; topic = topic->next)
   {
-    KT_T(StDdsPrePopulate, "Topic '%s'", topic->name);
+    KT_T(StDdsPrePopulate, "%s '%s'", concept, topic->name);
     KjNode* entityTypeNode = kjLookup(topic, "entityType");
     KjNode* entityIdNode   = kjLookup(topic, "entityId");
     KjNode* attrNameNode   = kjLookup(topic, "attribute");
@@ -145,7 +157,7 @@ static void* ddsPrePopulateDbInThread(void* vP)
 
     if ((entityType == NULL) || (entityId == NULL) || (attrName == NULL))
     {
-      KT_W("Topic '%s' is incomplete in the config file (entityType: '%s', entityId: '%s', attribute: '%s')", topic->name, entityType, entityId, attrName);
+      KT_W("Topic/Service '%s' is incomplete in the config file (entityType: '%s', entityId: '%s', attribute: '%s')", topic->name, entityType, entityId, attrName);
       continue;
     }
 
@@ -154,6 +166,12 @@ static void* ddsPrePopulateDbInThread(void* vP)
 
     pickList.array[pickList.items] = entityId;
     ++pickList.items;
+
+    if (isService == true)
+    {
+      if (ddsServiceLookup(topic->name) == NULL)
+        ddsServiceCreate(topic->name, NULL, NULL, NULL, NULL, entityId, entityType, attrName);
+    }
   }
 
   KT_T(StDdsPrePopulate, "-------------------------------------------------------------");
@@ -320,9 +338,8 @@ static void* ddsPrePopulateDbInThread(void* vP)
 //
 // ddsPrePopulateDb -
 //
-void ddsPrePopulateDb(void)
+void ddsPrePopulateDb(const char* what)
 {
-  pthread_t tid;
-
-  pthread_create(&tid, NULL, ddsPrePopulateDbInThread, NULL);
+  pthread_t   tid;
+  pthread_create(&tid, NULL, ddsPrePopulateDbInThread, (void*) what);
 }
