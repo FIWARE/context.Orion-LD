@@ -1,5 +1,6 @@
 ## Fixed Issues:
   #XXXX: Relationships that are arrays were not saved to Postgres
+  #XXXX: Fixed a crash for a combination of entityMaps, pick, and traces on (-t 219)
 
 ## New Features:
   #XXXX: Support for Linked Entities for Entity Retrieval
