@@ -57,6 +57,7 @@ orionldStart CP3 -experimental -forwarding -wip entityMaps
 # 19. Create an inclusive registration R11 in CP3 on entities of type T pointing to CP1
 # 20. Create an inclusive registration R12 in CP3 on entities of type T pointing to CP2
 # 21. GET /entities?type=T in CB - see 8 entities
+# 22. GET /entities?type=T&pick=id,p1 in CB - see 8 entities with id only
 #
 
 echo "01. In CB, create an entity urn:E1 with attributes P1+R1"
@@ -447,6 +448,14 @@ echo
 echo
 
 
+echo "22. GET /entities?type=T&pick=id,p1 in CB - see 8 entities with id only"
+echo "======================================================================="
+orionCurl --url '/ngsi-ld/v1/entities?type=T&count=true&pick=id,p1' -H "aerOS: true"
+entityMap=$(echo "$_responseHeaders" | grep NGSILD-EntityMap: | awk -F ': ' '{ print $2 }' | tr -d "\r\n")
+echo
+echo
+
+
 --REGEXPECT--
 01. In CB, create an entity urn:E1 with attributes P1+R1
 =========================================================
@@ -740,6 +749,44 @@ NGSILD-Results-Count: 8
 ]
 
 
+22. GET /entities?type=T&pick=id,p1 in CB - see 8 entities with id only
+=======================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+NGSILD-EntityMap: urn:ngsi-ld:entity-map:REGEX(.*)
+NGSILD-Results-Count: 8
+
+[
+#SORT_START
+    {
+        "id": "urn:E1"
+    },
+    {
+        "id": "urn:E2"
+    },
+    {
+        "id": "urn:E3"
+    },
+    {
+        "id": "urn:E4"
+    },
+    {
+        "id": "urn:E7"
+    },
+    {
+        "id": "urn:E8"
+    },
+    {
+        "id": "urn:E5"
+    },
+    {
+        "id": "urn:E6"
+    }
+#SORT_END
+]
 --TEARDOWN---
 brokerStop CB
 brokerStop CP1
