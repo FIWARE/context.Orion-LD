@@ -197,6 +197,13 @@ vMsg $lines lines in $files files in dir $dir
 
 if [ "$files" != 0 ]
 then
+  if [ -z "$lines" ] || [ "$lines" -eq 0 ]; 
+  then
+    lines=1
+  fi
+  if [ -z "$totalErrors" ]; then
+    totalErrors=0
+  fi
   percentage=$(echo "scale=2; $totalErrors*100/$lines" | bc)
 else
   percentage=0
