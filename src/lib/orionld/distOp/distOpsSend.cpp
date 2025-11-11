@@ -52,10 +52,13 @@ int distOpsSend(DistOp* distOpList, bool local)
     // Send the forwarded request and await all responses
     if ((distOpP->regP != NULL) && (distOpP->error == false))
     {
-      distOpP->entityMap = true;
+      distOpP->entityMap = true;  // FIXME: Is this necessary?
 
       if (distOpSend(distOpP, dateHeader, xff, via, local, NULL) == 0)
+      {
         distOpP->error = false;
+        orionldState.distOp.requests += 1;
+      }
       else
         distOpP->error = true;
 
@@ -87,11 +90,17 @@ int distOpsSend(DistOp* distOpList, bool local)
         }
       }
 
-      if ((++loops >= 50) && ((loops % 25) == 0))
+      if ((++loops >= 1000) && ((loops % 100) == 0))
         LM_W(("curl_multi_perform doesn't seem to finish ... (%d loops)", loops));
+
+      if (loops > 3000)
+      {
+        LM_E(("Internal Error (curl hard timeout at 3000 loops)"));
+        return -3;
+      }
     }
 
-    if (loops >= 100)
+    if (loops >= 1000)
       LM_W(("curl_multi_perform finally finished!   (%d loops)", loops));
   }
 

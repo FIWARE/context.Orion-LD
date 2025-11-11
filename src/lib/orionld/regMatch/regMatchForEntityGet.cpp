@@ -68,6 +68,8 @@ DistOp* regMatchForEntityGet  // FIXME: +entity-type
   DistOp* distOpHead = NULL;
   DistOp* distOpTail = NULL;
 
+  LM_T(LmtRegMatch, ("entityType: '%s'", entityType));
+
   for (RegCacheItem* regP = orionldState.tenantP->regCache->regList; regP != NULL; regP = regP->next)
   {
     if (regP->regId == NULL)
