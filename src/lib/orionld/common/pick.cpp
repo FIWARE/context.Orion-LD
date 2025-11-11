@@ -58,8 +58,8 @@ void pickForEntity(KjNode* entityP)
       kjChildRemove(entityP, itemP);
       itemP = NULL;
     }
-
-    LM_T(LmtPick, ("    - %s (%s)", itemP->name, (itemP == NULL)? "removed" : "stays"));
+    else
+      LM_T(LmtPick, ("    - %s (%s)", itemP->name, (itemP == NULL)? "removed" : "stays"));
 
     itemP = next;
   }
