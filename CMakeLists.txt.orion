@@ -100,7 +100,7 @@ MESSAGE("CMAKE_BUILD_TYPE: '${CMAKE_BUILD_TYPE}'")
 if (${CMAKE_BUILD_TYPE} STREQUAL DEBUG)
 
     MESSAGE("cmake: DEBUG compilation")
-    add_definitions(-DDEBUG -DDEBUG_$ENV{USER} -DDEBUG_${USER})
+    add_definitions(-DDEBUG)
 
     #
     # OLD:
