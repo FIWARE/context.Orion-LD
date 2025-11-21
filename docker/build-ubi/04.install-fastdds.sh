@@ -146,7 +146,7 @@ yum -y install lz4-devel libzstd-devel json-devel
 cd /opt/Fast-DDS
 git clone https://github.com/eProsima/FIWARE-DDS-Enabler.git
 cd FIWARE-DDS-Enabler
-git checkout feature/services_actions
+git checkout main
 
 # ./install_dds_module.sh
 

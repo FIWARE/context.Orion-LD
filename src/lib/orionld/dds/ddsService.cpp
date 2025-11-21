@@ -64,6 +64,6 @@ void ddsService(DdsService* serviceP, KjNode* attributeValueP)
   serviceP->instances = dsiP;
 
   // Start the service
-  ddsEnabler->send_service_request(serviceP->name, json, dsiP->requestId, eprosima::ddsenabler::participants::RpcProtocol::ROS2);
+  ddsEnabler->send_service_request(serviceP->name, json, dsiP->requestId, eprosima::ddsenabler::participants::Protocol::ROS2);
   KT_T(StDdsService, "Started Service '%s' (req id: %llu)", serviceP->name, dsiP->requestId);
 }

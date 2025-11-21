@@ -31,7 +31,7 @@
 #include <memory>                                           // for std::unique_ptr
 
 #include "ddsenabler/dds_enabler_runner.hpp"                // dds enabler
-#include "ddsenabler_participants/RpcTypes.hpp"             // eprosima::ddsenabler::participants::UUID
+#include "ddsenabler_participants/rpc/RpcTypes.hpp"         // eprosima::ddsenabler::participants::UUID
 
 extern "C"
 {
