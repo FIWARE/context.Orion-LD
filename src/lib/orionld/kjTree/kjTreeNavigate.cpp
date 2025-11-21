@@ -29,64 +29,14 @@ extern "C"
 {
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
-#include "kjson/kjLookup.h"                                      // kjLookup
+#include "kjson/kjNavigate.h"                                    // kjNavigate
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // Trace levels for kTrace
 #include "orionld/common/dotForEq.h"                             // dotForEq
 #include "orionld/common/pathComponentsSplit.h"                  // pathComponentsSplit
 #include "orionld/common/eqForDot.h"                             // eqForDot
-#include "orionld/kjTree/kjNavigate.h"                           // Own interface
-
-
-
-// -----------------------------------------------------------------------------
-//
-// kjNavigate -
-//
-// FIXME: move to kjson library
-//
-KjNode* kjNavigate(KjNode* treeP, const char** pathCompV, KjNode** parentPP, bool* onlyLastMissingP)
-{
-  KjNode* hitP = kjLookup(treeP, pathCompV[0]);
-
-  if (parentPP != NULL)
-    *parentPP = treeP;
-
-  if (hitP == NULL)  // No hit - we're done
-  {
-    if (onlyLastMissingP != NULL)
-      *onlyLastMissingP = (pathCompV[1] == NULL)? true : false;
-
-    return NULL;
-  }
-
-  if (pathCompV[1] == NULL)  // Found it - we're done
-    return hitP;
-
-  return kjNavigate(hitP, &pathCompV[1], parentPP, onlyLastMissingP);  // Recursive call, one level down
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
-// kjNavigate - true Kj-Tree navigation
-//
-KjNode* kjNavigate(KjNode* treeP, char** compV)
-{
-  KjNode* hitP = kjLookup(treeP, compV[0]);
-
-  if (hitP == NULL)
-    return NULL;
-
-  if (compV[1] == NULL)
-    return hitP;
-
-  return kjNavigate(hitP, &compV[1]);
-}
 
 
 
@@ -112,25 +62,25 @@ static int dotCount(char* s)
 
 // -----------------------------------------------------------------------------
 //
-// kjNavigate2 - prepared for db-model, but also OK without
+// kjTreeNavigate - prepared for db-model, but also OK without
 //
-KjNode* kjNavigate2(KjNode* treeP, const char* pathIn, bool* isTimestampP)
+KjNode* kjTreeNavigate(KjNode* treeP, const char* pathIn, bool* isTimestampP)
 {
   char path[512];
   strncpy(path, pathIn, sizeof(path) - 1);
 
-  LM_T(LmtCsf, ("Looking for '%s'", path));
-  kjTreeLog(treeP, "In this tree", LmtCsf);
+  KT_T(StCsf, "Looking for '%s'", path);
+  kjTreeLog2(treeP, "In this tree", sTCsf);
 
   int components = dotCount(path) + 1;
   if (components > 20)
-    LM_X(1, ("The current implementation of Orion-LD can only handle 20 levels of tree navigation"));
+    kt_X(1, "The current implementation of Orion-LD can only handle 20 levels of tree navigation");
 
   char* compV[20];
 
   // pathComponentsSplit destroys the path, I need to work on a copy
   char* pathCopy = kaStrdup(&orionldState.kalloc, path);
-  components = pathComponentsSplit(pathCopy, compV);
+  components     = pathComponentsSplit(pathCopy, compV);
 
   //
   // - the first component is always the longName of the ATTRIBUTE
@@ -193,6 +143,3 @@ KjNode* kjNavigate2(KjNode* treeP, const char* pathIn, bool* isTimestampP)
 
   return NULL;
 }
-
-
-

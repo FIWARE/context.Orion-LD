@@ -49,7 +49,6 @@ extern "C"
 #include "orionld/q/qPresent.h"                                  // qListPresent
 #include "orionld/q/qMatch.h"                                    // qMatch
 #include "orionld/q/qMatchCompare.h"                             // qMatchCompare
-#include "orionld/kjTree/kjNavigate.h"                           // kjNavigate2
 #include "orionld/context/orionldContextItemExpand.h"            // orionldContextItemExpand
 #include "orionld/serviceRoutines/orionldGetRegistrations.h"     // Own Interface
 

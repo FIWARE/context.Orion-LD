@@ -41,13 +41,13 @@ SET (SOURCES
     kjArrayAdd.cpp
     kjChildPrepend.cpp
     kjNodeDecouple.cpp
-    kjNavigate.cpp
     kjTreeFromCachedSubscription.cpp
     kjTreeFromPernotSubscription.cpp
     kjAttributeNormalizedToSimplified.cpp
     kjAttributeNormalizedToConcise.cpp
     kjSysAttrsRemove.cpp
     kjLookupInKvList.cpp
+    kjTreeNavigate.cpp
 )
 
 # Include directories

@@ -33,6 +33,7 @@ extern "C"
 #include "kjson/KjNode.h"                                   // KjNode
 #include "kjson/kjLookup.h"                                 // kjLookup
 #include "kjson/kjBuilder.h"                                // kjObject, kjArray, kjString, ...
+#include "kjson/kjNavigate.h"                               // kjNavigate
 }
 
 #include "orionld/types/StringArray.h"                      // StringArray
@@ -41,7 +42,7 @@ extern "C"
 #include "orionld/common/tenantList.h"                      // tenant0
 #include "orionld/common/dotForEq.h"                        // dotForEq
 #include "orionld/config/configInit.h"                      // configTree
-#include "orionld/kjTree/kjNavigate.h"                      // kjNavigate2
+#include "orionld/kjTree/kjTreeNavigate.h"                  // kjTreeNavigate
 #include "orionld/kjTree/kjChildCount.h"                    // kjChildCount
 #include "orionld/kjTree/kjEntityIdLookupInEntityArray.h"   // kjEntityIdLookupInEntityArray
 #include "orionld/context/orionldCoreContext.h"             // orionldCoreContextP
@@ -66,7 +67,7 @@ static KjNode* kjDbEntityLookupInArray(KjNode* entityV, const char* entityId)
 {
   for (KjNode* dbEntityP = entityV->value.firstChildP; dbEntityP != NULL; dbEntityP = dbEntityP->next)
   {
-    KjNode* idNodeP = kjNavigate2(dbEntityP, "_id.id", NULL);
+    KjNode* idNodeP = kjTreeNavigate(dbEntityP, "_id.id", NULL);
     char*   eId     = (idNodeP != NULL)? idNodeP->value.s : NULL;
 
     if ((eId != NULL) && (strcmp(eId, entityId) == 0))
@@ -121,7 +122,7 @@ static void* ddsPrePopulateDbInThread(void* vP)
   orionldState.kjsonP = kjBufferCreate(&kjson, &kalloc);
   orionldState.tenantP = &tenant0;
 
-  KjNode* topics = kjNavigate2(configTree, configPath, NULL);
+  KjNode* topics = kjTreeNavigate(configTree, configPath, NULL);
 
   if (topics == NULL)
   {

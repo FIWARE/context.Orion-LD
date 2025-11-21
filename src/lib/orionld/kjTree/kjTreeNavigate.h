@@ -1,5 +1,5 @@
-#ifndef SRC_LIB_ORIONLD_KJTREE_KJNAVIGATE_H_
-#define SRC_LIB_ORIONLD_KJTREE_KJNAVIGATE_H_
+#ifndef SRC_LIB_ORIONLD_KJTREE_KJTREENAVIGATE_H_
+#define SRC_LIB_ORIONLD_KJTREE_KJTREENAVIGATE_H_
 
 /*
 *
@@ -34,26 +34,8 @@ extern "C"
 
 // -----------------------------------------------------------------------------
 //
-// kjNavigate -
+// kjTreeNavigate - prepared for db-model, but also OK without
 //
-// FIXME: move to kjson library
-//
-extern KjNode* kjNavigate(KjNode* treeP, const char** pathCompV, KjNode** parentPP, bool* onlyLastMissingP);
+extern KjNode* kjTreeNavigate(KjNode* treeP, const char* path, bool* isTimestampP);
 
-
-
-// -----------------------------------------------------------------------------
-//
-// kjNavigate - true Kj-Tree navigation
-//
-extern KjNode* kjNavigate(KjNode* treeP, char** compV);
-
-
-
-// -----------------------------------------------------------------------------
-//
-// kjNavigate2 - prepared for db-model, but also OK without
-//
-extern KjNode* kjNavigate2(KjNode* treeP, const char* path, bool* isTimestampP);
-
-#endif  // SRC_LIB_ORIONLD_KJTREE_KJNAVIGATE_H_
+#endif  // SRC_LIB_ORIONLD_KJTREE_KJTREENAVIGATE_H_
