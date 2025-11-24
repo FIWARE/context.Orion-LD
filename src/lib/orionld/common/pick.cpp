@@ -61,7 +61,7 @@ void pickForEntity(KjNode* entityP)
       itemP = NULL;
     }
 
-    LM_T(LmtPick, ("    - %s (%s)", itemName, (itemP == NULL)? "removed" : "stays");
+    LM_T(LmtPick, ("    - %s (%s)", itemName, (itemP == NULL)? "removed" : "stays"));
     itemP = next;
   }
 }
