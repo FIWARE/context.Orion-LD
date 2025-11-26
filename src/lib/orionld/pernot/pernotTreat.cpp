@@ -135,7 +135,7 @@ static void* pernotTreat(void* vP)
   }
 
   apiEntityArray = dbModelToApiEntities(dbEntityArray, subP->sysAttrs, subP->renderFormat, subP->lang);
-  kjTreeLog(apiEntityArray, "apiEntityArray", LmtPernot);
+  LM_TREE(apiEntityArray, "apiEntityArray", LmtPernot);
 
   if (pernotSend(subP, apiEntityArray) == false)
     ok = false;

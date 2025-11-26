@@ -31,7 +31,7 @@ extern "C"
 #include "kjson/kjBuilder.h"                                // kjObject, kjChildAdd
 }
 
-#include "orionld/common/orionldState.h"                    // orionldState, kjTreeLog
+#include "orionld/common/orionldState.h"                    // orionldState
 #include "orionld/common/traceLevels.h"                     // KT_T trace levels
 #include "orionld/common/tenantList.h"                      // tenant0
 #include "orionld/types/OrionLdRestService.h"               // OrionLdRestService, OrionLdRestServiceVector, OrionldServiceRoutine
@@ -40,7 +40,6 @@ extern "C"
 #include "orionld/serviceRoutines/orionldPutAttribute.h"    // orionldPutAttribute
 #include "orionld/context/orionldContextItemExpand.h"       // orionldContextItemExpand
 #include "orionld/service/serviceLookupByServiceRoutine.h"  // serviceLookupByServiceRoutine
-#include "orionld/dds/kjTreeLog.h"                          // kjTreeLog2
 #include "orionld/dds/ddsNotification.h"                    // Own interface
 
 

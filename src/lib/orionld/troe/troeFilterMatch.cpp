@@ -32,7 +32,7 @@ extern "C"
 
 #include "logMsg/logMsg.h"                                       // LM_*
 
-#include "orionld/common/orionldState.h"                         // orionldState, kjTreeLog
+#include "orionld/common/orionldState.h"                         // orionldState, LM_TREE
 #include "orionld/config/configInit.h"                           // configTree
 
 
@@ -61,12 +61,12 @@ bool troeFilterMatch(const char* entityType, const char* entityId)
 
   LM_T(LmtConfig, ("Entity Type: '%s'", entityType));
 
-  kjTreeLog(filterP, "Config::troe::filter", LmtConfig);
+  LM_TREE(filterP, "Config::troe::filter", LmtConfig);
 
   int types = 0;
   for (KjNode* f = filterP->value.firstChildP; f != NULL; f = f->next)
   {
-    kjTreeLog(f, "Config::troe::filter::f", LmtConfig);
+    LM_TREE(f, "Config::troe::filter::f", LmtConfig);
     KjNode* idP   = kjLookup(f, "id");
     KjNode* typeV = kjLookup(f, "type");
 

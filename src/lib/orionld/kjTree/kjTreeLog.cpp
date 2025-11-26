@@ -27,6 +27,8 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // trace messages - ktrace library
+#include "ktrace/ktTraceLevelCheck.h"                          // ktTraceLevelCheck
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjRender.h"                                    // kjFastRender
 #include "kjson/kjRenderSize.h"                                // kjFastRenderSize
@@ -42,9 +44,9 @@ extern "C"
 
 // -----------------------------------------------------------------------------
 //
-// kjTreeLogFunction -
+// lmKjTreeLogFunction -
 //
-void kjTreeLogFunction(KjNode* tree, const char* msg, const char* path, int lineNo, const char* functionName, int traceLevel)
+void lmKTreeLogFunction(KjNode* tree, const char* msg, const char* path, int lineNo, const char* functionName, int traceLevel)
 {
   if (lmTraceIsSet(traceLevel) == false)
     return;
@@ -85,4 +87,54 @@ void kjTreeLogFunction(KjNode* tree, const char* msg, const char* path, int line
   }
   else
     lmOut((char*) "KjNode Tree too large to be rendered", 'T', fileNameOnly, lineNo, functionName, traceLevel, NULL);
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// ktKjTreeLogFunction -
+//
+void ktKjTreeLogFunction(KjNode* tree, const char* title, const char* path, int lineNo, const char* functionName, int traceLevel)
+{
+  if (ktTraceLevelCheck(traceLevel) == false)
+    return;
+
+  char* fileNameOnly = fileName(path);
+
+  if (tree == NULL)
+  {
+    char error[256];
+    snprintf(error, sizeof(error) - 1, "%s: NULL", title);
+    ktOut(fileNameOnly, lineNo, functionName, 'T', traceLevel, error);
+    return;
+  }
+
+  int bufSize = kjFastRenderSize(tree);
+
+  // Too big trees will not be rendered - this is just logging
+  if (bufSize < 10 * 1024)
+  {
+    bufSize += strlen(title) + 512;
+
+    char* treeBuf = kaAlloc(&orionldState.kalloc, bufSize);
+    if (treeBuf != NULL)
+    {
+      bzero(treeBuf, bufSize);
+      kjFastRender(tree, treeBuf);
+
+      char* buf = kaAlloc(&orionldState.kalloc, bufSize);
+      if (buf != NULL)
+      {
+        snprintf(buf, bufSize - 1, "%s: %s", title, treeBuf);
+        ktOut(fileNameOnly, lineNo, functionName, 'T', traceLevel, buf);
+      }
+      else
+        ktOut(fileNameOnly, lineNo, functionName, 'T', traceLevel, (char*) "KjNode Tree Render not possible - kaAlloc error 2");
+    }
+    else
+      ktOut(fileNameOnly, lineNo, functionName, 'T', traceLevel, (char*) "KjNode Tree Render not possible - kaAlloc error 1");
+  }
+  else
+    ktOut(fileNameOnly, lineNo, functionName, 'T', traceLevel, (char*) "KjNode Tree too large to be rendered");
 }

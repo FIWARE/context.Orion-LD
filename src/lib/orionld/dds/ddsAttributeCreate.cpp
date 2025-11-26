@@ -36,7 +36,7 @@ extern "C"
 #include "orionld/common/traceLevels.h"                          // KT_T trace levels
 #include "orionld/service/serviceLookupByServiceRoutine.h"       // serviceLookupByServiceRoutine
 #include "orionld/serviceRoutines/orionldPostEntity.h"           // orionldPostEntity   - if the attribute does not exist
-#include "orionld/dds/kjTreeLog.h"                               // kjTreeLog2
+#include "orionld/kjTree/kjTreeLog.h"                            // KT_TREE
 #include "orionld/dds/ddsEntityCreateFromAttribute.h"            // Own Interface
 
 
@@ -56,7 +56,7 @@ bool ddsAttributeCreate(KjNode* attrNodeP, const char* entityType, const char* a
   orionldState.requestTree = kjObject(orionldState.kjsonP, NULL);
 
   kjChildAdd(orionldState.requestTree, attributeP);
-  kjTreeLog2(orionldState.requestTree, "Input KjNode tree to orionldPostEntity", StDds);
+  KT_TREE(orionldState.requestTree, "Input KjNode tree to orionldPostEntity", StDds);
 
   //
   // We change the service routine

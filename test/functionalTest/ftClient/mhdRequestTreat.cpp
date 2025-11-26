@@ -38,7 +38,7 @@ extern "C"
 
 #include "common/orionldState.h"                            // orionldState
 #include "common/traceLevels.h"                             // Trace levels for ktrace
-#include "dds/kjTreeLog.h"                                  // kjTreeLog2
+#include "kjTree/kjTreeLog.h"                               // KT_TREE
 
 #include "ftClient/mhdRequestTreat.h"                       // Own interface
 
@@ -162,7 +162,7 @@ char* mhdRequestTreat(int* statusCodeP)
     dumpArray = kjArray(NULL, "dumpArray");
   }
 
-  kjTreeLog2(dump, "Adding to dump array", StDump);
+  KT_TREE(dump, "Adding to dump array", StDump);
   kjChildAdd(dumpArray, dump);
 
   *statusCodeP = 200;

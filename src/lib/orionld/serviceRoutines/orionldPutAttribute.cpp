@@ -27,6 +27,7 @@ extern "C"
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjObject
+#include "kjson/kjChildReplace.h"                                // kjChildReplace
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjClone.h"                                       // kjClone
 #include "ktrace/kTrace.h"                                       // trace messages - ktrace library
@@ -44,6 +45,7 @@ extern "C"
 #include "orionld/common/traceLevels.h"                          // KT_T trace levels
 #include "orionld/common/httpStatusCodeToOrionldErrorType.h"     // httpStatusCodeToOrionldErrorType
 #include "orionld/common/numberToDate.h"                         // numberToDate
+#include "orionld/kjTree/kjTreeLog.h"                            // LM_TREE
 #include "orionld/payloadCheck/pCheckUri.h"                      // pCheckUri
 #include "orionld/mongoc/mongocEntityLookup.h"                   // mongocEntityLookup
 #include "orionld/mongoc/mongocAttributeReplace.h"               // mongocAttributeReplace
@@ -67,7 +69,6 @@ extern "C"
 #include "orionld/distOp/distOpListsMerge.h"                     // distOpListsMerge
 #include "orionld/distOp/xForwardedForCompose.h"                 // xForwardedForCompose
 #include "orionld/distOp/viaCompose.h"                           // viaCompose
-#include "orionld/dds/kjTreeLog.h"                               // kjTreeLog2
 #include "orionld/dds/ddsEntityCreateFromAttribute.h"            // ddsEntityCreateFromAttribute
 #include "orionld/dds/ddsAttributeCreate.h"                      // ddsAttributeCreate
 #include "orionld/dds/ddsPublishAttribute.h"                     // ddsPublishAttribute
@@ -114,52 +115,12 @@ static const char* entityTypeSelect(const char* entityId, const char* entityType
 
 // -----------------------------------------------------------------------------
 //
-// kjChildReplace - FIXME: Move to kjTree library
-//
-static void kjChildReplace(KjNode* container, KjNode* outP, KjNode* inP)
-{
-  KjNode* prev  = NULL;
-  bool    found = false;
-
-  for (KjNode* childP = container->value.firstChildP; childP != NULL; childP = childP->next)
-  {
-    if (childP == outP)
-    {
-      found = true;
-      break;
-    }
-
-    prev = childP;
-  }
-
-  if (found == false)
-  {
-    LM_W(("Unable to replace a child of a contained (\"old\" not found"));
-    return;
-  }
-
-  if (prev == NULL)
-  {
-    container->value.firstChildP = inP;
-    inP->next = outP->next;
-  }
-  else
-  {
-    prev->next = inP;
-    inP->next  = outP->next;
-  }
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
 // datasetInstanceReplace -
 //
 static void datasetInstanceReplace(KjNode* dbAttrDatasetV, KjNode* oldInstanceP, KjNode* newInstanceP)
 {
-  kjTreeLog(oldInstanceP, "old db dataset instance", LmtSR);
-  kjTreeLog(newInstanceP, "new db dataset instance", LmtSR);
+  LM_TREE(oldInstanceP, "old db dataset instance", LmtSR);
+  LM_TREE(newInstanceP, "new db dataset instance", LmtSR);
 
   if (dbAttrDatasetV->type == KjObject)
   {
@@ -184,8 +145,8 @@ static void entityMergeInAttribute(KjNode* apiEntityP, KjNode* newAttrP)
   LM_T(LmtSR, ("Old attribute '%s' at: %p", newAttrP->name, oldAttrP));
   if (oldAttrP != NULL)
   {
-    kjTreeLog(oldAttrP, "OLD", LmtSR);
-    kjTreeLog(newAttrP, "NEW", LmtSR);
+    LM_TREE(oldAttrP, "OLD", LmtSR);
+    LM_TREE(newAttrP, "NEW", LmtSR);
 
     kjChildRemove(apiEntityP, oldAttrP);
     kjChildAdd(apiEntityP, newAttrP);
@@ -258,7 +219,7 @@ bool orionldPutAttribute(void)
   KjNode*     dbEntityP          = mongocEntityLookup(entityId, NULL, NULL, NULL, &detail);
 
   if (dbEntityP != NULL)
-    kjTreeLog(dbEntityP, "dbEntity", LmtSR);
+    LM_TREE(dbEntityP, "dbEntity", LmtSR);
 
   //
   // Is a DDS notification the source of this update?
@@ -355,7 +316,7 @@ bool orionldPutAttribute(void)
   //
   // datasetId?
   //
-  kjTreeLog(orionldState.requestTree, "Incoming", LmtSR);
+  LM_TREE(orionldState.requestTree, "Incoming", LmtSR);
   KjNode*     datasetIdNodeP = kjLookup(orionldState.requestTree, "datasetId");
   const char* datasetId      = (datasetIdNodeP != NULL)?datasetIdNodeP->value.s : NULL;
   KjNode*     dbAttrDatasetP = NULL;
@@ -420,7 +381,7 @@ bool orionldPutAttribute(void)
 
   // It's OK to modify the attribute type in a PUT Attribute operation (thus NoAttributeType)
   if (pCheckAttribute(entityId, orionldState.requestTree, true, NoAttributeType, true, NULL) == false)
-    LM_RE(false, ("pCheckAttribute failed"));  // pcheckAttribute() calls orionldError
+    LM_RE(false, ("pCheckAttribute failed"));  // pCheckAttribute() calls orionldError
 
   previousValuePopulate(NULL, dbAttrP, orionldState.in.pathAttrExpanded);
 
@@ -483,11 +444,11 @@ bool orionldPutAttribute(void)
       createdAt  = (creDateP != NULL)? creDateP->value.f : 0;
 
       LM_T(LmtSR, ("==================================================================================="));
-      kjTreeLog(dbAttributeP, "API Attribute", LmtSR);
+      LM_TREE(dbAttributeP, "API Attribute", LmtSR);
       if (dbModelFromApiAttribute(dbAttributeP, NULL, NULL, NULL, NULL, true, NULL) == false)
         goto response;
 
-      kjTreeLog(dbAttributeP, "DB Attribute", LmtSR);
+      LM_TREE(dbAttributeP, "DB Attribute", LmtSR);
       LM_T(LmtSR, ("==================================================================================="));
 
       if (creDateP != NULL)
@@ -511,7 +472,7 @@ bool orionldPutAttribute(void)
  response:
   // TRoE+Alterations needs the expanded attribute name for the payload body
   orionldState.requestTree->name = attrLongName;
-  kjTreeLog(orionldState.requestTree, "Attribute For TRoE", LmtSR);
+  LM_TREE(orionldState.requestTree, "Attribute For TRoE", LmtSR);
 
   // For Alterations
   if ((dbAttrP != NULL) || (dbAttrDatasetP != NULL))

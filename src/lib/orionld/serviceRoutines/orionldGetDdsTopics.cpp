@@ -26,6 +26,7 @@ extern "C"
 {
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjObject
+#include "kjson/kjNavigate.h"                                    // kjNavigate
 }
 
 #include "logMsg/logMsg.h"                                       // LM_*
@@ -35,7 +36,6 @@ extern "C"
 #include "orionld/common/orionldState.h"                         // orionldState, ddsSupport
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/config/configInit.h"                           // configTree
-#include "orionld/kjTree/kjNavigate.h"                           // kjNavigate
 
 
 

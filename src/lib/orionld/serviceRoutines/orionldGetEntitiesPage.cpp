@@ -31,6 +31,7 @@ extern "C"
 #include "kjson/kjBuilder.h"                                        // kjArray, ...
 #include "kjson/kjLookup.h"                                         // kjLookup
 #include "kjson/kjClone.h"                                          // kjClone
+#include "kjson/kjChildCount.h"                                     // kjChildCount
 }
 
 #include "logMsg/logMsg.h"                                          // LM_*
@@ -40,7 +41,6 @@ extern "C"
 #include "orionld/common/orionldError.h"                            // orionldError
 #include "orionld/common/pick.h"                                    // pickForEntityArray
 #include "orionld/common/traceLevels.h"                             // KTrace Levels
-#include "orionld/kjTree/kjChildCount.h"                            // kjChildCount
 #include "orionld/apiModel/ntocEntity.h"                            // ntocEntity
 #include "orionld/apiModel/ntosEntity.h"                            // ntosEntity
 #include "orionld/distOp/distOpLookupByRegId.h"                     // distOpLookupByRegId

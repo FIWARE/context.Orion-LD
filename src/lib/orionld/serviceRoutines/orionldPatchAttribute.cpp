@@ -32,6 +32,7 @@ extern "C"
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjChildAdd, kjChildRemove
 #include "kjson/kjClone.h"                                       // kjClone
+#include "kjson/kjStringValueLookupInArray.h"                    // kjStringValueLookupInArray
 }
 
 #include "logMsg/logMsg.h"                                       // LM_*
@@ -47,9 +48,6 @@ extern "C"
 #include "orionld/payloadCheck/pCheckAttribute.h"                // pCheckAttribute
 #include "orionld/dbModel/dbModelFromApiSubAttribute.h"          // dbModelFromApiSubAttribute
 #include "orionld/dbModel/dbModelToApiEntity.h"                  // dbModelToApiEntity
-#include "orionld/kjTree/kjStringValueLookupInArray.h"           // kjStringValueLookupInArray
-#include "orionld/kjTree/kjChildCount.h"                         // kjChildCount
-#include "orionld/kjTree/kjSort.h"                               // kjStringArraySort
 #include "orionld/mongoc/mongocEntityGet.h"                      // mongocEntityGet
 #include "orionld/mongoc/mongocAttributesAdd.h"                  // mongocAttributesAdd
 #include "orionld/distOp/distOpRequests.h"                       // distOpRequests
@@ -58,7 +56,6 @@ extern "C"
 #include "orionld/notifications/alteration.h"                    // alteration
 #include "orionld/notifications/sysAttrsStrip.h"                 // sysAttrsStrip
 #include "orionld/notifications/previousValuePopulate.h"         // previousValuePopulate
-#include "orionld/dds/kjTreeLog.h"                               // kjTreeLog2
 #include "orionld/dds/ddsPublishAttribute.h"                     // ddsPublishAttribute
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
 #include "orionld/serviceRoutines/orionldPostEntities.h"         // orionldPostEntities - if DDS and entity does not exist

@@ -30,6 +30,7 @@ extern "C"
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjArray, kjString, kjChildAdd, ...
+#include "kjson/kjStringValueLookupInArray.h"                    // kjStringValueLookupInArray
 }
 
 #include "logMsg/logMsg.h"                                       // LM_*
@@ -38,7 +39,6 @@ extern "C"
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/eqForDot.h"                             // eqForDot
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
-#include "orionld/kjTree/kjStringValueLookupInArray.h"           // kjStringValueLookupInArray
 #include "orionld/distOp/distOpSuccess.h"                        // Own interface
 
 

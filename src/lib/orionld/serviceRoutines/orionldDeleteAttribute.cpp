@@ -29,6 +29,8 @@ extern "C"
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjObject
+#include "kjson/kjStringValueLookupInArray.h"                    // kjStringValueLookupInArray
+#include "kjson/kjChildCount.h"                                  // kjChildCount
 }
 
 #include "logMsg/logMsg.h"                                       // LM_*
@@ -39,8 +41,7 @@ extern "C"
 #include "orionld/common/responseFix.h"                          // responseFix
 #include "orionld/common/dotForEq.h"                             // dotForEq
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
-#include "orionld/kjTree/kjStringValueLookupInArray.h"           // kjStringValueLookupInArray
-#include "orionld/kjTree/kjChildCount.h"                         // kjChildCount
+#include "orionld/kjTree/kjTreeLog.h"                            // LM_TREE
 #include "orionld/legacyDriver/legacyDeleteAttribute.h"          // legacyDeleteAttribute
 #include "orionld/payloadCheck/pCheckUri.h"                      // pCheckUri
 #include "orionld/mongoc/mongocEntityGet.h"                      // mongocEntityGet
@@ -223,7 +224,7 @@ static KjNode* entityFromDb(const char* entityId, char** entityTypeP)
 
   KjNode* entityP = mongocEntityGet(entityId, projectionV);
 
-  kjTreeLog(entityP, "entityP", LmtSR);
+  LM_TREE(entityP, "entityP", LmtSR);
 
   if (entityP != NULL)
   {
@@ -331,7 +332,7 @@ bool orionldDeleteAttribute(void)
   {
     // Respond according to responses in distOpList
     LM_T(LmtSR, ("Consumed by registration"));
-    kjTreeLog(responseBody, "DistOps: response", LmtSR);
+    LM_TREE(responseBody, "DistOps: response", LmtSR);
 
     int      noOf404s    = 0;
     int      noOf204s    = 0;
@@ -400,7 +401,7 @@ bool orionldDeleteAttribute(void)
   //
   // 3. Lookup the default attribute inside entityP
   //
-  kjTreeLog(entityP, "entityP", LmtSR);
+  LM_TREE(entityP, "entityP", LmtSR);
   KjNode* dbAttrsP       = (entityP != NULL)? kjLookup(entityP, "attrs") : NULL;
 
   LM_T(LmtSR, ("attrNameEq: '%s'", attrNameEq));
@@ -432,7 +433,7 @@ bool orionldDeleteAttribute(void)
     LM_T(LmtSR, ("attrDatasetV at %p", attrDatasetV));
   }
 
-  kjTreeLog(attrDatasetV, "attrDatasetV BEFORE", LmtSR);
+  LM_TREE(attrDatasetV, "attrDatasetV BEFORE", LmtSR);
 
   LM_T(LmtSR, ("Here"));
   if (attrDatasetV != NULL)
@@ -559,10 +560,10 @@ bool orionldDeleteAttribute(void)
       bool removal = false;
       if (attrDatasetV->type == KjArray)
       {
-        kjTreeLog(attrDatasetV, "attrDatasetV BEFORE", LmtSR);
+        LM_TREE(attrDatasetV, "attrDatasetV BEFORE", LmtSR);
         LM_T(LmtSR, ("Deleting attrDatasetP (%p) from attrDatasetV", attrDatasetP));
         kjChildRemove(attrDatasetV, attrDatasetP);
-        kjTreeLog(attrDatasetV, "attrDatasetV AFTER ", LmtSR);
+        LM_TREE(attrDatasetV, "attrDatasetV AFTER ", LmtSR);
         if (attrDatasetV->value.firstChildP == NULL)  // Empty array
           removal = true;
       }

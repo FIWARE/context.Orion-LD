@@ -1,3 +1,6 @@
+#ifndef SRC_LIB_ORIONLD_KJTREE_KJATTRIBUTESWITHTYPEEXTRACT_H_
+#define SRC_LIB_ORIONLD_KJTREE_KJATTRIBUTESWITHTYPEEXTRACT_H_
+
 /*
 *
 * Copyright 2022 FIWARE Foundation e.V.
@@ -22,28 +25,17 @@
 *
 * Author: Ken Zangelin
 */
-#include <unistd.h>                                              // NULL
-
 extern "C"
 {
 #include "kjson/KjNode.h"                                        // KjNode
 }
 
-#include "orionld/kjTree/kjNodeDecouple.h"                       // Own interface
-
 
 
 // -----------------------------------------------------------------------------
 //
-// kjNodeDecouple -
+// kjAttributesWithTypeExtract - convert DB entity::attrs field into list of attrs with type
 //
-void kjNodeDecouple(KjNode* parent, KjNode* nodeToDecouple, KjNode* prev)
-{
-  if (prev != NULL)
-    prev->next = nodeToDecouple->next;
-  else
-    parent->value.firstChildP = nodeToDecouple->next;
+extern bool kjAttributesWithTypeExtract(KjNode* kjTree, KjNode* entityP);
 
-  if (parent->lastChild == nodeToDecouple)
-    parent->lastChild = prev;
-}
+#endif  // SRC_LIB_ORIONLD_KJTREE_KJATTRIBUTESWITHTYPEEXTRACT_H_

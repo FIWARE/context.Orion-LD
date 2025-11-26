@@ -30,13 +30,13 @@ extern "C"
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjLookup.h"                                    // kjLookup
 #include "kjson/kjBuilder.h"                                   // kjChildRemove, ...
+#include "kjson/kjChildCount.h"                                // kjChildCount
 }
 
 #include "logMsg/logMsg.h"                                     // LM_*
 
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/common/langStringExtract.h"                  // langStringExtract
-#include "orionld/kjTree/kjChildCount.h"                       // kjChildCount
 #include "orionld/kjTree/kjEntityNormalizedToConcise.h"        // Own interface
 
 

@@ -32,6 +32,7 @@ extern "C"
 #include "kjson/kjRender.h"                                      // kjFastRender
 #include "kjson/kjRenderSize.h"                                  // kjFastRenderSize
 #include "kjson/kjBuilder.h"                                     // kjChildRemove
+#include "kjson/kjChildCount.h"                                  // kjChildCount
 }
 
 #include "orionld/types/DdsType.h"                               // DdsType
@@ -40,10 +41,9 @@ extern "C"
 #include "orionld/common/eqForDot.h"                             // eqForDot
 #include "orionld/config/configAttributeToDdsTopic.h"            // configAttributeToDdsTopic
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
-#include "orionld/kjTree/kjChildCount.h"                         // kjChildCount
+#include "orionld/kjTree/kjTreeLog.h"                            // KT_TREE
 #include "orionld/dds/ddsInit.h"                                 // ddsEnabler
 #include "orionld/dds/ddsTypes.h"                                // ddsTypeLookupByTopic, typeItemArraySort, typeItemArraySize, typeItemArraySerialize
-#include "orionld/dds/kjTreeLog.h"                               // kjTreeLog2
 #include "orionld/dds/ddsServiceLookup.h"                        // ddsServiceLookup
 #include "orionld/dds/ddsServiceLookupByAttributeName.h"         // ddsServiceLookupByAttributeName
 #include "orionld/dds/ddsService.h"                              // ddsService
@@ -171,7 +171,7 @@ void ddsPublishAttribute(const char* entityId, char* attrShortName, KjNode* attr
     return;
   }
 
-  kjTreeLog2(valueP, "Attr Value", StDds);
+  KT_TREE(valueP, "Attr Value", StDds);
 
   //
   // Might be 'attrShortName' is not a shortname ...

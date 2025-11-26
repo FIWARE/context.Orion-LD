@@ -27,6 +27,7 @@ extern "C"
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjArray, ...
 #include "kjson/kjLookup.h"                                      // kjLookup
+#include "kjson/kjChildCount.h"                                  // kjChildCount
 }
 
 #include "logMsg/logMsg.h"                                       // LM_*
@@ -34,11 +35,10 @@ extern "C"
 #include "orionld/types/TreeNode.h"                              // TreeNode
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/datasetEntityFix.h"                     // datasetEntityFix
-#include "orionld/kjTree/kjChildCount.h"                         // kjChildCount
 #include "orionld/legacyDriver/legacyPostQuery.h"                // legacyPostQuery
 #include "orionld/payloadCheck/pCheckQuery.h"                    // pCheckQuery
 #include "orionld/mongoc/mongocEntitiesQuery2.h"                 // mongocEntitiesQuery2
-#include "orionld/kjTree/kjTreeLog.h"                            // kjTreeLog
+#include "orionld/kjTree/kjTreeLog.h"                            // LM_TREE
 #include "orionld/dbModel/dbModelToApiEntity.h"                  // dbModelToApiEntity2
 #include "orionld/serviceRoutines/orionldPostQuery.h"            // Own interface
 
@@ -154,7 +154,7 @@ bool orionldPostQuery(void)
   LM_T(LmtSR, ("datasetIdArray at %p", datasetIdArray));
   if (datasetIdArray != NULL)
   {
-    kjTreeLog(datasetIdArray, "datasetIdArray", LmtSR);
+    LM_TREE(datasetIdArray, "datasetIdArray", LmtSR);
     int datasets = kjChildCount(datasetIdArray);
 
     //

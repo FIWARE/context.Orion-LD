@@ -31,6 +31,7 @@ extern "C"
 #include "kjson/kjLookup.h"                                    // kjLookup
 #include "kjson/kjClone.h"                                     // kjClone
 #include "kjson/kjBuilder.h"                                   // kjString, kjChildAdd
+#include "kjson/kjChildCount.h"                                // kjChildCount
 }
 
 #include "logMsg/logMsg.h"                                     // LM_*
@@ -45,7 +46,6 @@ extern "C"
 #include "orionld/common/orionldState.h"                       // orionldState, pernotSubCache
 #include "orionld/common/urlParse.h"                           // urlParse
 #include "orionld/payloadCheck/pcheckGeoQ.h"                   // pcheckGeoQ
-#include "orionld/kjTree/kjChildCount.h"                       // kjChildCount
 
 
 
@@ -164,7 +164,7 @@ PernotSubscription* pernotSubCacheAdd
   pSubP->timeInterval   = timeInterval;
   pSubP->kjSubP         = kjClone(NULL, apiSubP);
   LM_T(LmtLeak, ("Cloned an apiSubP: %p", pSubP->kjSubP));
-  kjTreeLog(pSubP->kjSubP, "apiSubP", LmtLeak);
+  LM_TREE(pSubP->kjSubP, "apiSubP", LmtLeak);
   pSubP->tenantP        = tenantP;
   pSubP->renderFormat   = renderFormat;
   pSubP->sysAttrs       = (sysAttrsP == NULL)? false : sysAttrsP->value.b;
@@ -195,8 +195,7 @@ PernotSubscription* pernotSubCacheAdd
       LM_T(LmtPernotQuery, ("maxDistance: %d", pSubP->geoSelector->maxDistance));
       LM_T(LmtPernotQuery, ("geoProperty: '%s'", pSubP->geoSelector->geoProperty));
       pSubP->geoSelector->coordinates = kjClone(NULL, pSubP->geoSelector->coordinates);
-      kjTreeLog(pSubP->geoSelector->coordinates, "coordinates", LmtPernotQuery);
-      
+      LM_TREE(pSubP->geoSelector->coordinates, "coordinates", LmtPernotQuery);
     }
   }
 

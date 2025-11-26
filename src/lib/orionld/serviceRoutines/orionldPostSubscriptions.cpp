@@ -33,6 +33,8 @@ extern "C"
 #include "kjson/kjLookup.h"                                    // kjLookup
 #include "kjson/kjBuilder.h"                                   // kjString, kjChildAdd, ...
 #include "kjson/kjClone.h"                                     // kjClone
+#include "kjson/kjNavigate.h"                                  // kjNavigate
+#include "kjson/kjChildPrepend.h"                              // kjChildPrepend
 }
 
 #include "logMsg/logMsg.h"                                     // LM_*
@@ -52,7 +54,7 @@ extern "C"
 #include "orionld/http/httpHeaderLocationAdd.h"                // httpHeaderLocationAdd
 #include "orionld/http/httpRequestHeaderAdd.h"                 // httpRequestHeaderAdd
 #include "orionld/legacyDriver/legacyPostSubscriptions.h"      // legacyPostSubscriptions
-#include "orionld/kjTree/kjChildPrepend.h"                     // kjChildPrepend
+#include "orionld/kjTree/kjTreeLog.h"                          // LM_TREE
 #include "orionld/dbModel/dbModelFromApiSubscription.h"        // dbModelFromApiSubscription
 #include "orionld/mongoc/mongocSubscriptionExists.h"           // mongocSubscriptionExists
 #include "orionld/mongoc/mongocSubscriptionInsert.h"           // mongocSubscriptionInsert
@@ -70,7 +72,6 @@ extern "C"
 #include "orionld/http/httpRequest.h"                          // httpRequest
 #include "orionld/common/tenantList.h"                         // tenant0
 #include "orionld/regMatch/regMatchSubscription.h"             // regMatchSubscription
-#include "orionld/kjTree/kjNavigate.h"                         // kjNavigate
 #include "orionld/serviceRoutines/orionldPostSubscriptions.h"  // Own Interface
 
 
@@ -216,7 +217,7 @@ bool orionldPostSubscriptions(void)
   if ((experimental == false) || (orionldState.in.legacy != NULL))
     return legacyPostSubscriptions();  // this will be removed!! (after thorough testing)
 
-  kjTreeLog(orionldState.requestTree, "Father Sub 01", LmtSubordinate);
+  LM_TREE(orionldState.requestTree, "Father Sub 01", LmtSubordinate);
 
   KjNode*              subP            = orionldState.requestTree;
   KjNode*              subIdP          = orionldState.payloadIdNode;
@@ -306,7 +307,7 @@ bool orionldPostSubscriptions(void)
   // Add subId to the tree
   kjChildPrepend(subP, subIdP);
 
-  kjTreeLog(orionldState.requestTree, "With ID", LmtSubordinate);
+  LM_TREE(orionldState.requestTree, "With ID", LmtSubordinate);
 
   // The three 'q's ... that's also dbModel
   if (ldqNodeP != NULL)

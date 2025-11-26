@@ -31,6 +31,8 @@ extern "C"
 #include "kjson/kjBuilder.h"                                       // kjArray, kjObject, kjChildRemove
 #include "kjson/kjLookup.h"                                        // kjLookup
 #include "kjson/kjClone.h"                                         // kjClone
+#include "kjson/kjStringValueLookupInArray.h"                      // kjStringValueLookupInArray
+#include "kjson/kjStringArraySortedInsert.h"                       // kjStringArraySortedInsert
 }
 
 #include "logMsg/logMsg.h"                                         // LM_*
@@ -39,8 +41,6 @@ extern "C"
 #include "orionld/common/uuidGenerate.h"                           // uuidGenerate
 #include "orionld/types/OrionldProblemDetails.h"                   // OrionldProblemDetails
 #include "orionld/context/orionldContextItemAliasLookup.h"         // orionldContextItemAliasLookup
-#include "orionld/kjTree/kjStringValueLookupInArray.h"             // kjStringValueLookupInArray
-#include "orionld/kjTree/kjStringArraySortedInsert.h"              // kjStringArraySortedInsert
 #include "orionld/mongoCppLegacy/mongoCppLegacyEntitiesGet.h"                      // mongoCppLegacyEntitiesGet
 #include "orionld/mongoCppLegacy/mongoCppLegacyEntityTypesFromRegistrationsGet.h"  // mongoCppLegacyEntityTypesFromRegistrationsGet
 #include "orionld/mongoc/mongocEntitiesGet.h"                      // mongocEntitiesGet

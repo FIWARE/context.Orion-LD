@@ -25,6 +25,7 @@
 extern "C"
 {
 #include "kjson/kjLookup.h"                                      // kjLookup
+#include "kjson/kjStringValueLookupInArray.h"                    // kjStringValueLookupInArray
 }
 
 #include "logMsg/logMsg.h"                                       // LM_*
@@ -32,7 +33,6 @@ extern "C"
 #include "orionld/types/StringArray.h"                           // StringArray, stringArrayClone
 #include "orionld/types/RegCacheItem.h"                          // RegCacheItem
 #include "orionld/common/orionldState.h"                         // orionldState
-#include "orionld/kjTree/kjStringValueLookupInArray.h"           // kjStringValueLookupInArray
 #include "orionld/regMatch/regMatchAttributesForGet.h"           // Own interface
 
 

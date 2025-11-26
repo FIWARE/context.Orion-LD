@@ -36,17 +36,10 @@ extern "C"
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/types/OrionldProblemDetails.h"                 // OrionldProblemDetails
+#include "orionld/kjTree/kjAttributesWithTypeExtract.h"          // kjAttributesWithTypeExtract
 #include "orionld/mongoc/mongocConnectionGet.h"                  // mongocConnectionGet
 #include "orionld/mongoc/mongocKjTreeFromBson.h"                 // mongocKjTreeFromBson
 #include "orionld/mongoc/mongocEntityTypeGet.h"                  // Own interface
-
-
-
-// -----------------------------------------------------------------------------
-//
-// kjAttributesWithTypeExtract - FIXME: Move to kjTree/kjAttributesWithTypeExtract.h/cpp
-//
-extern bool kjAttributesWithTypeExtract(KjNode* kjTree, KjNode* entityP);
 
 
 
@@ -56,10 +49,10 @@ extern bool kjAttributesWithTypeExtract(KjNode* kjTree, KjNode* entityP);
 //
 KjNode* mongocEntityTypeGet(OrionldProblemDetails* pdP, const char* typeLongName, int* noOfEntitiesP)
 {
-  KjNode*                               outArray       = kjArray(orionldState.kjsonP, NULL);
-  int                                   entities       = 0;
+  KjNode* outArray       = kjArray(orionldState.kjsonP, NULL);
+  int     entities       = 0;
+  bson_t  mongoFilter;
 
-  bson_t mongoFilter;
   bson_init(&mongoFilter);
   bson_append_utf8(&mongoFilter, "_id.type", 8, typeLongName, -1);
 

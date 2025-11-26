@@ -38,6 +38,7 @@ extern "C"
 #include "orionld/common/orionldState.h"                            // orionldState
 #include "orionld/distOp/distOpListRelease.h"                       // distOpListRelease
 #include "orionld/entityMaps/entityMapCreate.h"                     // entityMapCreate
+#include "orionld/kjTree/kjTreeLog.h"                               // LM_TREE
 #include "orionld/serviceRoutines/orionldGetEntitiesLocal.h"        // orionldGetEntitiesLocal
 #include "orionld/serviceRoutines/orionldGetEntitiesPage.h"         // orionldGetEntitiesPage
 #include "orionld/serviceRoutines/orionldGetEntitiesDistributed.h"  // Own interface
@@ -163,7 +164,7 @@ bool orionldGetEntitiesDistributed(DistOp* distOpList, char* idPattern, QNode* q
   if (orionldState.in.entityMap != NULL)
   {
     LM_T(LmtCount, ("--------------------------- Created entity map"));
-    kjTreeLog(orionldState.in.entityMap->map, "EntityMap excl local entities", LmtCount);
+    LM_TREE(orionldState.in.entityMap->map, "EntityMap excl local entities", LmtCount);
 
     // Add the new entity map to the global list of entity maps
     // sem-take

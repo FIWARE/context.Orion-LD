@@ -41,7 +41,7 @@ extern "C"
 #include "orionld/common/dotForEq.h"                             // dotForEq
 #include "orionld/common/responseFix.h"                          // responseFix
 #include "orionld/common/traceLevels.h"                          // KT_T trace levels
-#include "orionld/kjTree/kjTreeLog.h"                            // kjTreeLog
+#include "orionld/kjTree/kjTreeLog.h"                            // LM_TREE
 #include "orionld/payloadCheck/PCHECK.h"                         // PCHECK_OBJECT, PCHECK_EMPTY_OBJECT, ...
 #include "orionld/payloadCheck/pCheckEntity.h"                   // pCheckEntity
 #include "orionld/legacyDriver/legacyPostEntity.h"               // legacyPostEntity
@@ -319,9 +319,9 @@ bool orionldPostEntity(void)
 
       if (dbAttrsP != NULL)
       {
-        kjTreeLog(dbEntityP, "DB Entity before merge", LmtSR);
+        LM_TREE(dbEntityP, "DB Entity before merge", LmtSR);
         dbAttrsMerge(dbAttrsP, dbAttrsUpdate, orionldState.uriParamOptions.noOverwrite == false);
-        kjTreeLog(dbEntityP, "DB Entity after merge", LmtSR);
+        LM_TREE(dbEntityP, "DB Entity after merge", LmtSR);
 
         OrionldProblemDetails  pd;
         KjNode*                finalApiEntityWithSysAttrs = dbModelToApiEntity2(dbEntityP, true, RF_NORMALIZED, orionldState.uriParams.lang, false, &pd);

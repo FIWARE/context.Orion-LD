@@ -34,7 +34,7 @@ extern "C"
 
 #include "orionld/types/DistOp.h"                                // DistOp
 #include "orionld/types/StringArray.h"                           // StringArray
-#include "orionld/common/orionldState.h"                         // orionldState, kjTreeLog
+#include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
 #include "orionld/distOp/distOpAttrs.h"                          // Own interface
 

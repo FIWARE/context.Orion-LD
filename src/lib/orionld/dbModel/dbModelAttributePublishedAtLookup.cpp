@@ -32,7 +32,7 @@ extern "C"
 }
 
 #include "orionld/common/traceLevels.h"                          // KT_T trace levels
-#include "orionld/dds/kjTreeLog.h"                               // kjTreeLog2
+#include "orionld/kjTree/kjTreeLog.h"                            // KT_TREE
 
 
 
@@ -42,7 +42,7 @@ extern "C"
 //
 int64_t dbModelAttributePublishedAtLookup(KjNode* dbAttrP)
 {
-  kjTreeLog2(dbAttrP, "dbAttr", StDds);
+  KT_TREE(dbAttrP, "dbAttr", StDds);
 
   KjNode* publishedAtObjectP = kjLookup(dbAttrP, "publishedAt");
   KjNode* publishedAtValueP  = (publishedAtObjectP != NULL)? kjLookup(publishedAtObjectP, "value") : NULL;

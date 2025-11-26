@@ -61,7 +61,7 @@ KjNode* batchReplaceEntity(KjNode* inEntityP, char* entityId, char* entityType, 
     return NULL;
 
   LM_T(LmtSR, ("entityType: '%s'", entityType));
-  kjTreeLog(dbFinalEntityP, "dbFinalEntity", LmtSR);
+  LM_TREE(dbFinalEntityP, "dbFinalEntity", LmtSR);
 
   //
   // Fix the entity's creDate (from the version of the entity that was fouind in the database)

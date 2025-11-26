@@ -27,12 +27,12 @@ extern "C"
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjChildRemove
+#include "kjson/kjChildCount.h"                                  // kjChildCount
 }
 
 #include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/types/OrionldAttributeType.h"                  // OrionldAttributeType
-#include "orionld/kjTree/kjChildCount.h"                         // kjChildCount
 #include "orionld/kjTree/kjAttributeNormalizedToConcise.h"       // Own interface
 
 

@@ -33,6 +33,7 @@ extern "C"
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjClone.h"                                       // kjClone
 #include "kjson/kjRender.h"                                      // kjRender
+#include "kjson/kjStringValueLookupInArray.h"                    // kjStringValueLookupInArray
 }
 
 #include "logMsg/logMsg.h"                                       // LM_*
@@ -65,7 +66,6 @@ extern "C"
 #include "orionld/context/orionldContextItemExpand.h"            // orionldUriExpand
 #include "orionld/context/orionldContextFromTree.h"              // orionldContextFromTree
 #include "orionld/payloadCheck/pCheckEntity.h"                   // pCheckEntity
-#include "orionld/kjTree/kjStringValueLookupInArray.h"           // kjStringValueLookupInArray
 #include "orionld/legacyDriver/kjTreeToUpdateContextRequest.h"   // kjTreeToUpdateContextRequest
 #include "orionld/kjTree/kjEntityArrayErrorPurge.h"              // kjEntityArrayErrorPurge
 #include "orionld/mongoCppLegacy/mongoCppLegacyEntityListLookupWithIdTypeCreDate.h"   // mongoCppLegacyEntityListLookupWithIdTypeCreDate

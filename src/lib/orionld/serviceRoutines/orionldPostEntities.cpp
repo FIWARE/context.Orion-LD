@@ -60,8 +60,6 @@ extern "C"
 #include "orionld/distOp/distOpFailure.h"                        // distOpFailure
 #include "orionld/distOp/distOpRequests.h"                       // distOpRequests
 #include "orionld/distOp/distOpResponses.h"                      // distOpResponses
-#include "orionld/kjTree/kjChildCount.h"                         // kjChildCount
-#include "orionld/kjTree/kjSort.h"                               // kjStringArraySort
 #include "orionld/serviceRoutines/orionldPostEntity.h"           // orionldPostEntity
 #include "orionld/serviceRoutines/orionldPostEntities.h"         // Own interface
 

@@ -28,7 +28,10 @@
 extern "C"
 {
 #include "kjson/KjNode.h"                                      // KjNode
+#include "ktrace/ktTraceLevelCheck.h"                          // ktTraceLevelCheck
 }
+
+#include "logMsg/logMsg.h"                                     // LM_MASK, lmOk
 
 
 
@@ -36,7 +39,16 @@ extern "C"
 //
 // kjTreeLog -
 //
-#define kjTreeLog(tree, msg, traceLevel)    do { if (LM_MASK(LogLevelDebug) && lmOk('T', traceLevel) == LmsOk)  kjTreeLogFunction(tree, msg, __FILE__, __LINE__, __FUNCTION__, traceLevel); } while (0)
+#define LM_TREE(tree, msg, traceLevel)    do { if (LM_MASK(LogLevelDebug) && lmOk('T', traceLevel) == LmsOk)  lmKTreeLogFunction(tree, msg, __FILE__, __LINE__, __FUNCTION__, traceLevel); } while (0)
+#define KT_TREE(tree, title, traceLevel)  do { if (ktTraceLevelCheck(traceLevel) == true) ktKjTreeLogFunction(tree, title, __FILE__, __LINE__, __FUNCTION__, traceLevel); } while (0)
+
+
+
+// -----------------------------------------------------------------------------
+//
+// lmKTreeLogFunction -
+//
+extern void lmKTreeLogFunction(KjNode* tree, const char* msg, const char* fileName, int lineNo, const char* functionName, int traceLevel);
 
 
 
@@ -44,6 +56,6 @@ extern "C"
 //
 // kjTreeLogFunction -
 //
-extern void kjTreeLogFunction(KjNode* tree, const char* msg, const char* fileName, int lineNo, const char* functionName, int traceLevel);
+extern void ktKjTreeLogFunction(KjNode* tree, const char* msg, const char* fileName, int lineNo, const char* functionName, int traceLevel);
 
 #endif  // SRC_LIB_ORIONLD_KJTREE_KJTREELOG_H_

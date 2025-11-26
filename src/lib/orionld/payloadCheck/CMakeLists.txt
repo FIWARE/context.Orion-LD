@@ -40,7 +40,6 @@ SET (SOURCES
      pCheckSubscription.cpp
      pCheckUri.cpp
      pCheckStringArray.cpp
-     pcheckAttribute.cpp
      pcheckAttrs.cpp
      pcheckEndpoint.cpp
      pcheckEntity.cpp

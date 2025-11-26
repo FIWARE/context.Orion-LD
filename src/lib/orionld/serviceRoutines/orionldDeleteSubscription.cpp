@@ -35,6 +35,7 @@
 #include "orionld/mongoc/mongocSubscriptionDelete.h"             // mongocSubscriptionDelete
 #include "orionld/legacyDriver/legacyDeleteSubscription.h"       // legacyDeleteSubscription
 #include "orionld/regCache/regCacheItemLookup.h"                 // regCacheItemLookup
+#include "orionld/kjTree/kjTreeLog.h"                            // LM_TREE
 #include "orionld/serviceRoutines/orionldDeleteSubscription.h"   // Own Interface
 
 
@@ -104,7 +105,7 @@ bool orionldDeleteSubscription(void)
       if (r != 204)
       {
         LM_W(("Unable to DELETE subordinate subscription '%s': status code %d, %s: %s", subordinateP->subscriptionId, r, pd.title, pd.detail));
-        kjTreeLog(responseTree, "Error response payload body", LmtSR);
+        LM_TREE(responseTree, "Error response payload body", LmtSR);
       }
     }
 

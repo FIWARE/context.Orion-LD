@@ -31,13 +31,13 @@ extern "C"
 #include "kjson/kjLookup.h"                                    // kjLookup
 #include "kjson/kjBuilder.h"                                   // kjString, kjObject, ...
 #include "kjson/kjClone.h"                                     // kjClone
+#include "kjson/kjStringValueLookupInArray.h"                  // kjStringValueLookupInArray
 }
 
 #include "logMsg/logMsg.h"                                     // LM_*
 #include "logMsg/traceLevels.h"                                // Lmt*
 
 #include "orionld/context/orionldAttributeExpand.h"            // orionldAttributeExpand
-#include "orionld/kjTree/kjStringValueLookupInArray.h"         // kjStringValueLookupInArray
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/common/entityErrorPush.h"                    // entityErrorPush
 #include "orionld/common/troeIgnored.h"                        // troeIgnored

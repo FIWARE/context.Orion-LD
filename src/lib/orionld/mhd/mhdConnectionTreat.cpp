@@ -30,6 +30,7 @@ extern "C"
 #include "kbase/kMacros.h"                                         // K_FT
 #include "kbase/kTime.h"                                           // kTimeGet
 #include "kbase/kStringSplit.h"                                    // kStringSplit
+#include "kalloc/kaStrdup.h"                                       // kaStrdup
 #include "kjson/KjNode.h"                                          // KjNode
 #include "kjson/kjBufferCreate.h"                                  // kjBufferCreate
 #include "kjson/kjParse.h"                                         // kjParse
@@ -39,7 +40,7 @@ extern "C"
 #include "kjson/kjFree.h"                                          // kjFree
 #include "kjson/kjBuilder.h"                                       // kjString, ...
 #include "kjson/kjLookup.h"                                        // kjLookup
-#include "kalloc/kaStrdup.h"                                       // kaStrdup
+#include "kjson/kjNodeDecouple.h"                                  // kjNodeDecouple
 }
 
 #include "logMsg/logMsg.h"                                         // LM_*
@@ -66,7 +67,6 @@ extern "C"
 #include "orionld/mongoc/mongocGeoIndexCreate.h"                   // mongocGeoIndexCreate
 #include "orionld/mongoCppLegacy/mongoCppLegacyGeoIndexCreate.h"   // mongoCppLegacyGeoIndexCreate
 #include "orionld/db/dbGeoIndexLookup.h"                           // dbGeoIndexLookup
-#include "orionld/kjTree/kjNodeDecouple.h"                         // kjNodeDecouple
 #include "orionld/payloadCheck/pcheckName.h"                       // pcheckName
 #include "orionld/context/orionldCoreContext.h"                    // orionldCoreContextP
 #include "orionld/context/orionldContextFromUrl.h"                 // orionldContextFromUrl
@@ -334,7 +334,7 @@ static bool payloadParseAndExtractSpecialFields(bool* contextToBeCashedP)
 
         orionldState.payloadContextNode = attrNodeP;
         LM_T(LmtContextInBody, ("Found an @contest in the payload body - removing it and keeping it in orionldState.payloadContextNode"));
-        kjTreeLog(orionldState.payloadContextNode, "@context in body", LmtContextInBody);
+        LM_TREE(orionldState.payloadContextNode, "@context in body", LmtContextInBody);
 
         attrNodeP = orionldState.payloadContextNode->next;
         kjNodeDecouple(orionldState.requestTree, orionldState.payloadContextNode, prev);
@@ -1377,7 +1377,7 @@ MHD_Result mhdConnectionTreat(void)
   PERFORMANCE(serviceRoutineStart);
  serviceRoutine:
   if (orionldState.requestTree != NULL)
-    kjTreeLog(orionldState.requestTree, "Request Payload Body", LmtRequest);
+    LM_TREE(orionldState.requestTree, "Request Payload Body", LmtRequest);
 
   serviceRoutineResult = orionldState.serviceP->serviceRoutine();
 
