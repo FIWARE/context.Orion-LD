@@ -21,7 +21,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
 
 SET (SOURCES
-  kjTreeLog.cpp
   ddsInit.cpp
   ddsCategoryToKlogSeverity.cpp
   ddsNotification.cpp

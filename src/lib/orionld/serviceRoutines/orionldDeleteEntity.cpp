@@ -41,6 +41,7 @@ extern "C"
 #include "orionld/context/orionldContextItemExpand.h"            // orionldContextItemExpand
 #include "orionld/mongoc/mongocEntityLookup.h"                   // mongocEntityLookup
 #include "orionld/mongoc/mongocEntityDelete.h"                   // mongocEntityDelete
+#include "orionld/kjTree/kjTreeLog.h"                            // LM_TREE
 #include "orionld/notifications/orionldAlterations.h"            // orionldAlterations
 #include "orionld/regMatch/regMatchForEntityGet.h"               // regMatchForEntityGet
 #include "orionld/distOp/distOpListsMerge.h"                     // distOpListsMerge
@@ -264,7 +265,7 @@ bool orionldDeleteEntity(void)
     distOpListRelease(distOpList);
   }
 
-  kjTreeLog(responseBody, "responseBody", LmtSR);
+  LM_TREE(responseBody, "responseBody", LmtSR);
   responseFix(responseBody, DoDeleteEntity, 204, entityId);
 
   return true;

@@ -29,9 +29,9 @@ extern "C"
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjChildRemove
+#include "kjson/kjChildCount.h"                                  // kjChildCount
 }
 
-#include "orionld/kjTree/kjChildCount.h"                         // kjChildCount
 #include "orionld/kjTree/kjSysAttrsRemove.h"                     // kjSysAttrsRemove
 #include "orionld/apiModel/langFixNormalized.h"                  // langFixNormalized
 #include "orionld/apiModel/ntocSubAttribute.h"                   // Own interface

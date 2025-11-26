@@ -33,6 +33,7 @@ extern "C"
 #include "kjson/kjLookup.h"                                     // kjLookup
 #include "kjson/kjClone.h"                                      // kjClone
 #include "kjson/kjRender.h"                                     // kjFastRender    - DEBUG
+#include "kjson/kjStringValueLookupInArray.h"                   // kjStringValueLookupInArray
 }
 
 #include "logMsg/logMsg.h"                                      // LM_*
@@ -65,7 +66,6 @@ extern "C"
 #include "orionld/context/orionldContextPresent.h"              // orionldContextPresent
 #include "orionld/context/orionldContextItemAliasLookup.h"      // orionldContextItemAliasLookup
 #include "orionld/context/orionldContextFromTree.h"             // orionldContextFromTree
-#include "orionld/kjTree/kjStringValueLookupInArray.h"          // kjStringValueLookupInArray
 #include "orionld/kjTree/kjEntityIdLookupInEntityArray.h"       // kjEntityIdLookupInEntityArray
 #include "orionld/legacyDriver/kjTreeToUpdateContextRequest.h"  // kjTreeToUpdateContextRequest
 #include "orionld/kjTree/kjEntityIdArrayExtract.h"              // kjEntityIdArrayExtract

@@ -31,7 +31,7 @@ extern "C"
 #include "orionld/types/RegCacheItem.h"                          // RegCacheItem
 #include "orionld/types/StringArray.h"                           // StringArray
 #include "orionld/types/DistOp.h"                                // DistOp
-#include "orionld/common/orionldState.h"                         // orionldState, kjTreeLog
+#include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/distOp/distOpCreate.h"                         // distOpCreate
 #include "orionld/distOp/distOpListsMerge.h"                     // distOpListsMerge
 #include "orionld/distOp/distOpAttrs.h"                          // distOpAttrs

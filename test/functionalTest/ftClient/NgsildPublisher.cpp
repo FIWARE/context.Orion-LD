@@ -51,7 +51,6 @@ extern "C"
 #include "orionld/common/traceLevels.h"                     // Trace Levels
 #include "orionld/common/orionldState.h"                    // orionldState
 #include "ftClient/NgsildPublisher.h"                       // NgsildPublisher
-#include "orionld/dds/kjTreeLog.h"                          // kjTreeLog2
 
 
 

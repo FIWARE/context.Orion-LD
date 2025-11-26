@@ -36,7 +36,6 @@ extern "C"
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/common/traceLevels.h"                          // KTrace trace levels
 #include "orionld/common/dotForEq.h"                             // dotForEq
-#include "orionld/dds/kjTreeLog.h"                               // kjTreeLog2
 #include "orionld/dbModel/dbModelToApiAttribute.h"               // dbModelToApiAttribute
 #include "orionld/apiModel/ntonAttribute.h"                      // ntonAttribute
 #include "orionld/apiModel/ntocAttribute.h"                      // ntocAttribute

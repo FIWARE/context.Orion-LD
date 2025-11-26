@@ -39,6 +39,7 @@ extern "C"
 #include "orionld/pernot/pernotSubCacheAdd.h"                    // pernotSubCacheAdd
 #include "orionld/dbModel/dbModelToApiSubscription.h"            // dbModelToApiSubscription
 #include "orionld/context/orionldContextFromUrl.h"               // orionldContextFromUrl
+#include "orionld/kjTree/kjTreeLog.h"                            // LM_TREE
 #include "orionld/mongoc/mongocWriteLog.h"                       // MONGOC_RLOG
 #include "orionld/mongoc/mongocKjTreeFromBson.h"                 // mongocKjTreeFromBson
 #include "orionld/mongoc/mongocSubCachePopulateByTenant.h"       // Own interface
@@ -130,7 +131,7 @@ bool mongocSubCachePopulateByTenant(OrionldTenant* tenantP, bool refresh)
     OrionldRenderFormat renderFormat  = RF_NORMALIZED;
     double              timeInterval  = 0;
 
-    kjTreeLog(dbSubP, "dbSubP", LmtPernot);
+    LM_TREE(dbSubP, "dbSubP", LmtPernot);
     KjNode*      apiSubP       = dbModelToApiSubscription(dbSubP,
                                                           tenantP->tenant,
                                                           true,
@@ -145,7 +146,7 @@ bool mongocSubCachePopulateByTenant(OrionldTenant* tenantP, bool refresh)
     if (apiSubP == NULL)
       continue;
 
-    kjTreeLog(apiSubP, "apiSubP", LmtPernot);
+    LM_TREE(apiSubP, "apiSubP", LmtPernot);
 
     OrionldContext* contextP = NULL;
     if (contextNodeP != NULL)

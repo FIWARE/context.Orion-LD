@@ -34,6 +34,7 @@ extern "C"
 #include "kjson/KjNode.h"                                           // KjNode
 #include "kjson/kjLookup.h"                                         // kjLookup
 #include "kjson/kjBuilder.h"                                        // kjObject, ...
+#include "kjson/kjChildPrepend.h"                                   // kjChildPrepend
 }
 
 #include "logMsg/logMsg.h"                                          // LM_*
@@ -48,7 +49,6 @@ extern "C"
 #include "orionld/common/langStringExtract.h"                       // langValueFix
 #include "orionld/context/orionldContextItemAliasLookup.h"          // orionldContextItemAliasLookup
 #include "orionld/kjTree/kjEntityNormalizedToConcise.h"             // kjEntityNormalizedToConcise
-#include "orionld/kjTree/kjChildPrepend.h"                          // kjChildPrepend
 #include "orionld/mongoCppLegacy/mongoCppLegacyDataToKjTree.h"      // mongoCppLegacyDataToKjTree
 #include "orionld/mongoCppLegacy/mongoCppLegacyEntityRetrieve.h"    // Own interface
 

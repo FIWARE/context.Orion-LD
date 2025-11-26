@@ -36,6 +36,7 @@ extern "C"
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/dotForEq.h"                             // dotForEq
+#include "orionld/kjTree/kjTreeLog.h"                            // LM_TREE
 #include "orionld/mongoc/mongocWriteLog.h"                       // MONGOC_WLOG
 #include "orionld/mongoc/mongocConnectionGet.h"                  // mongocConnectionGet
 #include "orionld/mongoc/mongocKjTreeToBson.h"                   // mongocKjTreeToBson
@@ -243,7 +244,7 @@ static bool patchApply
     else if (tree->type == KjArray)
     {
       LM_T(LmtMongoc, ("'%s' is an Array - calling mongocKjTreeToBson", tree->name));
-      kjTreeLog(tree, "TREE", LmtMongoc);
+      LM_TREE(tree, "TREE", LmtMongoc);
       mongocKjTreeToBson(tree, &compound);
       bson_append_array(setP, path, -1, &compound);
       bson_destroy(&compound);

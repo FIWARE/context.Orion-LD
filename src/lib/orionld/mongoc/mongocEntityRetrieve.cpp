@@ -33,6 +33,7 @@ extern "C"
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjObject, ...
+#include "kjson/kjChildPrepend.h"                                // kjChildPrepend
 }
 
 #include "logMsg/logMsg.h"                                       // LM_*
@@ -46,7 +47,6 @@ extern "C"
 #include "orionld/mongoc/mongocKjTreeFromBson.h"                 // mongocKjTreeFromBson
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
 #include "orionld/kjTree/kjEntityNormalizedToConcise.h"          // kjEntityNormalizedToConcise
-#include "orionld/kjTree/kjChildPrepend.h"                       // kjChildPrepend
 #include "orionld/mongoc/mongocEntityRetrieve.h"                 // Own interface
 
 

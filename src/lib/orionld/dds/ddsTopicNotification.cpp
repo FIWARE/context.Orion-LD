@@ -33,7 +33,7 @@ extern "C"
 
 #include "orionld/types/OrionLdRestService.h"               // OrionLdRestService, OrionLdRestServiceVector, OrionldServiceRoutine
 #include "orionld/common/traceLevels.h"                     // Trace levels for KTrace
-#include "orionld/common/orionldState.h"                    // orionldState, kjTreeLog
+#include "orionld/common/orionldState.h"                    // orionldState
 #include "orionld/common/tenantList.h"                      // tenant0
 #include "orionld/context/orionldContextItemExpand.h"       // orionldContextItemExpand
 #include "orionld/service/orionldServiceInit.h"             // orionldRestServiceV

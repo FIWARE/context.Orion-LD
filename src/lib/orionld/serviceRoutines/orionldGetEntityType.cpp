@@ -27,6 +27,7 @@ extern "C"
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjObject, kjChildAdd, ...
 #include "kjson/kjLookup.h"                                      // kjLookup
+#include "kjson/kjStringValueLookupInArray.h"                    // kjStringValueLookupInArray
 }
 
 #include "logMsg/logMsg.h"                                       // LM_*
@@ -39,7 +40,6 @@ extern "C"
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/context/orionldContextItemExpand.h"            // orionldContextItemExpand
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
-#include "orionld/kjTree/kjStringValueLookupInArray.h"           // kjStringValueLookupInArray
 #include "orionld/mongoc/mongocEntityTypeGet.h"                  // mongocEntityTypeGet
 #include "orionld/mongoCppLegacy/mongoCppLegacyEntityTypeGet.h"  // mongoCppLegacyEntityTypeGet
 #include "orionld/regMatch/regMatchForEntityGet.h"               // regMatchForEntityGet

@@ -29,6 +29,7 @@ extern "C"
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjBuilder.h"                                   // kjString, kjChildAdd
 #include "kjson/kjLookup.h"                                    // kjLookup
+#include "kjson/kjStringValueLookupInArray.h"                  // kjStringValueLookupInArray
 }
 
 #include "logMsg/logMsg.h"                                     // LM_*
@@ -38,7 +39,6 @@ extern "C"
 #include "orionld/common/entityIdAndTypeGet.h"                 // entityIdAndTypeGet
 #include "orionld/common/entityErrorPush.h"                    // entityErrorPush
 #include "orionld/payloadCheck/pcheckEntity.h"                 // pcheckEntity
-#include "orionld/kjTree/kjStringValueLookupInArray.h"         // kjStringValueLookupInArray
 #include "orionld/kjTree/kjEntityIdArrayExtract.h"             // Own interface
 
 

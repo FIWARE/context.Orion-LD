@@ -27,9 +27,10 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KTrace library
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
-#include "kjson/kjNavigate.h"                                    // kjNavigate
+#include "kjson/kjNavigate.h"                                    // kjNavigate2
 }
 
 #include "orionld/common/orionldState.h"                         // orionldState
@@ -37,6 +38,7 @@ extern "C"
 #include "orionld/common/dotForEq.h"                             // dotForEq
 #include "orionld/common/pathComponentsSplit.h"                  // pathComponentsSplit
 #include "orionld/common/eqForDot.h"                             // eqForDot
+#include "orionld/kjTree/kjTreeLog.h"                            // KT_TREE
 
 
 
@@ -70,11 +72,11 @@ KjNode* kjTreeNavigate(KjNode* treeP, const char* pathIn, bool* isTimestampP)
   strncpy(path, pathIn, sizeof(path) - 1);
 
   KT_T(StCsf, "Looking for '%s'", path);
-  kjTreeLog2(treeP, "In this tree", sTCsf);
+  KT_TREE(treeP, "In this tree", StCsf);
 
   int components = dotCount(path) + 1;
   if (components > 20)
-    kt_X(1, "The current implementation of Orion-LD can only handle 20 levels of tree navigation");
+    KT_X(1, "The current implementation of Orion-LD can only handle 20 levels of tree navigation");
 
   char* compV[20];
 
@@ -103,7 +105,7 @@ KjNode* kjTreeNavigate(KjNode* treeP, const char* pathIn, bool* isTimestampP)
 
   compV[components] = NULL;
 
-  KjNode* result = kjNavigate(treeP, compV);
+  KjNode* result = kjNavigate2(treeP, compV);
   if (result != NULL)
     return result;
 
@@ -119,7 +121,7 @@ KjNode* kjTreeNavigate(KjNode* treeP, const char* pathIn, bool* isTimestampP)
   if (components > 1)
     eqForDot(compV[1]);  // As it MIGHT be a Sub-Attribute (and if not, it has no '=')
 
-  result = kjNavigate(treeP, compV);
+  result = kjNavigate2(treeP, compV);
   if (result != NULL)
     return result;
 
@@ -130,13 +132,13 @@ KjNode* kjTreeNavigate(KjNode* treeP, const char* pathIn, bool* isTimestampP)
   if ((components == 2) && (strcmp(compV[1], "value") == 0))
   {
     compV[1] = (char*) "object";
-    result = kjNavigate(treeP, compV);
+    result = kjNavigate2(treeP, compV);
     if (result != NULL)
       return result;
 
     // FIXME: Here I put the '=' back ... Even messier now :(
     dotForEq(compV[0]);
-    result = kjNavigate(treeP, compV);
+    result = kjNavigate2(treeP, compV);
     if (result != NULL)
       return result;
   }

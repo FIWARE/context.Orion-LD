@@ -39,6 +39,7 @@ extern "C"
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/common/dotForEq.h"                             // dotForEq
+#include "orionld/kjTree/kjTreeLog.h"                            // LM_TREE
 #include "orionld/q/qTreeToBson.h"                               // qTreeToBson
 #include "orionld/context/orionldAttributeExpand.h"              // orionldAttributeExpand
 #include "orionld/mongoc/mongocWriteLog.h"                       // MONGOC_RLOG - FIXME: change name to mongocLog.h
@@ -313,7 +314,7 @@ static bool geoWithinFilter(bson_t* mongoFilterP, OrionldGeoInfo* geoInfoP)
   bson_init(&within);
   bson_init(&coordinates);
 
-  kjTreeLog(geoInfoP->coordinates, "coordinates", LmtMongoc);
+  LM_TREE(geoInfoP->coordinates, "coordinates", LmtMongoc);
   mongocKjTreeToBson(geoInfoP->coordinates, &coordinates);
 
   bson_append_array(&geometry,    "coordinates", 11, &coordinates);

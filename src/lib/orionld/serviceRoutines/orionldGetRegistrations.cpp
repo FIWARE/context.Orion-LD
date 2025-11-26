@@ -30,6 +30,7 @@ extern "C"
 #include "kjson/kjBuilder.h"                                     // kjObject, kjArray
 #include "kjson/kjClone.h"                                       // kjClone
 #include "kjson/kjLookup.h"                                      // kjLookup
+#include "kjson/kjStringValueLookupInArray.h"                    // kjStringValueLookupInArray
 }
 
 #include "logMsg/logMsg.h"                                       // LM_*
@@ -43,7 +44,6 @@ extern "C"
 #include "orionld/legacyDriver/legacyGetRegistrations.h"         // legacyGetRegistrations
 #include "orionld/mongoc/mongocRegistrationsGet.h"               // mongocRegistrationsGet
 #include "orionld/dbModel/dbModelToApiRegistration.h"            // dbModelToApiRegistration
-#include "orionld/kjTree/kjStringValueLookupInArray.h"           // kjStringValueLookupInArray
 #include "orionld/q/qLex.h"                                      // qLex
 #include "orionld/q/qParse.h"                                    // qParse
 #include "orionld/q/qPresent.h"                                  // qListPresent

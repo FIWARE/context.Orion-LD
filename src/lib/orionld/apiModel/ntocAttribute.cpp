@@ -29,12 +29,12 @@ extern "C"
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjChildRemove
+#include "kjson/kjChildCount.h"                                  // kjChildCount
 }
 
 #include "logMsg/logMsg.h"                                       // LM_*
 
-#include "orionld/common/orionldState.h"                         // kjTreeLog
-#include "orionld/kjTree/kjChildCount.h"                         // kjChildCount
+#include "orionld/common/orionldState.h"                         // LM_TREE
 #include "orionld/kjTree/kjSysAttrsRemove.h"                     // kjSysAttrsRemove
 #include "orionld/apiModel/langFixNormalized.h"                  // langFixNormalized
 #include "orionld/apiModel/ntocSubAttribute.h"                   // ntocSubAttribute
@@ -57,7 +57,7 @@ void ntocAttribute(KjNode* attrP, const char* lang, bool sysAttrs)
     return;
   }
 
-  kjTreeLog(attrP, "attribute to convert from Normalized to Concise", LmtFormat);
+  LM_TREE(attrP, "attribute to convert from Normalized to Concise", LmtFormat);
 
   // 1. Remove the sysAttrs, if so requested
   if (sysAttrs == false)

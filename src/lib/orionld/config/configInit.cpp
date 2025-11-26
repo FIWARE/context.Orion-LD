@@ -35,7 +35,7 @@ extern "C"
 
 #include "logMsg/logMsg.h"                                  // LM_*
 
-#include "orionld/common/orionldState.h"                    // orionldState, kjTreelog
+#include "orionld/common/orionldState.h"                    // orionldState, LM_TREE
 #include "orionld/config/configLoad.h"                      // configLoad
 #include "orionld/config/configInit.h"                      // Own interface
 
@@ -69,5 +69,5 @@ void configInit(Kjson* kjP, char* configFile)
   if (configLoad(kjP, configFile) != 0)
     KT_X(1, "Error reading/parsing the config file '%s'", configFile);  // Not OK to have a bad config file
 
-  kjTreeLog(configTree, "Config", LmtConfig);
+  LM_TREE(configTree, "Config", LmtConfig);
 }

@@ -45,6 +45,7 @@ extern "C"
 #include "orionld/payloadCheck/PCHECK.h"                         // PCHECK_URI
 #include "orionld/dbModel/dbModelToApiSubscription.h"            // dbModelToApiSubscription
 #include "orionld/mongoc/mongocSubscriptionLookup.h"             // mongocSubscriptionLookup
+#include "orionld/kjTree/kjTreeLog.h"                            // LM_TREE
 #include "orionld/serviceRoutines/orionldGetSubscription.h"      // Own Interface
 
 
@@ -183,7 +184,7 @@ static bool orionldGetSubscriptionFromDb(void)
     orionldError(OrionldResourceNotFound, "Subscription Not Found", orionldState.wildcard[0], 404);
     return false;
   }
-  kjTreeLog(dbSubP, "DB Sub", LmtSubCacheStats);
+  LM_TREE(dbSubP, "DB Sub", LmtSubCacheStats);
 
   KjNode*             coordinatesNodeP = NULL;           // Not needed here, but dbModelToApiSubscription requires it
   KjNode*             contextNodeP     = NULL;           // Not needed here, but dbModelToApiSubscription requires it

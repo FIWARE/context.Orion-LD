@@ -27,16 +27,15 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                    // trace messages - ktrace library
 #include "kjson/KjNode.h"                                     // KjNode
 #include "kjson/kjLookup.h"                                   // kjLookup
-#include "ktrace/kTrace.h"                                    // trace messages - ktrace library
+#include "kjson/kjNavigate.h"                                 // kjNavigate
 }
 
 #include "orionld/common/orionldState.h"                      // configTree
 #include "orionld/common/traceLevels.h"                       // KT tracelevels
 #include "orionld/config/configInit.h"                        // configTree
-#include "orionld/kjTree/kjNavigate.h"                        // kjNavigate
-#include "orionld/dds/kjTreeLog.h"                            // kjTreeLog2
 #include "orionld/config/configAttributeToDdsTopic.h"         // Own interface
 
 

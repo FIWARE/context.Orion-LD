@@ -71,7 +71,7 @@ static void subCacheItemFill
   OrionldRenderFormat  rFormat
 )
 {
-  kjTreeLog(apiSubscriptionP, "apiSubscriptionP", LmtSubCacheSync);
+  LM_TREE(apiSubscriptionP, "apiSubscriptionP", LmtSubCacheSync);
 
   cSubP->tenant              = (tenant == NULL || *tenant == 0)? NULL : strdup(tenant);
   cSubP->servicePath         = strdup("/#");
@@ -459,7 +459,7 @@ static CachedSubscription* subCacheApiSubscriptionUpdate
 {
   LM_T(LmtSubCacheSync, ("Updating Cached Subscription (%p) from DB", cSubP));
 
-  kjTreeLog(apiSubscriptionP, "apiSubscription", LmtSubCacheSync);
+  LM_TREE(apiSubscriptionP, "apiSubscription", LmtSubCacheSync);
 
   KjNode* modifiedAtNode = kjLookup(apiSubscriptionP, "modifiedAt");
   if (modifiedAtNode == NULL)
@@ -517,7 +517,7 @@ CachedSubscription* subCacheApiSubscriptionInsert
 
   if (subIdNodeP == NULL)
   {
-    kjTreeLog(apiSubscriptionP, "apiSubscriptionP", LmtSubCacheSync);
+    LM_TREE(apiSubscriptionP, "apiSubscriptionP", LmtSubCacheSync);
     LM_X(1, ("Subscription without id - exiting due to bug"));
   }
 

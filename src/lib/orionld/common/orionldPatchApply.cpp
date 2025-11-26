@@ -31,12 +31,12 @@ extern "C"
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjChildRemove, kjChildAdd
+#include "kjson/kjNavigate.h"                                    // kjNavigate
 }
 
 #include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/common/orionldState.h"                         // orionldState
-#include "orionld/kjTree/kjNavigate.h"                           // kjNavigate
 #include "orionld/dbModel/dbModelPathComponentsSplit.h"          // dbModelPathComponentsSplit
 #include "orionld/common/orionldPatchApply.h"                    // Own interface
 
@@ -214,7 +214,7 @@ void orionldPatchApply(KjNode* patchBase, KjNode* patchP, bool api)
   if (pathNode->type != KjString) return;
 
   LM_T(LmtPatchEntity, ("Applying patch for '%s'", pathNode->value.s));
-  // kjTreeLog(patchBase, "patchBase", LmtPatchEntity);
+  // LM_TREE(patchBase, "patchBase", LmtPatchEntity);
 
   char* compV[7];
   bool  skip       = false;
@@ -240,7 +240,7 @@ void orionldPatchApply(KjNode* patchBase, KjNode* patchP, bool api)
   pathNode->value.s = kaStrdup(&orionldState.kalloc, pathArrayJoin(buf, compV, components));  // FIXME: buf is 512 bytes long ...
 
   KjNode*  parentP         = NULL;
-  bool     onlyLastMissing = false;
+  KBool    onlyLastMissing = false;
   KjNode*  nodeP           = kjNavigate(patchBase, (const char**) compV, &parentP, &onlyLastMissing);
 
   // Remove non-wanted parts of objects
@@ -264,7 +264,7 @@ void orionldPatchApply(KjNode* patchBase, KjNode* patchP, bool api)
 
   if (nodeP == NULL)  // Did not exist in the "patch base" - add to parentP
   {
-    if (onlyLastMissing == true)
+    if (onlyLastMissing == KTRUE)
     {
       kjChildRemove(patchP, treeNode);
       treeNode->name = compV[components - 1];

@@ -30,6 +30,7 @@ extern "C"
 #include "kjson/kjRender.h"                                    // kjFastRender
 #include "kjson/kjRenderSize.h"                                // kjFastRenderSize
 #include "kjson/kjParse.h"                                     // kjParse
+#include "kjson/kjStringValueLookupInArray.h"                  // kjStringValueLookupInArray
 }
 
 #include "logMsg/logMsg.h"                                     // LM_*
@@ -41,7 +42,6 @@ extern "C"
 #include "orionld/payloadCheck/PCHECK.h"                       // PCHECK_*
 #include "orionld/legacyDriver/legacyPostBatchDelete.h"        // legacyPostBatchDelete
 #include "orionld/dbModel/dbModelToApiEntity.h"                // dbModelToApiEntity
-#include "orionld/kjTree/kjStringValueLookupInArray.h"         // kjStringValueLookupInArray
 #include "orionld/mongoc/mongocEntitiesExist.h"                // mongocEntitiesExist
 #include "orionld/mongoc/mongocEntitiesDelete.h"               // mongocEntitiesDelete
 #include "orionld/distOp/distOpListsMerge.h"                   // distOpListsMerge

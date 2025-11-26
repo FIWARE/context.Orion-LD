@@ -27,6 +27,7 @@ extern "C"
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjClone.h"                                       // kjClone
 #include "kjson/kjBuilder.h"                                     // kjChildAdd
+#include "kjson/kjStringValueLookupInArray.h"                    // kjStringValueLookupInArray
 }
 
 #include "logMsg/logMsg.h"                                       // LM_*
@@ -34,7 +35,6 @@ extern "C"
 #include "orionld/types/RegCacheItem.h"                          // RegCacheItem
 #include "orionld/types/DistOpType.h"                            // DistOpType
 #include "orionld/common/orionldState.h"                         // orionldState
-#include "orionld/kjTree/kjStringValueLookupInArray.h"           // kjStringValueLookupInArray
 #include "orionld/regMatch/regMatchAttributes.h"                 // Own interface
 
 

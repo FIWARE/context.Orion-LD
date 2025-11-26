@@ -43,6 +43,7 @@ extern "C"
 #include "orionld/common/orionldError.h"                       // orionldError
 #include "orionld/http/httpRequest.h"                          // httpRequest
 #include "orionld/http/httpRequestHeaderAdd.h"                 // httpRequestHeaderAdd
+#include "orionld/kjTree/kjTreeLog.h"                          // LM_TREE
 #include "orionld/serviceRoutines/orionldPostNotification.h"   // Own interface
 
 
@@ -101,7 +102,7 @@ bool orionldPostNotification(void)
 
   LM_T(LmtSubordinate, ("Got a notification on remote subscription subordinate to '%s'", parentSubId));
 
-  kjTreeLog(orionldState.requestTree, "notification", LmtSubordinate);
+  LM_TREE(orionldState.requestTree, "notification", LmtSubordinate);
 
   CachedSubscription* cSubP = subCacheItemLookup(orionldState.tenantP->tenant, parentSubId);
   if (cSubP == NULL)
@@ -138,7 +139,7 @@ bool orionldPostNotification(void)
   //
   // HTTP Headers
   //
-  kjTreeLog(orionldState.in.httpHeaders, "httpHeaders", LmtSubordinate);
+  LM_TREE(orionldState.in.httpHeaders, "httpHeaders", LmtSubordinate);
 
 
   //
@@ -198,7 +199,7 @@ bool orionldPostNotification(void)
   if (httpStatus != 200)
   {
     LM_W(("httpRequest for a forwarded notification gave HTTP status %d", httpStatus));
-    kjTreeLog(responseTree, "forwarded notification response body", LmtSubordinate);
+    LM_TREE(responseTree, "forwarded notification response body", LmtSubordinate);
   }
 
   return true;

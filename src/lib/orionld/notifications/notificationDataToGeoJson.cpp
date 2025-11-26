@@ -31,7 +31,6 @@ extern "C"
 
 #include "logMsg/logMsg.h"
 
-#include "orionld/common/orionldState.h"                         // kjTreeLog
 #include "orionld/kjTree/kjGeojsonEntitiesTransform.h"           // kjGeojsonEntitiesTransform
 #include "orionld/notifications/notificationDataToGeoJson.h"     // Own interface
 

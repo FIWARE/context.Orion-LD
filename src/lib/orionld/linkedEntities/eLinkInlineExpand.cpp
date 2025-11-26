@@ -32,7 +32,7 @@ extern "C"
 }
 
 #include "orionld/types/EntityLink.h"                            // EntityLink
-#include "orionld/dds/kjTreeLog.h"                               // kjTreeLog2
+#include "orionld/kjTree/kjTreeLog.h"                            // KT_TREE
 #include "orionld/kjTree/kjEntityIdLookupInEntityArray.h"        // kjEntityIdLookupInEntityArray
 #include "orionld/common/traceLevels.h"                          // KTrace Levels
 #include "orionld/common/orionldState.h"                         // orionldState
@@ -83,7 +83,7 @@ void eLinkInlineExpand(KjNode* entityP, int level)
     KjNode* clonedLinkP = kjClone(orionldState.kjsonP, eLinkP);
 
     KT_T(StLinkedInline, "Found the related entity '%s', inlining it inside the attribute '%s'", objectP->value.s, attrP->name);
-    kjTreeLog2(clonedLinkP, "Cloned Entity", StLinkedInline);
+    KT_TREE(clonedLinkP, "Cloned Entity", StLinkedInline);
     // Add eLinkP as the value of a subAttribute named 'entity' of attrP
     clonedLinkP->name = (char*) "entity";
     kjChildAdd(attrP, clonedLinkP);

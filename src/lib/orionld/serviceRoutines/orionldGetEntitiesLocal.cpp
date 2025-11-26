@@ -32,6 +32,7 @@ extern "C"
 #include "kjson/kjBuilder.h"                                        // kjString, kjObject, kjChildAdd, kjChildRemove
 #include "kjson/kjLookup.h"                                         // kjLookup
 #include "kjson/kjClone.h"                                          // kjClone
+#include "kjson/kjChildPrepend.h"                                   // kjChildPrepend
 }
 
 #include "logMsg/logMsg.h"                                          // LM_*
@@ -43,11 +44,10 @@ extern "C"
 #include "orionld/common/traceLevels.h"                             // KTrace Levels
 #include "orionld/common/pick.h"                                    // pickForEntityArray
 #include "orionld/common/datasetEntityFix.h"                        // datasetEntityFix
-#include "orionld/dds/kjTreeLog.h"                                  // kjTreeLog2
 #include "orionld/context/orionldContextItemExpand.h"               // orionldContextItemExpand
 #include "orionld/mongoc/mongocEntitiesQuery.h"                     // mongocEntitiesQuery
-#include "orionld/kjTree/kjChildPrepend.h"                          // kjChildPrepend
 #include "orionld/kjTree/kjEntityIdLookupInEntityArray.h"           // kjEntityIdLookupInEntityArray
+#include "orionld/kjTree/kjTreeLog.h"                               // LM_TREE
 #include "orionld/dbModel/dbModelToApiEntity.h"                     // dbModelToApiEntity2
 #include "orionld/dbModel/dbModelToEntityIdAndTypeObject.h"         // dbModelToEntityIdAndTypeObject
 #include "orionld/linkedEntities/eLinkRelationsRetrieve.h"          // eLinkRelationsRetrieve
@@ -274,7 +274,7 @@ bool orionldGetEntitiesLocal
     }
   }
 
-  kjTreeLog(orionldState.responseTree, "Response Tree", LmtPick);
+  LM_TREE(orionldState.responseTree, "Response Tree", LmtPick);
   if (orionldState.in.pickList.items > 0)
     pickForEntityArray();
 

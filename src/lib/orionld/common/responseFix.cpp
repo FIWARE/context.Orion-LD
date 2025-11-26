@@ -27,6 +27,8 @@ extern "C"
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjChildRemove
+#include "kjson/kjStringArraySort.h"                             // kjStringArraySort
+#include "kjson/kjChildCount.h"                                  // kjChildCount
 }
 
 #include "logMsg/logMsg.h"                                       // Logging
@@ -35,8 +37,6 @@ extern "C"
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/http/httpHeaderLocationAdd.h"                  // httpHeaderLocationAdd
 #include "orionld/http/httpHeaderLinkAdd.h"                      // httpHeaderLinkAdd
-#include "orionld/kjTree/kjChildCount.h"                         // kjChildCount
-#include "orionld/kjTree/kjSort.h"                               // kjStringArraySort
 #include "orionld/common/responseFix.h"                          // Own interface
 
 

@@ -38,6 +38,7 @@ extern "C"
 #include "kjson/kjLookup.h"                                        // kjLookup
 #include "kjson/kjRender.h"                                        // kjFastRender
 #include "kjson/kjRenderSize.h"                                    // kjFastRenderSize
+#include "kjson/kjSort.h"                                          // kjSort
 }
 
 #include "logMsg/logMsg.h"
@@ -69,7 +70,6 @@ extern "C"
 #include "orionld/common/tenantList.h"                             // tenant0
 #include "orionld/mongoCppLegacy/mongoCppLegacyKjTreeToBsonObj.h"  // mongoCppLegacyKjTreeToBsonObj
 #include "orionld/mongoCppLegacy/mongoCppLegacyDataToKjTree.h"     // mongoCppLegacyDataToKjTree
-#include "orionld/kjTree/kjSort.h"                                 // kjSort
 #include "orionld/legacyDriver/kjTreeFromCompoundValue.h"          // kjTreeFromCompoundValue
 
 #include "mongoBackend/connectionOperations.h"

@@ -42,11 +42,10 @@ extern "C"
 #include "orionld/common/numberToDate.h"                         // numberToDate
 #include "orionld/common/eqForDot.h"                             // eqForDot
 #include "orionld/common/langStringExtract.h"                    // langValueFix
-#include "orionld/dds/kjTreeLog.h"                               // kjTreeLog2
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
 #include "orionld/serviceRoutines/orionldGetAttribute.h"         // orionldGetAttribute
 #include "orionld/types/OrionLdRestService.h"                    // OrionLdRestService
-#include "orionld/kjTree/kjTreeLog.h"                            // kjTreeLog
+#include "orionld/kjTree/kjTreeLog.h"                            // LM_TREE
 #include "orionld/kjTree/kjAttributeNormalizedToSimplified.h"    // kjAttributeNormalizedToSimplified
 #include "orionld/kjTree/kjAttributeNormalizedToConcise.h"       // kjAttributeNormalizedToConcise
 #include "orionld/dbModel/dbModelToApiSubAttribute.h"            // dbModelToApiSubAttribute
@@ -303,8 +302,8 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
     LM_T(LmtSR, ("------------------------------------------------------------------"));
     LM_T(LmtSR, ("dbAttrP at %p", dbAttrP));
     LM_T(LmtSR, ("Attribute name: '%s'", attrName));
-    kjTreeLog(datasetP, "datasetP", LmtSR);
-    kjTreeLog(dbAttrP, "dbAttrP", LmtSR);
+    LM_TREE(datasetP, "datasetP", LmtSR);
+    LM_TREE(dbAttrP, "dbAttrP", LmtSR);
     LM_T(LmtSR, ("------------------------------------------------------------------"));
 #endif
 
@@ -478,7 +477,7 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
     {
       KjNode* valueP = kjLookup(dbAttrP, "value");
 
-      kjTreeLog2(dbAttrP, "BEFORE", StSR);
+      LM_TREE(dbAttrP, "BEFORE", StSR);
 
       if (orionldState.serviceP->serviceRoutine != orionldGetAttribute)
       {
@@ -497,14 +496,14 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
         attrP = dbAttrP;
       }
 
-      kjTreeLog2(attrP, "AFTER", StSR);
+      LM_TREE(attrP, "AFTER", StSR);
     }
 
     attrP->name = shortName;
   }
   else  // RF_NORMALIZED  or  RF_CONCISE
   {
-    kjTreeLog(dbAttrP, "DB Attr", LmtSR);
+    LM_TREE(dbAttrP, "DB Attr", LmtSR);
     KjNode* mdsP    = NULL;
 
     attrP = kjObject(orionldState.kjsonP, shortName);

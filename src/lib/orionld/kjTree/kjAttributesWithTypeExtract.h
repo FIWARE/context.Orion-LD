@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_KJTREE_KJSTRINGVALUELOOKUPINARRAY_H_
-#define SRC_LIB_ORIONLD_KJTREE_KJSTRINGVALUELOOKUPINARRAY_H_
+#ifndef SRC_LIB_ORIONLD_KJTREE_KJKJATTRIBUTESWITHTYPEEXTRACT_H_
+#define SRC_LIB_ORIONLD_KJTREE_KJKJATTRIBUTESWITHTYPEEXTRACT_H_
 
 /*
 *
-* Copyright 2019 FIWARE Foundation e.V.
+* Copyright 2022 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -27,19 +27,15 @@
 */
 extern "C"
 {
-#include "kjson/KjNode.h"                                                  // KjNode
+#include "kjson/KjNode.h"                                        // KjNode
 }
 
 
 
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 //
-// kjStringValueLookupInArray -
+// kjAttributesWithTypeExtract - convert DB entity::attrs field into list of attrs with type
 //
-// NOTE
-//   This lookup function works on string items in an array.
-//   The caller needs to be sure that the 'stringArrayNodeP' is really an array and that ALL its items are Strings
-//
-extern KjNode* kjStringValueLookupInArray(KjNode* stringArrayNodeP, const char* value);
+extern bool kjAttributesWithTypeExtract(KjNode* kjTree, KjNode* entityP);
 
-#endif  // SRC_LIB_ORIONLD_KJTREE_KJSTRINGVALUELOOKUPINARRAY_H_
+#endif  // SRC_LIB_ORIONLD_KJTREE_KJKJATTRIBUTESWITHTYPEEXTRACT_H_

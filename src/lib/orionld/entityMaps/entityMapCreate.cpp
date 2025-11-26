@@ -31,6 +31,8 @@ extern "C"
 #include "kjson/kjBuilder.h"                                        // kjObject
 #include "kjson/kjLookup.h"                                         // kjLookup
 #include "kjson/kjRender.h"                                         // kjFastRender (for debugging purposes - LM_T)
+#include "kjson/kjChildCount.h"                                     // kjChildCount
+#include "kjson/kjStringArraySort.h"                                // kjStringArraySort
 }
 
 #include "logMsg/logMsg.h"                                          // LM_*
@@ -42,8 +44,7 @@ extern "C"
 #include "orionld/types/DistOpListItem.h"                           // DistOpListItem
 #include "orionld/common/orionldState.h"                            // orionldState
 #include "orionld/common/uuidGenerate.h"                            // uuidGenerate
-#include "orionld/kjTree/kjChildCount.h"                            // kjChildCount
-#include "orionld/kjTree/kjSort.h"                                  // kjStringArraySort
+#include "orionld/kjTree/kjTreeLog.h"                               // LM_TREE
 #include "orionld/distOp/distOpLookupByCurlHandle.h"                // distOpLookupByCurlHandle
 #include "orionld/distOp/distOpListDebug.h"                         // distOpListDebug2
 #include "orionld/distOp/distOpsSend.h"                             // distOpsSend
@@ -118,7 +119,7 @@ static int idListResponse(DistOp* distOpP, void* callbackParam)
 
   if ((distOpP->httpResponseCode == 200) && (distOpP->responseBody != NULL))
   {
-    kjTreeLog(distOpP->responseBody, "DistOp RESPONSE", LmtEntityMap);
+    LM_TREE(distOpP->responseBody, "DistOp RESPONSE", LmtEntityMap);
     for (KjNode* eIdNodeP = distOpP->responseBody->value.firstChildP; eIdNodeP != NULL; eIdNodeP = eIdNodeP->next)
     {
       // FIXME: The response is supposed to be an array of entity ids
@@ -186,7 +187,7 @@ EntityMap* entityMapCreate(DistOp* distOpList, char* idPattern, QNode* qNode, Or
   //
   distOpMatchIdsRequest(distOpList, entityMap);  // Not including local hits
 
-  kjTreeLog(entityMap->map, "entityMap", LmtSR);
+  LM_TREE(entityMap->map, "entityMap", LmtSR);
 
   char* geojsonGeometryLongName = NULL;
   if (orionldState.out.contentType == MT_GEOJSON)
@@ -258,7 +259,7 @@ EntityMap* entityMapCreate(DistOp* distOpList, char* idPattern, QNode* qNode, Or
     int ix = 0;
 
     LM_T(LmtEntityMap, ("Entity Maps (%d):", entityMap->count));
-    kjTreeLog(entityMap->map, "EntityMap", LmtEntityMap);
+    LM_TREE(entityMap->map, "EntityMap", LmtEntityMap);
 
     for (KjNode* entityP = entityMap->map->value.firstChildP; entityP != NULL; entityP = entityP->next)
     {
@@ -270,7 +271,7 @@ EntityMap* entityMapCreate(DistOp* distOpList, char* idPattern, QNode* qNode, Or
       ++ix;
     }
   }
-  kjTreeLog(entityMap->map, "EntityMap", LmtSR);
+  LM_TREE(entityMap->map, "EntityMap", LmtSR);
   // ---------------- </DEBUG>
 #endif
 

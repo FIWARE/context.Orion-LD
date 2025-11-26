@@ -35,6 +35,8 @@ extern "C"
 #include "kjson/kjFree.h"                                      // kjFree
 #include "kjson/kjRenderSize.h"                                // kjFastRenderSize
 #include "kjson/kjRender.h"                                    // kjFastRender
+#include "kjson/kjNavigate.h"                                  // kjNavigate
+#include "kjson/kjChildAddOrReplace.h"                         // kjChildAddOrReplace
 }
 
 #include "logMsg/logMsg.h"                                     // LM_*
@@ -58,8 +60,6 @@ extern "C"
 #include "orionld/mqtt/mqttConnectionEstablish.h"              // mqttConnectionEstablish
 #include "orionld/mqtt/mqttDisconnect.h"                       // mqttDisconnect
 #include "orionld/mqtt/mqttParse.h"                            // mqttParse
-#include "orionld/kjTree/kjNavigate.h"                         // kjNavigate
-#include "orionld/kjTree/kjChildAddOrReplace.h"                // kjChildAddOrReplace
 #include "orionld/serviceRoutines/orionldPatchSubscription.h"  // Own Interface
 
 

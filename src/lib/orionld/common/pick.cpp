@@ -46,21 +46,22 @@ void pickForEntity(KjNode* entityP)
   KjNode* idP = kjLookup(entityP, "id");
   LM_T(LmtPick, ("  o %s", idP->value.s));
 
-  KjNode* next  = NULL;
-  KjNode* itemP = entityP->value.firstChildP;
+  KjNode* next     = NULL;
+  KjNode* itemP    = entityP->value.firstChildP;
+  char*   itemName = NULL;
 
   while (itemP != NULL)
   {
-    next = itemP->next;
+    itemName = itemP->name;
+    next     = itemP->next;
 
     if (stringArrayLookup(&orionldState.in.pickList, itemP->name) == false)
     {
       kjChildRemove(entityP, itemP);
       itemP = NULL;
     }
-    else
-      LM_T(LmtPick, ("    - %s (%s)", itemP->name, (itemP == NULL)? "removed" : "stays"));
 
+    LM_T(LmtPick, ("    - %s (%s)", itemName, (itemP == NULL)? "removed" : "stays"));
     itemP = next;
   }
 }
