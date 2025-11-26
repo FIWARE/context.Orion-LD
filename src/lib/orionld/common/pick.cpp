@@ -48,11 +48,15 @@ void pickForEntity(KjNode* entityP)
 
   KjNode* next     = NULL;
   KjNode* itemP    = entityP->value.firstChildP;
+#ifdef LM_ON
   char*   itemName = NULL;
+#endif
 
   while (itemP != NULL)
   {
+#ifdef LM_ON
     itemName = itemP->name;
+#endif
     next     = itemP->next;
 
     if (stringArrayLookup(&orionldState.in.pickList, itemP->name) == false)
