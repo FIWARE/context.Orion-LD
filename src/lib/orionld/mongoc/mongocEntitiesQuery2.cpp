@@ -370,14 +370,6 @@ KjNode* mongocEntitiesQuery2
 
   if (limit != 0)
   {
-#if 0
-    char* filterString  = bson_as_json(&mongoFilter, NULL);
-    char* optionsString = bson_as_json(&options, NULL);
-
-    bson_free(filterString);
-    bson_free(optionsString);
-#endif
-
     MONGOC_RLOG("Lookup Entities", orionldState.tenantP->mongoDbName, "entities", &mongoFilter, &options, LmtMongoc);
     mongoCursorP = mongoc_collection_find_with_opts(orionldState.mongoc.entitiesP, &mongoFilter, &options, readPrefs);
     bson_destroy(&options);
@@ -391,13 +383,12 @@ KjNode* mongocEntitiesQuery2
       return NULL;
     }
 
-#if 1
     // <DEBUG>
-    const bson_t* lastError = mongoc_collection_get_last_error(orionldState.mongoc.entitiesP);
-    if (lastError != NULL)
-      LM_E(("MongoC Error: %s", bson_as_canonical_extended_json(lastError, NULL)));
+    bson_error_t  lastError;
+    const bson_t* reply;
+    if (mongoc_cursor_error_document(mongoCursorP, &lastError, &reply) == true)
+      LM_E(("MongoC Error: %s", bson_as_canonical_extended_json(reply, NULL)));
     // </DEBUG>
-#endif
 
     int hits = 0;
     mongoDocP = NULL;

@@ -68,7 +68,7 @@ KjNode* mongoCppLegacyKjTreeFromBsonObj(const void* dataP, char** titleP, char**
     if (treeP == NULL)
     {
       *titleP   = (char*) "Internal Error";
-      *detailsP = (char*) "Error parsing JSON output from bson_as_json";
+      *detailsP = (char*) "Error parsing JSON output from mongo::BSONObj::jsonString";
     }
   }
 
