@@ -12,6 +12,7 @@
 ## Library version updates
   #XXXX: kjson from v0.8.3 to v0.9.1
   #XXXX: libmicrohttpd from v0.9.75 to v1.0.2
+  #XXXX: libmongoc from v1.24.2 to v2.2.0
 
 ## DDS
   #XXXX: Support for DDS Services

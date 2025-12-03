@@ -26,8 +26,8 @@ cmake_minimum_required(VERSION 3.5)
 
 find_package(PkgConfig REQUIRED)
 find_package(Boost REQUIRED COMPONENTS thread filesystem system regex)
-pkg_check_modules(LIBMONGOC REQUIRED libmongoc-1.0)
-pkg_check_modules(LIBBSON REQUIRED libbson-1.0)
+pkg_check_modules(LIBMONGOC REQUIRED mongoc2)
+pkg_check_modules(LIBBSON REQUIRED bson2)
 pkg_check_modules(LIBMICROHTTPD REQUIRED libmicrohttpd)
 pkg_check_modules(GNUTLS REQUIRED gnutls)
 

@@ -885,9 +885,10 @@ KjNode* mongocEntitiesQuery
       return NULL;
     }
 
-    const bson_t* lastError = mongoc_collection_get_last_error(orionldState.mongoc.entitiesP);
-    if (lastError != NULL)
-      LM_E(("MongoC Error: %s", bson_as_canonical_extended_json(lastError, NULL)));
+    bson_error_t  lastError;
+    const bson_t* reply;
+    if (mongoc_cursor_error_document(mongoCursorP, &lastError, &reply) == true)
+      LM_E(("MongoC Error: %s", bson_as_canonical_extended_json(reply, NULL)));
 
     int hits = 0;
     while (mongoc_cursor_next(mongoCursorP, &mongoDocP))
