@@ -44,7 +44,6 @@ extern "C"
 #include "orionld/common/orionldState.h"                    // configFile, configTree, ddsServices
 #include "orionld/config/configDdsTopicToAttribute.h"       // configDdsTopicToAttribute
 #include "orionld/dds/ddsPrePopulateDb.h"                   // ddsPrePopulateDb
-#include "orionld/dds/kjTreeLog.h"                          // kjTreeLog2
 #include "orionld/dds/ddsServiceList.h"                     // ddsServiceList
 #include "orionld/dds/ddsServiceLookup.h"                   // ddsServiceLookup
 #include "orionld/dds/ddsTypes.h"                           // ddsTypeNotification, ddsTypeLookup

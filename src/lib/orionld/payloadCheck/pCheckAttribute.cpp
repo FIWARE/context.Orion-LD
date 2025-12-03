@@ -927,7 +927,7 @@ bool multiAttributeArray(KjNode* attrArrayP, bool* errorP)
   int datasets = 0;
   int objects  = 0;
 
-  kjTreeLog(attrArrayP, "Attr Array", LmtDbModel);
+  LM_TREE(attrArrayP, "Attr Array", LmtDbModel);
 
   for (KjNode* aInstanceP = attrArrayP->value.firstChildP; aInstanceP != NULL; aInstanceP = aInstanceP->next)
   {

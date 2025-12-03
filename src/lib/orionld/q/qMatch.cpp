@@ -36,7 +36,7 @@ extern "C"
 #include "orionld/common/dotForEq.h"                           // dotForEq
 #include "orionld/types/QNode.h"                               // QNode
 #include "orionld/context/orionldContextItemExpand.h"          // orionldContextItemExpand
-#include "orionld/kjTree/kjNavigate.h"                         // kjNavigate2
+#include "orionld/kjTree/kjTreeNavigate.h"                     // kjTreeNavigate
 #include "orionld/q/qRangeCompare.h"                           // qRangeCompare
 #include "orionld/q/qMatchCompare.h"                           // qMatchCompare
 #include "orionld/q/qCommaListCompare.h"                       // qCommaListCompare
@@ -97,7 +97,7 @@ bool qMatch(QNode* qP, KjNode* attributesP, bool eqNames)
     // If it does not, then the result is always "false" (except for the case "q=!P1", of course :))
     //
     bool     isTimestamp = false;
-    KjNode*  lhsNode     = (attributesP != NULL)? kjNavigate2(attributesP, longName, &isTimestamp) : NULL;
+    KjNode*  lhsNode     = (attributesP != NULL)? kjTreeNavigate(attributesP, longName, &isTimestamp) : NULL;
 
     //
     // If Left-Hand-Side does not exist - MATCH for op "NotExist" and No Match for all other operations

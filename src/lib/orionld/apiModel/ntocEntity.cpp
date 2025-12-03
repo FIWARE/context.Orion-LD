@@ -31,7 +31,6 @@ extern "C"
 #include "kjson/kjBuilder.h"                                     // kjChildRemove
 }
 
-#include "orionld/kjTree/kjChildCount.h"                         // kjChildCount
 #include "orionld/kjTree/kjSysAttrsRemove.h"                     // kjSysAttrsRemove
 #include "orionld/apiModel/ntocAttribute.h"                      // ntocAttribute
 #include "orionld/apiModel/ntocEntity.h"                         // Own interface

@@ -36,6 +36,7 @@ extern "C"
 #include "kjson/kjRender.h"                                               // kjRender
 #include "kalloc/kaAlloc.h"                                               // kaAlloc
 #include "kalloc/kaStrdup.h"                                              // kaStrdup
+#include "kjson/kjStringValueLookupInArray.h"                             // kjStringValueLookupInArray
 }
 
 #include "logMsg/logMsg.h"                                                // LM_*
@@ -62,7 +63,6 @@ extern "C"
 #include "orionld/context/orionldAttributeExpand.h"                       // orionldAttributeExpand
 #include "orionld/context/orionldContextItemAliasLookup.h"                // orionldContextItemAliasLookup
 #include "orionld/legacyDriver/kjTreeToContextAttribute.h"                // kjTreeToContextAttribute
-#include "orionld/kjTree/kjStringValueLookupInArray.h"                    // kjStringValueLookupInArray
 #include "orionld/mongoCppLegacy/mongoCppLegacyEntityLookup.h"            // mongoCppLegacyEntityLookup
 #include "orionld/mongoCppLegacy/mongoCppLegacyEntityAttributesDelete.h"  // mongoCppLegacyEntityAttributesDelete
 #include "orionld/mongoCppLegacy/mongoCppLegacyEntityFieldReplace.h"      // mongoCppLegacyEntityFieldReplace

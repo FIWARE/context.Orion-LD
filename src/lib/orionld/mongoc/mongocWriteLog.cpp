@@ -68,7 +68,7 @@ void mongocWriteLog
 
   if (selectorP != NULL)
   {
-    char* selector = bson_as_json(selectorP, NULL);
+    char* selector = bson_as_legacy_extended_json(selectorP, NULL);
 
     snprintf(line, sizeof(line), "  * Selector:              '%s'", selector);
     lmOut(line, 'T', fileNameOnly, lineNo, functionName, traceLevel, NULL);
@@ -77,7 +77,7 @@ void mongocWriteLog
 
   if (requestP != NULL)
   {
-    char* request = bson_as_json(requestP, NULL);
+    char* request = bson_as_legacy_extended_json(requestP, NULL);
 
     snprintf(line, sizeof(line), "  * Request:               '%s'", request);
     lmOut(line,     'T', fileNameOnly, lineNo, functionName, traceLevel, NULL);
@@ -120,7 +120,7 @@ void mongocReadLog
 
   if (filterP != NULL)
   {
-    char* filter = bson_as_json(filterP, NULL);
+    char* filter = bson_as_legacy_extended_json(filterP, NULL);
     snprintf(line, sizeof(line), "  * Filter:                '%s'", filter);
     lmOut(line,     'T', fileNameOnly, lineNo, functionName, traceLevel, NULL);
     bson_free(filter);
@@ -128,7 +128,7 @@ void mongocReadLog
 
   if (optionsP != NULL)
   {
-    char* options = bson_as_json(optionsP, NULL);
+    char* options = bson_as_legacy_extended_json(optionsP, NULL);
     snprintf(line, sizeof(line), "  * Options:             '%s'", options);
     lmOut(line, 'T', fileNameOnly, lineNo, functionName, traceLevel, NULL);
     bson_free(options);

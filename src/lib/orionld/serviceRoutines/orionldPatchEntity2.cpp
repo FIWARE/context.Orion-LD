@@ -33,6 +33,8 @@ extern "C"
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjChildRemove
 #include "kjson/kjClone.h"                                       // kjClone
+#include "kjson/kjStringValueLookupInArray.h"                    // kjStringValueLookupInArray
+#include "kjson/kjChildCount.h"                                  // kjChildCount
 }
 
 #include "logMsg/logMsg.h"                                       // LM_*
@@ -50,9 +52,7 @@ extern "C"
 #include "orionld/types/OrionldAlteration.h"                     // OrionldAlteration, orionldAlterationType
 #include "orionld/kjTree/kjTimestampAdd.h"                       // kjTimestampAdd
 #include "orionld/kjTree/kjArrayAdd.h"                           // kjArrayAdd
-#include "orionld/kjTree/kjStringValueLookupInArray.h"           // kjStringValueLookupInArray
-#include "orionld/kjTree/kjChildCount.h"                         // kjChildCount
-#include "orionld/kjTree/kjSort.h"                               // kjStringArraySort
+#include "orionld/kjTree/kjTreeLog.h"                            // LM_TREE, KT_TREE
 #include "orionld/mongoc/mongocEntityUpdate.h"                   // mongocEntityUpdate
 #include "orionld/mongoc/mongocEntityLookup.h"                   // mongocEntityLookup
 #include "orionld/payloadCheck/pCheckEntity.h"                   // pCheckEntity
@@ -68,7 +68,6 @@ extern "C"
 #include "orionld/distOp/distOpFailure.h"                        // distOpFailure
 #include "orionld/notifications/orionldAlterations.h"            // orionldAlterations
 #include "orionld/notifications/previousValues.h"                // previousValues
-#include "orionld/dds/kjTreeLog.h"                               // kjTreeLog2
 #include "orionld/dds/ddsPublishAttributes.h"                    // ddsPublishAttributes
 #include "orionld/serviceRoutines/orionldPatchEntity2.h"         // Own Interface
 
@@ -532,9 +531,9 @@ bool apiEntitySimplifiedToNormalized(KjNode* apiEntityFragmentP, KjNode* dbAttrs
             }
           }
 
-          kjTreeLog(attrP, "Attribute BEFORE attributeTransform", LmtSR);
+          LM_TREE(attrP, "Attribute BEFORE attributeTransform", LmtSR);
           attributeTransform(attrP, attrTypeFromDb, dbAttrTypeP->value.s, orionldState.uriParams.lang);
-          kjTreeLog(attrP, "Attribute AFTER attributeTransform", LmtSR);
+          LM_TREE(attrP, "Attribute AFTER attributeTransform", LmtSR);
         }
         else if ((attrTypeFromDb == Property) && (attrP->type == KjObject))
         {
@@ -610,7 +609,7 @@ bool orionldPatchEntity2(void)
   KjNode* incoming = NULL;
   if (ddsSupport == true)
   {
-    kjTreeLog2(orionldState.requestTree, "Incoming", StDds);
+    KT_TREE(orionldState.requestTree, "Incoming", StDds);
     incoming = kjClone(orionldState.kjsonP, orionldState.requestTree);
   }
 

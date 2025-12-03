@@ -60,7 +60,7 @@ void ddsPublishAttributes(const char* entityId, KjNode* incoming, KjNode* dbAttr
   }
 
   // patchBase is now fully merged
-  // kjTreeLog2(patchBase, "patchBase", StDds);
+  // KT_TREE(patchBase, "patchBase", StDds);
 
   for (KjNode* attrP = patchBase->value.firstChildP; attrP != NULL; attrP = attrP->next)
   {

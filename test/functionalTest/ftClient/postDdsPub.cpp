@@ -31,7 +31,7 @@ extern "C"
 
 #include "common/orionldState.h"                            // orionldState
 #include "common/traceLevels.h"                             // KT_T trace levels
-#include "dds/kjTreeLog.h"                                  // kjTreeLog2
+#include "kjTree/kjTreeLog.h"                               // KT_TREE
 
 #include "ftClient/ddsPublish.h"                            // ddsPublishEntity
 #include "ftClient/ftErrorResponse.h"                       // ftErrorResponse
@@ -55,7 +55,7 @@ KjNode* postDdsPub(int* statusCodeP)
     return ftErrorResponse(501, "DDS Support not enabled", "restart with --dds");
   }
 
-  kjTreeLog2(uriParams, "uriParams", StDds);
+  KT_TREE(uriParams, "uriParams", StDds);
 
   KjNode*      ddsTopicTypeNodeP  = (uriParams         != NULL)? kjLookup(uriParams, "ddsTopicType") : NULL;
   const char*  ddsTopicType       = (ddsTopicTypeNodeP != NULL)? ddsTopicTypeNodeP->value.s : NULL;
@@ -74,7 +74,7 @@ KjNode* postDdsPub(int* statusCodeP)
   }
 
   KT_V("Publishing on DDS for the topic %s:%s", ddsTopicType, ddsTopicName);
-  kjTreeLog2(orionldState.requestTree, "Publish Body", StDds);
+  KT_TREE(orionldState.requestTree, "Publish Body", StDds);
   // orionldState.requestTree->name = (char*) ddsTopicName;
   ddsPublishEntity(ddsTopicType, ddsTopicName, entityType, entityId, orionldState.requestTree);
 

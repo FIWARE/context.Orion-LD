@@ -62,7 +62,7 @@ KjNode* mongocKjTreeFromBson(const void* dataP, char** titleP, char** detailsP)
     if (treeP == NULL)
     {
       *titleP   = (char*) "Internal Error";
-      *detailsP = (char*) "Error parsing JSON output from bson_as_json";
+      *detailsP = (char*) "Error parsing JSON output from bson_as_relaxed_extended_json";
     }
 
     //

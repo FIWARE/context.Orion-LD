@@ -23,31 +23,25 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
 SET (SOURCES
     kjTreeToTimeInterval.cpp
     kjTreeToGeoLocation.cpp
-    kjStringValueLookupInArray.cpp
     kjEntityIdLookupInEntityArray.cpp
     kjTreeRegistrationInfoExtract.cpp
     kjEntityIdArrayExtract.cpp
-    kjChildAddOrReplace.cpp
     kjGeojsonEntityTransform.cpp
     kjGeojsonEntitiesTransform.cpp
     kjEntityArrayErrorPurge.cpp
-    kjStringArraySortedInsert.cpp
-    kjSort.cpp
-    kjChildCount.cpp
     kjEntityNormalizedToConcise.cpp
     kjEntityNormalizedToSimplified.cpp
     kjTreeLog.cpp
     kjTimestampAdd.cpp
     kjArrayAdd.cpp
-    kjChildPrepend.cpp
-    kjNodeDecouple.cpp
-    kjNavigate.cpp
     kjTreeFromCachedSubscription.cpp
     kjTreeFromPernotSubscription.cpp
     kjAttributeNormalizedToSimplified.cpp
     kjAttributeNormalizedToConcise.cpp
     kjSysAttrsRemove.cpp
     kjLookupInKvList.cpp
+    kjTreeNavigate.cpp
+    kjAttributesWithTypeExtract.cpp
 )
 
 # Include directories

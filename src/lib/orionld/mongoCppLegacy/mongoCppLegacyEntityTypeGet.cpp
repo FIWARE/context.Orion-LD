@@ -33,77 +33,11 @@ extern "C"
 
 #include "mongoBackend/MongoGlobal.h"                            // getMongoConnection, releaseMongoConnection, ...
 
-#include "orionld/common/orionldState.h"                         // orionldState
-#include "orionld/common/eqForDot.h"                             // eqForDot
 #include "orionld/types/OrionldProblemDetails.h"                 // OrionldProblemDetails
+#include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/kjTree/kjAttributesWithTypeExtract.h"          // kjAttributesWithTypeExtract
 #include "orionld/mongoCppLegacy/mongoCppLegacyDataToKjTree.h"   // mongoCppLegacyDataToKjTree
 #include "orionld/mongoCppLegacy/mongoCppLegacyEntityTypeGet.h"  // Own interface
-
-
-
-// -----------------------------------------------------------------------------
-//
-// kjAttributesWithTypeExtract - convert DB entity::attrs field into list of attrs with type
-//
-// kjTree (incoming):
-// {
-//   "attrs": {
-//     "P1": {
-//       "type": "Property",
-//       ...
-//     },
-//     "R1": {
-//       "type": "Relationship",
-//       ...
-//     },
-//     ...
-//   }
-// }
-//
-// entityP (outgoing):
-// {
-//   "P1": "Property",
-//   "R1": "Relationship"
-// }
-//
-// Also, the '=' in attribute names are to be replaced with '.' (NGSI data model details)
-//
-bool kjAttributesWithTypeExtract(KjNode* kjTree, KjNode* entityP)
-{
-  KjNode* attrsP = kjLookup(kjTree, "attrs");
-
-  if (attrsP == NULL)
-    return false;
-
-  if (attrsP->type != KjObject)
-    return false;
-
-  KjNode* attrP = attrsP->value.firstChildP;
-  KjNode* next;
-
-  while (attrP != NULL)
-  {
-    next = attrP->next;
-
-    KjNode* typeP = kjLookup(attrP, "type");
-
-    if (typeP != NULL)
-    {
-      // Set 'attrP' to have the value of 'typeP', as that's what we want for 'entityP'
-      attrP->value = typeP->value;
-      attrP->type  = typeP->type;
-
-      kjChildRemove(attrsP, attrP);
-      kjChildAdd(entityP, attrP);
-
-      eqForDot(attrP->name);
-    }
-
-    attrP = next;
-  }
-
-  return true;
-}
 
 
 

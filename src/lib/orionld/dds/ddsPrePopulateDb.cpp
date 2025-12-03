@@ -33,6 +33,8 @@ extern "C"
 #include "kjson/KjNode.h"                                   // KjNode
 #include "kjson/kjLookup.h"                                 // kjLookup
 #include "kjson/kjBuilder.h"                                // kjObject, kjArray, kjString, ...
+#include "kjson/kjNavigate.h"                               // kjNavigate
+#include "kjson/kjChildCount.h"                             // kjChildCount
 }
 
 #include "orionld/types/StringArray.h"                      // StringArray
@@ -41,8 +43,7 @@ extern "C"
 #include "orionld/common/tenantList.h"                      // tenant0
 #include "orionld/common/dotForEq.h"                        // dotForEq
 #include "orionld/config/configInit.h"                      // configTree
-#include "orionld/kjTree/kjNavigate.h"                      // kjNavigate2
-#include "orionld/kjTree/kjChildCount.h"                    // kjChildCount
+#include "orionld/kjTree/kjTreeNavigate.h"                  // kjTreeNavigate
 #include "orionld/kjTree/kjEntityIdLookupInEntityArray.h"   // kjEntityIdLookupInEntityArray
 #include "orionld/context/orionldCoreContext.h"             // orionldCoreContextP
 #include "orionld/context/orionldContextItemExpand.h"       // orionldContextItemExpand
@@ -54,7 +55,7 @@ extern "C"
 #include "orionld/mongoc/mongocAttributesAdd.h"             // mongocAttributesAdd
 #include "orionld/dds/ddsServiceLookup.h"                   // ddsServiceLookup
 #include "orionld/dds/ddsServiceCreate.h"                   // ddsServiceCreate
-#include "orionld/dds/kjTreeLog.h"                          // kjTreeLog2
+#include "orionld/kjTree/kjTreeLog.h"                       // KT_TREE
 
 
 
@@ -66,7 +67,7 @@ static KjNode* kjDbEntityLookupInArray(KjNode* entityV, const char* entityId)
 {
   for (KjNode* dbEntityP = entityV->value.firstChildP; dbEntityP != NULL; dbEntityP = dbEntityP->next)
   {
-    KjNode* idNodeP = kjNavigate2(dbEntityP, "_id.id", NULL);
+    KjNode* idNodeP = kjTreeNavigate(dbEntityP, "_id.id", NULL);
     char*   eId     = (idNodeP != NULL)? idNodeP->value.s : NULL;
 
     if ((eId != NULL) && (strcmp(eId, entityId) == 0))
@@ -121,7 +122,7 @@ static void* ddsPrePopulateDbInThread(void* vP)
   orionldState.kjsonP = kjBufferCreate(&kjson, &kalloc);
   orionldState.tenantP = &tenant0;
 
-  KjNode* topics = kjNavigate2(configTree, configPath, NULL);
+  KjNode* topics = kjTreeNavigate(configTree, configPath, NULL);
 
   if (topics == NULL)
   {
@@ -129,7 +130,7 @@ static void* ddsPrePopulateDbInThread(void* vP)
     return NULL;
   }
 
-  kjTreeLog2(topics, concept, StDdsPrePopulate);
+  KT_TREE(topics, concept, StDdsPrePopulate);
   KT_T(StDdsPrePopulate, "-------------------------------------------------------------");
 
   int         entities = kjChildCount(topics);
@@ -181,7 +182,7 @@ static void* ddsPrePopulateDbInThread(void* vP)
   KjNode* entityV = mongocEntitiesQuery(NULL, &entityIds, NULL, NULL, &pickList, NULL, NULL, NULL, NULL, NULL);
 
   if (entityV != NULL)
-    kjTreeLog2(entityV, "entityV", StDdsPrePopulate);
+    KT_TREE(entityV, "entityV", StDdsPrePopulate);
 
   //
   // Now we know what's in the config file and what's in the DB.
@@ -278,7 +279,7 @@ static void* ddsPrePopulateDbInThread(void* vP)
       dbModelFromApiEntity(entity, NULL, true, entityId, entityType);
       kjChildAdd(dbCreateV, entity);
       KT_T(StDdsPrePopulate, "Added entity '%s' to dbCreateV array", entityId);
-      // kjTreeLog2(dbCreateV, "dbCreateV", StDdsPrePopulate);
+      // KT_TREE(dbCreateV, "dbCreateV", StDdsPrePopulate);
     }
     else if (attributeExists == false)  // Add the attribute to existing entity
     {
@@ -321,7 +322,7 @@ static void* ddsPrePopulateDbInThread(void* vP)
 
   if (dbCreateV->value.firstChildP != NULL)
   {
-    // kjTreeLog2(dbCreateV, "dbCreateV", StDdsPrePopulate);
+    // KT_TREE(dbCreateV, "dbCreateV", StDdsPrePopulate);
     mongocEntitiesUpsert(dbCreateV, NULL);
   }
 

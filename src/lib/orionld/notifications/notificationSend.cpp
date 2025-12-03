@@ -632,7 +632,7 @@ static KjNode* notificationTree(OrionldAlterationMatch* matchList)
   if (subP->httpInfo.mimeType == MT_JSONLD)  // Add @context to the entity
   {
     char*   contextUrl   = (subP->contextP->url != NULL)? subP->contextP->url : (char*) "http://localhost:80/no/thing";
-    KjNode* contextNodeP = kjString(orionldState.kjsonP, "@context", contextUrl); 
+    KjNode* contextNodeP = kjString(orionldState.kjsonP, "@context", contextUrl);
 
     kjChildAdd(notificationP, contextNodeP);
   }

@@ -30,6 +30,7 @@ extern "C"
 #include "kjson/KjNode.h"                                   // KjNode
 #include "kjson/kjBuilder.h"                                // kjString, kjObject, kjChildAdd, ...
 #include "kjson/kjLookup.h"                                 // kjLookup
+#include "kjson/kjNavigate.h"                               // kjNavigate
 }
 
 #include "orionld/common/traceLevels.h"                     // Trace levels for KTrace
@@ -39,12 +40,11 @@ extern "C"
 #include "orionld/context/orionldAttributeExpand.h"         // orionldAttributeExpand
 #include "orionld/context/orionldContextItemExpand.h"       // orionldContextItemExpand
 #include "orionld/mongoc/mongocEntityGet.h"                 // mongocEntityGet
-#include "orionld/kjTree/kjNavigate.h"                      // kjNavigate
 #include "orionld/serviceRoutines/orionldPostEntities.h"    // orionldPostEntities
 #include "orionld/serviceRoutines/orionldPostEntity.h"      // orionldPostEntity
 #include "orionld/serviceRoutines/orionldPutAttribute.h"    // orionldPutAttribute
 #include "orionld/service/serviceLookupByServiceRoutine.h"  // serviceLookupByServiceRoutine
-#include "orionld/dds/kjTreeLog.h"                          // kjTreeLog2
+#include "orionld/kjTree/kjTreeLog.h"                       // KT_TREE
 #include "orionld/dds/ddsServiceCreate.h"                   // ddsServiceCreate, ddsServiceInfoAdd
 #include "orionld/dds/ddsServiceLookup.h"                   // ddsServiceLookup
 
@@ -144,7 +144,7 @@ void ddsEntityAttributeUpsert(const char* entityId, const char* entityType, cons
   else
   {
     KT_T(StDdsServicePrepopulate, "The entity '%s' exists - what about the attribute '%s'?", entityId, attributeName);
-    kjTreeLog2(dbEntity, "DB Entity", StDdsServicePrepopulate);
+    KT_TREE(dbEntity, "DB Entity", StDdsServicePrepopulate);
 
     char*       attrLongName  = orionldAttributeExpand(orionldState.contextP, attributeName, true, NULL);
     const char* compV[5]      = { "attrNames", attrLongName, NULL };

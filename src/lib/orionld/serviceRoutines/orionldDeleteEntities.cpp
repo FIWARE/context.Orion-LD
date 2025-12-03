@@ -39,6 +39,7 @@ extern "C"
 #include "orionld/mongoc/mongocEntitiesQuery.h"                  // mongocEntitiesQuery
 #include "orionld/mongoc/mongocEntitiesDelete.h"                 // mongocEntitiesDelete
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
+#include "orionld/kjTree/kjTreeLog.h"                            // LM_TREE
 #include "orionld/regMatch/regMatchOperation.h"                  // regMatchOperation
 #include "orionld/regMatch/regMatchForEntitiesQuery.h"           // regMatchForEntitiesQuery
 #include "orionld/distOp/distOpSuccess.h"                        // distOpSuccess
@@ -216,7 +217,7 @@ bool orionldDeleteEntities(void)
   {
     distOpsSend(distOpList, orionldState.in.aerOS);
     distOpResponses(distOpList, responseBody);
-    kjTreeLog(responseBody, "responseBody", LmtSR);
+    LM_TREE(responseBody, "responseBody", LmtSR);
     distOpListRelease(distOpList);
   }
 

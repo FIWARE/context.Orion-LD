@@ -50,7 +50,7 @@ void distOpResponseMergeIntoEntityArray(DistOp* distOpP, KjNode* entityArray)
   LM_W(("Merging entities for DistOp '%s' (aux: %s)", distOpP->id, (distOpP->regP->mode == RegModeAuxiliary)? "YES" : "NO"));
   LM_T(LmtSR, ("Got a response. status code: %d. entityArray: %p", distOpP->httpResponseCode, entityArray));
 
-  kjTreeLog(distOpP->responseBody, "Response", LmtSR);
+  LM_TREE(distOpP->responseBody, "Response", LmtSR);
 
   if ((distOpP->httpResponseCode == 200) && (distOpP->responseBody != NULL))
   {

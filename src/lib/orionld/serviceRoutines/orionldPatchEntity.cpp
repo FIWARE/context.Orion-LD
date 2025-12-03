@@ -63,8 +63,7 @@ extern "C"
 #include "orionld/notifications/alteration.h"                    // alteration
 #include "orionld/notifications/previousValuePopulate.h"         // previousValuePopulate
 #include "orionld/notifications/sysAttrsStrip.h"                 // sysAttrsStrip
-#include "orionld/kjTree/kjSort.h"                               // kjStringArraySort
-#include "orionld/kjTree/kjChildCount.h"                         // kjChildCount
+#include "orionld/kjTree/kjTreeLog.h"                            // LM_TREE
 #include "orionld/dds/ddsPublishAttribute.h"                     // ddsPublishAttribute
 #include "orionld/serviceRoutines/orionldPatchEntity.h"          // Own interface
 
@@ -430,8 +429,8 @@ bool orionldPatchEntity(void)
   //
   if ((ddsSupport == true) && (orionldState.ddsSample == false))
   {
-    kjTreeLog(finalApiEntityP, "finalApiEntityP", LmtSR);
-    kjTreeLog(orionldState.requestTree, "orionldState.requestTree", LmtSR);
+    LM_TREE(finalApiEntityP, "finalApiEntityP", LmtSR);
+    LM_TREE(orionldState.requestTree, "orionldState.requestTree", LmtSR);
 
     // Only publish those attributes that have been modified
     for (KjNode* attrP = finalApiEntityP->value.firstChildP; attrP != NULL; attrP = attrP->next)

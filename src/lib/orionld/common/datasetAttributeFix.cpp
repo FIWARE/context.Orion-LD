@@ -100,7 +100,7 @@ void datasetAttributeFix(KjNode* entityP, KjNode* attrP)
       attrInstanceP = next;
     }
 
-    kjTreeLog(attrP, "Attribute after removing non-matching instances", LmtSR);
+    LM_TREE(attrP, "Attribute after removing non-matching instances", LmtSR);
     if (attrP->value.firstChildP == NULL)
     {
       LM_T(LmtDatasetId, ("No instances left - remove the entire attribute"));

@@ -27,6 +27,9 @@ extern "C"
 #include "kalloc/kaAlloc.h"                                      // kaAlloc
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
+#include "kjson/kjStringSiblingFind.h"                           // kjStringSiblingFind
+#include "kjson/kjStringValueLookupInArray.h"                    // kjStringValueLookupInArray
+#include "kjson/kjChildCount.h"                                  // kjChildCount
 }
 
 #include "orionld/types/RegistrationMode.h"                     // RegistrationMode
@@ -36,38 +39,11 @@ extern "C"
 #include "orionld/common/orionldError.h"                        // orionldError
 #include "orionld/common/CHECK.h"                               // STRING_CHECK, ...
 #include "orionld/context/orionldAttributeExpand.h"             // orionldAttributeExpand
-#include "orionld/kjTree/kjStringValueLookupInArray.h"          // kjStringValueLookupInArray
-#include "orionld/kjTree/kjChildCount.h"                        // kjChildCount
 #include "orionld/mongoc/mongocEntitiesQuery.h"                 // mongocEntitiesQuery
 #include "orionld/mongoc/mongocEntityLookup.h"                  // mongocEntityLookup
 #include "orionld/payloadCheck/fieldPaths.h"                    // RegistrationInformationEntitiesPath, ...
 #include "orionld/payloadCheck/pcheckEntityInfoArray.h"         // pcheckEntityInfoArray
 #include "orionld/payloadCheck/pcheckInformationItem.h"         // Own interface
-
-
-
-// ----------------------------------------------------------------------------
-//
-// kjValueInArrayLookup - FIXME: Move to kjTree lib (or kjson library!)
-//
-// ALSO
-//   I think I have a similar function somewhere ...
-//
-KjNode* kjValueInArrayLookup(KjNode* arrayItemP, const char* value)
-{
-  while (arrayItemP != NULL)
-  {
-    if (arrayItemP->type == KjString)
-    {
-      if (strcmp(arrayItemP->value.s, value) == 0)
-        return arrayItemP;
-    }
-
-    arrayItemP = arrayItemP->next;
-  }
-
-  return NULL;
-}
 
 
 
@@ -453,7 +429,7 @@ bool pcheckInformationItem(const char* currentRegId, RegistrationMode regMode, K
     for (KjNode* propertyP = propertiesP->value.firstChildP; propertyP != NULL; propertyP = propertyP->next)
     {
       // Start looking for duplicates from the nextcoming name in the array (no need to look back - already done)
-      if (kjValueInArrayLookup(propertyP->next, propertyP->value.s) != NULL)
+      if (kjStringSiblingFind(propertyP->next, propertyP->value.s) != NULL)
       {
         orionldError(OrionldBadRequestData, "Duplicated Property Name", propertyP->value.s, 400);
         return false;
@@ -467,7 +443,7 @@ bool pcheckInformationItem(const char* currentRegId, RegistrationMode regMode, K
     for (KjNode* relationshipP = relationshipsP->value.firstChildP; relationshipP != NULL; relationshipP = relationshipP->next)
     {
       // Start looking for duplicates from the nextcoming name in the array (no need to look back - already done)
-      if (kjValueInArrayLookup(relationshipP->next, relationshipP->value.s) != NULL)
+      if (kjStringSiblingFind(relationshipP->next, relationshipP->value.s) != NULL)
       {
         orionldError(OrionldBadRequestData, "Duplicated Relationship Name", relationshipP->value.s, 400);
         return false;

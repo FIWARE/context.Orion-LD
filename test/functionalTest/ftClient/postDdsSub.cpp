@@ -34,7 +34,7 @@ extern "C"
 
 #include "common/orionldState.h"                            // orionldState
 #include "common/traceLevels.h"                             // Trace levels for ktrace
-#include "dds/kjTreeLog.h"                                  // kjTreeLog2
+#include "kjTree/kjTreeLog.h"                               // KT_TREE
 
 #include "ftClient/ftErrorResponse.h"                       // ftErrorResponse
 
@@ -75,7 +75,7 @@ void ddsNotification(const char* entityType, const char* entityId, const char* a
   //
   if ((attrValue->type == KjObject) && (attrValue->value.firstChildP != NULL))
   {
-    kjTreeLog2(attrValue, attrName, StDdsDump);
+    KT_TREE(attrValue, attrName, StDdsDump);
     attrValue = attrValue->value.firstChildP;
   }
 
@@ -85,11 +85,11 @@ void ddsNotification(const char* entityType, const char* entityId, const char* a
   kjChildAdd(notificationP, entityIdNode);
   kjChildAdd(notificationP, kjClone(NULL, attrValue));
 
-  kjTreeLog2(ddsDumpArray, "DDS dump array before", StDdsDump);
-  kjTreeLog2(notificationP, "Adding to DDS dump array", StDdsDump);
+  KT_TREE(ddsDumpArray, "DDS dump array before", StDdsDump);
+  KT_TREE(notificationP, "Adding to DDS dump array", StDdsDump);
 
   kjChildAdd(ddsDumpArray, notificationP);
-  kjTreeLog2(ddsDumpArray, "DDS dump array after", StDdsDump);
+  KT_TREE(ddsDumpArray, "DDS dump array after", StDdsDump);
 }
 
 

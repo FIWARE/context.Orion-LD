@@ -30,6 +30,7 @@ extern "C"
 #include "kjson/kjParse.h"                                       // kjParse
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjArray, kjObject, kjString, kjChildAdd, ...
+#include "kjson/kjStringValueLookupInArray.h"                    // kjStringValueLookupInArray
 }
 
 #include "logMsg/logMsg.h"                                       // LM_*
@@ -37,7 +38,6 @@ extern "C"
 #include "orionld/types/DistOp.h"                                // DistOp
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/curlToBrokerStrerror.h"                 // curlToBrokerStrerror
-#include "orionld/kjTree/kjStringValueLookupInArray.h"           // kjStringValueLookupInArray
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
 #include "orionld/distOp/distOpLookupByCurlHandle.h"             // distOpLookupByCurlHandle
 #include "orionld/distOp/distOpSuccess.h"                        // distOpSuccess

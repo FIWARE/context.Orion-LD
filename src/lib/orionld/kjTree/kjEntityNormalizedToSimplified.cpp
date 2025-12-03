@@ -35,7 +35,6 @@ extern "C"
 #include "logMsg/logMsg.h"                                          // LM_*
 
 #include "orionld/common/langStringExtract.h"                       // langStringExtract
-#include "orionld/kjTree/kjChildCount.h"                            // kjChildCount
 #include "orionld/kjTree/kjEntityNormalizedToSimplified.h"          // Own interface
 
 

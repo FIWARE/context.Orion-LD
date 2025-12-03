@@ -354,7 +354,7 @@ bool dbModelFromApiSubscription(KjNode* apiSubscriptionP, bool patch)
   // it's much better to not do this inside the loop. Especially as the tree must be modified and a for-loop
   // would no longer be possible
   //
-  kjTreeLog(notificationP, "notificationP", LmtSR);
+  LM_TREE(notificationP, "notificationP", LmtSR);
   if (notificationP != NULL)
   {
     KjNode* nItemP = notificationP->value.firstChildP;

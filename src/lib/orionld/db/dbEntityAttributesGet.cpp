@@ -32,6 +32,8 @@ extern "C"
 #include "kjson/kjLookup.h"                                        // kjLookup
 #include "kjson/kjClone.h"                                         // kjClone
 #include "kjson/kjRender.h"                                        // kjFastRender
+#include "kjson/kjStringValueLookupInArray.h"                      // kjStringValueLookupInArray
+#include "kjson/kjStringArraySortedInsert.h"                       // kjStringArraySortedInsert
 }
 
 #include "logMsg/logMsg.h"                                         // LM_*
@@ -43,8 +45,6 @@ extern "C"
 #include "orionld/common/eqForDot.h"                               // eqForDot
 #include "orionld/common/dotForEq.h"                               // dotForEq
 #include "orionld/context/orionldContextItemAliasLookup.h"         // orionldContextItemAliasLookup
-#include "orionld/kjTree/kjStringValueLookupInArray.h"             // kjStringValueLookupInArray
-#include "orionld/kjTree/kjStringArraySortedInsert.h"              // kjStringArraySortedInsert
 #include "orionld/mongoc/mongocEntitiesGet.h"                      // mongocEntitiesGet
 #include "orionld/mongoc/mongocEntityTypesFromRegistrationsGet.h"  // mongocEntityTypesFromRegistrationsGet
 #include "orionld/mongoCppLegacy/mongoCppLegacyEntitiesGet.h"                      // mongoCppLegacyEntitiesGet

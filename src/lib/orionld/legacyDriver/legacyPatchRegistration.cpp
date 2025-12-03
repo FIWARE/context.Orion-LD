@@ -28,6 +28,7 @@ extern "C"
 #include "kjson/kjLookup.h"                                            // kjLookup
 #include "kjson/kjBuilder.h"                                           // kjChildAdd, ...
 #include "kjson/kjRender.h"                                            // kjRender (DEBUG)
+#include "kjson/kjChildAddOrReplace.h"                                 // kjChildAddOrReplace
 }
 
 #include "logMsg/logMsg.h"                                             // LM_*
@@ -43,7 +44,6 @@ extern "C"
 #include "orionld/mongoCppLegacy/mongoCppLegacyRegistrationReplace.h"  // mongoCppLegacyRegistrationReplace
 #include "orionld/payloadCheck/PCHECK.h"                               // PCHECK_URI
 #include "orionld/payloadCheck/pcheckRegistration.h"                   // pcheckRegistration
-#include "orionld/kjTree/kjChildAddOrReplace.h"                        // kjChildAddOrReplace
 #include "orionld/legacyDriver/legacyPatchRegistration.h"              // Own Interface
 
 
