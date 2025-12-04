@@ -27,10 +27,16 @@
 #include <string>
 #include <vector>
 
+extern "C"
+{
+#include "ktrace/kTrace.h"                             // trace messages - ktrace library
+}
+
 #include "logMsg/logMsg.h"
 #include "logMsg/traceLevels.h"
 
 #include "orionld/common/orionldState.h"               // mongoServerVersion
+#include "orionld/common/traceLevels.h"                // KTrace levels
 
 #include "common/clockFunctions.h"
 #include "common/string.h"
@@ -306,7 +312,7 @@ int mongoConnectionPoolInit
   //
   // Initialize (connect) the pool
   //
-  LM_K(("Connecting to mongo for the C++ legacy driver"));
+  KT_I("Connecting to mongo for the C++ legacy driver");
   for (int ix = 0; ix < connectionPoolSize; ++ix)
   {
     connectionPool[ix].free       = true;

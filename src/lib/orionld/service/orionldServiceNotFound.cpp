@@ -22,10 +22,7 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                       // LM_W
-
 #include "orionld/types/OrionldResponseErrorType.h"              // OrionldResourceNotFound
-#include "orionld/types/OrionldProblemDetails.h"                 // pdTreeCreate
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
 

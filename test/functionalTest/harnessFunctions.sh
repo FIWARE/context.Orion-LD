@@ -433,7 +433,7 @@ function localBrokerStart()
     then
       echo Starting broker: $CB_START_CMD
     fi
-    $CB_START_CMD
+    $CB_START_CMD > /dev/null
     brokerPid=$!
     if [ "$verbose" == "on" ]
     then
@@ -656,7 +656,7 @@ function orionldStart
   #
   if [ "$VALGRIND" == "" ] || [ "$port" != "$CB_PORT" ]
   then
-    $BROKER_START_CMD
+    $BROKER_START_CMD > /dev/null
   else
     # Use the CLI --gen-suppressions=all for valgrind to get suppressions (to put in suppressions.supp)
     # valgrind -v --leak-check=full --show-leak-kinds=definite,indirect --track-origins=yes --trace-children=yes --suppressions=$REPO_HOME/test/valgrind/suppressions.supp --gen-suppressions=all $BROKER_START_CMD > /tmp/valgrind.out 2>&1 &

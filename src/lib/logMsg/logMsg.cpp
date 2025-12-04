@@ -1044,22 +1044,22 @@ const char* longTypeName(char type)
 {
   switch (type)
   {
-  case 'W':  return "WARN";
-  case 'E':  return "ERROR";
-  case 'P':  return "ERROR";
-  case 'X':  return "FATAL";
-  case 'T':  return "DEBUG";
-  case 'D':  return "DEBUG";
-  case 'V':  return "DEBUG";
-  case '2':  return "DEBUG";
-  case '3':  return "DEBUG";
-  case '4':  return "DEBUG";
-  case '5':  return "DEBUG";
-  case 'M':  return "DEBUG";
-  case 'F':  return "TMP";
-  case 'I':  return "INFO";
+  case 'W':  return "W";
+  case 'E':  return "E";
+  case 'P':  return "E";
+  case 'X':  return "X";
+  case 'T':  return "T";
+  case 'D':  return "D";
+  case 'V':  return "V";
+  case '2':  return "V";
+  case '3':  return "V";
+  case '4':  return "V";
+  case '5':  return "V";
+  case 'M':  return "I";
+  case 'F':  return "I";
+  case 'I':  return "I";
   case 'S':  return "SUMMARY";
-  case 'K':  return "TMP";
+  case 'K':  return "I";
   }
 
   return "N/A";

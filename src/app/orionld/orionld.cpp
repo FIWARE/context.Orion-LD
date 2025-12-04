@@ -826,16 +826,16 @@ static void notificationModeParse(char* notificationMode, int* pQueueSize, int* 
 //
 static void versionInfo(void)
 {
-  LM_K(("Version Info:"));
-  LM_K(("-----------------------------------------"));
-  LM_K(("orionld version:    %s", orionldVersion));
-  LM_K(("based on orion:     %s", ORION_VERSION));
-  LM_K(("core @context:      %s", coreContextUrl));
-  LM_K(("git hash:           %s", GIT_HASH));
-  LM_K(("build branch:       %s", ORIONLD_BRANCH));
-  LM_K(("compiled by:        %s", COMPILED_BY));
-  LM_K(("compiled in:        %s", COMPILED_IN));
-  LM_K(("-----------------------------------------"));
+  KT_I("Version Info:");
+  KT_I("-----------------------------------------");
+  KT_I("orionld version:    %s", orionldVersion);
+  KT_I("based on orion:     %s", ORION_VERSION);
+  KT_I("core @context:      %s", coreContextUrl);
+  KT_I("git hash:           %s", GIT_HASH);
+  KT_I("build branch:       %s", ORIONLD_BRANCH);
+  KT_I("compiled by:        %s", COMPILED_BY);
+  KT_I("compiled in:        %s", COMPILED_IN);
+  KT_I("-----------------------------------------");
 }
 
 
@@ -872,7 +872,7 @@ static void libLogFunction
   vsnprintf(libLogBuffer, sizeof(libLogBuffer), format, args);
   va_end(args);
 
-  // LM_K(("Got a lib log message, severity: %d: %s", severity, libLogBuffer));
+  // KT_I("Got a lib log message, severity: %d: %s", severity, libLogBuffer);
 
   if (severity == 1)
     lmOut(libLogBuffer, 'E', fileName, lineNo, functionName, 0, NULL);
@@ -957,22 +957,6 @@ static char* coreContextUrlSetup(const char* version)
 */
 int main(int argC, char* argV[])
 {
-#if 0
-  //
-  // Just an experiment.
-  // It's an interesting way of "comparing strings"
-  // The problem is "const char*" vs "char*" - stupid C++ and its type checking!!!
-  //
-  // char* SUB_CACHE_DISABLED = NULL;
-
-  char* sc = SUB_CACHE_DISABLED;
-  if (sc == SUB_CACHE_DISABLED)
-  {
-    printf("the sub cache is disabled\n");
-    exit(1);
-  }
-#endif
-
 #if LEAK_TEST
   char* allocated = strdup("123");
   if (allocated == NULL)
@@ -1032,6 +1016,11 @@ int main(int argC, char* argV[])
   paConfig("default value",                 "-logLevel", "WARN");
 
 
+  // Vars for kTrace, to be configured along with logMsg (verbose, debug, "log to screen", etc)
+  KBool          kLogToScreen = KTRUE;
+  char*          kLogLevel    = (char*) "DEBUG";
+  KBool          kFixme       = KFALSE;
+
   //
   // If option '-disableFileLog' is set, no log to file
   // If option '-fg' is set, print traces to stdout as well, otherwise, only to file (unless -disableFileLog is set)
@@ -1042,32 +1031,29 @@ int main(int argC, char* argV[])
 
   if (disableFileLog && fg)
   {
+    kLogToScreen = KTRUE;
     paConfig("log to screen", (void*) true);
     paConfig("log to file",   (void*) false);
   }
   else if (fg)
   {
+    kLogToScreen = KTRUE;
     paConfig("log to screen", (void*) true);
     paConfig("log to file",   (void*) true);
   }
   else if (disableFileLog)
   {
+    kLogToScreen = KFALSE;
     paConfig("log to screen", (void*) false);
     paConfig("log to file",   (void*) false);
   }
   else
   {
+    kLogToScreen = KTRUE;
     paConfig("log to file",   (void*) true);
   }
 
-  if (paIsSet(argC, argV, paArgs, "-logForHumans"))
-  {
-    paConfig("screen line format", (void*) "TYPE@TIME  FILE[LINE]: TEXT");
-  }
-  else
-  {
-    paConfig("screen line format", LOG_FILE_LINE_FORMAT);
-  }
+  paConfig("screen line format", (void*) "TYPE: TIME: FILE[LINE]: FUNC: TEXT");
 
   //
   // If trace levels are set, set logLevel to DEBUG, so that the trace messages will actually pass through
@@ -1077,25 +1063,17 @@ int main(int argC, char* argV[])
 
   paParse(paArgs, argC, (char**) argV, 1, false);
 
-  LM_T(LmtMongoPool, ("DB Pool Size: %d", dbPoolSize));
-
   //
   // Initializing the new logging library, kTrace
   //
-  KBool          kLogToScreen = KTRUE;
-  char*          kLogLevel    = (char*) "DEBUG";
-  KBool          kVerbose     = KTRUE;
-  KBool          kDebug       = KTRUE;
-  KBool       	 kFixme       = KTRUE;
-
-  int kt = ktInit("Orion-LD", paLogDir, kLogToScreen, kLogLevel, kTraceLevels, kVerbose, kDebug, kFixme);
+  int kt = ktInit("Orion-LD", paLogDir, kLogToScreen, kLogLevel, kTraceLevels, paVerbose, paDebug, kFixme);
   if (kt != 0)
   {
     fprintf(stderr, "Error initializing logging library\n");
     exit(1);
   }
 
-  ktVerbose = KTRUE;
+  KT_I("Informational KTrace");
 
   coreContextUrl = coreContextUrlSetup(coreContextVersion);
   if (coreContextUrl == NULL)
@@ -1429,40 +1407,40 @@ int main(int argC, char* argV[])
       LM_X(1, ("Unable to contact the Postgres Server"));
   }
 
-  LM_K(("Initialization is Done"));
-  LM_K(("  Accepting REST requests on port %d (experimental API endpoints are %sabled)", port, (experimental == true)? "en" : "dis"));
-  LM_K(("  TRoE:                      %s", (troe               == true)? "Enabled" : "Disabled"));
-  LM_K(("  Distributed Operation:     %s", (distributed        == true)? "Enabled" : "Disabled"));
-  LM_K(("  Health Check:              %s", (socketService      == true)? "Enabled" : "Disabled"));
-  LM_K(("  Entity Maps:               %s", (entityMapsEnabled  == true)? "Enabled" : "Disabled"));
-  LM_K(("  Distributed Subscriptions: %s", (distSubsEnabled    == true)? "Enabled" : "Disabled"));
+  KT_I("Initialization is Done");
+  KT_I("  Accepting REST requests on port %d (experimental API endpoints are %sabled)", port, (experimental == true)? "en" : "dis");
+  KT_I("  TRoE:                      %s", (troe               == true)? "Enabled" : "Disabled");
+  KT_I("  Distributed Operation:     %s", (distributed        == true)? "Enabled" : "Disabled");
+  KT_I("  Health Check:              %s", (socketService      == true)? "Enabled" : "Disabled");
+  KT_I("  Entity Maps:               %s", (entityMapsEnabled  == true)? "Enabled" : "Disabled");
+  KT_I("  Distributed Subscriptions: %s", (distSubsEnabled    == true)? "Enabled" : "Disabled");
 
   if (troe)
   {
     // Postgres Server
-    LM_K(("  Postgres Server Version:   %s", postgresServerVersion));
+    KT_I("  Postgres Server Version:   %s", postgresServerVersion);
 
     // Postgres Client Lib
     int     pgLibVersion = PQlibVersion();
     char    pgLibVersionString[32];
     pgVersionToString(pgLibVersion, pgLibVersionString, sizeof(pgLibVersionString));
-    LM_K(("  Postgres Client Version:   %s", pgLibVersionString));
+    KT_I("  Postgres Client Version:   %s", pgLibVersionString);
   }
 
-  LM_K(("  Mongo Server Version:      %s", mongocServerVersion));
+  KT_I("  Mongo Server Version:      %s", mongocServerVersion);
 
   if (mongocOnly == true)
   {
-    LM_K(("  Mongo Driver:              mongoc driver- ONLY (MongoDB C++ Legacy Driver is DISABLED)"));
-    LM_K(("  MongoC Driver Version:     %s", MONGOC_VERSION_S));
+    KT_I("  Mongo Driver:              mongoc driver- ONLY (MongoDB C++ Legacy Driver is DISABLED)");
+    KT_I("  MongoC Driver Version:     %s", MONGOC_VERSION_S);
   }
   else if (experimental  == true)
   {
-    LM_K(("  Mongo Driver:              mongoc driver for NGSI-LD requests, Legacy Mongo C++ Driver for NGSIv1&2"));
-    LM_K(("  MongoC Driver Version:     %s", MONGOC_VERSION_S));
+    KT_I("  Mongo Driver:              mongoc driver for NGSI-LD requests, Legacy Mongo C++ Driver for NGSIv1&2");
+    KT_I("  MongoC Driver Version:     %s", MONGOC_VERSION_S);
   }
   else
-    LM_K(("  Mongo Driver:              Legacy C++ Driver (deprecated by mongodb)"));
+    KT_I("  Mongo Driver:              Legacy C++ Driver (deprecated by mongodb)");
 
   // Startup is done - we can free up the allocated kalloc buffers - assuming socketService doesn't use kalloc ...
   kaBufferReset(&orionldState.kalloc, KFALSE);
@@ -1485,7 +1463,7 @@ int main(int argC, char* argV[])
 
     if ((fd = socketServiceInit(socketServicePort)) == -1)
       LM_X(1, ("Can't initialize socketService"));
-    LM_K(("Initialization ready - accepting SOCKET requests on port %d", socketServicePort));
+    KT_I("Initialization ready - accepting SOCKET requests on port %d", socketServicePort);
 
     socketServiceRun(fd);
     LM_X(1, ("Socket Service terminated"));

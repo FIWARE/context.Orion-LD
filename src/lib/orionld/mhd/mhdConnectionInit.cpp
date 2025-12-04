@@ -28,7 +28,7 @@
 extern "C"
 {
 #include "kbase/kMacros.h"                                       // K_FT, K_VEC_SIZE
-#include "ktrace/kTrace.h"                                       // KT_T, ...
+#include "ktrace/kTrace.h"                                       // KT_T, KT_I, ...
 #include "kbase/kTime.h"                                         // kTimeGet, kTimeDiff
 #include "kalloc/kaAlloc.h"                                      // kaAlloc
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
@@ -1287,8 +1287,7 @@ MHD_Result mhdConnectionInit
   ++requestNo;
 
   // if ((requestNo % 100 == 0) || (requestNo == 1))
-  LM_K(("------------------------- Servicing NGSI-LD request %03d: %s %s --------------------------", requestNo, method, url));  // if not REQUEST_PERFORMANCE
-  KT_T(StRequest, "------------------------- Servicing NGSI-LD request %03d: %s %s --------------------------", requestNo, method, url);
+  KT_I("------------------------- Servicing NGSI-LD request %03d: %s %s --------------------------", requestNo, method, url);
 
   //
   // 2. Prepare orionldState
