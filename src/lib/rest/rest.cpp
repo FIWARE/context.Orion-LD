@@ -35,6 +35,7 @@
 extern "C"
 {
 #include "kbase/kTime.h"                                         // kTimeGet, kTimeDiff
+#include "ktrace/kTrace.h"                                       // KT_I
 #include "kalloc/kaBufferReset.h"                                // kaBufferReset
 #include "kjson/kjFree.h"                                        // kjFree
 #include "kjson/kjRender.h"                                      // kjFastRender
@@ -1423,7 +1424,7 @@ static MHD_Result connectionTreat
     MHD_Result retVal;
 
     ++requestNo;
-    LM_K(("------------------------- Servicing NGSIv2 request %03d: %s %s --------------------------", requestNo, method, url));
+    KT_I("------------------------- Servicing NGSIv2 request %03d: %s %s --------------------------", requestNo, method, url);
 
     // Reset the Compound stuff
     compoundInfo.compoundValueRoot = NULL;

@@ -47,7 +47,10 @@ typedef enum OrionldTraceLevels
 
   StMongoc                  = 400,
 
-  StCsf                     = 500,
+  StMongo                   = 500,
+  StMongoPool               = 501,
+
+  StCsf                     = 600,
 
   StDds                     = 1001,
   StDdsPublish              = 1002,

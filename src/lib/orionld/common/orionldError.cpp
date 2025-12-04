@@ -24,10 +24,9 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                    // ktOut
 #include "kalloc/kaStrdup.h"                                  // kaStrdup
 }
-
-#include "logMsg/logMsg.h"                                    // lmOut
 
 #include "orionld/types/OrionldResponseErrorType.h"           // OrionldResponseErrorType
 #include "orionld/types/OrionldProblemDetails.h"              // OrionldProblemDetails
@@ -63,5 +62,5 @@ void orionldErrorFunction
   char  msg[1024];
 
   snprintf(msg, sizeof(msg), "***** ERROR: %s: %s (status: %d)", title, detail, status);
-  lmOut(msg, 'E', fileNameOnly, lineNo, functionName, 0, NULL);
+  ktOut(fileNameOnly, lineNo, functionName, 'E', 0, msg);
 }

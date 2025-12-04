@@ -27,11 +27,13 @@
 #include <semaphore.h>                                           // sem_init
 #include <mongoc/mongoc.h>                                       // MongoDB C Client Driver
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // LmtMongoc
+extern "C" {
+#include "ktrace/kTrace.h"                                       // KTrace library
+}
 
 #include "orionld/common/orionldState.h"                         // orionldState, mongocPool, ...
 #include "orionld/common/tenantList.h"                           // tenant0 - the default tenant
+#include "orionld/common/traceLevels.h"                          // KTrace trace levels
 #include "orionld/mongoc/mongocTenantsGet.h"                     // mongocTenantsGet
 #include "orionld/mongoc/mongocGeoIndexInit.h"                   // mongocGeoIndexInit
 #include "orionld/mongoc/mongocIdIndexCreate.h"                  // mongocIdIndexCreate
@@ -52,19 +54,19 @@ static void mongocLog
 )
 {
   if (level == MONGOC_LOG_LEVEL_CRITICAL)
-    LM_E(("MONGOC[%s]:critical %s", domain, msg));  // Perhaps even LM_X ?
+    KT_E("MONGOC[%s]:critical %s", domain, msg);  // Perhaps even KT_X ?
   else if (level == MONGOC_LOG_LEVEL_ERROR)
-    LM_E(("MONGOC[%s]:error: %s", domain, msg));
+    KT_E("MONGOC[%s]:error: %s", domain, msg);
   else if (level == MONGOC_LOG_LEVEL_WARNING)
-    LM_W(("MONGOC[%s]:warning: %s", domain, msg));
+    KT_W("MONGOC[%s]:warning: %s", domain, msg);
   else if (level == MONGOC_LOG_LEVEL_MESSAGE)
-    LM_M(("MONGOC[%s]:message: %s", domain, msg));  // This LM_M is OK
+    KT_I("MONGOC[%s]:message: %s", domain, msg);  // This KT_M is OK
   else if (level == MONGOC_LOG_LEVEL_INFO)
-    LM_I(("MONGOC[%s]:info: %s", domain, msg));
+    KT_I("MONGOC[%s]:info: %s", domain, msg);
   else if ((level == MONGOC_LOG_LEVEL_DEBUG) || (level ==  MONGOC_LOG_LEVEL_TRACE))
   {
     if (lmTraceIsSet(LmtMongoc) == true)
-      LM_M(("MONGOC[%s]: %s", domain, msg));
+      KT_I("MONGOC[%s]: %s", domain, msg);
   }
 }
 
@@ -144,16 +146,16 @@ static char* uriCompose
   char* compV[50];
   int   compNo = 0;
 
-  LM_T(LmtMongoc, ("dbURI:           '%s'", dbURI));
-  LM_T(LmtMongoc, ("dbHost:          '%s'", dbHost));
-  LM_T(LmtMongoc, ("dbUser:          '%s'", dbUser));
+  KT_T(StMongoc, "dbURI:           '%s'", dbURI);
+  KT_T(StMongoc, "dbHost:          '%s'", dbHost);
+  KT_T(StMongoc, "dbUser:          '%s'", dbUser);
   if (dbPwd != NULL)
-    LM_T(LmtMongoc, ("dbPwd:           '****'"));
-  LM_T(LmtMongoc, ("dbAuthDb:        '%s'", dbAuthDb));
-  LM_T(LmtMongoc, ("dbReplicaSet:    '%s'", dbReplicaSet));
-  LM_T(LmtMongoc, ("dbAuthMechanism: '%s'", dbAuthMechanism));
-  LM_T(LmtMongoc, ("dbSSL:           '%s'", (dbSSL == true)? "true" : "false"));
-  LM_T(LmtMongoc, ("tlsCertificate:  '%s'", tlsCertificateFilePath));
+    KT_T(StMongoc, "dbPwd:           '****'");
+  KT_T(StMongoc, "dbAuthDb:        '%s'", dbAuthDb);
+  KT_T(StMongoc, "dbReplicaSet:    '%s'", dbReplicaSet);
+  KT_T(StMongoc, "dbAuthMechanism: '%s'", dbAuthMechanism);
+  KT_T(StMongoc, "dbSSL:           '%s'", (dbSSL == true)? "true" : "false");
+  KT_T(StMongoc, "tlsCertificate:  '%s'", tlsCertificateFilePath);
 
   if (dbURI[0] != 0)
   {
@@ -170,14 +172,14 @@ static char* uriCompose
     if (pwdP != NULL)
     {
       if (dbPwd[0] == 0)
-        LM_X(1, ("Invalid Command Line Options: -dbURI is used with a password substitution, but no password (-dbPwd) is supplied"));
+        KT_X(1, "Invalid Command Line Options: -dbURI is used with a password substitution, but no password (-dbPwd) is supplied");
 
       *pwdP    = 0;
       compV[1] = dbPwd;
       compV[2] = &pwdP[6];
       compNo   = 3;
 
-      LM_T(LmtMongoc, ("dbURI:           '%s****%s'", compV[0], compV[2]));
+      KT_T(StMongoc, "dbURI:           '%s****%s'", compV[0], compV[2]);
     }
   }
   else
@@ -252,7 +254,7 @@ static char* uriCompose
 
   char* uri = (char*) calloc(1, uriLen + 1);
   if (uri == NULL)
-    LM_X(1, ("Out of memory allocating a mongo connection URI of length %d", uriLen + 1));
+    KT_X(1, "Out of memory allocating a mongo connection URI of length %d", uriLen + 1);
 
   int len = 0;
   for (int ix = 0; ix < compNo; ix++)
@@ -300,10 +302,10 @@ void mongocInit
   char*         mongoUri = uriCompose(dbURI, dbHost, dbUser, dbPwd, dbAuthDb, dbReplicaSet, dbAuthMechanism, dbSSL, tlsCertificateFilePath);
   bson_error_t  mongoError;
 
-  LM_K(("Connecting to mongo for the C driver (URI: %s)", mongoUri));
+  KT_I("Connecting to mongo for the C driver (URI: %s)", mongoUri);
   mongocUri = mongoc_uri_new_with_error(mongoUri, &mongoError);
   if (mongocUri == NULL)
-    LM_X(1, ("Unable to connect to mongo(URI: %s): %s", mongoUri, mongoError.message));
+    KT_X(1, "Unable to connect to mongo(URI: %s): %s", mongoUri, mongoError.message);
 
   //
   // Initialize the connection pool
@@ -328,18 +330,18 @@ void mongocInit
 
   int tenants = 1;
   if (mongocTenantsGet(&tenants) == false)
-    LM_X(1, ("Unable to extract tenants from the database - fatal error"));
+    KT_X(1, "Unable to extract tenants from the database - fatal error");
 
-  LM_T(LmtMongoPool, ("No of tenants: %d", tenants));
+  KT_T(StMongoPool, "No of tenants: %d", tenants);
   extern int dbPoolSize;
   if (dbPoolSize < tenants)
     dbPoolSize = tenants + 5;
 
   if (mongocGeoIndexInit() == false)
-    LM_X(1, ("Unable to initialize geo indices in database - fatal error"));
+    KT_X(1, "Unable to initialize geo indices in database - fatal error");
 
   if (mongocIdIndexCreate(&tenant0) == false)
-    LM_W(("Unable to create the index on Entity ID on the default database"));
+    KT_W("Unable to create the index on Entity ID on the default database");
 
   // Free the uri, allocated by uriCompose
   free(mongoUri);
