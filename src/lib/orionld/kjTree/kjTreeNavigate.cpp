@@ -71,8 +71,8 @@ KjNode* kjTreeNavigate(KjNode* treeP, const char* pathIn, bool* isTimestampP)
   char path[512];
   strncpy(path, pathIn, sizeof(path) - 1);
 
-  KT_T(StCsf, "Looking for '%s'", path);
-  KT_TREE(treeP, "In this tree", StCsf);
+  KT_T(KtCsf, "Looking for '%s'", path);
+  KT_TREE(treeP, "In this tree", KtCsf);
 
   int components = dotCount(path) + 1;
   if (components > 20)
