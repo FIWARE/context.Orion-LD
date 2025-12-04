@@ -30,7 +30,6 @@ extern "C"
 #include "kjson/KjNode.h"                                        // KjNode
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
 
 
 
@@ -54,13 +53,11 @@ static void kjTreeToBson(KjNode* nodeP, bson_t* parentP, bool inArray, int array
   {
     slen = snprintf(nameBuf, sizeof(nameBuf), "%d", arrayIndex);
     name = nameBuf;
-    // LM_T(LmtMongoc, ("Array Index: '%s'", name));
   }
   else
   {
     name = nodeP->name;
     slen = strlen(name);
-    // LM_T(LmtMongoc, ("Name: '%s'", name));
   }
 
   if      (nodeP->type == KjString)    bson_append_utf8(parentP, name, slen, nodeP->value.s, -1);
@@ -77,7 +74,6 @@ static void kjTreeToBson(KjNode* nodeP, bson_t* parentP, bool inArray, int array
 
     for (KjNode* itemP = nodeP->value.firstChildP; itemP != NULL; itemP = itemP->next)
     {
-      // LM_T(LmtMongoc, ("Calling kjTreeToBson for item '%s' of container '%s'", itemP->name, nodeP->name));
       kjTreeToBson(itemP, &bObject, false);
     }
     bson_append_document_end(parentP, &bObject);
@@ -91,7 +87,6 @@ static void kjTreeToBson(KjNode* nodeP, bson_t* parentP, bool inArray, int array
     bson_append_array_begin(parentP, name, slen, &bArray);
     for (KjNode* itemP = nodeP->value.firstChildP; itemP != NULL; itemP = itemP->next)
     {
-      // LM_T(LmtMongoc, ("Calling kjTreeToBson for array item %d of '%s'", arrayIndex, nodeP->name));
       kjTreeToBson(itemP, &bArray, true, arrayIndex);
       arrayIndex += 1;
     }
@@ -115,7 +110,6 @@ void mongocKjTreeToBson(KjNode* treeP, bson_t* bsonP)
   int arrayIx = 0;
   for (KjNode* itemP = treeP->value.firstChildP; itemP != NULL; itemP = itemP->next)
   {
-    // LM_T(LmtMongoc, ("Calling kjTreeToBson for '%s' of '%s'", itemP->name, treeP->name));
     kjTreeToBson(itemP, bsonP, inArray, arrayIx);
 
     if (inArray == true)

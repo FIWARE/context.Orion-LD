@@ -26,11 +26,11 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
 #include "orionld/common/orionldState.h"                         // orionldState, dbName
 #include "orionld/mongoc/mongocConnectionGet.h"                  // mongocConnectionGet
 #include "orionld/mongoc/mongocKjTreeFromBson.h"                 // mongocKjTreeFromBson
@@ -72,7 +72,7 @@ bool mongocTenantExists(const char* tenantName)
 
   bool b = mongoc_client_read_command_with_opts(orionldState.mongoc.client, "admin", &command, NULL, NULL, &reply, &mcError);
   if (b == false)
-    LM_RE(false, ("Database Error (%s)", mcError.message));
+    KT_RE(false, "Database Error (%s)", mcError.message);
 
   char*   title;
   char*   detail;

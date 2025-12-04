@@ -24,7 +24,10 @@
 */
 #include <mongoc/mongoc.h>                                       // MongoDB C Client Driver
 
-#include "logMsg/logMsg.h"                                       // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
+}
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/mongoc/mongocConnectionGet.h"                  // mongocConnectionGet
@@ -59,7 +62,7 @@ bool mongocSubscriptionExists(const char* subscriptionId, char** detailP)
   // semTake(&mongoSubscriptionsSem);
   if ((mongoCursorP = mongoc_collection_find_with_opts(orionldState.mongoc.subscriptionsP, &mongoFilter, NULL, NULL)) == NULL)
   {
-    LM_E(("Internal Error (mongoc_collection_find_with_opts ERROR)"));
+    KT_E("Internal Error (mongoc_collection_find_with_opts ERROR)");
     *detailP = (char*) "database query failed";
     return false;
   }
@@ -73,7 +76,7 @@ bool mongocSubscriptionExists(const char* subscriptionId, char** detailP)
 
   if (mongoc_cursor_error(mongoCursorP, &mongoError))
   {
-    LM_E(("Internal Error (DB Error '%s')", mongoError.message));
+    KT_E("Internal Error (DB Error '%s')", mongoError.message);
     *detailP = (char*) "error in cursor";
     return false;
   }

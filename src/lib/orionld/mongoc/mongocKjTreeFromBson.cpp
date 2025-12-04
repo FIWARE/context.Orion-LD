@@ -31,8 +31,6 @@ extern "C"
 #include "kjson/kjClone.h"                                     // kjClone
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/mongoc/mongocKjTreeFromBson.h"               // Own interface
 

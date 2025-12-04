@@ -27,8 +27,10 @@
 #include <semaphore.h>                                           // sem_init
 #include <mongoc/mongoc.h>                                       // MongoDB C Client Driver
 
-extern "C" {
+extern "C"
+{
 #include "ktrace/kTrace.h"                                       // KTrace library
+#include "ktrace/ktTraceLevelCheck.h"                            // ktTraceLevelCheck
 }
 
 #include "orionld/common/orionldState.h"                         // orionldState, mongocPool, ...
@@ -65,7 +67,7 @@ static void mongocLog
     KT_I("MONGOC[%s]:info: %s", domain, msg);
   else if ((level == MONGOC_LOG_LEVEL_DEBUG) || (level ==  MONGOC_LOG_LEVEL_TRACE))
   {
-    if (lmTraceIsSet(LmtMongoc) == true)
+    if (ktTraceLevelCheck(StMongoc) == true)
       KT_I("MONGOC[%s]: %s", domain, msg);
   }
 }

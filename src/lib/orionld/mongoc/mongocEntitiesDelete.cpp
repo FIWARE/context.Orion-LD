@@ -27,12 +27,11 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjChildRemove
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/kjTree/kjTreeLog.h"                            // kjTreeLog
@@ -71,7 +70,7 @@ bool mongocEntitiesDelete(KjNode* entityIdArray)
   if (r == false)
   {
     char* errorString = bson_as_canonical_extended_json(&reply, NULL);
-    LM_E(("mongoc_bulk_operation_execute: %s", errorString));
+    KT_E("mongoc_bulk_operation_execute: %s", errorString);
     bson_free(errorString);
   }
 

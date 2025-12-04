@@ -28,11 +28,9 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kjson/KjNode.h"                                        // KjNode
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
 
 #include "orionld/common/orionldState.h"                         // orionldState, mongoContextsSem
 #include "orionld/mongoc/mongocConnectionGet.h"                  // mongocConnectionGet
@@ -60,7 +58,7 @@ void mongocContextCacheDelete(const char* id)
   sem_post(&mongocContextsSem);
 
   if (r == false)
-    LM_E(("Database Error (deleting context '%s': %s)", id, mcError.message));
+    KT_E("Database Error (deleting context '%s': %s)", id, mcError.message);
 
   bson_destroy(&selector);
 }

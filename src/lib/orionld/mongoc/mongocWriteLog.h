@@ -27,7 +27,10 @@
 */
 #include <bson/bson.h>                                           // bson_t
 
-#include "logMsg/logMsg.h"                                       // TraceLevels
+extern "C"
+{
+#include "ktrace/ktTraceLevelCheck.h"                            // ktTraceLevelCheck
+}
 
 
 
@@ -38,7 +41,7 @@
 #define MONGOC_WLOG(msg, dbName, collectionName, selectorP, requestP, traceLevel)                                   \
 do                                                                                                                  \
 {                                                                                                                   \
-  if (LM_MASK(LogLevelDebug) && lmOk('T', traceLevel) == LmsOk)                                                     \
+  if (ktTraceLevelCheck(traceLevel) == true)                                                                        \
     mongocWriteLog(msg, dbName, collectionName, selectorP, requestP, __FILE__, __LINE__, __FUNCTION__, traceLevel); \
 } while (0)
 
@@ -51,7 +54,7 @@ do                                                                              
 #define MONGOC_RLOG(msg, dbName, collectionName, filterP, optionsP, traceLevel)                                     \
 do                                                                                                                  \
 {                                                                                                                   \
-  if (LM_MASK(LogLevelDebug) && lmOk('T', traceLevel) == LmsOk)                                                     \
+  if (ktTraceLevelCheck(traceLevel) == true)                                                                        \
     mongocReadLog(msg, dbName, collectionName, filterP, optionsP, __FILE__, __LINE__, __FUNCTION__, traceLevel);    \
 } while (0)
 

@@ -27,12 +27,11 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjChildRemove
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/kjTree/kjTreeLog.h"                            // kjTreeLog
@@ -79,14 +78,14 @@ bool mongocEntitiesUpsert(KjNode* createArrayP, KjNode* updateArrayP)
       KjNode* _idP = kjLookup(entityP, "_id");
       if (_idP == NULL)
       {
-        LM_E(("Can't update an entity without entity id"));
+        KT_E("Can't update an entity without entity id");
         continue;
       }
 
       KjNode* idP  = kjLookup(_idP, "id");
       if (idP == NULL)
       {
-        LM_E(("Can't update an entity without an entity id"));
+        KT_E("Can't update an entity without an entity id");
         continue;
       }
 
@@ -112,7 +111,7 @@ bool mongocEntitiesUpsert(KjNode* createArrayP, KjNode* updateArrayP)
   if (r == false)
   {
     char* errorString = bson_as_canonical_extended_json(&reply, NULL);
-    LM_E(("mongoc_bulk_operation_execute: %s", errorString));
+    KT_E("mongoc_bulk_operation_execute: %s", errorString);
     bson_free(errorString);
   }
 

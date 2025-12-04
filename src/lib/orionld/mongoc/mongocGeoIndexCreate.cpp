@@ -27,11 +27,10 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                        // trace messages - ktrace library
 #include "kalloc/kaAlloc.h"                                       // kaAlloc
 #include "kalloc/kaStrdup.h"                                      // kaStrdup
 }
-
-#include "logMsg/logMsg.h"                                        // LM_*
 
 #include "orionld/common/orionldState.h"                          // kalloc
 #include "orionld/common/dotForEq.h"                              // dotForEq
@@ -87,7 +86,7 @@ bool mongocGeoIndexCreate(OrionldTenant* tenantP, const char* attrLongName)
     dbGeoIndexAdd(tenantP->tenant, eqName);
   }
   else
-    LM_E(("Database Error (error creating 2dsphere index for attribute '%s' for db '%s': %s)", eqName, tenantP->mongoDbName, mcError.message));
+    KT_E("Database Error (error creating 2dsphere index for attribute '%s' for db '%s': %s)", eqName, tenantP->mongoDbName, mcError.message);
 
   bson_destroy(&key);
   bson_free(indexName);

@@ -26,12 +26,10 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
 
 #include "orionld/common/orionldState.h"                         // orionldState, mongocContextsSem
 #include "orionld/mongoc/mongocConnectionGet.h"                  // mongocConnectionGet
@@ -68,7 +66,7 @@ void mongocContextCachePersist(KjNode* contextObject, bool reload)
 
       // Remove the context
       if (mongoc_collection_remove(orionldState.mongoc.contextsP,  MONGOC_REMOVE_SINGLE_REMOVE, &mongoFilter, NULL, &error) == false)
-        LM_E(("Database Error (mongoc_collection_remove returned %d.%d:%s)", error.domain, error.code, error.message));
+        KT_E("Database Error (mongoc_collection_remove returned %d.%d:%s)", error.domain, error.code, error.message);
       bson_destroy(&mongoFilter);
     }
   }
@@ -81,7 +79,7 @@ void mongocContextCachePersist(KjNode* contextObject, bool reload)
   sem_post(&mongocContextsSem);
 
   if (r == false)
-    LM_E(("Database Error (persisting context: %s)", error.message));
+    KT_E("Database Error (persisting context: %s)", error.message);
 
   bson_destroy(&bson);
 

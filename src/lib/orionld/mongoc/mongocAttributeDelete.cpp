@@ -26,13 +26,13 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/dotForEq.h"                             // dotForEq
+#include "orionld/common/traceLevels.h"                          // StMongoc
 #include "orionld/mongoc/mongocWriteLog.h"                       // MONGOC_WLOG
 #include "orionld/mongoc/mongocConnectionGet.h"                  // mongocConnectionGet
 #include "orionld/mongoc/mongocAttributeDelete.h"                // Own interface
@@ -94,12 +94,12 @@ bool mongocAttributeDelete(const char* entityId, const char* attrName)
   bson_append_document(&request, "$pull",  5, &pull);
 
   // Send the request to mongo
-  MONGOC_WLOG("Deleting an attribute", orionldState.tenantP->mongoDbName, "entities", &selector, &request, LmtMongoc);
+  MONGOC_WLOG("Deleting an attribute", orionldState.tenantP->mongoDbName, "entities", &selector, &request, StMongoc);
   bool b = mongoc_collection_update_one(orionldState.mongoc.entitiesP, &selector, &request, NULL, &reply, &orionldState.mongoc.error);
   if (b == false)
   {
     bson_error_t* errP = &orionldState.mongoc.error;
-    LM_E(("mongoc error updating entity '%s': [%d.%d]: %s", entityId, errP->domain, errP->code, errP->message));
+    KT_E("mongoc error updating entity '%s': [%d.%d]: %s", entityId, errP->domain, errP->code, errP->message);
   }
 
   bson_destroy(&request);

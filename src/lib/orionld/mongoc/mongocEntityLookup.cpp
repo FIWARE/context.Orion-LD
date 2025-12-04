@@ -26,13 +26,13 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kjson/KjNode.h"                                        // KjNode
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
-#include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/types/StringArray.h"                           // StringArray
+#include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // StMongoc
 #include "orionld/mongoc/mongocConnectionGet.h"                  // mongocConnectionGet
 #include "orionld/mongoc/mongocKjTreeFromBson.h"                 // mongocKjTreeFromBson
 #include "orionld/mongoc/mongocAuxAttributesFilter.h"            // mongocAuxAttributesFilter
@@ -116,10 +116,10 @@ KjNode* mongocEntityLookup(const char* entityId, const char* entityType, StringA
   //
   // Run the query
   //
-  MONGOC_RLOG("Entity Lookup", orionldState.tenantP->mongoDbName, "entities", &mongoFilter, &options, LmtMongoc);
+  MONGOC_RLOG("Entity Lookup", orionldState.tenantP->mongoDbName, "entities", &mongoFilter, &options, StMongoc);
   if ((mongoCursorP = mongoc_collection_find_with_opts(orionldState.mongoc.entitiesP, &mongoFilter, &options, readPrefs)) == NULL)
   {
-    LM_E(("Internal Error (mongoc_collection_find_with_opts ERROR)"));
+    KT_E("Internal Error (mongoc_collection_find_with_opts ERROR)");
     entityNodeP = NULL;
     if (detailP != NULL)
       *detailP = (char*) "mongoc_collection_find_with_opts failed";
@@ -134,7 +134,7 @@ KjNode* mongocEntityLookup(const char* entityId, const char* entityType, StringA
 
   if (mongoc_cursor_error(mongoCursorP, &mcError))
   {
-    LM_E(("Internal Error (DB Error '%s')", mcError.message));
+    KT_E("Internal Error (DB Error '%s')", mcError.message);
     if (detailP != NULL)
       *detailP = mcError.message;
     entityNodeP = NULL;

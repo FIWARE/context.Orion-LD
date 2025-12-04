@@ -27,19 +27,19 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjArray
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/types/StringArray.h"                           // StringArray
 #include "orionld/types/OrionldGeoInfo.h"                        // OrionldGeoInfo
 #include "orionld/types/QNode.h"                                 // QNode
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/dotForEq.h"                             // dotForEq
-#include "orionld/kjTree/kjTreeLog.h"                            // LM_TREE
+#include "orionld/kjTree/kjTreeLog.h"                            // KT_TREE
 #include "orionld/q/qTreeToBson.h"                               // qTreeToBson
 #include "orionld/context/orionldAttributeExpand.h"              // orionldAttributeExpand
 #include "orionld/mongoc/mongocWriteLog.h"                       // MONGOC_RLOG - FIXME: change name to mongocLog.h
@@ -257,9 +257,9 @@ static bool geoNearFilter(bson_t* mongoFilterP, OrionldGeoInfo*  geoInfoP)
   char geoPropertyPath[512];
   int  geoPropertyPathLen;
   if (geoPropertyDbPath(geoPropertyPath, sizeof(geoPropertyPath), geoInfoP->geoProperty, &geoPropertyPathLen) == false)
-    LM_RE(false, ("Failed to aeemble the geoProperty path"));
+    KT_RE(false, "Failed to aeemble the geoProperty path");
 
-  LM_T(LmtMongoc, ("geoPropertyPath: '%s'", geoPropertyPath));
+  KT_T(StMongoc, "geoPropertyPath: '%s'", geoPropertyPath);
 
   bson_append_document(mongoFilterP, geoPropertyPath, geoPropertyPathLen, &location);
 
@@ -314,7 +314,7 @@ static bool geoWithinFilter(bson_t* mongoFilterP, OrionldGeoInfo* geoInfoP)
   bson_init(&within);
   bson_init(&coordinates);
 
-  LM_TREE(geoInfoP->coordinates, "coordinates", LmtMongoc);
+  KT_TREE(geoInfoP->coordinates, "coordinates", StMongoc);
   mongocKjTreeToBson(geoInfoP->coordinates, &coordinates);
 
   bson_append_array(&geometry,    "coordinates", 11, &coordinates);
@@ -747,7 +747,7 @@ KjNode* mongocEntitiesQuery
         path[len - 6] = '.';
       }
 
-      LM_T(LmtMongoc, ("Ordering by '%s' (%d letters)", path, len));
+      KT_T(StMongoc, "Ordering by '%s' (%d letters)", path, len);
       bson_append_int32(&sortDoc, path, len, sortOrder);
     }
 
@@ -839,7 +839,7 @@ KjNode* mongocEntitiesQuery
     //
     if ((geoInfoP->georel == GeorelNear) && (countP != NULL))
     {
-      LM_W(("Cannot count entities if georel is 'near'. MongoDB doesn't allow it"));
+      KT_W("Cannot count entities if georel is 'near'. MongoDB doesn't allow it");
       *countP = -2;    // Mark the 'absense' of a count
       countP  = NULL;  // This inhibits the count
     }
@@ -861,7 +861,7 @@ KjNode* mongocEntitiesQuery
     if (*countP == -1)
     {
       *countP = 0;
-      LM_E(("Database Error (error counting entities: %d.%d: %s)", error.domain, error.code, error.message));
+      KT_E("Database Error (error counting entities: %d.%d: %s)", error.domain, error.code, error.message);
     }
   }
 
@@ -872,13 +872,13 @@ KjNode* mongocEntitiesQuery
 
   if (orionldState.uriParams.limit != 0)
   {
-    MONGOC_RLOG("Querying Entities", orionldState.tenantP->mongoDbName, "entities", &mongoFilter, &options, LmtMongoc);
+    MONGOC_RLOG("Querying Entities", orionldState.tenantP->mongoDbName, "entities", &mongoFilter, &options, StMongoc);
     mongoCursorP = mongoc_collection_find_with_opts(orionldState.mongoc.entitiesP, &mongoFilter, &options, readPrefs);
     bson_destroy(&options);
 
     if (mongoCursorP == NULL)
     {
-      LM_E(("Database Error (mongoc_collection_find_with_opts ERROR)"));
+      KT_E("Database Error (mongoc_collection_find_with_opts ERROR)");
       bson_destroy(&mongoFilter);
       mongoc_read_prefs_destroy(readPrefs);
       orionldError(OrionldInternalError, "Database Error", "mongoc_collection_find_with_opts failed", 500);
@@ -888,7 +888,7 @@ KjNode* mongocEntitiesQuery
     bson_error_t  lastError;
     const bson_t* reply;
     if (mongoc_cursor_error_document(mongoCursorP, &lastError, &reply) == true)
-      LM_E(("MongoC Error: %s", bson_as_canonical_extended_json(reply, NULL)));
+      KT_E("MongoC Error: %s", bson_as_canonical_extended_json(reply, NULL));
 
     int hits = 0;
     while (mongoc_cursor_next(mongoCursorP, &mongoDocP))
@@ -901,12 +901,12 @@ KjNode* mongocEntitiesQuery
         ++hits;
       }
       else
-        LM_E(("Database Error (%s: %s)", title, detail));
+        KT_E("Database Error (%s: %s)", title, detail);
     }
 
     bson_error_t error;
     if (mongoc_cursor_error(mongoCursorP, &error) == true)
-      LM_E(("mongoc_cursor_error: %d.%d: '%s'", error.domain, error.code, error.message));
+      KT_E("mongoc_cursor_error: %d.%d: '%s'", error.domain, error.code, error.message);
 
     mongoc_cursor_destroy(mongoCursorP);
   }

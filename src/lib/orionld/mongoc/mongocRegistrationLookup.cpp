@@ -26,11 +26,10 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjArray, kjChildAdd
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/mongoc/mongocConnectionGet.h"                  // mongocConnectionGet
@@ -72,10 +71,7 @@ KjNode* mongocRegistrationLookup(const char* entityId, const char* attribute, in
   bson_error_t      mongoError;
 
   if ((mongoCursorP = mongoc_collection_find_with_opts(orionldState.mongoc.registrationsP, &mongoFilter, NULL, NULL)) == NULL)
-  {
-    LM_E(("Internal Error (mongoc_collection_find_with_opts ERROR)"));
-    return NULL;
-  }
+    KT_RE(NULL, "Internal Error (mongoc_collection_find_with_opts ERROR)");
 
   // mongocConnectionRelease(); - done at the end of the request
 
@@ -90,7 +86,7 @@ KjNode* mongocRegistrationLookup(const char* entityId, const char* attribute, in
 
     registrationNodeP = mongocKjTreeFromBson(mongoDocP, &title, &detail);
     if (registrationNodeP == NULL)
-      LM_E(("%s: %s", title, detail));
+      KT_E("%s: %s", title, detail);
     else
     {
       if (kjRegArray == NULL)
@@ -100,10 +96,7 @@ KjNode* mongocRegistrationLookup(const char* entityId, const char* attribute, in
   }
 
   if (mongoc_cursor_error(mongoCursorP, &mongoError))
-  {
-    LM_E(("Internal Error (DB Error '%s')", mongoError.message));
-    return NULL;
-  }
+    KT_RE(NULL, "Internal Error (DB Error '%s')", mongoError.message);
 
   mongoc_cursor_destroy(mongoCursorP);
   // semGive(&mongoRegistrationsSem);

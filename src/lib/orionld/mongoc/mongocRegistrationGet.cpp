@@ -26,10 +26,9 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kjson/KjNode.h"                                        // KjNode
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/mongoc/mongocConnectionGet.h"                  // mongocConnectionGet
@@ -66,7 +65,7 @@ KjNode* mongocRegistrationGet(const char* registrationId)
   // semTake(&mongoRegistrationsSem);
   if ((mongoCursorP = mongoc_collection_find_with_opts(orionldState.mongoc.registrationsP, &mongoFilter, NULL, NULL)) == NULL)
   {
-    LM_E(("Internal Error (mongoc_collection_find_with_opts ERROR)"));
+    KT_E("Internal Error (mongoc_collection_find_with_opts ERROR)");
     return NULL;
   }
 
@@ -78,7 +77,7 @@ KjNode* mongocRegistrationGet(const char* registrationId)
 
   if (mongoc_cursor_error(mongoCursorP, &mongoError))
   {
-    LM_E(("Internal Error (DB Error '%s')", mongoError.message));
+    KT_E("Internal Error (DB Error '%s')", mongoError.message);
     return NULL;
   }
 

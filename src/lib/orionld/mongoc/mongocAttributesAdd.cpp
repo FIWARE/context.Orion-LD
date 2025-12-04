@@ -26,14 +26,13 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // LmtMongoc
-
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // trace levels
 #include "orionld/mongoc/mongocConnectionGet.h"                  // mongocConnectionGet
 #include "orionld/mongoc/mongocWriteLog.h"                       // mongocWriteLog
 #include "orionld/mongoc/mongocKjTreeToBson.h"                   // mongocKjTreeToBson
@@ -121,7 +120,7 @@ bool mongocAttributesAdd
   //
   KjNode* dbAttrP = (singleAttribute == true)? attrsToUpdate : attrsToUpdate->value.firstChildP;
 
-  LM_T(LmtMongoc, ("%s attribute: '%s'", (singleAttribute == true)? "Only": "First", dbAttrP->name));
+  KT_T(StMongoc, "%s attribute: '%s'", (singleAttribute == true)? "Only": "First", dbAttrP->name);
   while (dbAttrP != NULL)
   {
     // Update the Attribute's modDate
@@ -146,12 +145,12 @@ bool mongocAttributesAdd
 
   bson_append_document(&request, "$set", 4, &set);
   bson_destroy(&set);
-  MONGOC_WLOG("Adding Attributes", orionldState.tenantP->mongoDbName, "entities", &selector, &request, LmtMongoc);
+  MONGOC_WLOG("Adding Attributes", orionldState.tenantP->mongoDbName, "entities", &selector, &request, StMongoc);
   bool b = mongoc_collection_update_one(orionldState.mongoc.entitiesP, &selector, &request, NULL, &reply, &orionldState.mongoc.error);
   if (b == false)
   {
     bson_error_t* errP = &orionldState.mongoc.error;
-    LM_E(("mongoc error updating entity '%s': [%d.%d]: %s", entityId, errP->domain, errP->code, errP->message));
+    KT_E("mongoc error updating entity '%s': [%d.%d]: %s", entityId, errP->domain, errP->code, errP->message);
   }
 
   bson_destroy(&request);

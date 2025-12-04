@@ -28,13 +28,11 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjArray, kjChildAdd
 #include "kjson/kjRender.h"                                      // TMP: kjFastRender
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
 
 #include "orionld/common/orionldState.h"                         // orionldState, mongocContextsSem
 #include "orionld/mongoc/mongocConnectionGet.h"                  // mongocConnectionGet
@@ -70,7 +68,7 @@ KjNode* mongocContextCacheGet(void)
 
     if (contextNodeP == NULL)
     {
-      LM_E(("Database Error parsing retrieved contexts (%s: %s)", title, detail));
+      KT_E("Database Error parsing retrieved contexts (%s: %s)", title, detail);
       continue;
     }
 

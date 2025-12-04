@@ -27,16 +27,16 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kbase/kMacros.h"                                       // K_FT
 #include "kbase/kTime.h"                                         // kTimeGet
+#include "kalloc/kaAlloc.h"                                      // kaAlloc
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjObject, ...
 #include "kjson/kjChildPrepend.h"                                // kjChildPrepend
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/numberToDate.h"                         // numberToDate
@@ -65,16 +65,10 @@ static bool timestampToString(KjNode* nodeP)
   else if (nodeP->type == KjInt)
     timestamp = nodeP->value.i;
   else
-  {
-    LM_E(("Internal Error (not a number: %s)", kjValueType(nodeP->type)));
-    return false;
-  }
+    KT_RE(false, "Internal Error (not a number: %s)", kjValueType(nodeP->type));
 
   if (numberToDate(timestamp, dateBuf, 64) == false)
-  {
-    LM_E(("Database Error (numberToDate failed)"));
-    return false;
-  }
+    KT_RE(false, "Database Error (numberToDate failed)");
 
   nodeP->type    = KjString;
   nodeP->value.s = dateBuf;
@@ -97,15 +91,9 @@ static bool presentationAttributeFix(KjNode* attrP, const char* entityId, bool s
     KjNode* typeP = kjLookup(attrP, "type");
 
     if (typeP == NULL)
-    {
-      LM_E(("No 'type' field found"));
-      return false;
-    }
+      KT_RE(false, "No 'type' field found");
     else if (typeP->type != KjString)
-    {
-      LM_E(("'type' field not a string"));
-      return false;
-    }
+      KT_RE(false, "'type' field not a string");
 
     //
     // FIXME: Here I need to know what to look for!!!
@@ -117,7 +105,7 @@ static bool presentationAttributeFix(KjNode* attrP, const char* entityId, bool s
 
     if (valueP == NULL)
     {
-      LM_E(("Database Error (the %s '%s' has no value)", typeP->value.s, attrP->name));
+      KT_E("Database Error (the %s '%s' has no value)", typeP->value.s, attrP->name);
       valueP = kjString(orionldState.kjsonP, "value", "Internal Error - attribute value lost");
     }
 
@@ -213,26 +201,17 @@ static bool datamodelAttributeFix(KjNode* attrP, const char* entityId, bool sysA
   KjNode* typeP = kjLookup(attrP, "type");
 
   if (typeP == NULL)
-  {
-    LM_E(("Database Error (field 'type' not found for attribute '%s' of entity '%s')", attrP->name, entityId));
-    return false;
-  }
+    KT_RE(false, "Database Error (field 'type' not found for attribute '%s' of entity '%s')", attrP->name, entityId);
 
   if (typeP->type != KjString)
-  {
-    LM_E(("Database Error (field 'type' not a String for attribute '%s' of entity '%s')", attrP->name, entityId));
-    return false;
-  }
+    KT_RE(false, "Database Error (field 'type' not a String for attribute '%s' of entity '%s')", attrP->name, entityId);
 
   if (strcmp(typeP->value.s, "Relationship") == 0)
   {
     KjNode* objectP = kjLookup(attrP, "value");
 
     if (objectP == NULL)
-    {
-      LM_E(("Database Error (field 'value' not found for attribute '%s' of entity '%s')", attrP->name, entityId));
-      return false;
-    }
+      KT_RE(false, "Database Error (field 'value' not found for attribute '%s' of entity '%s')", attrP->name, entityId);
 
     objectP->name = (char*) "object";
   }
@@ -241,10 +220,7 @@ static bool datamodelAttributeFix(KjNode* attrP, const char* entityId, bool sysA
     KjNode* languageMapP = kjLookup(attrP, "value");
 
     if (languageMapP == NULL)
-    {
-      LM_E(("Database Error (field 'value' not found for attribute '%s' of entity '%s')", attrP->name, entityId));
-      return false;
-    }
+      KT_RE(false, "Database Error (field 'value' not found for attribute '%s' of entity '%s')", attrP->name, entityId);
 
     // If the language is asked for, then the LanguageProperty is converted into a normal property ...
     if (lang != NULL)
@@ -335,15 +311,9 @@ static bool datamodelAttributeFix(KjNode* attrP, const char* entityId, bool sysA
       // If Relationship - change 'value' for 'object'
       KjNode* typeP = kjLookup(metadataP, "type");
       if (typeP == NULL)
-      {
-        LM_E(("Database Error (field 'type' not found for metadata '%s' of attribute '%s' of entity '%s')", metadataP->name, attrP->name, entityId));
-        return false;
-      }
+        KT_RE(false, "Database Error (field 'type' not found for metadata '%s' of attribute '%s' of entity '%s')", metadataP->name, attrP->name, entityId);
       else if (typeP->type != KjString)
-      {
-        LM_E(("Database Error (field 'type' not a String for metadata '%s' of attribute '%s' of entity '%s')", metadataP->name, attrP->name, entityId));
-        return false;
-      }
+        KT_RE(false, "Database Error (field 'type' not a String for metadata '%s' of attribute '%s' of entity '%s')", metadataP->name, attrP->name, entityId);
 
       if (strcmp(typeP->value.s, "Relationship") == 0)
       {
@@ -420,7 +390,7 @@ KjNode* mongocEntityRetrieve
   // semTake(&mongoEntitiesSem);
   if ((mongoCursorP = mongoc_collection_find_with_opts(orionldState.mongoc.entitiesP, &mongoFilter, NULL, NULL)) == NULL)
   {
-    LM_E(("Internal Error (mongoc_collection_find_with_opts ERROR)"));
+    KT_E("Internal Error (mongoc_collection_find_with_opts ERROR)");
     bson_destroy(&mongoFilter);
     return NULL;
   }
@@ -445,7 +415,7 @@ KjNode* mongocEntityRetrieve
 
   if (mongoc_cursor_error(mongoCursorP, &mongoError))
   {
-    LM_E(("Internal Error (DB Error '%s')", mongoError.message));
+    KT_E("Internal Error (DB Error '%s')", mongoError.message);
     bson_destroy(&mongoFilter);
     mongoc_cursor_destroy(mongoCursorP);
     return NULL;
@@ -468,10 +438,7 @@ KjNode* mongocEntityRetrieve
   KjNode*  dbDataSetsP        = kjLookup(dbTree, "@datasets");  // May not be there
 
   if (dbAttrsP == NULL)
-  {
-    LM_E(("Internal Error (field 'attrs' not found for entity '%s')", entityId));
-    return NULL;
-  }
+    KT_RE(NULL, "Internal Error (field 'attrs' not found for entity '%s')", entityId);
 
   //
   // Attributes may be found both in dbAttrsP and in dbDataSetsP
@@ -642,10 +609,7 @@ KjNode* mongocEntityRetrieve
     if (attrP->type == KjObject)
     {
       if (presentationAttributeFix(attrP, entityId, sysAttrs, keyValues, lang) == false)
-      {
-        LM_E(("Internal Error (presentationAttributeFix failed)"));
-        return NULL;
-      }
+        KT_RE(NULL, "Internal Error (presentationAttributeFix failed)");
     }
     else  // KjArray
     {
@@ -653,10 +617,8 @@ KjNode* mongocEntityRetrieve
       for (KjNode* aP = attrP->value.firstChildP; aP != NULL; aP = aP->next)
       {
         if (presentationAttributeFix(aP, entityId, sysAttrs, keyValues, lang) == false)
-        {
-          LM_E(("presentationAttributeFix failed"));
-          return NULL;
-        }
+          KT_RE(NULL, "presentationAttributeFix failed");
+
         ++instances;
       }
 
@@ -673,19 +635,13 @@ KjNode* mongocEntityRetrieve
   KjNode* idP = kjLookup(dbTree, "_id");
 
   if (idP == NULL)
-  {
-    LM_E(("Internal Error (field '_id' not found for entity '%s')", entityId));
-    return NULL;
-  }
+    KT_RE(NULL, "Internal Error (field '_id' not found for entity '%s')", entityId);
 
   KjNode* typeP        = kjLookup(idP, "type");
   KjNode* servicePathP = kjLookup(idP, "servicePath");
 
   if (typeP == NULL)
-  {
-    LM_E(("Internal Error (field '_id.type' not found for entity '%s')", entityId));
-    return NULL;
-  }
+    KT_RE(NULL, "Internal Error (field '_id.type' not found for entity '%s')", entityId);
 
   if (servicePathP != NULL)
     kjChildRemove(idP, servicePathP);

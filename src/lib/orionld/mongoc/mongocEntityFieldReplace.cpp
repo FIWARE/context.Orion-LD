@@ -27,12 +27,12 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kjson/KjNode.h"                                        // KjNode
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // StMongoc
 #include "orionld/mongoc/mongocWriteLog.h"                       // MONGOC_WLOG
 #include "orionld/mongoc/mongocConnectionGet.h"                  // mongocConnectionGet
 #include "orionld/mongoc/mongocKjTreeToBson.h"                   // mongocKjTreeToBson
@@ -68,20 +68,20 @@ bool mongocEntityFieldReplace(const char* entityId, const char* dbFieldPath, KjN
   else if (newValue->type == KjObject)
     bson_append_document(&set, dbFieldPath, -1, &dataset);
   else
-    LM_X(1, ("501 - the JSON type '%s' is not supported - easy fix - needs recompilation", kjValueType(newValue->type)));
+    KT_X(1, "501 - the JSON type '%s' is not supported - easy fix - needs recompilation", kjValueType(newValue->type));
 
   bson_destroy(&dataset);
 
   bson_append_document(&request, "$set", 4, &set);
   bson_destroy(&set);
 
-  MONGOC_WLOG("Replacing a field", orionldState.tenantP->mongoDbName, "entities", &selector, &request, LmtMongoc);
+  MONGOC_WLOG("Replacing a field", orionldState.tenantP->mongoDbName, "entities", &selector, &request, StMongoc);
   bool dbResult = mongoc_collection_update_one(orionldState.mongoc.entitiesP, &selector, &request, NULL, &reply, &orionldState.mongoc.error);
   if (dbResult == false)
   {
     bson_error_t* errP = &orionldState.mongoc.error;
     *detailP = errP->message;
-    LM_E(("mongoc error replacing a filed of entity '%s': [%d.%d]: %s", entityId, errP->domain, errP->code, errP->message));
+    KT_E("mongoc error replacing a filed of entity '%s': [%d.%d]: %s", entityId, errP->domain, errP->code, errP->message);
   }
 
   bson_destroy(&request);

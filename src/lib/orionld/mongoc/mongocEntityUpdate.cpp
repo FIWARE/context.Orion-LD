@@ -27,16 +27,16 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjRender.h"                                      // kjFastRender
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/dotForEq.h"                             // dotForEq
-#include "orionld/kjTree/kjTreeLog.h"                            // LM_TREE
+#include "orionld/common/traceLevels.h"                          // StMongoc
+#include "orionld/kjTree/kjTreeLog.h"                            // KT_TREE
 #include "orionld/mongoc/mongocWriteLog.h"                       // MONGOC_WLOG
 #include "orionld/mongoc/mongocConnectionGet.h"                  // mongocConnectionGet
 #include "orionld/mongoc/mongocKjTreeToBson.h"                   // mongocKjTreeToBson
@@ -102,7 +102,7 @@ static void mongocKjTreeToUpdateBson
           if (isValue)
           {
             bson_t compound;
-            LM_T(LmtMongoc, ("Member '%s' has a value that is a compound object - calling mongocKjTreeToBson", subAttrP->name));
+            KT_T(StMongoc, "Member '%s' has a value that is a compound object - calling mongocKjTreeToBson", subAttrP->name);
             mongocKjTreeToBson(subAttrP, &compound);
             bson_append_document(setP, path, pathLen, &compound);
           }
@@ -111,7 +111,7 @@ static void mongocKjTreeToUpdateBson
             int    bsonPathLen = strlen(bsonPath) + 1 + strlen(attrP->name) + 1;
             char*  bsonPath2   = kaAlloc(&orionldState.kalloc, bsonPathLen);
 
-            LM_T(LmtMongoc, ("Member '%s' has a value that is a simple value - calling mongocKjTreeToUpdateBson", subAttrP->name));
+            KT_T(StMongoc, "Member '%s' has a value that is a simple value - calling mongocKjTreeToUpdateBson", subAttrP->name);
             snprintf(bsonPath2, bsonPathLen, "%s.%s", bsonPath, attrP->name);
             mongocKjTreeToUpdateBson(subAttrP, setP, unsetP, bsonPath2, NULL, NULL, NULL, level + 1);  // Perhaps another function for sub-attributes ...?
           }
@@ -122,12 +122,12 @@ static void mongocKjTreeToUpdateBson
           {
             bson_t compound;
 
-            LM_T(LmtMongoc, ("Array member '%s' is a compound object - calling mongocKjTreeToBson", subAttrP->name));
+            KT_T(StMongoc, "Array member '%s' is a compound object - calling mongocKjTreeToBson", subAttrP->name);
             mongocKjTreeToBson(subAttrP, &compound);
             bson_append_array(setP, path, pathLen, &compound);
           }
           else
-            LM_T(LmtMongoc, ("Wait, what???"));
+            KT_T(StMongoc, "Wait, what???");
         }
 
         ++jx;
@@ -217,7 +217,7 @@ static bool patchApply
           char buf[16];
           int  bufLen = mongocIndexString(ix, buf);
 
-          LM_T(LmtMongoc, ("Array Index: '%s'", buf));
+          KT_T(StMongoc, "Array Index: '%s'", buf);
           bson_append_utf8(&commaArrayBson, buf, bufLen, itemNameP->value.s, -1);
           ++ix;
         }
@@ -243,15 +243,15 @@ static bool patchApply
     else if (tree->type == KjBoolean)  bson_append_bool(setP,   path, -1, tree->value.b);
     else if (tree->type == KjArray)
     {
-      LM_T(LmtMongoc, ("'%s' is an Array - calling mongocKjTreeToBson", tree->name));
-      LM_TREE(tree, "TREE", LmtMongoc);
+      KT_T(StMongoc, "'%s' is an Array - calling mongocKjTreeToBson", tree->name);
+      KT_TREE(tree, "TREE", StMongoc);
       mongocKjTreeToBson(tree, &compound);
       bson_append_array(setP, path, -1, &compound);
       bson_destroy(&compound);
     }
     else if (tree->type == KjObject)
     {
-      LM_T(LmtMongoc, ("'%s' is an Object - calling mongocKjTreeToBson", tree->name));
+      KT_T(StMongoc, "'%s' is an Object - calling mongocKjTreeToBson", tree->name);
       mongocKjTreeToBson(tree, &compound);
       bson_append_document(setP, path, -1, &compound);
       bson_destroy(&compound);
@@ -302,12 +302,12 @@ bool mongocEntityUpdate(const char* entityId, KjNode* patchTree)
   if (pulls  > 0)    bson_append_document(&request, "$pull",  5, &pull);
   if (pushes > 0)    bson_append_document(&request, "$push",  5, &push);
 
-  MONGOC_WLOG("PATCH Entity", orionldState.tenantP->mongoDbName, "entities", &selector, &request, LmtMongoc);
+  MONGOC_WLOG("PATCH Entity", orionldState.tenantP->mongoDbName, "entities", &selector, &request, StMongoc);
   bool b = mongoc_collection_update_one(orionldState.mongoc.entitiesP, &selector, &request, NULL, &reply, &orionldState.mongoc.error);
   if (b == false)
   {
     bson_error_t* errP = &orionldState.mongoc.error;
-    LM_E(("mongoc error updating entity '%s': [%d.%d]: %s", entityId, errP->domain, errP->code, errP->message));
+    KT_E("mongoc error updating entity '%s': [%d.%d]: %s", entityId, errP->domain, errP->code, errP->message);
   }
 
   // bson_error_t* errP = &orionldState.mongoc.error;
