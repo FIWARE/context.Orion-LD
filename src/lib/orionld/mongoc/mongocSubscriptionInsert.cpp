@@ -27,13 +27,13 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kjson/KjNode.h"                                        // KjNode
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
+#include "orionld/common/traceLevels.h"                          // StMongoc
 #include "orionld/mongoc/mongocConnectionGet.h"                  // mongocConnectionGet
 #include "orionld/mongoc/mongocKjTreeToBson.h"                   // mongocKjTreeToBson
 #include "orionld/mongoc/mongocWriteLog.h"                       // MONGOC_WLOG
@@ -59,7 +59,7 @@ bool mongocSubscriptionInsert(KjNode* dbSubscriptionP, const char* subscriptionI
 
   mongocKjTreeToBson(dbSubscriptionP, &document);
 
-  MONGOC_WLOG("Inserting a Subscription", orionldState.tenantP->mongoDbName, "csubs", NULL, &document, LmtMongoc);
+  MONGOC_WLOG("Inserting a Subscription", orionldState.tenantP->mongoDbName, "csubs", NULL, &document, StMongoc);
   bool b = mongoc_collection_insert_one(orionldState.mongoc.subscriptionsP, &document, NULL, &reply, &orionldState.mongoc.error);
   if (b == false)
   {
@@ -67,7 +67,7 @@ bool mongocSubscriptionInsert(KjNode* dbSubscriptionP, const char* subscriptionI
     bson_error_t* errP = &orionldState.mongoc.error;
 
     snprintf(eBuf, sizeof(eBuf), "mongoc error inserting subscription '%s': [%d.%d]: %s", subscriptionId, errP->domain, errP->code, errP->message);
-    LM_E(("%s", eBuf));
+    KT_E("%s", eBuf);
     orionldError(OrionldInternalError, "Database Error", eBuf, 500);
   }
 

@@ -27,14 +27,15 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                        // trace messages - ktrace library
+#include "ktrace/ktTraceLevelCheck.h"                             // ktTraceLevelCheck
 #include "kjson/KjNode.h"                                         // KjNode
 #include "kjson/kjLookup.h"                                       // kjLookup
 }
 
-#include "logMsg/logMsg.h"                                        // LM_*
-
 #include "orionld/common/orionldState.h"                          // orionldState
 #include "orionld/common/tenantList.h"                            // tenantList
+#include "orionld/common/traceLevels.h"                           // StMongoc
 #include "orionld/db/dbGeoIndexLookup.h"                          // dbGeoIndexLookup
 #include "orionld/mongoc/mongocConnectionGet.h"                   // mongocConnectionGet
 #include "orionld/mongoc/mongocKjTreeFromBson.h"                  // mongocKjTreeFromBson
@@ -73,7 +74,7 @@ bool mongocGeoIndexInit(void)
     //
     mCollectionP = mongoc_client_get_collection(orionldState.mongoc.client, tenantP->mongoDbName, "entities");
     if (mCollectionP == NULL)
-      LM_X(1, ("mongoc_client_get_collection failed for 'entities' collection on tenant '%s'", tenantP->mongoDbName));
+      KT_X(1, "mongoc_client_get_collection failed for 'entities' collection on tenant '%s'", tenantP->mongoDbName);
 
     // Aggregation pipeline
 
@@ -128,10 +129,10 @@ bool mongocGeoIndexInit(void)
     // Append the array to the pipeline
     bson_append_array(pipeline, "pipeline", 8, objectArray);
 
-    if (lmTraceIsSet(LmtMongoc))
+    if (ktTraceLevelCheck(StMongoc))
     {
       char* str = bson_as_relaxed_extended_json(pipeline, NULL);
-      LM_T(LmtMongoc, ("%s", str));
+      KT_T(StMongoc, "%s", str);
       bson_free(str);
     }
 
@@ -148,7 +149,7 @@ bool mongocGeoIndexInit(void)
 
     if (mongoCursorP == NULL)
     {
-      LM_E(("Internal Error (mongoc_collection_aggregate ERROR)"));
+      KT_E("Internal Error (mongoc_collection_aggregate ERROR)");
       mongoc_collection_destroy(mCollectionP);
       mongoc_cursor_destroy(mongoCursorP);
       return NULL;
@@ -166,18 +167,18 @@ bool mongocGeoIndexInit(void)
 
       if (_idNodeP == NULL)
       {
-        LM_W(("_idNodeP is NULL"));
+        KT_W("_idNodeP is NULL");
         continue;
       }
 
       char* geoPropertyName = _idNodeP->value.s;
 
-      LM_T(LmtMongoc, ("Found geoProperty: '%s'", geoPropertyName));
+      KT_T(StMongoc, "Found geoProperty: '%s'", geoPropertyName);
 
       if (dbGeoIndexLookup(tenantP->tenant, geoPropertyName) == NULL)
       {
         mongocGeoIndexCreate(tenantP, geoPropertyName);
-        LM_T(LmtMongoc, ("Creating index for property '%s'", geoPropertyName));
+        KT_T(StMongoc, "Creating index for property '%s'", geoPropertyName);
       }
     }
 

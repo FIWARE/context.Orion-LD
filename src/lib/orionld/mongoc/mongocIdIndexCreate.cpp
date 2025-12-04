@@ -27,11 +27,10 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                        // trace messages - ktrace library
 #include "kalloc/kaAlloc.h"                                       // kaAlloc
 #include "kalloc/kaStrdup.h"                                      // kaStrdup
 }
-
-#include "logMsg/logMsg.h"                                        // LM_*
 
 #include "orionld/common/orionldState.h"                          // kalloc
 #include "orionld/common/dotForEq.h"                              // dotForEq
@@ -73,7 +72,7 @@ bool mongocIdIndexCreate(OrionldTenant* tenantP)
 
   if (mongoc_database_write_command_with_opts(dbP, createIndexCommand, NULL, &reply, &mcError) == false)
   {
-    LM_E(("Database Error (error creating index for _id.id for db '%s': %s)", tenantP->mongoDbName, mcError.message));
+    KT_E("Database Error (error creating index for _id.id for db '%s': %s)", tenantP->mongoDbName, mcError.message);
     return false;
   }
 

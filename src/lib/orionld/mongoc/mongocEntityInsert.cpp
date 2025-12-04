@@ -27,12 +27,12 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kjson/KjNode.h"                                        // KjNode
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // StMongoc
 #include "orionld/mongoc/mongocConnectionGet.h"                  // mongocConnectionGet
 #include "orionld/mongoc/mongocKjTreeToBson.h"                   // mongocKjTreeToBson
 #include "orionld/mongoc/mongocWriteLog.h"                       // MONGOC_WLOG
@@ -58,12 +58,12 @@ bool mongocEntityInsert(KjNode* dbEntityP, const char* entityId)
 
   mongocKjTreeToBson(dbEntityP, &document);
 
-  MONGOC_WLOG("Creating Entity", orionldState.tenantP->mongoDbName, "entities", NULL, &document, LmtMongoc);
+  MONGOC_WLOG("Creating Entity", orionldState.tenantP->mongoDbName, "entities", NULL, &document, StMongoc);
   bool b = mongoc_collection_insert_one(orionldState.mongoc.entitiesP, &document, NULL, &reply, &orionldState.mongoc.error);
   if (b == false)
   {
     bson_error_t* errP = &orionldState.mongoc.error;
-    LM_E(("mongoc error inserting entity '%s': [%d.%d]: %s", entityId, errP->domain, errP->code, errP->message));
+    KT_E("mongoc error inserting entity '%s': [%d.%d]: %s", entityId, errP->domain, errP->code, errP->message);
   }
 
   // mongocConnectionRelease(); - done at the end of the request - the connection is needed for Subs, Regs, ...

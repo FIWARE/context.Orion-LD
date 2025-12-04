@@ -26,20 +26,20 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/types/OrionldTenant.h"                         // OrionldTenant
 #include "orionld/types/QNode.h"                                 // QNode
 #include "orionld/common/orionldState.h"                         // mongocPool
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/subCacheApiSubscriptionInsert.h"        // subCacheApiSubscriptionInsert
 #include "orionld/pernot/pernotSubCacheAdd.h"                    // pernotSubCacheAdd
 #include "orionld/dbModel/dbModelToApiSubscription.h"            // dbModelToApiSubscription
 #include "orionld/context/orionldContextFromUrl.h"               // orionldContextFromUrl
-#include "orionld/kjTree/kjTreeLog.h"                            // LM_TREE
+#include "orionld/kjTree/kjTreeLog.h"                            // KT_TREE
 #include "orionld/mongoc/mongocWriteLog.h"                       // MONGOC_RLOG
 #include "orionld/mongoc/mongocKjTreeFromBson.h"                 // mongocKjTreeFromBson
 #include "orionld/mongoc/mongocSubCachePopulateByTenant.h"       // Own interface
@@ -80,18 +80,18 @@ bool mongocSubCachePopulateByTenant(OrionldTenant* tenantP, bool refresh)
   mongoc_collection_t* subscriptionsP = mongoc_client_get_collection(connectionP, tenantP->mongoDbName, "csubs");
 
   if (subscriptionsP == NULL)
-    LM_X(1, ("mongoc_client_get_collection failed for 'csubs' collection on tenant '%s'", tenantP->mongoDbName));
+    KT_X(1, "mongoc_client_get_collection failed for 'csubs' collection on tenant '%s'", tenantP->mongoDbName);
 
   //
   // Run the query
   //
   // semTake(&mongoSubscriptionsSem);
-  MONGOC_RLOG("Subscription for sub-cache", tenantP->mongoDbName, "subscriptions", &mongoFilter, NULL, LmtMongoc);
+  MONGOC_RLOG("Subscription for sub-cache", tenantP->mongoDbName, "subscriptions", &mongoFilter, NULL, StMongoc);
   if ((mongoCursorP = mongoc_collection_find_with_opts(subscriptionsP, &mongoFilter, NULL, NULL)) == NULL)
   {
     mongoc_client_pool_push(mongocPool, connectionP);
     mongoc_collection_destroy(subscriptionsP);
-    LM_RE(false, ("Internal Error (mongoc_collection_find_with_opts ERROR)"));
+    KT_RE(false, "Internal Error (mongoc_collection_find_with_opts ERROR)");
   }
 
   if (refresh == true)
@@ -107,7 +107,7 @@ bool mongocSubCachePopulateByTenant(OrionldTenant* tenantP, bool refresh)
     char* tenantName = (tenantP != NULL)? tenantP->tenant : NULL;
     for (CachedSubscription* cSubP = subCacheHeadGet(); cSubP != NULL; cSubP = cSubP->next)
     {
-      LM_T(LmtSubCacheSync, ("tenantName: '%s' (cSubP->tenant: '%s')", tenantName, cSubP->tenant));
+      KT_T(KtSubCacheSync, "tenantName: '%s' (cSubP->tenant: '%s')", tenantName, cSubP->tenant);
       if (tenantMatch(tenantName, cSubP->tenant) == true)
         cSubP->inDB = false;
     }
@@ -119,7 +119,7 @@ bool mongocSubCachePopulateByTenant(OrionldTenant* tenantP, bool refresh)
 
     if (dbSubP == NULL)
     {
-      LM_E(("Database Error (unable to create tree of subscriptions for tenant '%s')", tenantP->tenant));
+      KT_E("Database Error (unable to create tree of subscriptions for tenant '%s')", tenantP->tenant);
       continue;
     }
 
@@ -131,7 +131,7 @@ bool mongocSubCachePopulateByTenant(OrionldTenant* tenantP, bool refresh)
     OrionldRenderFormat renderFormat  = RF_NORMALIZED;
     double              timeInterval  = 0;
 
-    LM_TREE(dbSubP, "dbSubP", LmtPernot);
+    KT_TREE(dbSubP, "dbSubP", KtPernot);
     KjNode*      apiSubP       = dbModelToApiSubscription(dbSubP,
                                                           tenantP->tenant,
                                                           true,
@@ -146,7 +146,7 @@ bool mongocSubCachePopulateByTenant(OrionldTenant* tenantP, bool refresh)
     if (apiSubP == NULL)
       continue;
 
-    LM_TREE(apiSubP, "apiSubP", LmtPernot);
+    KT_TREE(apiSubP, "apiSubP", KtPernot);
 
     OrionldContext* contextP = NULL;
     if (contextNodeP != NULL)
@@ -189,7 +189,7 @@ bool mongocSubCachePopulateByTenant(OrionldTenant* tenantP, bool refresh)
   if (mongoc_cursor_error(mongoCursorP, &mongoError))
   {
     r = false;
-    LM_E(("Internal Error (DB Error '%s')", mongoError.message));
+    KT_E("Internal Error (DB Error '%s')", mongoError.message);
   }
 
   mongoc_cursor_destroy(mongoCursorP);

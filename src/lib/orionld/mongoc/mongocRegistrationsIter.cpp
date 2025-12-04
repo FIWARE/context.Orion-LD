@@ -26,15 +26,15 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjArray, kjChildAdd, ...
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/types/RegCache.h"                              // RegCache
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/mongoc/mongocWriteLog.h"                       // MONGOC_RLOG
 #include "orionld/mongoc/mongocConnectionRelease.h"              // mongocConnectionRelease
 #include "orionld/mongoc/mongocConnectionGet.h"                  // mongocConnectionGet
@@ -71,12 +71,12 @@ int mongocRegistrationsIter(RegCache* rcP, RegCacheIterFunc callback)
   mongoc_collection_t* regsCollectionP = mongoc_client_get_collection(orionldState.mongoc.client, rcP->tenantP->mongoDbName, "registrations");
 
   if (regsCollectionP == NULL)
-    LM_X(1, ("mongoc_client_get_collection failed for 'registrations' collection on tenant '%s'", rcP->tenantP->mongoDbName));
+    KT_X(1, "mongoc_client_get_collection failed for 'registrations' collection on tenant '%s'", rcP->tenantP->mongoDbName);
 
   //
   // Run the query
   //
-  MONGOC_RLOG("Query for all regs", rcP->tenantP->mongoDbName, "registrations", NULL, NULL, LmtMongoc);
+  MONGOC_RLOG("Query for all regs", rcP->tenantP->mongoDbName, "registrations", NULL, NULL, StMongoc);
   mongoCursorP = mongoc_collection_find_with_opts(regsCollectionP, &mongoFilter, NULL, readPrefs);
   if (mongoCursorP == NULL)
   {
@@ -91,7 +91,7 @@ int mongocRegistrationsIter(RegCache* rcP, RegCacheIterFunc callback)
   while (mongoc_cursor_next(mongoCursorP, &mongoDocP))
   {
     char* json = bson_as_relaxed_extended_json(mongoDocP, NULL);
-    LM_T(LmtMongoc, ("Found a registration in the DB: '%s'", json));
+    KT_T(StMongoc, "Found a registration in the DB: '%s'", json);
     bson_free(json);
 
     KjNode* dbRegP = mongocKjTreeFromBson(mongoDocP, &title, &details);
@@ -110,7 +110,7 @@ int mongocRegistrationsIter(RegCache* rcP, RegCacheIterFunc callback)
     ++hits;
   }
 
-  LM_T(LmtMongoc, ("Found %d hits in the db", hits));
+  KT_T(StMongoc, "Found %d hits in the db", hits);
 
   if (mongoc_cursor_error(mongoCursorP, &mongoError))
   {

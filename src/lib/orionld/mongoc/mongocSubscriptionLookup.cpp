@@ -26,12 +26,12 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kjson/KjNode.h"                                        // KjNode
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // StMongoc
 #include "orionld/mongoc/mongocConnectionGet.h"                  // mongocConnectionGet
 #include "orionld/mongoc/mongocKjTreeFromBson.h"                 // mongocKjTreeFromBson
 #include "orionld/mongoc/mongocWriteLog.h"                       // MONGOC_WLOG - FIXME: change name to mongocLog.h
@@ -65,10 +65,10 @@ KjNode* mongocSubscriptionLookup(const char* subscriptionId)
   // Run the query
   //
   // semTake(&mongoSubscriptionsSem);
-  MONGOC_RLOG("Lookup Subscription", orionldState.tenantP->mongoDbName, "subscriptions", &mongoFilter, NULL, LmtMongoc);
+  MONGOC_RLOG("Lookup Subscription", orionldState.tenantP->mongoDbName, "subscriptions", &mongoFilter, NULL, StMongoc);
   if ((mongoCursorP = mongoc_collection_find_with_opts(orionldState.mongoc.subscriptionsP, &mongoFilter, NULL, NULL)) == NULL)
   {
-    LM_E(("Internal Error (mongoc_collection_find_with_opts ERROR)"));
+    KT_E("Internal Error (mongoc_collection_find_with_opts ERROR)");
     return NULL;
   }
 
@@ -80,7 +80,7 @@ KjNode* mongocSubscriptionLookup(const char* subscriptionId)
 
   if (mongoc_cursor_error(mongoCursorP, &mongoError))
   {
-    LM_E(("Internal Error (DB Error '%s')", mongoError.message));
+    KT_E("Internal Error (DB Error '%s')", mongoError.message);
     return NULL;
   }
 

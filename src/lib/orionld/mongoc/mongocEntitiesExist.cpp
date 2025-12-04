@@ -25,10 +25,9 @@
 #include <bson/bson.h>                                           // bson_t, ...
 #include <mongoc/mongoc.h>                                       // MongoDB C Client Driver
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjArray, ...
 }
@@ -126,7 +125,7 @@ KjNode* mongocEntitiesExist(KjNode* entityIdArray, bool entityType)
 
   if (mongoCursorP == NULL)
   {
-    LM_E(("GEO: Database Error (mongoc_collection_find_with_opts ERROR)"));
+    KT_E("GEO: Database Error (mongoc_collection_find_with_opts ERROR)");
     orionldError(OrionldInternalError, "Database Error", "mongoc_collection_find_with_opts failed", 500);
     return NULL;
   }
@@ -141,12 +140,12 @@ KjNode* mongocEntitiesExist(KjNode* entityIdArray, bool entityType)
     if (idNodeP != NULL)
       kjChildAdd(entityIdOutArray, idNodeP);
     else
-      LM_E(("GEO: Database Error (%s: %s)", title, detail));
+      KT_E("GEO: Database Error (%s: %s)", title, detail);
   }
 
   bson_error_t error;
   if (mongoc_cursor_error(mongoCursorP, &error) == true)
-    LM_E(("GEO: mongoc_cursor_error: %d.%d: '%s'", error.domain, error.code, error.message));
+    KT_E("GEO: mongoc_cursor_error: %d.%d: '%s'", error.domain, error.code, error.message);
 
   mongoc_cursor_destroy(mongoCursorP);
 

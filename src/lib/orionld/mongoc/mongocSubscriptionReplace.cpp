@@ -27,14 +27,14 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjChildRemove
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace Levels
 #include "orionld/mongoc/mongocConnectionGet.h"                  // mongocConnectionGet
 #include "orionld/mongoc/mongocKjTreeToBson.h"                   // mongocKjTreeToBson
 #include "orionld/mongoc/mongocWriteLog.h"                       // MONGOC_WLOG
@@ -58,17 +58,17 @@ bool mongocSubscriptionReplace(const char* subscriptionId, KjNode* dbSubscriptio
   bson_init(&replacement);
   bson_init(&reply);
 
-  LM_T(LmtMongoc, ("Creating the _id selector for subscription id '%s'", subscriptionId));
+  KT_T(StMongoc, "Creating the _id selector for subscription id '%s'", subscriptionId);
   bson_append_utf8(&selector, "_id", 3, subscriptionId, -1);
 
   mongocKjTreeToBson(dbSubscriptionP, &replacement);
 
-  MONGOC_WLOG("Replacing Subscription", orionldState.tenantP->mongoDbName, "subscriptions", &selector, &replacement, LmtMongoc);
+  MONGOC_WLOG("Replacing Subscription", orionldState.tenantP->mongoDbName, "subscriptions", &selector, &replacement, StMongoc);
   bool b = mongoc_collection_replace_one(orionldState.mongoc.subscriptionsP, &selector, &replacement, NULL, &reply, &orionldState.mongoc.error);
   if (b == false)
   {
     bson_error_t* errP = &orionldState.mongoc.error;
-    LM_E(("mongoc error replacing subscription '%s': [%d.%d]: %s", subscriptionId, errP->domain, errP->code, errP->message));
+    KT_E("mongoc error replacing subscription '%s': [%d.%d]: %s", subscriptionId, errP->domain, errP->code, errP->message);
   }
 
   // mongocConnectionRelease(); - Not here - done at the end of the request

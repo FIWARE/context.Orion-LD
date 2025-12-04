@@ -26,11 +26,10 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjArray, kjChildAdd, ...
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
@@ -91,7 +90,7 @@ KjNode* mongocSubscriptionsGet(int64_t* countP)
     if (*countP == -1)
     {
       *countP = 0;
-      LM_E(("Database Error (error counting entities: %d.%d: %s)", error.domain, error.code, error.message));
+      KT_E("Database Error (error counting entities: %d.%d: %s)", error.domain, error.code, error.message);
     }
 
     if (limit == 0)  // Only count requested

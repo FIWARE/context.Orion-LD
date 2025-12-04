@@ -26,10 +26,9 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kalloc/kaStrdup.h"                                     // ksStrdup
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
@@ -60,7 +59,7 @@ bool mongocEntityDelete(const char* entityId, char** detailP)
   //
   if (mongoc_collection_remove(orionldState.mongoc.entitiesP, MONGOC_REMOVE_SINGLE_REMOVE, &selector, NULL, &error) == false)
   {
-    LM_E(("Database Error (mongoc_collection_remove returned %d.%d:%s)", error.domain, error.code, error.message));
+    KT_E("Database Error (mongoc_collection_remove returned %d.%d:%s)", error.domain, error.code, error.message);
     orionldError(OrionldInternalError, "Database Error", error.message, 500);
     *detailP = kaStrdup(&orionldState.kalloc, error.message);
     return false;

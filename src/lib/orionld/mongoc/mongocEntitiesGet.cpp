@@ -27,11 +27,10 @@
 
 extern "C"
 {
-#include "kjson/KjNode.h"                                         // KjNode
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
+#include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjArray
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
@@ -107,7 +106,7 @@ KjNode* mongocEntitiesGet(char** fieldV, int fields, bool entityIdPresent)
 
   if (mongoCursorP == NULL)
   {
-    LM_E(("Database Error (mongoc_collection_find_with_opts ERROR)"));
+    KT_E("Database Error (mongoc_collection_find_with_opts ERROR)");
     bson_destroy(&mongoFilter);
     mongoc_read_prefs_destroy(readPrefs);
     orionldError(OrionldInternalError, "Database Error", "mongoc_collection_find_with_opts failed", 500);
@@ -132,12 +131,12 @@ KjNode* mongocEntitiesGet(char** fieldV, int fields, bool entityIdPresent)
       ++hits;
     }
     else
-      LM_E(("Database Error (%s: %s)", title, detail));
+      KT_E("Database Error (%s: %s)", title, detail);
   }
 
   bson_error_t error;
   if (mongoc_cursor_error(mongoCursorP, &error) == true)
-    LM_E(("mongoc_cursor_error: %d.%d: '%s'", error.domain, error.code, error.message));
+    KT_E("mongoc_cursor_error: %d.%d: '%s'", error.domain, error.code, error.message);
 
   mongoc_cursor_destroy(mongoCursorP);
   mongoc_read_prefs_destroy(readPrefs);

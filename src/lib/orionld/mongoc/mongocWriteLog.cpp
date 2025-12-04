@@ -26,11 +26,10 @@
 
 extern "C"
 {
+#include "ktrace/ktOut.h"                                        // ktOut
 #include "kjson/KjNode.h"                                        // KjNode
-#include "kjson/kjLookup.h"                                      // kjLookup
 }
 
-#include "logMsg/logMsg.h"                                       // TraceLevels, LM_T
 #include "orionld/common/fileName.h"                             // fileName
 #include "orionld/mongoc/mongocWriteLog.h"                       // Own interface
 
@@ -58,20 +57,20 @@ void mongocWriteLog
   char line[2048];
 
   snprintf(line, sizeof(line), "---------- %s ----------", msg);
-  lmOut(line,     'T', fileNameOnly, lineNo, functionName, traceLevel, NULL);
+  ktOut(fileNameOnly, lineNo, functionName, 'T', traceLevel, line);
 
   snprintf(line, sizeof(line), "  * Database Name:         '%s'", dbName);
-  lmOut(line,     'T', fileNameOnly, lineNo, functionName, traceLevel, NULL);
+  ktOut(fileNameOnly, lineNo, functionName, 'T', traceLevel, line);
 
   snprintf(line, sizeof(line), "  * Collection Name:       '%s'", collectionName);
-  lmOut(line,     'T', fileNameOnly, lineNo, functionName, traceLevel, NULL);
+  ktOut(fileNameOnly, lineNo, functionName, 'T', traceLevel, line);
 
   if (selectorP != NULL)
   {
     char* selector = bson_as_legacy_extended_json(selectorP, NULL);
 
     snprintf(line, sizeof(line), "  * Selector:              '%s'", selector);
-    lmOut(line, 'T', fileNameOnly, lineNo, functionName, traceLevel, NULL);
+    ktOut(fileNameOnly, lineNo, functionName, 'T', traceLevel, line);
     bson_free(selector);
   }
 
@@ -80,7 +79,7 @@ void mongocWriteLog
     char* request = bson_as_legacy_extended_json(requestP, NULL);
 
     snprintf(line, sizeof(line), "  * Request:               '%s'", request);
-    lmOut(line,     'T', fileNameOnly, lineNo, functionName, traceLevel, NULL);
+    ktOut(fileNameOnly, lineNo, functionName, 'T', traceLevel, line);
     bson_free(request);
   }
 }
@@ -109,20 +108,20 @@ void mongocReadLog
   char line[2048];
 
   snprintf(line, sizeof(line), "---------- %s ----------", msg);
-  lmOut(line,     'T', fileNameOnly, lineNo, functionName, traceLevel, NULL);
+  ktOut(fileNameOnly, lineNo, functionName, 'T', traceLevel, line);
 
   snprintf(line, sizeof(line), "  * Database Name:         '%s'", dbName);
-  lmOut(line,     'T', fileNameOnly, lineNo, functionName, traceLevel, NULL);
+  ktOut(fileNameOnly, lineNo, functionName, 'T', traceLevel, line);
 
   snprintf(line, sizeof(line), "  * Collection Name:       '%s'", collectionName);
-  lmOut(line,     'T', fileNameOnly, lineNo, functionName, traceLevel, NULL);
+  ktOut(fileNameOnly, lineNo, functionName, 'T', traceLevel, line);
 
 
   if (filterP != NULL)
   {
     char* filter = bson_as_legacy_extended_json(filterP, NULL);
     snprintf(line, sizeof(line), "  * Filter:                '%s'", filter);
-    lmOut(line,     'T', fileNameOnly, lineNo, functionName, traceLevel, NULL);
+    ktOut(fileNameOnly, lineNo, functionName, 'T', traceLevel, line);
     bson_free(filter);
   }
 
@@ -130,7 +129,7 @@ void mongocReadLog
   {
     char* options = bson_as_legacy_extended_json(optionsP, NULL);
     snprintf(line, sizeof(line), "  * Options:             '%s'", options);
-    lmOut(line, 'T', fileNameOnly, lineNo, functionName, traceLevel, NULL);
+    ktOut(fileNameOnly, lineNo, functionName, 'T', traceLevel, line);
     bson_free(options);
   }
 }

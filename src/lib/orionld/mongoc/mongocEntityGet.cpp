@@ -25,15 +25,15 @@
 #include <bson/bson.h>                                           // bson_t, ...
 #include <mongoc/mongoc.h>                                       // MongoDB C Client Driver
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kjson/KjNode.h"                                        // KjNode
 }
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
+#include "orionld/common/traceLevels.h"                          // StMongoc
 #include "orionld/mongoc/mongocConnectionGet.h"                  // mongocConnectionGet
 #include "orionld/mongoc/mongocKjTreeFromBson.h"                 // mongocKjTreeFromBson
 #include "orionld/mongoc/mongocWriteLog.h"                       // MONGOC_RLOG - FIXME: change name to mongocLog.h
@@ -99,7 +99,7 @@ KjNode* mongocEntityGet(const char* entityId, const char** projectionV)
   mongoc_read_prefs_t*  readPrefs   = mongoc_read_prefs_new(MONGOC_READ_NEAREST);
   mongoc_cursor_t*      mongoCursorP;
 
-  MONGOC_RLOG("Retrieving Entity", orionldState.tenantP->mongoDbName, "entities", &mongoFilter, &options, LmtMongoc);
+  MONGOC_RLOG("Retrieving Entity", orionldState.tenantP->mongoDbName, "entities", &mongoFilter, &options, StMongoc);
 
   mongoCursorP = mongoc_collection_find_with_opts(orionldState.mongoc.entitiesP, &mongoFilter, &options, readPrefs);
   bson_destroy(&options);
@@ -108,7 +108,7 @@ KjNode* mongocEntityGet(const char* entityId, const char** projectionV)
 
   if (mongoCursorP == NULL)
   {
-    LM_E(("Database Error (mongoc_collection_find_with_opts ERROR)"));
+    KT_E("Database Error (mongoc_collection_find_with_opts ERROR)");
     orionldError(OrionldInternalError, "Database Error", "mongoc_collection_find_with_opts failed", 500);
     return NULL;
   }
@@ -123,7 +123,7 @@ KjNode* mongocEntityGet(const char* entityId, const char** projectionV)
   char* detail = (char*) "detail";
   entityNodeP = mongocKjTreeFromBson(mongoDocP, &title, &detail);
   if (entityNodeP == NULL)
-    LM_E(("mongocKjTreeFromBson: %s: %s", title, detail));
+    KT_E("mongocKjTreeFromBson: %s: %s", title, detail);
 
   mongoc_cursor_destroy(mongoCursorP);
 

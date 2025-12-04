@@ -27,11 +27,10 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjArray
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
@@ -80,7 +79,7 @@ KjNode* mongocEntityTypeGet(OrionldProblemDetails* pdP, const char* typeLongName
 
   if (mongoCursorP == NULL)
   {
-    LM_E(("Database Error (mongoc_collection_find_with_opts ERROR)"));
+    KT_E("Database Error (mongoc_collection_find_with_opts ERROR)");
     bson_destroy(&mongoFilter);
     mongoc_read_prefs_destroy(readPrefs);
     orionldError(OrionldInternalError, "Database Error", "mongoc_collection_find_with_opts failed", 500);
@@ -96,7 +95,7 @@ KjNode* mongocEntityTypeGet(OrionldProblemDetails* pdP, const char* typeLongName
 
     if (kjTree == NULL)
     {
-      LM_E(("%s: %s", title, detail));
+      KT_E("%s: %s", title, detail);
       continue;
     }
 
@@ -107,7 +106,7 @@ KjNode* mongocEntityTypeGet(OrionldProblemDetails* pdP, const char* typeLongName
       kjChildAdd(outArray, entityP);
     }
     else
-      LM_E(("Internal Error (kjAttributesWithTypeExtract failed)"));
+      KT_E("Internal Error (kjAttributesWithTypeExtract failed)");
   }
 
   mongoc_read_prefs_destroy(readPrefs);

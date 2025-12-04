@@ -28,11 +28,10 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                         // trace messages - ktrace library
 #include "kjson/KjNode.h"                                          // KjNode
 #include "kjson/kjBuilder.h"                                       // kjArray
 }
-
-#include "logMsg/logMsg.h"                                         // LM_*
 
 #include "orionld/common/orionldState.h"                           // orionldState
 #include "orionld/mongoc/mongocConnectionGet.h"                    // mongocConnectionGet
@@ -90,7 +89,7 @@ KjNode* mongocEntityTypesFromRegistrationsGet(bool details, const char* entityTy
 
   if ((mongoCursorP = mongoc_collection_find_with_opts(orionldState.mongoc.registrationsP, &mongoFilter, &options, readPrefs)) == NULL)
   {
-    LM_E(("Internal Error (mongoc_collection_find_with_opts ERROR)"));
+    KT_E("Internal Error (mongoc_collection_find_with_opts ERROR)");
     mongoc_read_prefs_destroy(readPrefs);
     bson_destroy(&options);
     bson_destroy(&mongoFilter);
@@ -108,7 +107,7 @@ KjNode* mongocEntityTypesFromRegistrationsGet(bool details, const char* entityTy
 
     registrationNodeP = mongocKjTreeFromBson(mongoDocP, &title, &detail);
     if (registrationNodeP == NULL)
-      LM_E(("%s: %s", title, detail));
+      KT_E("%s: %s", title, detail);
     else
     {
       if (kjRegArray == NULL)
@@ -119,7 +118,7 @@ KjNode* mongocEntityTypesFromRegistrationsGet(bool details, const char* entityTy
 
   if (mongoc_cursor_error(mongoCursorP, &mongoError))
   {
-    LM_E(("Internal Error (DB Error '%s')", mongoError.message));
+    KT_E("Internal Error (DB Error '%s')", mongoError.message);
     bson_destroy(&options);
     mongoc_cursor_destroy(mongoCursorP);
     mongoc_read_prefs_destroy(readPrefs);

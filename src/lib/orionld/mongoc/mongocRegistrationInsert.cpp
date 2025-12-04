@@ -27,10 +27,9 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kjson/KjNode.h"                                        // KjNode
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
@@ -65,7 +64,7 @@ bool mongocRegistrationInsert(KjNode* dbRegistrationP, const char* registrationI
     bson_error_t* errP = &orionldState.mongoc.error;
 
     snprintf(eBuf, sizeof(eBuf), "mongoc error inserting registration '%s': [%d.%d]: %s", registrationId, errP->domain, errP->code, errP->message);
-    LM_E(("%s", eBuf));
+    KT_E("%s", eBuf);
     orionldError(OrionldInternalError, "Database Error", eBuf, 500);
   }
 

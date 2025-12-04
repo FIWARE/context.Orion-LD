@@ -27,10 +27,9 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kjson/KjNode.h"                                        // KjNode
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/mongoc/mongocConnectionGet.h"                  // mongocConnectionGet
@@ -64,7 +63,7 @@ bool mongocEntityReplace(KjNode* dbEntityP, const char* entityId)
   if (b == false)
   {
     bson_error_t* errP = &orionldState.mongoc.error;
-    LM_E(("mongoc error updating entity '%s': [%d.%d]: %s", entityId, errP->domain, errP->code, errP->message));
+    KT_E("mongoc error updating entity '%s': [%d.%d]: %s", entityId, errP->domain, errP->code, errP->message);
   }
 
   // mongocConnectionRelease(); - Not here - done at the end of the request

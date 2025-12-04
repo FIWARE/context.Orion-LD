@@ -60,27 +60,36 @@ typedef enum OrionldTraceLevels
 
   // Subscriptions
   KtSubs                    = 800,
-  KtSubordinate             = 801,
+  KtPernot                  = 801,
+  KtSubordinate             = 802,
+
+  // Subscription Cache
+  KtSubCache                = 900,
+  KtSubCacheSync            = 901,
+
+  // Notifications
+  KtNotification            = 1000,
+  KtNotificationStats       = 1001,
 
   // DDS
-  StDds                     = 1001,
-  StDdsPublish              = 1002,
-  StDdsNotification         = 1003,
-  StDdsLibInfo              = 1004,
-  StDdsLibDebug             = 1005,
-  StDdsConfig               = 1006,
-  StDdsTypes                = 1007,
-  StDdsTypeCache            = 1008,
-  StDdsPrePopulate          = 1009,
+  StDds                     = 2001,
+  StDdsPublish              = 2002,
+  StDdsNotification         = 2003,
+  StDdsLibInfo              = 2004,
+  StDdsLibDebug             = 2005,
+  StDdsConfig               = 2006,
+  StDdsTypes                = 2007,
+  StDdsTypeCache            = 2008,
+  StDdsPrePopulate          = 2009,
   StDdsSrCalls              = 1010,
-  StDdsService              = 1020,
-  StDdsServiceList          = 1021,
-  StDdsServicePrepopulate   = 1022,
-  StDdsAction               = 1030,
+  StDdsService              = 2020,
+  StDdsServiceList          = 2021,
+  StDdsServicePrepopulate   = 2022,
+  StDdsAction               = 2030,
 
   // FT Client
-  StDump                    = 2001,
-  StDdsDump                 = 2002
+  StDump                    = 3001,
+  StDdsDump                 = 3002
 } OrionldTraceLevels;
 
 #endif  // SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_
