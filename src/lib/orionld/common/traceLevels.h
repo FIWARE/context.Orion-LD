@@ -41,17 +41,28 @@ typedef enum OrionldTraceLevels
   StRequestParams           = 202,
   StSR                      = 210,
 
-  StLinked                  = 300,
-  StLinkedInline            = 301,
-  StLinkedInline2           = 302,
+  // URL Params
+  KtCsf                     = 300,
 
-  StMongoc                  = 400,
+  StLinked                  = 400,
+  StLinkedInline            = 401,
+  StLinkedInline2           = 402,
 
-  StMongo                   = 500,
-  StMongoPool               = 501,
+  // Mongoc driver
+  StMongoc                  = 500,
 
-  StCsf                     = 600,
+  // Mongo C++ Legacy driver
+  StMongo                   = 600,
+  StMongoPool               = 601,
 
+  // Registration Cache
+  KtRegCache                = 700,
+
+  // Subscriptions
+  KtSubs                    = 800,
+  KtSubordinate             = 801,
+
+  // DDS
   StDds                     = 1001,
   StDdsPublish              = 1002,
   StDdsNotification         = 1003,
@@ -65,9 +76,9 @@ typedef enum OrionldTraceLevels
   StDdsService              = 1020,
   StDdsServiceList          = 1021,
   StDdsServicePrepopulate   = 1022,
-
   StDdsAction               = 1030,
 
+  // FT Client
   StDump                    = 2001,
   StDdsDump                 = 2002
 } OrionldTraceLevels;

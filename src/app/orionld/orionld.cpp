@@ -91,7 +91,6 @@ extern "C"
 #include "parseArgs/paBuiltin.h"
 #include "parseArgs/paIsSet.h"
 #include "parseArgs/paUsage.h"
-#include "logMsg/logMsg.h"
 
 #include "rest/httpRequestSend.h"
 #include "common/compileInfo.h"
@@ -512,9 +511,7 @@ void daemonize(void)
 
   pid = fork();
   if (pid == -1)
-  {
-    LM_X(1, ("Fatal Error (fork: %s)", strerror(errno)));
-  }
+    KT_X(1, "Fatal Error (fork: %s)", strerror(errno));
 
   // Exiting father process
   if (pid > 0)
@@ -529,16 +526,12 @@ void daemonize(void)
   // Removing the controlling terminal
   sid = setsid();
   if (sid == -1)
-  {
-    LM_X(1, ("Fatal Error (setsid: %s)", strerror(errno)));
-  }
+    KT_X(1, "Fatal Error (setsid: %s)", strerror(errno));
 
   // Change current working directory.
   // This prevents the current directory from being locked; hence not being able to remove it.
   if (chdir("/") == -1)
-  {
-    LM_X(1, ("Fatal Error (chdir: %s)", strerror(errno)));
-  }
+    KT_X(1, "Fatal Error (chdir: %s)", strerror(errno));
 
   // We have to call this after a fork, see: http://api.mongodb.org/cplusplus/2.2.2/classmongo_1_1_o_i_d.html
   mongo::OID::justForked();
@@ -552,14 +545,14 @@ void daemonize(void)
 */
 void sigHandler(int sigNo)
 {
-  LM_I(("Signal Handler (caught signal %d)", sigNo));
+  KT_I("Signal Handler (caught signal %d)", sigNo);
 
   switch (sigNo)
   {
   case SIGINT:
   case SIGTERM:
   case SIGHUP:
-    LM_I(("Orion context broker exiting due to receiving a signal"));
+    KT_I("Orion context broker exiting due to receiving a signal");
     exit(0);
     break;
   }
@@ -574,13 +567,9 @@ void sigHandler(int sigNo)
 void orionExit(int code, const std::string& reason)
 {
   if (code == 0)
-  {
-    LM_I(("Orion context broker exits in an ordered manner (%s)", reason.c_str()));
-  }
+    KT_I("Orion context broker exits in an ordered manner (%s)", reason.c_str());
   else
-  {
-    LM_E(("Fatal Error (reason: %s)", reason.c_str()));
-  }
+    KT_E("Fatal Error (reason: %s)", reason.c_str());
 
   orionldStateRelease();
   exit(code);
@@ -696,7 +685,7 @@ static void contextBrokerInit(std::string dbPrefix, bool multitenant)
     int             rc         = pQNotifier->start();
 
     if (rc != 0)
-      LM_X(1, ("Runtime Error starting notification queue workers (%d)", rc));
+      KT_X(1, "Runtime Error starting notification queue workers (%d)", rc);
 
     pNotifier = pQNotifier;
   }
@@ -724,12 +713,12 @@ static char* loadFile(char* path)
   char*        buf;
 
   if (fd == -1)
-    LM_RE(NULL, ("HTTPS Error (error opening '%s': %s)", path, strerror(errno)));
+    KT_RE(NULL, "HTTPS Error (error opening '%s': %s)", path, strerror(errno));
 
   if (stat(path, &statBuf) != 0)
   {
     close(fd);
-    LM_RE(NULL, ("HTTPS Error (stat '%s': %s)", path, strerror(errno)));
+    KT_RE(NULL, "HTTPS Error (stat '%s': %s)", path, strerror(errno));
   }
 
   buf = (char*) malloc(statBuf.st_size + 1);
@@ -737,17 +726,17 @@ static char* loadFile(char* path)
   if (buf == NULL)
   {
     close(fd);
-    LM_RE(NULL, ("HTTPS Error (out of memory allocating room for https key/cert file of %d bytes)", statBuf.st_size + 1));
+    KT_RE(NULL, "HTTPS Error (out of memory allocating room for https key/cert file of %d bytes)", statBuf.st_size + 1);
   }
 
   nb = read(fd, buf, statBuf.st_size);
   close(fd);
 
   if (nb == -1)
-    LM_RE(NULL, ("HTTPS Error (reading from '%s': %s)", path, strerror(errno)));
+    KT_RE(NULL, "HTTPS Error (reading from '%s': %s)", path, strerror(errno));
 
   if (nb != statBuf.st_size)
-    LM_RE(NULL, ("HTTPS Error (invalid size read from '%s': %d, wanted %d)", path, nb, statBuf.st_size));
+    KT_RE(NULL, "HTTPS Error (invalid size read from '%s': %d, wanted %d)", path, nb, statBuf.st_size);
 
   buf[statBuf.st_size] = 0;  // Zero-terminate the buffer
 
@@ -807,15 +796,15 @@ static void notificationModeParse(char* notificationMode, int* pQueueSize, int* 
       char* colon2 = strchr(&notificationMode[11], ':');
 
       if (colon2 == NULL)
-        LM_X(1, ("Invalid notificationMode (first colon found, second is missing)"));
+        KT_X(1, "Invalid notificationMode (first colon found, second is missing)");
       *pQueueSize  = atoi(&notificationMode[11]);
       *pNumThreads = atoi(&colon2[1]);
     }
     else
-      LM_X(1, ("Invalid notificationMode '%s'", notificationMode));
+      KT_X(1, "Invalid notificationMode '%s'", notificationMode);
   }
   else if ((strcmp(notificationMode, "transient") != 0) && (strcmp(notificationMode, "persistent") != 0))
-    LM_X(1, ("Invalid notificationMode '%s'", notificationMode));
+    KT_X(1, "Invalid notificationMode '%s'", notificationMode);
 }
 
 
@@ -897,31 +886,31 @@ void regCachePresent(void)
   for (OrionldTenant* tenantP = &tenant0; tenantP != NULL; tenantP = tenantP->next)
   {
     if (tenantP->regCache == NULL)
-      LM_T(LmtRegCache, ("Tenant '%s': No regCache", tenantP->mongoDbName));
+      KT_T(KtRegCache, "Tenant '%s': No regCache", tenantP->mongoDbName);
     else
     {
-      LM_T(LmtRegCache, ("Tenant '%s':", tenantP->mongoDbName));
+      KT_T(KtRegCache, "Tenant '%s':", tenantP->mongoDbName);
       RegCacheItem* rciP = tenantP->regCache->regList;
 
       while (rciP != NULL)
       {
         KjNode* regIdP = kjLookup(rciP->regTree, "id");
 
-        LM_T(LmtRegCache, ("  o Registration %s:", (regIdP != NULL)? regIdP->value.s : "unknown"));
-        LM_T(LmtRegCache, ("    o mode:  %s", registrationModeToString(rciP->mode)));
-        LM_T(LmtRegCache, ("    o ops:   0x%x", rciP->opMask));
+        KT_T(KtRegCache, "  o Registration %s:", (regIdP != NULL)? regIdP->value.s : "unknown");
+        KT_T(KtRegCache, "    o mode:  %s", registrationModeToString(rciP->mode));
+        KT_T(KtRegCache, "    o ops:   0x%x", rciP->opMask);
 
         if (rciP->idPatternRegexList != NULL)
         {
-          LM_T(LmtRegCache, ("    o patterns:"));
+          KT_T(KtRegCache, "    o patterns:");
           for (RegIdPattern* ripP = rciP->idPatternRegexList; ripP != NULL; ripP = ripP->next)
           {
-            LM_T(LmtRegCache, ("      o %s (idPattern at %p)", ripP->owner->value.s, ripP->owner));
+            KT_T(KtRegCache, "      o %s (idPattern at %p)", ripP->owner->value.s, ripP->owner);
           }
         }
         else
-          LM_T(LmtRegCache, ("    o patterns: NONE"));
-        LM_T(LmtRegCache, ("  -----------------------------------"));
+          KT_T(KtRegCache, "    o patterns: NONE");
+        KT_T(KtRegCache, "  -----------------------------------");
         rciP = rciP->next;
       }
     }
@@ -1077,7 +1066,7 @@ int main(int argC, char* argV[])
 
   coreContextUrl = coreContextUrlSetup(coreContextVersion);
   if (coreContextUrl == NULL)
-    LM_X(1, ("Invalid version for the Core Context: %s (valid: v1.0|v1.3|v1.4|v1.5|v1.6|v1.7)", coreContextVersion));
+    KT_X(1, "Invalid version for the Core Context: %s (valid: v1.0|v1.3|v1.4|v1.5|v1.6|v1.7)", coreContextVersion);
 
   lmTimeFormat(0, (char*) "%Y-%m-%dT%H:%M:%S");
 
@@ -1101,7 +1090,7 @@ int main(int argC, char* argV[])
       else if (strcmp(wipV[ix], "dds") == 0)
         ddsSupport = true;
       else
-        LM_X(1, ("Invalid value for -wip comma-separated list (allowed: 'entityMaps', 'distSubs')"));
+        KT_X(1, "Invalid value for -wip comma-separated list (allowed: 'entityMaps', 'distSubs')");
     }
   }
 
@@ -1115,9 +1104,9 @@ int main(int argC, char* argV[])
     char* prefix = slash;
     subordinatePathLen = snprintf(subordinatePath, sizeof(subordinatePath) - 1, "%s/notifications/", prefix);
 
-    LM_T(LmtSubordinate, ("entity subordinate prefix: '%s'", subordinateEndpoint));
-    LM_T(LmtSubordinate, ("path portion:              '%s'", prefix));
-    LM_T(LmtSubordinate, ("subordinatePath:           '%s'", subordinatePath));
+    KT_T(KtSubordinate, "entity subordinate prefix: '%s'", subordinateEndpoint);
+    KT_T(KtSubordinate, "path portion:              '%s'", prefix);
+    KT_T(KtSubordinate, "subordinatePath:           '%s'", subordinatePath);
   }
   else
     bzero(subordinatePath, sizeof(subordinatePath));
@@ -1149,7 +1138,7 @@ int main(int argC, char* argV[])
 
   if (noswap == true)
   {
-    LM_W(("All the broker's memory is locked in RAM - swapping disabled!!!"));
+    KT_W("All the broker's memory is locked in RAM - swapping disabled!!!");
     mlockall(MCL_CURRENT | MCL_FUTURE);
   }
 
@@ -1167,25 +1156,22 @@ int main(int argC, char* argV[])
   paCleanup();
 
   if (strlen(dbName) > DB_NAME_MAX_LEN)
-    LM_X(1, ("dbName too long (max %d characters)", DB_NAME_MAX_LEN));
+    KT_X(1, "dbName too long (max %d characters)", DB_NAME_MAX_LEN);
 
   if (useOnlyIPv6 && useOnlyIPv4)
-    LM_X(1, ("Fatal Error (-ipv4 and -ipv6 can not be activated at the same time. They are incompatible)"));
+    KT_X(1, "Fatal Error (-ipv4 and -ipv6 can not be activated at the same time. They are incompatible)");
 
   if (https)
   {
     if (httpsKeyFile[0] == 0)
-    {
-      LM_X(1, ("Fatal Error (when option '-https' is used, option '-key' is mandatory)"));
-    }
+      KT_X(1, "Fatal Error (when option '-https' is used, option '-key' is mandatory)");
+
     if (httpsCertFile[0] == 0)
-    {
-      LM_X(1, ("Fatal Error (when option '-https' is used, option '-cert' is mandatory)"));
-    }
+      KT_X(1, "Fatal Error (when option '-https' is used, option '-cert' is mandatory)");
   }
 
   notificationModeParse(notificationMode, &notificationQueueSize, &notificationThreadNum);
-  LM_I(("Orion Context Broker is running"));
+  KT_I("Orion Context Broker is running");
 
   versionInfo();
 
@@ -1193,9 +1179,9 @@ int main(int argC, char* argV[])
     daemonize();
 
   if (noprom == true)
-    LM_W(("Running without Prometheus metrics"));
+    KT_W("Running without Prometheus metrics");
   else if (promInit(8000) != 0)
-    LM_W(("Error initializing Prometheus Metrics library"));
+    KT_W("Error initializing Prometheus Metrics library");
 
   IpVersion ipVersion = IPDUAL;
 
@@ -1218,7 +1204,7 @@ int main(int argC, char* argV[])
     // close(2);
 
     if (troeInit() == false)
-      LM_X(1, ("Database Error (unable to initialize the layer for Temporal Representation of Entities)"));
+      KT_X(1, "Database Error (unable to initialize the layer for Temporal Representation of Entities)");
   }
 
 
@@ -1305,9 +1291,7 @@ int main(int argC, char* argV[])
 
   // Startup libcurl
   if (curl_global_init(CURL_GLOBAL_SSL) != 0)
-  {
-    LM_X(1, ("Fatal Error (could not initialize libcurl)"));
-  }
+    KT_X(1, "Fatal Error (could not initialize libcurl)");
 
   if (noCache == false)
   {
@@ -1348,16 +1332,14 @@ int main(int argC, char* argV[])
     {
       if (httpsCertificate != NULL)
         free(httpsCertificate);
-      LM_E(("Fatal Error (loading private server key from '%s')", httpsKeyFile));
-      exit(1);
+      KT_X(1, "Fatal Error (loading private server key from '%s')", httpsKeyFile);
     }
 
     if (httpsCertificate == NULL)
     {
       if (httpsPrivateServerKey != NULL)
         free(httpsPrivateServerKey);
-      LM_E(("Fatal Error (loading certificate from '%s')", httpsCertFile));
-      exit(1);
+      KT_X(1, "Fatal Error (loading certificate from '%s')", httpsCertFile);
     }
 
     orionRestServicesInit(ipVersion,
@@ -1392,19 +1374,19 @@ int main(int argC, char* argV[])
                           NULL);
   }
 
-  LM_I(("Startup completed"));
+  KT_I("Startup completed");
   orionldPhase = OrionldPhaseServing;
 
   //
   // Get the version of the mongo server (could be in mongocInit instead)
   //
   if (mongocServerVersionGet(mongocServerVersion) == false)
-    LM_X(1, ("Unable to contact the MongoDB Server"));
+    KT_X(1, "Unable to contact the MongoDB Server");
 
   if (troe)
   {
     if (pgVersionGet(postgresServerVersion, sizeof(postgresServerVersion)) == false)
-      LM_X(1, ("Unable to contact the Postgres Server"));
+      KT_X(1, "Unable to contact the Postgres Server");
   }
 
   KT_I("Initialization is Done");
@@ -1462,11 +1444,11 @@ int main(int argC, char* argV[])
     int fd;
 
     if ((fd = socketServiceInit(socketServicePort)) == -1)
-      LM_X(1, ("Can't initialize socketService"));
+      KT_X(1, "Can't initialize socketService");
     KT_I("Initialization ready - accepting SOCKET requests on port %d", socketServicePort);
 
     socketServiceRun(fd);
-    LM_X(1, ("Socket Service terminated"));
+    KT_X(1, "Socket Service terminated");
   }
   else
   {
