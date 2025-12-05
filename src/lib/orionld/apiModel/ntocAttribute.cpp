@@ -26,15 +26,15 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjChildRemove
 #include "kjson/kjChildCount.h"                                  // kjChildCount
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
-#include "orionld/common/orionldState.h"                         // LM_TREE
+#include "orionld/common/orionldState.h"                         // KT_TREE
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/kjTree/kjSysAttrsRemove.h"                     // kjSysAttrsRemove
 #include "orionld/apiModel/langFixNormalized.h"                  // langFixNormalized
 #include "orionld/apiModel/ntocSubAttribute.h"                   // ntocSubAttribute
@@ -53,11 +53,11 @@ void ntocAttribute(KjNode* attrP, const char* lang, bool sysAttrs)
   //
   if (attrP->type == KjArray)
   {
-    LM_E(("Multi-Attribute (datasetId) not supported, sorry ..."));
+    KT_E("Multi-Attribute (datasetId) not supported, sorry ...");
     return;
   }
 
-  LM_TREE(attrP, "attribute to convert from Normalized to Concise", LmtFormat);
+  KT_TREE(attrP, "attribute to convert from Normalized to Concise", KtFormat);
 
   // 1. Remove the sysAttrs, if so requested
   if (sysAttrs == false)

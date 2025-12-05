@@ -28,9 +28,6 @@ extern "C"
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
-
 #include "orionld/types/OrionldGeoIndex.h"                       // OrionldGeoIndex
 #include "orionld/common/orionldState.h"                         // kalloc, geoIndexList
 #include "orionld/db/dbGeoIndexAdd.h"                            // Own interface

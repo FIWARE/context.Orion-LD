@@ -24,16 +24,16 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                          // KT_*
 #include "kjson/KjNode.h"                                           // KjNode
 #include "kjson/kjLookup.h"                                         // kjLookup
 #include "kjson/kjBuilder.h"                                        // kjChildAdd
 }
 
-#include "logMsg/logMsg.h"                                              // LM_*
-
-#include "orionld/types/EntityMap.h"                                    // EntityMap
-#include "orionld/types/DistOp.h"                                       // DistOp
-#include "orionld/entityMaps/entityMapItemAdd.h"                        // Own interface
+#include "orionld/types/EntityMap.h"                                // EntityMap
+#include "orionld/types/DistOp.h"                                   // DistOp
+#include "orionld/common/traceLevels.h"                             // KTrace levels
+#include "orionld/entityMaps/entityMapItemAdd.h"                    // Own interface
 
 
 
@@ -45,14 +45,14 @@ void entityMapItemAdd(EntityMap* entityMap, const char* entityId, DistOp* distOp
 {
   KjNode* matchP = kjLookup(entityMap->map, entityId);
 
-  LM_T(LmtCount, ("entity id: '%s'", entityId));
+  KT_T(KtCount, "entity id: '%s'", entityId);
 
   if (matchP == NULL)
   {
     //
     // The entity ID is not present in the list - must be added
     //
-    LM_T(LmtEntityMap, ("The entity ID '%s' is not present in the list - adding it", entityId));
+    KT_T(KtEntityMap, "The entity ID '%s' is not present in the list - adding it", entityId);
     matchP = kjArray(NULL, entityId);
     kjChildAddSorted(entityMap->map, matchP);
   }
@@ -63,6 +63,6 @@ void entityMapItemAdd(EntityMap* entityMap, const char* entityId, DistOp* distOp
   const char*  distOpId      = (distOpP != NULL)? distOpP->regP->regId : "@none";
   KjNode*      distOpIdNodeP = kjString(NULL, NULL, distOpId);
 
-  LM_T(LmtEntityMap, ("Adding DistOp '%s' to entity '%s'", distOpId, matchP->name));
+  KT_T(KtEntityMap, "Adding DistOp '%s' to entity '%s'", distOpId, matchP->name);
   kjChildAdd(matchP, distOpIdNodeP);  // This is sorted later - in entityMapCreate
 }

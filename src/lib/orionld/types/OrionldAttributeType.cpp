@@ -24,8 +24,6 @@
 */
 #include <string.h>                                              // strcmp
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/types/OrionldAttributeType.h"                  // Own interface
 
 

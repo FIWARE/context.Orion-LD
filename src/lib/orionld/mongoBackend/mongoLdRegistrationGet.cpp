@@ -26,8 +26,10 @@
 
 #include "mongo/client/dbclient.h"
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "apiTypesV2/Registration.h"                           // ngsiv2::Registration
 #include "common/statistics.h"                                 // TIME_STAT_MONGO_READ_WAIT_START
@@ -90,7 +92,7 @@ bool mongoLdRegistrationGet
     if (!nextSafeOrErrorF(cursor, &bob, &err))
     {
       releaseMongoConnection(connection);
-      LM_E(("Runtime Error (exception in nextSafe(): %s - query: %s)", err.c_str(), query.toString().c_str()));
+      KT_E("Runtime Error (exception in nextSafe(): %s - query: %s)", err.c_str(), query.toString().c_str());
       reqSemGive(__FUNCTION__, "Mongo Get Registration", reqSemTaken);
       *detailP     = (char*) "Runtime Error (exception in nextSafe)";
       *statusCodeP = 500;
@@ -117,7 +119,7 @@ bool mongoLdRegistrationGet
     if (mongoSetDataProvided(regP, &bob, false) == false)
     {
       releaseMongoConnection(connection);
-      LM_W(("Bad Input (getting registrations with more than one CR is not yet implemented, see issue 3044)"));
+      KT_W("Bad Input (getting registrations with more than one CR is not yet implemented, see issue 3044)");
       reqSemGive(__FUNCTION__, "Mongo Get Registration", reqSemTaken);
       *statusCodeP = 500;
       return false;
@@ -133,7 +135,7 @@ bool mongoLdRegistrationGet
 
     if (mongoSetLdTimeInterval(&regP->location, "location", bob, &title, detailP) == false)
     {
-      LM_E(("Internal Error (mongoSetLdTimeInterval: %s: %s)", title, *detailP));
+      KT_E("Internal Error (mongoSetLdTimeInterval: %s: %s)", title, *detailP);
       releaseMongoConnection(connection);
       reqSemGive(__FUNCTION__, "Mongo Get Registration", reqSemTaken);
       *statusCodeP = 500;
@@ -142,7 +144,7 @@ bool mongoLdRegistrationGet
 
     if (mongoSetLdTimeInterval(&regP->observationSpace, "observationSpace", bob, &title, detailP) == false)
     {
-      LM_E(("Internal Error (mongoSetLdTimeInterval: %s: %s)", title, *detailP));
+      KT_E("Internal Error (mongoSetLdTimeInterval: %s: %s)", title, *detailP);
       releaseMongoConnection(connection);
       reqSemGive(__FUNCTION__, "Mongo Get Registration", reqSemTaken);
       *statusCodeP = 500;
@@ -151,7 +153,7 @@ bool mongoLdRegistrationGet
 
     if (mongoSetLdTimeInterval(&regP->operationSpace, "operationSpace", bob, &title, detailP) == false)
     {
-      LM_E(("Internal Error (mongoSetLdTimeInterval: %s: %s)", title, *detailP));
+      KT_E("Internal Error (mongoSetLdTimeInterval: %s: %s)", title, *detailP);
       releaseMongoConnection(connection);
       reqSemGive(__FUNCTION__, "Mongo Get Registration", reqSemTaken);
       *statusCodeP = 500;
@@ -160,7 +162,7 @@ bool mongoLdRegistrationGet
 
     if (mongoSetLdProperties(regP, "properties", bob, &title, detailP) == false)
     {
-      LM_E(("Internal Error (mongoSetLdProperties: %s: %s)", title, *detailP));
+      KT_E("Internal Error (mongoSetLdProperties: %s: %s)", title, *detailP);
       releaseMongoConnection(connection);
       reqSemGive(__FUNCTION__, "Mongo Get Registration", reqSemTaken);
       *statusCodeP = 500;

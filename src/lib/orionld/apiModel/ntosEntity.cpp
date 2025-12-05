@@ -31,8 +31,6 @@ extern "C"
 #include "kjson/kjBuilder.h"                                     // kjChildRemove
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/apiModel/ntosAttribute.h"                      // ntosAttribute
 #include "orionld/apiModel/ntosEntity.h"                         // Own interface
 
@@ -67,7 +65,6 @@ void ntosEntity(KjNode* apiEntityP, const char* lang)
     {
       for (KjNode* attrInstanceP = attrP->value.firstChildP; attrInstanceP != NULL; attrInstanceP = attrInstanceP->next)
       {
-        LM_T(LmtFormat, ("Calling ntosAttribute for '%s', dataset instance X", attrP->name));
         ntosAttribute(attrInstanceP);
       }
     }
@@ -75,10 +72,7 @@ void ntosEntity(KjNode* apiEntityP, const char* lang)
     {
       // Skip "id" and "type" ... and "scope" once that gets implemented
       if ((strcmp(attrP->name, "id") != 0) && (strcmp(attrP->name, "type") != 0) && (strcmp(attrP->name, "scope") != 0))
-      {
-        LM_T(LmtFormat, ("Calling ntosAttribute for '%s'", attrP->name));
         ntosAttribute(attrP);
-      }
     }
 
     attrP = next;

@@ -27,9 +27,6 @@ extern "C"
 #include "kalloc/kaStrdup.h"                                   // kaStrdup
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
-
 #include "orionld/types/OrionLdRestService.h"                  // OrionLdRestService, ORION_LD_SERVICE_PREFIX_LEN
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/service/orionldServiceLookup.h"              // Own interface

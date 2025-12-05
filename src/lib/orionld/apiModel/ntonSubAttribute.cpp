@@ -30,8 +30,6 @@ extern "C"
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/kjTree/kjSysAttrsRemove.h"                     // kjSysAttrsRemove
 #include "orionld/apiModel/langFixNormalized.h"                  // langFixNormalized
 #include "orionld/apiModel/ntonSubAttribute.h"                   // Own interface

@@ -32,8 +32,10 @@
 
 #include <microhttpd.h>
 
-#include "logMsg/logMsg.h"                                          // LM_*
-#include "logMsg/traceLevels.h"                                     // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                           // KT_*
+}
 
 #include "orionld/types/OrionLdRestService.h"                        // OrionLdRestService, ORION_LD_SERVICE_PREFIX_LEN
 #include "orionld/common/orionldState.h"                             // orionldState, userAgentHeader
@@ -169,9 +171,9 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
     serviceP->matchForSecondWildcardLen = wildCardEnd - wildCardStart;
 
     if (serviceP->matchForSecondWildcardLen < 0)
-      LM_X(1, ("Negative length of matchForSecondWildcard - not possible. SW bug"));
+      KT_X(1, "Negative length of matchForSecondWildcard - not possible. SW bug");
     if (serviceP->matchForSecondWildcardLen > (int) sizeof(serviceP->matchForSecondWildcard))
-      LM_X(1, ("Too big matchForSecondWildcard - not possible. SW bug"));
+      KT_X(1, "Too big matchForSecondWildcard - not possible. SW bug");
 
     if (serviceP->matchForSecondWildcardLen != 0)
       strncpy(serviceP->matchForSecondWildcard, wildCardStart, wildCardEnd - wildCardStart);
@@ -678,7 +680,7 @@ void orionldServiceInit(OrionLdRestServiceSimplifiedVector* restServiceVV, int v
   OrionldProblemDetails pd;
 
   if (orionldContextInit(&pd) == false)
-    LM_X(1, ("orionldContextInit failed: %s %s", pd.title, pd.detail));
+    KT_X(1, "orionldContextInit failed: %s %s", pd.title, pd.detail);
 
 
   //

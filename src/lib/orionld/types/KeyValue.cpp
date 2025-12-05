@@ -26,8 +26,6 @@
 #include <stdlib.h>                                     // malloc
 #include <vector>                                       // std::vector
 
-#include "logMsg/logMsg.h"                              // LM_*
-
 #include "orionld/types/KeyValue.h"                     // KeyValue
 
 

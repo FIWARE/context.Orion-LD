@@ -26,6 +26,7 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                         // KT_*
 #include "kalloc/kaStrdup.h"                                       // kaStrdup
 #include "kjson/KjNode.h"                                          // KjNode
 #include "kjson/kjBuilder.h"                                       // kjArray, kjObject
@@ -35,8 +36,6 @@ extern "C"
 #include "kjson/kjStringValueLookupInArray.h"                      // kjStringValueLookupInArray
 #include "kjson/kjStringArraySortedInsert.h"                       // kjStringArraySortedInsert
 }
-
-#include "logMsg/logMsg.h"                                         // LM_*
 
 #include "orionld/common/orionldState.h"                           // orionldState
 #include "orionld/common/orionldError.h"                           // orionldError
@@ -101,13 +100,13 @@ static void localAttrNamesExtract(KjNode* outArray, KjNode* local)
 
     if (attrNamesP == NULL)
     {
-      LM_E(("Database Error (entity:attrNames not present in DB)"));
+      KT_E("Database Error (entity:attrNames not present in DB)");
       continue;
     }
 
     if (attrNamesP->type != KjArray)
     {
-      LM_E(("Database Error (entity:attrNames present but not an Array: '%s')", kjValueType(attrNamesP->type)));
+      KT_E("Database Error (entity:attrNames present but not an Array: '%s')", kjValueType(attrNamesP->type));
       continue;
     }
 
@@ -120,7 +119,7 @@ static void localAttrNamesExtract(KjNode* outArray, KjNode* local)
 
       if (aP->type != KjString)
       {
-        LM_E(("Database Error (entity:attrNames item is not a String (it is of type '%s')", kjValueType(aP->type)));
+        KT_E("Database Error (entity:attrNames item is not a String (it is of type '%s')", kjValueType(aP->type));
         aP = next;
         continue;
       }
@@ -300,16 +299,11 @@ static void attributeInfoAdd(KjNode* arrayAttributeP, KjNode* aP, char* entityTy
   KjNode*     attrTypeNodeP = kjLookup(aP, "type");
 
   if ((countP == NULL) || (attrTypesP == NULL) || (typeNamesP == NULL))
-  {
-    LM_E(("Internal Error (missing field: countP:%p, attrTypesP:%p, typeNamesP:%p", countP, attrTypesP, typeNamesP));
-    return;
-  }
+    KT_RVE("Internal Error (missing field: countP:%p, attrTypesP:%p, typeNamesP:%p", countP, attrTypesP, typeNamesP);
 
   if (attrTypeNodeP == NULL)
-  {
-    LM_E(("Internal Error (attribute type not found)"));
-    return;
-  }
+    KT_RVE("Internal Error (attribute type not found)");
+
   const char* attributeType = attrTypeNodeP->value.s;
 
   countP->value.i += 1;

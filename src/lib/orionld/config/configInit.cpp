@@ -33,9 +33,8 @@ extern "C"
 #include "ktrace/kTrace.h"                                  // trace messages - ktrace library
 }
 
-#include "logMsg/logMsg.h"                                  // LM_*
-
-#include "orionld/common/orionldState.h"                    // orionldState, LM_TREE
+#include "orionld/common/orionldState.h"                    // orionldState, KT_TREE
+#include "orionld/common/traceLevels.h"                     // KtConfig
 #include "orionld/config/configLoad.h"                      // configLoad
 #include "orionld/config/configInit.h"                      // Own interface
 
@@ -58,7 +57,7 @@ void configInit(Kjson* kjP, char* configFile)
       {
         // It's OK to not have a config file, as long as DDS is not turned on
         if (ddsSupport == true)
-          LM_X(1, ("DDS functionality demands a configuration file"));
+          KT_X(1, "DDS functionality demands a configuration file");
 
         return;
       }
@@ -69,5 +68,5 @@ void configInit(Kjson* kjP, char* configFile)
   if (configLoad(kjP, configFile) != 0)
     KT_X(1, "Error reading/parsing the config file '%s'", configFile);  // Not OK to have a bad config file
 
-  LM_TREE(configTree, "Config", LmtConfig);
+  KT_TREE(configTree, "Config", KtConfig);
 }

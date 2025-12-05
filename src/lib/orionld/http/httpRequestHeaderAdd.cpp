@@ -27,13 +27,13 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kalloc/kaAlloc.h"                                    // kaAlloc
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
 #include "orionld/types/HttpKeyValue.h"                        // HttpKeyValue
 #include "orionld/common/orionldState.h"                       // orionldState
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/http/httpRequestHeaderAdd.h"                 // Own interface
 
 
@@ -53,7 +53,7 @@ void httpRequestHeaderAdd(HttpKeyValue* headerP, const char* key, const char* va
   if (value == NULL)
     snprintf(val, 15, "%d", ivalue);
 
-  LM_T(LmtSR, ("Adding HTTP header: %s=%s", key, val));
+  KT_T(KtSR, "Adding HTTP header: %s=%s", key, val);
   headerP->key   = (char*) key;
   headerP->value = (char*) val;
 }

@@ -22,7 +22,10 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+}
 
 #include "orionld/types/OrionldHeader.h"                         // orionldHeaderAdd
 #include "orionld/common/orionldState.h"                         // orionldState, coreContextUrl
@@ -74,7 +77,7 @@ void httpHeaderLinkAdd(const char* _url)
     linkP = (char*) malloc(urlLen + LINK_REL_AND_TYPE_SIZE + 5);
     if (linkP == NULL)
     {
-      LM_E(("Out-of-memory allocating room for HTTP Link Header"));
+      KT_E("Out-of-memory allocating room for HTTP Link Header");
       return;
     }
     freeLinkP = true;

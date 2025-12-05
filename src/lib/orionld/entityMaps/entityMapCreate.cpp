@@ -26,16 +26,15 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                          // KT_*
 #include "kjson/KjNode.h"                                           // KjNode
 #include "kjson/kjParse.h"                                          // kjParse
 #include "kjson/kjBuilder.h"                                        // kjObject
 #include "kjson/kjLookup.h"                                         // kjLookup
-#include "kjson/kjRender.h"                                         // kjFastRender (for debugging purposes - LM_T)
+#include "kjson/kjRender.h"                                         // kjFastRender (for debugging purposes)
 #include "kjson/kjChildCount.h"                                     // kjChildCount
 #include "kjson/kjStringArraySort.h"                                // kjStringArraySort
 }
-
-#include "logMsg/logMsg.h"                                          // LM_*
 
 #include "orionld/types/EntityMap.h"                                // EntityMap
 #include "orionld/types/OrionldGeoInfo.h"                           // OrionldGeoInfo
@@ -43,8 +42,9 @@ extern "C"
 #include "orionld/types/DistOp.h"                                   // DistOp
 #include "orionld/types/DistOpListItem.h"                           // DistOpListItem
 #include "orionld/common/orionldState.h"                            // orionldState
+#include "orionld/common/traceLevels.h"                             // KTrace levels
 #include "orionld/common/uuidGenerate.h"                            // uuidGenerate
-#include "orionld/kjTree/kjTreeLog.h"                               // LM_TREE
+#include "orionld/kjTree/kjTreeLog.h"                               // KT_TREE
 #include "orionld/distOp/distOpLookupByCurlHandle.h"                // distOpLookupByCurlHandle
 #include "orionld/distOp/distOpListDebug.h"                         // distOpListDebug2
 #include "orionld/distOp/distOpsSend.h"                             // distOpsSend
@@ -69,7 +69,7 @@ typedef int (*DistOpResponseTreatFunction)(DistOp* distOpP, void* callbackParam)
 //
 void distOpsReceive(DistOp* distOpList, DistOpResponseTreatFunction treatFunction, void* callbackParam, int requestsSent)
 {
-  LM_T(LmtCount, ("Receiving %d responses", requestsSent));
+  KT_T(KtCount, "Receiving %d responses", requestsSent);
   //
   // Read the responses to the forwarded requests
   //
@@ -88,13 +88,13 @@ void distOpsReceive(DistOp* distOpList, DistOpResponseTreatFunction treatFunctio
 
       if (distOpP == NULL)
       {
-        LM_E(("Unable to find the curl handle of a message, presumably a response to a forwarded request"));
+        KT_E("Unable to find the curl handle of a message, presumably a response to a forwarded request");
         continue;
       }
 
       curl_easy_getinfo(msgP->easy_handle, CURLINFO_RESPONSE_CODE, &distOpP->httpResponseCode);
 
-      LM_T(LmtDistOpResponse, ("%s: received a %d response for a forwarded request; %s", distOpP->regP->regId, distOpP->httpResponseCode, distOpP->rawResponse));
+      KT_T(KtDistOpResponse, "%s: received a %d response for a forwarded request; %s", distOpP->regP->regId, distOpP->httpResponseCode, distOpP->rawResponse);
 
       if ((distOpP->rawResponse != NULL) && (distOpP->rawResponse[0] != 0))
         distOpP->responseBody = kjParse(orionldState.kjsonP, distOpP->rawResponse);
@@ -104,7 +104,7 @@ void distOpsReceive(DistOp* distOpList, DistOpResponseTreatFunction treatFunctio
     }
   }
 
-  LM_W(("********************** Expected %d responses, got %d", requestsSent, responses));
+  KT_W("********************** Expected %d responses, got %d", requestsSent, responses);
 }
 
 
@@ -119,7 +119,7 @@ static int idListResponse(DistOp* distOpP, void* callbackParam)
 
   if ((distOpP->httpResponseCode == 200) && (distOpP->responseBody != NULL))
   {
-    LM_TREE(distOpP->responseBody, "DistOp RESPONSE", LmtEntityMap);
+    KT_TREE(distOpP->responseBody, "DistOp RESPONSE", KtEntityMap);
     for (KjNode* eIdNodeP = distOpP->responseBody->value.firstChildP; eIdNodeP != NULL; eIdNodeP = eIdNodeP->next)
     {
       // FIXME: The response is supposed to be an array of entity ids
@@ -128,11 +128,11 @@ static int idListResponse(DistOp* distOpP, void* callbackParam)
       //        This is an UGLY attempt to "make it work"
       //
       KjNode* eP = (eIdNodeP->type == KjObject)? kjLookup(eIdNodeP, "id") : eIdNodeP;
-      LM_T(LmtEntityMap, ("JSON Type of array item: %s", kjValueType(eIdNodeP->type)));
+      KT_T(KtEntityMap, "JSON Type of array item: %s", kjValueType(eIdNodeP->type));
 
       char* entityId = eP->value.s;
 
-      LM_T(LmtEntityMap, ("o Entity '%s', distOp '%s', registration '%s'", entityId, distOpP->id, distOpP->regP->regId));
+      KT_T(KtEntityMap, "o Entity '%s', distOp '%s', registration '%s'", entityId, distOpP->id, distOpP->regP->regId);
       entityMapItemAdd(entityMap, entityId, distOpP);
     }
   }
@@ -168,26 +168,26 @@ static void distOpMatchIdsRequest(DistOp* distOpList, EntityMap* entityMap)
 //
 EntityMap* entityMapCreate(DistOp* distOpList, char* idPattern, QNode* qNode, OrionldGeoInfo* geoInfoP)
 {
-  LM_T(LmtEntityMap, ("Creating an entity map"));
+  KT_T(KtEntityMap, "Creating an entity map");
 
   EntityMap* entityMap = (EntityMap*) malloc(sizeof(EntityMap));
   if (entityMap == NULL)
-    LM_X(1, ("Out of memory allocating a memory map"));
+    KT_X(1, "Out of memory allocating a memory map");
 
   entityMap->map = kjObject(NULL, "EntityMap");
   if (entityMap->map == NULL)
-    LM_X(1, ("Out of memory allocating a memory map"));
+    KT_X(1, "Out of memory allocating a memory map");
 
   uuidGenerate(entityMap->id, sizeof(entityMap->id), "urn:ngsi-ld:entity-map:");
 
-  LM_T(LmtEntityMap, ("Created an entity map at %p (%s)", entityMap, entityMap->id));
+  KT_T(KtEntityMap, "Created an entity map at %p (%s)", entityMap, entityMap->id);
 
   //
   // Send requests to all matching registration-endpoints, to fill in the entity map
   //
   distOpMatchIdsRequest(distOpList, entityMap);  // Not including local hits
 
-  LM_TREE(entityMap->map, "entityMap", LmtSR);
+  KT_TREE(entityMap->map, "entityMap", KtSR);
 
   char* geojsonGeometryLongName = NULL;
   if (orionldState.out.contentType == MT_GEOJSON)
@@ -195,8 +195,8 @@ EntityMap* entityMapCreate(DistOp* distOpList, char* idPattern, QNode* qNode, Or
 
   // Get the local matches
   KjNode* localEntityV   = NULL;
-  LM_T(LmtMongoc, ("orionldState.in.attrList.items: %d", orionldState.in.attrList.items));
-  LM_T(LmtMongoc, ("Calling mongocEntitiesQuery"));
+  KT_T(KtMongoc, "orionldState.in.attrList.items: %d", orionldState.in.attrList.items);
+  KT_T(KtMongoc, "Calling mongocEntitiesQuery");
 
   //
   // Can't do any pagination in this step, and we only really need the Entity ID
@@ -233,13 +233,13 @@ EntityMap* entityMapCreate(DistOp* distOpList, char* idPattern, QNode* qNode, Or
   if (localDbMatches != NULL)
   {
     localEntityV = dbModelToEntityIdAndTypeObject(localDbMatches, false);
-    LM_T(LmtEntityMap, ("Adding local entities to the entityMap"));
+    KT_T(KtEntityMap, "Adding local entities to the entityMap");
 
     for (KjNode* eidNodeP = localEntityV->value.firstChildP; eidNodeP != NULL; eidNodeP = eidNodeP->next)
     {
       const char* entityId = eidNodeP->value.s;
 
-      LM_T(LmtEntityMap, ("o Entity '%s', distOp 'local'", entityId));
+      KT_T(KtEntityMap, "o Entity '%s', distOp 'local'", entityId);
       entityMapItemAdd(entityMap, entityId, NULL);
     }
   }
@@ -254,12 +254,12 @@ EntityMap* entityMapCreate(DistOp* distOpList, char* idPattern, QNode* qNode, Or
 
 #if 0
   // ------------------- <DEBUG>
-  if (lmTraceIsSet(LmtEntityMap) == true)
+  if (lmTraceIsSet(KtEntityMap) == true)
   {
     int ix = 0;
 
-    LM_T(LmtEntityMap, ("Entity Maps (%d):", entityMap->count));
-    LM_TREE(entityMap->map, "EntityMap", LmtEntityMap);
+    KT_T(KtEntityMap, "Entity Maps (%d):", entityMap->count);
+    KT_TREE(entityMap->map, "EntityMap", KtEntityMap);
 
     for (KjNode* entityP = entityMap->map->value.firstChildP; entityP != NULL; entityP = entityP->next)
     {
@@ -267,11 +267,11 @@ EntityMap* entityMapCreate(DistOp* distOpList, char* idPattern, QNode* qNode, Or
 
       bzero(rBuf, 1024);
       kjFastRender(entityP, rBuf);
-      LM_T(LmtEntityMap, ("  %03d '%s': %s", ix, entityP->name, rBuf));
+      KT_T(KtEntityMap, "  %03d '%s': %s", ix, entityP->name, rBuf);
       ++ix;
     }
   }
-  LM_TREE(entityMap->map, "EntityMap", LmtSR);
+  KT_TREE(entityMap->map, "EntityMap", KtSR);
   // ---------------- </DEBUG>
 #endif
 
