@@ -27,6 +27,7 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kalloc/kaAlloc.h"                                    // kaAlloc
 #include "kalloc/kaStrdup.h"                                   // kaStrdup
 #include "kjson/KjNode.h"                                      // KjNode
@@ -35,10 +36,9 @@ extern "C"
 #include "kjson/kjClone.h"                                     // kjClone
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/common/orionldError.h"                       // orionldError
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/common/entitySuccessPush.h"                  // entitySuccessPush
 #include "orionld/common/entityErrorPush.h"                    // entityErrorPush
 #include "orionld/common/entityLookupById.h"                   // entityLookupBy_id_Id
@@ -136,7 +136,7 @@ bool orionldPostBatchUpsert(void)
   KjNode*      outArrayErroredP = kjArray(orionldState.kjsonP, "errors");
   int          noOfEntities     = batchEntityCountAndFirstCheck(orionldState.requestTree, outArrayErroredP);
 
-  LM_T(LmtSR, ("Number of valid Entities after 1st check-round: %d", noOfEntities));
+  KT_T(KtSR, "Number of valid Entities after 1st check-round: %d", noOfEntities);
 
 
   //
@@ -161,7 +161,7 @@ bool orionldPostBatchUpsert(void)
   // (extract the entity ids) later to be used by mongocEntitiesQuery().
   //
   noOfEntities = batchEntityStringArrayPopulate(orionldState.requestTree, &eIdArray, outArrayErroredP, false);
-  LM_T(LmtSR, ("Number of valid Entities after 2nd check-round: %d", noOfEntities));
+  KT_T(KtSR, "Number of valid Entities after 2nd check-round: %d", noOfEntities);
 
 
   //
@@ -184,7 +184,7 @@ bool orionldPostBatchUpsert(void)
   // Finally we have everything we need to 100% CHECK the incoming entities
   //
   noOfEntities = batchEntitiesFinalCheck(orionldState.requestTree, outArrayErroredP, dbEntityArray, orionldState.uriParamOptions.update, false, false);
-  LM_T(LmtSR, ("Number of valid Entities after 3rd check-round: %d", noOfEntities));
+  KT_T(KtSR, "Number of valid Entities after 3rd check-round: %d", noOfEntities);
 
   KjNode* outArrayCreatedP  = kjArray(orionldState.kjsonP, "created");  // For the HTTP response payload body
   KjNode* outArrayUpdatedP  = kjArray(orionldState.kjsonP, "updated");  // For the HTTP response payload body
@@ -244,7 +244,7 @@ bool orionldPostBatchUpsert(void)
       //
       KjNode* dbArrayItemP = entityLookupBy_id_Id(dbArray, entityId, NULL);
       if (dbArrayItemP == NULL)
-        LM_E(("MI: Internal Error (multiple instance entity '%s' not found in DB Array)", entityId));
+        KT_E("MI: Internal Error (multiple instance entity '%s' not found in DB Array)", entityId);
       else
       {
         kjChildRemove(dbArray, dbArrayItemP);

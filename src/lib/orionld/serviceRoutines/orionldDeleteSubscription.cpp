@@ -22,12 +22,16 @@
 *
 * Author: Ken Zangelin and Gabriel Quaresma
 */
-#include "logMsg/logMsg.h"                                       // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+}
 
 #include "cache/subCache.h"                                      // CachedSubscription, subCacheItemLookup, ...
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
+#include "orionld/common/traceLevels.h"                          // KTrace level
 #include "orionld/http/httpRequest.h"                            // httpRequest
 #include "orionld/payloadCheck/PCHECK.h"                         // PCHECK_URI
 #include "orionld/mqtt/mqttDisconnect.h"                         // mqttDisconnect
@@ -35,7 +39,7 @@
 #include "orionld/mongoc/mongocSubscriptionDelete.h"             // mongocSubscriptionDelete
 #include "orionld/legacyDriver/legacyDeleteSubscription.h"       // legacyDeleteSubscription
 #include "orionld/regCache/regCacheItemLookup.h"                 // regCacheItemLookup
-#include "orionld/kjTree/kjTreeLog.h"                            // LM_TREE
+#include "orionld/kjTree/kjTreeLog.h"                            // KT_TREE
 #include "orionld/serviceRoutines/orionldDeleteSubscription.h"   // Own Interface
 
 
@@ -65,7 +69,7 @@ bool orionldDeleteSubscription(void)
   if (cSubP == NULL)
   {
     if (noCache == false)
-      LM_W(("The subscription '%s' was successfully removed from DB but does not exist in sub-cache ... (sub-cache is enabled)"));
+      KT_W("The subscription '%s' was successfully removed from DB but does not exist in sub-cache ... (sub-cache is enabled)");
 
     //
     // FIXME: If mqtt, we need to disconnect from MQTT broker
@@ -101,11 +105,10 @@ bool orionldDeleteSubscription(void)
 
       bzero(&pd, sizeof(pd));
       r = httpRequest(ip, "DELETE", url, NULL, NULL, NULL, 5000, &responseTree, &pd);
-      LM_W(("r = %d", r));
       if (r != 204)
       {
-        LM_W(("Unable to DELETE subordinate subscription '%s': status code %d, %s: %s", subordinateP->subscriptionId, r, pd.title, pd.detail));
-        LM_TREE(responseTree, "Error response payload body", LmtSR);
+        KT_W("Unable to DELETE subordinate subscription '%s': status code %d, %s: %s", subordinateP->subscriptionId, r, pd.title, pd.detail);
+        KT_TREE(responseTree, "Error response payload body", KtSR);
       }
     }
 

@@ -25,8 +25,6 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                     // TraceLevels
-
 #include "orionld/types/QNode.h"                               // QNode
 
 
@@ -35,7 +33,7 @@
 //
 // qPresent -
 //
-extern void qPresent(QNode* qP, const char* prefix, const char* what, TraceLevels tLevel);
+extern void qPresent(QNode* qP, const char* prefix, const char* what, int tLevel);
 
 
 

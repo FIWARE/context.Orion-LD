@@ -24,14 +24,12 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjObject, kjChildAdd, ...
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjStringValueLookupInArray.h"                    // kjStringValueLookupInArray
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
 
 #include "orionld/types/OrionldProblemDetails.h"                 // OrionldProblemDetails
 #include "orionld/types/OrionLdRestService.h"                    // OrionLdRestService
@@ -237,7 +235,7 @@ bool orionldGetEntityType(void)
 
   if (entities == 0)
   {
-    LM_E(("xxxEntityTypeGet: no entities found"));
+    KT_E("xxxEntityTypeGet: no entities found");
     orionldError(OrionldResourceNotFound, "Entity Type Not Found", typeExpanded, 404);
     return false;
   }

@@ -22,7 +22,10 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                       // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+}
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
@@ -59,7 +62,7 @@ bool orionldDeleteRegistration(void)
   if (regCacheItemRemove(orionldState.tenantP->regCache, orionldState.wildcard[0]) == false)
   {
     if (noCache == false)
-      LM_W(("The registration '%s' does not exist in sub-cache ... (sub-cache is enabled)"));
+      KT_W("The registration '%s' does not exist in sub-cache ... (sub-cache is enabled)");
   }
 
   if (mongocRegistrationDelete(orionldState.wildcard[0]) == false)

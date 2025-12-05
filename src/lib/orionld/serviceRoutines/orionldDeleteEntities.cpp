@@ -24,22 +24,22 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjObject, kjString, kjChildAdd, ...
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/types/DistOp.h"                                // DistOp
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/context/orionldContextItemExpand.h"            // orionldContextItemExpand
 #include "orionld/payloadCheck/pCheckQueryParams.h"              // pCheckQueryParams
 #include "orionld/mongoc/mongocEntitiesQuery.h"                  // mongocEntitiesQuery
 #include "orionld/mongoc/mongocEntitiesDelete.h"                 // mongocEntitiesDelete
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
-#include "orionld/kjTree/kjTreeLog.h"                            // LM_TREE
+#include "orionld/kjTree/kjTreeLog.h"                            // KT_TREE
 #include "orionld/regMatch/regMatchOperation.h"                  // regMatchOperation
 #include "orionld/regMatch/regMatchForEntitiesQuery.h"           // regMatchForEntitiesQuery
 #include "orionld/distOp/distOpSuccess.h"                        // distOpSuccess
@@ -111,7 +111,7 @@ DistOp* distOpRequestsForEntitiesPurge(char* idPattern, QNode* qNode)
   distOpList = distOpListsMerge(distOpList, inclusiveList);
   distOpList = distOpListsMerge(distOpList, auxiliarList);
 
-  LM_W(("distOpList: %p", distOpList));
+  KT_W("distOpList: %p", distOpList);
   return distOpList;
 }
 
@@ -179,21 +179,21 @@ bool orionldDeleteEntities(void)
       KjNode* _idP = kjLookup(eP, "_id");
       if (_idP == NULL)
       {
-        LM_E(("Entity in Database without '_id'!"));
+        KT_E("Entity in Database without '_id'!");
         continue;
       }
 
       KjNode* typeP = kjLookup(_idP, "type");
       if (typeP == NULL)
       {
-        LM_E(("Entity in Database without 'type'!"));
+        KT_E("Entity in Database without 'type'!");
         continue;
       }
 
       KjNode* idP = kjLookup(_idP, "id");
       if (idP == NULL)
       {
-        LM_E(("Entity in Database without 'id'!"));
+        KT_E("Entity in Database without 'id'!");
         continue;
       }
 
@@ -217,7 +217,7 @@ bool orionldDeleteEntities(void)
   {
     distOpsSend(distOpList, orionldState.in.aerOS);
     distOpResponses(distOpList, responseBody);
-    LM_TREE(responseBody, "responseBody", LmtSR);
+    KT_TREE(responseBody, "responseBody", KtSR);
     distOpListRelease(distOpList);
   }
 
@@ -230,7 +230,7 @@ bool orionldDeleteEntities(void)
   {
     if (mongocEntitiesDelete(localEntityIdArray) == false)
     {
-      LM_E(("mongocEntitiesDelete reports an error to delete the entities"));
+      KT_E("mongocEntitiesDelete reports an error to delete the entities");
       for (KjNode* eP = localEntityIdArray; eP != NULL; eP = eP->next)
       {
         distOpFailure(responseBody, NULL, "Database Error", eP->name, 500, NULL);

@@ -29,9 +29,6 @@ extern "C"
 #include "kjson/kjNavigate.h"                                    // kjNavigate
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
-
 #include "orionld/types/OrionLdRestService.h"                    // OrionLdRestService
 #include "orionld/common/orionldState.h"                         // orionldState, ddsSupport
 #include "orionld/common/orionldError.h"                         // orionldError

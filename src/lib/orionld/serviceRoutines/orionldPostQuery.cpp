@@ -24,21 +24,21 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjArray, ...
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjChildCount.h"                                  // kjChildCount
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/types/TreeNode.h"                              // TreeNode
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/datasetEntityFix.h"                     // datasetEntityFix
 #include "orionld/legacyDriver/legacyPostQuery.h"                // legacyPostQuery
 #include "orionld/payloadCheck/pCheckQuery.h"                    // pCheckQuery
 #include "orionld/mongoc/mongocEntitiesQuery2.h"                 // mongocEntitiesQuery2
-#include "orionld/kjTree/kjTreeLog.h"                            // LM_TREE
+#include "orionld/kjTree/kjTreeLog.h"                            // KT_TREE
 #include "orionld/dbModel/dbModelToApiEntity.h"                  // dbModelToApiEntity2
 #include "orionld/serviceRoutines/orionldPostQuery.h"            // Own interface
 
@@ -151,10 +151,10 @@ bool orionldPostQuery(void)
   if (orionldState.responseTree->value.firstChildP == NULL)
     orionldState.noLinkHeader = true;
 
-  LM_T(LmtSR, ("datasetIdArray at %p", datasetIdArray));
+  KT_T(KtSR, "datasetIdArray at %p", datasetIdArray);
   if (datasetIdArray != NULL)
   {
-    LM_TREE(datasetIdArray, "datasetIdArray", LmtSR);
+    KT_TREE(datasetIdArray, "datasetIdArray", KtSR);
     int datasets = kjChildCount(datasetIdArray);
 
     //

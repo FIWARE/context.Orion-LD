@@ -29,9 +29,6 @@ extern "C"
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
-
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/eqForDot.h"                             // eqForDot
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup

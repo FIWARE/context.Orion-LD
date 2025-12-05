@@ -24,21 +24,21 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                          // KT_*
 #include "kjson/KjNode.h"                                           // KjNode
 #include "kjson/kjFree.h"                                           // kjFree
 #include "kjson/kjLookup.h"                                         // kjLookup
 #include "kjson/kjBuilder.h"                                        // kjChildRemove, kjChildAdd, kjArray
 }
 
-#include "logMsg/logMsg.h"                                          // LM_*
-
 #include "orionld/types/OrionldGeoInfo.h"                           // OrionldGeoInfo
 #include "orionld/types/QNode.h"                                    // QNode
 #include "orionld/types/DistOp.h"                                   // DistOp
 #include "orionld/common/orionldState.h"                            // orionldState
+#include "orionld/common/traceLevels.h"                             // KTrace level
 #include "orionld/distOp/distOpListRelease.h"                       // distOpListRelease
 #include "orionld/entityMaps/entityMapCreate.h"                     // entityMapCreate
-#include "orionld/kjTree/kjTreeLog.h"                               // LM_TREE
+#include "orionld/kjTree/kjTreeLog.h"                               // KT_TREE
 #include "orionld/serviceRoutines/orionldGetEntitiesLocal.h"        // orionldGetEntitiesLocal
 #include "orionld/serviceRoutines/orionldGetEntitiesPage.h"         // orionldGetEntitiesPage
 #include "orionld/serviceRoutines/orionldGetEntitiesDistributed.h"  // Own interface
@@ -152,19 +152,19 @@ extern "C"
 //
 bool orionldGetEntitiesDistributed(DistOp* distOpList, char* idPattern, QNode* qNode, OrionldGeoInfo* geoInfoP)
 {
-  LM_T(LmtEntityMap, ("orionldState.in.entityMap at %p", orionldState.in.entityMap));
+  KT_T(KtEntityMap, "orionldState.in.entityMap at %p", orionldState.in.entityMap);
   if (orionldState.in.entityMap != NULL)
     return orionldGetEntitiesPage();
 
-  LM_T(LmtEntityMap, ("--------------------------- Creating entity map"));
+  KT_T(KtEntityMap, "--------------------------- Creating entity map");
   orionldState.in.entityMap = entityMapCreate(distOpList, idPattern, qNode, geoInfoP);
   distOpListRelease(distOpList);
 
-  LM_T(LmtCount, ("--------------------------- entity map at %p", orionldState.in.entityMap));
+  KT_T(KtCount, "--------------------------- entity map at %p", orionldState.in.entityMap);
   if (orionldState.in.entityMap != NULL)
   {
-    LM_T(LmtCount, ("--------------------------- Created entity map"));
-    LM_TREE(orionldState.in.entityMap->map, "EntityMap excl local entities", LmtCount);
+    KT_T(KtCount, "--------------------------- Created entity map");
+    KT_TREE(orionldState.in.entityMap->map, "EntityMap excl local entities", KtCount);
 
     // Add the new entity map to the global list of entity maps
     // sem-take
@@ -183,7 +183,7 @@ bool orionldGetEntitiesDistributed(DistOp* distOpList, char* idPattern, QNode* q
     }
   }
   else
-    LM_E(("entityMapCreate returned NULL"));
+    KT_E("entityMapCreate returned NULL");
 
   //
   // if there are no entity hits to the matching registrations, the request is treated as a local request

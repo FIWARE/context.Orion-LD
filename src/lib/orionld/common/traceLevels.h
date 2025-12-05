@@ -39,10 +39,16 @@ typedef enum OrionldTraceLevels
   StRequest                 = 200,
   StRequestHeaders          = 201,
   StRequestParams           = 202,
-  StSR                      = 210,
+  KtSR                      = 210,
 
   // URL Params
-  KtCsf                     = 300,
+  KtUrlParam                = 300,
+  KtCsf                     = 301,
+  KtCount                   = 302,
+  KtPick                    = 303,
+  KtFormat                  = 304,
+  KtSysAttrs                = 305,
+  KtQ                       = 306,
 
   StLinked                  = 400,
   StLinkedInline            = 401,
@@ -62,14 +68,33 @@ typedef enum OrionldTraceLevels
   KtSubs                    = 800,
   KtPernot                  = 801,
   KtSubordinate             = 802,
+  KtShowChanges             = 803,
 
   // Subscription Cache
   KtSubCache                = 900,
   KtSubCacheSync            = 901,
+  KtSubCacheStats           = 902,
+
+  // Alterations
+  KtAlt                     = 1000,
 
   // Notifications
-  KtNotification            = 1000,
-  KtNotificationStats       = 1001,
+  KtNotification            = 1100,
+  KtNotificationStats       = 1101,
+
+  // Distributed Operations
+  KtDistOp                  = 1200,
+  KtDistOpRequest           = 1201,
+  KtDistOpList              = 1202,
+  KtDistOpResponseDetail    = 1203,
+  KtDistOpAttributes        = 1204,
+  KtDistOpAttrRemove        = 1205,
+
+  // Entity Maps
+  KtEntityMap               = 1300,
+
+  // TRoE
+  KtTroe                    = 1400,
 
   // DDS
   StDds                     = 2001,

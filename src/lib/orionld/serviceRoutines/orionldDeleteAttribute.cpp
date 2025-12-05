@@ -25,6 +25,7 @@
 extern "C"
 {
 #include "kbase/kMacros.h"                                       // K_FT
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
@@ -33,15 +34,14 @@ extern "C"
 #include "kjson/kjChildCount.h"                                  // kjChildCount
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/types/DistOp.h"                                // DistOp
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
+#include "orionld/common/traceLevels.h"                          // KTrace level
 #include "orionld/common/responseFix.h"                          // responseFix
 #include "orionld/common/dotForEq.h"                             // dotForEq
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
-#include "orionld/kjTree/kjTreeLog.h"                            // LM_TREE
+#include "orionld/kjTree/kjTreeLog.h"                            // KT_TREE
 #include "orionld/legacyDriver/legacyDeleteAttribute.h"          // legacyDeleteAttribute
 #include "orionld/payloadCheck/pCheckUri.h"                      // pCheckUri
 #include "orionld/mongoc/mongocEntityGet.h"                      // mongocEntityGet
@@ -80,13 +80,13 @@ DistOp* distributedDelete(KjNode* responseBody, char* entityId, char* entityType
   array[0]    = attrNameExpanded;
 
   DistOp* exclusiveList = regMatchForEntityGet(RegModeExclusive, DoDeleteAttrs, entityId, entityTypeExpanded, &attrV, NULL);
-  LM_T(LmtDistOpAttrRemove, ("%d attrs left", attrV.items));
+  KT_T(KtDistOpAttrRemove, "%d attrs left", attrV.items);
   DistOp* redirectList  = (attrV.items == 1)? regMatchForEntityGet(RegModeRedirect,  DoDeleteAttrs, entityId, entityTypeExpanded, &attrV, NULL) : NULL;
 
   if (redirectList != NULL)
     attrV.items = 0;  // Chopped off the only attribute as it was a match to a redirect registration
 
-  LM_T(LmtDistOpAttrRemove, ("%d attrs left", attrV.items));
+  KT_T(KtDistOpAttrRemove, "%d attrs left", attrV.items);
   DistOp* inclusiveList = (attrV.items == 1)? regMatchForEntityGet(RegModeInclusive, DoDeleteAttrs, entityId, entityTypeExpanded, &attrV, NULL) : NULL;
   DistOp* distOpList;
 
@@ -99,7 +99,7 @@ DistOp* distributedDelete(KjNode* responseBody, char* entityId, char* entityType
   if (distOpList == NULL)
     return NULL;
 
-  LM_T(LmtDistOpAttrRemove, ("%d attrs left", attrV.items));
+  KT_T(KtDistOpAttrRemove, "%d attrs left", attrV.items);
 
   //
   // Enqueue all forwarded requests
@@ -124,7 +124,7 @@ DistOp* distributedDelete(KjNode* responseBody, char* entityId, char* entityType
       }
       else
       {
-        LM_W(("Reg %s: Forwarded request failed", distOpP->regP->regId));
+        KT_W("Reg %s: Forwarded request failed", distOpP->regP->regId);
         distOpP->error = true;
       }
     }
@@ -142,7 +142,7 @@ DistOp* distributedDelete(KjNode* responseBody, char* entityId, char* entityType
     CURLMcode cm = curl_multi_perform(orionldState.curlDoMultiP, &stillRunning);
     if (cm != 0)
     {
-      LM_E(("Internal Error (curl_multi_perform: error %d)", cm));
+      KT_E("Internal Error (curl_multi_perform: error %d)", cm);
       forwards = 0;
       break;
     }
@@ -152,17 +152,17 @@ DistOp* distributedDelete(KjNode* responseBody, char* entityId, char* entityType
       cm = curl_multi_wait(orionldState.curlDoMultiP, NULL, 0, 1000, NULL);
       if (cm != CURLM_OK)
       {
-        LM_E(("Internal Error (curl_multi_wait: error %d", cm));
+        KT_E("Internal Error (curl_multi_wait: error %d", cm);
         break;
       }
     }
 
     if ((++loops >= 50) && ((loops % 25) == 0))
-      LM_W(("curl_multi_perform doesn't seem to finish ... (%d loops)", loops));
+      KT_W("curl_multi_perform doesn't seem to finish ... (%d loops)", loops);
   }
 
   if (loops >= 100)
-    LM_W(("curl_multi_perform finally finished!   (%d loops)", loops));
+    KT_W("curl_multi_perform finally finished!   (%d loops)", loops);
 
   // Wait for responses
   if (forwards > 0)
@@ -224,7 +224,7 @@ static KjNode* entityFromDb(const char* entityId, char** entityTypeP)
 
   KjNode* entityP = mongocEntityGet(entityId, projectionV);
 
-  LM_TREE(entityP, "entityP", LmtSR);
+  KT_TREE(entityP, "entityP", KtSR);
 
   if (entityP != NULL)
   {
@@ -234,7 +234,7 @@ static KjNode* entityFromDb(const char* entityId, char** entityTypeP)
     if (typeP != NULL)
       *entityTypeP = typeP->value.s;
 
-    LM_T(LmtSR, ("entityType: '%s'", *entityTypeP));
+    KT_T(KtSR, "entityType: '%s'", *entityTypeP);
   }
 
   return entityP;
@@ -316,7 +316,7 @@ bool orionldDeleteAttribute(void)
       {
         if (distOpP->httpResponseCode != 404)
         {
-          LM_T(LmtSR, ("Found a non-404 DistOp response (%d)", distOpP->httpResponseCode));
+          KT_T(KtSR, "Found a non-404 DistOp response (%d)", distOpP->httpResponseCode);
           distOp404 = false;
         }
       }
@@ -331,8 +331,8 @@ bool orionldDeleteAttribute(void)
   if (consumed == true)
   {
     // Respond according to responses in distOpList
-    LM_T(LmtSR, ("Consumed by registration"));
-    LM_TREE(responseBody, "DistOps: response", LmtSR);
+    KT_T(KtSR, "Consumed by registration");
+    KT_TREE(responseBody, "DistOps: response", KtSR);
 
     int      noOf404s    = 0;
     int      noOf204s    = 0;
@@ -343,7 +343,7 @@ bool orionldDeleteAttribute(void)
 
     for (DistOp* distOpP = distOpList; distOpP != NULL; distOpP = distOpP->next)
     {
-      LM_T(LmtSR, ("DistOp Response: %d", distOpP->httpResponseCode));
+      KT_T(KtSR, "DistOp Response: %d", distOpP->httpResponseCode);
 
       if (distOpP->httpResponseCode == 204)
         ++noOf204s;
@@ -360,9 +360,9 @@ bool orionldDeleteAttribute(void)
       }
     }
 
-    LM_T(LmtSR, ("noOf404s: %d", noOf404s));
-    LM_T(LmtSR, ("noOf204s: %d", noOf204s));
-    LM_T(LmtSR, ("others:   %d", others));
+    KT_T(KtSR, "noOf404s: %d", noOf404s);
+    KT_T(KtSR, "noOf204s: %d", noOf204s);
+    KT_T(KtSR, "others:   %d", others);
 
     if (others != 0)  // "Weird responses. let's just give it back to the end user
     {
@@ -401,12 +401,12 @@ bool orionldDeleteAttribute(void)
   //
   // 3. Lookup the default attribute inside entityP
   //
-  LM_TREE(entityP, "entityP", LmtSR);
+  KT_TREE(entityP, "entityP", KtSR);
   KjNode* dbAttrsP       = (entityP != NULL)? kjLookup(entityP, "attrs") : NULL;
 
-  LM_T(LmtSR, ("attrNameEq: '%s'", attrNameEq));
+  KT_T(KtSR, "attrNameEq: '%s'", attrNameEq);
   defaultAttrP = (dbAttrsP != NULL)? kjLookup(dbAttrsP, attrNameEq) : NULL;
-  LM_T(LmtSR, ("dbAttrsP at %p", dbAttrsP));
+  KT_T(KtSR, "dbAttrsP at %p", dbAttrsP);
 
   //
   // 404 if no datasetId, no default attribute found and empty distOpList (or only 404s in responseBody)
@@ -418,24 +418,23 @@ bool orionldDeleteAttribute(void)
     return false;
   }
 
-  LM_T(LmtSR, ("defaultAttrP: %p", defaultAttrP));
+  KT_T(KtSR, "defaultAttrP: %p", defaultAttrP);
   //
   // datasetId given
   // (deleteAll also needs @datasets.attrNameEq - for 404 check, so, must take that out of the 'if')
   //
   if ((orionldState.uriParams.datasetId != NULL) || (orionldState.uriParams.deleteAll == true))
   {
-    LM_T(LmtSR, ("defaultAttrP: %p", defaultAttrP));
+    KT_T(KtSR, "defaultAttrP: %p", defaultAttrP);
     KjNode* datasetsP = (entityP != NULL)? kjLookup(entityP, "@datasets") : NULL;
-    LM_T(LmtSR, ("defaultAttrP: %p", defaultAttrP));
+    KT_T(KtSR, "defaultAttrP: %p", defaultAttrP);
     attrDatasetV = (datasetsP != NULL)? kjLookup(datasetsP, attrNameEq) : NULL;
-    LM_T(LmtSR, ("datasetsP at %p", datasetsP));
-    LM_T(LmtSR, ("attrDatasetV at %p", attrDatasetV));
+    KT_T(KtSR, "datasetsP at %p", datasetsP);
+    KT_T(KtSR, "attrDatasetV at %p", attrDatasetV);
   }
 
-  LM_TREE(attrDatasetV, "attrDatasetV BEFORE", LmtSR);
+  KT_TREE(attrDatasetV, "attrDatasetV BEFORE", KtSR);
 
-  LM_T(LmtSR, ("Here"));
   if (attrDatasetV != NULL)
   {
     if (orionldState.uriParams.datasetId != NULL)
@@ -447,7 +446,7 @@ bool orionldDeleteAttribute(void)
           KjNode* dsetIdP = kjLookup(dsetP, "datasetId");
           if (dsetIdP == NULL)
           {
-            LM_W(("Attribute Instance without datasetId in DB (entity: '%s', attribute: '%s'", entityId, orionldState.in.pathAttrExpanded));
+            KT_W("Attribute Instance without datasetId in DB (entity: '%s', attribute: '%s'", entityId, orionldState.in.pathAttrExpanded);
             continue;
           }
 
@@ -462,7 +461,7 @@ bool orionldDeleteAttribute(void)
       {
         KjNode* dsetIdP = kjLookup(attrDatasetV, "datasetId");
         if (dsetIdP == NULL)
-          LM_W(("Attribute Instance without datasetId in DB (entity: '%s', attribute: '%s'", entityId, orionldState.in.pathAttrExpanded));
+          KT_W("Attribute Instance without datasetId in DB (entity: '%s', attribute: '%s'", entityId, orionldState.in.pathAttrExpanded);
         else
         {
           if (strcmp(dsetIdP->value.s, orionldState.uriParams.datasetId) == 0)
@@ -472,7 +471,7 @@ bool orionldDeleteAttribute(void)
     }
   }
 
-  LM_T(LmtSR, ("defaultAttrP: %p", defaultAttrP));
+  KT_T(KtSR, "defaultAttrP: %p", defaultAttrP);
 
   if ((orionldState.uriParams.datasetId != NULL) || (orionldState.uriParams.deleteAll == true))
   {
@@ -488,11 +487,11 @@ bool orionldDeleteAttribute(void)
     }
   }
 
-  LM_T(LmtSR, ("datasetId: '%s'", orionldState.uriParams.datasetId));
-  LM_T(LmtSR, ("deleteAll: %s", K_FT(orionldState.uriParams.deleteAll)));
-  LM_T(LmtSR, ("attrDatasetV: %p", attrDatasetV));
-  LM_T(LmtSR, ("attrDatasetP: %p", attrDatasetP));
-  LM_T(LmtSR, ("defaultAttrP: %p", defaultAttrP));
+  KT_T(KtSR, "datasetId: '%s'", orionldState.uriParams.datasetId);
+  KT_T(KtSR, "deleteAll: %s", K_FT(orionldState.uriParams.deleteAll));
+  KT_T(KtSR, "attrDatasetV: %p", attrDatasetV);
+  KT_T(KtSR, "attrDatasetP: %p", attrDatasetP);
+  KT_T(KtSR, "defaultAttrP: %p", defaultAttrP);
 
   //
   // Local actual deletion of the attribute
@@ -513,15 +512,15 @@ bool orionldDeleteAttribute(void)
   else
     deleteDataset = true;
 
-  LM_T(LmtSR, ("deleteDefault: %s", K_FT(deleteDefault)));
-  LM_T(LmtSR, ("deleteAll:     %s", K_FT(deleteAll)));
-  LM_T(LmtSR, ("deleteDataset: %s", K_FT(deleteDataset)));
+  KT_T(KtSR, "deleteDefault: %s", K_FT(deleteDefault));
+  KT_T(KtSR, "deleteAll:     %s", K_FT(deleteAll));
+  KT_T(KtSR, "deleteDataset: %s", K_FT(deleteDataset));
 
   if (deleteDefault == true)
   {
     if (defaultAttrP != NULL)
     {
-      LM_T(LmtSR, ("Deleting the default attribute '%s'", orionldState.in.pathAttrExpanded));
+      KT_T(KtSR, "Deleting the default attribute '%s'", orionldState.in.pathAttrExpanded);
       int r = mongocAttributeDelete(entityId, orionldState.in.pathAttrExpanded);
       if (r == false)
       {
@@ -541,10 +540,10 @@ bool orionldDeleteAttribute(void)
 
   char datasetPath[512];
   snprintf(datasetPath, sizeof(datasetPath) - 1, "@datasets.%s", attrNameEq);
-  LM_T(LmtSR, ("Entity DB field to be removed/replaced: '%s' (deleteDataset: %s)", datasetPath, K_FT(deleteDataset)));
+  KT_T(KtSR, "Entity DB field to be removed/replaced: '%s' (deleteDataset: %s)", datasetPath, K_FT(deleteDataset));
 
-  LM_T(LmtSR, ("attrDatasetP: %p", attrDatasetP));
-  LM_T(LmtSR, ("defaultAttrP: %p", defaultAttrP));
+  KT_T(KtSR, "attrDatasetP: %p", attrDatasetP);
+  KT_T(KtSR, "defaultAttrP: %p", defaultAttrP);
   if ((attrDatasetP == NULL) && (defaultAttrP == NULL) && (distOp404 == true) && (attrDatasetV == NULL))
   {
     orionldError(OrionldResourceNotFound, "Attribute Not Found", attrName, 404);
@@ -555,15 +554,15 @@ bool orionldDeleteAttribute(void)
   {
     if (attrDatasetP != NULL)
     {
-      LM_T(LmtSR, ("Deleting the dataset '%s' of attribute '%s'", orionldState.uriParams.datasetId, orionldState.in.pathAttrExpanded));
+      KT_T(KtSR, "Deleting the dataset '%s' of attribute '%s'", orionldState.uriParams.datasetId, orionldState.in.pathAttrExpanded);
 
       bool removal = false;
       if (attrDatasetV->type == KjArray)
       {
-        LM_TREE(attrDatasetV, "attrDatasetV BEFORE", LmtSR);
-        LM_T(LmtSR, ("Deleting attrDatasetP (%p) from attrDatasetV", attrDatasetP));
+        KT_TREE(attrDatasetV, "attrDatasetV BEFORE", KtSR);
+        KT_T(KtSR, "Deleting attrDatasetP (%p) from attrDatasetV", attrDatasetP);
         kjChildRemove(attrDatasetV, attrDatasetP);
-        LM_TREE(attrDatasetV, "attrDatasetV AFTER ", LmtSR);
+        KT_TREE(attrDatasetV, "attrDatasetV AFTER ", KtSR);
         if (attrDatasetV->value.firstChildP == NULL)  // Empty array
           removal = true;
       }
@@ -572,16 +571,16 @@ bool orionldDeleteAttribute(void)
 
       if (removal == true)
       {
-        LM_T(LmtSR, ("ALL the dataset is being removed"));
+        KT_T(KtSR, "ALL the dataset is being removed");
         deleteAll = true;
       }
       else  // Replace
       {
         char* detail = NULL;
-        LM_T(LmtSR, ("Calling mongocEntityFieldReplace"));
+        KT_T(KtSR, "Calling mongocEntityFieldReplace");
         if (mongocEntityFieldReplace(entityId, datasetPath, attrDatasetV, &detail) != true)
         {
-          LM_E(("mongocEntityFieldReplace failed for '%s' / '%s': %s", entityId, datasetPath, detail));
+          KT_E("mongocEntityFieldReplace failed for '%s' / '%s': %s", entityId, datasetPath, detail);
           orionldError(OrionldInternalError, "DB Error (unable to replace a dataset field in an entity)", datasetPath, 500);
           return false;
         }
@@ -604,10 +603,10 @@ bool orionldDeleteAttribute(void)
   if (deleteAll == true)
   {
     char* detail = NULL;
-    LM_T(LmtSR, ("Calling mongocEntityFieldDelete"));
+    KT_T(KtSR, "Calling mongocEntityFieldDelete");
     if (mongocEntityFieldDelete(entityId, datasetPath, &detail) != true)
     {
-      LM_E(("mongocEntityFieldDelete failed for '%s' / '%s': %s", entityId, datasetPath, detail));
+      KT_E("mongocEntityFieldDelete failed for '%s' / '%s': %s", entityId, datasetPath, detail);
       orionldError(OrionldInternalError, "DB Error (unable to remove a dataset field in an entity)", datasetPath, 500);
       return false;
     }

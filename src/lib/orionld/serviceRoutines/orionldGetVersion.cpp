@@ -45,8 +45,6 @@ extern "C"
 #include "kjson/kjBuilder.h"                                   // kjObject, kjString, kjBoolean, ...
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
 #include "cache/subCache.h"                                    // subCacheItems
 
 #include "orionld/common/orionldState.h"                       // orionldState, orionldVersion, postgresServerVersion, mongocServerVersion

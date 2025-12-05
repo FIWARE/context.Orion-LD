@@ -24,11 +24,10 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                          // KT_*
 #include "kjson/KjNode.h"                                           // KjNode
 #include "kjson/kjClone.h"                                          // kjClone
 }
-
-#include "logMsg/logMsg.h"                                          // LM_*
 
 #include "orionld/types/OrionldGeoInfo.h"                           // OrionldGeoInfo
 #include "orionld/types/QNode.h"                                    // QNode
@@ -36,10 +35,10 @@ extern "C"
 #include "orionld/types/DistOp.h"                                   // DistOp
 #include "orionld/common/orionldState.h"                            // orionldState
 #include "orionld/common/orionldError.h"                            // orionldError
+#include "orionld/common/traceLevels.h"                             // KTrace level
 #include "orionld/common/tenantList.h"                              // tenant0
 #include "orionld/q/qClone.h"                                       // qClone
 #include "orionld/legacyDriver/legacyGetEntities.h"                 // legacyGetEntities
-#include "orionld/kjTree/kjTreeLog.h"                               // kjTreeLog
 #include "orionld/payloadCheck/pCheckQueryParams.h"                 // pCheckQueryParams
 #include "orionld/distOp/distOpRequests.h"                          // distOpRequests
 #include "orionld/distOp/distOpListsMerge.h"                        // distOpListsMerge
@@ -203,7 +202,7 @@ bool orionldGetEntities(void)
 
     // This is the DistOp list to be used over pagination - it is "malloqued" so it survives the current request
     distOpListDebug2(orionldState.distOpList, "distOpList for Entity Query");
-    LM_T(LmtDistOpList, ("--------------- "));
+    KT_T(KtDistOpList, "--------------- ");
   }
 
   return orionldGetEntitiesDistributed(orionldState.distOpList, idPattern, qNode, &geoInfo);

@@ -477,7 +477,7 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
     {
       KjNode* valueP = kjLookup(dbAttrP, "value");
 
-      LM_TREE(dbAttrP, "BEFORE", StSR);
+      LM_TREE(dbAttrP, "BEFORE", KtSR);
 
       if (orionldState.serviceP->serviceRoutine != orionldGetAttribute)
       {
@@ -496,7 +496,7 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
         attrP = dbAttrP;
       }
 
-      LM_TREE(attrP, "AFTER", StSR);
+      LM_TREE(attrP, "AFTER", KtSR);
     }
 
     attrP->name = shortName;

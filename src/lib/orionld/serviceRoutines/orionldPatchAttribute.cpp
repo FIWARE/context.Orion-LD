@@ -35,14 +35,12 @@ extern "C"
 #include "kjson/kjStringValueLookupInArray.h"                    // kjStringValueLookupInArray
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/types/DistOp.h"                                // DistOp
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
+#include "orionld/common/traceLevels.h"                          // KTrace level
 #include "orionld/common/dotForEq.h"                             // dotForEq
 #include "orionld/common/responseFix.h"                          // responseFix
-#include "orionld/common/traceLevels.h"                          // KT_T trace levels
 #include "orionld/legacyDriver/legacyPatchAttribute.h"           // legacyPatchAttribute
 #include "orionld/payloadCheck/pCheckUri.h"                      // pCheckUri
 #include "orionld/payloadCheck/pCheckAttribute.h"                // pCheckAttribute
@@ -75,10 +73,10 @@ static void mdItemRemove(KjNode* mdArray, const char* subAttrName)
   if (mdItemP != NULL)
   {
     kjChildRemove(mdArray, mdItemP);
-    LM_T(LmtSR, ("Removed '%s' from '%s'", subAttrName, mdArray->name));
+    KT_T(KtSR, "Removed '%s' from '%s'", subAttrName, mdArray->name);
   }
   else
-    LM_T(LmtSR, ("Can't find subAttr '%s' in 'md'", subAttrName));
+    KT_T(KtSR, "Can't find subAttr '%s' in 'md'", subAttrName);
 }
 
 
@@ -92,7 +90,7 @@ static void mdItemAdd(KjNode* mdArray, const char* subAttrName)
   KjNode* mdItemP = kjString(orionldState.kjsonP, NULL, subAttrName);
 
   kjChildAdd(mdArray, mdItemP);
-  LM_T(LmtSR, ("Added '%s' to '%s'", subAttrName, mdArray->name));
+  KT_T(KtSR, "Added '%s' to '%s'", subAttrName, mdArray->name);
 }
 
 
@@ -162,7 +160,7 @@ static void attributeMerge(KjNode* dbAttrP, KjNode* incomingP, KjNode* addedV, K
         dbValueP->value = subAttrP->value;
       }
       else
-        LM_E(("Databse Error (attribute '%s' without a 'value' field in the database)", dbAttrP->name));
+        KT_E("Databse Error (attribute '%s' without a 'value' field in the database)", dbAttrP->name);
 
       subAttrP = next;
       continue;
@@ -171,7 +169,7 @@ static void attributeMerge(KjNode* dbAttrP, KjNode* incomingP, KjNode* addedV, K
     char eqName[512];
     strncpy(eqName, subAttrP->name, sizeof(eqName) - 1);
     dotForEq(eqName);
-    LM_T(LmtSR, ("Looking up '%s' in dbAttr's md", eqName));
+    KT_T(KtSR, "Looking up '%s' in dbAttr's md", eqName);
     KjNode* dbSubAttrP = kjLookup(mdP, eqName);
 
     if (dbSubAttrP != NULL)
@@ -193,7 +191,7 @@ static void attributeMerge(KjNode* dbAttrP, KjNode* incomingP, KjNode* addedV, K
 
     if (dbSubAttrP == NULL)
     {
-      LM_T(LmtSR, ("dbSubAttrP == NULL, so, adding '%s' to mdNames", subAttrP->name));
+      KT_T(KtSR, "dbSubAttrP == NULL, so, adding '%s' to mdNames", subAttrP->name);
       mdItemAdd(mdNamesP, subAttrP->name);
     }
 
@@ -202,17 +200,17 @@ static void attributeMerge(KjNode* dbAttrP, KjNode* incomingP, KjNode* addedV, K
     dbModelFromApiSubAttribute(subAttrP, dbSubAttrP, addedV, removedV, &ignore);
 
     if (strcmp(subAttrP->name, "observedAt") == 0)
-      LM_T(LmtSR, ("observedAt ... special treatment (not String - object with Float)"));
+      KT_T(KtSR, "observedAt ... special treatment (not String - object with Float)");
     else if (strcmp(subAttrP->name, "unitCode") == 0)
-      LM_T(LmtSR, ("observedAt ... special treatment (not String - object with String)"));
+      KT_T(KtSR, "observedAt ... special treatment (not String - object with String)");
 
-    LM_T(LmtSR, ("Adding sub-attr '%s' to 'md'", subAttrP->name));
+    KT_T(KtSR, "Adding sub-attr '%s' to 'md'", subAttrP->name);
     kjChildRemove(incomingP, subAttrP);
     kjChildAdd(mdP, subAttrP);
 
     if (mustAdd == true)
     {
-      LM_T(LmtSR, ("Adding 'md' to dbAttr"));
+      KT_T(KtSR, "Adding 'md' to dbAttr");
       kjChildAdd(dbAttrP, mdP);
       mustAdd = false;
     }
@@ -338,7 +336,7 @@ bool orionldPatchAttribute(void)
   {
     entityType = dbModelEntityTypeExtract(dbEntityP);
     orionldState.entityTypeForTroe = entityType;
-    LM_T(LmtTroe, ("orionldState.entityTypeForTroe: %s", orionldState.entityTypeForTroe));
+    KT_T(KtTroe, "orionldState.entityTypeForTroe: %s", orionldState.entityTypeForTroe);
   }
   else if (orionldState.distributed == false)
   {
@@ -434,7 +432,7 @@ bool orionldPatchAttribute(void)
       //
       int r = mongocAttributesAdd(entityId, NULL, dbAttrP, true);
       if (r == false)
-        LM_E(("Database Error ()"));
+        KT_E("Database Error (mongocAttributesAdd failed)");
 
       //
       // For alteration, we need:
@@ -444,7 +442,7 @@ bool orionldPatchAttribute(void)
       KjNode* _idNodeP = kjLookup(dbEntityP, "_id");
 
       if (_idNodeP == NULL)
-        LM_E(("Database Error (no _id in the DB for entity '%s')", entityId));
+        KT_E("Database Error (no _id in the DB for entity '%s')", entityId);
       else
       {
         KjNode*      eTypeNodeP = kjLookup(_idNodeP, "type");
@@ -486,7 +484,7 @@ bool orionldPatchAttribute(void)
           alterationP->finalApiEntityWithSysAttrsP = finalApiEntityWithSysAttrsP;
         }
         else
-          LM_E(("Database Error (no _id::type in the DB for entity '%s')", entityId));
+          KT_E("Database Error (no _id::type in the DB for entity '%s')", entityId);
       }
     }
   }

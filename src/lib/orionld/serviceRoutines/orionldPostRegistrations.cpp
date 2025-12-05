@@ -22,10 +22,9 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                     // LM_*
-
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjLookup.h"                                    // kjLookup
 #include "kjson/kjBuilder.h"                                   // kjString, kjFloat, ...
@@ -151,7 +150,7 @@ bool orionldPostRegistrations(void)
   KjNode*  propertyTree    = NULL;  // Will be set by pcheckRegistration
 
   if (pCheckRegistrationType(regTypeP) == false)
-    LM_RE(false, ("pCheckRegistrationType failed"));
+    KT_RE(false, "pCheckRegistrationType failed");
 
   char  registrationIdV[100];
   char* registrationId = registrationIdV;
@@ -165,7 +164,7 @@ bool orionldPostRegistrations(void)
   else
   {
     if (pCheckRegistrationId(regIdP) == false)
-      LM_RE(false, ("pCheckRegistrationId failed"));
+      KT_RE(false, "pCheckRegistrationId failed");
 
     registrationId = regIdP->value.s;
   }
@@ -174,14 +173,14 @@ bool orionldPostRegistrations(void)
   bool            b           = pcheckRegistration(NULL, regP, NULL, false, true, &propertyTree, &fwdContextP);
 
   if (b == false)
-    LM_RE(false, ("pCheckRegistration FAILED"));
+    KT_RE(false, "pCheckRegistration FAILED");
 
   // Make sure it doesn't exist already
   bool found;
 
   if (mongocRegistrationExists(registrationId, &found) == false)
   {
-    LM_E(("mongocRegistrationExists FAILED"));
+    KT_E("mongocRegistrationExists FAILED");
     return false;
   }
 

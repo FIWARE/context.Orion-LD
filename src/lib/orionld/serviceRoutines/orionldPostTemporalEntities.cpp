@@ -24,11 +24,9 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                          // KT_*
 #include "kjson/kjRender.h"                                         // kjFastRender
 }
-
-#include "logMsg/logMsg.h"                                          // LM_*
-#include "logMsg/traceLevels.h"                                     // Lmt*
 
 #include "orionld/common/orionldState.h"                            // orionldState
 #include "orionld/common/numberToDate.h"                            // numberToDate
@@ -165,7 +163,7 @@ bool orionldPostTemporalEntities(void)
     return true;
   }
 
-  LM_E(("troePostEntities failed (%s: %s)", orionldState.pd.title, orionldState.pd.detail));
+  KT_E("troePostEntities failed (%s: %s)", orionldState.pd.title, orionldState.pd.detail);
 
   return false;
 }

@@ -27,6 +27,7 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kalloc/kaAlloc.h"                                    // kaAlloc
 #include "kalloc/kaStrdup.h"                                   // kaStrdup
 #include "kjson/kjLookup.h"                                    // kjLookup
@@ -39,8 +40,6 @@ extern "C"
 #include "kjson/kjChildAddOrReplace.h"                         // kjChildAddOrReplace
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
 #include "cache/subCache.h"                                    // CachedSubscription, subCacheItemLookup
 
 #include "orionld/types/OrionldMimeType.h"                     // mimeTypeFromString
@@ -48,6 +47,7 @@ extern "C"
 #include "orionld/types/MqttInfo.h"                            // MqttInfo
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/common/orionldError.h"                       // orionldError
+#include "orionld/common/traceLevels.h"                        // KTrace level
 #include "orionld/common/urlParse.h"                           // urlParse
 #include "orionld/common/dateTime.h"                           // dateTimeFromString
 #include "orionld/context/orionldAttributeExpand.h"            // orionldAttributeExpand
@@ -122,7 +122,7 @@ static bool ngsildSubscriptionPatch(KjNode* dbSubscriptionP, CachedSubscription*
   {
     next = fragmentP->next;
 
-    LM_T(LmtSR, ("Patching subscription fragment '%s' for DB", fragmentP->name));
+    KT_T(KtSR, "Patching subscription fragment '%s' for DB", fragmentP->name);
 
     if (fragmentP->type == KjNull)
     {
@@ -148,13 +148,13 @@ static bool ngsildSubscriptionPatch(KjNode* dbSubscriptionP, CachedSubscription*
       {
         if (strcmp(fragmentP->value.s, "active") == 0)
         {
-          LM_T(LmtSR, ("Setting subscription to ACTIVE in cache"));
+          KT_T(KtSR, "Setting subscription to ACTIVE in cache");
           cSubP->isActive = true;
           cSubP->status   = "active";
         }
         else
         {
-          LM_T(LmtSR, ("Setting subscription to INACTIVE/PAUSED in cache"));
+          KT_T(KtSR, "Setting subscription to INACTIVE/PAUSED in cache");
           cSubP->isActive = false;
           cSubP->status   = "paused";
         }
@@ -194,7 +194,7 @@ static bool ngsildSubscriptionPatch(KjNode* dbSubscriptionP, CachedSubscription*
     {
       next = geoqNodeP->next;
 
-      LM_T(LmtSR, ("Checking field '%s'", geoqNodeP->name));
+      KT_T(KtSR, "Checking field '%s'", geoqNodeP->name);
       // 1. Remove the node from patch payload body
       kjChildRemove(expressionP, geoqNodeP);
 
@@ -202,14 +202,14 @@ static bool ngsildSubscriptionPatch(KjNode* dbSubscriptionP, CachedSubscription*
       KjNode* dbGeoqNodeP = kjLookup(dbExpressionP, geoqNodeP->name);
       if (dbGeoqNodeP != NULL)
       {
-        LM_T(LmtSR, ("Found '%s' in DB Expression - removing it from there", geoqNodeP->name));
+        KT_T(KtSR, "Found '%s' in DB Expression - removing it from there", geoqNodeP->name);
         kjChildRemove(dbExpressionP, dbGeoqNodeP);
       }
       else
-        LM_T(LmtSR, ("Did not find '%s' in DB Expression", geoqNodeP->name));
+        KT_T(KtSR, "Did not find '%s' in DB Expression", geoqNodeP->name);
 
       // 3, Add the new geoqNodeP to dbExpressionP
-      LM_T(LmtSR, ("Adding '%s' to DB Expression", geoqNodeP->name));
+      KT_T(KtSR, "Adding '%s' to DB Expression", geoqNodeP->name);
       kjChildAdd(dbExpressionP, geoqNodeP);
 
       geoqNodeP = next;
@@ -372,7 +372,7 @@ static bool subCacheItemUpdateWatchedAttributes(CachedSubscription* cSubP, KjNod
   }
 
   if ((int) cSubP->notifyConditionV.size() != attrs)
-    LM_RE(false, ("Expected %d items in watchedAttributes list - there are %d !!!", attrs, cSubP->notifyConditionV.size()));
+    KT_RE(false, "Expected %d items in watchedAttributes list - there are %d !!!", attrs, cSubP->notifyConditionV.size());
 
   return true;
 }
@@ -445,7 +445,7 @@ static bool subCacheItemUpdateNotificationEndpoint(CachedSubscription* cSubP, Kj
       if (mqttParse(mqttUrl, &mqtts, &mqttUser, &mqttPassword, &mqttHost, &mqttPort, &mqttTopic, &detail) == false)
       {
         free(url);
-        LM_E(("Internal Error (unable to parse mqtt URL)"));
+        KT_E("Internal Error (unable to parse mqtt URL)");
         return false;
       }
 
@@ -486,7 +486,7 @@ static bool subCacheItemUpdateNotificationEndpoint(CachedSubscription* cSubP, Kj
     }
     else
     {
-      LM_W(("Invalid url '%s'", uriP->value.s));
+      KT_W("Invalid url '%s'", uriP->value.s);
       free(url);
       return false;
     }
@@ -591,7 +591,7 @@ static bool subCacheItemUpdate
   bool                r     = true;
 
   if (cSubP == NULL)
-    LM_RE(false, ("Internal Error (can't find the subscription '%s' in the subscription cache)", subscriptionId));
+    KT_RE(false, "Internal Error (can't find the subscription '%s' in the subscription cache)", subscriptionId);
 
   cacheSemTake(__FUNCTION__, "Updating a cached subscription");
   subCacheState = ScsSynchronizing;
@@ -621,7 +621,7 @@ static bool subCacheItemUpdate
 
   for (KjNode* itemP = subscriptionTree->value.firstChildP; itemP != NULL; itemP = itemP->next)
   {
-    LM_T(LmtSR, ("Patching subscription fragment '%s' for sub-cache", itemP->name));
+    KT_T(KtSR, "Patching subscription fragment '%s' for sub-cache", itemP->name);
 
     if ((strcmp(itemP->name, "subscriptionName") == 0) || (strcmp(itemP->name, "name") == 0))
       cSubP->name = itemP->value.s;
@@ -636,16 +636,14 @@ static bool subCacheItemUpdate
     else if (strcmp(itemP->name, "watchedAttributes") == 0)
       subCacheItemUpdateWatchedAttributes(cSubP, itemP);
     else if (strcmp(itemP->name, "timeInterval") == 0)
-    {
-      LM_W(("Not Implemented (Orion-LD doesn't implement periodical notifications"));
-    }
+      KT_W("Not Implemented (Orion-LD doesn't implement periodical notifications");
     else if (strcmp(itemP->name, "lang") == 0)
     {
       cSubP->lang = itemP->value.s;
     }
     else if (strcmp(itemP->name, "q") == 0)
     {
-      LM_T(LmtSR, ("Change in 'q' (%s)", itemP->value.s));
+      KT_T(KtSR, "Change in 'q' (%s)", itemP->value.s);
       cSubP->expression.q = itemP->value.s;
     }
     else if (strcmp(itemP->name, "geoQ") == 0)
@@ -663,13 +661,13 @@ static bool subCacheItemUpdate
     {
       if (itemP->value.b == true)
       {
-        LM_T(LmtSR, ("Setting subscription to ACTIVE in cache"));
+        KT_T(KtSR, "Setting subscription to ACTIVE in cache");
         cSubP->isActive = true;
         cSubP->status   = "active";
       }
       else
       {
-        LM_T(LmtSR, ("Setting subscription to INACTIVE/PAUSED in cache"));
+        KT_T(KtSR, "Setting subscription to INACTIVE/PAUSED in cache");
         cSubP->isActive = false;
         cSubP->status   = "paused";
       }
@@ -700,16 +698,12 @@ static bool subCacheItemUpdate
       else if (itemP->type == KjFloat)
         cSubP->throttling = itemP->value.f;
       else
-        LM_W(("Invalid type for 'throttling'"));
+        KT_W("Invalid type for 'throttling'");
     }
     else if (strcmp(itemP->name, "scopeQ") == 0)
-    {
-      LM_W(("Not Implemented (Orion-LD doesn't support Multi-Type (yet)"));
-    }
+      KT_W("Not Implemented (Orion-LD doesn't support Multi-Type (yet)");
     else if (strcmp(itemP->name, "lang") == 0)
-    {
-      LM_W(("Not Implemented (Orion-LD doesn't support LanguageProperty just yet"));
-    }
+      KT_W("Not Implemented (Orion-LD doesn't support LanguageProperty just yet");
     else
     {
       orionldError(OrionldBadRequestData, "Invalid field for subscription patch", itemP->name, 400);
@@ -775,7 +769,7 @@ static bool mqttConnectFromInfo(MqttInfo* miP)
   b = mqttConnectionEstablish(miP->mqtts, miP->username, miP->password, miP->host, miP->port, miP->version);
 
   if (b == false)
-    LM_RE(false, ("Unable to connect to MQTT broker %s:%d", miP->host, miP->port));
+    KT_RE(false, "Unable to connect to MQTT broker %s:%d", miP->host, miP->port);
 
   return true;
 }
@@ -860,12 +854,12 @@ bool orionldPatchSubscription(void)
   {
     if (qNodeP != NULL)
       qRelease(qNodeP);
-    LM_E(("pCheckSubscription FAILED"));
+    KT_E("pCheckSubscription FAILED");
     return false;
   }
 
   if (qRenderedForDb != NULL)
-    LM_T(LmtSR, ("qRenderedForDb: '%s'", qRenderedForDb));
+    KT_T(KtSR, "qRenderedForDb: '%s'", qRenderedForDb);
 
   KjNode* dbSubscriptionP = mongocSubscriptionLookup(subscriptionId);
 
@@ -981,13 +975,13 @@ bool orionldPatchSubscription(void)
     }
   }
   else
-    LM_X(131, ("Can't reach this point, right? ;-)"));
+    KT_X(131, "Can't reach this point, right? ;-)");
 
   if (ngsildSubscriptionPatch(dbSubscriptionP, cSubP, orionldState.requestTree, qP, geoqP, qRenderedForDb) == false)
   {
     if (qNodeP != NULL)
       qRelease(qNodeP);
-    LM_RE(false, ("ngsildSubscriptionPatch failed!"));
+    KT_RE(false, "ngsildSubscriptionPatch failed!");
   }
 
   //
@@ -997,7 +991,7 @@ bool orionldPatchSubscription(void)
 
   if (modifiedAtP != NULL)
   {
-    LM_T(LmtSR, ("%s: Old modifiedAt: %f", subscriptionId, modifiedAtP->value.f));
+    KT_T(KtSR, "%s: Old modifiedAt: %f", subscriptionId, modifiedAtP->value.f);
     modifiedAtP->value.f = orionldState.requestTime;
   }
   else
@@ -1005,7 +999,7 @@ bool orionldPatchSubscription(void)
     modifiedAtP = kjFloat(orionldState.kjsonP, "modifiedAt", orionldState.requestTime);
     kjChildAdd(dbSubscriptionP, modifiedAtP);
   }
-  LM_T(LmtSR, ("%s: New modifiedAt: %f", subscriptionId, orionldState.requestTime));
+  KT_T(KtSR, "%s: New modifiedAt: %f", subscriptionId, orionldState.requestTime);
 
   // Connect to MQTT broker, if needed
   if ((newIsMqtt == true) && (mqttChange == true))
@@ -1044,12 +1038,12 @@ bool orionldPatchSubscription(void)
   if (timeInterval == 0)
   {
     if (subCacheItemUpdate(orionldState.tenantP, subscriptionId, patchBody, geoCoordinatesP, qNodeP, qRenderedForDb, showChangesP) == false)
-      LM_E(("Internal Error (unable to update the cached subscription '%s' after a PATCH)", subscriptionId));
+      KT_E("Internal Error (unable to update the cached subscription '%s' after a PATCH)", subscriptionId);
   }
   else
   {
     // Update the subscription in the pernot-cache
-    LM_X(1, ("Implement PATCH for pernot subscriptions!"));
+    KT_X(1, "Implement PATCH for pernot subscriptions!");
   }
 
   // All OK? 204 No Content

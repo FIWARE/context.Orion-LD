@@ -24,11 +24,9 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/db/dbEntityAttributesGet.h"                    // dbEntityAttributesGet
@@ -51,7 +49,7 @@ bool orionldGetEntityAttribute(void)
   if (orionldState.responseTree == NULL)
   {
     // dbEntityAttributesGet calls orionldError
-    LM_E(("dbEntityAttributesGet: %s: %s", pd.title, pd.detail));
+    KT_E("dbEntityAttributesGet: %s: %s", pd.title, pd.detail);
     return false;
   }
 

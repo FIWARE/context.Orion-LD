@@ -27,6 +27,7 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
@@ -35,10 +36,9 @@ extern "C"
 #include "kjson/kjRender.h"                                      // kjFastRender
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
+#include "orionld/common/traceLevels.h"                          // KTrace level
 #include "orionld/common/dotForEq.h"                             // dotForEq
 #include "orionld/common/eqForDot.h"                             // eqForDot
 #include "orionld/common/attributeUpdated.h"                     // attributeUpdated
@@ -63,7 +63,7 @@ extern "C"
 #include "orionld/notifications/alteration.h"                    // alteration
 #include "orionld/notifications/previousValuePopulate.h"         // previousValuePopulate
 #include "orionld/notifications/sysAttrsStrip.h"                 // sysAttrsStrip
-#include "orionld/kjTree/kjTreeLog.h"                            // LM_TREE
+#include "orionld/kjTree/kjTreeLog.h"                            // KT_TREE
 #include "orionld/dds/ddsPublishAttribute.h"                     // ddsPublishAttribute
 #include "orionld/serviceRoutines/orionldPatchEntity.h"          // Own interface
 
@@ -119,9 +119,9 @@ static char* pCheckEntityType2(KjNode* payloadTypeNode, KjNode* dbEntityP, char*
   char*   entityTypeFromPayload = (orionldState.payloadTypeNode != NULL)? orionldState.payloadTypeNode->value.s : NULL;
   char*   entityType            = (entityTypeFromPayload != NULL)? orionldContextItemExpand(orionldState.contextP, entityTypeFromPayload, true, NULL) : NULL;
 
-  LM_T(LmtSR, ("entityType From DB:        '%s'", entityTypeFromDB));
-  LM_T(LmtSR, ("entityType From URI Param: '%s'", entityTypeFromUriParam));
-  LM_T(LmtSR, ("entityType From Payload:   '%s'  ('%s')", entityType, entityTypeFromPayload));
+  KT_T(KtSR, "entityType From DB:        '%s'", entityTypeFromDB);
+  KT_T(KtSR, "entityType From URI Param: '%s'", entityTypeFromUriParam);
+  KT_T(KtSR, "entityType From Payload:   '%s'  ('%s')", entityType, entityTypeFromPayload);
 
   //
   // 3 different way to find the Entity Type:
@@ -140,8 +140,8 @@ static char* pCheckEntityType2(KjNode* payloadTypeNode, KjNode* dbEntityP, char*
     if (strcmp(entityTypeFromDB, entityType) != 0)
     {
       orionldError(OrionldBadRequestData, "Mismatching Entity::type in payload body", "Does not coincide with the Entity::type in the database", 400);
-      LM_E(("Entity type in database:       '%s'", entityTypeFromDB));
-      LM_E(("Entity type from payload body: '%s'", entityType));
+      KT_E("Entity type in database:       '%s'", entityTypeFromDB);
+      KT_E("Entity type from payload body: '%s'", entityType);
       return NULL;
     }
   }
@@ -151,8 +151,8 @@ static char* pCheckEntityType2(KjNode* payloadTypeNode, KjNode* dbEntityP, char*
     if (strcmp(entityTypeFromDB, entityTypeFromUriParam) != 0)
     {
       orionldError(OrionldBadRequestData, "Mismatching Entity type in URL parameter 'type'", "Does not coincide with the Entity::type in the database", 400);
-      LM_E(("Entity type in database:       '%s'", entityTypeFromDB));
-      LM_E(("Entity type from URI param:    '%s'", entityTypeFromUriParam));
+      KT_E("Entity type in database:       '%s'", entityTypeFromDB);
+      KT_E("Entity type from URI param:    '%s'", entityTypeFromUriParam);
       return NULL;
     }
   }
@@ -162,8 +162,8 @@ static char* pCheckEntityType2(KjNode* payloadTypeNode, KjNode* dbEntityP, char*
     if (strcmp(entityType, entityTypeFromUriParam) != 0)
     {
       orionldError(OrionldBadRequestData, "Mismatching Entity type in URL parameter 'type'", "Does not coincide with the Entity::type in payload body", 400);
-      LM_E(("Entity type from URI param:    '%s'", entityTypeFromUriParam));
-      LM_E(("Entity type from payload body: '%s'", entityType));
+      KT_E("Entity type from URI param:    '%s'", entityTypeFromUriParam);
+      KT_E("Entity type from payload body: '%s'", entityType);
       return NULL;
     }
   }
@@ -188,7 +188,7 @@ static bool attributeLookup(KjNode* dbAttrsP, char* attrName)
 
   KjNode* dbAttrP = kjLookup(dbAttrsP, attrName);
   if (dbAttrP == NULL)
-    LM_T(0, ("Attribute '%s' does not exist locally", attrName));
+    KT_T(0, "Attribute '%s' does not exist locally", attrName);
 
   eqForDot(attrName);
 
@@ -204,15 +204,15 @@ static bool attributeLookup(KjNode* dbAttrsP, char* attrName)
 //
 void rawResponse(DistOp* distOpList, const char* what)
 {
-  LM_T(LmtSR, ("=============== rawResponse: %s", what));
+  KT_T(KtSR, "=============== rawResponse: %s", what);
   for (DistOp* distOpP = distOpList; distOpP != NULL; distOpP = distOpP->next)
   {
     if (distOpP->rawResponse != NULL)
-      LM_T(LmtSR, ("%s: rawResponse: '%s'", distOpP->regP->regId, distOpP->rawResponse));
+      KT_T(KtSR, "%s: rawResponse: '%s'", distOpP->regP->regId, distOpP->rawResponse);
     else
-      LM_T(LmtSR, ("%s: rawResponse: NULL", distOpP->regP->regId));
+      KT_T(KtSR, "%s: rawResponse: NULL", distOpP->regP->regId);
   }
-  LM_T(LmtSR, ("===================================================================="));
+  KT_T(KtSR, "====================================================================");
 }
 #endif
 
@@ -281,7 +281,7 @@ bool orionldPatchEntity(void)
   KjNode* dbAttrsP = (dbEntityP != NULL)? kjLookup(dbEntityP, "attrs") : NULL;
   if (pCheckEntity(orionldState.requestTree, false, dbAttrsP) == false)
   {
-    LM_W(("Invalid payload body. %s: %s", orionldState.pd.title, orionldState.pd.detail));
+    KT_W("Invalid payload body. %s: %s", orionldState.pd.title, orionldState.pd.detail);
     return false;
   }
 
@@ -324,17 +324,17 @@ bool orionldPatchEntity(void)
   //
   incomingP = kjClone(orionldState.kjsonP, orionldState.requestTree);  // For Alterations and TRoE
 
-  LM_T(LmtShowChanges, ("Looping over modified attributes"));
+  KT_T(KtShowChanges, "Looping over modified attributes");
 
   attrP = orionldState.requestTree->value.firstChildP;
   while (attrP != NULL)
   {
     next = attrP->next;
 
-    LM_T(LmtShowChanges, ("Modified attribute: '%s'", attrP->name));
+    KT_T(KtShowChanges, "Modified attribute: '%s'", attrP->name);
     if (attributeLookup(dbAttrsP, attrP->name) == false)
     {
-      LM_T(LmtSR, ("Removing attribute '%s' from the incoming tree", attrP->name));
+      KT_T(KtSR, "Removing attribute '%s' from the incoming tree", attrP->name);
       kjChildRemove(orionldState.requestTree, attrP);
       distOpFailure(responseBody, NULL, "Attribute Not Found", NULL, 404, attrP->name);
 
@@ -345,7 +345,7 @@ bool orionldPatchEntity(void)
     }
     else
     {
-      LM_T(LmtShowChanges, ("Lookup attribute '%s' in dbAttrsP and copy its value - store in orionldState", attrP->name));
+      KT_T(KtShowChanges, "Lookup attribute '%s' in dbAttrsP and copy its value - store in orionldState", attrP->name);
       char* eqName = kaStrdup(&orionldState.kalloc, attrP->name);
       dotForEq(eqName);
 
@@ -407,7 +407,7 @@ bool orionldPatchEntity(void)
   if (finalApiEntityWithSysAttrs == NULL)
   {
     // There will be no notifications for this update :(  - Well.  cause something important failed ...
-    LM_E(("dbModelToApiEntity2: %s: %s", orionldState.pd.title, orionldState.pd.detail));
+    KT_E("dbModelToApiEntity2: %s: %s", orionldState.pd.title, orionldState.pd.detail);
     goto done;
   }
 
@@ -429,8 +429,8 @@ bool orionldPatchEntity(void)
   //
   if ((ddsSupport == true) && (orionldState.ddsSample == false))
   {
-    LM_TREE(finalApiEntityP, "finalApiEntityP", LmtSR);
-    LM_TREE(orionldState.requestTree, "orionldState.requestTree", LmtSR);
+    KT_TREE(finalApiEntityP, "finalApiEntityP", KtSR);
+    KT_TREE(orionldState.requestTree, "orionldState.requestTree", KtSR);
 
     // Only publish those attributes that have been modified
     for (KjNode* attrP = finalApiEntityP->value.firstChildP; attrP != NULL; attrP = attrP->next)

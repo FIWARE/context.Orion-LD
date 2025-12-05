@@ -26,6 +26,8 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
+#include "ktrace/ktTraceLevelCheck.h"                          // ktTraceLevelCheck
 #include "kalloc/kaStrdup.h"                                   // kaStrdup
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjLookup.h"                                    // kjLookup
@@ -34,14 +36,13 @@ extern "C"
 #include "kjson/kjFree.h"                                      // kjFree
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
 #include "orionld/types/RegistrationMode.h"                    // registrationMode
 #include "orionld/types/RegCacheItem.h"                        // RegCacheItem
 #include "orionld/types/OrionLdRestService.h"                  // OrionLdRestService
 #include "orionld/types/DistOpType.h"                          // distOpTypeMask
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/common/orionldError.h"                       // orionldError
+#include "orionld/common/traceLevels.h"                        // KTrace level
 #include "orionld/common/CHECK.h"                              // STRING_CHECK, ...
 #include "orionld/common/tenantList.h"                         // tenant0
 #include "orionld/common/dateTime.h"                           // dateTimeFromString
@@ -56,7 +57,7 @@ extern "C"
 #include "orionld/dbModel/dbModelToApiRegistration.h"          // dbModelToApiRegistration
 #include "orionld/mongoc/mongocRegistrationGet.h"              // mongocRegistrationGet
 #include "orionld/mongoc/mongocRegistrationReplace.h"          // mongocRegistrationReplace
-#include "orionld/kjTree/kjTreeLog.h"                          // LM_TREE
+#include "orionld/kjTree/kjTreeLog.h"                          // KT_TREE
 #include "orionld/serviceRoutines/orionldPatchRegistration.h"  // Own Interface
 
 
@@ -201,7 +202,7 @@ static void kjDateTimePatch(KjNode* container, const char* fieldName, char* date
   double  dValue = dateTimeFromString(dateTime, errorString, sizeof(errorString));
 
   if (dValue < 0)
-    LM_E(("dateTimeFromString: %s", errorString));
+    KT_E("dateTimeFromString: %s", errorString);
   else if (nodeP != NULL)
   {
     nodeP->type    = KjFloat;
@@ -230,7 +231,7 @@ static void kjTimeIntervalPatch(KjNode* container, const char* fieldName, KjNode
   {
     if ((newStartAt == NULL) || (newEndAt == NULL))
     {
-      LM_W(("The TimeInterval '%s' did not previously exist and one of startAt/endAt is missing", fieldName));
+      KT_W("The TimeInterval '%s' did not previously exist and one of startAt/endAt is missing", fieldName);
 
       //
       // For now, add it the one that is missing (copy of the other one)
@@ -376,7 +377,7 @@ static void informationAndEndpointPatch(KjNode* dbRegP, KjNode* informationP, Kj
 {
   KjNode* dbCrP = kjLookup(dbRegP, "contextRegistration");
   if (dbCrP == NULL)
-    LM_RVE(("Database Error (invalid registration in DB: contextRegistration array is missing)"));
+    KT_RVE("Database Error (invalid registration in DB: contextRegistration array is missing)");
 
   KjNode* crV = dbModelFromApiRegInformation(informationP, endpointP->value.s);
 
@@ -400,15 +401,15 @@ static void informationPatch(KjNode* dbRegP, KjNode* informationP)
   KjNode* dbCrP = kjLookup(dbRegP, "contextRegistration");
 
   if (dbCrP == NULL)
-    LM_RVE(("Database Error (invalid registration in DB: contextRegistration array is missing)"));
+    KT_RVE("Database Error (invalid registration in DB: contextRegistration array is missing)");
 
   KjNode* dbCr1P = dbCrP->value.firstChildP;  // First item in the contextRegistration array
   if (dbCr1P == NULL)
-    LM_RVE(("Database Error (invalid registration in DB: empty contextRegistration array)"));
+    KT_RVE("Database Error (invalid registration in DB: empty contextRegistration array)");
 
   KjNode* providingApplicationP = kjLookup(dbCr1P, "providingApplication");
   if (providingApplicationP == NULL)
-    LM_RVE(("Database Error (invalid registration in DB: missing 'providingApplication' in contextRegistration array item)"));
+    KT_RVE("Database Error (invalid registration in DB: missing 'providingApplication' in contextRegistration array item)");
 
   //
   // Good, we have the endpoint. Now we can transform the "information" array into DB model
@@ -639,11 +640,11 @@ bool orionldPatchRegistration(void)
 
   if (rciP == NULL)
   {
-    LM_E(("======================================================================================"));
-    LM_E(("Registration '%s' found in database but NOT IN THE REG CACHE !!!", registrationId));
-    LM_TREE(dbRegP, "DB Reg", LmtSR);
-    LM_E(("Must add the registration to the reg cache"));
-    LM_E(("But really, must find out why the reg is in the database but not in the cache"));
+    KT_E("======================================================================================");
+    KT_E("Registration '%s' found in database but NOT IN THE REG CACHE !!!", registrationId);
+    KT_TREE(dbRegP, "DB Reg", KtSR);
+    KT_E("Must add the registration to the reg cache");
+    KT_E("But really, must find out why the reg is in the database but not in the cache");
 
     regCacheList(orionldState.tenantP->regCache, "Lost a cached registration");
   }
@@ -788,7 +789,7 @@ bool orionldPatchRegistration(void)
   if (informationP != NULL)
   {
     if (regCacheIdPatternRegexCompile(rciP, informationP) == false)
-      LM_X(1, ("Internal Error (if this happens it's a bug of Orion-LD - the idPattern was checked in pcheckEntityInfo and all OK"));
+      KT_X(1, "Internal Error (if this happens it's a bug of Orion-LD - the idPattern was checked in pcheckEntityInfo and all OK");
   }
 
   if (managementP != NULL)
@@ -798,7 +799,7 @@ bool orionldPatchRegistration(void)
     rciP->localOnly = (localOnlyP != NULL)? localOnlyP->value.b : false;
   }
 
-  if (lmTraceIsSet(LmtRegCache))
+  if (ktTraceLevelCheck(KtRegCache))
     regCachePresent();
 
   //

@@ -24,16 +24,14 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjObject
 #include "kjson/kjChildReplace.h"                                // kjChildReplace
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjClone.h"                                       // kjClone
-#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 }
-
-#include "logMsg/logMsg.h"                                       // LM*
 
 #include "orionld/types/OrionldAttributeType.h"                  // OrionldAttributeType, orionldAttributeType
 #include "orionld/types/OrionLdRestService.h"                    // OrionLdRestService
@@ -45,7 +43,7 @@ extern "C"
 #include "orionld/common/traceLevels.h"                          // KT_T trace levels
 #include "orionld/common/httpStatusCodeToOrionldErrorType.h"     // httpStatusCodeToOrionldErrorType
 #include "orionld/common/numberToDate.h"                         // numberToDate
-#include "orionld/kjTree/kjTreeLog.h"                            // LM_TREE
+#include "orionld/kjTree/kjTreeLog.h"                            // KT_TREE
 #include "orionld/payloadCheck/pCheckUri.h"                      // pCheckUri
 #include "orionld/mongoc/mongocEntityLookup.h"                   // mongocEntityLookup
 #include "orionld/mongoc/mongocAttributeReplace.h"               // mongocAttributeReplace
@@ -90,15 +88,15 @@ static const char* entityTypeSelect(const char* entityId, const char* entityType
     char* entityTypeFromDb = dbModelEntityTypeLookup(dbEntityP, entityId);
 
     if (entityTypeFromDb == NULL)
-      LM_W(("Entity '%s' has no type in the database!!!", entityId));
+      KT_W("Entity '%s' has no type in the database!!!", entityId);
     else
     {
       if (entityTypeFromUriParam != NULL)
       {
         if (strcmp(entityTypeFromUriParam, entityTypeFromDb) != 0)
         {
-          LM_W(("Entity Type via URI Parameter (%s) differs fronm the one in the database (%s)", entityTypeFromUriParam, entityTypeFromDb));
-          LM_W(("Multi Type is not yet supported. Picking the entity type from the URI Parameter"));
+          KT_W("Entity Type via URI Parameter (%s) differs fronm the one in the database (%s)", entityTypeFromUriParam, entityTypeFromDb);
+          KT_W("Multi Type is not yet supported. Picking the entity type from the URI Parameter");
           *entityTypeMismatchP = true;
           return entityTypeFromUriParam;
         }
@@ -119,8 +117,8 @@ static const char* entityTypeSelect(const char* entityId, const char* entityType
 //
 static void datasetInstanceReplace(KjNode* dbAttrDatasetV, KjNode* oldInstanceP, KjNode* newInstanceP)
 {
-  LM_TREE(oldInstanceP, "old db dataset instance", LmtSR);
-  LM_TREE(newInstanceP, "new db dataset instance", LmtSR);
+  KT_TREE(oldInstanceP, "old db dataset instance", KtSR);
+  KT_TREE(newInstanceP, "new db dataset instance", KtSR);
 
   if (dbAttrDatasetV->type == KjObject)
   {
@@ -142,11 +140,11 @@ static void entityMergeInAttribute(KjNode* apiEntityP, KjNode* newAttrP)
 {
   KjNode* oldAttrP = kjLookup(apiEntityP, newAttrP->name);
 
-  LM_T(LmtSR, ("Old attribute '%s' at: %p", newAttrP->name, oldAttrP));
+  KT_T(KtSR, "Old attribute '%s' at: %p", newAttrP->name, oldAttrP);
   if (oldAttrP != NULL)
   {
-    LM_TREE(oldAttrP, "OLD", LmtSR);
-    LM_TREE(newAttrP, "NEW", LmtSR);
+    KT_TREE(oldAttrP, "OLD", KtSR);
+    KT_TREE(newAttrP, "NEW", KtSR);
 
     kjChildRemove(apiEntityP, oldAttrP);
     kjChildAdd(apiEntityP, newAttrP);
@@ -219,7 +217,7 @@ bool orionldPutAttribute(void)
   KjNode*     dbEntityP          = mongocEntityLookup(entityId, NULL, NULL, NULL, &detail);
 
   if (dbEntityP != NULL)
-    LM_TREE(dbEntityP, "dbEntity", LmtSR);
+    KT_TREE(dbEntityP, "dbEntity", KtSR);
 
   //
   // Is a DDS notification the source of this update?
@@ -241,10 +239,10 @@ bool orionldPutAttribute(void)
 
   orionldState.entityTypeForTroe = (char*) entityType;
 
-  LM_T(LmtSR, ("In orionldPutAttribute: entity type:  '%s'", (entityType != NULL)? entityType : "Not Known"));
-  LM_T(LmtSR, ("In orionldPutAttribute: entity id:    '%s'", entityId));
-  LM_T(LmtSR, ("In orionldPutAttribute: attrName:     '%s'", attrName));
-  LM_T(LmtSR, ("In orionldPutAttribute: attrLongName: '%s'", attrLongName));
+  KT_T(KtSR, "In orionldPutAttribute: entity type:  '%s'", (entityType != NULL)? entityType : "Not Known");
+  KT_T(KtSR, "In orionldPutAttribute: entity id:    '%s'", entityId);
+  KT_T(KtSR, "In orionldPutAttribute: attrName:     '%s'", attrName);
+  KT_T(KtSR, "In orionldPutAttribute: attrLongName: '%s'", attrLongName);
 
   //
   // DistOps
@@ -257,7 +255,7 @@ bool orionldPutAttribute(void)
 
   if ((orionldState.distributed == true) && (orionldState.uriParams.local == false))
   {
-    LM_T(LmtDistOpRequest, ("Distributed - checking reg matches"));
+    KT_T(KtDistOpRequest, "Distributed - checking reg matches");
     KjNode* entityObject = kjObject(orionldState.kjsonP, NULL);
     KjNode* attrClone    = kjClone(orionldState.kjsonP, orionldState.requestTree);
 
@@ -266,12 +264,12 @@ bool orionldPutAttribute(void)
     distOpList = distOpRequests(entityId, (char*) entityType, DoReplaceAttr, entityObject);
   }
 
-  LM_T(LmtDistOpRequest, ("distOpList at %p", distOpList));
+  KT_T(KtDistOpRequest, "distOpList at %p", distOpList);
   if (distOpList != NULL)
   {
     for (DistOp* distOpP = distOpList; distOpP != NULL; distOpP = distOpP->next)
     {
-      LM_T(LmtDistOpRequest, ("Got a DistOp response of %d", distOpP->httpResponseCode));
+      KT_T(KtDistOpRequest, "Got a DistOp response of %d", distOpP->httpResponseCode);
       ++distOps;
 
       if (distOpP->httpResponseCode == 204)
@@ -280,7 +278,7 @@ bool orionldPutAttribute(void)
         distOps404s += 1;
       else
       {
-        LM_T(LmtDistOpRequest, ("Other Error: %d", distOpP->httpResponseCode));
+        KT_T(KtDistOpRequest, "Other Error: %d", distOpP->httpResponseCode);
         otherP = distOpP;
       }
     }
@@ -288,7 +286,7 @@ bool orionldPutAttribute(void)
 
   if (orionldState.attributeConsumed == true)
   {
-    LM_T(LmtDistOpRequest, ("The attribute has been consumed by Exclusive/Redirect registration"));
+    KT_T(KtDistOpRequest, "The attribute has been consumed by Exclusive/Redirect registration");
     if (distOps204s > 0)
       orionldState.httpStatusCode = 204;
     else if (distOps404s == distOps)
@@ -316,7 +314,7 @@ bool orionldPutAttribute(void)
   //
   // datasetId?
   //
-  LM_TREE(orionldState.requestTree, "Incoming", LmtSR);
+  KT_TREE(orionldState.requestTree, "Incoming", KtSR);
   KjNode*     datasetIdNodeP = kjLookup(orionldState.requestTree, "datasetId");
   const char* datasetId      = (datasetIdNodeP != NULL)?datasetIdNodeP->value.s : NULL;
   KjNode*     dbAttrDatasetP = NULL;
@@ -327,7 +325,7 @@ bool orionldPutAttribute(void)
 
   if (datasetId != NULL)
   {
-    LM_T(LmtSR, ("datasetId: '%s'", datasetId));
+    KT_T(KtSR, "datasetId: '%s'", datasetId);
     KjNode* datasets = kjLookup(dbEntityP, "@datasets");
 
     dbAttrDatasetV = (datasets != NULL)? kjLookup(datasets, attrLongNameEq) : NULL;
@@ -338,7 +336,7 @@ bool orionldPutAttribute(void)
         KjNode* datassetIdP = kjLookup(instanceP, "datasetId");
 
         if (datassetIdP == NULL)
-          LM_W(("DB Error - instance of attribute '%s' has no datasetId in @datasets field in DB", attrLongNameEq));
+          KT_W("DB Error - instance of attribute '%s' has no datasetId in @datasets field in DB", attrLongNameEq);
         else
         {
           if (strcmp(datassetIdP->value.s, datasetId) == 0)
@@ -381,7 +379,7 @@ bool orionldPutAttribute(void)
 
   // It's OK to modify the attribute type in a PUT Attribute operation (thus NoAttributeType)
   if (pCheckAttribute(entityId, orionldState.requestTree, true, NoAttributeType, true, NULL) == false)
-    LM_RE(false, ("pCheckAttribute failed"));  // pCheckAttribute() calls orionldError
+    KT_RE(false, "pCheckAttribute failed");  // pCheckAttribute() calls orionldError
 
   previousValuePopulate(NULL, dbAttrP, orionldState.in.pathAttrExpanded);
 
@@ -443,18 +441,18 @@ bool orionldPutAttribute(void)
       KjNode* creDateP = kjLookup(dbAttrP, "creDate");
       createdAt  = (creDateP != NULL)? creDateP->value.f : 0;
 
-      LM_T(LmtSR, ("==================================================================================="));
-      LM_TREE(dbAttributeP, "API Attribute", LmtSR);
+      KT_T(KtSR, "===================================================================================");
+      KT_TREE(dbAttributeP, "API Attribute", KtSR);
       if (dbModelFromApiAttribute(dbAttributeP, NULL, NULL, NULL, NULL, true, NULL) == false)
         goto response;
 
-      LM_TREE(dbAttributeP, "DB Attribute", LmtSR);
-      LM_T(LmtSR, ("==================================================================================="));
+      KT_TREE(dbAttributeP, "DB Attribute", KtSR);
+      KT_T(KtSR, "===================================================================================");
 
       if (creDateP != NULL)
         dbModelAttributeCreatedAtSet(dbAttributeP, createdAt, "creDate");
       else
-        LM_W(("No creDate found in default instance of attribute '%s' of entity '%s'", attrLongNameEq, entityId));
+        KT_W("No creDate found in default instance of attribute '%s' of entity '%s'", attrLongNameEq, entityId);
 
       r = mongocAttributeReplace(entityId, dbAttributeP, &detail);
     }
@@ -472,7 +470,7 @@ bool orionldPutAttribute(void)
  response:
   // TRoE+Alterations needs the expanded attribute name for the payload body
   orionldState.requestTree->name = attrLongName;
-  LM_TREE(orionldState.requestTree, "Attribute For TRoE", LmtSR);
+  KT_TREE(orionldState.requestTree, "Attribute For TRoE", KtSR);
 
   // For Alterations
   if ((dbAttrP != NULL) || (dbAttrDatasetP != NULL))
