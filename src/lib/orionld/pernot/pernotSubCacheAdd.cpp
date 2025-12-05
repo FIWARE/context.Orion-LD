@@ -27,14 +27,13 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjLookup.h"                                    // kjLookup
 #include "kjson/kjClone.h"                                     // kjClone
 #include "kjson/kjBuilder.h"                                   // kjString, kjChildAdd
 #include "kjson/kjChildCount.h"                                // kjChildCount
 }
-
-#include "logMsg/logMsg.h"                                     // LM_*
 
 #include "orionld/types/Protocol.h"                            // Protocol, protocolFromString
 #include "orionld/types/OrionldTenant.h"                       // OrionldTenant
@@ -44,6 +43,7 @@ extern "C"
 #include "orionld/types/OrionldContext.h"                      // OrionldContext
 #include "orionld/types/OrionldRenderFormat.h"                 // OrionldRenderFormat
 #include "orionld/common/orionldState.h"                       // orionldState, pernotSubCache
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/common/urlParse.h"                           // urlParse
 #include "orionld/payloadCheck/pcheckGeoQ.h"                   // pcheckGeoQ
 
@@ -90,18 +90,18 @@ static void receiverInfo(PernotSubscription* pSubP, KjNode* endpointP)
 //
 static void counterFromDb(KjNode* subP, uint32_t* counterP, const char* fieldName)
 {
-  LM_T(LmtPernot, ("Getting counter '%s' from db", fieldName));
+  KT_T(KtPernot, "Getting counter '%s' from db", fieldName);
   KjNode* counterNodeP = kjLookup(subP, fieldName);
 
   if (counterNodeP != NULL)
   {
-    LM_T(LmtPernot, ("Found counter '%s' in db: %d", fieldName, counterNodeP->value.i));
+    KT_T(KtPernot, "Found counter '%s' in db: %d", fieldName, counterNodeP->value.i);
     *counterP = counterNodeP->value.i;
   }
   else
   {
     *counterP = 0;
-    LM_T(LmtPernot, ("Counter '%s' NOT found in db", fieldName));
+    KT_T(KtPernot, "Counter '%s' NOT found in db", fieldName);
   }
 }
 
@@ -148,23 +148,23 @@ PernotSubscription* pernotSubCacheAdd
   PernotSubscription* pSubP = (PernotSubscription*) malloc(sizeof(PernotSubscription));
   bzero(pSubP, sizeof(PernotSubscription));
 
-  LM_T(LmtPernot, ("Creating pernot subscription %s (at %p)", subscriptionId, pSubP));
+  KT_T(KtPernot, "Creating pernot subscription %s (at %p)", subscriptionId, pSubP);
 
   if (subscriptionId == NULL)
   {
     KjNode* idP = kjLookup(apiSubP, "id");
     if (idP == NULL)
-      LM_RE(NULL, ("No subscription id"));
+      KT_RE(NULL, "No subscription id");
     subscriptionId = idP->value.s;
   }
 
-  LM_T(LmtPernot, ("Adding pernot subscription '%s' to cache (top level name: '%s')", subscriptionId, apiSubP->name));
+  KT_T(KtPernot, "Adding pernot subscription '%s' to cache (top level name: '%s')", subscriptionId, apiSubP->name);
 
   pSubP->subscriptionId = strdup(subscriptionId);
   pSubP->timeInterval   = timeInterval;
   pSubP->kjSubP         = kjClone(NULL, apiSubP);
-  LM_T(LmtLeak, ("Cloned an apiSubP: %p", pSubP->kjSubP));
-  LM_TREE(pSubP->kjSubP, "apiSubP", LmtLeak);
+  KT_T(KtLeak, "Cloned an apiSubP: %p", pSubP->kjSubP);
+  KT_TREE(pSubP->kjSubP, "apiSubP", KtLeak);
   pSubP->tenantP        = tenantP;
   pSubP->renderFormat   = renderFormat;
   pSubP->sysAttrs       = (sysAttrsP == NULL)? false : sysAttrsP->value.b;
@@ -189,13 +189,13 @@ PernotSubscription* pernotSubCacheAdd
       if (pSubP->geoSelector->geoProperty == NULL)
         pSubP->geoSelector->geoProperty = (char*) "location";
 
-      LM_T(LmtPernotQuery, ("geometry:    %d", pSubP->geoSelector->geometry));
-      LM_T(LmtPernotQuery, ("georel:      %d", pSubP->geoSelector->georel));
-      LM_T(LmtPernotQuery, ("minDistance: %d", pSubP->geoSelector->minDistance));
-      LM_T(LmtPernotQuery, ("maxDistance: %d", pSubP->geoSelector->maxDistance));
-      LM_T(LmtPernotQuery, ("geoProperty: '%s'", pSubP->geoSelector->geoProperty));
+      KT_T(KtPernotQuery, "geometry:    %d", pSubP->geoSelector->geometry);
+      KT_T(KtPernotQuery, "georel:      %d", pSubP->geoSelector->georel);
+      KT_T(KtPernotQuery, "minDistance: %d", pSubP->geoSelector->minDistance);
+      KT_T(KtPernotQuery, "maxDistance: %d", pSubP->geoSelector->maxDistance);
+      KT_T(KtPernotQuery, "geoProperty: '%s'", pSubP->geoSelector->geoProperty);
       pSubP->geoSelector->coordinates = kjClone(NULL, pSubP->geoSelector->coordinates);
-      LM_TREE(pSubP->geoSelector->coordinates, "coordinates", LmtPernotQuery);
+      KT_TREE(pSubP->geoSelector->coordinates, "coordinates", KtPernotQuery);
     }
   }
 

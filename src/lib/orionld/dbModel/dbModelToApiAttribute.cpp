@@ -25,14 +25,13 @@
 extern "C"
 {
 #include "kbase/kMacros.h"                                       // K_VEC_SIZE
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kalloc/kaAlloc.h"                                      // kaAlloc
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjChildRemove, kjString
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/types/OrionldAttributeType.h"                  // OrionldAttributeType
 #include "orionld/types/OrionldRenderFormat.h"                   // OrionldRenderFormat
@@ -45,7 +44,7 @@ extern "C"
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
 #include "orionld/serviceRoutines/orionldGetAttribute.h"         // orionldGetAttribute
 #include "orionld/types/OrionLdRestService.h"                    // OrionLdRestService
-#include "orionld/kjTree/kjTreeLog.h"                            // LM_TREE
+#include "orionld/kjTree/kjTreeLog.h"                            // KT_TREE
 #include "orionld/kjTree/kjAttributeNormalizedToSimplified.h"    // kjAttributeNormalizedToSimplified
 #include "orionld/kjTree/kjAttributeNormalizedToConcise.h"       // kjAttributeNormalizedToConcise
 #include "orionld/dbModel/dbModelToApiSubAttribute.h"            // dbModelToApiSubAttribute
@@ -267,7 +266,7 @@ static char* valueFieldName(KjNode* attrP)
     else if (strcmp(typeP->value.s, "LanguageProperty") == 0) return (char*) "languageMap";
   }
   else
-    LM_W(("No type in the attribute"));
+    KT_W("No type in the attribute");
 
   return (char*) "value";
 }
@@ -285,7 +284,7 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
   if (dbAttrP == NULL)
   {
     defaultAttribute = false;
-    LM_T(LmtSR, ("Dataset-only Attribute: '%s'", datasetP->name));
+    KT_T(KtSR, "Dataset-only Attribute: '%s'", datasetP->name);
   }
   else if ((dbAttrP->type == KjArray) && (dbAttrP->value.firstChildP == NULL))
     defaultAttribute = false;
@@ -299,12 +298,12 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
 #if 0
     const  char*  attrName = (dbAttrP != NULL)? dbAttrP->name : "No Attr";
 
-    LM_T(LmtSR, ("------------------------------------------------------------------"));
-    LM_T(LmtSR, ("dbAttrP at %p", dbAttrP));
-    LM_T(LmtSR, ("Attribute name: '%s'", attrName));
-    LM_TREE(datasetP, "datasetP", LmtSR);
-    LM_TREE(dbAttrP, "dbAttrP", LmtSR);
-    LM_T(LmtSR, ("------------------------------------------------------------------"));
+    KT_T(KtSR, "------------------------------------------------------------------");
+    KT_T(KtSR, "dbAttrP at %p", dbAttrP);
+    KT_T(KtSR, "Attribute name: '%s'", attrName);
+    KT_TREE(datasetP, "datasetP", KtSR);
+    KT_TREE(dbAttrP, "dbAttrP", KtSR);
+    KT_T(KtSR, "------------------------------------------------------------------");
 #endif
 
     char* shortName = datasetP->name;
@@ -413,7 +412,7 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
 
   if (attrTypeNodeP == NULL)
   {
-    LM_E(("Database Error (attribute without type in database)", dbAttrP->name));
+    KT_E("Database Error (attribute without type in database)", dbAttrP->name);
     orionldError(OrionldInternalError, "Database Error (attribute without type in database)", dbAttrP->name, 500);
     return NULL;
   }
@@ -477,7 +476,7 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
     {
       KjNode* valueP = kjLookup(dbAttrP, "value");
 
-      LM_TREE(dbAttrP, "BEFORE", KtSR);
+      KT_TREE(dbAttrP, "BEFORE", KtSR);
 
       if (orionldState.serviceP->serviceRoutine != orionldGetAttribute)
       {
@@ -496,14 +495,14 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
         attrP = dbAttrP;
       }
 
-      LM_TREE(attrP, "AFTER", KtSR);
+      KT_TREE(attrP, "AFTER", KtSR);
     }
 
     attrP->name = shortName;
   }
   else  // RF_NORMALIZED  or  RF_CONCISE
   {
-    LM_TREE(dbAttrP, "DB Attr", LmtSR);
+    KT_TREE(dbAttrP, "DB Attr", KtSR);
     KjNode* mdsP    = NULL;
 
     attrP = kjObject(orionldState.kjsonP, shortName);
@@ -627,10 +626,7 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
         next = mdP->next;
 
         if ((subAttributeP = dbModelToApiSubAttribute2(mdP, sysAttrs, renderFormat, lang, pdP)) == NULL)
-        {
-          LM_E(("Datamodel Error (%s: %s)", pdP->title, pdP->detail));
-          return NULL;
-        }
+          KT_RE(NULL, "Datamodel Error (%s: %s)", pdP->title, pdP->detail);
 
         kjChildRemove(mdsP, mdP);
         kjChildAdd(attrP, subAttributeP);

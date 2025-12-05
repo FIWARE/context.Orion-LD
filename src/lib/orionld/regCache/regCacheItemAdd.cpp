@@ -24,13 +24,12 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjClone.h"                                       // kjClone
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjInteger, kjFloat, kjString, kjChildAdd, ...
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/types/OrionldTenant.h"                         // OrionldTenant
 #include "orionld/types/RegistrationMode.h"                      // registrationMode
@@ -39,6 +38,7 @@ extern "C"
 #include "orionld/types/OrionldContext.h"                        // OrionldContext
 #include "orionld/types/DistOpType.h"                            // distOpTypeMask
 #include "orionld/common/orionldState.h"                         // orionldState, localIpAndPort
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/kjTree/kjTreeLog.h"                            // kjTreeLog
 #include "orionld/regCache/regCacheIdPatternRegexCompile.h"      // regCacheIdPatternRegexCompile
 #include "orionld/regCache/regCachePresent.h"                    // regCacheList
@@ -137,7 +137,7 @@ static char* regIpAndPortExtract(KjNode* regP, char** restP)
   char* buf = (char*) malloc(len + 1);  // This goes to the cache - must be allocated using malloc
 
   if (buf == NULL)
-    LM_RE(NULL, ("Out of memory allocating ipAndPort for a registration (%d bytes)", len + 1));
+    KT_RE(NULL, "Out of memory allocating ipAndPort for a registration (%d bytes)", len + 1);
 
   strncpy(buf, start, len);
   buf[len] = 0;
@@ -156,9 +156,9 @@ RegCacheItem* regCacheItemAdd(RegCache* rcP, const char* registrationId, KjNode*
   RegCacheItem* rciP = (RegCacheItem*) calloc(1, sizeof(RegCacheItem));
 
   if (rciP == NULL)
-    LM_X(1, ("Out of memory attempting to allocate a Registration Cache Item (%d bytes)", sizeof(RegCacheItem)));
+    KT_X(1, "Out of memory attempting to allocate a Registration Cache Item (%d bytes)", sizeof(RegCacheItem));
 
-  LM_T(LmtRegCache, ("Adding reg '%s' into the reg cache for tenant '%s'", registrationId, rcP->tenantP->mongoDbName));
+  KT_T(KtRegCache, "Adding reg '%s' into the reg cache for tenant '%s'", registrationId, rcP->tenantP->mongoDbName);
   regCacheList(rcP, "Before add");
 
   //
@@ -178,10 +178,11 @@ RegCacheItem* regCacheItemAdd(RegCache* rcP, const char* registrationId, KjNode*
   rciP->ipAndPort = regIpAndPortExtract(regP, &rciP->rest);
   rciP->next      = NULL;
 
-  LM_T(LmtRegCache, ("First item in reg cache: %p", rcP->regList));
-  LM_T(LmtRegCache, (" Next item in reg cache: %p", rcP->regList->next));
-  if (rcP->regList->next != NULL) LM_T(LmtRegCache, (" Next-next item in reg cache: %p", rcP->regList->next->next));
-  LM_T(LmtRegCache, (" Last item in reg cache: %p", rcP->last));
+  KT_T(KtRegCache, "First item in reg cache: %p", rcP->regList);
+  KT_T(KtRegCache, " Next item in reg cache: %p", rcP->regList->next);
+  if (rcP->regList->next != NULL)
+    KT_T(KtRegCache, " Next-next item in reg cache: %p", rcP->regList->next->next);
+  KT_T(KtRegCache, " Last item in reg cache: %p", rcP->last);
 
   regCacheList(rcP, "In the middle");
 
@@ -223,7 +224,7 @@ RegCacheItem* regCacheItemAdd(RegCache* rcP, const char* registrationId, KjNode*
   }
 
   if (regCacheIdPatternRegexCompile(rciP, informationP) == false)
-    LM_X(1, ("Internal Error (if this happens it's a SW bug of Orion-LD - the idPattern was checked in pcheckEntityInfo and all was OK"));
+    KT_X(1, "Internal Error (if this happens it's a SW bug of Orion-LD - the idPattern was checked in pcheckEntityInfo and all was OK");
 
   regCacheList(rcP, "After add");
 

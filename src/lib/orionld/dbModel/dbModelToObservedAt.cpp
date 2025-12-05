@@ -22,10 +22,9 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                       // LM*
-
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjChildRemove. kjString, ...
@@ -65,7 +64,7 @@ KjNode* dbModelToObservedAt(KjNode* dbObservedAtP)
     bufP = buf;
   }
   else
-    LM_E(("dbObservedAt is of type '%s'", kjValueType(dbObservedAtP->type)));
+    KT_E("dbObservedAt is of type '%s'", kjValueType(dbObservedAtP->type));
 
   if (bufP == NULL)
   {

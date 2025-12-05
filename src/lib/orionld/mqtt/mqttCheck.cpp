@@ -22,8 +22,7 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
+#include <unistd.h>                                            // NULL
 
 #include "orionld/common/SCOMPARE.h"                           // SCOMPAREx
 #include "orionld/mqtt/mqttCheck.h"                            // Own interface

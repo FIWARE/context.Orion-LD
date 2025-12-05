@@ -25,6 +25,8 @@
 *
 * Author: Ken Zangelin
 */
+#include <stdint.h>                                            // types: uint16_t, ...
+
 extern "C"
 {
 #include "kjson/KjNode.h"                                      // KjNode

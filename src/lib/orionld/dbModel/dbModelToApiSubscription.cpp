@@ -24,18 +24,18 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjObject, kjString, kjChildAdd, ...
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/types/QNode.h"                                 // QNode
 #include "orionld/types/OrionldRenderFormat.h"                   // OrionldRenderFormat
 #include "orionld/types/SubordinateSubscription.h"               // SubordinateSubscription
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/numberToDate.h"                         // numberToDate
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
 #include "orionld/q/qAliasCompact.h"                             // qAliasCompact
@@ -54,7 +54,7 @@ do                                                                              
 {                                                                                                   \
   if (pointer == NULL)                                                                              \
   {                                                                                                 \
-    LM_E(("Database Error (sub-cache item '%s' in tenant '%s' is not there)", fieldName, tenant));  \
+    KT_E("Database Error (sub-cache item '%s' in tenant '%s' is not there)", fieldName, tenant);    \
     return NULL;                                                                                    \
   }                                                                                                 \
 } while (0)
@@ -261,7 +261,7 @@ KjNode* dbModelToApiSubscription
     KjNode* oidP = kjLookup(dbSubIdP, "$oid");
 
     if ((oidP == NULL) || (oidP->type != KjString))
-      LM_RE(NULL, ("Un able to retrieve the subscription ID from what seems to be an NGSIv2 subscription"));
+      KT_RE(NULL, "Un able to retrieve the subscription ID from what seems to be an NGSIv2 subscription");
 
     dbSubIdP->type      = KjString;
     dbSubIdP->lastChild = NULL;
@@ -522,7 +522,7 @@ KjNode* dbModelToApiSubscription
     if (dbCountP->type == KjInt)
       timesSent = dbCountP->value.i;
     else if (dbCountP->type == KjObject)
-      LM_W(("Subscription::count: find the integer inside the object!"));
+      KT_W("Subscription::count: find the integer inside the object!");
 
     //
     // Transform to KjInt named "timesSent"
@@ -532,7 +532,7 @@ KjNode* dbModelToApiSubscription
     dbCountP->value.i = timesSent;
 
     kjChildAdd(notificationP, dbCountP);
-    LM_T(LmtSubCacheStats, ("count/timesSent: %d", timesSent));
+    KT_T(KtSubCacheStats, "count/timesSent: %d", timesSent);
   }
 
   // timesFailed
@@ -692,7 +692,7 @@ KjNode* dbModelToApiSubscription
     }
     else
     {
-      LM_T(LmtSubCacheSync, ("modifiedAt from DB: %f", dbModifiedAtP->value.f));
+      KT_T(KtSubCacheSync, "modifiedAt from DB: %f", dbModifiedAtP->value.f);
       modifiedAtNodeP = kjFloat(orionldState.kjsonP, "modifiedAt", dbModifiedAtP->value.f);
     }
 

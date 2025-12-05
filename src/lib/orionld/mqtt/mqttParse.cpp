@@ -22,10 +22,13 @@
 *
 * Author: Ken Zangelin
 */
+#include <stdlib.h>                                            // atoi
 #include <string.h>                                            // strchr
 
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "orionld/common/SCOMPARE.h"                           // SCOMPAREx
 #include "orionld/mqtt/mqttParse.h"                            // Own interface
@@ -103,7 +106,7 @@ bool mqttParse(char* url, bool* mqttsP, char** usernameP, char** passwordP, char
     if (*psP == 0)
     {
       // We have a colon, but no port ...
-      LM_W(("Bad Input (Invalid MQTT endpoint port - there is a colon, but the port number is missing)"));
+      KT_W("Bad Input (Invalid MQTT endpoint port - there is a colon, but the port number is missing)");
       if (detailP != NULL)
         *detailP = (char*) "Invalid MQTT endpoint port - there is a colon, but the port number is missing";
       return false;
@@ -113,7 +116,7 @@ bool mqttParse(char* url, bool* mqttsP, char** usernameP, char** passwordP, char
     {
       if ((*psP < '0') || (*psP > '9'))
       {
-        LM_W(("Bad Input (Invalid MQTT endpoint port - must be a number"));
+        KT_W("Bad Input (Invalid MQTT endpoint port - must be a number");
         if (detailP != NULL)
           *detailP = (char*) "Invalid MQTT endpoint port - must be a number";
         return false;

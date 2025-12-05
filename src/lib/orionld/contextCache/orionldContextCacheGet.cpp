@@ -29,9 +29,6 @@ extern "C"
 #include "khash/khash.h"                                         // KHashTable, ...
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
-
 #include "orionld/types/OrionldContext.h"                        // OrionldContext, orionldOriginToString, OrionldContextKind
 #include "orionld/types/OrionldContextItem.h"                    // OrionldContextItem
 #include "orionld/common/orionldState.h"                         // orionldState

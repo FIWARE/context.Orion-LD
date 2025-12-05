@@ -22,6 +22,8 @@
 *
 * Author: Ken Zangelin, Gabriel Quaresma
 */
+#include <unistd.h>                                            // NULL
+
 extern "C"
 {
 #include "kjson/KjNode.h"                                      // KjNode
@@ -29,9 +31,6 @@ extern "C"
 #include "kjson/kjBuilder.h"                                   // kjChildRemove
 #include "kjson/kjStringValueLookupInArray.h"                  // kjStringValueLookupInArray
 }
-
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
 
 #include "orionld/kjTree/kjEntityIdLookupInEntityArray.h"      // kjEntityIdLookupInEntityArray
 #include "orionld/kjTree/kjEntityArrayErrorPurge.h"            // Own Interface

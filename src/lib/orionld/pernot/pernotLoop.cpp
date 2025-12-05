@@ -29,14 +29,14 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                  // KT_*
 #include "kbase/kMacros.h"                                  // K_MIN
 }
-
-#include "logMsg/logMsg.h"                                  // LM_x
 
 #include "orionld/types/PernotSubscription.h"               // PernotSubscription
 #include "orionld/types/PernotSubCache.h"                   // PernotSubCache
 #include "orionld/common/orionldState.h"                    // orionldState, pernotSubCache
+#include "orionld/common/traceLevels.h"                     // KTrace levels
 #include "orionld/mongoc/mongocSubCountersUpdate.h"         // mongocSubCountersUpdate
 #include "orionld/pernot/pernotTreat.h"                     // pernotTreat
 #include "orionld/pernot/pernotLoop.h"                      // Own interface
@@ -53,7 +53,7 @@ double currentTime(void)
   struct timeval tv;
 
   if (gettimeofday(&tv, NULL) != 0)
-    LM_RE(0, ("gettimeofday error: %s", strerror(errno)));
+    KT_RE(0, "gettimeofday error: %s", strerror(errno));
 
   return tv.tv_sec + tv.tv_usec / 1000000.0;
 }
@@ -71,7 +71,7 @@ void pernotSubCacheFlushToDb(void)
     if (subP->dirty == false)
       continue;
 
-    LM_T(LmtPernotFlush, ("%s: flushing to db (noMatch=%d, notificationAttempts=%d)", subP->subscriptionId, subP->noMatch, subP->notificationAttempts));
+    KT_T(KtPernotFlush, "%s: flushing to db (noMatch=%d, notificationAttempts=%d)", subP->subscriptionId, subP->noMatch, subP->notificationAttempts);
     mongocSubCountersUpdate(subP->tenantP,
                             subP->subscriptionId,
                             true,
@@ -124,13 +124,13 @@ static void* pernotLoop(void* vP)
 
       if (subP->state == SubPaused)
       {
-        LM_T(LmtPernotLoop, ("%s: Paused", subP->subscriptionId));
+        KT_T(KtPernotLoop, "%s: Paused", subP->subscriptionId);
         continue;
       }
 
       if (subP->isActive == false)
       {
-        LM_T(LmtPernotLoop, ("%s: Inactive", subP->subscriptionId));
+        KT_T(KtPernotLoop, "%s: Inactive", subP->subscriptionId);
         continue;
       }
 
@@ -139,7 +139,7 @@ static void* pernotLoop(void* vP)
 
       if (subP->state == SubExpired)
       {
-        LM_T(LmtPernotLoop, ("%s: Expired", subP->subscriptionId));
+        KT_T(KtPernotLoop, "%s: Expired", subP->subscriptionId);
         continue;
       }
 
@@ -150,23 +150,23 @@ static void* pernotLoop(void* vP)
           subP->state = SubActive;
         else
         {
-          LM_T(LmtPernotLoop, ("%s: Erroneous", subP->subscriptionId));
+          KT_T(KtPernotLoop, "%s: Erroneous", subP->subscriptionId);
           continue;
         }
       }
 
       double diffTime = subP->lastNotificationTime + subP->timeInterval - now;
-      LM_T(LmtPernotLoopTimes, ("%s: lastNotificationTime:    %f", subP->subscriptionId, subP->lastNotificationTime));
-      LM_T(LmtPernotLoopTimes, ("%s: now:                     %f", subP->subscriptionId, now));
-      LM_T(LmtPernotLoopTimes, ("%s: diffTime:                %f", subP->subscriptionId, diffTime));
-      LM_T(LmtPernotLoopTimes, ("%s: noMatch:                 %d", subP->subscriptionId, subP->noMatch));
-      LM_T(LmtPernotLoopTimes, ("%s: noMatchDb:               %d", subP->subscriptionId, subP->noMatchDb));
-      LM_T(LmtPernotLoopTimes, ("%s: notificationAttempts:    %d", subP->subscriptionId, subP->notificationAttempts));
-      LM_T(LmtPernotLoopTimes, ("%s: notificationAttemptsDb:  %d", subP->subscriptionId, subP->notificationAttemptsDb));
+      KT_T(KtPernotLoopTimes, "%s: lastNotificationTime:    %f", subP->subscriptionId, subP->lastNotificationTime);
+      KT_T(KtPernotLoopTimes, "%s: now:                     %f", subP->subscriptionId, now);
+      KT_T(KtPernotLoopTimes, "%s: diffTime:                %f", subP->subscriptionId, diffTime);
+      KT_T(KtPernotLoopTimes, "%s: noMatch:                 %d", subP->subscriptionId, subP->noMatch);
+      KT_T(KtPernotLoopTimes, "%s: noMatchDb:               %d", subP->subscriptionId, subP->noMatchDb);
+      KT_T(KtPernotLoopTimes, "%s: notificationAttempts:    %d", subP->subscriptionId, subP->notificationAttempts);
+      KT_T(KtPernotLoopTimes, "%s: notificationAttemptsDb:  %d", subP->subscriptionId, subP->notificationAttemptsDb);
 
       if (diffTime <= 0)
       {
-        LM_T(LmtPernotLoop, ("%s: ---------- Sending notification at %f", subP->subscriptionId, now));
+        KT_T(KtPernotLoop, "%s: ---------- Sending notification at %f", subP->subscriptionId, now);
         subP->lastNotificationTime = now;  // Either it works or fails, the timestamp needs to be updated (it's part of the loop)
         pernotTreatStart(subP);            // Query runs in a new thread, loop continues
       }
@@ -174,23 +174,23 @@ static void* pernotLoop(void* vP)
 
     if ((subCacheFlushInterval > 0) && (now > nextFlushAt))
     {
-      LM_T(LmtPernotLoop, ("Flushing Pernot SubCache contents to DB"));
+      KT_T(KtPernotLoop, "Flushing Pernot SubCache contents to DB");
       pernotSubCacheFlushToDb();
       nextFlushAt += subCacheFlushInterval;
     }
     else if ((subCacheInterval > 0) && (now > nextCacheRefreshAt))
     {
-      LM_T(LmtPernotLoop, ("Refreshing Pernot SubCache contents from DB"));
+      KT_T(KtPernotLoop, "Refreshing Pernot SubCache contents from DB");
       pernotSubCacheRefresh();
       nextCacheRefreshAt  += subCacheInterval;
     }
     else
     {
-      // LM_T(LmtPernotLoop, ("Sleeping 50ms"));
+      // KT_T(KtPernotLoop, "Sleeping 50ms");
       usleep(50000);  // We always end up here if there are no subscriptions in the cache
     }
   }
-  LM_T(LmtPernotLoop, ("End of loop"));
+  KT_T(KtPernotLoop, "End of loop");
   return NULL;
 }
 
@@ -203,6 +203,6 @@ pthread_t pernotThreadID;
 //
 void pernotLoopStart(void)
 {
-  LM_T(LmtPernot, ("Starting thread for the Periodic Notification Loop"));
+  KT_T(KtPernot, "Starting thread for the Periodic Notification Loop");
   pthread_create(&pernotThreadID, NULL, pernotLoop, NULL);
 }

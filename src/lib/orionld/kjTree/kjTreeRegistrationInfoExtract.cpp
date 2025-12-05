@@ -26,12 +26,10 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
 
 #include "orionld/common/urlParse.h"                             // urlParse
 #include "orionld/kjTree/kjTreeRegistrationInfoExtract.h"        // Owm interface
@@ -87,7 +85,7 @@ bool kjTreeRegistrationInfoExtract
 
               if (nameP == NULL)
               {
-                LM_W(("FWD: 'name' field not found in attrs array item"));
+                KT_W("FWD: 'name' field not found in attrs array item");
                 continue;
               }
 

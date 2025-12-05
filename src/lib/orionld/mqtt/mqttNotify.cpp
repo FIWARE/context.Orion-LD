@@ -29,19 +29,19 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjRenderSize.h"                                // kjFastRenderSize
 #include "kjson/kjRender.h"                                    // kjFastRender
 #include "kjson/kjBuilder.h"                                   // kjObject, kjArray, kjString, kjChildAdd, ...
 }
 
-#include "logMsg/logMsg.h"
-
 #include "cache/subCache.h"                                    // CachedSubscription
 
+#include "orionld/types/MqttConnection.h"                      // MqttConnection
 #include "orionld/common/orionldState.h"                       // orionldState, coreContextUrl
 #include "orionld/common/orionldError.h"                       // orionldError
-#include "orionld/types/MqttConnection.h"                      // MqttConnection
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/notifications/notificationSuccess.h"         // notificationSuccess
 #include "orionld/notifications/notificationFailure.h"         // notificationFailure
 #include "orionld/mqtt/mqttConnectionLookup.h"                 // mqttConnectionLookup
@@ -185,11 +185,11 @@ int mqttNotify(CachedSubscription* cSubP, struct iovec* ioVec, int ioVecSize, do
   mqttMsg.qos        = mqttP->qos;
   mqttMsg.retained   = 0;
 
-  LM_T(LmtMqtt, ("Sending a notification over MQTT (topic: '%s')", mqttP->topic));
+  KT_T(KtMqtt, "Sending a notification over MQTT (topic: '%s')", mqttP->topic);
   int  mr = MQTTClient_publishMessage(mqttConnectionP->client, mqttP->topic, &mqttMsg, &mqttToken);
   if (mr != MQTTCLIENT_SUCCESS)
   {
-    LM_E(("MQTT Broker error %d", mr));
+    KT_E("MQTT Broker error %d", mr);
     // Reconnect and try again
     orionldError(OrionldInternalError, "MQTT Broker Problem", "MQTTClient_publishMessage failed", 500);
     notificationFailure(cSubP, "MQTT Broker error", notificationTime);
@@ -200,7 +200,7 @@ int mqttNotify(CachedSubscription* cSubP, struct iovec* ioVec, int ioVecSize, do
   int rc = MQTTClient_waitForCompletion(mqttConnectionP->client, mqttToken, mqttTimeout);
   if (rc != 0)
   {
-    LM_E(("Internal Error (MQTT waitForCompletion error %d)", rc));
+    KT_E("Internal Error (MQTT waitForCompletion error %d)", rc);
     orionldError(OrionldInternalError, "MQTT Broker Problem", "MQTT waitForCompletion error", 500);
     notificationFailure(cSubP, "MQTT waitForCompletion error", notificationTime);
     return -1;

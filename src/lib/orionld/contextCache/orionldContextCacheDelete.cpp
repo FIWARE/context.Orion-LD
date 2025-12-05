@@ -29,9 +29,6 @@ extern "C"
 #include "kjson/kjFree.h"                                        // kjFree
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
-
 #include "orionld/types/OrionldContext.h"                        // OrionldContext
 #include "orionld/mongoc/mongocContextCacheDelete.h"             // mongocContextCacheDelete
 #include "orionld/contextCache/orionldContextCache.h"            // Context Cache Internals

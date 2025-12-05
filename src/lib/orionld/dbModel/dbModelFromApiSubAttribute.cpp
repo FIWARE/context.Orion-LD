@@ -24,13 +24,12 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjString, kjChildAdd, ...
 }
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/common/dotForEq.h"                             // dotForEq
@@ -94,7 +93,7 @@ bool dbModelFromApiSubAttribute(KjNode* saP, KjNode* dbMdP, KjNode* mdAddedV, Kj
       if (timestamp < 0)
       {
         orionldError(OrionldBadRequestData, "Invalid ISO8601 timestamp", errorString, 400);
-        LM_W(("Bad Request (Invalid ISO8601 timestamp: %s)", saP->value.s));
+        KT_W("Bad Request (Invalid ISO8601 timestamp: %s)", saP->value.s);
         return false;
       }
 
@@ -145,7 +144,7 @@ bool dbModelFromApiSubAttribute(KjNode* saP, KjNode* dbMdP, KjNode* mdAddedV, Kj
     if (saP->type != KjObject)
     {
       // Not an object ... weird, but let's leave it as it is
-      LM_W(("The sub-attribute '%s' is not a JSON Object", saP->name));
+      KT_W("The sub-attribute '%s' is not a JSON Object", saP->name);
       return true;
     }
 

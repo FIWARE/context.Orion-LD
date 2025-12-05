@@ -22,10 +22,13 @@
 *
 * Author: Ken Zangelin
 */
+#include <string.h>                                            // strcmp
 #include <MQTTClient.h>                                        // MQTT Client header
 
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "orionld/types/MqttConnection.h"                      // MqttConnection
 #include "orionld/mqtt/mqttConnectionList.h"                   // Mqtt Connection List
@@ -64,7 +67,7 @@ bool mqttConnect(MqttConnection* mqP, bool mqtts, const char* username, const ch
   else                                          connectOptions.MQTTVersion = MQTTVERSION_DEFAULT;
 
   if (mqtts)
-    LM_W(("WARNING - MQTT/SSL is not implemented yet - using unsecure MQTT for now. Sorry ... "));
+    KT_W("WARNING - MQTT/SSL is not implemented yet - using unsecure MQTT for now. Sorry ... ");
 
 
   //
@@ -72,7 +75,7 @@ bool mqttConnect(MqttConnection* mqP, bool mqtts, const char* username, const ch
   //
   if ((status = MQTTClient_connect(mqP->client, &connectOptions)) != MQTTCLIENT_SUCCESS)
   {
-    LM_E(("Internal Error (unable to connect to MQTT server (%s:%d): MQTTClient_connect error %d", host, port, status));
+    KT_E("Internal Error (unable to connect to MQTT server (%s:%d): MQTTClient_connect error %d", host, port, status);
     return false;
   }
 

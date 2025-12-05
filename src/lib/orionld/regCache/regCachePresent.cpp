@@ -24,15 +24,15 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
 
-#include "logMsg/logMsg.h"                                       // LM_T
-
 #include "orionld/types/OrionldTenant.h"                         // OrionldTenant
 #include "orionld/types/RegCache.h"                              // RegCache
 #include "orionld/types/RegCacheItem.h"                          // RegCacheItem
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/tenantList.h"                           // tenant0
 
 
@@ -43,15 +43,15 @@ extern "C"
 //
 void regCacheList(RegCache* rcP , const char* what)
 {
-  LM_T(LmtRegCache, ("============= %s ====================================", what));
-  LM_T(LmtRegCache, ("Registration cache for tenant '%s':", rcP->tenantP->mongoDbName));
+  KT_T(KtRegCache, "============= %s ====================================", what);
+  KT_T(KtRegCache, "Registration cache for tenant '%s':", rcP->tenantP->mongoDbName);
 
   for (RegCacheItem* rciP = rcP->regList; rciP != NULL; rciP = rciP->next)
   {
-    LM_T(LmtRegCache, ("* %s", rciP->regId));
+    KT_T(KtRegCache, "* %s", rciP->regId);
   }
 
-  LM_T(LmtRegCache, ("===================================================================================================="));
+  KT_T(KtRegCache, "====================================================================================================");
 }
 
 
@@ -65,31 +65,32 @@ void regCachePresent(void)
   for (OrionldTenant* tenantP = &tenant0; tenantP != NULL; tenantP = tenantP->next)
   {
     if (tenantP->regCache == NULL)
-      LM_T(LmtRegCache, ("Tenant '%s': No regCache", tenantP->mongoDbName));
+      KT_T(KtRegCache, "Tenant '%s': No regCache", tenantP->mongoDbName);
     else
     {
-      LM_T(LmtRegCache, ("Tenant '%s':", tenantP->mongoDbName));
+      KT_T(KtRegCache, "Tenant '%s':", tenantP->mongoDbName);
       RegCacheItem* rciP = tenantP->regCache->regList;
 
       while (rciP != NULL)
       {
         KjNode* regIdP = kjLookup(rciP->regTree, "id");
 
-        LM_T(LmtRegCache, ("  o Registration %s:", (regIdP != NULL)? regIdP->value.s : "unknown"));
-        LM_T(LmtRegCache, ("    o mode:  %s", registrationModeToString(rciP->mode)));
-        LM_T(LmtRegCache, ("    o ops:   0x%x", rciP->opMask));
+        KT_T(KtRegCache, "  o Registration %s:", (regIdP != NULL)? regIdP->value.s : "unknown");
+        KT_T(KtRegCache, "    o mode:  %s", registrationModeToString(rciP->mode));
+        KT_T(KtRegCache, "    o ops:   0x%x", rciP->opMask);
 
         if (rciP->idPatternRegexList != NULL)
         {
-          LM_T(LmtRegCache, ("    o patterns:"));
+          KT_T(KtRegCache, "    o patterns:");
           for (RegIdPattern* ripP = rciP->idPatternRegexList; ripP != NULL; ripP = ripP->next)
           {
-            LM_T(LmtRegCache, ("      o %s (idPattern at %p)", ripP->owner->value.s, ripP->owner));
+            KT_T(KtRegCache, "      o %s (idPattern at %p)", ripP->owner->value.s, ripP->owner);
           }
         }
         else
-          LM_T(LmtRegCache, ("    o patterns: NONE"));
-        LM_T(LmtRegCache, ("  -----------------------------------"));
+          KT_T(KtRegCache, "    o patterns: NONE");
+
+        KT_T(KtRegCache, "  -----------------------------------");
         rciP = rciP->next;
       }
     }

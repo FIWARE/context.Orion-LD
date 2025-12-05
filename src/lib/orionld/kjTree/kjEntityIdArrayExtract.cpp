@@ -26,14 +26,12 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjBuilder.h"                                   // kjString, kjChildAdd
 #include "kjson/kjLookup.h"                                    // kjLookup
 #include "kjson/kjStringValueLookupInArray.h"                  // kjStringValueLookupInArray
 }
-
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
 
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/common/entityIdAndTypeGet.h"                 // entityIdAndTypeGet
@@ -94,7 +92,7 @@ KjNode* kjEntityIdArrayExtract(KjNode* entityArray, KjNode* errorArray)
 
     if ((orionldState.in.contentType == MT_JSONLD) && (contextNodeP == NULL))
     {
-      LM_W(("Bad Input (Content-Type == application/ld+json, but no @context in payload data array item)"));
+      KT_W("Bad Input (Content-Type == application/ld+json, but no @context in payload data array item)");
       entityErrorPush(errorArray,
                       entityId,
                       OrionldBadRequestData,
@@ -109,7 +107,7 @@ KjNode* kjEntityIdArrayExtract(KjNode* entityArray, KjNode* errorArray)
 
     if ((orionldState.in.contentType != MT_JSONLD) && (contextNodeP != NULL))
     {
-      LM_W(("Bad Input (Content-Type is 'application/json', and an @context is present in the payload data array item)"));
+      KT_W("Bad Input (Content-Type is 'application/json', and an @context is present in the payload data array item)");
       entityErrorPush(errorArray,
                       entityId,
                       OrionldBadRequestData,
@@ -123,7 +121,7 @@ KjNode* kjEntityIdArrayExtract(KjNode* entityArray, KjNode* errorArray)
 
     if ((contextNodeP != NULL) && (orionldState.linkHttpHeaderPresent == true))
     {
-      LM_W(("Bad Input (@context present both in Link header and in payload data)"));
+      KT_W("Bad Input (@context present both in Link header and in payload data)");
       entityErrorPush(errorArray,
                       entityId,
                       OrionldBadRequestData,
@@ -140,7 +138,7 @@ KjNode* kjEntityIdArrayExtract(KjNode* entityArray, KjNode* errorArray)
     // But, not until pcheckEntity is good enough
     if (pcheckEntity(entityP->value.firstChildP, NULL, NULL, NULL, NULL, NULL, true) == false)
     {
-      LM_W(("Bad Input (invalid payload body)"));
+      KT_W("Bad Input (invalid payload body)");
       entityErrorPush(errorArray,
                       entityId,
                       OrionldBadRequestData,

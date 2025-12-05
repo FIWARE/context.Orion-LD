@@ -24,13 +24,13 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/kjFree.h"                                      // kjFree
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
 #include "orionld/types/PernotSubscription.h"                  // PernotSubscription
 #include "orionld/common/orionldState.h"                       // pernotSubCache
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/pernot/pernotItemRelease.h"                  // pernotItemRelease
 #include "orionld/pernot/pernotRelease.h"                      // Own interface
 
@@ -42,12 +42,12 @@ extern "C"
 //
 void pernotRelease(void)
 {
-  LM_T(LmtPernot, ("Releasing all pernot subscriptions"));
+  KT_T(KtPernot, "Releasing all pernot subscriptions");
 
   PernotSubscription* psP = pernotSubCache.head;
   while (psP != NULL)
   {
-    LM_T(LmtPernot, ("Releasing pernot subscription %s (at %p)", psP->subscriptionId, psP));
+    KT_T(KtPernot, "Releasing pernot subscription %s (at %p)", psP->subscriptionId, psP);
     pernotItemRelease(psP);
     psP = psP->next;
   }

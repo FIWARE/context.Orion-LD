@@ -26,9 +26,13 @@
 #include <strings.h>                                           // bzero
 #include <MQTTClient.h>                                        // MQTT Client header
 
-#include "logMsg/logMsg.h"                                     // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "orionld/types/MqttConnection.h"                      // MqttConnection
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/mqtt/mqttConnectionLookup.h"                 // mqttConnectionLookup
 #include "orionld/mqtt/mqttDisconnect.h"                       // Own Interface
 
@@ -52,7 +56,7 @@ void mqttDisconnect(const char* host, unsigned short port, const char* username,
   if (mcP->connections > 0)
     return;
 
-  LM_T(LmtMqtt, ("Disconnection for %s/%s", mcP->host, mcP->username));
+  KT_T(KtMqtt, "Disconnection for %s/%s", mcP->host, mcP->username);
 
   if (mcP->host     != NULL)      free(mcP->host);
   if (mcP->username != NULL)      free(mcP->username);

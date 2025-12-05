@@ -24,15 +24,15 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/types/OrionldTenant.h"                         // OrionldTenant
 #include "orionld/types/RegCache.h"                              // RegCache
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/mongoc/mongocRegistrationsIter.h"              // mongocRegistrationsIter
 #include "orionld/dbModel/dbModelToApiRegistration.h"            // dbModelToApiRegistration
 #include "orionld/regCache/regCacheItemAdd.h"                    // regCacheItemAdd
@@ -51,7 +51,7 @@ int regIterFunc(RegCache* rcP, KjNode* dbRegP)
   // Convert DB Reg to API Reg
   if (dbModelToApiRegistration(dbRegP, true, true) == false)
   {
-    LM_E(("dbModelToApiRegistration failed"));
+    KT_E("dbModelToApiRegistration failed");
     return 1;
   }
 
@@ -62,7 +62,7 @@ int regIterFunc(RegCache* rcP, KjNode* dbRegP)
   OrionldContext* fwdContextP = NULL;
   if (regCacheItemContextCheck(apiRegP, NULL, &fwdContextP) == false)
   {
-    LM_W(("Unable to resolve a Registration @context for a reg-cache item"));
+    KT_W("Unable to resolve a Registration @context for a reg-cache item");
     return 0;
   }
 
@@ -90,7 +90,7 @@ RegCache* regCacheCreate(OrionldTenant* tenantP, bool scanRegs)
   RegCache* rcP = (RegCache*) malloc(sizeof(RegCache));
 
   if (rcP == NULL)
-    LM_RE(NULL, ("Out of memory (attempt to create a registration cache)"));
+    KT_RE(NULL, "Out of memory (attempt to create a registration cache)");
 
   rcP->tenantP  = tenantP;
   rcP->regList  = NULL;
@@ -99,7 +99,7 @@ RegCache* regCacheCreate(OrionldTenant* tenantP, bool scanRegs)
   if (scanRegs)
   {
     if (mongocRegistrationsIter(rcP, regIterFunc) != 0)
-      LM_E(("mongocRegistrationsIter failed"));
+      KT_E("mongocRegistrationsIter failed");
   }
 
   return rcP;

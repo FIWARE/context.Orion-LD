@@ -31,8 +31,6 @@ extern "C"
 #include "kjson/kjBuilder.h"                                     // kjChildRemove. kjString, ...
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/types/OrionldAttributeType.h"                  // OrionldAttributeType
 #include "orionld/types/OrionldRenderFormat.h"                   // OrionldRenderFormat
 #include "orionld/common/orionldState.h"                         // orionldState

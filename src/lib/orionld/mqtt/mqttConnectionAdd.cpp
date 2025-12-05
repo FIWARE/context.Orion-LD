@@ -22,10 +22,16 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
+#include <string.h>                                            // strdup
+#include <stdlib.h>                                            // realloc
+
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "orionld/types/MqttConnection.h"                      // MqttConnection
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/mqtt/mqttConnect.h"                          // mqttConnect
 #include "orionld/mqtt/mqttConnectionList.h"                   // Mqtt Connection List
 #include "orionld/mqtt/mqttConnectionAdd.h"                    // Own interface
@@ -71,7 +77,7 @@ MqttConnection* mqttConnectionAdd
 
   if (mqP == NULL)
   {
-    LM_E(("Internal Error (no MQTT connection available)"));
+    KT_E("Internal Error (no MQTT connection available)");
     return NULL;
   }
 
@@ -83,13 +89,13 @@ MqttConnection* mqttConnectionAdd
 
   if (mqttConnect(mqP, mqtts, username, password, host, port, version) == false)
   {
-    LM_E(("Internal Error (mqttConnect failed)"));
+    KT_E("Internal Error (mqttConnect failed)");
     return NULL;
   }
 
-  LM_T(LmtMqtt, ("Added an MQTT connection for %s:%d (user: '%s', pwd: '%s', ver: '%s')", mqP->host, mqP->port, mqP->username, mqP->password, mqP->version));
+  KT_T(KtMqtt, "Added an MQTT connection for %s:%d (user: '%s', pwd: '%s', ver: '%s')", mqP->host, mqP->port, mqP->username, mqP->password, mqP->version);
   ++mqttConnectionListIx;
-  LM_T(LmtMqtt, ("mqttConnectionListIx is now %d", mqttConnectionListIx));
+  KT_T(KtMqtt, "mqttConnectionListIx is now %d", mqttConnectionListIx);
 
   return mqP;
 }

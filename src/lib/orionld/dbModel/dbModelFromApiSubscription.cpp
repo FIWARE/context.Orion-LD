@@ -25,15 +25,15 @@
 extern "C"
 {
 #include "kbase/kMacros.h"                                     // K_VEC_SIZE
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjLookup.h"                                    // kjLookup
 #include "kjson/kjBuilder.h"                                   // kjString, kjChildAdd, ...
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/common/orionldError.h"                       // orionldError
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/common/dateTime.h"                           // dateTimeFromString
 #include "orionld/context/orionldCoreContext.h"                // orionldCoreContextP
 #include "orionld/context/orionldContextSimplify.h"            // orionldContextSimplify
@@ -253,7 +253,7 @@ bool dbModelFromApiSubscription(KjNode* apiSubscriptionP, bool patch)
       fragmentP->value.f = dateTimeFromString(fragmentP->value.s, errorString, sizeof(errorString));
 
       if (fragmentP->value.f < 0)
-        LM_E(("expiration/expiresAt: %s", errorString));
+        KT_E("expiration/expiresAt: %s", errorString);
     }
     else if (strcmp(fragmentP->name, "throttling") == 0)
       throttlingP = fragmentP;
@@ -354,7 +354,7 @@ bool dbModelFromApiSubscription(KjNode* apiSubscriptionP, bool patch)
   // it's much better to not do this inside the loop. Especially as the tree must be modified and a for-loop
   // would no longer be possible
   //
-  LM_TREE(notificationP, "notificationP", LmtSR);
+  KT_TREE(notificationP, "notificationP", KtSR);
   if (notificationP != NULL)
   {
     KjNode* nItemP = notificationP->value.firstChildP;
@@ -522,7 +522,7 @@ bool dbModelFromApiSubscription(KjNode* apiSubscriptionP, bool patch)
       //
       orionldState.payloadContextNode->type    = KjString;
       orionldState.payloadContextNode->value.s = orionldCoreContextP->url;
-      LM_W(("Warning - the context is not a string - changing it for the Core Context (API Spec v1.6)"));
+      KT_W("Warning - the context is not a string - changing it for the Core Context (API Spec v1.6)");
     }
 
     orionldState.payloadContextNode->name = (char*) "ldContext";

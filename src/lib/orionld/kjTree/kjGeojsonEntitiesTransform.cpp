@@ -24,13 +24,11 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjObject, kjString, kjArray, kjChildAdd
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/kjTree/kjGeojsonEntityTransform.h"             // kjGeojsonEntityTransform
@@ -45,7 +43,7 @@ extern "C"
 static KjNode* geoPropertyNodeLookup(KjNode* geoPropertyNodes, KjNode* entityIdNode, const char* geoPropertyName)
 {
   if ((entityIdNode == NULL) || (entityIdNode->type != KjString))
-    LM_RE(NULL, ("Internal Error (no id field found in entity)"));
+    KT_RE(NULL, "Internal Error (no id field found in entity)");
 
   const char* entityId = entityIdNode->value.s;
 

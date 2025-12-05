@@ -28,8 +28,10 @@ extern "C"
 #include "kjson/kjBuilder.h"                                     // kjObject, kjString, kjFloat, kjChildAdd, ...
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+}
 
 #include "orionld/types/OrionldContext.h"                        // OrionldContext, orionldOriginToString, orionldKindToString
 #include "orionld/common/orionldState.h"                         // orionldState
@@ -44,7 +46,7 @@ extern "C"
 //
 // orionldContextCachePersist -
 //
-// In  mongo, a context looks like this:
+// In mongo, a context looks like this:
 // {
 //   "_id":       "uuid-invented-by-broker",
 //   "url":       "URL to the context",
@@ -66,7 +68,7 @@ void orionldContextCachePersist(OrionldContext* contextP, bool reload)
   KjNode*  valueP       = contextP->tree;
 
   if (contextP->tree == NULL)
-    LM_X(1, ("FATAL ERROR: the context '%s' has no tree!", contextP->url));
+    KT_X(1, "FATAL ERROR: the context '%s' has no tree!", contextP->url);
 
   // Field: "_id"
   if (contextP->id == NULL)

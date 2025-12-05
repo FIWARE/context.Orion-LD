@@ -24,9 +24,13 @@
 */
 #include <string.h>                                            // strcmp
 
-#include "logMsg/logMsg.h"                                     // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "orionld/types/MqttConnection.h"                      // MqttConnection
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/mqtt/mqttConnectionList.h"                   // Mqtt Connection List
 #include "orionld/mqtt/mqttConnectionLookup.h"                 // Own interface
 
@@ -38,11 +42,11 @@
 //
 MqttConnection* mqttConnectionLookup(const char* host, unsigned short port, const char* username, const char* password, const char* version)
 {
-  LM_T(LmtMqtt, ("mqttConnectionListIx == %d", mqttConnectionListIx));
+  KT_T(KtMqtt, "mqttConnectionListIx == %d", mqttConnectionListIx);
 
   if (host == NULL) return NULL;
 
-  LM_T(LmtMqtt, ("Looking up an MQTT connection for %s:%d (user: '%s', pwd: '%s', ver: '%s')", host, port, username, password, version));
+  KT_T(KtMqtt, "Looking up an MQTT connection for %s:%d (user: '%s', pwd: '%s', ver: '%s')", host, port, username, password, version);
 
   for (int ix = 0; ix < mqttConnectionListIx; ix++)
   {
@@ -53,7 +57,7 @@ MqttConnection* mqttConnectionLookup(const char* host, unsigned short port, cons
     if (mqP->port != port)                                                  continue;
     if (strcmp(host, mqP->host) != 0)                                       continue;  // Host is mandatory, cannot be empty
 
-    LM_T(LmtMqtt, ("Comparing with MQTT connection %s:%d (user: '%s', pwd: '%s', ver: '%s')", mqP->host, mqP->port, mqP->username, mqP->password, mqP->version));
+    KT_T(KtMqtt, "Comparing with MQTT connection %s:%d (user: '%s', pwd: '%s', ver: '%s')", mqP->host, mqP->port, mqP->username, mqP->password, mqP->version);
 
     if (((username == NULL) || (*username == 0)) && (mqP->username == NULL))
       {}  // Match
@@ -79,14 +83,14 @@ MqttConnection* mqttConnectionLookup(const char* host, unsigned short port, cons
       continue;
 
     if (MQTTClient_isConnected(mqP->client) != true)
-      LM_T(LmtMqtt, ("Found the MQTT connection, just, it's not connected!"));
+      KT_T(KtMqtt, "Found the MQTT connection, just, it's not connected!");
     else
-      LM_T(LmtMqtt, ("Found the MQTT connection and it's connected"));
+      KT_T(KtMqtt, "Found the MQTT connection and it's connected");
 
     return mqP;
   }
 
-  LM_T(LmtMqtt, ("No MQTT connection found for %s:%d (user: '%s', pwd: '%s', ver: '%s')", host, port, username, password, version));
+  KT_T(KtMqtt, "No MQTT connection found for %s:%d (user: '%s', pwd: '%s', ver: '%s')", host, port, username, password, version);
 
   return NULL;
 }

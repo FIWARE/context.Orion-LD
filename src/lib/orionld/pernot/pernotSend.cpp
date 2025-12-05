@@ -24,16 +24,16 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjRenderSize.h"                                  // kjFastRenderSize
 #include "kjson/kjRender.h"                                      // kjFastRender
 #include "kjson/kjBuilder.h"                                     // kjObject, kjArray, kjString, kjChildAdd, ...
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/types/PernotSubscription.h"                    // PernotSubscription
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/numberToDate.h"                         // numberToDate
 #include "orionld/common/uuidGenerate.h"                         // uuidGenerate
 #include "orionld/common/tenantList.h"                           // tenant0
@@ -96,7 +96,7 @@ static KjNode* notificationTree(PernotSubscription* subP, KjNode* entityArray)
 //
 static KjNode* notificationTreeForNgsiV2(PernotSubscription* subP, KjNode* entityArray)
 {
-  LM_X(1, ("Pernot subs in NGSIv2 format is not implemented, how did we get here???"));
+  KT_X(1, "Pernot subs in NGSIv2 format is not implemented, how did we get here???");
   return NULL;
 }
 
@@ -222,7 +222,7 @@ bool pernotSend(PernotSubscription* subP, KjNode* entityArray)
   //
   if (subP->protocol == HTTP)
   {
-    LM_T(LmtPernot, ("Sending a Periodic Notification to %s:%d%s", subP->ip, subP->port, subP->rest));
+    KT_T(KtPernot, "Sending a Periodic Notification to %s:%d%s", subP->ip, subP->port, subP->rest);
     return httpNotify(NULL, subP, subP->subscriptionId, subP->ip, subP->port, subP->rest, ioVec, ioVecLen, subP->lastNotificationTime);
   }
 #if 0
@@ -230,7 +230,7 @@ bool pernotSend(PernotSubscription* subP, KjNode* entityArray)
   else if (subP->protocol == MQTT)    return mqttNotify(subP,  ioVec, ioVecLen, now);
 #endif
 
-  LM_W(("%s: Unsupported protocol for notifications: '%s'", subP->subscriptionId, subP->protocol));
+  KT_W("%s: Unsupported protocol for notifications: '%s'", subP->subscriptionId, subP->protocol);
 
   return false;
 }

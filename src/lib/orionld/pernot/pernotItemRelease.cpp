@@ -22,14 +22,16 @@
 *
 * Author: Ken Zangelin
 */
+#include <stdlib.h>                                            // free
+
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/kjFree.h"                                      // kjFree
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
 #include "orionld/types/PernotSubscription.h"                  // PernotSubscription
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/pernot/pernotItemRelease.h"                  // Own interface
 
 
@@ -40,16 +42,16 @@ extern "C"
 //
 bool pernotItemRelease(PernotSubscription* pSubP)
 {
-  LM_T(LmtLeak, ("Releasing pernot at %p", pSubP));
+  KT_T(KtLeak, "Releasing pernot at %p", pSubP);
   if (pSubP->subscriptionId != NULL)
   {
-    LM_T(LmtLeak, ("Releasing pernot id '%s'", pSubP->subscriptionId));
+    KT_T(KtLeak, "Releasing pernot id '%s'", pSubP->subscriptionId);
     free(pSubP->subscriptionId);
   }
 
   if (pSubP->kjSubP != NULL)
   {
-    LM_T(LmtLeak, ("Releasing pernot kj-tree at %p", pSubP->kjSubP));
+    KT_T(KtLeak, "Releasing pernot kj-tree at %p", pSubP->kjSubP);
     kjFree(pSubP->kjSubP);
   }
 

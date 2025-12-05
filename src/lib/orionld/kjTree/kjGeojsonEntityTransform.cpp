@@ -30,9 +30,6 @@ extern "C"
 #include "kjson/kjClone.h"                                       // kjClone
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
-
 #include "orionld/common/orionldState.h"                         // orionldState, coreContextUrl
 #include "orionld/kjTree/kjGeojsonEntityTransform.h"             // Own interface
 

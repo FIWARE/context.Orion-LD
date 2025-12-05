@@ -25,12 +25,12 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/types/OrionldTenant.h"                         // OrionldTenant
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/tenantList.h"                           // tenantList, tenant0
 #include "orionld/regCache/regCacheCreate.h"                     // regCacheCreate
 #include "orionld/regCache/regCacheInit.h"                       // Own interface
@@ -43,12 +43,12 @@ extern "C"
 //
 void regCacheInit(void)
 {
-  LM_T(LmtRegMatch, ("Creating regCache for default tenant"));
+  KT_T(KtRegMatch, "Creating regCache for default tenant");
   tenant0.regCache = regCacheCreate(&tenant0, true);
 
   for (OrionldTenant* tenantP = tenantList; tenantP != NULL; tenantP = tenantP->next)
   {
-    LM_T(LmtRegMatch, ("Creating regCache for tenant '%s'", tenantP->tenant));
+    KT_T(KtRegMatch, "Creating regCache for tenant '%s'", tenantP->tenant);
     tenantP->regCache = regCacheCreate(tenantP, true);
   }
 }

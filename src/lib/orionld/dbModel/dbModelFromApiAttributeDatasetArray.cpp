@@ -24,15 +24,15 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                        // KT_*
 #include "kjson/KjNode.h"                                         // KjNode
 #include "kjson/kjLookup.h"                                       // kjLookup
 #include "kjson/kjBuilder.h"                                      // kjString, kjObject, kjChildAdd, ...
 }
 
-#include "logMsg/logMsg.h"                                        // LM_*
-
 #include "orionld/common/orionldState.h"                          // orionldState
 #include "orionld/common/orionldError.h"                          // orionldError
+#include "orionld/common/traceLevels.h"                           // KTrace levels
 #include "orionld/dbModel/dbModelFromApiAttribute.h"              // dbModelFromApiAttribute
 #include "orionld/dbModel/dbModelFromApiAttributeDatasetArray.h"  // Own interface
 
@@ -121,7 +121,7 @@ bool dbModelFromApiAttributeDatasetArray
   {
     next = attrInstanceP->next;
 
-    LM_T(LmtDbModel, ("Attribute: %s (JSON type: %s)", attrArrayP->name, kjValueType(attrInstanceP->type)));
+    KT_T(KtDbModel, "Attribute: %s (JSON type: %s)", attrArrayP->name, kjValueType(attrInstanceP->type));
 
     KjNode* datasetIdNodeP = kjLookup(attrInstanceP, "datasetId");
 

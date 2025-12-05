@@ -22,14 +22,14 @@
 *
 * Author: Ken Zangelin
 */
+#include <unistd.h>                                              // NULL
+
 extern "C"
 {
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjChildRemove
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/kjTree/kjAttributeNormalizedToSimplified.h"    // Own interface
 
