@@ -29,8 +29,6 @@ extern "C"
 #include "kjson/kjBuilder.h"                                     // kjChildRemove, kjChildAdd
 }
 
-#include "logMsg/logMsg.h"                                       // LM
-
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/common/eqForDot.h"                             // eqForDot

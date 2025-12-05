@@ -25,14 +25,13 @@
 extern "C"
 {
 #include "kbase/kMacros.h"                                        // K_VEC_SIZE
+#include "ktrace/kTrace.h"                                        // KT_*
 #include "kalloc/kaStrdup.h"                                      // kaStrdup
 #include "kjson/KjNode.h"                                         // KjNode
 #include "kjson/kjLookup.h"                                       // kjLookup
 #include "kjson/kjBuilder.h"                                      // kjString, kjObject, kjChildAdd, ...
 #include "kjson/kjClone.h"                                        // kjClone
 }
-
-#include "logMsg/logMsg.h"                                        // LM_*
 
 #include "orionld/types/OrionLdRestService.h"                     // ORIONLD_SERVICE_OPTION_DATASET_SUPPORT
 #include "orionld/common/orionldState.h"                          // orionldState
@@ -94,7 +93,7 @@ bool dbModelFromApiAttribute(KjNode* attrP, KjNode* dbAttrsP, KjNode* attrAddedV
   {
     if ((orionldState.serviceP->options & ORIONLD_SERVICE_OPTION_DATASET_SUPPORT) == 0)
     {
-      LM_W(("Datasets present - not yet implemented"));
+      KT_W("Datasets present - not yet implemented");
       orionldError(OrionldOperationNotSupported, "Not Implemented", "Datasets not implemented for this type of request", 501);
       return false;
     }

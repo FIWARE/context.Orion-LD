@@ -22,11 +22,14 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                       // LM_T
-#include "logMsg/traceLevels.h"                                  // LmtRegCache
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+}
 
 #include "orionld/types/RegCache.h"                              // RegCache
 #include "orionld/types/RegCacheItem.h"                          // RegCacheItem
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 
 
 
@@ -36,10 +39,10 @@
 //
 void regCacheDebug(RegCache* rcP, const char* what)
 {
-  LM_T(LmtRegCache, ("======================== Reg Cache %p for tenant '%s' (%s) =================", rcP, rcP->tenantP->tenant, what));
+  KT_T(KtRegCache, "======================== Reg Cache %p for tenant '%s' (%s) =================", rcP, rcP->tenantP->tenant, what);
   for (RegCacheItem* rciP = rcP->regList; rciP != NULL; rciP = rciP->next)
   {
-    LM_T(LmtRegCache, ("  o %s", rciP->regId));
+    KT_T(KtRegCache, "  o %s", rciP->regId);
   }
-  LM_T(LmtRegCache, ("========================================================================================================="));
+  KT_T(KtRegCache, "=========================================================================================================");
 }

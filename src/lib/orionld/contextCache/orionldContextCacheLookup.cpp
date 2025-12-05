@@ -24,9 +24,6 @@
 */
 #include <string.h>                                              // strcmp
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
-
 #include "orionld/types/OrionldContext.h"                        // OrionldContext
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/contextCache/orionldContextCache.h"            // Context Cache Internals

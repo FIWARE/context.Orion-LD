@@ -28,8 +28,6 @@ extern "C"
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/types/OrionldContext.h"                        // OrionldContext
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/context/orionldContextFromUrl.h"               // orionldContextFromUrl

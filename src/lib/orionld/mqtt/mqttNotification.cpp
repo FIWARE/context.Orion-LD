@@ -29,16 +29,16 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kalloc/kaAlloc.h"                                    // kaAlloc
 #include "kjson/kjRenderSize.h"                                // kjFastRenderSize
 #include "kjson/kjRender.h"                                    // kjFastRender
 #include "kjson/kjBuilder.h"                                   // kjObject, kjString, ...
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
-#include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/types/MqttConnection.h"                      // MqttConnection
+#include "orionld/common/orionldState.h"                       // orionldState
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/mqtt/mqttConnectionLookup.h"                 // mqttConnectionLookup
 #include "orionld/mqtt/mqttConnectionAdd.h"                    // mqttConnectionAdd
 #include "orionld/mqtt/mqttNotification.h"                     // Own interface
@@ -83,10 +83,7 @@ int mqttNotification
   char*    totalBuf;
 
   if ((metadataNodeP == NULL) || (contentTypeNodeP == NULL))
-  {
-    LM_E(("Internal Error (unable to allocate)"));
-    return -1;
-  }
+    KT_RE(-1, "Internal Error (unable to allocate)");
 
   kjChildAdd(metadataNodeP, contentTypeNodeP);
 
@@ -119,7 +116,7 @@ int mqttNotification
 
       if ((openingBracket == NULL) || (closingBracket == NULL))
       {
-        LM_E(("Internal Error (invalid Link header: '%s')", value));
+        KT_E("Internal Error (invalid Link header: '%s')", value);
         continue;
       }
 
@@ -152,13 +149,10 @@ int mqttNotification
 
   if (mqttP == NULL)
   {
-    LM_T(LmtMqtt, ("No MQTT connection found, getting one"));
+    KT_T(KtMqtt, "No MQTT connection found, getting one");
     mqttP = mqttConnectionAdd(false, username, password, host, port, mqttVersion);
     if (mqttP == NULL)
-    {
-      LM_E(("Internal Error (unable to connect to MQTT broker at %s:%d)", host, port));
-      return -1;
-    }
+      KT_RE(-1, "Internal Error (unable to connect to MQTT broker at %s:%d)", host, port);
   }
 
   mqttMsg.payload    = (void*) totalBuf;
@@ -166,24 +160,19 @@ int mqttNotification
   mqttMsg.qos        = QoS;
   mqttMsg.retained   = 0;
 
-  LM_T(LmtMqtt, ("Sending a notification over MQTT (topic: '%s')", topic));
+  KT_T(KtMqtt, "Sending a notification over MQTT (topic: '%s')", topic);
   int  mr = MQTTClient_publishMessage(mqttP->client, topic, &mqttMsg, &mqttToken);
   if (mr != MQTTCLIENT_SUCCESS)
-  {
-    LM_E(("MQTT Broker error %d", mr));
-    // Reconnect and try again
-    return -1;
-  }
-  LM_T(LmtMqtt, ("MQTTClient_publishMessage says OK (returned MQTTCLIENT_SUCCESS)"));
+    KT_RE(-1, "MQTT Broker error %d", mr);    // Reconnect and try again
 
-  LM_T(LmtMqtt, ("Waiting for completion (timeout: %d)", mqttTimeout));
+  KT_T(KtMqtt, "MQTTClient_publishMessage says OK (returned MQTTCLIENT_SUCCESS)");
+
+  KT_T(KtMqtt, "Waiting for completion (timeout: %d)", mqttTimeout);
   int rc = MQTTClient_waitForCompletion(mqttP->client, mqttToken, mqttTimeout);
   if (rc != MQTTCLIENT_SUCCESS)
-  {
-    LM_E(("Internal Error (MQTT waitForCompletion error %d)", rc));
-    return -1;
-  }
-  LM_T(LmtMqtt, ("MQTTClient_waitForCompletion says OK (returned MQTTCLIENT_SUCCESS)"));
+    KT_RE(-1, "Internal Error (MQTT waitForCompletion error %d)", rc);
+
+  KT_T(KtMqtt, "MQTTClient_waitForCompletion says OK (returned MQTTCLIENT_SUCCESS)");
 
   return 0;
 }

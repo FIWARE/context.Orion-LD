@@ -22,11 +22,15 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                     // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+}
 
-#include "orionld/mqtt/mqttConnectionLookup.h"                 // mqttConnectionLookup
-#include "orionld/mqtt/mqttConnectionAdd.h"                    // mqttConnectionAdd
-#include "orionld/mqtt/mqttConnectionEstablish.h"              // Own interface
+#include "orionld/common/traceLevels.h"                          // KTrace levels
+#include "orionld/mqtt/mqttConnectionLookup.h"                   // mqttConnectionLookup
+#include "orionld/mqtt/mqttConnectionAdd.h"                      // mqttConnectionAdd
+#include "orionld/mqtt/mqttConnectionEstablish.h"                // Own interface
 
 
 
@@ -42,7 +46,7 @@ bool mqttConnectionEstablish(bool mqtts, const char* username, const char* passw
   {
     // Already connected
     mqP->connections += 1;
-    LM_T(LmtMqtt, ("Already connected. Connections: %d", mqP->connections));
+    KT_T(KtMqtt, "Already connected. Connections: %d", mqP->connections);
     return true;
   }
 

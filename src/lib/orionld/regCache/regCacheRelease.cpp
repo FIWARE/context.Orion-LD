@@ -29,8 +29,6 @@ extern "C"
 #include "kjson/kjFree.h"                                      // kjFree
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
 #include "orionld/types/RegCache.h"                            // RegCache
 #include "orionld/types/RegCacheItem.h"                        // RegCacheItem
 #include "orionld/regCache/regCacheItemRegexRelease.h"         // regCacheItemRegexRelease

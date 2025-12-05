@@ -26,12 +26,11 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjChildAdd, kjChildRemove, kjString, kjObject, ...
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/common/orionldState.h"                         // orionldState, coreContextUrl
 #include "orionld/common/dateTime.h"                             // dateTimeFromString
@@ -110,7 +109,7 @@ bool dbModelFromApiRegInfo(KjNode* informationP, KjNode* endpointP, RegCacheItem
 
   if (endpoint == NULL)
   {
-    LM_E(("Internal Error (no endpoint (providing application) found)"));
+    KT_E("Internal Error (no endpoint (providing application) found)");
     return false;
   }
 
@@ -185,7 +184,7 @@ void dbModelFromApiTimeInterval(KjNode* intervalP)
   {
     ts = dateTimeFromString(startAtP->value.s, errorString, sizeof(errorString));
     if (ts < 0)
-      LM_E(("startAt: %s", errorString));
+      KT_E("startAt: %s", errorString);
 
     startAtP->type    = KjFloat;
     startAtP->value.f = ts;
@@ -195,7 +194,7 @@ void dbModelFromApiTimeInterval(KjNode* intervalP)
   {
     ts = dateTimeFromString(endAtP->value.s, errorString, sizeof(errorString));
     if (ts < 0)
-      LM_E(("startAt: %s", errorString));
+      KT_E("startAt: %s", errorString);
 
     endAtP->type    = KjFloat;
     endAtP->value.f = ts;
@@ -257,7 +256,7 @@ bool dbModelFromApiRegistration(KjNode* apiRegistration, RegCacheItem* rciP)
     expiresAtP->type    = KjFloat;
 
     if (expiresAtP->value.f < 0)
-      LM_W(("expiration/expiresAt: %s", errorString));
+      KT_W("expiration/expiresAt: %s", errorString);
   }
 
   kjChildAdd(apiRegistration, statusP);

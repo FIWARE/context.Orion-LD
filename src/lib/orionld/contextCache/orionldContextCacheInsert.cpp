@@ -27,7 +27,10 @@
 #include <semaphore.h>                                           // sem_wait, sem_post
 #include <stdlib.h>                                              // calloc
 
-#include "logMsg/logMsg.h"                                       // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+}
 
 #include "orionld/types/OrionLdRestService.h"                    // OrionLdRestService
 #include "orionld/types/OrionldContext.h"                        // OrionldContext
@@ -49,7 +52,7 @@ void orionldContextCacheInsert(OrionldContext* contextP)
 
   if (contextP == NULL)
   {
-    LM_W(("contextP == NULL"));
+    KT_W("contextP == NULL");
     return;
   }
 
@@ -98,7 +101,7 @@ void orionldContextCacheInsert(OrionldContext* contextP)
     char* newArray     = (char*) calloc(sizeof(OrionldContext*), newNoOfSlots);
 
     if (newArray == NULL)
-      LM_X(1, ("Out of memory attempting to reallocate the context cache for growth (%d bytes)", sizeof(OrionldContext*) * newNoOfSlots));
+      KT_X(1, "Out of memory attempting to reallocate the context cache for growth (%d bytes)", sizeof(OrionldContext*) * newNoOfSlots);
 
     memcpy(newArray, (char*) orionldContextCache, sizeof(OrionldContext*) * orionldContextCacheSlots);
     bzero(&newArray[sizeof(OrionldContext*) * orionldContextCacheSlots], addedSize);

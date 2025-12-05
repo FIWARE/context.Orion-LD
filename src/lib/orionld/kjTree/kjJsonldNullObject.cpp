@@ -30,7 +30,6 @@ extern "C"
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
 #include "orionld/kjTree/kjJsonldNullObject.h"                   // Own interface
 
 

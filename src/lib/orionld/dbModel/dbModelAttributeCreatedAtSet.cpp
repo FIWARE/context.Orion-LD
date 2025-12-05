@@ -26,12 +26,11 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjFloat, kjChildAdd
 }
-
-#include "logMsg/logMsg.h"                                       // LM*
 
 #include "orionld/common/orionldState.h"                         // orionldState
 
@@ -52,7 +51,7 @@ void dbModelAttributeCreatedAtSet(KjNode* dbAttrP, double createdAt, const char*
     creDateP->value.f = createdAt;
   else
   {
-    LM_W(("No '%s' found in attribute '%s'", fieldName, dbAttrP->name));
+    KT_W("No '%s' found in attribute '%s'", fieldName, dbAttrP->name);
 
     KjNode* createdAtP = kjFloat(orionldState.kjsonP, fieldName, createdAt);
     kjChildAdd(dbAttrP, createdAtP);

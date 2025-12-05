@@ -26,12 +26,11 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
 
-#include "logMsg/logMsg.h"                                       // LM*
-#include "logMsg/traceLevels.h"                                  // Lmt*
 
 
 
@@ -45,7 +44,7 @@ char* dbModelEntityTypeLookup(KjNode* dbEntityP, const char* entityId)
 
   if (_idP == NULL)
   {
-    LM_E(("Entity '%s' is without _id field", entityId));
+    KT_E("Entity '%s' is without _id field", entityId);
     return NULL;
   }
 
@@ -53,7 +52,7 @@ char* dbModelEntityTypeLookup(KjNode* dbEntityP, const char* entityId)
 
   if (typeP == NULL)
   {
-    LM_E(("Entity '%s' is without _id::type field", entityId));
+    KT_E("Entity '%s' is without _id::type field", entityId);
     return NULL;
   }
 

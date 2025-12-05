@@ -33,8 +33,6 @@ extern "C"
 #include "kjson/kjBuilder.h"                                     // kjString
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/dbModel/dbModelToApiCoordinates.h"             // Own interface
 

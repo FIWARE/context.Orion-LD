@@ -23,19 +23,19 @@
 * Author: Ken Zangelin
 */
 #include <string.h>                                              // strcmp
-#include <unistd.h>                                              // NULL
+#include <stdlib.h>                                              // free
 #include <regex.h>                                               // regfree
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjFree.h"                                        // kjFree
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/types/RegCacheItem.h"                          // RegCacheItem
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/regCache/regCachePresent.h"                    // regCacheList
 #include "orionld/regCache/regCacheItemRegexRelease.h"           // regCacheItemRegexRelease
 #include "orionld/regCache/regCacheItemRemove.h"                 // Own interface
@@ -60,12 +60,12 @@ extern "C"
 bool regCacheItemRemove(RegCache* rcP, const char* regId)
 {
   if (rcP == NULL)
-    LM_RE(false, ("NULL rcP - that's a SW bug!"));
+    KT_RE(false, "NULL rcP - that's a SW bug!");
 
   RegCacheItem* rciP = rcP->regList;
   RegCacheItem* prev = NULL;
 
-  LM_T(LmtRegCache, ("Removing the reg '%s' from the regCache for tenant '%s'", regId, rcP->tenantP->mongoDbName));
+  KT_T(KtRegCache, "Removing the reg '%s' from the regCache for tenant '%s'", regId, rcP->tenantP->mongoDbName);
   regCacheList(rcP, "Before remove");
 
   while (rciP != NULL)

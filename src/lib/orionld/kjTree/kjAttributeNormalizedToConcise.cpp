@@ -22,15 +22,16 @@
 *
 * Author: Ken Zangelin
 */
+#include <string.h>                                              // strcmp
+
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjChildRemove
 #include "kjson/kjChildCount.h"                                  // kjChildCount
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/types/OrionldAttributeType.h"                  // OrionldAttributeType
 #include "orionld/kjTree/kjAttributeNormalizedToConcise.h"       // Own interface
@@ -49,9 +50,9 @@ void kjAttributeNormalizedToConcise(KjNode* attrP, const char* lang)
   KjNode*              typeP    = kjLookup(attrP, "type");
 
   if (typeP == NULL)
-    LM_RVE(("The attribute '%s' doesn't have an attribute type", attrP->name));
+    KT_RVE("The attribute '%s' doesn't have an attribute type", attrP->name);
   if (typeP->type != KjString)
-    LM_RVE(("The attribute '%s' has an attribute type that is not a String", attrP->name));
+    KT_RVE("The attribute '%s' has an attribute type that is not a String", attrP->name);
 
   kjChildRemove(attrP, typeP);
   attrType = orionldAttributeType(typeP->value.s);

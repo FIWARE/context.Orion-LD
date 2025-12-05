@@ -22,15 +22,16 @@
 *
 * Author: Ken Zangelin
 */
+#include <unistd.h>                                              // NULL
+#include <stdlib.h>                                              // malloc
 #include <regex.h>                                               // regcomp
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/types/OrionldTenant.h"                         // OrionldTenant
 #include "orionld/types/RegCacheItem.h"                          // RegCacheItem
@@ -65,12 +66,12 @@ bool regCacheIdPatternRegexCompile(RegCacheItem* rciP, KjNode* informationArrayP
       RegIdPattern* ripP = (RegIdPattern*) malloc(sizeof(RegIdPattern));
 
       if (ripP == NULL)
-        LM_X(1, ("Out of memory"));
+        KT_X(1, "Out of memory");
 
       ripP->owner = idPatternP;
       if (regcomp(&ripP->regex, idPatternP->value.s, REG_EXTENDED) != 0)
       {
-        LM_E(("Error compiling a regular expression for '%s'", idPatternP->value.s));
+        KT_E("Error compiling a regular expression for '%s'", idPatternP->value.s);
         return false;
       }
 

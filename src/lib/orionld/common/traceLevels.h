@@ -65,11 +65,20 @@ typedef enum OrionldTraceLevels
   // Registration Cache
   KtRegCache                = 700,
 
+  // Registration Match
+  KtRegMatch                = 750,
+
   // Subscriptions
   KtSubs                    = 800,
-  KtPernot                  = 801,
-  KtSubordinate             = 802,
-  KtShowChanges             = 803,
+  KtSubordinate             = 801,
+  KtShowChanges             = 802,
+
+  // Periodic Subscriptions
+  KtPernot                  = 850,
+  KtPernotLoop              = 851,
+  KtPernotLoopTimes         = 852,
+  KtPernotFlush             = 853,
+  KtPernotQuery             = 854,
 
   // Subscription Cache
   KtSubCache                = 900,
@@ -107,6 +116,18 @@ typedef enum OrionldTraceLevels
   // Socket Service
   KtSocketService           = 1600,
 
+  // Context
+  KtContext                 = 1700,
+
+  // Context Cache
+  KtContextCache            = 1750,
+
+  // DB Model
+  KtDbModel                 = 1800,
+
+  // API Model
+  KtApiModel                = 1850,
+
   // DDS
   StDds                     = 2001,
   StDdsPublish              = 2002,
@@ -125,10 +146,14 @@ typedef enum OrionldTraceLevels
 
   // 3rd Party
   KtCurl                    = 3001,
+  KtMqtt                    = 3010,
+
+  // Misc
+  KtLeak                    = 4000,
 
   // FT Client
-  StDump                    = 4001,
-  StDdsDump                 = 4002
+  StDump                    = 5001,
+  StDdsDump                 = 5002
 } OrionldTraceLevels;
 
 #endif  // SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_

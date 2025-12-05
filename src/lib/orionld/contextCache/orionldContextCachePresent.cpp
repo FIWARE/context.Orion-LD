@@ -22,9 +22,12 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+}
 
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/context/orionldContextPresent.h"               // orionldContextPresent
 #include "orionld/contextCache/orionldContextCache.h"            // Context Cache Internals
 #include "orionld/contextCache/orionldContextCachePresent.h"     // Own interface
@@ -37,12 +40,12 @@
 //
 void orionldContextCachePresent(const char* prefix, const char* info)
 {
-  LM_T(LmtContextCache, ("%s: *************** %s: %d Contexts *************************", prefix, info, orionldContextCacheSlotIx));
-  LM_T(LmtContextCache, ("%s: ========================================================================", prefix));
+  KT_T(KtContextCache, "%s: *************** %s: %d Contexts *************************", prefix, info, orionldContextCacheSlotIx);
+  KT_T(KtContextCache, "%s: ========================================================================", prefix);
   for (int ix = 0; ix < orionldContextCacheSlotIx; ix++)
   {
     orionldContextPresent(prefix, orionldContextCache[ix]);
-    LM_T(LmtContextCache, ("%s:", prefix));
+    KT_T(KtContextCache, "%s:", prefix);
   }
-  LM_T(LmtContextCache, ("%s: ========================================================================", prefix));
+  KT_T(KtContextCache, "%s: ========================================================================", prefix);
 }

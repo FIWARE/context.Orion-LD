@@ -26,15 +26,14 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjChildRemove
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
-
 #include "orionld/common/orionldState.h"                         // dbHost, coreContextUrl, builtinCoreContext
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/mongoc/mongocContextCacheGet.h"                // mongocContextCacheGet
 #include "orionld/context/orionldCoreContext.h"                  // orionldCoreContextP, builtinCoreContextUrl, builtinCoreContext
 #include "orionld/context/orionldContextFromUrl.h"               // orionldContextFromUrl
@@ -59,11 +58,11 @@ void dbContextToCache(KjNode* dbContextP, KjNode* atContextP, bool keyValues, bo
   KjNode* kindNodeP      = kjLookup(dbContextP, "kind");
   KjNode* createdAtNodeP = kjLookup(dbContextP, "createdAt");
 
-  if (idNodeP        == NULL) LM_RVE(("Database Error (No 'id' node in cached context in DB)"));
-  if (urlNodeP       == NULL) LM_RVE(("Database Error (No 'url' node in cached context in DB)"));
-  if (originNodeP    == NULL) LM_RVE(("Database Error (No 'origin' node in cached context in DB)"));
-  if (kindNodeP      == NULL) LM_RVE(("Database Error (No 'kind' node in cached context in DB)"));
-  if (createdAtNodeP == NULL) LM_RVE(("Database Error (No 'createdAt' node in cached context in DB)"));
+  if (idNodeP        == NULL) KT_RVE("Database Error (No 'id' node in cached context in DB)");
+  if (urlNodeP       == NULL) KT_RVE("Database Error (No 'url' node in cached context in DB)");
+  if (originNodeP    == NULL) KT_RVE("Database Error (No 'origin' node in cached context in DB)");
+  if (kindNodeP      == NULL) KT_RVE("Database Error (No 'kind' node in cached context in DB)");
+  if (createdAtNodeP == NULL) KT_RVE("Database Error (No 'createdAt' node in cached context in DB)");
 
   char*                 id           = idNodeP->value.s;
   char*                 url          = urlNodeP->value.s;
@@ -73,7 +72,7 @@ void dbContextToCache(KjNode* dbContextP, KjNode* atContextP, bool keyValues, bo
   OrionldContext*       contextP     = orionldContextFromTree(url, origin, id, atContextP);
 
   if (contextP == NULL)
-    LM_RVE(("Internal Error (unable to create context '%s' from DB - %s: %s)", url, orionldState.pd.title, orionldState.pd.detail));
+    KT_RVE("Internal Error (unable to create context '%s' from DB - %s: %s)", url, orionldState.pd.title, orionldState.pd.detail);
 
   contextP->createdAt   = createdAt;
   contextP->usedAt      = 0;
@@ -100,7 +99,7 @@ void orionldContextCacheInit(void)
   bzero(&orionldContextCacheArray, sizeof(orionldContextCacheArray));
 
   if (sem_init(&orionldContextCacheSem, 0, 1) == -1)
-    LM_X(1, ("Runtime Error (error initializing semaphore for orionld context list; %s)", strerror(errno)));
+    KT_X(1, "Runtime Error (error initializing semaphore for orionld context list; %s)", strerror(errno));
 
   //
   // Retrieve the context cache from the database and populate the context cache in RAM
@@ -124,7 +123,7 @@ void orionldContextCacheInit(void)
   //
 
   // 1. Find the Core Context
-  LM_T(LmtCoreContext, ("Trying to find the core context (%s)", coreContextUrl));
+  KT_T(LmtCoreContext, "Trying to find the core context (%s)", coreContextUrl);
   if (contextArray != NULL)
   {
     KjNode* contextNodeP = contextArray->value.firstChildP;
@@ -139,12 +138,12 @@ void orionldContextCacheInit(void)
 
       if (valueNodeP == NULL)
       {
-        LM_E(("Database Error (invalid context in orionld::contexts collection - 'value' node is missing)"));
+        KT_E("Database Error (invalid context in orionld::contexts collection - 'value' node is missing)");
         kjChildRemove(contextArray, contextNodeP);
       }
       else if (urlNodeP == NULL)
       {
-        LM_E(("Database Error (invalid context in orionld::contexts collection - 'url' node is missing)"));
+        KT_E("Database Error (invalid context in orionld::contexts collection - 'url' node is missing)");
         kjChildRemove(contextArray, contextNodeP);
       }
       else if (strcmp(urlNodeP->value.s, coreContextUrl) == 0)
@@ -160,16 +159,16 @@ void orionldContextCacheInit(void)
   // Still no core context? - try to download it
   if (orionldCoreContextP == NULL)
   {
-    LM_T(LmtCoreContext, ("Still no core context - trying to download it (%s)", coreContextUrl));
+    KT_T(LmtCoreContext, "Still no core context - trying to download it (%s)", coreContextUrl);
     orionldCoreContextP = orionldContextFromUrl(coreContextUrl, NULL);
     if (orionldCoreContextP == NULL)
-      LM_W(("Unable to download the core context (%s: %s)", orionldState.pd.title, orionldState.pd.detail));
+      KT_W("Unable to download the core context (%s: %s)", orionldState.pd.title, orionldState.pd.detail);
   }
 
   // Still no core context? - use the default core context, meant for airgapped setups
   if (orionldCoreContextP == NULL)
   {
-    LM_T(LmtCoreContext, ("Still no core context - no network?  Getting the core context from builtin"));
+    KT_T(LmtCoreContext, "Still no core context - no network?  Getting the core context from builtin");
 
     //
     // The builtin core context is a string in a read-only segment.
@@ -179,15 +178,15 @@ void orionldContextCacheInit(void)
     char* buf    = (char*) calloc(1, bufLen + 1);
 
     if (buf == NULL)
-      LM_X(1, ("Out of memory trying to allocate %d bytes for the built-in Core Context"));
+      KT_X(1, "Out of memory trying to allocate %d bytes for the built-in Core Context");
 
     memcpy(buf, builtinCoreContext, bufLen + 1);
     orionldCoreContextP = orionldContextFromBuffer(coreContextUrl, OrionldContextBuiltinCoreContext, (char*) builtinCoreContextUrl, buf);
     free(buf);
-    LM_T(LmtContextCache, ("Core Context at %p", orionldCoreContextP));
+    KT_T(LmtContextCache, "Core Context at %p", orionldCoreContextP);
     if (orionldCoreContextP == NULL)
-      LM_X(1, ("Unable to create the core context from in-compiled default core context (%s: %s)", orionldState.pd.title, orionldState.pd.detail));
-    LM_W(("Falling back to Built-in Core Context (hard-coded copy of %s)", builtinCoreContextUrl));
+      KT_X(1, "Unable to create the core context from in-compiled default core context (%s: %s)", orionldState.pd.title, orionldState.pd.detail);
+    KT_W("Falling back to Built-in Core Context (hard-coded copy of %s)", builtinCoreContextUrl);
   }
 
   //
@@ -197,7 +196,7 @@ void orionldContextCacheInit(void)
   {
     defaultUserContextP = orionldContextFromUrl(defaultUserContextUrl, NULL);
     if (defaultUserContextP == NULL)
-      LM_W(("Unable to download the default user context"));
+      KT_W("Unable to download the default user context");
   }
 
   if (contextArray == NULL)
@@ -230,6 +229,6 @@ void orionldContextCacheInit(void)
     if (valueNodeP->type == KjArray)
       dbContextToCache(contextNodeP, valueNodeP, false, false);
     else
-      LM_E(("Database Error (invalid context in orionld::contexts collection - not an arry nor an object: %s", kjValueType(valueNodeP->type)));
+      KT_E("Database Error (invalid context in orionld::contexts collection - not an arry nor an object: %s", kjValueType(valueNodeP->type));
   }
 }

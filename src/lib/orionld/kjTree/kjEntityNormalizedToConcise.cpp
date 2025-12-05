@@ -27,13 +27,12 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjLookup.h"                                    // kjLookup
 #include "kjson/kjBuilder.h"                                   // kjChildRemove, ...
 #include "kjson/kjChildCount.h"                                // kjChildCount
 }
-
-#include "logMsg/logMsg.h"                                     // LM_*
 
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/common/langStringExtract.h"                  // langStringExtract
@@ -66,7 +65,7 @@ void kjEntityNormalizedToConcise(KjNode* treeP, const char* lang)
 
     if (typeP == NULL)
     {
-      LM_E(("Database Error (no type found for attribute '%s')", attrP->name));
+      KT_E("Database Error (no type found for attribute '%s')", attrP->name);
       continue;
     }
 

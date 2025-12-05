@@ -24,6 +24,7 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 }
 
@@ -47,7 +48,7 @@ bool kjTreeToGeoLocation(KjNode* geoLocationNodeP, OrionldGeoLocation* locationP
 
   if (pcheckGeoPropertyValue(geoLocationNodeP, &geoType, &geoCoordsP, geoLocationNodeP->name) == false)
   {
-    LM_E(("pcheckGeoProperty failed"));
+    KT_E("pcheckGeoProperty failed");
     // pcheckGeoProperty sets the Error Response
     orionldState.httpStatusCode = 400;
     return false;

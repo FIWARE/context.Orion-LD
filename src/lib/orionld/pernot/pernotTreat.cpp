@@ -26,6 +26,7 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                  // KT_*
 #include "kalloc/kaBufferInit.h"                            // kaBufferInit
 #include "kalloc/kaBufferReset.h"                           // kaBufferReset
 #include "kjson/kjBufferCreate.h"                           // kjBufferCreate
@@ -33,12 +34,11 @@ extern "C"
 #include "kjson/kjBuilder.h"                                // kjArray, ...
 }
 
-#include "logMsg/logMsg.h"                                  // LM_x
-
 #include "orionld/types/OrionldRenderFormat.h"              // OrionldRenderFormat
 #include "orionld/types/PernotSubscription.h"               // PernotSubscription
-#include "orionld/common/orionldState.h"                    // orionldState, pernotSubCache
 #include "orionld/types/OrionldGeoInfo.h"                   // OrionldGeoInfo
+#include "orionld/common/orionldState.h"                    // orionldState, pernotSubCache
+#include "orionld/common/traceLevels.h"                     // KTrace levels
 #include "orionld/mongoc/mongocEntitiesQuery2.h"            // mongocEntitiesQuery2
 #include "orionld/dbModel/dbModelToApiEntity.h"             // dbModelToApiEntity2
 #include "orionld/pernot/pernotSend.h"                      // pernotSend
@@ -60,7 +60,7 @@ KjNode* dbModelToApiEntities(KjNode* dbEntityArray, bool sysAttrs, OrionldRender
     KjNode*               apiEntityP = dbModelToApiEntity2(dbEntityP, sysAttrs, renderFormat, lang, true, &pd);
 
     if (apiEntityP == NULL)
-      LM_E(("dbModelToApiEntity: %s: %s", pd.title, pd.detail));
+      KT_E("dbModelToApiEntity: %s: %s", pd.title, pd.detail);
     else
       kjChildAdd(apiEntityArray, apiEntityP);
   }
@@ -87,7 +87,7 @@ static void* pernotTreat(void* vP)
   bool                ok   = true;
   char                kallocBuffer[2048];
 
-  LM_T(LmtPernotFlush, ("In thread for one Periodic Notification Subscription (%s, %f)", subP->subscriptionId, subP->lastNotificationTime));
+  KT_T(KtPernotFlush, "In thread for one Periodic Notification Subscription (%s, %f)", subP->subscriptionId, subP->lastNotificationTime);
 
   // 01. Initialize kalloc/kjson
   // 02. Initialize orionldState
@@ -107,14 +107,14 @@ static void* pernotTreat(void* vP)
   //     - After that, a loop for pagination, if need be
   //    
 
-  LM_T(LmtPernotLoop, ("%s: lastNotificationTime: %f", subP->subscriptionId, subP->lastNotificationTime));
+  KT_T(KtPernotLoop, "%s: lastNotificationTime: %f", subP->subscriptionId, subP->lastNotificationTime);
 
   orionldStateInit(NULL);
   bzero(kallocBuffer, sizeof(kallocBuffer));
   kaBufferInit(&kalloc, kallocBuffer, sizeof(kallocBuffer), 8 * 1024, NULL, "Pernot KAlloc buffer");
   orionldState.kjsonP = kjBufferCreate(&kjson, &kalloc);
   
-  LM_T(LmtPernot, ("Creating the query for pernot-subscription %s", subP->subscriptionId));
+  KT_T(KtPernot, "Creating the query for pernot-subscription %s", subP->subscriptionId);
   int64_t          count      = 0;
   KjNode*          dbEntityArray;
   KjNode*          apiEntityArray;
@@ -128,14 +128,14 @@ static void* pernotTreat(void* vP)
 
   if ((dbEntityArray == NULL) || (count == 0))
   {
-    LM_T(LmtPernotFlush, ("mongocEntitiesQuery2 found no matches (noMatch was %d)", subP->noMatch));
+    KT_T(KtPernotFlush, "mongocEntitiesQuery2 found no matches (noMatch was %d)", subP->noMatch);
     subP->noMatch += 1;
     subP->dirty   += 1;
     goto done;
   }
 
   apiEntityArray = dbModelToApiEntities(dbEntityArray, subP->sysAttrs, subP->renderFormat, subP->lang);
-  LM_TREE(apiEntityArray, "apiEntityArray", LmtPernot);
+  KT_TREE(apiEntityArray, "apiEntityArray", KtPernot);
 
   if (pernotSend(subP, apiEntityArray) == false)
     ok = false;
@@ -168,13 +168,13 @@ static void* pernotTreat(void* vP)
   //
   if (ok == true)
   {
-    LM_T(LmtPernot, ("Successful Periodic Notification"));
+    KT_T(KtPernot, "Successful Periodic Notification");
     subP->lastSuccessTime   = subP->lastNotificationTime;
     subP->consecutiveErrors = 0;
   }
   else
   {
-    LM_T(LmtPernot, ("Failed Periodic Notification"));
+    KT_T(KtPernot, "Failed Periodic Notification");
     subP->lastFailureTime    = subP->lastNotificationTime;
     subP->notificationErrors += 1;
     subP->consecutiveErrors  += 1;
@@ -182,7 +182,7 @@ static void* pernotTreat(void* vP)
     if (subP->consecutiveErrors >= 3)
     {
       subP->state = SubErroneous;
-      LM_W(("%s: 3 consecutive errors - setting the subscription in Error state", subP->subscriptionId));
+      KT_W("%s: 3 consecutive errors - setting the subscription in Error state", subP->subscriptionId);
     }
   }
 
@@ -204,7 +204,7 @@ void pernotTreatStart(PernotSubscription* subP)
 {
   pthread_t          tid;
 
-  LM_T(LmtPernotLoop, ("Starting thread for one Periodic Notification Subscription (%s, %f)", subP->subscriptionId, subP->lastNotificationTime));
+  KT_T(KtPernotLoop, "Starting thread for one Periodic Notification Subscription (%s, %f)", subP->subscriptionId, subP->lastNotificationTime);
   
   pthread_create(&tid, NULL, pernotTreat, subP);
 

@@ -25,6 +25,7 @@
 extern "C"
 {
 #include "kbase/kMacros.h"                                       // K_VEC_SIZE
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kalloc/kaAlloc.h"                                      // kaAlloc
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
@@ -32,8 +33,6 @@ extern "C"
 #include "kjson/kjClone.h"                                       // kjClone
 #include "kjson/kjRender.h"                                      // kjFastRender (TEMP)
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/types/OrionldRenderFormat.h"                   // OrionldRenderFormat
 #include "orionld/common/orionldState.h"                         // orionldState
@@ -74,7 +73,7 @@ KjNode* dbModelToApiEntity(KjNode* dbEntityP, bool sysAttrs, char* entityId)
     kjChildAdd(apiEntityP, idNodeP);
   }
   else
-    LM_E(("Database Error (entity '%s' without id inside _id)", entityId));
+    KT_E("Database Error (entity '%s' without id inside _id)", entityId);
 
   KjNode* dbTypeNodeP = kjLookup(dbIdObjectP, "type");
   if (dbTypeNodeP != NULL)
@@ -83,7 +82,7 @@ KjNode* dbModelToApiEntity(KjNode* dbEntityP, bool sysAttrs, char* entityId)
     kjChildAdd(apiEntityP, typeNodeP);
   }
   else
-    LM_E(("Database Error (entity '%s' without type inside _id)", entityId));
+    KT_E("Database Error (entity '%s' without type inside _id)", entityId);
 
   if (sysAttrs)
   {
@@ -196,7 +195,7 @@ KjNode* dbModelToApiEntity2(KjNode* dbEntityP, bool sysAttrs, OrionldRenderForma
 
   if (_idP == NULL)
   {
-    LM_E(("Database Error (the field '_id' is missing)"));
+    KT_E("Database Error (the field '_id' is missing)");
     pdP->title  = (char*) "Database Error";
     pdP->detail = (char*) "the field '_id' is missing";
     return NULL;
@@ -229,7 +228,7 @@ KjNode* dbModelToApiEntity2(KjNode* dbEntityP, bool sysAttrs, OrionldRenderForma
 
   if (idP == NULL)
   {
-    LM_E(("Database Error (the field '_id.id' is missing)"));
+    KT_E("Database Error (the field '_id.id' is missing)");
     pdP->title  = (char*) "Database Error";
     pdP->detail = (char*) "the field '_id.id' is missing";
     return NULL;
@@ -237,7 +236,7 @@ KjNode* dbModelToApiEntity2(KjNode* dbEntityP, bool sysAttrs, OrionldRenderForma
 
   if (typeP == NULL)
   {
-    LM_E(("Database Error (the field '_id.type' is missing)"));
+    KT_E("Database Error (the field '_id.type' is missing)");
     pdP->title  = (char*) "Database Error";
     pdP->detail = (char*) "the field '_id.type' is missing";
     return NULL;
@@ -308,7 +307,7 @@ KjNode* dbModelToApiEntity2(KjNode* dbEntityP, bool sysAttrs, OrionldRenderForma
 
     if ((attributeP = dbModelToApiAttribute2(attrP, datasetP, sysAttrs, renderFormat, lang, compacted, pdP)) == NULL)
     {
-      LM_E(("Datamodel Error (%s: %s)", pdP->title, pdP->detail));
+      KT_E("Datamodel Error (%s: %s)", pdP->title, pdP->detail);
       return NULL;
     }
 
@@ -333,7 +332,7 @@ KjNode* dbModelToApiEntity2(KjNode* dbEntityP, bool sysAttrs, OrionldRenderForma
       kjChildRemove(datasetsP, datasetP);
       if ((attributeP = dbModelToApiAttribute2(NULL, datasetP, sysAttrs, renderFormat, lang, compacted, pdP)) == NULL)
       {
-        LM_E(("Datamodel Error (%s: %s)", pdP->title, pdP->detail));
+        KT_E("Datamodel Error (%s: %s)", pdP->title, pdP->detail);
         return NULL;
       }
 

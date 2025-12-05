@@ -24,17 +24,17 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjClone.h"                                       // kjClone
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjString, kjChildAdd, ...
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/types/PernotSubscription.h"                    // PernotSubscription
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/numberToDate.h"                         // numberToDate
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
 #include "orionld/dbModel/dbModelValueStrip.h"                   // dbModelValueStrip
@@ -56,7 +56,7 @@ extern "C"
 //
 static KjNode* outOfMemory(void)
 {
-  LM_E(("Internal Error (out of memory creating a KjNode-tree for a PernotSubscription)"));
+  KT_E("Internal Error (out of memory creating a KjNode-tree for a PernotSubscription)");
   return NULL;
 }
 
@@ -202,15 +202,15 @@ KjNode* kjTreeFromPernotSubscription(PernotSubscription* pSubP, bool sysAttrs, b
   KjNode* qP = kjLookup(sP, "q");
   if (qP != NULL)
   {
-    LM_T(LmtPernot, ("Found 'q' (%s)- fixing it", qP->value.s));
+    KT_T(KtPernot, "Found 'q' (%s)- fixing it", qP->value.s);
     dbModelValueStrip(qP);
-    LM_T(LmtPernot, ("'q' after dbModelValueStrip: '%s'", qP->value.s));
+    KT_T(KtPernot, "'q' after dbModelValueStrip: '%s'", qP->value.s);
     qAliasCompact(qP, true);  // qAliasCompact uses orionldState.contextP - which is what we want
     qP->name = (char*) "q";
-    LM_T(LmtPernot, ("'q' final: '%s'", qP->value.s));
+    KT_T(KtPernot, "'q' final: '%s'", qP->value.s);
   }
   else
-    LM_T(LmtPernot, ("No 'q'"));
+    KT_T(KtPernot, "No 'q'");
 
   //
   // name => subscriptionName

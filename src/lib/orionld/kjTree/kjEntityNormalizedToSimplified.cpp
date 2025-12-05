@@ -27,12 +27,11 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                          // KT_*
 #include "kjson/KjNode.h"                                           // KjNode
 #include "kjson/kjLookup.h"                                         // kjLookup
 #include "kjson/kjBuilder.h"                                        // kjChildRemove, ...
 }
-
-#include "logMsg/logMsg.h"                                          // LM_*
 
 #include "orionld/common/langStringExtract.h"                       // langStringExtract
 #include "orionld/kjTree/kjEntityNormalizedToSimplified.h"          // Own interface
@@ -57,7 +56,7 @@ void kjEntityNormalizedToSimplified(KjNode* treeP, const char* lang)
 
     if (typeP == NULL)
     {
-      LM_E(("Database Error (no type found for attibute '%s')", attrP->name));
+      KT_E("Database Error (no type found for attibute '%s')", attrP->name);
       continue;
     }
 
@@ -92,6 +91,6 @@ void kjEntityNormalizedToSimplified(KjNode* treeP, const char* lang)
       attrP->value = valueP->value;
     }
     else
-      LM_E(("Database Error (no value/object/languageMap found for attribute '%s')", attrP->name));
+      KT_E("Database Error (no value/object/languageMap found for attribute '%s')", attrP->name);
   }
 }

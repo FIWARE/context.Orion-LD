@@ -27,18 +27,18 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjParse.h"                                       // kjParse
 #include "kjson/kjBuilder.h"                                     // kjObject, kjString, ..., kjChildAdd
 #include "kjson/kjClone.h"                                       // kjClone
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "cache/subCache.h"                                      // CachedSubscription
 
 #include "orionld/types/SubordinateSubscription.h"               // SubordinateSubscription
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/numberToDate.h"                         // numberToDate
 #include "orionld/common/eqForDot.h"                             // eqForDot
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
@@ -63,7 +63,7 @@ extern "C"
 //
 static KjNode* outOfMemory(void)
 {
-  LM_E(("Internal Error (out of memory creating a KjNode-tree for a Subscription)"));
+  KT_E("Internal Error (out of memory creating a KjNode-tree for a Subscription)");
   return NULL;
 }
 
@@ -133,7 +133,7 @@ KjNode* kjTreeFromCachedSubscription(CachedSubscription* cSubP, bool sysAttrs, b
       KjNode*     eObjectP = kjObject(orionldState.kjsonP, NULL);
       NULL_CHECK(eObjectP);
 
-      LM_T(LmtSR, ("Got an entity"));
+      KT_T(KtSR, "Got an entity");
       //
       // id/idPattern
       //
@@ -144,10 +144,10 @@ KjNode* kjTreeFromCachedSubscription(CachedSubscription* cSubP, bool sysAttrs, b
       const char*  entityType  = eiP->entityType.c_str();
       bool         noIdNeeded  = (eiP->isPattern == true) && (strcmp(entityId, ".*") == 0);
 
-      LM_T(LmtSR, ("entityId:    %s", entityId));
-      LM_T(LmtSR, ("isPattern:   %s", (eiP->isPattern == true)? "true" : "false"));
-      LM_T(LmtSR, ("entityType:  %s", entityType));
-      LM_T(LmtSR, ("noIdNeeded:  %s", (noIdNeeded == false)? "FALSE" : "TRUE"));
+      KT_T(KtSR, "entityId:    %s", entityId);
+      KT_T(KtSR, "isPattern:   %s", (eiP->isPattern == true)? "true" : "false");
+      KT_T(KtSR, "entityType:  %s", entityType);
+      KT_T(KtSR, "noIdNeeded:  %s", (noIdNeeded == false)? "FALSE" : "TRUE");
 
       if ((noIdNeeded == false) && (*entityId != 0))
       {
@@ -385,8 +385,8 @@ KjNode* kjTreeFromCachedSubscription(CachedSubscription* cSubP, bool sysAttrs, b
   //
   if (cSubP->count + cSubP->dbCount > 0)
   {
-    LM_T(LmtSubCacheStats, ("count:   %d", cSubP->count));
-    LM_T(LmtSubCacheStats, ("dbCount: %d", cSubP->dbCount));
+    KT_T(KtSubCacheStats, "count:   %d", cSubP->count);
+    KT_T(KtSubCacheStats, "dbCount: %d", cSubP->dbCount);
 
     nodeP = kjInteger(orionldState.kjsonP, "timesSent", cSubP->count + cSubP->dbCount);
     NULL_CHECK(nodeP);

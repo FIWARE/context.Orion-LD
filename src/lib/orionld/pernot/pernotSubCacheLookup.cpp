@@ -22,6 +22,8 @@
 *
 * Author: Ken Zangelin
 */
+#include <string.h>                                            // strcmp
+
 #include "orionld/types/PernotSubscription.h"                  // PernotSubscription
 #include "orionld/types/PernotSubCache.h"                      // PernotSubCache
 #include "orionld/common/orionldState.h"                       // pernotSubCache
