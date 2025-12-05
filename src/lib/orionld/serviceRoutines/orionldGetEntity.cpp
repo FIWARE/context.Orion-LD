@@ -35,15 +35,13 @@ extern "C"
 #include "kjson/kjBuilder.h"                                     // kjChildRemove, kjChildAdd, kjArray, ...
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/types/DistOp.h"                                // DistOp
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/tenantList.h"                           // tenant0
 #include "orionld/common/pick.h"                                 // pickForEntity
 #include "orionld/common/datasetEntityFix.h"                     // datasetEntityFix
-#include "orionld/common/traceLevels.h"                          // KTrace Levels
 #include "orionld/context/orionldEntityExpand.h"                 // orionldEntityExpand
 #include "orionld/context/orionldEntityCompact.h"                // orionldEntityCompact
 #include "orionld/payloadCheck/pCheckUri.h"                      // pCheckUri
@@ -82,7 +80,6 @@ extern "C"
 bool orionldGetEntity(void)
 {
   KT_T(StLinked, "Getting Entity '%s'", orionldState.wildcard[0]);
-  LM_T(LmtSR, ("Getting Entity '%s'", orionldState.wildcard[0]));
 
   if ((experimental == false) || (orionldState.in.legacy != NULL))                      // If Legacy header - use old implementation
     return legacyGetEntity();
@@ -196,7 +193,7 @@ bool orionldGetEntity(void)
         // Send the forwarded request and await all responses
         if (distOpP->regP != NULL)
         {
-          LM_T(LmtDistOpAttributes, ("distOp::attrsParam: '%s'", distOpP->attrsParam));
+          KT_T(KtDistOpAttributes, "distOp::attrsParam: '%s'", distOpP->attrsParam);
           if (distOpSend(distOpP, dateHeader, xff, via, false, NULL) == 0)
           {
             ++forwards;
@@ -204,7 +201,7 @@ bool orionldGetEntity(void)
           }
           else
           {
-            LM_W(("Forwarded request failed"));
+            KT_W("Forwarded request failed");
             distOpP->error = true;
           }
         }
@@ -218,7 +215,7 @@ bool orionldGetEntity(void)
         CURLMcode cm = curl_multi_perform(orionldState.curlDoMultiP, &stillRunning);
         if (cm != 0)
         {
-          LM_E(("Internal Error (curl_multi_perform: error %d)", cm));
+          KT_E("Internal Error (curl_multi_perform: error %d)", cm);
           forwards = 0;
           break;
         }
@@ -228,17 +225,17 @@ bool orionldGetEntity(void)
           cm = curl_multi_wait(orionldState.curlDoMultiP, NULL, 0, 1000, NULL);
           if (cm != CURLM_OK)
           {
-            LM_E(("Internal Error (curl_multi_wait: error %d", cm));
+            KT_E("Internal Error (curl_multi_wait: error %d", cm);
             break;
           }
         }
 
         if ((++loops >= 50) && ((loops % 25) == 0))
-          LM_W(("curl_multi_perform doesn't seem to finish ... (%d loops)", loops));
+          KT_W("curl_multi_perform doesn't seem to finish ... (%d loops)", loops);
       }
 
       if (loops >= 100)
-        LM_W(("curl_multi_perform finally finished!   (%d loops)", loops));
+        KT_W("curl_multi_perform finally finished!   (%d loops)", loops);
     }
   }
 
@@ -280,12 +277,12 @@ bool orionldGetEntity(void)
         {
           if (distOpP->httpResponseCode >= 400)
           {
-            LM_W(("Got an ERROR response (%d) from a forwarded request: '%s'", distOpP->httpResponseCode, distOpP->rawResponse));
+            KT_W("Got an ERROR response (%d) from a forwarded request: '%s'", distOpP->httpResponseCode, distOpP->rawResponse);
             continue;
           }
           else if (distOpP->httpResponseCode != 200)
           {
-            LM_W(("Got a non-200 response code (%d)", distOpP->httpResponseCode));
+            KT_W("Got a non-200 response code (%d)", distOpP->httpResponseCode);
             continue;
           }
 
@@ -323,15 +320,15 @@ bool orionldGetEntity(void)
           }
         }
         else
-          LM_E(("Internal Error (parse error for the received response of a forwarded request)"));
+          KT_E("Internal Error (parse error for the received response of a forwarded request)");
       }
       else
       {
         DistOp* distOpP = distOpLookupByCurlHandle(distOpList, msgP->easy_handle);
-        LM_E(("CURL Error %d awaiting response to forwarded request (reg: %s): %s",
+        KT_E("CURL Error %d awaiting response to forwarded request (reg: %s): %s",
               msgP->data.result,
               distOpP->regP->regId,
-              curl_easy_strerror(msgP->data.result)));
+              curl_easy_strerror(msgP->data.result));
       }
     }
 

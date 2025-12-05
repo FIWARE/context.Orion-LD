@@ -37,13 +37,11 @@ extern "C"
 #include "kjson/kjChildCount.h"                                  // kjChildCount
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/types/DistOp.h"                                // DistOp
 #include "orionld/types/OrionldAttributeType.h"                  // OrionldAttributeType
-#include "orionld/common/traceLevels.h"                          // KT_T trace levels
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
+#include "orionld/common/traceLevels.h"                          // KT_T trace levels
 #include "orionld/common/dotForEq.h"                             // dotForEq
 #include "orionld/common/eqForDot.h"                             // eqForDot
 #include "orionld/common/responseFix.h"                          // responseFix
@@ -52,7 +50,7 @@ extern "C"
 #include "orionld/types/OrionldAlteration.h"                     // OrionldAlteration, orionldAlterationType
 #include "orionld/kjTree/kjTimestampAdd.h"                       // kjTimestampAdd
 #include "orionld/kjTree/kjArrayAdd.h"                           // kjArrayAdd
-#include "orionld/kjTree/kjTreeLog.h"                            // LM_TREE, KT_TREE
+#include "orionld/kjTree/kjTreeLog.h"                            // KT_TREE, KT_TREE
 #include "orionld/mongoc/mongocEntityUpdate.h"                   // mongocEntityUpdate
 #include "orionld/mongoc/mongocEntityLookup.h"                   // mongocEntityLookup
 #include "orionld/payloadCheck/pCheckEntity.h"                   // pCheckEntity
@@ -243,7 +241,7 @@ static void orionldEntityPatchTree(KjNode* oldP, KjNode* newP, char* path, KjNod
 
   if (newP->type != oldP->type)  // Different type?  - overwrite the old
   {
-    LM_T(LmtPatchEntity, ("Attribute '%s': its type has changed (from %d to %d) - overwriting", newP->name, newP->type, oldP->type));
+    KT_T(KtSR, "Attribute '%s': its type has changed (from %d to %d) - overwriting", newP->name, newP->type, oldP->type);
     patchTreeItemAdd(patchTree, path, newP, NULL);
     return;
   }
@@ -316,7 +314,7 @@ static void orionldEntityPatchTree(KjNode* oldP, KjNode* newP, char* path, KjNod
       int     newPathLen  = strlen(path) + 1 + strlen(newItemP->name) + 1;
       char*   newPathV    = kaAlloc(&orionldState.kalloc, newPathLen);
 
-      LM_T(LmtPatchEntity, ("Adding name '%s' to PATH '%s'", newItemP->name, path));
+      KT_T(KtSR, "Adding name '%s' to PATH '%s'", newItemP->name, path);
       snprintf(newPathV, newPathLen, "%s.%s", path, newItemP->name);
       newPath = newPathV;
     }
@@ -378,15 +376,15 @@ static bool dbEntityFields(KjNode* dbEntityP, const char* entityId, char** entit
 //
 void orionldAlterationsPresent(OrionldAlteration* altP)
 {
-  LM_T(LmtAlt, ("Entity Altered:  Entity Id:   %s", altP->entityId));
-  LM_T(LmtAlt, ("Entity Altered:  Entity Type: %s", altP->entityType));
-  LM_T(LmtAlt, ("Entity Altered:  Attributes:  %d", altP->alteredAttributes));
+  KT_T(KtAlt, "Entity Altered:  Entity Id:   %s", altP->entityId);
+  KT_T(KtAlt, "Entity Altered:  Entity Type: %s", altP->entityType);
+  KT_T(KtAlt, "Entity Altered:  Attributes:  %d", altP->alteredAttributes);
 
   for (int ix = 0; ix < altP->alteredAttributes; ix++)
   {
-    LM_T(LmtAlt, ("Entity Altered:    Attribute:  %s", altP->alteredAttributeV[ix].attrName));
-    LM_T(LmtAlt, ("Entity Altered:    Attribute:  %s", altP->alteredAttributeV[ix].attrNameEq));
-    LM_T(LmtAlt, ("Entity Altered:    Alteration: %s", orionldAlterationType(altP->alteredAttributeV[ix].alterationType)));
+    KT_T(KtAlt, "Entity Altered:    Attribute:  %s", altP->alteredAttributeV[ix].attrName);
+    KT_T(KtAlt, "Entity Altered:    Attribute:  %s", altP->alteredAttributeV[ix].attrNameEq);
+    KT_T(KtAlt, "Entity Altered:    Alteration: %s", orionldAlterationType(altP->alteredAttributeV[ix].alterationType));
   }
 }
 
@@ -531,9 +529,9 @@ bool apiEntitySimplifiedToNormalized(KjNode* apiEntityFragmentP, KjNode* dbAttrs
             }
           }
 
-          LM_TREE(attrP, "Attribute BEFORE attributeTransform", LmtSR);
+          KT_TREE(attrP, "Attribute BEFORE attributeTransform", KtSR);
           attributeTransform(attrP, attrTypeFromDb, dbAttrTypeP->value.s, orionldState.uriParams.lang);
-          LM_TREE(attrP, "Attribute AFTER attributeTransform", LmtSR);
+          KT_TREE(attrP, "Attribute AFTER attributeTransform", KtSR);
         }
         else if ((attrTypeFromDb == Property) && (attrP->type == KjObject))
         {
@@ -582,7 +580,7 @@ bool orionldPatchEntity2(void)
     }
   }
 
-  LM_T(LmtSR, ("entityType: '%s'", entityType));
+  KT_T(KtSR, "entityType: '%s'", entityType);
   dbEntityP = mongocEntityLookup(entityId, entityType, NULL, NULL, NULL);
 
   if ((dbEntityP == NULL) && (orionldState.distributed == false))
@@ -628,7 +626,7 @@ bool orionldPatchEntity2(void)
   //
   if (pCheckEntity(orionldState.requestTree, false, dbAttrsP) == false)
   {
-    LM_W(("Invalid payload body. %s: %s", orionldState.pd.title, orionldState.pd.detail));
+    KT_W("Invalid payload body. %s: %s", orionldState.pd.title, orionldState.pd.detail);
     return false;
   }
 
@@ -645,7 +643,7 @@ bool orionldPatchEntity2(void)
     {
       char body[1024];
       kjFastRender(distOpP->requestBody, body);
-      LM_T(LmtSR, ("Registration '%s': %s", distOpP->regP->regId, body));
+      KT_T(KtSR, "Registration '%s': %s", distOpP->regP->regId, body);
     }
 #endif
   }
@@ -700,7 +698,7 @@ bool orionldPatchEntity2(void)
     //
     if (dbModelFromApiEntity(orionldState.requestTree, dbEntityP, false, NULL, NULL) == false)
     {
-      LM_W(("dbModelFromApiEntity: %s: %s", orionldState.pd.title, orionldState.pd.detail));
+      KT_W("dbModelFromApiEntity: %s: %s", orionldState.pd.title, orionldState.pd.detail);
       return false;
     }
 
@@ -737,7 +735,7 @@ bool orionldPatchEntity2(void)
       {
         bson_error_t* errP = &orionldState.mongoc.error;  // Can't be in orionldState - DB Dependant!!!
 
-        LM_E(("mongocEntityUpdate(%s): [%d.%d]: %s", entityId, errP->domain, errP->code, errP->message));
+        KT_E("mongocEntityUpdate(%s): [%d.%d]: %s", entityId, errP->domain, errP->code, errP->message);
 
         if (errP->code == 12)  orionldError(OrionldResourceNotFound, "Entity not found", entityId, 404);
         else                   orionldError(OrionldInternalError, "Internal Error", errP->message, 500);

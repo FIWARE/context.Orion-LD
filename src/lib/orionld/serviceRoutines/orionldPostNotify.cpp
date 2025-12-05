@@ -1,6 +1,6 @@
 /*
 *
- Copyright 2021 FIWARE Foundation e.V.
+* Copyright 2021 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -22,9 +22,6 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
-
 extern "C"
 {
 #include "kjson/KjNode.h"                                      // KjNode

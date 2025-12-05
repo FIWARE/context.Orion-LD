@@ -28,9 +28,6 @@ extern "C"
 #include "kjson/kjBuilder.h"                                     // kjObject, kjString, kjBoolean, ...
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
-
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/tenantList.h"                           // tenantList
 #include "orionld/serviceRoutines/orionldGetTenants.h"           // Own interface

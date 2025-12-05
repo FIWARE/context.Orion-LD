@@ -24,24 +24,23 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjObject, kjString, kjChildAdd, ...
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
-
 #include "orionld/types/DistOp.h"                                // DistOp
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
+#include "orionld/common/traceLevels.h"                          // KTrace level
 #include "orionld/common/responseFix.h"                          // responseFix
 #include "orionld/payloadCheck/PCHECK.h"                         // PCHECK_URI
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
 #include "orionld/context/orionldContextItemExpand.h"            // orionldContextItemExpand
 #include "orionld/mongoc/mongocEntityLookup.h"                   // mongocEntityLookup
 #include "orionld/mongoc/mongocEntityDelete.h"                   // mongocEntityDelete
-#include "orionld/kjTree/kjTreeLog.h"                            // LM_TREE
+#include "orionld/kjTree/kjTreeLog.h"                            // KT_TREE
 #include "orionld/notifications/orionldAlterations.h"            // orionldAlterations
 #include "orionld/regMatch/regMatchForEntityGet.h"               // regMatchForEntityGet
 #include "orionld/distOp/distOpListsMerge.h"                     // distOpListsMerge
@@ -129,7 +128,7 @@ static DistOp* distributedDelete(char* entityId, char* entityTypeExpanded, char*
       }
       else
       {
-        LM_W(("Reg %s: Forwarded request failed", distOpP->regP->regId));
+        KT_W("Reg %s: Forwarded request failed", distOpP->regP->regId);
         distOpP->error = true;
       }
     }
@@ -143,7 +142,7 @@ static DistOp* distributedDelete(char* entityId, char* entityTypeExpanded, char*
     CURLMcode cm = curl_multi_perform(orionldState.curlDoMultiP, &stillRunning);
     if (cm != 0)
     {
-      LM_E(("Internal Error (curl_multi_perform: error %d)", cm));
+      KT_E("Internal Error (curl_multi_perform: error %d)", cm);
       forwards = 0;
       break;
     }
@@ -153,17 +152,17 @@ static DistOp* distributedDelete(char* entityId, char* entityTypeExpanded, char*
       cm = curl_multi_wait(orionldState.curlDoMultiP, NULL, 0, 1000, NULL);
       if (cm != CURLM_OK)
       {
-        LM_E(("Internal Error (curl_multi_wait: error %d", cm));
+        KT_E("Internal Error (curl_multi_wait: error %d", cm);
         break;
       }
     }
 
     if ((++loops >= 50) && ((loops % 25) == 0))
-      LM_W(("curl_multi_perform doesn't seem to finish ... (%d loops)", loops));
+      KT_W("curl_multi_perform doesn't seem to finish ... (%d loops)", loops);
   }
 
   if (loops >= 100)
-    LM_W(("curl_multi_perform finally finished!   (%d loops)", loops));
+    KT_W("curl_multi_perform finally finished!   (%d loops)", loops);
 
   return distOpList;
 }
@@ -265,7 +264,7 @@ bool orionldDeleteEntity(void)
     distOpListRelease(distOpList);
   }
 
-  LM_TREE(responseBody, "responseBody", LmtSR);
+  KT_TREE(responseBody, "responseBody", KtSR);
   responseFix(responseBody, DoDeleteEntity, 204, entityId);
 
   return true;

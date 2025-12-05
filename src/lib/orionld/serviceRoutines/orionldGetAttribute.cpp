@@ -75,7 +75,7 @@ bool orionldGetAttribute(void)
   // attrList.array    = array;
   // attrList.array[0] =   attrLongName;
 
-  KT_T(StSR, "attrLongName: '%s'", attrLongName);
+  KT_T(KtSR, "attrLongName: '%s'", attrLongName);
 
 
   //

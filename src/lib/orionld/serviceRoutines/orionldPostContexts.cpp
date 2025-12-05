@@ -24,13 +24,12 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjRender.h"                                      // kjFasrRender
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
@@ -78,7 +77,7 @@ bool orionldPostContexts(void)
   OrionldContext* contextP = orionldContextFromTree(url, OrionldContextUserCreated, id, orionldState.payloadContextNode);
   if (contextP == NULL)
   {
-    LM_W(("Unable to create context (%s: %s)", orionldState.pd.title, orionldState.pd.detail));
+    KT_W("Unable to create context (%s: %s)", orionldState.pd.title, orionldState.pd.detail);
     return false;
   }
 

@@ -24,6 +24,8 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
+#include "ktrace/ktTraceLevelCheck.h"                          // ktTraceLevelCheck
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjLookup.h"                                    // kjLookup
 #include "kjson/kjBuilder.h"                                   // kjArray, kjObject, kjNull, ...
@@ -33,10 +35,9 @@ extern "C"
 #include "kjson/kjStringValueLookupInArray.h"                  // kjStringValueLookupInArray
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
 #include "orionld/types/DistOp.h"                              // DistOp
 #include "orionld/common/orionldState.h"                       // orionldState
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/common/tenantList.h"                         // tenant0
 #include "orionld/common/entityLookupById.h"                   // entityLookupBy_id_Id
 #include "orionld/payloadCheck/PCHECK.h"                       // PCHECK_*
@@ -122,27 +123,27 @@ KjNode* dbModelToEntityIdAndTypeTable(KjNode* dbEntityIdArray)
 //
 void distReqLog(DistOp* distOpList, const char* title)
 {
-  LM_T(LmtSR, ("DR: %s", title));
+  KT_T(KtSR, "DR: %s", title);
   for (DistOp* drP = distOpList; drP != NULL; drP = drP->next)
   {
-    LM_T(LmtSR, ("DR: Registration:               %s", drP->regP->regId));
-    LM_T(LmtSR, ("DR: Verb:                       %s", "TBD"));
-    LM_T(LmtSR, ("DR: URL:                        %s", "TBD"));  // IP+port should be in the URL
-    LM_T(LmtSR, ("DR: Entity ID:                  %s", drP->entityId));
-    LM_T(LmtSR, ("DR: Entity Type:                %s", drP->entityType));
+    KT_T(KtSR, "DR: Registration:               %s", drP->regP->regId);
+    KT_T(KtSR, "DR: Verb:                       %s", "TBD");
+    KT_T(KtSR, "DR: URL:                        %s", "TBD");  // IP+port should be in the URL
+    KT_T(KtSR, "DR: Entity ID:                  %s", drP->entityId);
+    KT_T(KtSR, "DR: Entity Type:                %s", drP->entityType);
 
-    if ((drP->requestBody != NULL) && (lmTraceIsSet(LmtSR)))
+    if ((drP->requestBody != NULL) && (ktTraceLevelCheck(KtSR)))
     {
       int   bodySize = kjFastRenderSize(drP->requestBody);
       char* body     = kaAlloc(&orionldState.kalloc, bodySize + 256);
 
-      kjFastRender(drP->requestBody, body);  // Depends on the trace level LmtSR
-      LM_T(LmtSR, ("DR: payload body:               %s", body));
+      kjFastRender(drP->requestBody, body);  // Depends on the trace level KtSR
+      KT_T(KtSR, "DR: payload body:               %s", body);
     }
     else
-      LM_T(LmtSR, ("DR: payload body:               NULL"));
+      KT_T(KtSR, "DR: payload body:               NULL");
 
-    LM_T(LmtSR, ("DR: -----------------------------------------------------------"));
+    KT_T(KtSR, "DR: -----------------------------------------------------------");
   }
 }
 
@@ -488,7 +489,7 @@ bool orionldPostBatchDelete(void)
           }
           else
           {
-            LM_W(("Forwarded request failed"));
+            KT_W("Forwarded request failed");
             distReqP->error = true;
           }
         }
@@ -502,7 +503,7 @@ bool orionldPostBatchDelete(void)
         CURLMcode cm = curl_multi_perform(orionldState.curlDoMultiP, &stillRunning);
         if (cm != 0)
         {
-          LM_E(("Internal Error (curl_multi_perform: error %d)", cm));
+          KT_E("Internal Error (curl_multi_perform: error %d)", cm);
           forwards = 0;
           break;
         }
@@ -512,17 +513,17 @@ bool orionldPostBatchDelete(void)
           cm = curl_multi_wait(orionldState.curlDoMultiP, NULL, 0, 1000, NULL);
           if (cm != CURLM_OK)
           {
-            LM_E(("Internal Error (curl_multi_wait: error %d", cm));
+            KT_E("Internal Error (curl_multi_wait: error %d", cm);
             break;
           }
         }
 
         if ((++loops >= 50) && ((loops % 25) == 0))
-          LM_W(("curl_multi_perform doesn't seem to finish ... (%d loops)", loops));
+          KT_W("curl_multi_perform doesn't seem to finish ... (%d loops)", loops);
       }
 
       if (loops >= 100)
-        LM_W(("curl_multi_perform finally finished!   (%d loops)", loops));
+        KT_W("curl_multi_perform finally finished!   (%d loops)", loops);
 
       // Wait for responses
       if (forwards > 0)

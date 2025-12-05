@@ -37,8 +37,6 @@ extern "C"
 #include "kjson/kjRender.h"                                      // kjFastRender
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/types/DistOp.h"                                // DistOp
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError

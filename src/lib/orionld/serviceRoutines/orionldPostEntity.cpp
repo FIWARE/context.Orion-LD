@@ -26,22 +26,20 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjChildRemove, kjChildAdd, kjArray, ...
 #include "kjson/kjClone.h"                                       // kjClone
-#include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/types/OrionldContextItem.h"                    // OrionldContextItem
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/dotForEq.h"                             // dotForEq
 #include "orionld/common/responseFix.h"                          // responseFix
-#include "orionld/common/traceLevels.h"                          // KT_T trace levels
-#include "orionld/kjTree/kjTreeLog.h"                            // LM_TREE
+#include "orionld/kjTree/kjTreeLog.h"                            // KT_TREE
 #include "orionld/payloadCheck/PCHECK.h"                         // PCHECK_OBJECT, PCHECK_EMPTY_OBJECT, ...
 #include "orionld/payloadCheck/pCheckEntity.h"                   // pCheckEntity
 #include "orionld/legacyDriver/legacyPostEntity.h"               // legacyPostEntity
@@ -114,7 +112,7 @@ static void dbAttrsMerge(KjNode* dbAttrsP, KjNode* dbAttrsUpdate, bool replace)
 
   while (newAttrP != NULL)
   {
-    LM_T(LmtSR, ("Incoming attribute '%s'", newAttrP->name));
+    KT_T(KtSR, "Incoming attribute '%s'", newAttrP->name);
 
     next = newAttrP->next;
 
@@ -171,10 +169,10 @@ bool orionldPostEntity(void)
       return false;
     }
     else
-      LM_T(LmtSR, ("Entity '%s' does not exist, but must alsdo check registrations", entityId));
+      KT_T(KtSR, "Entity '%s' does not exist, but must alsdo check registrations", entityId);
   }
   else
-    LM_T(LmtSR, ("The entity '%s' was found in the local DB", entityId));
+    KT_T(KtSR, "The entity '%s' was found in the local DB", entityId);
 
   // Keep untouched initial state of the entity in the database - for alterations (to check for false updates)
   KjNode* initialDbEntityP = NULL;  // kjClone(orionldState.kjsonP, dbEntityP);
@@ -319,9 +317,9 @@ bool orionldPostEntity(void)
 
       if (dbAttrsP != NULL)
       {
-        LM_TREE(dbEntityP, "DB Entity before merge", LmtSR);
+        KT_TREE(dbEntityP, "DB Entity before merge", KtSR);
         dbAttrsMerge(dbAttrsP, dbAttrsUpdate, orionldState.uriParamOptions.noOverwrite == false);
-        LM_TREE(dbEntityP, "DB Entity after merge", LmtSR);
+        KT_TREE(dbEntityP, "DB Entity after merge", KtSR);
 
         OrionldProblemDetails  pd;
         KjNode*                finalApiEntityWithSysAttrs = dbModelToApiEntity2(dbEntityP, true, RF_NORMALIZED, orionldState.uriParams.lang, false, &pd);

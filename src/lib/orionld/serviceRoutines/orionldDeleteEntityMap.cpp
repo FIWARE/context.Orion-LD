@@ -24,11 +24,15 @@
 */
 #include <string.h>                                              // strcmp
 
-#include "logMsg/logMsg.h"                                       // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+}
 
+#include "orionld/types/EntityMap.h"                             // EntityMap
 #include "orionld/common/orionldState.h"                         // orionldState, orionldEntityMapId
 #include "orionld/common/orionldError.h"                         // orionldError
-#include "orionld/types/EntityMap.h"                             // EntityMap
+#include "orionld/common/traceLevels.h"                          // KTrace level
 #include "orionld/entityMaps/entityMapRemove.h"                  // entityMapRemove
 #include "orionld/entityMaps/entityMapRelease.h"                 // entityMapRelease
 #include "orionld/serviceRoutines/orionldDeleteEntityMap.h"      // Own interface
@@ -50,7 +54,7 @@ bool orionldDeleteEntityMap(void)
     return false;
   }
 
-  LM_T(LmtSR, ("Deleting entity map '%s'", entityMapId));
+  KT_T(KtSR, "Deleting entity map '%s'", entityMapId);
   entityMapRelease(entityMap);
 
   return true;

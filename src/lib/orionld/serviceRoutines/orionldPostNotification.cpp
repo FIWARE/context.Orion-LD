@@ -1,6 +1,6 @@
 /*
 *
- Copyright 2024 FIWARE Foundation e.V.
+* Copyright 2024 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -27,12 +27,11 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjLookup.h"                                    // kjLookup
 #include "kjson/kjBuilder.h"                                   // kjChildRemove
 }
-
-#include "logMsg/logMsg.h"                                     // LM_*
 
 #include "cache/CachedSubscription.h"                          // CachedSubscription
 #include "cache/subCache.h"                                    // subCacheItemLookup
@@ -41,9 +40,10 @@ extern "C"
 #include "orionld/types/OrionLdRestService.h"                  // OrionLdRestService
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/common/orionldError.h"                       // orionldError
+#include "orionld/common/traceLevels.h"                        // KTrace level
 #include "orionld/http/httpRequest.h"                          // httpRequest
 #include "orionld/http/httpRequestHeaderAdd.h"                 // httpRequestHeaderAdd
-#include "orionld/kjTree/kjTreeLog.h"                          // LM_TREE
+#include "orionld/kjTree/kjTreeLog.h"                          // KT_TREE
 #include "orionld/serviceRoutines/orionldPostNotification.h"   // Own interface
 
 
@@ -54,28 +54,28 @@ extern "C"
 //
 static CachedSubscription* subParentLookup(char* subordinateSubId)
 {
-  LM_T(LmtSubordinate, ("Looking for subordinate subscription '%s' in the subscription cache", subordinateSubId));
+  KT_T(KtSubordinate, "Looking for subordinate subscription '%s' in the subscription cache", subordinateSubId);
   for (CachedSubscription* cSubP = subCacheHeadGet(); cSubP != NULL; cSubP = cSubP->next)
   {
-    LM_T(LmtSubordinate, ("Checking subscription '%s' to see if it's the parent", cSubP->subscriptionId));
+    KT_T(KtSubordinate, "Checking subscription '%s' to see if it's the parent", cSubP->subscriptionId);
     if (cSubP->subordinateP == NULL)
     {
-      LM_T(LmtSubordinate, ("It's not - no subordinates for '%s'", cSubP->subscriptionId));
+      KT_T(KtSubordinate, "It's not - no subordinates for '%s'", cSubP->subscriptionId);
       continue;
     }
 
     for (SubordinateSubscription* subordinateP = cSubP->subordinateP; subordinateP != NULL; subordinateP = subordinateP->next)
     {
-      LM_T(LmtSubordinate, ("Comparing '%s' with '%s' of parent '%s'", subordinateP->subscriptionId, subordinateSubId, cSubP->subscriptionId));
+      KT_T(KtSubordinate, "Comparing '%s' with '%s' of parent '%s'", subordinateP->subscriptionId, subordinateSubId, cSubP->subscriptionId);
       if (strcmp(subordinateP->subscriptionId, subordinateSubId) == 0)
       {
-        LM_T(LmtSubordinate, ("Found it!"));
+        KT_T(KtSubordinate, "Found it!");
         return cSubP;
       }
     }
   }
 
-  LM_T(LmtSubordinate, ("No parent subscription found"));
+  KT_T(KtSubordinate, "No parent subscription found");
   return NULL;
 }
 #endif
@@ -92,7 +92,7 @@ bool orionldPostNotification(void)
 
   if (distSubsEnabled == false)
   {
-    LM_W(("Got a notification on remote subscription subordinate to '%s', but, distributed subscriptions are not enabled", parentSubId));
+    KT_W("Got a notification on remote subscription subordinate to '%s', but, distributed subscriptions are not enabled", parentSubId);
 
     orionldError(OrionldOperationNotSupported, "Distributed Subscriptions Are Not Enabled", orionldState.serviceP->url, 501);
     orionldState.noLinkHeader   = true;  // We don't want the Link header for non-implemented requests
@@ -100,14 +100,14 @@ bool orionldPostNotification(void)
     return true;
   }
 
-  LM_T(LmtSubordinate, ("Got a notification on remote subscription subordinate to '%s'", parentSubId));
+  KT_T(KtSubordinate, "Got a notification on remote subscription subordinate to '%s'", parentSubId);
 
-  LM_TREE(orionldState.requestTree, "notification", LmtSubordinate);
+  KT_TREE(orionldState.requestTree, "notification", KtSubordinate);
 
   CachedSubscription* cSubP = subCacheItemLookup(orionldState.tenantP->tenant, parentSubId);
   if (cSubP == NULL)
   {
-    LM_W(("Got a notification from a remote subscription '%s' on IP:PORT, but, its local parent subscription was not found", parentSubId));
+    KT_W("Got a notification from a remote subscription '%s' on IP:PORT, but, its local parent subscription was not found", parentSubId);
     return false;
   }
 
@@ -132,14 +132,14 @@ bool orionldPostNotification(void)
   uriParams[0].value = (char*) parentSubId;
 
   snprintf(url, sizeof(url), "%s://%s:%d/%s", cSubP->protocolString, cSubP->ip, cSubP->port, cSubP->rest);
-  LM_T(LmtSubordinate, ("ip:  '%s'", cSubP->ip));
-  LM_T(LmtSubordinate, ("url: '%s'", url));
+  KT_T(KtSubordinate, "ip:  '%s'", cSubP->ip);
+  KT_T(KtSubordinate, "url: '%s'", url);
 
 
   //
   // HTTP Headers
   //
-  LM_TREE(orionldState.in.httpHeaders, "httpHeaders", LmtSubordinate);
+  KT_TREE(orionldState.in.httpHeaders, "httpHeaders", KtSubordinate);
 
 
   //
@@ -178,7 +178,7 @@ bool orionldPostNotification(void)
     char*       value  = (char*) it->second.c_str();
 
     if (headerIx >= 19)
-      LM_W(("Too many headers (change and recompile for more than 20 headers) - skipping '%s'", key));
+      KT_W("Too many headers (change and recompile for more than 20 headers) - skipping '%s'", key);
     else
     {
       KjNode* inHeaderP = kjLookup(orionldState.in.httpHeaders, key);
@@ -198,8 +198,8 @@ bool orionldPostNotification(void)
   httpStatus = httpRequest(cSubP->ip, "POST", url, orionldState.requestTree, uriParams, headers, 5000, &responseTree, &pd);
   if (httpStatus != 200)
   {
-    LM_W(("httpRequest for a forwarded notification gave HTTP status %d", httpStatus));
-    LM_TREE(responseTree, "forwarded notification response body", LmtSubordinate);
+    KT_W("httpRequest for a forwarded notification gave HTTP status %d", httpStatus);
+    KT_TREE(responseTree, "forwarded notification response body", KtSubordinate);
   }
 
   return true;

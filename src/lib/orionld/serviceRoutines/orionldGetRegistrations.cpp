@@ -24,6 +24,7 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kbase/kMacros.h"                                       // K_FT
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
@@ -33,13 +34,12 @@ extern "C"
 #include "kjson/kjStringValueLookupInArray.h"                    // kjStringValueLookupInArray
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/types/OrionldHeader.h"                         // orionldHeaderAdd, HttpResultsCount
 #include "orionld/types/RegCache.h"                              // RegCache
 #include "orionld/types/RegCacheItem.h"                          // RegCache, RegCacheItem
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
+#include "orionld/common/traceLevels.h"                          // KTrace level
 #include "orionld/common/dotForEq.h"                             // dotForEq
 #include "orionld/legacyDriver/legacyGetRegistrations.h"         // legacyGetRegistrations
 #include "orionld/mongoc/mongocRegistrationsGet.h"               // mongocRegistrationsGet
@@ -212,7 +212,7 @@ static QNode* csfParse(char* csf)
   char* title  = NULL;
   char* detail = NULL;
 
-  LM_T(LmtCsf, ("CSF: '%s'", csf));
+  KT_T(KtCsf, "CSF: '%s'", csf);
 
   QNode* csfList = qLex(csf, false, &title, &detail);
   if (csfList == NULL)
@@ -230,7 +230,7 @@ static QNode* csfParse(char* csf)
     return NULL;
   }
 
-  qPresent(csfTree, "csf", "CSF Tree", LmtCsf);
+  qPresent(csfTree, "csf", "CSF Tree", KtCsf);
 
   return csfTree;
 }
@@ -340,7 +340,7 @@ bool orionldGetRegistrations(void)
 
   if (idPattern != NULL)
   {
-    LM_W(("The idPattern URL parameter isn't implemented for GET Registrations (pattern ending in .* is assumed)"));
+    KT_W("The idPattern URL parameter isn't implemented for GET Registrations (pattern ending in .* is assumed)");
     idPatternLen = strlen(idPattern) - 2;
     idPattern[idPatternLen] = 0;  // CUT OFF the ".*"
   }
@@ -372,7 +372,7 @@ bool orionldGetRegistrations(void)
       // Filter: CSF
       if ((csfTree != NULL) && (properties != NULL))
       {
-        LM_T(LmtCsf, ("CSF check for reg '%s'", cRegP->regId));
+        KT_T(KtCsf, "CSF check for reg '%s'", cRegP->regId);
         if (qMatch(csfTree, properties, true) == false)
           continue;
       }

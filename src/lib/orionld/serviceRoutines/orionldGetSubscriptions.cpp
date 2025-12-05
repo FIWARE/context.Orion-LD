@@ -24,11 +24,11 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjObject, kjArray
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
 #include "cache/subCache.h"                                      // CachedSubscription, subCacheHeadGet, subCacheItemLookup
 
 #include "orionld/types/OrionldHeader.h"                         // orionldHeaderAdd, HttpResultsCount
@@ -136,7 +136,7 @@ static bool orionldGetSubscriptionsFromDb(void)
     {
       KjNode* nodeP = kjString(orionldState.kjsonP, "@context", orionldState.contextP->url);
       if (nodeP == NULL)
-        LM_E(("Internal error (out of memory creating an '@context' field for a subscription)"));
+        KT_E("Internal error (out of memory creating an '@context' field for a subscription)");
       else
         kjChildAdd(apiSubP, nodeP);
     }
@@ -228,7 +228,7 @@ bool orionldGetSubscriptions(void)
 
           if (subP == NULL)
           {
-            LM_E(("Internal Error (kjTreeFromPernotSubscription failed for subscription '%s')", pSubP->subscriptionId));
+            KT_E("Internal Error (kjTreeFromPernotSubscription failed for subscription '%s')", pSubP->subscriptionId);
             ++ix;
             continue;
           }
@@ -260,7 +260,7 @@ bool orionldGetSubscriptions(void)
 
         if (subP == NULL)
         {
-          LM_E(("Internal Error (kjTreeFromCachedSubscription failed for subscription '%s')", cSubP->subscriptionId));
+          KT_E("Internal Error (kjTreeFromCachedSubscription failed for subscription '%s')", cSubP->subscriptionId);
           ++ix;
           continue;
         }

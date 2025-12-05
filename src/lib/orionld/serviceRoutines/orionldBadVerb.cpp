@@ -22,9 +22,6 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
-
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/types/OrionldHeader.h"                       // orionldHeaderAdd
 #include "orionld/service/orionldServiceInit.h"                // orionldRestServiceV

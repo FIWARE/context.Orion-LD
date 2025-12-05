@@ -31,9 +31,8 @@ extern "C"
 #include "kjson/kjClone.h"                                     // kjClone
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
 #include "orionld/common/orionldState.h"                       // orionldState
+#include "orionld/common/traceLevels.h"                        // KTrace level
 #include "orionld/common/tenantList.h"                         // tenant0
 #include "orionld/common/entitySuccessPush.h"                  // entitySuccessPush
 #include "orionld/common/entityErrorPush.h"                    // entityErrorPush
@@ -88,7 +87,7 @@ bool orionldPostBatchCreate(void)
   KjNode*      outArrayErroredP = kjArray(orionldState.kjsonP, "errors");
   int          noOfEntities     = batchEntityCountAndFirstCheck(orionldState.requestTree, outArrayErroredP);
 
-  LM_T(LmtSR, ("Number of valid Entities after 1st check-round: %d", noOfEntities));
+  KT_T(KtSR, "Number of valid Entities after 1st check-round: %d", noOfEntities);
 
   //
   // Now that we know the max number of entities (some may drop out after calling pCheckEntity - part of entitiesFinalCheck),
@@ -111,7 +110,7 @@ bool orionldPostBatchCreate(void)
   // (extract the entity ids) later to be used by mongocEntitiesQuery().
   //
   noOfEntities = batchEntityStringArrayPopulate(orionldState.requestTree, &eIdArray, outArrayErroredP, false);
-  LM_T(LmtSR, ("Number of valid Entities after 2nd check-round: %d", noOfEntities));
+  KT_T(KtSR, "Number of valid Entities after 2nd check-round: %d", noOfEntities);
 
   //
   // The entity id array is ready - time to query mongo
@@ -129,7 +128,7 @@ bool orionldPostBatchCreate(void)
   // Finally we have everything we need to 100% CHECK the incoming entities
   //
   noOfEntities = batchEntitiesFinalCheck(orionldState.requestTree, outArrayErroredP, dbEntityArray, orionldState.uriParamOptions.update, false, true);
-  LM_T(LmtSR, ("Number of valid Entities after 3rd check-round: %d", noOfEntities));
+  KT_T(KtSR, "Number of valid Entities after 3rd check-round: %d", noOfEntities);
 
 
   //
@@ -163,7 +162,7 @@ bool orionldPostBatchCreate(void)
 
     if (batchMultipleInstances(entityId, outArrayCreatedP, NULL) == true)
     {
-      LM_W(("Got another instance of entity '%s' - that's an error", entityId));
+      KT_W("Got another instance of entity '%s' - that's an error", entityId);
       entityErrorPush(outArrayErroredP, entityId, OrionldAlreadyExists, "Entity already exists", "Created as part of the same request", 409);
       kjChildRemove(orionldState.requestTree, inEntityP);
       inEntityP = next;

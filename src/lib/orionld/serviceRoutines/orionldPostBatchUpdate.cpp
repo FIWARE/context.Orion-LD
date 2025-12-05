@@ -33,8 +33,6 @@ extern "C"
 #include "kjson/kjClone.h"                                     // kjClone
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/common/orionldError.h"                       // orionldError
 #include "orionld/common/traceLevels.h"                        // Stdds, ...
@@ -84,7 +82,7 @@ bool orionldPostBatchUpdate(void)
   KjNode*      outArrayErroredP = kjArray(orionldState.kjsonP, "errors");
   int          noOfEntities     = batchEntityCountAndFirstCheck(orionldState.requestTree, outArrayErroredP);
 
-  LM_T(LmtSR, ("Number of valid Entities after 1st check-round: %d", noOfEntities));
+  KT_T(KtSR, "Number of valid Entities after 1st check-round: %d", noOfEntities);
 
   //
   // Now that we know the max number of entities (some may drop out after calling pCheckEntity - part of entitiesFinalCheck),
@@ -108,7 +106,7 @@ bool orionldPostBatchUpdate(void)
   // (extract the entity ids) later to be used by mongocEntitiesQuery().
   //
   noOfEntities = batchEntityStringArrayPopulate(orionldState.requestTree, &eIdArray, outArrayErroredP, false);
-  LM_T(LmtSR, ("Number of valid Entities after 2nd check-round: %d", noOfEntities));
+  KT_T(KtSR, "Number of valid Entities after 2nd check-round: %d", noOfEntities);
 
   //
   // The entity id array is ready - time to query mongo
@@ -124,7 +122,7 @@ bool orionldPostBatchUpdate(void)
   // Finally we have everything we need to 100% CHECK the incoming entities
   //
   noOfEntities = batchEntitiesFinalCheck(orionldState.requestTree, outArrayErroredP, dbEntityArray, orionldState.uriParamOptions.update, true, false);
-  LM_T(LmtSR, ("Number of valid Entities after 3rd check-round: %d", noOfEntities));
+  KT_T(KtSR, "Number of valid Entities after 3rd check-round: %d", noOfEntities);
 
 
   //
@@ -168,7 +166,7 @@ bool orionldPostBatchUpdate(void)
 
       KjNode* dbArrayItemP = entityLookupBy_id_Id(dbUpdateArray, entityId, NULL);
       if (dbArrayItemP == NULL)
-        LM_E(("MI: Internal Error (multiple instance entity '%s' not found in DB Array)", entityId));
+        KT_E("MI: Internal Error (multiple instance entity '%s' not found in DB Array)", entityId);
       else
       {
         kjChildRemove(dbUpdateArray, dbArrayItemP);  // Soon to be replaced by a newer one

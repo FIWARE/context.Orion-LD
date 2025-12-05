@@ -24,6 +24,7 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kalloc/kaStrdup.h"                                   // kaStrdup
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjClone.h"                                     // kjClone
@@ -31,10 +32,9 @@ extern "C"
 #include "kjson/kjBuilder.h"                                   // kjChildRemove, kjChildAdd, kjInteger
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/common/orionldError.h"                       // orionldError
+#include "orionld/common/traceLevels.h"                        // KTrace level
 #include "orionld/common/numberToDate.h"                       // numberToDate
 #include "orionld/common/eqForDot.h"                           // eqForDot
 #include "orionld/payloadCheck/PCHECK.h"                       // PCHECK_URI
@@ -258,9 +258,9 @@ void apiModelFromCachedRegistration(KjNode* regTree, RegCacheItem* cachedRegP, b
     {
       char* dotName = kaStrdup(&orionldState.kalloc, propertyP->name);
       eqForDot(dotName);
-      LM_T(LmtCsf, ("Finding alias for '%s'", dotName));
+      KT_T(KtCsf, "Finding alias for '%s'", dotName);
       propertyP->name = orionldContextItemAliasLookup(orionldState.contextP, dotName, NULL, NULL);
-      LM_T(LmtCsf, ("Found '%s'", propertyP->name));
+      KT_T(KtCsf, "Found '%s'", propertyP->name);
     }
 
     //

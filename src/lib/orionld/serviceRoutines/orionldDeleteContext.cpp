@@ -28,8 +28,6 @@ extern "C"
 #include "kjson/kjFree.h"                                        // kjFree
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/context/orionldCoreContext.h"                  // orionldCoreContextP

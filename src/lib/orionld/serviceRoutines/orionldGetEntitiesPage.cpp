@@ -27,14 +27,11 @@ extern "C"
 #include "ktrace/kTrace.h"                                          // KTrace
 #include "kalloc/kaAlloc.h"                                         // kaAlloc
 #include "kjson/KjNode.h"                                           // KjNode
-#include "kjson/kjRender.h"                                         // kjFastRender (for debugging purposes - LM_T)
 #include "kjson/kjBuilder.h"                                        // kjArray, ...
 #include "kjson/kjLookup.h"                                         // kjLookup
 #include "kjson/kjClone.h"                                          // kjClone
 #include "kjson/kjChildCount.h"                                     // kjChildCount
 }
-
-#include "logMsg/logMsg.h"                                          // LM_*
 
 #include "orionld/types/DistOp.h"                                   // DistOp
 #include "orionld/common/orionldState.h"                            // orionldState, entityMaps
@@ -63,14 +60,14 @@ extern "C"
 //
 static void cleanupSysAttrs(void)
 {
-  LM_T(LmtSysAttrs, ("orionldState.responseTree: %p", orionldState.responseTree));
+  KT_T(KtSysAttrs, "orionldState.responseTree: %p", orionldState.responseTree);
 
   for (KjNode* entityP = orionldState.responseTree->value.firstChildP; entityP != NULL; entityP = entityP->next)
   {
     KjNode*     idP = kjLookup(entityP, "id");
     const char* id  = (idP != NULL)? idP->value.s : "unidentified";
 
-    LM_T(LmtSysAttrs, ("Removing sysAttrs for the entity '%s'", id));
+    KT_T(KtSysAttrs, "Removing sysAttrs for the entity '%s'", id);
 
     KjNode* createdAtP  = kjLookup(entityP, "createdAt");
     KjNode* modifiedAtP = kjLookup(entityP, "modifiedAt");
@@ -82,7 +79,7 @@ static void cleanupSysAttrs(void)
       if (attrP->type != KjObject)
         continue;
 
-      LM_T(LmtSysAttrs, ("Removing sysAttrs for the attribute '%s'", attrP->name));
+      KT_T(KtSysAttrs, "Removing sysAttrs for the attribute '%s'", attrP->name);
 
       KjNode* createdAtP  = kjLookup(attrP, "createdAt");
       KjNode* modifiedAtP = kjLookup(attrP, "modifiedAt");
@@ -94,7 +91,7 @@ static void cleanupSysAttrs(void)
         if (subAttrP->type != KjObject)
           continue;
 
-        LM_T(LmtSysAttrs, ("Removing sysAttrs for the sub-attribute '%s'", subAttrP->name));
+        KT_T(KtSysAttrs, "Removing sysAttrs for the sub-attribute '%s'", subAttrP->name);
 
         KjNode* createdAtP  = kjLookup(subAttrP, "createdAt");
         KjNode* modifiedAtP = kjLookup(subAttrP, "modifiedAt");
@@ -155,11 +152,11 @@ static void formatFix(KjNode* entityArray, int skip)
     ++ix;
     if (ix < skip)  // Entities from the local DB have already been transformed to the desired format
     {
-      LM_T(LmtFormat, ("Skipping child %d as it comes from local DB", ix));
+      KT_T(KtFormat, "Skipping child %d as it comes from local DB", ix);
       continue;
     }
 
-    LM_T(LmtFormat, ("Fixing format for child %d as it comes from remote", ix));
+    KT_T(KtFormat, "Fixing format for child %d as it comes from remote", ix);
 
     if (orionldState.out.format == RF_CONCISE)
       ntocEntity(entityP, orionldState.uriParams.lang, orionldState.uriParamOptions.sysAttrs);
@@ -180,26 +177,26 @@ bool orionldGetEntitiesPage(void)
   uint32_t  limit       = orionldState.uriParams.limit;
   KjNode*   entityArray = kjArray(orionldState.kjsonP, NULL);
 
-  LM_T(LmtEntityMap, ("entity map:          '%s'", orionldState.in.entityMap->id));
-  LM_T(LmtEntityMap, ("items in entity map:  %d",  orionldState.in.entityMap->count));
-  LM_T(LmtEntityMap, ("offset:               %d",  offset));
-  LM_T(LmtEntityMap, ("limit:                %d",  limit));
+  KT_T(KtEntityMap, "entity map:          '%s'", orionldState.in.entityMap->id);
+  KT_T(KtEntityMap, "items in entity map:  %d",  orionldState.in.entityMap->count);
+  KT_T(KtEntityMap, "offset:               %d",  offset);
+  KT_T(KtEntityMap, "limit:                %d",  limit);
 
   // HTTP Status code and payload body
   orionldState.responseTree   = entityArray;
-  LM_T(LmtSR, ("orionldState.responseTree: %p", orionldState.responseTree));
+  KT_T(KtSR, "orionldState.responseTree: %p", orionldState.responseTree);
   orionldState.httpStatusCode = 200;
 
   if (orionldState.uriParams.count == true)
   {
-    LM_T(LmtEntityMap, ("%d entities match, in the entire federation", orionldState.in.entityMap->count));
-    LM_T(LmtEntityMap, ("COUNT: Adding HttpResultsCount header: %d", orionldState.in.entityMap->count));
+    KT_T(KtEntityMap, "%d entities match, in the entire federation", orionldState.in.entityMap->count);
+    KT_T(KtEntityMap, "COUNT: Adding HttpResultsCount header: %d", orionldState.in.entityMap->count);
     orionldHeaderAdd(&orionldState.out.headers, HttpResultsCount, NULL, orionldState.in.entityMap->count);
   }
 
   if (offset >= orionldState.in.entityMap->count)
   {
-    LM_T(LmtEntityMap, ("offset (%d) >= orionldState.in.entityMap->count (%d)", offset, orionldState.in.entityMap->count));
+    KT_T(KtEntityMap, "offset (%d) >= orionldState.in.entityMap->count (%d)", offset, orionldState.in.entityMap->count);
     return true;
   }
 
@@ -264,13 +261,13 @@ bool orionldGetEntitiesPage(void)
   }
 
   DistOpListItem* distOpListItem = NULL;
-  LM_T(LmtEntityMap, ("Sending the distOp requests for the entity map"));
+  KT_T(KtEntityMap, "Sending the distOp requests for the entity map");
   for (KjNode* sourceP = sources->value.firstChildP; sourceP != NULL; sourceP = sourceP->next)
   {
     if (strcmp(sourceP->name, "@none") == 0)
     {
       DistOp* distOpP = distOpLookupByRegId(orionldState.distOpList, "@none");
-      LM_T(LmtEntityMap, ("distOpP->entityMap == %s", (distOpP->entityMap == true)? "true" : "false"));
+      KT_T(KtEntityMap, "distOpP->entityMap == %s", (distOpP->entityMap == true)? "true" : "false");
 
       // Local query - set input params for orionldGetEntitiesLocal
 
@@ -280,22 +277,22 @@ bool orionldGetEntitiesPage(void)
       orionldState.in.typeList.items = 0;
 
 #if 0
-      LM_T(LmtDistOpAttributes, ("------------ Local DB Query -------------"));
-      LM_T(LmtDistOpAttributes, ("orionldState.uriParams.attrs:   %s", orionldState.uriParams.attrs));
-      LM_T(LmtDistOpAttributes, ("orionldState.in.attrList.items: %d", orionldState.in.attrList.items));
+      KT_T(KtDistOpAttributes, "------------ Local DB Query -------------");
+      KT_T(KtDistOpAttributes, "orionldState.uriParams.attrs:   %s", orionldState.uriParams.attrs);
+      KT_T(KtDistOpAttributes, "orionldState.in.attrList.items: %d", orionldState.in.attrList.items);
       for (int ix = 0; ix < orionldState.in.attrList.items; ix++)
       {
-        LM_T(LmtDistOpAttributes, ("orionldState.in.attrList.array[%d]: '%s'", ix, orionldState.in.attrList.array[ix]));
+        KT_T(KtDistOpAttributes, "orionldState.in.attrList.array[%d]: '%s'", ix, orionldState.in.attrList.array[ix]);
       }
-      LM_T(LmtDistOpAttributes, ("distOpP->attrsParam:          %s", distOpP->attrsParam));
-      LM_T(LmtDistOpAttributes, ("distOpP->attrList:            %p", distOpP->attrList));
+      KT_T(KtDistOpAttributes, "distOpP->attrsParam:          %s", distOpP->attrsParam);
+      KT_T(KtDistOpAttributes, "distOpP->attrList:            %p", distOpP->attrList);
 
       if (distOpP->attrList != NULL)
       {
-        LM_T(LmtDistOpAttributes, ("distOpP->attrList->items: %d", distOpP->attrList->items));
+        KT_T(KtDistOpAttributes, "distOpP->attrList->items: %d", distOpP->attrList->items);
         for (int ix = 0; ix < distOpP->attrList->items; ix++)
         {
-          LM_T(LmtDistOpAttributes, ("distOpP->attrList->array[%d]: '%s'", ix, distOpP->attrList->array[ix]));
+          KT_T(KtDistOpAttributes, "distOpP->attrList->array[%d]: '%s'", ix, distOpP->attrList->array[ix]);
         }
       }
 #endif
@@ -312,7 +309,7 @@ bool orionldGetEntitiesPage(void)
       orionldState.uriParams.offset = 0;
       orionldState.uriParams.limit  = orionldState.in.idList.items;
 
-      LM_T(LmtEntityMap, ("Query local database for %d entities", orionldState.in.idList.items));
+      KT_T(KtEntityMap, "Query local database for %d entities", orionldState.in.idList.items);
       orionldGetEntitiesLocal(distOpP->typeList,
                               distOpP->idList,
                               &orionldState.in.attrList,
@@ -328,7 +325,7 @@ bool orionldGetEntitiesPage(void)
       // Response comes in orionldState.responseTree - move those to entityArray
       if ((orionldState.responseTree != NULL) && (orionldState.responseTree->value.firstChildP != NULL))
       {
-        LM_T(LmtDistOpResponseDetail, ("Adding a 'distop-response-entity' to the entityArray"));
+        KT_T(KtDistOpResponseDetail, "Adding a 'distop-response-entity' to the entityArray");
 
         orionldState.responseTree->lastChild->next = entityArray->value.firstChildP;
         entityArray->value.firstChildP = orionldState.responseTree->value.firstChildP;
@@ -340,10 +337,10 @@ bool orionldGetEntitiesPage(void)
     {
       int idStringSize = 0;
 
-      LM_T(LmtEntityMap, ("Query '%s' for:", sourceP->name));
+      KT_T(KtEntityMap, "Query '%s' for:", sourceP->name);
       for (KjNode* entityNodeP = sourceP->value.firstChildP; entityNodeP != NULL; entityNodeP = entityNodeP->next)
       {
-        LM_T(LmtEntityMap, ("  o %s", entityNodeP->value.s));
+        KT_T(KtEntityMap, "  o %s", entityNodeP->value.s);
         idStringSize += strlen(entityNodeP->value.s) + 1;  // +1 for the comma
       }
 
@@ -363,7 +360,7 @@ bool orionldGetEntitiesPage(void)
         }
       }
 
-      LM_T(LmtEntityMap, ("Query '%s' with entity ids=%s", sourceP->name, idString));
+      KT_T(KtEntityMap, "Query '%s' with entity ids=%s", sourceP->name, idString);
       distOpListItem = distOpListItemAdd(distOpListItem, sourceP->name, idString);
     }
   }
@@ -372,7 +369,7 @@ bool orionldGetEntitiesPage(void)
   {
     int localKids = kjChildCount(entityArray);
 
-    LM_T(LmtFormat, ("Number of children from local: %d (no format fix for those)", localKids));
+    KT_T(KtFormat, "Number of children from local: %d (no format fix for those)", localKids);
 
     distOpItemListDebug(distOpListItem, "To Forward for GET /entities");
     distOpsSendAndReceive(distOpListItem, queryResponse, entityArray);

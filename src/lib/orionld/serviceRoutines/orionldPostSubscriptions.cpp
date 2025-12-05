@@ -28,6 +28,7 @@
 extern "C"
 {
 #include "kbase/kMacros.h"                                     // K_FT
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kalloc/kaStrdup.h"                                   // kaStrdup
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjLookup.h"                                    // kjLookup
@@ -36,8 +37,6 @@ extern "C"
 #include "kjson/kjNavigate.h"                                  // kjNavigate
 #include "kjson/kjChildPrepend.h"                              // kjChildPrepend
 }
-
-#include "logMsg/logMsg.h"                                     // LM_*
 
 #include "cache/subCache.h"                                    // subCacheItemLookup, CachedSubscription
 
@@ -49,12 +48,13 @@ extern "C"
 #include "orionld/types/SubordinateSubscription.h"             // SubordinateSubscription
 #include "orionld/common/orionldState.h"                       // orionldState, coreContextUrl
 #include "orionld/common/orionldError.h"                       // orionldError
+#include "orionld/common/traceLevels.h"                        // KTrace level
 #include "orionld/common/uuidGenerate.h"                       // uuidGenerate
 #include "orionld/common/subCacheApiSubscriptionInsert.h"      // subCacheApiSubscriptionInsert
 #include "orionld/http/httpHeaderLocationAdd.h"                // httpHeaderLocationAdd
 #include "orionld/http/httpRequestHeaderAdd.h"                 // httpRequestHeaderAdd
 #include "orionld/legacyDriver/legacyPostSubscriptions.h"      // legacyPostSubscriptions
-#include "orionld/kjTree/kjTreeLog.h"                          // LM_TREE
+#include "orionld/kjTree/kjTreeLog.h"                          // KT_TREE
 #include "orionld/dbModel/dbModelFromApiSubscription.h"        // dbModelFromApiSubscription
 #include "orionld/mongoc/mongocSubscriptionExists.h"           // mongocSubscriptionExists
 #include "orionld/mongoc/mongocSubscriptionInsert.h"           // mongocSubscriptionInsert
@@ -147,7 +147,7 @@ SubordinateSubscription* subordinateCreate(CachedSubscription* cSubP, RegCacheIt
   KjNode*     uriP    = kjNavigate(subP, compV, NULL, NULL);
 
   if (uriP == NULL)
-    LM_RE(NULL, ("No notification:endpoint:uri field in the subscription!"));
+    KT_RE(NULL, "No notification:endpoint:uri field in the subscription!");
 
   uriP->value.s = notificationUrl;
 
@@ -181,27 +181,27 @@ SubordinateSubscription* subordinateCreate(CachedSubscription* cSubP, RegCacheIt
   else
     snprintf(rciUrl, sizeof(rciUrl) - 1, "http://%s%s/ngsi-ld/v1/subscriptions", rciP->ipAndPort, rciP->rest);
 
-  LM_T(LmtSR, ("URL for creation of subordinate subscription '%s'", rciUrl));
+  KT_T(KtSR, "URL for creation of subordinate subscription '%s'", rciUrl);
 
   httpRequestHeaderAdd(&headers[headerIx++], "Content-Type", "application/json", 0);
   int httpStatus = httpRequest(rciIp, "POST", rciUrl, subP, NULL, headers, tmo, &responseBody, &pd);
   if ((httpStatus != 201) && (httpStatus != 200))  // ftClient responds with 200 ...
-    LM_RE(NULL, ("Attempt to create subordinate subscription failed with a %d", httpStatus));
+    KT_RE(NULL, "Attempt to create subordinate subscription failed with a %d", httpStatus);
 
   SubordinateSubscription* subordinateP = (SubordinateSubscription*) calloc(1, sizeof(SubordinateSubscription));
   if (subordinateP == NULL)
-    LM_X(1, ("Out of memory allocating a subordinate subscription"));
+    KT_X(1, "Out of memory allocating a subordinate subscription");
 
   subordinateP->subscriptionId = strdup(subSubId);
   if (subordinateP->subscriptionId == NULL)
-    LM_X(1, ("Out of memory allocating the id of a subordinate subscription"));
+    KT_X(1, "Out of memory allocating the id of a subordinate subscription");
 
   subordinateP->registrationId = rciP->regId;
   subordinateP->runNo          = runNo;
   subordinateP->next           = cSubP->subordinateP;
 
   cSubP->subordinateP          = subordinateP;
-  LM_T(LmtSR, ("***************** Added subordinate subs to '%s' at %p", cSubP->subscriptionId, subordinateP));
+  KT_T(KtSR, "***************** Added subordinate subs to '%s' at %p", cSubP->subscriptionId, subordinateP);
 
   return subordinateP;
 }
@@ -217,7 +217,7 @@ bool orionldPostSubscriptions(void)
   if ((experimental == false) || (orionldState.in.legacy != NULL))
     return legacyPostSubscriptions();  // this will be removed!! (after thorough testing)
 
-  LM_TREE(orionldState.requestTree, "Father Sub 01", LmtSubordinate);
+  KT_TREE(orionldState.requestTree, "Father Sub 01", KtSubordinate);
 
   KjNode*              subP            = orionldState.requestTree;
   KjNode*              subIdP          = orionldState.payloadIdNode;
@@ -260,14 +260,14 @@ bool orionldPostSubscriptions(void)
                          &renderFormat);
 
   if (qRenderedForDb != NULL)
-    LM_T(LmtQ, ("qRenderedForDb: '%s'", qRenderedForDb));
+    KT_T(KtQ, "qRenderedForDb: '%s'", qRenderedForDb);
 
   if (b == false)
   {
     if (qTree != NULL)
       qRelease(qTree);
 
-    LM_RE(false, ("pCheckSubscription FAILED"));
+    KT_RE(false, "pCheckSubscription FAILED");
   }
 
   // Subscription id special treats
@@ -307,7 +307,7 @@ bool orionldPostSubscriptions(void)
   // Add subId to the tree
   kjChildPrepend(subP, subIdP);
 
-  LM_TREE(orionldState.requestTree, "With ID", LmtSubordinate);
+  KT_TREE(orionldState.requestTree, "With ID", KtSubordinate);
 
   // The three 'q's ... that's also dbModel
   if (ldqNodeP != NULL)
@@ -430,9 +430,9 @@ bool orionldPostSubscriptions(void)
   else
   {
     // Add subscription to the pernot-cache
-    LM_T(LmtPernot, ("qRenderedForDb: '%s'", qRenderedForDb));
+    KT_T(KtPernot, "qRenderedForDb: '%s'", qRenderedForDb);
     if (qTree != NULL)
-      qPresent(qTree, "Pernot", "Q for pernot subscription", LmtPernot);
+      qPresent(qTree, "Pernot", "Q for pernot subscription", KtPernot);
     pSubP = pernotSubCacheAdd(subscriptionId,
                               subP,
                               endpointP,
@@ -447,17 +447,17 @@ bool orionldPostSubscriptions(void)
 
     // Signal that there's a new Pernot subscription in the cache
     // ++pernotSubCache.newSubs;
-    // LM_T(LmtPernotLoop, ("pernotSubCache.newSubs == %d", pernotSubCache.newSubs));
+    // KT_T(KtPernotLoop, "pernotSubCache.newSubs == %d", pernotSubCache.newSubs);
   }
 
 
   //
   // Any subordinate subscriptions needed?
   //
-  LM_T(LmtSubordinate, ("Any subordinate subscriptions needed?"));
+  KT_T(KtSubordinate, "Any subordinate subscriptions needed?");
   if ((distSubsEnabled == true) && (orionldState.uriParams.local == false))
   {
-    LM_T(LmtSubordinate, ("At least, subordinate subscriptions are ON - checking regs"));
+    KT_T(KtSubordinate, "At least, subordinate subscriptions are ON - checking regs");
 
     //
     // Find matching regs
@@ -467,10 +467,10 @@ bool orionldPostSubscriptions(void)
     {
       char* entityTypeP;
 
-      LM_T(LmtSubordinate, ("Checking reg '%s' for match to subscription '%s'", rciP->regId, cSubP->subscriptionId));
+      KT_T(KtSubordinate, "Checking reg '%s' for match to subscription '%s'", rciP->regId, cSubP->subscriptionId);
       if (regMatchSubscription(rciP, cSubP, &entityTypeP) == true)
       {
-        LM_T(LmtSubordinate, ("Reg '%s' is a match - creating subordinate subscription", rciP->regId));
+        KT_T(KtSubordinate, "Reg '%s' is a match - creating subordinate subscription", rciP->regId);
 
         SubordinateSubscription* subSubP = subordinateCreate(cSubP, rciP, clonedSubP);
         if (subSubP != NULL)
@@ -496,10 +496,10 @@ bool orionldPostSubscriptions(void)
           kjChildAdd(subordinateP, subSubNodeP);
         }
         else
-          LM_W(("Unable to create subordinate subscription for '%s'", subscriptionId));
+          KT_W("Unable to create subordinate subscription for '%s'", subscriptionId);
       }
       else
-        LM_T(LmtSubordinate, ("Reg '%s' is not a match", rciP->regId));
+        KT_T(KtSubordinate, "Reg '%s' is not a match", rciP->regId);
     }
   }
 
@@ -512,7 +512,7 @@ bool orionldPostSubscriptions(void)
   if (mongocSubscriptionInsert(dbSubscriptionP, subIdP->value.s) == false)
   {
     // orionldError is done by mongocSubscriptionInsert
-    LM_E(("mongocSubscriptionInsert failed"));
+    KT_E("mongocSubscriptionInsert failed");
     if (mqttSubscription == true)
       mqttDisconnect(mqttHost, mqttPort, mqttUser, mqttPassword, mqttVersion);
 

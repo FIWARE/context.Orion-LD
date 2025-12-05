@@ -26,18 +26,19 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjString, kjInteger, kjChildAdd
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
+#include "cache/subCache.h"                                      // CachedSubscription, subCacheItemLookup
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
+#include "orionld/common/traceLevels.h"                          // KTrace level
 #include "orionld/common/numberToDate.h"                         // numberToDate
-#include "cache/subCache.h"                                      // CachedSubscription, subCacheItemLookup
 #include "orionld/pernot/pernotSubCacheLookup.h"                 // pernotSubCacheLookup
 #include "orionld/legacyDriver/legacyGetSubscription.h"          // legacyGetSubscription
 #include "orionld/kjTree/kjTreeFromCachedSubscription.h"         // kjTreeFromCachedSubscription
@@ -45,7 +46,7 @@ extern "C"
 #include "orionld/payloadCheck/PCHECK.h"                         // PCHECK_URI
 #include "orionld/dbModel/dbModelToApiSubscription.h"            // dbModelToApiSubscription
 #include "orionld/mongoc/mongocSubscriptionLookup.h"             // mongocSubscriptionLookup
-#include "orionld/kjTree/kjTreeLog.h"                            // LM_TREE
+#include "orionld/kjTree/kjTreeLog.h"                            // KT_TREE
 #include "orionld/serviceRoutines/orionldGetSubscription.h"      // Own Interface
 
 
@@ -119,7 +120,7 @@ void orionldSubCounters(KjNode* apiSubP, CachedSubscription* cSubP, PernotSubscr
   KjNode* notificationP = kjLookup(apiSubP, "notification");
 
   if (notificationP == NULL)
-    LM_RVE(("API Subscription without a notification field !!!"));
+    KT_RVE("API Subscription without a notification field !!!");
 
   if ((cSubP == NULL) && (pSubP == NULL))
   {
@@ -134,7 +135,7 @@ void orionldSubCounters(KjNode* apiSubP, CachedSubscription* cSubP, PernotSubscr
     {
       pSubP = pernotSubCacheLookup(orionldState.tenantP->tenant, subIdP->value.s);
       if (pSubP == NULL)
-        LM_RVE(("Can't find subscription '%s' in any subscription cache", subIdP->value.s));
+        KT_RVE("Can't find subscription '%s' in any subscription cache", subIdP->value.s);
     }
   }
 
@@ -184,7 +185,7 @@ static bool orionldGetSubscriptionFromDb(void)
     orionldError(OrionldResourceNotFound, "Subscription Not Found", orionldState.wildcard[0], 404);
     return false;
   }
-  LM_TREE(dbSubP, "DB Sub", LmtSubCacheStats);
+  KT_TREE(dbSubP, "DB Sub", KtSubCacheStats);
 
   KjNode*             coordinatesNodeP = NULL;           // Not needed here, but dbModelToApiSubscription requires it
   KjNode*             contextNodeP     = NULL;           // Not needed here, but dbModelToApiSubscription requires it

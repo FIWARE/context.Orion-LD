@@ -35,8 +35,6 @@ extern "C"
 #include "kjson/kjChildPrepend.h"                                   // kjChildPrepend
 }
 
-#include "logMsg/logMsg.h"                                          // LM_*
-
 #include "orionld/types/OrionldHeader.h"                            // orionldHeaderAdd, HttpResultsCount
 #include "orionld/types/OrionldGeoInfo.h"                           // OrionldGeoInfo
 #include "orionld/types/QNode.h"                                    // QNode
@@ -47,7 +45,7 @@ extern "C"
 #include "orionld/context/orionldContextItemExpand.h"               // orionldContextItemExpand
 #include "orionld/mongoc/mongocEntitiesQuery.h"                     // mongocEntitiesQuery
 #include "orionld/kjTree/kjEntityIdLookupInEntityArray.h"           // kjEntityIdLookupInEntityArray
-#include "orionld/kjTree/kjTreeLog.h"                               // LM_TREE
+#include "orionld/kjTree/kjTreeLog.h"                               // KT_TREE
 #include "orionld/dbModel/dbModelToApiEntity.h"                     // dbModelToApiEntity2
 #include "orionld/dbModel/dbModelToEntityIdAndTypeObject.h"         // dbModelToEntityIdAndTypeObject
 #include "orionld/linkedEntities/eLinkRelationsRetrieve.h"          // eLinkRelationsRetrieve
@@ -274,7 +272,7 @@ bool orionldGetEntitiesLocal
     }
   }
 
-  LM_TREE(orionldState.responseTree, "Response Tree", LmtPick);
+  KT_TREE(orionldState.responseTree, "Response Tree", KtPick);
   if (orionldState.in.pickList.items > 0)
     pickForEntityArray();
 

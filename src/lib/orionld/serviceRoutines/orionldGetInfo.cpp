@@ -28,8 +28,6 @@ extern "C"
 #include "kjson/kjBuilder.h"                                   // kjObject, kjString, kjBoolean, ...
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/common/numberToDate.h"                       // numberToDate
 #include "orionld/serviceRoutines/orionldGetVersion.h"         // orionldGetVersion
