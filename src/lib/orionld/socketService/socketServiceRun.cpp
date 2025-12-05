@@ -28,7 +28,10 @@
 #include <poll.h>                                            // poll
 #include <netinet/in.h>                                      // sockaddr_in
 
-#include "logMsg/logMsg.h"                                   // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                   // KT_*
+}
 
 #include "orionld/common/orionldState.h"                     // troe
 #include "orionld/mongoc/mongocServerVersionGet.h"           // mongocServerVersionGet
@@ -50,7 +53,7 @@ static int ssAccept(int listenFd)
   int                 fd    = accept(listenFd, (struct sockaddr*) &sa, &saLen);
 
   if (fd == -1)
-    LM_RE(-1, ("accept socket service connection: %s", strerror(errno)));
+    KT_RE(-1, "accept socket service connection: %s", strerror(errno));
 
   return fd;
 }
@@ -104,7 +107,7 @@ void socketServiceRun(int listenFd)
     if (rs == -1)
     {
       if (errno != EINTR)
-        LM_RVE(("poll error for socket service: %s", strerror(errno)));
+        KT_RVE("poll error for socket service: %s", strerror(errno));
     }
     else if (rs == 0)
     {}
@@ -120,7 +123,7 @@ void socketServiceRun(int listenFd)
 
         connectionFd = ssAccept(listenFd);
         if (fd == -1)
-          LM_RVE(("error accepting incoming connection over Socket Service: %s", strerror(errno)));
+          KT_RVE("error accepting incoming connection over Socket Service: %s", strerror(errno));
       }
       else
       {
@@ -133,7 +136,7 @@ void socketServiceRun(int listenFd)
         nb = read(connectionFd, buf, sizeof(buf));
 
         if (nb != 0)
-          LM_W(("SS: A message was sent over the socket service - the broker is not ready for that - closing connection"));
+          KT_W("SS: A message was sent over the socket service - the broker is not ready for that - closing connection");
 
         close(connectionFd);
         connectionFd = -1;

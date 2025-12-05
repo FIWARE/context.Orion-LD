@@ -24,8 +24,6 @@
 */
 #include <stdio.h>                                               // snprintf
 
-#include "logMsg/logMsg.h"
-
 #include "orionld/types/OrionldHeader.h"                         // orionldHeaderAdd
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/http/httpHeaderLocationAdd.h"                  // Own interface

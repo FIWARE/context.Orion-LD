@@ -27,11 +27,10 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                           // KT_*
 #include "kalloc/kaAlloc.h"                          // kaAlloc
 #include "kalloc/kaStrdup.h"                         // kaStrdup
 }
-
-#include "logMsg/logMsg.h"                           // LM_*
 
 #include "orionld/common/orionldState.h"             // orionldState
 #include "orionld/types/OrionldHeader.h"             // Own interface
@@ -86,7 +85,7 @@ OrionldHeaderSet* orionldHeaderSetCreate(int headers)
   OrionldHeaderSet* setP = (OrionldHeaderSet*) kaAlloc(&orionldState.kalloc, sizeof(OrionldHeaderSet));
 
   if (setP == NULL)
-    LM_RE(NULL, ("Error allocating a OrionldHeaderSet of %d bytes", sizeof(OrionldHeaderSet)));
+    KT_RE(NULL, "Error allocating a OrionldHeaderSet of %d bytes", sizeof(OrionldHeaderSet));
 
   if (orionldHeaderSetInit(setP, headers) == true)
     return setP;
@@ -105,7 +104,7 @@ bool orionldHeaderSetInit(OrionldHeaderSet* setP, int headers)
   setP->headerV  = (OrionldHeader*) kaAlloc(&orionldState.kalloc, sizeof(OrionldHeader) * headers);
 
   if (setP->headerV == NULL)
-    LM_RE(false, ("Error allocating %d OrionldHeader items of %d bytes each", headers, sizeof(OrionldHeader)));
+    KT_RE(false, "Error allocating %d OrionldHeader items of %d bytes each", headers, sizeof(OrionldHeader));
 
   setP->size = headers;
   setP->ix   = 0;
@@ -126,7 +125,7 @@ int orionldHeaderAdd(OrionldHeaderSet* setP, OrionldHeaderType type, const char*
     OrionldHeader* headerV = (OrionldHeader*) kaAlloc(&orionldState.kalloc, sizeof(OrionldHeader) * (setP->size + 3));
 
     if (headerV == NULL)
-      LM_RE(-1, ("Error allocating %d OrionldHeader items of %d bytes each", setP->size + 3, sizeof(OrionldHeader)));
+      KT_RE(-1, "Error allocating %d OrionldHeader items of %d bytes each", setP->size + 3, sizeof(OrionldHeader));
 
     // Copy old content to new array
     memcpy(headerV, setP->headerV, sizeof(OrionldHeader) * setP->size);
@@ -150,7 +149,7 @@ int orionldHeaderAdd(OrionldHeaderSet* setP, OrionldHeaderType type, const char*
     headerP->sValue = kaAlloc(&orionldState.kalloc, 30);
 
     if (headerP->sValue == NULL)
-      LM_RE(-1, ("Error allocating 30 bytes for a string buffer of an integer HTTP Header value"));
+      KT_RE(-1, "Error allocating 30 bytes for a string buffer of an integer HTTP Header value");
     snprintf(headerP->sValue, 30, "%d", headerP->iValue);
   }
   else

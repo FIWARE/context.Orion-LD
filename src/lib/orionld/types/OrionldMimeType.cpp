@@ -24,8 +24,6 @@
 */
 #include <string.h>                                              // strstr, strncmp, strcmp
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/stringStrip.h"                          // stringStrip
 #include "orionld/types/OrionldMimeType.h"                       // Own interface

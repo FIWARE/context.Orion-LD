@@ -27,8 +27,6 @@ extern "C"
 #include "kbase/kMacros.h"                                     // K_VEC_SIZE
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/types/OrionldResponseErrorType.h"            // Own interface
 

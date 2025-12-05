@@ -24,7 +24,10 @@
 */
 #include <string.h>                                                     // strcmp
 
-#include "logMsg/logMsg.h"                                              // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                              // KT_*
+}
 
 #include "orionld/common/orionldState.h"                                // entityMaps
 #include "orionld/types/EntityMap.h"                                    // EntityMap
@@ -51,7 +54,7 @@ EntityMap* entityMapRemove(const char* mapId)
   }
 
   if (emP == NULL)
-    LM_RE(NULL, ("Internal Error (can't remove the entity map '%s' - not found", mapId));
+    KT_RE(NULL, "Internal Error (can't remove the entity map '%s' - not found", mapId);
 
   // First?
   if (emP == entityMaps)

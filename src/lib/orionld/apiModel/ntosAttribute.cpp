@@ -24,12 +24,11 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjChildRemove
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/apiModel/ntosAttribute.h"                      // Own interface
 
@@ -66,7 +65,7 @@ void ntosAttribute(KjNode* attrP)
     }
   }
   else
-    LM_E(("No attribute value (object/languageMap/json/vocab) found - this should never happen!!!"));
+    KT_E("No attribute value (object/languageMap/json/vocab) found - this should never happen!!!");
 
   // Remove sysAttrs of the Attribute
   const char* attrNames[2] = { "createdAt", "modifiedAt" };

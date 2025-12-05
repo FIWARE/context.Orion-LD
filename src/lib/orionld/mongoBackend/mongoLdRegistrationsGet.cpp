@@ -25,10 +25,10 @@
 #include <string>                                                // std::string
 #include <vector>                                                // std::vector
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
-
-#include "orionld/types/OrionldTenant.h"                         // OrionldTenant
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+}
 
 #include "common/statistics.h"                                   // TIME_STAT_MONGO_READ_WAIT_START, ...
 #include "rest/OrionError.h"                                     // OrionError
@@ -38,6 +38,7 @@
 #include "mongoBackend/connectionOperations.h"                   // collectionRangedQuery
 #include "mongoBackend/mongoRegistrationAux.h"                   // mongoSetXxx
 
+#include "orionld/types/OrionldTenant.h"                         // OrionldTenant
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/context/orionldContextItemExpand.h"            // orionldContextItemExpand
@@ -211,7 +212,7 @@ bool mongoLdRegistrationsGet
 
     if (!nextSafeOrErrorF(cursor, &bob, &err))
     {
-      LM_E(("Runtime Error (exception in nextSafe(): %s - query: %s)", err.c_str(), query.toString().c_str()));
+      KT_E("Runtime Error (exception in nextSafe(): %s - query: %s)", err.c_str(), query.toString().c_str());
       continue;
     }
     docs++;
@@ -228,7 +229,7 @@ bool mongoLdRegistrationsGet
     if (mongoSetDataProvided(&reg, &bob, false) == false)
     {
       releaseMongoConnection(connection);
-      LM_W(("Bad Input (getting registrations with more than one CR is not yet implemented, see issue 3044)"));
+      KT_W("Bad Input (getting registrations with more than one CR is not yet implemented, see issue 3044)");
       reqSemGive(__FUNCTION__, "Mongo Get Registration", reqSemTaken);
       oeP->code = SccReceiverInternalError;
       return false;
@@ -244,7 +245,7 @@ bool mongoLdRegistrationsGet
 
     if (mongoSetLdTimeInterval(&reg.location, "location", bob, &title, &detail) == false)
     {
-      LM_E(("Internal Error (mongoSetLdTimeInterval: %s: %s)", title, detail));
+      KT_E("Internal Error (mongoSetLdTimeInterval: %s: %s)", title, detail);
       releaseMongoConnection(connection);
       reqSemGive(__FUNCTION__, "Mongo Get Registration", reqSemTaken);
       orionldState.httpStatusCode = 500;
@@ -253,7 +254,7 @@ bool mongoLdRegistrationsGet
 
     if (mongoSetLdTimeInterval(&reg.observationSpace, "observationSpace", bob, &title, &detail) == false)
     {
-      LM_E(("Internal Error (mongoSetLdTimeInterval: %s: %s)", title, detail));
+      KT_E("Internal Error (mongoSetLdTimeInterval: %s: %s)", title, detail);
       releaseMongoConnection(connection);
       reqSemGive(__FUNCTION__, "Mongo Get Registration", reqSemTaken);
       orionldState.httpStatusCode = 500;
@@ -262,7 +263,7 @@ bool mongoLdRegistrationsGet
 
     if (mongoSetLdTimeInterval(&reg.operationSpace, "operationSpace", bob, &title, &detail) == false)
     {
-      LM_E(("Internal Error (mongoSetLdTimeInterval: %s: %s)", title, detail));
+      KT_E("Internal Error (mongoSetLdTimeInterval: %s: %s)", title, detail);
       releaseMongoConnection(connection);
       reqSemGive(__FUNCTION__, "Mongo Get Registration", reqSemTaken);
       orionldState.httpStatusCode = 500;
@@ -271,7 +272,7 @@ bool mongoLdRegistrationsGet
 
     if (mongoSetLdProperties(&reg, "properties", bob, &title, &detail) == false)
     {
-      LM_E(("Internal Error (mongoSetLdProperties: %s: %s)", title, detail));
+      KT_E("Internal Error (mongoSetLdProperties: %s: %s)", title, detail);
       releaseMongoConnection(connection);
       reqSemGive(__FUNCTION__, "Mongo Get Registration", reqSemTaken);
       orionldState.httpStatusCode = 500;

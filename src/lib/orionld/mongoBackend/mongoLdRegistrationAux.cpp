@@ -29,11 +29,9 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                           // KT_*
 #include "kjson/KjNode.h"                                            // KjNode
 }
-
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
 
 #include "apiTypesV2/Registration.h"                                 // ngsiv2::Registration
 #include "mongoBackend/dbConstants.h"                                // REG_ATTRS, ...
@@ -222,7 +220,7 @@ bool mongoSetLdTimeInterval(OrionldGeoLocation* geoLocationP, const char* name, 
 
     if (geoLocationP->coordsNodeP == NULL)
     {
-      LM_E(("Internal Error (%s: %s)", *titleP, *detailP));
+      KT_E("Internal Error (%s: %s)", *titleP, *detailP);
       return false;
     }
   }
@@ -247,7 +245,7 @@ bool mongoSetLdProperties(ngsiv2::Registration* regP, const char* name, const mo
 
     if (regP->properties == NULL)
     {
-      LM_E(("Internal Error (%s: %s)", *titleP, *detailP));
+      KT_E("Internal Error (%s: %s)", *titleP, *detailP);
       return false;
     }
   }

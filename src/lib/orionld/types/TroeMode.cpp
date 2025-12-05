@@ -22,9 +22,12 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                     // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+}
 
-#include "orionld/types/TroeMode.h"                            // Own interface
+#include "orionld/types/TroeMode.h"                              // Own interface
 
 
 
@@ -46,6 +49,6 @@ const char* troeMode(TroeMode opMode)
   case TROE_ATTRIBUTE_DELETE:   return "Delete";
   }
 
-  LM_E(("Invalid TRoE Mode: %d", opMode));
+  KT_E("Invalid TRoE Mode: %d", opMode);
   return "INVALID";
 }

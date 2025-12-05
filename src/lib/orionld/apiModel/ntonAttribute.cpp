@@ -30,8 +30,6 @@ extern "C"
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/kjTree/kjSysAttrsRemove.h"                     // kjSysAttrsRemove
 #include "orionld/apiModel/langFixNormalized.h"                  // langFixNormalized
 #include "orionld/apiModel/ntonSubAttribute.h"                   // ntonSubAttribute
@@ -85,7 +83,6 @@ void ntonAttribute(KjNode* attrP, const char* lang, bool sysAttrs)
     if (strcmp(fieldP->name, "objectType")  == 0)  continue;
     if (strcmp(fieldP->name, "valueType")   == 0)  continue;
 
-    LM_T(LmtFormat, ("Calling ntonSubAttribute for '%s'", fieldP->name));
     ntonSubAttribute(fieldP, lang, sysAttrs);
   }
 }

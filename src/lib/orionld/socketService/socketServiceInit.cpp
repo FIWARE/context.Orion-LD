@@ -22,13 +22,19 @@
 *
 * Author: Ken Zangelin
 */
-#include <sys/socket.h>                                      // socket, setsockopt, bind, listen
-#include <netinet/in.h>                                      // sockaddr_in
+#include <string.h>                                              // strerror
+#include <strings.h>                                             // bzero
+#include <errno.h>                                               // errno
+#include <sys/socket.h>                                          // socket, setsockopt, bind, listen
+#include <netinet/in.h>                                          // sockaddr_in
 
-#include "logMsg/logMsg.h"                                   // LM_*
-#include "logMsg/traceLevels.h"                              // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+}
 
-#include "orionld/socketService/socketServiceInit.h"         // Own interface
+#include "orionld/common/traceLevels.h"                          // KTrace levels
+#include "orionld/socketService/socketServiceInit.h"             // Own interface
 
 
 
@@ -44,11 +50,11 @@ int socketServiceInit(unsigned short port)
   listenFd = socket(AF_INET,  SOCK_STREAM, 0);
 
   if (listenFd == -1)
-    LM_RP(-1, ("error opening listen socket for socket service"));
+    KT_RE(-1, "error opening listen socket for socket service: %s", strerror(errno));
 
   int optval = 1;
   if (setsockopt(listenFd, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval)) == -1)
-    LM_RP(-1, ("error setting options for socket service"));
+    KT_RE(-1, "error setting options for socket service: %s", strerror(errno));
 
   sai.sin_family      = AF_INET;
   sai.sin_port        = htons(port);
@@ -56,11 +62,11 @@ int socketServiceInit(unsigned short port)
   bzero(&sai.sin_zero, 8);
 
   if (bind(listenFd, (struct sockaddr*) &sai, sizeof(struct sockaddr)) == -1)
-    LM_RP(-1, ("error binding socket for socket service"));
+    KT_RE(-1, "error binding socket for socket service: %s", strerror(errno));
 
   if (listen(listenFd, 10) == -1)
-    LM_RP(-1, ("error listening to socket for socket service"));
+    KT_RE(-1, "error listening to socket for socket service: %s", strerror(errno));
 
-  LM_T(LmtSocketService, ("Socket Service listens on fd %d", listenFd));
+  KT_T(KtSocketService, "Socket Service listens on fd %d", listenFd);
   return listenFd;
 }

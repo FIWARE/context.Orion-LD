@@ -26,16 +26,15 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjParse.h"                                     // kjParse
 #include "kjson/kjRender.h"                                    // kjFastRender
 #include "kjson/kjRenderSize.h"                                // kjFastRenderSize
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
-
 #include "orionld/common/orionldState.h"                       // orionldState
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/types/OrionldProblemDetails.h"               // OrionldProblemDetails
 #include "orionld/types/OrionldResponseBuffer.h"               // OrionldResponseBuffer
 #include "orionld/http/httpRequest.h"                          // HttpKeyValue, Own interface
@@ -60,7 +59,7 @@ static size_t writeCallback(void* contents, size_t size, size_t members, void* u
   OrionldResponseBuffer*  rBufP        = (OrionldResponseBuffer*) userP;
   int                     xtraBytes    = 512;
 
-  LM_T(LmtCurl, ("CURL: got %d bytes of payload body: %s", bytesToCopy, contents));
+  KT_T(KtCurl, "CURL: got %d bytes of payload body: %s", bytesToCopy, contents);
 
   if (bytesToCopy + rBufP->used >= rBufP->size)
   {
@@ -69,7 +68,7 @@ static size_t writeCallback(void* contents, size_t size, size_t members, void* u
       rBufP->buf  = (char*) malloc(rBufP->size + bytesToCopy + xtraBytes);
 
       if (rBufP->buf == NULL)
-        LM_X(1, ("Runtime Error (out of memory)"));
+        KT_X(1, "Runtime Error (out of memory)");
 
       rBufP->size = rBufP->size + bytesToCopy + xtraBytes;
 
@@ -85,7 +84,7 @@ static size_t writeCallback(void* contents, size_t size, size_t members, void* u
     }
 
     if (rBufP->buf == NULL)
-      LM_X(1, ("Runtime Error (out of memory)"));
+      KT_X(1, "Runtime Error (out of memory)");
 
     //
     // Save pointer to allocated buffer for later call to free()
@@ -125,7 +124,7 @@ static size_t responseHeaderRead(char* buffer, size_t size, size_t nitems, void*
     }
   }
 
-  LM_T(LmtDistOpResponseHeaders, ("Response Header: %s", buffer));
+  KT_T(KtDistOpResponseHeaders, "Response Header: %s", buffer);
   return nitems;
 }
 
@@ -165,14 +164,6 @@ int httpRequest
   int                  httpStatus = 500;
   char*                url       = (char*) urlIn;
 
-  // FIXME: Use:
-  //   LmtDistOpRequest            (verb, path, and body of a distributed request)
-  //   LmtDistOpRequestHeaders     (HTTP headers of distributed requests)
-  //   LmtDistOpRequestParams      (URL parameters of distributed requests)
-  //   LmtDistOpResponse           (body and status code of the response to a distributed request)
-  //   LmtDistOpResponseHeaders    (HTTP headers of responses to distributed requests)
-  //
-
   *responseTree = NULL;
   if (uriParams != NULL)
   {
@@ -180,7 +171,7 @@ int httpRequest
 
     for (int ix = 0; uriParams[ix].key != NULL; ix++)
     {
-      LM_T(LmtDistOpRequestParams, ("URI param: %s=%s", uriParams[ix].key, uriParams[ix].value));
+      KT_T(KtDistOpRequestParams, "URI param: %s=%s", uriParams[ix].key, uriParams[ix].value);
       len += strlen(uriParams[ix].key) + 2 + strlen(uriParams[ix].value);  // 2: =&
     }
 
@@ -191,7 +182,7 @@ int httpRequest
     {
       pdP->title  = (char*) "Out of memory";
       pdP->detail = (char*) "trying to allocate memory for full URL (including URL Params)";
-      LM_RE(-1, ("%s: %s - total length: %d", pdP->title, pdP->detail, len));
+      KT_RE(-1, "%s: %s - total length: %d", pdP->title, pdP->detail, len);
     }
 
     snprintf(url, len, "%s?", urlIn);
@@ -217,7 +208,7 @@ int httpRequest
     pdP->detail  = (char*) "FIXME: get the curl error string";
     pdP->status  = 500;
 
-    LM_RE(-1, ("Internal Error (Unable to obtain CURL context)"));
+    KT_RE(-1, "Internal Error (Unable to obtain CURL context)");
   }
 
   //
@@ -253,7 +244,7 @@ int httpRequest
     char*         serializedBody = kaAlloc(&orionldState.kalloc, bodySize);
 
     kjFastRender(body, serializedBody);
-    LM_T(LmtDistOpRequest, ("Body for HTTP request: '%s'", serializedBody));
+    KT_T(KtDistOpRequest, "Body for HTTP request: '%s'", serializedBody);
     curl_easy_setopt(cc.curl, CURLOPT_POSTFIELDS, (u_int8_t*) serializedBody);
 
     int  contentLen = strlen(serializedBody);
@@ -261,7 +252,7 @@ int httpRequest
 
     snprintf(ibuf, sizeof(ibuf), "Content-Length:%d", contentLen);
     curlHeaders = curl_slist_append(curlHeaders, ibuf);
-    LM_T(LmtDistOpRequestHeaders, ("Content-Length HTTP Header: %s", ibuf));
+    KT_T(KtDistOpRequestHeaders, "Content-Length HTTP Header: %s", ibuf);
   }
 
   if (headers != NULL)
@@ -270,7 +261,7 @@ int httpRequest
     {
       char buf[256];
 
-      LM_T(LmtDistOpRequestHeaders, ("HTTP Header: %s: %s", headers[ix].key, headers[ix].value));
+      KT_T(KtDistOpRequestHeaders, "HTTP Header: %s: %s", headers[ix].key, headers[ix].value);
 
       snprintf(buf, sizeof(buf) - 1, "%s:%s", headers[ix].key, headers[ix].value);
       curlHeaders = curl_slist_append(curlHeaders, buf);
@@ -279,7 +270,7 @@ int httpRequest
     curl_easy_setopt(cc.curl, CURLOPT_HTTPHEADER, curlHeaders);
   }
 
-  LM_T(LmtDistOpRequest, ("Sending HTTP request: %s %s", verb, url));
+  KT_T(KtDistOpRequest, "Sending HTTP request: %s %s", verb, url);
   cCode = curl_easy_perform(cc.curl);
   httpStatus = responseCode;
 
@@ -296,7 +287,7 @@ int httpRequest
     pdP->detail  = (char*) url;
     pdP->title   = (char*) "Internal CURL Error";
 
-    LM_RE(-1, ("Internal Error (curl_easy_perform returned error code %d)", cCode));
+    KT_RE(-1, "Internal Error (curl_easy_perform returned error code %d)", cCode);
   }
 
   // The downloaded buffer is in rBuf.buf - let's parse it into a KjNode tree!

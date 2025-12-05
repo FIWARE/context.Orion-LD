@@ -56,6 +56,7 @@ typedef enum OrionldTraceLevels
 
   // Mongoc driver
   StMongoc                  = 500,
+  KtMongoc                  = 500,
 
   // Mongo C++ Legacy driver
   StMongo                   = 600,
@@ -85,16 +86,26 @@ typedef enum OrionldTraceLevels
   // Distributed Operations
   KtDistOp                  = 1200,
   KtDistOpRequest           = 1201,
-  KtDistOpList              = 1202,
+  KtDistOpResponse          = 1202,
   KtDistOpResponseDetail    = 1203,
-  KtDistOpAttributes        = 1204,
-  KtDistOpAttrRemove        = 1205,
+  KtDistOpList              = 1204,
+  KtDistOpAttributes        = 1205,
+  KtDistOpAttrRemove        = 1206,
+  KtDistOpRequestHeaders    = 1207,
+  KtDistOpResponseHeaders   = 1208,
+  KtDistOpRequestParams     = 1209,
 
   // Entity Maps
   KtEntityMap               = 1300,
 
   // TRoE
   KtTroe                    = 1400,
+
+  // Config File
+  KtConfig                  = 1500,
+
+  // Socket Service
+  KtSocketService           = 1600,
 
   // DDS
   StDds                     = 2001,
@@ -112,9 +123,12 @@ typedef enum OrionldTraceLevels
   StDdsServicePrepopulate   = 2022,
   StDdsAction               = 2030,
 
+  // 3rd Party
+  KtCurl                    = 3001,
+
   // FT Client
-  StDump                    = 3001,
-  StDdsDump                 = 3002
+  StDump                    = 4001,
+  StDdsDump                 = 4002
 } OrionldTraceLevels;
 
 #endif  // SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_

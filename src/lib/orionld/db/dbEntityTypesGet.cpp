@@ -27,6 +27,7 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                         // KT_*
 #include "kjson/KjNode.h"                                          // KjNode
 #include "kjson/kjBuilder.h"                                       // kjArray, kjObject, kjChildRemove
 #include "kjson/kjLookup.h"                                        // kjLookup
@@ -34,8 +35,6 @@ extern "C"
 #include "kjson/kjStringValueLookupInArray.h"                      // kjStringValueLookupInArray
 #include "kjson/kjStringArraySortedInsert.h"                       // kjStringArraySortedInsert
 }
-
-#include "logMsg/logMsg.h"                                         // LM_*
 
 #include "orionld/common/orionldState.h"                           // orionldState
 #include "orionld/common/uuidGenerate.h"                           // uuidGenerate
@@ -143,7 +142,7 @@ static KjNode* typesAndAttributesExtractFromRegistrations(KjNode* array)
 
     if (typeP == NULL)
     {
-      LM_E(("Internal Error (no 'type' item in registration)"));
+      KT_E("Internal Error (no 'type' item in registration)");
       return NULL;
     }
 
@@ -258,7 +257,7 @@ bool detailTypeMerge(KjNode* fromP, KjNode* toP)
   KjNode* toAttributes   = kjLookup(toP,   "attributeNames");
 
   if ((fromAttributes == NULL) || (toAttributes == NULL))
-    LM_RE(false, ("Internal Error ('attributeNames' missing in a entity-type object)"));
+    KT_RE(false, "Internal Error ('attributeNames' missing in a entity-type object)");
 
   KjNode* fromAttrP = fromAttributes->value.firstChildP;
   KjNode* next;
@@ -415,14 +414,14 @@ KjNode* dbEntityTypesGet(OrionldProblemDetails* pdP, bool details, bool localOnl
         KjNode* idP = kjLookup(typeP, "id");
 
         if (idP == NULL)
-          LM_RE(NULL, ("Internal Error (no 'id' in type object)"));
+          KT_RE(NULL, "Internal Error (no 'id' in type object)");
 
         for (KjNode* nodeP = typeP->next; nodeP != NULL; nodeP = nodeP->next)
         {
           KjNode* nodeIdP = kjLookup(nodeP, "id");
 
           if (nodeIdP == NULL)
-            LM_RE(NULL, ("Internal Error (no 'id' in type object)"));
+            KT_RE(NULL, "Internal Error (no 'id' in type object)");
 
           if (strcmp(idP->value.s, nodeIdP->value.s) == 0)
           {
@@ -472,14 +471,14 @@ KjNode* dbEntityTypesGet(OrionldProblemDetails* pdP, bool details, bool localOnl
         KjNode* idP = kjLookup(typeP, "id");
 
         if (idP == NULL)
-          LM_RE(NULL, ("Internal Error (no 'id' in type object)"));
+          KT_RE(NULL, "Internal Error (no 'id' in type object)");
 
         for (KjNode* nodeP = typeP->next; nodeP != NULL; nodeP = nodeP->next)
         {
           KjNode* nodeIdP = kjLookup(nodeP, "id");
 
           if (nodeIdP == NULL)
-            LM_RE(NULL, ("Internal Error (no 'id' in type object)"));
+            KT_RE(NULL, "Internal Error (no 'id' in type object)");
 
           if (strcmp(idP->value.s, nodeIdP->value.s) == 0)
           {
@@ -585,7 +584,7 @@ KjNode* dbEntityTypesGet(OrionldProblemDetails* pdP, bool details, bool localOnl
 
     if (type == NULL)
     {
-      LM_E(("Internal Error (no 'id' found in remote type object)"));
+      KT_E("Internal Error (no 'id' found in remote type object)");
       remoteObjP = next;
       continue;
     }

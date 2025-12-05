@@ -24,11 +24,10 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/types/OrionldTenant.h"                         // OrionldTenant
 #include "orionld/types/SubCache.h"                              // SubCache
@@ -50,7 +49,7 @@ int subIterFunc(SubCache* scP, KjNode* dbSubP)
 {
   // Convert DB Sub to API Sub
   if (dbModelToApiSubscription(dbSubP, true, true) == false)
-    LM_RE(-1, ("dbModelToApiSubscription failed"));
+    KT_RE(-1, "dbModelToApiSubscription failed");
 
   // The DB Subscription 'dbSubP' is now in API Subscription format (after calling dbModelToApiSubscription)
   KjNode* apiSubP = dbSubP;
@@ -64,7 +63,7 @@ int subIterFunc(SubCache* scP, KjNode* dbSubP)
 
     if (jsonldContextP == NULL)
     {
-      LM_W(("Unable to resolve a Subscription @context for a sub-cache item"));
+      KT_W("Unable to resolve a Subscription @context for a sub-cache item");
       return 0;
     }
   }
@@ -93,7 +92,7 @@ SubCache* subCacheCreate(OrionldTenant* tenantP, bool scanSubs)
   SubCache* scP = (SubCache*) malloc(sizeof(SubCache));
 
   if (scP == NULL)
-    LM_RE(NULL, ("Out of memory (attempt to create a subscription cache)"));
+    KT_RE(NULL, "Out of memory (attempt to create a subscription cache)");
 
   scP->tenantP  = tenantP;
   scP->subList  = NULL;
@@ -102,7 +101,7 @@ SubCache* subCacheCreate(OrionldTenant* tenantP, bool scanSubs)
   if (scanSubs)
   {
     if (mongocSubscriptionsIter(scP, subIterFunc) != 0)
-      LM_E(("mongocSubscriptionsIter failed"));
+      KT_E("mongocSubscriptionsIter failed");
   }
 
   return scP;

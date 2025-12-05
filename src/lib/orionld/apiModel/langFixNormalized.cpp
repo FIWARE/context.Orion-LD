@@ -29,8 +29,6 @@ extern "C"
 #include "kjson/kjBuilder.h"                                     // kjChildRemove, kjChildAdd, kjString
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/apiModel/langFixNormalized.h"                  // Own interface
 
