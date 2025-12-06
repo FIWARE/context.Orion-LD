@@ -24,12 +24,11 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
-
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
 #include "orionld/context/orionldAttributeExpand.h"              // orionldAttributeExpand
 #include "orionld/common/orionldState.h"                         // orionldState
@@ -73,7 +72,7 @@ bool qAliasCompact(KjNode* qP, bool compact)
 
     if ((c0 == '(') || (c0 == ')'))
     {
-      LM_T(LmtQ, ("Found a parenthesis - skipping it"));
+      KT_T(LmtQ, "Found a parenthesis - skipping it");
       ++cP;
       varStart = cP;
       out[outIx] = c0;
@@ -114,7 +113,7 @@ bool qAliasCompact(KjNode* qP, bool compact)
           ++eqP;
         }
 
-        LM_T(LmtQ, ("Compacting '%s'", varStart));
+        KT_T(KtQ, "Compacting '%s'", varStart);
         alias = orionldContextItemAliasLookup(orionldState.contextP, varStart, NULL, NULL);
       }
       else

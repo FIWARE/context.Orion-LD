@@ -26,14 +26,14 @@
 
 extern "C"
 {
-#include "kjson/KjNode.h"                                        // KjNode
-#include "kjson/kjRender.h"                                      // kjRender, kjFastRender
-#include "kjson/kjRenderSize.h"                                  // kjRenderSize, kjFastRenderSize
+#include "ktrace/kTrace.h"                                     // KT_*
+#include "kjson/KjNode.h"                                      // KjNode
+#include "kjson/kjRender.h"                                    // kjRender, kjFastRender
+#include "kjson/kjRenderSize.h"                                // kjRenderSize, kjFastRenderSize
 }
 
-#include "logMsg/logMsg.h"
-
 #include "orionld/common/orionldState.h"                       // orionldState
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/common/performance.h"                        // PERFORMANCE
 #include "orionld/mhd/mhdReply.h"                              // Own interface
 
@@ -59,7 +59,7 @@ void mhdReply(KjNode* body)
       orionldState.responsePayload = (char*) malloc(responsePayloadSize);
 
       if (orionldState.responsePayload == NULL)
-        LM_X(1, ("Out of memory"));
+        KT_X(1, "Out of memory");
 
       orionldStateDelayedFreeEnqueue(orionldState.responsePayload);
     }
@@ -74,8 +74,8 @@ void mhdReply(KjNode* body)
 
   PERFORMANCE(mhdReplyStart);
 
-  LM_T(LmtResponse, ("Response Body: '%s'", (body != NULL)? orionldState.responsePayload : "None"));
-  LM_T(LmtResponse, ("Response Code:  %d", orionldState.httpStatusCode));
+  KT_T(LmtResponse, "Response Body: '%s'", (body != NULL)? orionldState.responsePayload : "None");
+  KT_T(LmtResponse, "Response Code:  %d", orionldState.httpStatusCode);
 
   //
   // Enqueue response
@@ -85,7 +85,7 @@ void mhdReply(KjNode* body)
 
   if (!response)
   {
-    LM_E(("Runtime Error (MHD_create_response_from_buffer FAILED)"));
+    KT_E("Runtime Error (MHD_create_response_from_buffer FAILED)");
     if (orionldState.responsePayloadAllocated == true)
     {
       free(orionldState.responsePayload);

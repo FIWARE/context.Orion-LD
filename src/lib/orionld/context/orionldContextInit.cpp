@@ -22,8 +22,10 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "orionld/types/OrionldContextItem.h"                    // OrionldContextItem
 #include "orionld/types/OrionldProblemDetails.h"                 // OrionldProblemDetails, orionldProblemDetailsFill
@@ -49,7 +51,7 @@ bool orionldContextInit(OrionldProblemDetails* pdP)
 
   OrionldContextItem* vocabP = orionldContextItemLookup(orionldCoreContextP, "@vocab", NULL);
   if (vocabP == NULL)
-    LM_X(1, ("Invalid Core Context - the term '@vocab' is missing"));
+    KT_X(1, "Invalid Core Context - the term '@vocab' is missing");
 
   orionldDefaultUrl    = vocabP->id;
   orionldDefaultUrlLen = strlen(orionldDefaultUrl);

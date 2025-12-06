@@ -27,7 +27,6 @@ extern "C"
 #include "kalloc/kaAlloc.h"                                      // kaAlloc
 }
 
-#include "logMsg/logMsg.h"                                       // LM*
 #include "orionld/common/uuidGenerate.h"                         // uuidGenerate
 #include "orionld/common/orionldState.h"                         // orionldHostName, orionldHostNameLen
 #include "orionld/context/orionldContextUrlGenerate.h"           // Own interface

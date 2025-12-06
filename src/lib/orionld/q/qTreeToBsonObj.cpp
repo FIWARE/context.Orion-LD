@@ -26,9 +26,6 @@
 
 #include "mongo/client/dbclient.h"                             // mongo::BSONObj
 
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
-
 #include "orionld/types/QNode.h"                               // QNode
 #include "orionld/q/qTreeToBsonObj.h"                          // Own interface
 

@@ -24,9 +24,6 @@
 */
 #include <unistd.h>                                              // NULL
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
-
 #include "orionld/types/OrionldContext.h"                        // OrionldContext
 #include "orionld/types/OrionldContextItem.h"                    // OrionldContextItem
 

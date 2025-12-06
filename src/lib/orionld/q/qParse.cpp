@@ -25,13 +25,13 @@
 extern "C"
 {
 #include "kbase/kMacros.h"                                     // K_FT
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kalloc/kaStrdup.h"                                   // kaStrdup
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
 #include "orionld/types/QNode.h"                               // QNode
 #include "orionld/common/orionldState.h"                       // orionldState
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/context/orionldAttributeExpand.h"            // orionldAttributeExpand
 #include "orionld/context/orionldSubAttributeExpand.h"         // orionldSubAttributeExpand
 #include "orionld/context/orionldContextItemExpand.h"          // orionldContextItemExpand
@@ -165,7 +165,7 @@ QNode* qParse(QNode* qLexList, QNode* endNodeP, bool forDb, bool qToDbModel, cha
       {
         if (compOpP == NULL)
         {
-          LM_T(LmtQ, ("Existence for '%s'", qLexP->value.v));
+          KT_T(KtQ, "Existence for '%s'", qLexP->value.v);
           if ((strcmp(qLexP->value.v, "creDate") == 0) || (strcmp(qLexP->value.v, "modDate") == 0))
           {
             *titleP   = (char*) "Invalid Q-Filter (Cannot use Existence on system attributes)";
@@ -173,7 +173,7 @@ QNode* qParse(QNode* qLexList, QNode* endNodeP, bool forDb, bool qToDbModel, cha
             return NULL;
           }
 
-          LM_T(LmtQ, ("Existence of '%s'", qLexP->value.v));
+          KT_T(KtQ, "Existence of '%s'", qLexP->value.v);
           compOpP = qNode(QNodeExists);
         }
 

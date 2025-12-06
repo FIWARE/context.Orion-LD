@@ -24,11 +24,11 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 
 
 
@@ -39,10 +39,10 @@ extern "C"
 void orionldContextTreePresent(const char* prefix, KjNode* contextNodeP)
 {
   if (contextNodeP->type == KjString)
-    LM_T(LmtContextTree, ("%s: the context is a String: %s", prefix, contextNodeP->value.s));
+    KT_T(KtContextTree, "%s: the context is a String: %s", prefix, contextNodeP->value.s);
   else if (contextNodeP->type == KjArray)
   {
-    LM_T(LmtContextTree, ("%s: the context is an Array:", prefix));
+    KT_T(KtContextTree, "%s: the context is an Array:", prefix);
     for (KjNode* aItemP = contextNodeP->value.firstChildP; aItemP != NULL; aItemP = aItemP->next)
       orionldContextTreePresent(prefix, aItemP);
   }
@@ -50,21 +50,21 @@ void orionldContextTreePresent(const char* prefix, KjNode* contextNodeP)
   {
     int items = 0;
 
-    LM_T(LmtContextTree, ("%s: the context is an Object:", prefix));
+    KT_T(KtContextTree, "%s: the context is an Object:", prefix);
     for (KjNode* itemP = contextNodeP->value.firstChildP; itemP != NULL; itemP = itemP->next)
     {
       if (itemP->type == KjString)
-        LM_T(LmtContextTree, ("%s: %s -> %s", prefix, itemP->name, itemP->value));
+        KT_T(KtContextTree, "%s: %s -> %s", prefix, itemP->name, itemP->value);
       else
-        LM_T(LmtContextTree, ("%s: %s (%s)", prefix, itemP->name, kjValueType(itemP->type)));
+        KT_T(KtContextTree, "%s: %s (%s)", prefix, itemP->name, kjValueType(itemP->type));
       ++items;
       if (items > 3)
         break;
     }
   }
   else
-    LM_T(LmtContextTree, ("%s: Invalid type for context: %s", prefix, kjValueType(contextNodeP->type)));
+    KT_T(KtContextTree, "%s: Invalid type for context: %s", prefix, kjValueType(contextNodeP->type));
 
-  LM_T(LmtContextTree, ("%s", prefix));
+  KT_T(KtContextTree, "%s", prefix);
 }
 

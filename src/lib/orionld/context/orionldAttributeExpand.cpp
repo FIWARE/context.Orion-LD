@@ -24,8 +24,12 @@
 */
 #include <string.h>                                              // strcmp
 
-#include "logMsg/logMsg.h"                                       // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+}
 
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/context/orionldContextItemAlreadyExpanded.h"   // orionldContextItemAlreadyExpanded
 #include "orionld/context/orionldContextItemExpand.h"            // orionldContextItemExpand
 #include "orionld/context/orionldAttributeExpand.h"              // Own interface
@@ -80,7 +84,7 @@ char* orionldAttributeExpand
 
   if (orionldContextItemAlreadyExpanded(sName) == true)
   {
-    LM_T(LmtExpand, ("Already Expanded: '%s'", sName));
+    KT_T(KtExpand, "Already Expanded: '%s'", sName);
     return sName;
   }
 

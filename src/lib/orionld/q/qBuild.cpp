@@ -25,11 +25,15 @@
 #include <string.h>                                            // strlen, strncpy, strdup
 #include <stdlib.h>                                            // free
 
-#include "logMsg/logMsg.h"                                     // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "orionld/types/QNode.h"                               // QNode
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/common/orionldError.h"                       // orionldError
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/common/urlDecode.h"                          // urlDecode
 #include "orionld/q/qLex.h"                                    // qLex
 #include "orionld/q/qParse.h"                                  // qParse
@@ -89,7 +93,7 @@ QNode* qBuild(const char* q, char** qRenderP, bool* v2ValidP, bool* isMqP, bool 
   if (qList == NULL)
   {
     orionldError(OrionldBadRequestData, "Invalid Q-Filter", detail, 400);
-    LM_RE(NULL, ("Error (qLex: %s: %s)", title, detail));
+    KT_RE(NULL, "Error (qLex: %s: %s)", title, detail);
   }
   else
   {
@@ -108,7 +112,7 @@ QNode* qBuild(const char* q, char** qRenderP, bool* v2ValidP, bool* isMqP, bool 
     if (qP == NULL)
     {
       orionldError(OrionldBadRequestData, "Invalid Q-Filter", detail, 400);
-      LM_RE(NULL, ("Error (qParse: %s: %s) - but, the subscription will be inserted in the sub-cache without 'q'", title, detail));
+      KT_RE(NULL, "Error (qParse: %s: %s) - but, the subscription will be inserted in the sub-cache without 'q'", title, detail);
     }
   }
 

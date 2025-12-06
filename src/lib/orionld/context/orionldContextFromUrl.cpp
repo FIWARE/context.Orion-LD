@@ -25,12 +25,15 @@
 #include <unistd.h>                                              // usleep
 #include <semaphore.h>                                           // sem_init, sem_wait, sem_post
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "orionld/types/OrionldContext.h"                        // OrionldContext
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/context/orionldContextFromBuffer.h"            // orionldContextFromBuffer
 #include "orionld/contextCache/orionldContextCacheLookup.h"      // orionldContextCacheLookup
 #include "orionld/context/orionldContextDownload.h"              // orionldContextDownload
@@ -74,20 +77,20 @@ bool contextDownloadListLookup(const char* url)
 {
   StringListItem* itemP = contextDownloadList;
 
-  LM_T(LmtContextDownload, ("Looking for context URL '%s'", url));
+  KT_T(LmtContextDownload, "Looking for context URL '%s'", url);
   while (itemP != NULL)
   {
-    LM_T(LmtContextDownload, ("Comparing existing '%s' to wanted '%s'", itemP->name, url));
+    KT_T(LmtContextDownload, "Comparing existing '%s' to wanted '%s'", itemP->name, url);
     if (strcmp(itemP->name, url) == 0)
     {
-      LM_T(LmtContextDownload, ("Found a match: '%s'", url));
+      KT_T(LmtContextDownload, "Found a match: '%s'", url);
       return true;
     }
 
     itemP = itemP->next;
   }
 
-  LM_T(LmtContextDownload, ("Found no match for '%s'", url));
+  KT_T(LmtContextDownload, "Found no match for '%s'", url);
   return false;
 }
 
@@ -99,15 +102,15 @@ bool contextDownloadListLookup(const char* url)
 //
 static void contextDownloadListDebug(const char* what)
 {
-  LM_T(LmtContextDownload, ("contextDownloadList (%s)", what));
-  LM_T(LmtContextDownload, ("----------------------------------------------------"));
+  KT_T(LmtContextDownload, "contextDownloadList (%s)", what);
+  KT_T(LmtContextDownload, "----------------------------------------------------");
 
   for (StringListItem* iterP = contextDownloadList; iterP != NULL; iterP = iterP->next)
   {
-    LM_T(LmtContextDownload, ("  o %s", iterP->name));
+    KT_T(LmtContextDownload, "  o %s", iterP->name);
   }
 
-  LM_T(LmtContextDownload, ("----------------------------------------------------"));
+  KT_T(LmtContextDownload, "----------------------------------------------------");
 }
 
 
@@ -120,7 +123,7 @@ void contextDownloadListAdd(const char* url)
 {
   StringListItem* itemP = (StringListItem*) malloc(sizeof(StringListItem));
 
-  LM_T(LmtContextDownload, ("Adding '%s' to contextDownloadList", url));
+  KT_T(LmtContextDownload, "Adding '%s' to contextDownloadList", url);
   strncpy(itemP->name, url, sizeof(itemP->name) - 1);
   itemP->next = contextDownloadList;
   contextDownloadList = itemP;
@@ -139,7 +142,7 @@ void contextDownloadListRemove(const char* url)
   StringListItem* prevP = NULL;
   StringListItem* itemP = NULL;
 
-  LM_T(LmtContextDownload, ("Removing '%s' from contextDownloadList", url));
+  KT_T(LmtContextDownload, "Removing '%s' from contextDownloadList", url);
 
   while (iterP != NULL)
   {
@@ -155,25 +158,25 @@ void contextDownloadListRemove(const char* url)
 
   if (itemP == NULL)  // Not found!
   {
-    LM_T(LmtContextDownload, ("Cannot find '%s' in contextDownloadList", url));
+    KT_T(LmtContextDownload, "Cannot find '%s' in contextDownloadList", url);
     return;
   }
 
   if (prevP == NULL)  // Found as the first item of the list
   {
-    LM_T(LmtContextDownload, ("Removing '%s' as first item in contextDownloadList", url));
+    KT_T(LmtContextDownload, "Removing '%s' as first item in contextDownloadList", url);
     contextDownloadList = itemP->next;
     free(itemP);
   }
   else if (itemP->next == NULL)  // Found as the last item of the list
   {
-    LM_T(LmtContextDownload, ("Removing '%s' as last item in contextDownloadList", url));
+    KT_T(LmtContextDownload, "Removing '%s' as last item in contextDownloadList", url);
     prevP->next = NULL;
     free(itemP);
   }
   else  // Found in the middle of the list
   {
-    LM_T(LmtContextDownload, ("Removing '%s' as middle item in contextDownloadList", url));
+    KT_T(LmtContextDownload, "Removing '%s' as middle item in contextDownloadList", url);
     prevP->next = itemP->next;
     free(itemP);
   }
@@ -215,22 +218,22 @@ static OrionldContext* contextCacheWait(char* url)
   int             sleepTime = 0;
   OrionldContext* contextP;
 
-  LM_T(LmtContextDownload, ("Awaiting a context download by other (URL: %s)", url));
+  KT_T(LmtContextDownload, "Awaiting a context download by other (URL: %s)", url);
 
   while (sleepTime < 3000000)  // 3 secs - 3 million microsecs ... CLI param?
   {
     usleep(20000);  // sleep 20 millisecs ... CLI param?
-    LM_T(LmtContextDownload, ("Awaiting context download: looking up context '%s'", url));
+    KT_T(LmtContextDownload, "Awaiting context download: looking up context '%s'", url);
     contextP = orionldContextCacheLookup(url);
     if (contextP != NULL)
     {
-      LM_T(LmtContextDownload, ("Got it! (%s)", url));
+      KT_T(LmtContextDownload, "Got it! (%s)", url);
       return contextP;
     }
-    LM_T(LmtContextDownload, ("Still not there (%s)", url));
+    KT_T(LmtContextDownload, "Still not there (%s)", url);
     sleepTime += 20000;
   }
-  LM_T(LmtContextDownload, ("Timeout during download of an @context (%s)", url));
+  KT_T(LmtContextDownload, "Timeout during download of an @context (%s)", url);
 
   // The wait timed out
   orionldError(OrionldInternalError, "Timeout during download of an @context", url, 504);
@@ -245,7 +248,7 @@ static OrionldContext* contextCacheWait(char* url)
 //
 OrionldContext* orionldContextFromUrl(char* url, char* id)
 {
-  LM_T(LmtContextDownload, ("Possibly downloading a context URL: '%s'", url));
+  KT_T(LmtContextDownload, "Possibly downloading a context URL: '%s'", url);
 
   OrionldContext* contextP = orionldContextCacheLookup(url);
 
@@ -254,9 +257,9 @@ OrionldContext* orionldContextFromUrl(char* url, char* id)
     contextP->usedAt   = orionldState.requestTime;
 
     contextP->lookups += 1;
-    LM_T(LmtContextCacheStats, ("Context '%s': %d lookups", url, contextP->lookups));
+    KT_T(LmtContextCacheStats, "Context '%s': %d lookups", url, contextP->lookups);
 
-    LM_T(LmtContextDownload, ("Found already downloaded URL '%s'", url));
+    KT_T(LmtContextDownload, "Found already downloaded URL '%s'", url);
     return contextP;
   }
 
@@ -283,9 +286,9 @@ OrionldContext* orionldContextFromUrl(char* url, char* id)
     // Not there, so, we'll download it
     // First take the 'download semaphore'
     //
-    LM_T(LmtContextDownload, ("The context '%s' is not downloading, getting the downloadList semaphore", url));
+    KT_T(LmtContextDownload, "The context '%s' is not downloading, getting the downloadList semaphore", url);
     sem_wait(&contextDownloadListSem);
-    LM_T(LmtContextDownload, ("Got the downloadList semaphore for '%s'", url));
+    KT_T(LmtContextDownload, "Got the downloadList semaphore for '%s'", url);
 
     //
     // OK - got the semaphore - but, did I have to wait?
@@ -294,20 +297,20 @@ OrionldContext* orionldContextFromUrl(char* url, char* id)
     // If the URL is in 'contextDownloadList' then somebody else took the semaphore before me
     // and started downloading.
     //
-    LM_T(LmtContextDownload, ("Looking up '%s' again, in case I got the semaphore late", url));
+    KT_T(LmtContextDownload, "Looking up '%s' again, in case I got the semaphore late", url);
     urlDownloading = contextDownloadListLookup(url);
     if (urlDownloading == false)
     {
-      LM_T(LmtContextDownload, ("The context '%s' is not downloading by other - will be downloaded here", url));
+      KT_T(LmtContextDownload, "The context '%s' is not downloading by other - will be downloaded here", url);
       contextDownloadListAdd(url);  // CASE 1: Mark the URL as being downloading
     }
 
-    LM_T(LmtContextDownload, ("Giving back the downloadList semaphore for '%s'", url));
+    KT_T(LmtContextDownload, "Giving back the downloadList semaphore for '%s'", url);
     sem_post(&contextDownloadListSem);
 
     if (urlDownloading == true)  // If somebody has taken the semaphore before me and is downloading the context - I'll have to wait
     {
-      LM_T(LmtContextDownload, ("The context '%s' is downloading by other - I wait until it's done", url));
+      KT_T(LmtContextDownload, "The context '%s' is downloading by other - I wait until it's done", url);
       return contextCacheWait(url);  // CASE 2 - another thread has downloaded the context
     }
 
@@ -315,26 +318,26 @@ OrionldContext* orionldContextFromUrl(char* url, char* id)
   }
   else
   {
-    LM_T(LmtContextDownload, ("The context '%s' is downloading by other - I wait until it's done", url));
+    KT_T(LmtContextDownload, "The context '%s' is downloading by other - I wait until it's done", url);
     return contextCacheWait(url);  // CASE 3 - another thread has downloaded the context
   }
 
-  LM_T(LmtContextDownload, ("Downloading the context '%s' and adding it to the context cache", url));
+  KT_T(LmtContextDownload, "Downloading the context '%s' and adding it to the context cache", url);
   char* buffer = orionldContextDownload(url);  // orionldContextDownload fills in ProblemDetails
 
   if (buffer != NULL)  // All OK
   {
-    LM_T(LmtCoreContext, ("Downloaded the context '%s'", url));
+    KT_T(LmtCoreContext, "Downloaded the context '%s'", url);
     contextP = orionldContextFromBuffer(url, OrionldContextDownloaded, id, buffer);
     if (contextP == NULL)
     {
-      LM_E(("Context Error (%s: %s)", orionldState.pd.title, orionldState.pd.detail));
+      KT_E("Context Error (%s: %s)", orionldState.pd.title, orionldState.pd.detail);
       if (orionldState.pd.status < 300)  // Error not filled in
         orionldError(OrionldLdContextNotAvailable, "Unable to download context", url, 503);
     }
   }
   else
-    LM_E(("Context Error (%s: %s)", orionldState.pd.title, orionldState.pd.detail));
+    KT_E("Context Error (%s: %s)", orionldState.pd.title, orionldState.pd.detail);
 
   if (contextP != NULL)
   {

@@ -26,12 +26,10 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjFree.h"                                        // kjFree
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
 
 #include "orionld/types/OrionldProblemDetails.h"                 // OrionldProblemDetails, orionldProblemDetailsFill
 #include "orionld/types/OrionldContextItem.h"                    // OrionldContextItem
@@ -113,29 +111,26 @@ OrionldContext* orionldContextFromObject
 
   contextP = orionldContextCreate(url, origin, id, contextObjectP, true);
   if (contextP == NULL)
-  {
-    LM_E(("orionldContextCreate failed"));
-    return NULL;
-  }
+    KT_RE(NULL, "orionldContextCreate failed");
 
   contextP->context.hash.nameHashTable  = khashTableCreate(&kalloc, hashCode, nameCompareFunction,  ORIONLD_CONTEXT_CACHE_HASH_ARRAY_SIZE);
   if (contextP->context.hash.nameHashTable == NULL)
   {
-    LM_E(("khashTableCreate failed"));
+    KT_E("khashTableCreate failed");
     ok = false;
   }
 
   contextP->context.hash.valueHashTable = khashTableCreate(&kalloc, hashCode, valueCompareFunction, ORIONLD_CONTEXT_CACHE_HASH_ARRAY_SIZE);
   if (contextP->context.hash.valueHashTable == NULL)
   {
-    LM_E(("khashTableCreate failed"));
+    KT_E("khashTableCreate failed");
     ok = false;
   }
 
   if ((ok == true) && (orionldContextHashTablesFill(contextP, contextObjectP, &orionldState.pd) == false))
   {
     // orionldContextHashTablesFill fills in pdP
-    LM_E(("orionldContextHashTablesFill failed"));
+    KT_E("orionldContextHashTablesFill failed");
     ok = false;
   }
 

@@ -23,8 +23,13 @@
 * Author: Ken Zangelin
 */
 #include <stdio.h>                                             // snprintf
+#include <string.h>                                            // strncpy
+#include <strings.h>                                           // bzero
 
-#include "logMsg/logMsg.h"                                     // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "orionld/types/QNode.h"                               // QNode
 #include "orionld/q/qRender.h"                                 // Own interface
@@ -76,7 +81,7 @@ static bool qRenderOp(QNode* qP, const char* opString, ApiVersion apiVersion, ch
 
   if (*bufIxP >= bufLen)
   {
-    LM_W(("Buffer too small for qRender - enlarge and recompile!"));
+    KT_W("Buffer too small for qRender - enlarge and recompile!");
     return false;
   }
 

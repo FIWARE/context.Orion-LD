@@ -22,10 +22,14 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                     // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "orionld/types/QNode.h"                               // QNode
 #include "orionld/common/orionldState.h"                       // orionldState
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/common/dateTime.h"                           // dateTimeFromString
 #include "orionld/context/orionldContextItemExpand.h"          // orionldContextItemExpand
 #include "orionld/q/qNode.h"                                   // qNode
@@ -45,19 +49,19 @@ static QNode* qStringPush(QNode* prev, char* stringValue)
 {
   QNode* qNodeP = qNode(QNodeStringValue);
 
-  LM_T(LmtQ, ("Pushing a String:     '%s'", stringValue));
+  KT_T(LmtQ, "Pushing a String:     '%s'", stringValue);
   if (orionldState.qVariable != NULL)
   {
-    LM_T(LmtQ, ("For Variable:         '%s'", orionldState.qVariable->value.s));
+    KT_T(LmtQ, "For Variable:         '%s'", orionldState.qVariable->value.s);
     if (orionldState.uriParams.expandValues != NULL)
     {
-      LM_T(LmtQ, ("And, expandValues is: '%s'", orionldState.uriParams.expandValues));
+      KT_T(LmtQ, "And, expandValues is: '%s'", orionldState.uriParams.expandValues);
       for (int ix = 0; ix <  orionldState.in.expandValuesList.items; ix++)
       {
-        LM_T(LmtQ, ("expandValuesList[%d]:  '%s'", ix, orionldState.in.expandValuesList.array[ix]));
+        KT_T(LmtQ, "expandValuesList[%d]:  '%s'", ix, orionldState.in.expandValuesList.array[ix]);
         if (strcmp(orionldState.qVariable->value.s, orionldState.in.expandValuesList.array[ix]) == 0)
         {
-          LM_T(LmtQ, ("The string '%s' needs to be expanded", stringValue));
+          KT_T(LmtQ, "The string '%s' needs to be expanded", stringValue);
           stringValue = orionldContextItemExpand(orionldState.contextP, stringValue, true, NULL);
         }
       }
@@ -84,7 +88,7 @@ static QNode* qDateTimePush(QNode* prev, double dateTime)
 {
   QNode* qNodeP = qNode(QNodeFloatValue);
 
-  LM_T(LmtQ, ("Pushing a timestamp: %f", dateTime));
+  KT_T(LmtQ, "Pushing a timestamp: %f", dateTime);
   qNodeP->value.f = dateTime;
 
   prev->next = qNodeP;
@@ -113,7 +117,7 @@ static QNode* qTermPush(QNode* prev, char* term, bool* lastTermIsTimestampP, cha
     --termLen;
   }
 
-  LM_T(LmtQ, ("term: '%s' (termLen: %d)", term, termLen));
+  KT_T(LmtQ, "term: '%s' (termLen: %d)", term, termLen);
 
   *lastTermIsTimestampP = false;
   if (termLen >= 9)
@@ -124,9 +128,9 @@ static QNode* qTermPush(QNode* prev, char* term, bool* lastTermIsTimestampP, cha
   }
 
   if (*lastTermIsTimestampP == true)
-    LM_T(LmtQ, ("Pushing a Timestamp term: '%s'", term));
+    KT_T(LmtQ, "Pushing a Timestamp term: '%s'", term);
   else
-    LM_T(LmtQ, ("Pushing a term: '%s'", term));
+    KT_T(LmtQ, "Pushing a term: '%s'", term);
 
   if (*term != 0)
   {
@@ -203,7 +207,7 @@ static QNode* qTermPush(QNode* prev, char* term, bool* lastTermIsTimestampP, cha
       else
         type = QNodeVariable;
     }
-    LM_T(LmtQ, ("'%s' seems like a %s", term, qNodeType(type)));
+    KT_T(LmtQ, "'%s' seems like a %s", term, qNodeType(type));
 
     if ((prev != NULL) && ((prev->type == QNodeMatch) || (prev->type == QNodeNoMatch)))
       type = QNodeRegexpValue;
@@ -213,21 +217,21 @@ static QNode* qTermPush(QNode* prev, char* term, bool* lastTermIsTimestampP, cha
     if (type == QNodeVariable)
     {
       orionldState.qVariable = qNodeP;
-      LM_T(LmtQ, ("'%s' IS a VARIABLE", term));
+      KT_T(LmtQ, "'%s' IS a VARIABLE", term);
     }
 
     if (dateTime == true)
     {
-      LM_T(LmtQ, ("'%s' might be a DateTime", term));
+      KT_T(LmtQ, "'%s' might be a DateTime", term);
 
       char   errorString[256];
       double dTime = dateTimeFromString(term, errorString, sizeof(errorString));
 
       if (dTime < 0)
-        LM_W(("Invalid DateTime: '%s': %s", term, errorString));
+        KT_W("Invalid DateTime: '%s': %s", term, errorString);
       else
       {
-        LM_T(LmtQ, ("term: '%s', dTime: %f", term, dTime));
+        KT_T(LmtQ, "term: '%s', dTime: %f", term, dTime);
         qNodeP->value.f = dTime;
         qNodeP->type    = QNodeFloatValue;
       }
@@ -448,7 +452,7 @@ QNode* qLex(char* s, bool timestampToFloat, char** titleP, char** detailsP)
       *sP = 0;
       ++sP;
 
-      LM_T(LmtQ, ("timestampToFloat: %s", (timestampToFloat == true)? "true" : "false"));
+      KT_T(LmtQ, "timestampToFloat: %s", (timestampToFloat == true)? "true" : "false");
       if (timestampToFloat == true)
       {
         char      errorString[256];

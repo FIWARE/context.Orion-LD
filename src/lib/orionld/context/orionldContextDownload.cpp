@@ -26,10 +26,9 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/types/OrionldResponseErrorType.h"              // OrionldResponseErrorType
 #include "orionld/types/OrionldHttpHeader.h"
@@ -115,7 +114,7 @@ char* orionldContextDownload(const char* url)
     if (reqOk == true)
       break;
 
-    LM_E(("orionldRequestSend failed (try number %d out of %d. Timeout is: %dms): %s", tries + 1, contextDownloadAttempts, contextDownloadTimeout, orionldState.pd.detail));
+    KT_E("orionldRequestSend failed (try number %d out of %d. Timeout is: %dms): %s", tries + 1, contextDownloadAttempts, contextDownloadTimeout, orionldState.pd.detail);
     if (tryAgain == false)
       break;
   }

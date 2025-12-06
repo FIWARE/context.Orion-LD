@@ -26,10 +26,9 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 }
-
-#include "logMsg/logMsg.h"                                     // LM_*
 
 #include "orionld/common/dateTime.h"                           // dateTimeFromString
 #include "orionld/types/QNode.h"                               // QNode
@@ -141,7 +140,7 @@ bool qCommaListCompare(KjNode* lhsNode, QNode* rhs, bool isTimestamp)
     QNode* child1 = rhs->value.children;
 
     if (child1->type != QNodeFloatValue)
-      LM_E(("CLIST: Internal Error (LHS is a timestamp but the first in the RHS list is not a FLOAT ..."));
+      KT_E("CLIST: Internal Error (LHS is a timestamp but the first in the RHS list is not a FLOAT ...");
     else if (child1->value.f == timestamp)
       return true;
 

@@ -37,6 +37,7 @@ typedef enum OrionldTraceLevels
   StMhdInit                 = 100,
 
   StRequest                 = 200,
+  KtRequest                 = 200,
   StRequestHeaders          = 201,
   StRequestParams           = 202,
   KtSR                      = 210,
@@ -49,7 +50,15 @@ typedef enum OrionldTraceLevels
   KtFormat                  = 304,
   KtSysAttrs                = 305,
   KtQ                       = 306,
+  KtQ2                      = 307,
+  KtQ3                      = 308,
+  KtOptions                 = 309,
 
+  // HTTP Headers
+  KtHttpHeader              = 350,
+  KtLinkHeader              = 351,
+
+  // Linked Entities
   StLinked                  = 400,
   StLinkedInline            = 401,
   StLinkedInline2           = 402,
@@ -118,9 +127,19 @@ typedef enum OrionldTraceLevels
 
   // Context
   KtContext                 = 1700,
+  KtContextInBody           = 1701,
+  KtExpand                  = 1702,
+  KtCompact                 = 1703,
+  KtCoreContext             = 1704,
+  KtUserContext             = 1705,
+  KtDefaultUserContext      = 1706,
+  KtContextDownload         = 1707,
+  KtContextItem             = 1708,
+  KtContextTree             = 1709,
 
   // Context Cache
   KtContextCache            = 1750,
+  KtContextCacheStats       = 1751,
 
   // DB Model
   KtDbModel                 = 1800,

@@ -1,3 +1,4 @@
+
 /*
 *
 * Copyright 2024 FIWARE Foundation e.V.
@@ -22,12 +23,13 @@
 *
 * Author: Ken Zangelin
 */
+#include <string.h>                                            // strcmp
+
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 }
-
-#include "logMsg/logMsg.h"                                     // LM_*
 
 #include "orionld/types/QNode.h"                               // QNode
 #include "orionld/common/dateTime.h"                           // dateTimeFromString
@@ -60,7 +62,7 @@ bool qRangeCompare(KjNode* lhsNode, QNode* rhs, bool isTimestamp)
     double highTimestamp = dateTimeFromString(high->value.s, errorString, sizeof(errorString));
 
     if ((lhsTimestamp < 0) || (lowTimestamp < 0) || (highTimestamp < 0))
-      LM_RE(false, ("Invalid ISO8601 timestamp: %s", errorString));
+      KT_RE(false, "Invalid ISO8601 timestamp: %s", errorString);
 
     if ((lhsTimestamp >= lowTimestamp) && (lhsTimestamp <= highTimestamp))
       return true;

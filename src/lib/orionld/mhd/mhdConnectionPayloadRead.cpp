@@ -24,11 +24,9 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kalloc/kaStrdup.h"                                   // kaStrdup
 }
-
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
 
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/mhd/mhdConnectionPayloadRead.h"              // Own interface
@@ -65,7 +63,7 @@ MHD_Result mhdConnectionPayloadRead
   //
   if (orionldState.serviceP == NULL)
   {
-    LM_W(("Acknowledge the data and return"));
+    KT_W("Acknowledge the data and return");
     *upload_data_size = 0;  // Acknowledge the data and return
     return MHD_YES;
   }
@@ -107,7 +105,7 @@ MHD_Result mhdConnectionPayloadRead
       orionldState.in.payload = (char*) malloc(orionldState.in.contentLength + 1);
       if (orionldState.in.payload == NULL)
       {
-        LM_E(("Out of memory!!!"));
+        KT_E("Out of memory!!!");
         return MHD_NO;
       }
     }

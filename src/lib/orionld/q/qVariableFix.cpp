@@ -27,14 +27,14 @@
 extern "C"
 {
 #include "kbase/kStringSplit.h"                                // kStringSplit
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kalloc/kaStrdup.h"                                   // kaStrdup
 }
-
-#include "logMsg/logMsg.h"                                     // LM_*
 
 #include "orionld/types/QNode.h"                               // QNode
 #include "orionld/types/OrionLdRestService.h"                  // OrionLdRestService
 #include "orionld/common/orionldState.h"                       // orionldState
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/common/dotForEq.h"                           // dotForEq
 #include "orionld/context/orionldAttributeExpand.h"            // orionldAttributeExpand
 #include "orionld/context/orionldSubAttributeExpand.h"         // orionldSubAttributeExpand
@@ -83,14 +83,14 @@ char* qVariableFix(char* varPathIn, bool forDb, bool* isMdP, char** detailsP)
     if (endBracket == NULL)
     {
       *detailsP = (char*) "missing end bracket";
-      LM_W(("Bad Input (%s)", *detailsP));
+      KT_W("Bad Input (%s)", *detailsP);
       return NULL;
     }
 
     if (endBracket < startBracket)
     {
       *detailsP = (char*) "syntax error in 'q' (ending bracket before initial bracket)";
-      LM_W(("Bad Input (%s)", *detailsP));
+      KT_W("Bad Input (%s)", *detailsP);
       return NULL;
     }
 
@@ -98,9 +98,9 @@ char* qVariableFix(char* varPathIn, bool forDb, bool* isMdP, char** detailsP)
     valuePath   = &startBracket[1];
   }
 
-  LM_T(LmtQ, ("*************************************************************************************"));
-  LM_T(LmtQ, ("Q-Attribute Path: '%s'", attrPath));
-  LM_T(LmtQ, ("Q-Value Path: '%s'", valuePath));
+  KT_T(KtQ, "*************************************************************************************");
+  KT_T(KtQ, "Q-Attribute Path: '%s'", attrPath);
+  KT_T(KtQ, "Q-Value Path: '%s'", valuePath);
 
   //
   // Split attrPath into array with dot as delimiter
@@ -112,14 +112,14 @@ char* qVariableFix(char* varPathIn, bool forDb, bool* isMdP, char** detailsP)
   int   items    = kStringSplit(attrPath, '.', attrArray, 10);
   bool  addValue = forDb;
 
-  LM_T(LmtQ2, ("Attr Path Items: %d", items));
+  KT_T(KtQ2, "Attr Path Items: %d", items);
   if ((items == 2) && ((strcmp(attrArray[1], "createdAt") == 0) || (strcmp(attrArray[1], "modifiedAt") == 0)))
     isMd = false;
   else if (items > 1)
     isMd   = true;
 
   *isMdP = isMd;
-  LM_T(LmtQ2, ("isMd: %s", (isMd == true)? "true" : "false"));
+  KT_T(KtQ2, "isMd: %s", (isMd == true)? "true" : "false");
 
   // Special case: createdAt, modifiedAt, observedAt
   // Entities, Attributes and sub-attributes have creDate/modDate in the DB
@@ -150,7 +150,7 @@ char* qVariableFix(char* varPathIn, bool forDb, bool* isMdP, char** detailsP)
 
   for (int ix = 0; ix < items; ix++)
   {
-    LM_T(LmtQ2, ("Attr Item %d: '%s'", ix, attrArray[ix]));
+    KT_T(KtQ2, "Attr Item %d: '%s'", ix, attrArray[ix]);
     if (ix == 0)
       attrArray[ix] = orionldAttributeExpand(orionldState.contextP, attrArray[ix], true, NULL);
     else if ((isTimestamp == true) && (ix == (items - 1)))
@@ -160,7 +160,7 @@ char* qVariableFix(char* varPathIn, bool forDb, bool* isMdP, char** detailsP)
 
     attrArray[ix] = kaStrdup(&orionldState.kalloc, attrArray[ix]);
     dotForEq(attrArray[ix]);
-    LM_T(LmtQ, ("Q-Attribute %d: '%s'", ix, attrArray[ix]));
+    KT_T(KtQ, "Q-Attribute %d: '%s'", ix, attrArray[ix]);
   }
 
   // Calculate the buffer size needed for the rendered string
@@ -190,7 +190,7 @@ char* qVariableFix(char* varPathIn, bool forDb, bool* isMdP, char** detailsP)
       }
       else if ((isMd == true) && (ix == 1))
       {
-        LM_T(LmtQ2, ("Adding '.md' to the path"));
+        KT_T(KtQ2, "Adding '.md' to the path");
         snprintf(&path[last], pathLen - last, ".md");
         last += 3;
       }
@@ -213,8 +213,8 @@ char* qVariableFix(char* varPathIn, bool forDb, bool* isMdP, char** detailsP)
   if (valuePath != NULL)
     snprintf(&path[last], pathLen - last, ".%s", valuePath);
 
-  LM_T(LmtQ, ("Final path: '%s'", path));
-  LM_T(LmtQ, ("*************************************************************************************"));
-  LM_T(LmtQ3, ("NEW Returning '%s' (forDb: '%s')", path, (forDb == true)? "true" : "false"));
+  KT_T(KtQ, "Final path: '%s'", path);
+  KT_T(KtQ, "*************************************************************************************");
+  KT_T(KtQ3, "NEW Returning '%s' (forDb: '%s')", path, (forDb == true)? "true" : "false");
   return path;
 }

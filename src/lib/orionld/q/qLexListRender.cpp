@@ -31,8 +31,6 @@ extern "C"
 #include "kalloc/kaRealloc.h"                                  // kaRealloc
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
 #include "orionld/types/QNode.h"                               // QNode
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/common/orionldError.h"                       // orionldError

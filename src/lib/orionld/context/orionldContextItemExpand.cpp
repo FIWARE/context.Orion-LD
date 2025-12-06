@@ -24,11 +24,15 @@
 */
 #include <string.h>                                              // strchr
 
-#include "logMsg/logMsg.h"                                       // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+}
 
 #include "orionld/types/OrionldContextItem.h"                    // OrionldContextItem
 #include "orionld/types/OrionldContext.h"                        // OrionldContext
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/context/orionldCoreContext.h"                  // orionldCoreContextP
 #include "orionld/context/orionldContextPrefixExpand.h"          // orionldContextPrefixExpand
 #include "orionld/context/orionldContextItemLookup.h"            // orionldContextItemLookup
@@ -72,14 +76,14 @@ char* orionldContextItemExpand
 
   if (strcmp(shortName, "ngsildproof") == 0)
   {
-    LM_T(LmtExpand, ("Not expanding '%s' - special sub-attribute", shortName));
+    KT_T(KtExpand, "Not expanding '%s' - special sub-attribute", shortName);
     return (char*) shortName;
   }
 
   if ((colonP = strchr((char*) shortName, ':')) != NULL)
   {
     char* longName = orionldContextPrefixExpand(contextP, shortName, colonP);
-    LM_T(LmtExpand, ("Prefix-Expanded '%s' to '%s'", shortName, longName));
+    KT_T(KtExpand, "Prefix-Expanded '%s' to '%s'", shortName, longName);
     return longName;
   }
 
@@ -88,7 +92,7 @@ char* orionldContextItemExpand
     contextItemP = orionldContextItemLookup(orionldCoreContextP, shortName, NULL);
 
   if (contextItemP != NULL)
-    LM_T(LmtExpand, ("Found '%s' in the core context (%s)", shortName, orionldCoreContextP->url));
+    KT_T(KtExpand, "Found '%s' in the core context (%s)", shortName, orionldCoreContextP->url);
 
   // 2. Lookup in given context (unless it's the Core Context)
   if ((contextItemP == NULL) && (contextP != orionldCoreContextP))
@@ -110,11 +114,11 @@ char* orionldContextItemExpand
 
       orionldCoreContextP->expansions += 1;  // Really, @vocab expansions of the core context
 
-      LM_T(LmtExpand, ("Vocab-Expanded '%s' to '%s'", shortName, longName));
+      KT_T(KtExpand, "Vocab-Expanded '%s' to '%s'", shortName, longName);
       return longName;
     }
 
-    LM_T(LmtExpand, ("No Expansion found for '%s'", shortName));
+    KT_T(KtExpand, "No Expansion found for '%s'", shortName);
     return NULL;
   }
 
@@ -124,7 +128,7 @@ char* orionldContextItemExpand
 
   contextP->expansions += 1;
 
-  // LM_T(LmtExpand, ("Expanded '%s' to '%s'", shortName, contextItemP->id));
+  // KT_T(KtExpand, "Expanded '%s' to '%s'", shortName, contextItemP->id);
 
   return contextItemP->id;
 }

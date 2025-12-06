@@ -30,6 +30,7 @@ extern "C"
 #include "kbase/kMacros.h"                                         // K_FT
 #include "kbase/kTime.h"                                           // kTimeGet
 #include "kbase/kStringSplit.h"                                    // kStringSplit
+#include "ktrace/kTrace.h"                                         // KT_*
 #include "kalloc/kaStrdup.h"                                       // kaStrdup
 #include "kjson/KjNode.h"                                          // KjNode
 #include "kjson/kjBufferCreate.h"                                  // kjBufferCreate
@@ -43,8 +44,6 @@ extern "C"
 #include "kjson/kjNodeDecouple.h"                                  // kjNodeDecouple
 }
 
-#include "logMsg/logMsg.h"                                         // LM_*
-
 #include "orionld/types/OrionldResponseErrorType.h"                // orionldResponseErrorType
 #include "orionld/types/OrionldProblemDetails.h"                   // OrionldProblemDetails, pdTreeCreate
 #include "orionld/types/OrionldGeoIndex.h"                         // OrionldGeoIndex
@@ -52,6 +51,7 @@ extern "C"
 #include "orionld/types/OrionldHeader.h"                           // orionldHeaderAdd
 #include "orionld/common/orionldState.h"                           // orionldState, orionldHostName, coreContextUrl
 #include "orionld/common/orionldError.h"                           // orionldError
+#include "orionld/common/traceLevels.h"                            // KTrace levels
 #include "orionld/common/SCOMPARE.h"                               // SCOMPARE
 #include "orionld/common/CHECK.h"                                  // CHECK
 #include "orionld/common/uuidGenerate.h"                           // uuidGenerate
@@ -213,7 +213,7 @@ static bool contentTypeCheck(void)
 
   if (errorTitle != NULL)
   {
-    LM_W(("Bad Input (%s: %s)", errorTitle, errorDetails));
+    KT_W("Bad Input (%s: %s)", errorTitle, errorDetails);
 
     orionldError(OrionldBadRequestData, errorTitle, errorDetails, 400);
     return false;
@@ -327,14 +327,14 @@ static bool payloadParseAndExtractSpecialFields(bool* contextToBeCashedP)
       {
         if (orionldState.payloadContextNode != NULL)
         {
-          LM_W(("Bad Input (duplicated attribute: '@context'"));
+          KT_W("Bad Input (duplicated attribute: '@context'");
           orionldError(OrionldBadRequestData, "Duplicated field", "@context", 400);
           return false;
         }
 
         orionldState.payloadContextNode = attrNodeP;
-        LM_T(LmtContextInBody, ("Found an @contest in the payload body - removing it and keeping it in orionldState.payloadContextNode"));
-        LM_TREE(orionldState.payloadContextNode, "@context in body", LmtContextInBody);
+        KT_T(KtContextInBody, "Found an @contest in the payload body - removing it and keeping it in orionldState.payloadContextNode");
+        KT_TREE(orionldState.payloadContextNode, "@context in body", KtContextInBody);
 
         attrNodeP = orionldState.payloadContextNode->next;
         kjNodeDecouple(orionldState.requestTree, orionldState.payloadContextNode, prev);
@@ -343,7 +343,7 @@ static bool payloadParseAndExtractSpecialFields(bool* contextToBeCashedP)
       {
         if (orionldState.payloadIdNode != NULL)
         {
-          LM_W(("Bad Input (duplicated attribute: 'id'"));
+          KT_W("Bad Input (duplicated attribute: 'id'");
           orionldError(OrionldBadRequestData, "Duplicated field", "id", 400);
           return false;
         }
@@ -360,7 +360,7 @@ static bool payloadParseAndExtractSpecialFields(bool* contextToBeCashedP)
       {
         if (orionldState.payloadTypeNode != NULL)
         {
-          LM_W(("Bad Input (duplicated attribute: 'type'"));
+          KT_W("Bad Input (duplicated attribute: 'type'");
           orionldError(OrionldBadRequestData, "Duplicated field", "type", 400);
           return false;
         }
@@ -395,7 +395,7 @@ static bool payloadParseAndExtractSpecialFields(bool* contextToBeCashedP)
         {
           if (orionldState.payloadContextNode != NULL)
           {
-            LM_W(("Bad Input (duplicated attribute: '@context'"));
+            KT_W("Bad Input (duplicated attribute: '@context'");
             orionldError(OrionldBadRequestData, "Duplicated field", "@context", 400);
             return false;
           }
@@ -440,7 +440,7 @@ static bool payloadParseAndExtractSpecialFields(bool* contextToBeCashedP)
 //
 char* pCheckLinkHeader(char* link)
 {
-  LM_T(LmtLinkHeader, ("link: '%s'", link));
+  KT_T(KtLinkHeader, "link: '%s'", link);
   if (link[0] != '<')
   {
     orionldError(OrionldBadRequestData, "invalid Link HTTP header", "link doesn't start with '<'", 400);
@@ -464,9 +464,9 @@ char* pCheckLinkHeader(char* link)
   *cP = 0;  // End of string for the URL
 
   if (pCheckUri(linkStart, "Link", true) == false)
-    LM_RE(NULL, ("pCheckUri failed"));
+    KT_RE(NULL, "pCheckUri failed");
 
-  LM_T(LmtLinkHeader, ("link: '%s'", linkStart));
+  KT_T(KtLinkHeader, "link: '%s'", linkStart);
   return linkStart;
 }
 
@@ -704,7 +704,7 @@ static bool pCheckAttrsParam(void)
 
   if (orionldState.in.attrList.array == NULL)
   {
-    LM_E(("Out of memory (allocating an /attrs/ array of %d char pointers)", items));
+    KT_E("Out of memory (allocating an /attrs/ array of %d char pointers)", items);
     orionldError(OrionldInternalError, "Out of memory", "allocating the array for /attrs/ URI param", 500);
     return false;
   }
@@ -713,7 +713,7 @@ static bool pCheckAttrsParam(void)
 
   if (splitItems != items)
   {
-    LM_E(("kStringSplit didn't find exactly %d items (it found %d)", items, splitItems));
+    KT_E("kStringSplit didn't find exactly %d items (it found %d)", items, splitItems);
     orionldError(OrionldInternalError, "Internal Error", "kStringSplit does not agree with commaCount", 500);
     return false;
   }
@@ -746,7 +746,7 @@ static bool pCheckPickParam(void)
 
   if (orionldState.in.pickList.array == NULL)
   {
-    LM_E(("Out of memory (allocating an /pick/ array of %d char pointers)", items));
+    KT_E("Out of memory (allocating an /pick/ array of %d char pointers)", items);
     orionldError(OrionldInternalError, "Out of memory", "allocating the array for /pick/ URI param", 500);
     return false;
   }
@@ -755,7 +755,7 @@ static bool pCheckPickParam(void)
 
   if (splitItems != items)
   {
-    LM_E(("kStringSplit didn't find exactly %d items (it found %d)", items, splitItems));
+    KT_E("kStringSplit didn't find exactly %d items (it found %d)", items, splitItems);
     orionldError(OrionldInternalError, "Internal Error", "kStringSplit does not agree with commaCount", 500);
     return false;
   }
@@ -799,7 +799,7 @@ static bool pCheckEntityIdParam(void)
 
   if (orionldState.in.idList.array == NULL)
   {
-    LM_E(("Out of memory (allocating an /id/ array of %d char pointers)", items));
+    KT_E("Out of memory (allocating an /id/ array of %d char pointers)", items);
     orionldError(OrionldInternalError, "Out of memory", "allocating the array for /id/ URI param", 500);
     return false;
   }
@@ -808,7 +808,7 @@ static bool pCheckEntityIdParam(void)
 
   if (splitItems != items)
   {
-    LM_E(("kStringSplit didn't find exactly %d items (it found %d)", items, splitItems));
+    KT_E("kStringSplit didn't find exactly %d items (it found %d)", items, splitItems);
     orionldError(OrionldInternalError, "Internal Error", "kStringSplit does not agree with commaCount", 500);
     return false;
   }
@@ -838,7 +838,7 @@ static bool datasetIdList(void)
   int splitItems = kStringSplit(orionldState.uriParams.datasetId, ',', orionldState.in.datasetIdList.array, items);
 
   if (splitItems != items)
-    LM_X(1, ("BUG - splitItems must be == items"));
+    KT_X(1, "BUG - splitItems must be == items");
 
   for (int item = 0; item < items; item++)
   {
@@ -875,7 +875,7 @@ static bool pCheckEntityTypeParam(void)
 
   if (orionldState.in.typeList.array == NULL)
   {
-    LM_E(("Out of memory (allocating an /type/ array of %d char pointers)", items));
+    KT_E("Out of memory (allocating an /type/ array of %d char pointers)", items);
     orionldError(OrionldInternalError, "Out of memory", "allocating the array for /type/ URI param", 500);
     return false;
   }
@@ -884,7 +884,7 @@ static bool pCheckEntityTypeParam(void)
 
   if (splitItems != items)
   {
-    LM_E(("kStringSplit didn't find exactly %d items (it found %d)", items, splitItems));
+    KT_E("kStringSplit didn't find exactly %d items (it found %d)", items, splitItems);
     orionldError(OrionldInternalError, "Internal Error", "kStringSplit does not agree with commaCount", 500);
     return false;
   }
@@ -1001,7 +1001,7 @@ static bool pCheckExpandValuesParam(void)
 
   if (orionldState.in.expandValuesList.array == NULL)
   {
-    LM_E(("Out of memory (allocating an /expandValues/ array of %d char pointers)", items));
+    KT_E("Out of memory (allocating an /expandValues/ array of %d char pointers)", items);
     orionldError(OrionldInternalError, "Out of memory", "allocating the array for /expandValues/ URI param", 500);
     return false;
   }
@@ -1010,7 +1010,7 @@ static bool pCheckExpandValuesParam(void)
 
   if (splitItems != items)
   {
-    LM_E(("kStringSplit didn't find exactly %d items (it found %d)", items, splitItems));
+    KT_E("kStringSplit didn't find exactly %d items (it found %d)", items, splitItems);
     orionldError(OrionldInternalError, "Internal Error", "kStringSplit does not agree with commaCount", 500);
     return false;
   }
@@ -1261,7 +1261,7 @@ MHD_Result mhdConnectionTreat(void)
       bool implicitlyCreated = false;
       bool allDone           = false;
 
-      LM_T(LmtContextCacheStats, ("Got an @context in the payload body (type %s)", kjValueType(orionldState.payloadContextNode->type)));
+      KT_T(KtContextCacheStats, "Got an @context in the payload body (type %s)", kjValueType(orionldState.payloadContextNode->type));
 
       //
       // Simplify and if need be, flatten array
@@ -1273,10 +1273,10 @@ MHD_Result mhdConnectionTreat(void)
 
         if ((arrayItems == 1) && (orionldState.payloadContextNode->value.firstChildP->type == KjString))
         {
-          LM_T(LmtContextInBody, ("@context is an array with a single URI inside - flattening"));
+          KT_T(KtContextInBody, "@context is an array with a single URI inside - flattening");
           orionldState.payloadContextNode = orionldState.payloadContextNode->value.firstChildP;
           orionldState.contextP = orionldContextFromUrl(orionldState.payloadContextNode->value.s, orionldState.payloadContextNode->value.s);
-          LM_T(LmtContextInBody, ("All done: orionldState.contextP->url: '%s'", orionldState.contextP->url));
+          KT_T(KtContextInBody, "All done: orionldState.contextP->url: '%s'", orionldState.contextP->url);
           allDone = true;
         }
       }
@@ -1284,7 +1284,7 @@ MHD_Result mhdConnectionTreat(void)
       if ((orionldState.serviceP->serviceRoutine == orionldPostSubscriptions) || (orionldState.serviceP->serviceRoutine == orionldPatchSubscription))
       {
         implicitlyCreated = true;
-        LM_T(LmtContextCacheStats, ("And the service is Subscription Creation"));
+        KT_T(KtContextCacheStats, "And the service is Subscription Creation");
       }
 
       if (allDone == true)
@@ -1330,24 +1330,24 @@ MHD_Result mhdConnectionTreat(void)
 
  allDone:
 
-  LM_T(LmtUserContext, ("orionldState.contextP at %p", orionldState.contextP));
-  LM_T(LmtUserContext, ("Core Context at          %p", orionldCoreContextP));
+  KT_T(KtUserContext, "orionldState.contextP at %p", orionldState.contextP);
+  KT_T(KtUserContext, "Core Context at          %p", orionldCoreContextP);
   if (orionldState.contextP == orionldCoreContextP)
   {
     if (defaultUserContextP != NULL)
     {
-      LM_T(LmtUserContext, ("Using the default user context (%s)", defaultUserContextUrl));
+      KT_T(KtUserContext, "Using the default user context (%s)", defaultUserContextUrl);
       orionldState.contextP = defaultUserContextP;
     }
     else
     {
-      LM_T(LmtUserContext, ("No default user context, using only the core context"));
+      KT_T(KtUserContext, "No default user context, using only the core context");
       orionldState.contextP = orionldCoreContextP;
     }
   }
 
-  LM_T(LmtUserContext, ("orionldState.contextP: '%s'", orionldState.contextP->url));
-  LM_T(LmtUserContext, ("-------------------------------------------"));
+  KT_T(KtUserContext, "orionldState.contextP: '%s'", orionldState.contextP->url);
+  KT_T(KtUserContext, "-------------------------------------------");
   if (orionldState.link == NULL)
     orionldState.link = orionldState.contextP->url;
 
@@ -1377,7 +1377,7 @@ MHD_Result mhdConnectionTreat(void)
   PERFORMANCE(serviceRoutineStart);
  serviceRoutine:
   if (orionldState.requestTree != NULL)
-    LM_TREE(orionldState.requestTree, "Request Payload Body", LmtRequest);
+    KT_TREE(orionldState.requestTree, "Request Payload Body", KtRequest);
 
   serviceRoutineResult = orionldState.serviceP->serviceRoutine();
 

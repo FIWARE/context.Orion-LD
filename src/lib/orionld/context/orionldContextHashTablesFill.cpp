@@ -26,18 +26,17 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "khash/khash.h"                                         // KHashTable, KHashListItem, khashItemAdd, ...
 #include "kjson/KjNode.h"                                        // KjNode
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
-
 #include "orionld/types/OrionldProblemDetails.h"                 // OrionldProblemDetails, orionldProblemDetailsFill
 #include "orionld/types/OrionldContextItem.h"                    // OrionldContextItem
 #include "orionld/types/OrionldContext.h"                        // OrionldContext, OrionldContextHashTables
 #include "orionld/common/orionldState.h"                         // orionldState, kalloc
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/contextCache/orionldContextCache.h"            // ORIONLD_CONTEXT_CACHE_HASH_ARRAY_SIZE
 #include "orionld/context/orionldContextPrefixExpand.h"          // orionldContextPrefixExpand
 #include "orionld/context/orionldContextHashTablesFill.h"        // Own interface
@@ -94,14 +93,14 @@ bool orionldContextHashTablesFill(OrionldContext* contextP, KjNode* keyValueTree
     }
     else
     {
-      LM_W(("Bad Input (invalid value type for '%s': %s)", kvP->name, kjValueType(kvP->type)));
+      KT_W("Bad Input (invalid value type for '%s': %s)", kvP->name, kjValueType(kvP->type));
       orionldProblemDetailsFill(pdP, OrionldBadRequestData, "Invalid key-value in @context", kvP->name, 400);
       return false;
     }
 
     if ((hiP->id == NULL) || (hiP->id[0] == 0))
     {
-      LM_W(("Bad Input (NULL value for key '%s')", kvP->name));
+      KT_W("Bad Input (NULL value for key '%s')", kvP->name);
 
       pdP->type   = OrionldBadRequestData;
       pdP->title  = (char*) "NULL value for key in context";
@@ -111,7 +110,7 @@ bool orionldContextHashTablesFill(OrionldContext* contextP, KjNode* keyValueTree
       return false;
     }
 
-    // LM_T(LmtContextItem, ("Adding '%s' -> '%s' to hash table for context '%s' (step 1)", hiP->name, hiP->id, contextP->url));
+    // KT_T(KtContextItem, "Adding '%s' -> '%s' to hash table for context '%s' (step 1)", hiP->name, hiP->id, contextP->url);
     khashItemAdd(nameHashTableP,  hiP->name, hiP);
   }
 
@@ -138,7 +137,7 @@ bool orionldContextHashTablesFill(OrionldContext* contextP, KjNode* keyValueTree
       hashItemP->id = kaStrdup(&kalloc, hashItemP->id);
       khashItemAdd(valueHashTableP, hashItemP->id, hashItemP);
 
-      // LM_T(LmtContextItem, ("Fixed '%s' -> '%s' in hash table for context '%s' (step 2)", hashItemP->name, hashItemP->id, contextP->url));
+      // KT_T(KtContextItem, "Fixed '%s' -> '%s' in hash table for context '%s' (step 2)", hashItemP->name, hashItemP->id, contextP->url);
 
       itemP = itemP->next;
     }
