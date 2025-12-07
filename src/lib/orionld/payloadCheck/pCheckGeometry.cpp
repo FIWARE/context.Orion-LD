@@ -22,8 +22,7 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
+#include <string.h>                                             // strcmp
 
 #include "orionld/types/OrionldGeometry.h"                     // OrionldGeometry, GeoPoint, GeoLineString, ...
 #include "orionld/common/orionldError.h"                       // orionldError

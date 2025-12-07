@@ -22,17 +22,19 @@
 *
 * Author: Ken Zangelin
 */
+#include <string.h>                                             // strcmp
+
 extern "C"
 {
+#include "ktrace/kTrace.h"                                      // KT_*
 #include "kjson/KjNode.h"                                       // KjNode
 #include "kjson/kjBuilder.h"                                    // kjChildRemove
 }
 
-#include "logMsg/logMsg.h"                                      // LM_*
-
 #include "orionld/types/OrionldRenderFormat.h"                  // OrionldRenderFormat
 #include "orionld/common/orionldState.h"                        // orionldState
 #include "orionld/common/orionldError.h"                        // orionldError
+#include "orionld/common/traceLevels.h"                         // KTrace levels
 #include "orionld/context/orionldAttributeExpand.h"             // orionldAttributeExpand
 #include "orionld/payloadCheck/PCHECK.h"                        // PCHECK_*
 #include "orionld/payloadCheck/fieldPaths.h"                    // SubscriptionNotificationPath, ...
@@ -118,7 +120,7 @@ bool pCheckNotification
       PCHECK_DUPLICATE(sysAttrsP, nItemP, 0, NULL, SubscriptionNotificationSysAttrsPath, 400);
       PCHECK_BOOL(sysAttrsP, 0, NULL, SubscriptionNotificationSysAttrsPath, 400);
       *sysAttrsOutP = sysAttrsP;
-      LM_T(LmtSysAttrs, ("Found a 'sysAttrs' in Subscription::notification (%s)", (sysAttrsP->value.b == true)? "true" : "false"));
+      KT_T(KtSysAttrs, "Found a 'sysAttrs' in Subscription::notification (%s)", (sysAttrsP->value.b == true)? "true" : "false");
     }
     else if ((strcmp(nItemP->name, "status")           == 0) ||
              (strcmp(nItemP->name, "timesSent")        == 0) ||

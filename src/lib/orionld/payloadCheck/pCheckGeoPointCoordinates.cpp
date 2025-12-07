@@ -29,8 +29,6 @@ extern "C"
 #include "kjson/KjNode.h"                                        // KjNode
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/types/OrionldResponseErrorType.h"              // OrionldBadRequestData
 #include "orionld/payloadCheck/pCheckGeoPointCoordinates.h"      // Own interface

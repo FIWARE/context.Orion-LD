@@ -25,12 +25,11 @@
 extern "C"
 {
 #include "kbase/kMacros.h"                                       // K_FT
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjChildRemove
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/types/QNode.h"                                 // QNode
 #include "orionld/types/OrionldRenderFormat.h"                   // OrionldRenderFormat
@@ -233,7 +232,7 @@ bool pCheckSubscription
       *qNodeP = qP;
 
       if (*qTreeP == NULL)
-        LM_RE(false, ("qBuild failed"));
+        KT_RE(false, "qBuild failed");
     }
     else if (strcmp(subItemP->name, "geoQ") == 0)
     {

@@ -43,21 +43,24 @@ typedef enum OrionldTraceLevels
   KtSR                      = 210,
 
   // URL Params
-  KtUrlParam                = 300,
-  KtCsf                     = 301,
-  KtCount                   = 302,
-  KtPick                    = 303,
-  KtFormat                  = 304,
-  KtSysAttrs                = 305,
-  KtQ                       = 306,
-  KtQ2                      = 307,
-  KtQ3                      = 308,
-  KtOptions                 = 309,
+  KtUrlParam                = 250,
+  KtCsf                     = 251,
+  KtCount                   = 252,
+  KtPick                    = 253,
+  KtFormat                  = 254,
+  KtSysAttrs                = 255,
+  KtQ                       = 256,
+  KtQ2                      = 257,
+  KtQ3                      = 258,
+  KtOptions                 = 259,
 
   // HTTP Headers
-  KtHttpHeader              = 350,
-  KtLinkHeader              = 351,
+  KtHttpHeader              = 280,
+  KtLinkHeader              = 281,
 
+  // JSON-LD
+  KtArrayReduction          = 301,
+  
   // Linked Entities
   StLinked                  = 400,
   StLinkedInline            = 401,
@@ -143,6 +146,7 @@ typedef enum OrionldTraceLevels
 
   // DB Model
   KtDbModel                 = 1800,
+  KtAttrNames               = 1801,
 
   // API Model
   KtApiModel                = 1850,
@@ -169,6 +173,7 @@ typedef enum OrionldTraceLevels
 
   // Misc
   KtLeak                    = 4000,
+  KtToDo                    = 4001,
 
   // FT Client
   StDump                    = 5001,

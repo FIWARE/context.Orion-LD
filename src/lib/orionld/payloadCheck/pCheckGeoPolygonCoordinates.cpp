@@ -26,10 +26,9 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/payloadCheck/pCheckGeoPointCoordinates.h"      // pCheckGeoPointCoordinates
@@ -63,7 +62,7 @@ bool pCheckGeoPolygonCoordinates(KjNode* coordinatesP)
 
     if (ringP->type != KjArray)
     {
-      LM_W(("Bad Input (one of the rings is not an array"));
+      KT_W("Bad Input (one of the rings is not an array");
       orionldError(OrionldBadRequestData, "Invalid GeoJSON", "'coordinates' in a 'Polygon' must be a JSON Array of 'Rings' that are JSON Arrays", 400);
       return false;
     }
@@ -72,7 +71,7 @@ bool pCheckGeoPolygonCoordinates(KjNode* coordinatesP)
     {
       if (memberP->type != KjArray)
       {
-        LM_W(("Bad Input (a member of Polygon must be a JSON Array)"));
+        KT_W("Bad Input (a member of Polygon must be a JSON Array)");
         orionldError(OrionldBadRequestData, "Invalid GeoJSON", "Non-Array in 'coordinates' for a 'Polygon'", 400);
         return false;
       }
@@ -80,7 +79,7 @@ bool pCheckGeoPolygonCoordinates(KjNode* coordinatesP)
       if (pCheckGeoPointCoordinates(memberP) == false)
       {
         // orionldError called by pCheckGeoPointCoordinates
-        LM_W(("Bad Input (one of the points of one of the rings is not a valid point"));
+        KT_W("Bad Input (one of the points of one of the rings is not a valid point");
         return false;
       }
 
@@ -96,7 +95,7 @@ bool pCheckGeoPolygonCoordinates(KjNode* coordinatesP)
     //
     if (points < 4)
     {
-      LM_W(("Bad Input (A Polygon must have at least 4 points)"));
+      KT_W("Bad Input (A Polygon must have at least 4 points)");
       orionldError(OrionldBadRequestData, "Invalid GeoJSON", "A Polygon must have at least 4 points", 400);
       return false;
     }
@@ -134,7 +133,7 @@ bool pCheckGeoPolygonCoordinates(KjNode* coordinatesP)
 
       if (error == true)
       {
-        LM_W(("Bad Input (In a Polygon, the first and the last position must be identical)"));
+        KT_W("Bad Input (In a Polygon, the first and the last position must be identical)");
         orionldError(OrionldBadRequestData, "Invalid GeoJSON", "In a Polygon, the first and the last position must be identical", 400);
         return false;
       }
@@ -147,7 +146,7 @@ bool pCheckGeoPolygonCoordinates(KjNode* coordinatesP)
     // Now both firstItemNodeP and lastItemNodeP must be NULL - we already know that firstItemNodeP is NULL - that's when the loop ended
     if (lastItemNodeP != NULL)
     {
-      LM_W(("Bad Input (In a Polygon, the first and the last position must be identical)"));
+      KT_W("Bad Input (In a Polygon, the first and the last position must be identical)");
       orionldError(OrionldBadRequestData, "Invalid GeoJSON", "In a Polygon, the first and the last position must be identical", 400);
       return false;
     }

@@ -22,9 +22,6 @@
 *
 * Author: Ken Zangelin, Gabriel Quaresma
 */
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
-
 extern "C"
 {
 #include "kjson/KjNode.h"                                        // KjNode

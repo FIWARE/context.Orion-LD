@@ -28,13 +28,12 @@
 extern "C"
 {
 #include "kbase/kMacros.h"                                       // K_FT
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjString, kjObject, ...
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/types/OrionldProblemDetails.h"                 // OrionldProblemDetails
 #include "orionld/types/OrionldResponseErrorType.h"              // OrionldBadRequestData
@@ -44,6 +43,7 @@ extern "C"
 #include "orionld/types/OrionldContextItem.h"                    // OrionldContextItem
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/dateTime.h"                             // dateTimeFromString
 #include "orionld/context/orionldContextItemExpand.h"            // orionldContextItemExpand
 #include "orionld/context/orionldAttributeExpand.h"              // orionldAttributeExpand
@@ -144,7 +144,7 @@ static void arrayReduce(KjNode* valueP)
   valueP->value     = itemP->value;
   valueP->lastChild = itemP->lastChild;
 
-  LM_T(LmtArrayReduction, ("Reduced an array of one single item to a JSON %s", kjValueType(valueP->type)));
+  KT_T(KtArrayReduction, "Reduced an array of one single item to a JSON %s", kjValueType(valueP->type));
 }
 
 
@@ -232,12 +232,12 @@ static bool pCheckTypeFromContext(KjNode* attrP, OrionldContextItem* attrContext
     }
     else if (strcmp(attrContextInfoP->type, "@set") == 0)
     {
-      LM_T(LmtArrayReduction, ("the type for '%s' in the @context is '@set' - arrayReduction is set to FALSE", attrP->name));
+      KT_T(KtArrayReduction, "the type for '%s' in the @context is '@set' - arrayReduction is set to FALSE", attrP->name);
       arrayReduction = false;
     }
     else if (strcmp(attrContextInfoP->type, "@list") == 0)
     {
-      LM_T(LmtArrayReduction, ("the type for '%s' in the @context is '@list' - arrayReduction is set to FALSE", attrP->name));
+      KT_T(KtArrayReduction, "the type for '%s' in the @context is '@list' - arrayReduction is set to FALSE", attrP->name);
       arrayReduction = false;
     }
   }
@@ -245,14 +245,14 @@ static bool pCheckTypeFromContext(KjNode* attrP, OrionldContextItem* attrContext
   //
   // Array Reduction
   //
-  LM_T(LmtArrayReduction, ("Attribute: '%s' - arrayReduction: %s, type '%s'", attrP->name, K_FT(arrayReduction), kjValueType(attrP->type)));
+  KT_T(KtArrayReduction, "Attribute: '%s' - arrayReduction: %s, type '%s'", attrP->name, K_FT(arrayReduction), kjValueType(attrP->type));
 
   if ((attrP->type == KjArray) && (arrayReduction == true))
   {
-    LM_T(LmtArrayReduction, ("The value of '%s' is an array and arrayReduction is ON", attrP->name));
+    KT_T(KtArrayReduction, "The value of '%s' is an array and arrayReduction is ON", attrP->name);
     if ((attrP->value.firstChildP != NULL) && (attrP->value.firstChildP->next == NULL))
     {
-      LM_T(LmtArrayReduction, ("'%s' is an array of one single element => arrayReduction is PERFORMED", attrP->name));
+      KT_T(KtArrayReduction, "'%s' is an array of one single element => arrayReduction is PERFORMED", attrP->name);
 
       KjNode* arrayItemP = attrP->value.firstChildP;
 
@@ -261,7 +261,7 @@ static bool pCheckTypeFromContext(KjNode* attrP, OrionldContextItem* attrContext
       attrP->lastChild = arrayItemP->lastChild;  // Might be an array or object inside the array ...
     }
     else
-      LM_T(LmtArrayReduction, ("'%s' is an array of zero od +1 elements => arrayReduction is NOT performed", attrP->name));
+      KT_T(KtArrayReduction, "'%s' is an array of zero od +1 elements => arrayReduction is NOT performed", attrP->name);
   }
 
   return true;
@@ -429,7 +429,7 @@ inline bool pCheckAttributeArray
 //
 inline bool pCheckAttributeNull(const char* entityId, KjNode* attrP)
 {
-  LM_W(("RHS for attribute '%s' is NULL - that doesn't work for JSON-LD - use the string 'urn:ngsi-ld:null'", attrP->name));
+  KT_W("RHS for attribute '%s' is NULL - that doesn't work for JSON-LD - use the string 'urn:ngsi-ld:null'", attrP->name);
   orionldError(OrionldBadRequestData,
                "The use of NULL value is not recommended for JSON-LD (the whole attribute gets ignored)",
                attrP->name,
@@ -927,13 +927,13 @@ bool multiAttributeArray(KjNode* attrArrayP, bool* errorP)
   int datasets = 0;
   int objects  = 0;
 
-  LM_TREE(attrArrayP, "Attr Array", LmtDbModel);
+  KT_TREE(attrArrayP, "Attr Array", KtDbModel);
 
   for (KjNode* aInstanceP = attrArrayP->value.firstChildP; aInstanceP != NULL; aInstanceP = aInstanceP->next)
   {
     if (aInstanceP->type != KjObject)
     {
-      LM_T(LmtDbModel, ("Instance is not an object"));
+      KT_T(KtDbModel, "Instance is not an object");
       return false;
     }
 
@@ -957,7 +957,7 @@ bool multiAttributeArray(KjNode* attrArrayP, bool* errorP)
 
   if (datasets == 0)
   {
-    LM_T(LmtDbModel, ("no datasets"));
+    KT_T(KtDbModel, "no datasets");
     return false;
   }
 
@@ -968,7 +968,7 @@ bool multiAttributeArray(KjNode* attrArrayP, bool* errorP)
     return false;
   }
 
-  LM_T(LmtDbModel, ("dataset array recognized"));
+  KT_T(KtDbModel, "dataset array recognized");
   return true;
 }
 
@@ -987,7 +987,7 @@ bool deletionWithTypePresent(KjNode* attrP, KjNode* typeP)
     valueP = kjLookup(attrP, "value");
     if ((valueP != NULL) && (valueP->type == KjString) && (strcmp(valueP->value.s, "urn:ngsi-ld:null") == 0))
     {
-      LM_T(LmtAttrNames, ("Marking '%s' for REMOVAL", attrP->name));
+      KT_T(KtAttrNames, "Marking '%s' for REMOVAL", attrP->name);
       attrP->type = KjNull;
       return true;
     }
@@ -1210,7 +1210,7 @@ static bool pCheckAttributeObject
           arrayReduceForLangProp(languageMapP);
       }
       else
-        LM_W(("No languageMap field found!"));
+        KT_W("No languageMap field found!");
     }
     else if (attributeType == VocabularyProperty)
     {
@@ -1276,7 +1276,7 @@ static bool pCheckAttributeObject
     {
       // As "type" is present - is it coherent? (Property has "value", Relationship has "object", etc)
       if (valueAndTypeCheck(attrP, attributeType, attrTypeFromDb != NoAttributeType) == false)
-        LM_RE(false, ("valueAndTypeCheck failed"));
+        KT_RE(false, "valueAndTypeCheck failed");
     }
   }
   else  // Attribute Type is not there - try to guess the type, if not already known from the DB
@@ -1328,7 +1328,7 @@ static bool pCheckAttributeObject
     }
 
     if (valueAndTypeCheck(attrP, attributeType, attrTypeFromDb != NoAttributeType) == false)
-      LM_RE(false, ("valueAndTypeCheck failed"));
+      KT_RE(false, "valueAndTypeCheck failed");
 
     if ((attrTypeFromDb != NoAttributeType) && (attributeType != NoAttributeType) && (attributeType != attrTypeFromDb))
     {
@@ -1346,7 +1346,7 @@ static bool pCheckAttributeObject
     // FIXME: Change ORIONLD_SERVICE_OPTION_ACCEPT_JSONLD_NULL for ... ORIONLD_SERVICE_OPTION_xxxxx
     //
     if (orionldState.serviceP == NULL)
-      LM_W(("orionldState.serviceP is NULL as 'DDS initiated via PutAttribute'"));
+      KT_W("orionldState.serviceP is NULL as 'DDS initiated via PutAttribute'");
     else if ((orionldState.serviceP->options & ORIONLD_SERVICE_OPTION_ACCEPT_JSONLD_NULL) != 0)
     {
       if (deletionWithoutTypePresent(attrP, attributeType, valueP, objectP, languageMapP, vocabP, jsonP) == true)
@@ -1363,7 +1363,7 @@ static bool pCheckAttributeObject
 
     if ((fieldP->type == KjString) && (strcmp(fieldP->value.s, "urn:ngsi-ld:null") == 0))
     {
-      LM_T(LmtAttrNames, ("Marking '%s' of '%s' for REMOVAL", fieldP->name, attrP->name));
+      KT_T(KtAttrNames, "Marking '%s' of '%s' for REMOVAL", fieldP->name, attrP->name);
       fieldP->type = KjNull;
     }
 
@@ -1375,7 +1375,7 @@ static bool pCheckAttributeObject
         snprintf(errorString, sizeof(errorString),
                  "The use of NULL value is not recommended for JSON-LD (the whole attribute gets ignored) - for the entity '%s', attribute '%s', attribute field '%s'",
                  entityId, attrP->name, fieldP->name);
-        LM_E(("%s", errorString));
+        KT_E("%s", errorString);
         orionldError(OrionldBadRequestData, "Bad Input", errorString, 400);
         return false;
       }
@@ -1517,7 +1517,7 @@ static bool pCheckAttributeObject
   {
     if (pCheckGeoProperty(attrP) == false)
     {
-      LM_W(("pCheckGeoProperty flagged an error: %s: %s", orionldState.pd.title, orionldState.pd.detail));
+      KT_W("pCheckGeoProperty flagged an error: %s: %s", orionldState.pd.title, orionldState.pd.detail);
       return false;
     }
 
@@ -1703,7 +1703,7 @@ bool pCheckAttribute
   // "Direct" Deletion?
   if ((attrP->type == KjString) && (strcmp(attrP->value.s, "urn:ngsi-ld:null") == 0))
   {
-    LM_T(LmtAttrNames, ("Marking '%s' for REMOVAL", attrP->name));
+    KT_T(KtAttrNames, "Marking '%s' for REMOVAL", attrP->name);
     attrP->type = KjNull;
     return true;
   }
@@ -1719,10 +1719,10 @@ bool pCheckAttribute
   {
     bool error = false;
 
-    LM_T(LmtDbModel, ("It's an Attribute and it is an Array - datasets?"));
+    KT_T(KtDbModel, "It's an Attribute and it is an Array - datasets?");
     if (multiAttributeArray(attrP, &error) == true)
     {
-      LM_T(LmtDbModel, ("Yes, datasets"));
+      KT_T(KtDbModel, "Yes, datasets");
       for (KjNode* aInstanceP = attrP->value.firstChildP; aInstanceP != NULL; aInstanceP = aInstanceP->next)
       {
         // Do I need the attribute instance in the DB?

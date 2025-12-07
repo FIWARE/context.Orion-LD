@@ -26,12 +26,10 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                      // KT_*
 #include "kjson/KjNode.h"                                       // KjNode
 #include "kjson/kjBuilder.h"                                    // kjChildRemove
 }
-
-#include "logMsg/logMsg.h"                                      // LM_*
-#include "logMsg/traceLevels.h"                                 // Lmt*
 
 #include "orionld/common/CHECK.h"                               // STRING_CHECK, ...
 #include "orionld/common/orionldState.h"                        // orionldState
@@ -57,7 +55,7 @@ static bool regexCheck(const char* pattern)
 
   if (r != 0)
   {
-    LM_W(("Invalid regex '%s' - error %d from regcomp", r));
+    KT_W("Invalid regex '%s' - error %d from regcomp", r);
     return false;
   }
 
