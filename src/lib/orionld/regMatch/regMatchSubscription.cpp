@@ -24,17 +24,17 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjLookup.h"                                    // kjLookup
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
 #include "cache/CachedSubscription.h"                          // CachedSubscription
 
-#include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/types/RegCache.h"                            // RegCache
 #include "orionld/types/RegCacheItem.h"                        // RegCacheItem
+#include "orionld/common/orionldState.h"                       // orionldState
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/regMatch/regMatchSubscription.h"             // Own interface
 
 
@@ -60,7 +60,7 @@ bool regMatchSubscription
     EntityInfo* eiP = cSubP->entityIdInfos[ix];
 
     // For now, only match subs/regs with entity type only
-    LM_T(LmtSR, ("entityType  : '%s', entityId: '%s'", eiP->entityType.c_str(), eiP->entityId.c_str()));
+    KT_T(LmtSR, "entityType  : '%s', entityId: '%s'", eiP->entityType.c_str(), eiP->entityId.c_str());
     if ((eiP->entityType != "") && (eiP->entityId == ".*"))
     {
       const char* entityType = eiP->entityType.c_str();
@@ -88,13 +88,13 @@ bool regMatchSubscription
             //
             if ((strcmp(typeP->name, "type") != 0) || (typeP->next != NULL))
             {
-              LM_W(("For now, distributed subscriptions only work for type based registrations"));
+              KT_W("For now, distributed subscriptions only work for type based registrations");
               break;
             }
 
             if (strcmp(entityType, typeP->value.s) == 0)
             {
-              LM_T(LmtSR, ("Found a matching registration for entity type '%s': %s", entityType, rciP->regId));
+              KT_T(LmtSR, "Found a matching registration for entity type '%s': %s", entityType, rciP->regId);
               *entityTypeP = (char*) entityType;
               return true;
             }

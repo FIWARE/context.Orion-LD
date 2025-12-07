@@ -24,15 +24,15 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjStringValueLookupInArray.h"                    // kjStringValueLookupInArray
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/types/StringArray.h"                           // StringArray, stringArrayClone
 #include "orionld/types/RegCacheItem.h"                          // RegCacheItem
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/regMatch/regMatchAttributesForGet.h"           // Own interface
 
 
@@ -96,32 +96,32 @@ StringArray* regMatchAttributesForGet
   bool allAttributes = (propertyNamesP == NULL) && (relationshipNamesP == NULL);
 
 #ifdef DEBUG
-  LM_T(LmtDistOpAttributes, ("Creating the union of attributes GET URL-Param vs Registered Attributes"));
+  KT_T(KtDistOpAttributes, "Creating the union of attributes GET URL-Param vs Registered Attributes");
 
   if (attrListP != NULL)
   {
-    LM_T(LmtDistOpAttributes, ("URI param 'attrs':"));
+    KT_T(KtDistOpAttributes, "URI param 'attrs':");
     for (int ix = 0; ix < attrListP->items; ix++)
     {
-      LM_T(LmtDistOpAttributes, ("  o %s", attrListP->array[ix]));
+      KT_T(KtDistOpAttributes, "  o %s", attrListP->array[ix]);
     }
   }
 
   if (propertyNamesP != NULL)
   {
-    LM_T(LmtDistOpAttributes, ("Reg 'propertyNames':"));
+    KT_T(KtDistOpAttributes, "Reg 'propertyNames':");
     for (KjNode* propertyP = propertyNamesP->value.firstChildP; propertyP != NULL; propertyP = propertyP->next)
     {
-      LM_T(LmtDistOpAttributes, ("  o %s", propertyP->value.s));
+      KT_T(KtDistOpAttributes, "  o %s", propertyP->value.s);
     }
   }
 
   if (relationshipNamesP != NULL)
   {
-    LM_T(LmtDistOpAttributes, ("Reg 'relationshipNames':"));
+    KT_T(KtDistOpAttributes, "Reg 'relationshipNames':");
     for (KjNode* relationshipP = relationshipNamesP->value.firstChildP; relationshipP != NULL; relationshipP = relationshipP->next)
     {
-      LM_T(LmtDistOpAttributes, ("  o %s", relationshipP->value.s));
+      KT_T(KtDistOpAttributes, "  o %s", relationshipP->value.s);
     }
   }
 #endif
@@ -139,7 +139,7 @@ StringArray* regMatchAttributesForGet
     //
     if (attrListP != NULL)
     {
-      LM_T(LmtDistOpAttributes, ("Keeping the URL-Param Attributes as the registration has no attributes specified"));
+      KT_T(KtDistOpAttributes, "Keeping the URL-Param Attributes as the registration has no attributes specified");
       return stringArrayClone(attrListP);
     }
   }
@@ -152,13 +152,13 @@ StringArray* regMatchAttributesForGet
     // Everything matches - return an empty array
     sList->items = 0;
     sList->array = NULL;
-    LM_T(LmtDistOpAttributes, ("Using ALL Attributes as the registration has no attributes specified and the Query also not"));
+    KT_T(KtDistOpAttributes, "Using ALL Attributes as the registration has no attributes specified and the Query also not");
     return sList;
   }
   else if ((attrListP != NULL) && (attrListP->items > 0))
   {
     items = attrListP->items;
-    LM_T(LmtDistOpAttributes, ("%d attributes in URL param", items));
+    KT_T(KtDistOpAttributes, "%d attributes in URL param", items);
   }
   else
   {
@@ -181,7 +181,7 @@ StringArray* regMatchAttributesForGet
     {
       for (KjNode* pName = propertyNamesP->value.firstChildP; pName != NULL; pName = pName->next)
       {
-        LM_T(LmtDistOpAttributes, ("Adding '%s' to the attrList of the DistOp", pName->value.s));
+        KT_T(KtDistOpAttributes, "Adding '%s' to the attrList of the DistOp", pName->value.s);
         sList->array[ix++] = pName->value.s;
       }
     }
@@ -190,7 +190,7 @@ StringArray* regMatchAttributesForGet
     {
       for (KjNode* rName = relationshipNamesP->value.firstChildP; rName != NULL; rName = rName->next)
       {
-        LM_T(LmtDistOpAttributes, ("Adding '%s' to the attrList of the DistOp", rName->value.s));
+        KT_T(KtDistOpAttributes, "Adding '%s' to the attrList of the DistOp", rName->value.s);
         sList->array[ix++] = rName->value.s;
       }
     }
@@ -200,35 +200,35 @@ StringArray* regMatchAttributesForGet
   else
   {
     int matches = 0;
-    LM_T(LmtDistOpAttributes, ("Matching %d URL attrs", attrListP->items));
+    KT_T(KtDistOpAttributes, "Matching %d URL attrs", attrListP->items);
     for (int ix = 0; ix < attrListP->items; ix++)
     {
       bool match = false;
 
-      LM_T(LmtDistOpAttributes, ("Matching URL attr '%s' with propertyNames", attrListP->array[ix]));
+      KT_T(KtDistOpAttributes, "Matching URL attr '%s' with propertyNames", attrListP->array[ix]);
       if (propertyNamesP != NULL)
         match = (kjStringValueLookupInArray(propertyNamesP, attrListP->array[ix]) != NULL);
 
-      LM_T(LmtDistOpAttributes, ("Matching URL attr '%s' with relationshipNames", attrListP->array[ix]));
+      KT_T(KtDistOpAttributes, "Matching URL attr '%s' with relationshipNames", attrListP->array[ix]);
       if ((match == false) && (relationshipNamesP != NULL))
         match = (kjStringValueLookupInArray(relationshipNamesP, attrListP->array[ix]) != NULL);
 
       if (match == false)
       {
-        LM_T(LmtDistOpAttributes, ("%s is not a match", attrListP->array[ix]));
+        KT_T(KtDistOpAttributes, "%s is not a match", attrListP->array[ix]);
         continue;
       }
 
-      LM_T(LmtDistOpAttributes, ("Adding '%s' to the attrList of the DistOp", attrListP->array[ix]));
+      KT_T(KtDistOpAttributes, "Adding '%s' to the attrList of the DistOp", attrListP->array[ix]);
       sList->array[matches++]  = attrListP->array[ix];
 
       if (regP->mode == RegModeExclusive)
       {
         stringArrayRemoveItem(attrListP, ix);
-        LM_T(LmtDistOpAttrRemove, ("Removing the attribute '%s' from the attrV (%d attr left)", attrListP->array[ix], attrListP->items));
+        KT_T(KtDistOpAttrRemove, "Removing the attribute '%s' from the attrV (%d attr left)", attrListP->array[ix], attrListP->items);
         --ix;  // Compensating for the item in attrListP that was just removed
       }
-      LM_T(LmtDistOpAttributes, ("Matching %d (ix is %d) URL attrs", attrListP->items, ix));
+      KT_T(KtDistOpAttributes, "Matching %d (ix is %d) URL attrs", attrListP->items, ix);
     }
 
     if (matches == 0)
@@ -237,6 +237,6 @@ StringArray* regMatchAttributesForGet
     sList->items = matches;
   }
 
-  LM_T(LmtDistOpAttributes, ("Returning an attrList of %d items", sList->items));
+  KT_T(KtDistOpAttributes, "Returning an attrList of %d items", sList->items);
   return sList;
 }
