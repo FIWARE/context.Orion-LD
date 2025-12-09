@@ -24,15 +24,15 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                           // KjNode
 #include "kjson/kjBuilder.h"                                        // kjChildRemove
 #include "kjson/kjLookup.h"                                         // kjLookup
 }
 
-#include "logMsg/logMsg.h"                                          // LM_*
-
 #include "orionld/types/StringArray.h"                              // StringArray, stringArrayLookup
 #include "orionld/common/orionldState.h"                            // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/pick.h"                                    // Own interface
 
 
@@ -43,20 +43,17 @@ extern "C"
 //
 void pickForEntity(KjNode* entityP)
 {
-  KjNode* idP = kjLookup(entityP, "id");
-  LM_T(LmtPick, ("  o %s", idP->value.s));
-
+  KjNode* idP      = kjLookup(entityP, "id");
   KjNode* next     = NULL;
   KjNode* itemP    = entityP->value.firstChildP;
-#ifdef LM_ON
   char*   itemName = NULL;
-#endif
+
+  if (idP != NULL)
+    KT_T(KtPick, "  o %s", idP->value.s);
 
   while (itemP != NULL)
   {
-#ifdef LM_ON
     itemName = itemP->name;
-#endif
     next     = itemP->next;
 
     if (stringArrayLookup(&orionldState.in.pickList, itemP->name) == false)
@@ -65,7 +62,7 @@ void pickForEntity(KjNode* entityP)
       itemP = NULL;
     }
 
-    LM_T(LmtPick, ("    - %s (%s)", itemName, (itemP == NULL)? "removed" : "stays"));
+    KT_T(KtPick, "    - %s (%s)", itemName, (itemP == NULL)? "removed" : "stays");
     itemP = next;
   }
 }
@@ -78,14 +75,14 @@ void pickForEntity(KjNode* entityP)
 //
 void pickForEntityArray(void)
 {
-  LM_T(LmtPick, ("%d items in pick: %d", orionldState.in.pickList.items));
+  KT_T(KtPick, "%d items in pick: %d", orionldState.in.pickList.items);
 
   for (int ix = 0; ix < orionldState.in.pickList.items; ix++)
   {
-    LM_T(LmtPick, ("  o %s", orionldState.in.pickList.array[ix]));
+    KT_T(KtPick, "  o %s", orionldState.in.pickList.array[ix]);
   }
 
-  LM_T(LmtPick, ("First level records per entity:"));
+  KT_T(KtPick, "First level records per entity:");
   for (KjNode* entityP = orionldState.responseTree->value.firstChildP; entityP != NULL; entityP = entityP->next)
   {
     pickForEntity(entityP);

@@ -24,8 +24,10 @@
 */
 #include <semaphore.h>                                           // sem_init
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+}
 
 #include "orionld/types/OrionldTenant.h"                         // OrionldTenant, tenantList, tenantCache
 #include "orionld/common/orionldState.h"                         // dbName (CLI param - default is "orion")
@@ -42,7 +44,7 @@
 void orionldTenantInit(void)
 {
   if (sem_init(&tenantSem, 0, 1) == -1)
-    LM_X(1, ("Runtime Error (error initializing semaphore for orionld tenants: %s)", strerror(errno)));
+    KT_X(1, "Runtime Error (error initializing semaphore for orionld tenants: %s)", strerror(errno));
 
   //
   // Initialize all path values for the default tenant

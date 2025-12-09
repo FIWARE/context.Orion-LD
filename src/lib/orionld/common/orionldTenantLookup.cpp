@@ -24,9 +24,6 @@
 */
 #include <string.h>                                            // strcpy
 
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
-
 #include "orionld/types/OrionldTenant.h"                       // OrionldTenant
 #include "orionld/common/tenantList.h"                         // tenantList, tenant0, tenantCache
 #include "orionld/common/orionldTenantLookup.h"                // Own interface

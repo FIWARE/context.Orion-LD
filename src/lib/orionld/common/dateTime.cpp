@@ -22,13 +22,18 @@
 *
 * Author: Ken Zangelin
 */
+#include <stdio.h>                                             // snprintf
 #include <unistd.h>                                            // NULL
 #include <string.h>                                            // strchr
 #include <stdlib.h>                                            // strtod
 #include <time.h>                                              // timegm, struct tm
 
-#include "logMsg/logMsg.h"                                     // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/common/stringStrip.h"                        // stringStrip
 #include "orionld/common/dateTime.h"                           // Own interface
 
@@ -60,7 +65,7 @@ static bool dateParse(const char* dateTime, char* dateString, int* yearP, int* m
   int month   = 0;
   int day     = 0;
 
-  LM_T(LmtDateTime, ("len('%s'): %d", dateString, len));
+  KT_T(KtDateTime, "len('%s'): %d", dateString, len);
 
   if (len == 10)
   {
@@ -87,9 +92,9 @@ static bool dateParse(const char* dateTime, char* dateString, int* yearP, int* m
     month = atoi(&dateString[5]);
     day   = atoi(&dateString[8]);
 
-    LM_T(LmtDateTime, ("year:  %d", year));
-    LM_T(LmtDateTime, ("month: %d", month));
-    LM_T(LmtDateTime, ("day:   %d", day));
+    KT_T(KtDateTime, "year:  %d", year);
+    KT_T(KtDateTime, "month: %d", month);
+    KT_T(KtDateTime, "day:   %d", day);
   }
   else if (len == 8)
   {
@@ -439,17 +444,17 @@ double dateTimeFromString(const char* iso8601String, char* errorString, int erro
   char iso8601[64];
 
   if (iso8601String == NULL)
-    LM_RE(-1, ("NULL ISO8601 String"));
+    KT_RE(-1, "NULL ISO8601 String");
 
   if (*iso8601String == 0)
-    LM_RE(-1, ("Empty ISO8601 String"));
+    KT_RE(-1, "Empty ISO8601 String");
 
   strncpy(iso8601, iso8601String, sizeof(iso8601) - 1);
 
   char* date = stringStrip(iso8601);
   char* T    = strchr(date, 'T');
 
-  LM_T(LmtDateTime, ("In: '%s'", iso8601));
+  KT_T(KtDateTime, "In: '%s'", iso8601);
 
   //
   // Extracting dateString. timeString, and timezoneString
@@ -476,7 +481,7 @@ double dateTimeFromString(const char* iso8601String, char* errorString, int erro
     strncpy(iso8601_2, date, sizeof(iso8601_2) - 1);
 
     if (dateParse(iso8601String, iso8601_2, &year, &month, &day, errorString, errorStringLen) == false)
-      LM_RE(-1, ("Error parsing ISO8601 timestamp '%s': %s", iso8601String, errorString));
+      KT_RE(-1, "Error parsing ISO8601 timestamp '%s': %s", iso8601String, errorString);
 
 
     strncpy(dateString, date, sizeof(dateString) - 1);
@@ -503,9 +508,9 @@ double dateTimeFromString(const char* iso8601String, char* errorString, int erro
     }
   }
 
-  LM_T(LmtDateTime, ("dateString;     '%s'", dateString));
-  LM_T(LmtDateTime, ("timeString;     '%s'", timeString));
-  LM_T(LmtDateTime, ("timezoneString; '%s'", timezoneString));
+  KT_T(KtDateTime, "dateString;     '%s'", dateString);
+  KT_T(KtDateTime, "timeString;     '%s'", timeString);
+  KT_T(KtDateTime, "timezoneString; '%s'", timezoneString);
 
   int    year      = 0;
   int    month     = 0;
@@ -518,13 +523,13 @@ double dateTimeFromString(const char* iso8601String, char* errorString, int erro
   char   sign      = 'Z';
 
   if (dateParse(iso8601String, dateString, &year, &month, &day, errorString, errorStringLen) == false)
-    LM_RE(-1, ("Error parsing ISO8601 timestamp '%s': %s", iso8601String, errorString));
+    KT_RE(-1, "Error parsing ISO8601 timestamp '%s': %s", iso8601String, errorString);
 
   if (timeParse(iso8601String, timeString, &hour, &minute, &secs, errorString, errorStringLen) == false)
-    LM_RE(-1, ("Error parsing ISO8601 timestamp '%s': %s", iso8601String, errorString));
+    KT_RE(-1, "Error parsing ISO8601 timestamp '%s': %s", iso8601String, errorString);
 
   if (timezoneParse(iso8601String, timezoneString, &tzHour, &tzMinute, &sign, errorString, errorStringLen) == false)
-    LM_RE(-1, ("Error parsing ISO8601 timestamp '%s': %s", iso8601String, errorString));
+    KT_RE(-1, "Error parsing ISO8601 timestamp '%s': %s", iso8601String, errorString);
 
 
   //

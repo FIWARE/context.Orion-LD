@@ -22,12 +22,16 @@
 *
 * Author: Ken Zangelin
 */
-#include <stdlib.h>                               // atoi
+#include <stdlib.h>                                              // atoi
 
-#include "logMsg/logMsg.h"                        // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+}
 
-#include "orionld/common/orionldState.h"          // orionldState
-#include "orionld/common/urlParse.h"              // Own interface
+#include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace levels
+#include "orionld/common/urlParse.h"                             // Own interface
 
 
 
@@ -59,7 +63,7 @@ bool urlParse
   int urlIx  = 0;
   int toIx   = 0;
 
-  LM_T(LmtAlt, ("Incoming url: '%s'", url));
+  KT_T(KtAlt, "Incoming url: '%s'", url);
 
   //
   // 1. Find ':', copy left-hand-side to 'protocol'
@@ -70,7 +74,7 @@ bool urlParse
       protocol[toIx] = url[urlIx];
     else
     {
-      LM_W(("Bad Input (not enough room in protocol char vector: url='%s')", url));
+      KT_W("Bad Input (not enough room in protocol char vector: url='%s')", url);
       *detailsPP = (char*) "Not a URI";
       protocol[toIx] = 0;
       return false;
@@ -87,8 +91,8 @@ bool urlParse
   }
 
   protocol[toIx] = 0;
-  LM_T(LmtAlt, ("Got the protocol: '%s'", protocol));
-  LM_T(LmtAlt, ("Rest: '%s'", &url[urlIx]));
+  KT_T(KtAlt, "Got the protocol: '%s'", protocol);
+  KT_T(KtAlt, "Rest: '%s'", &url[urlIx]);
 
   //
   // 2. Make sure "//" comes after ':'
@@ -99,7 +103,7 @@ bool urlParse
     return false;
   }
   urlIx += 3;  // Step over ://
-  LM_T(LmtAlt, ("Rest: '%s'", url));
+  KT_T(KtAlt, "Rest: '%s'", url);
 
 
   //
@@ -122,12 +126,12 @@ bool urlParse
   }
 
   ip[toIx] = 0;
-  LM_T(LmtAlt, ("Got the IP: '%s'", ip));
-  LM_T(LmtAlt, ("Rest: '%s'", &url[urlIx]));
+  KT_T(KtAlt, "Got the IP: '%s'", ip);
+  KT_T(KtAlt, "Rest: '%s'", &url[urlIx]);
 
   if (url[urlIx] == 0)
   {
-    LM_T(LmtAlt, ("Were done (url[%d] == 0) (url: '%s')", urlIx, url));
+    KT_T(KtAlt, "Were done (url[%d] == 0) (url: '%s')", urlIx, url);
     return true;
   }
 
@@ -136,7 +140,7 @@ bool urlParse
   //
   if (url[urlIx] == ':')  // It's a port number
   {
-    LM_T(LmtAlt, ("There's a port number"));
+    KT_T(KtAlt, "There's a port number");
     char portNumberString[6];
 
     toIx = 0;
@@ -151,14 +155,14 @@ bool urlParse
     portNumberString[toIx] = 0;
     *portP = atoi(portNumberString);
 
-    LM_T(LmtAlt, ("Port: %d", *portP));
+    KT_T(KtAlt, "Port: %d", *portP);
     if (url[urlIx] == 0)
     {
-      LM_T(LmtAlt, ("We're done"));
+      KT_T(KtAlt, "We're done");
       return true;
     }
 
-    LM_T(LmtAlt, ("Rest: '%s'", &url[urlIx]));
+    KT_T(KtAlt, "Rest: '%s'", &url[urlIx]);
   }
 
   //
@@ -167,17 +171,17 @@ bool urlParse
   if (url[urlIx] == '/')
   {
     *urlPathPP = (char*) &url[urlIx];
-    LM_T(LmtAlt, ("Got a URL PATH: '%s'", *urlPathPP));
+    KT_T(KtAlt, "Got a URL PATH: '%s'", *urlPathPP);
   }
   else
   {
-    LM_T(LmtAlt, ("No URL PATH"));
+    KT_T(KtAlt, "No URL PATH");
     *detailsPP = (char*) "URL parse error - no slash found to start the URL PATH";
-    LM_T(LmtAlt, ("Done, but with error ..."));
+    KT_T(KtAlt, "Done, but with error ...");
     return false;
   }
 
-  LM_T(LmtAlt, ("Done"));
+  KT_T(KtAlt, "Done");
   return true;
 }
 
@@ -197,7 +201,7 @@ bool urlParse(char* url, char** protocolP, char** ipP, unsigned short* portP, ch
   char*            ip;
   char*            rest;
 
-  LM_T(LmtAlt, ("URL:      '%s'", url));
+  KT_T(KtAlt, "URL:      '%s'", url);
 
   // Check for custom url, e.g. "${abc}" - only if NGSIv2
   if (orionldState.apiVersion != API_VERSION_NGSILD_V1)
@@ -262,10 +266,10 @@ bool urlParse(char* url, char** protocolP, char** ipP, unsigned short* portP, ch
   else
     *restP = NULL;
 
-  LM_T(LmtAlt, ("Protocol: '%s'", *protocolP));
-  LM_T(LmtAlt, ("Host:     '%s'", *ipP));
-  LM_T(LmtAlt, ("Port:      %d", *portP));
-  LM_T(LmtAlt, ("Path:     '%s'", *restP));
+  KT_T(KtAlt, "Protocol: '%s'", *protocolP);
+  KT_T(KtAlt, "Host:     '%s'", *ipP);
+  KT_T(KtAlt, "Port:      %d", *portP);
+  KT_T(KtAlt, "Path:     '%s'", *restP);
 
   return true;
 }

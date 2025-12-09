@@ -22,15 +22,20 @@
 *
 * Author: Ken Zangelin
 */
+#include <string.h>                                              // strerror
+#include <unistd.h>                                              // close
+#include <netdb.h>                                               // struct hostent
+#include <errno.h>                                               // errno
 #include <sys/types.h>                                           // types
 #include <sys/socket.h>                                          // socket
 #include <netinet/in.h>                                          // sockaddr_in
-#include <netdb.h>                                               // struct hostent
-#include <unistd.h>                                              // close
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+}
 
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/orionldServerConnect.h"                 // Own interface
 
 
@@ -45,18 +50,18 @@ int orionldServerConnect(const char* ip, uint16_t portNo)
   struct hostent*     heP;
   struct sockaddr_in  server;
 
-  LM_T(LmtNotificationMsg, ("Connecting to IP: '%s'", ip));
+  KT_T(KtNotificationMsg, "Connecting to IP: '%s'", ip);
   heP = gethostbyname(ip);
   if (heP == NULL)
   {
-    LM_E(("unable to find host '%s'", ip));
+    KT_E("unable to find host '%s'", ip);
     return -1;
   }
 
   fd = socket(AF_INET, SOCK_STREAM, 0);
   if (fd == -1)
   {
-    LM_E(("Can't even create a socket: %s", strerror(errno)));
+    KT_E("Can't even create a socket: %s", strerror(errno));
     return -1;
   }
 
@@ -68,7 +73,7 @@ int orionldServerConnect(const char* ip, uint16_t portNo)
   if (connect(fd, (struct sockaddr*) &server, sizeof(struct sockaddr)) == -1)
   {
     close(fd);
-    LM_E(("Unable to connect to host/port: %s:%d", ip, portNo));
+    KT_E("Unable to connect to host/port: %s:%d", ip, portNo);
     return -1;
   }
 

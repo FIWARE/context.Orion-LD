@@ -22,9 +22,12 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                // LM_RE
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+}
 
-#include "orionld/common/orionldState.h"                  // orionldState
+#include "orionld/common/orionldState.h"                         // orionldState
 
 
 
@@ -52,7 +55,7 @@ bool forbidden(const char* s, const char* exceptions)
     }
 
     if (bad == true)
-      LM_RE(true, ("Invalid character: 0x%x '%c'", *s & 0xFF, *s));
+      KT_RE(true, "Invalid character: 0x%x '%c'", *s & 0xFF, *s);
 
     ++s;
   }

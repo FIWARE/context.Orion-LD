@@ -22,11 +22,14 @@
 *
 * Author: Ken Zangelin
 */
-#include <stdio.h>                                                  // sprintf
-#include <string.h>                                                 // strlen
-#include <time.h>                                                   // time, gmtime_r
+#include <stdio.h>                                               // sprintf
+#include <string.h>                                              // strlen
+#include <time.h>                                                // time, gmtime_r
 
-#include "logMsg/logMsg.h"                                          // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+}
 
 
 
@@ -45,10 +48,7 @@ bool numberToDate(double timestamp, char* date, int dateLen)
 
   int sLen = strlen(date);
   if (sLen + 5 >= dateLen)
-  {
-    LM_E(("Internal Error (not enough room for the decimals of the timestamp)"));
-    return false;
-  }
+    KT_RE(false, "Internal Error (not enough room for the decimals of the timestamp)");
 
   int dMicros  = (int) (millis * 1000000) + 1;
   int dMillis  = dMicros / 1000;

@@ -29,12 +29,11 @@ extern "C"
 {
 #include "kbase/kTime.h"                                         // kTimeGet
 #include "kbase/kMacros.h"                                       // K_VEC_SIZE
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kalloc/kaBufferInit.h"                                 // kaBufferInit
 #include "kjson/kjBufferCreate.h"                                // kjBufferCreate
 #include "kjson/kjFree.h"                                        // kjFree
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/types/OrionldGeoIndex.h"                       // OrionldGeoIndex
 #include "orionld/types/OrionldTenant.h"                         // OrionldTenant
@@ -225,7 +224,7 @@ void orionldOutHeaderAdd(char* key, char* sValue, int iValue)
     orionldState.out.httpHeaderSize += 5;
     orionldState.out.httpHeader      = (char**) kaAlloc(&orionldState.kalloc, sizeof(char*) * orionldState.out.httpHeaderSize);
     if (orionldState.out.httpHeader == NULL)
-      LM_X(1, ("Out of memory trying to allocate room for %d outgoing HTTP headers", orionldState.out.httpHeaderSize));
+      KT_X(1, "Out of memory trying to allocate room for %d outgoing HTTP headers", orionldState.out.httpHeaderSize);
 
     // Copying the already existing header pointers to the new buffer
     memcpy(orionldState.out.httpHeader, oldArray, orionldState.out.httpHeaderSize - 5);
@@ -241,7 +240,7 @@ void orionldOutHeaderAdd(char* key, char* sValue, int iValue)
   char* header = kaAlloc(&orionldState.kalloc, size);
 
   if (header == NULL)
-    LM_X(1, ("Out of memory trying to allocate %d bytes for an outgoing HTTP header", size));
+    KT_X(1, "Out of memory trying to allocate %d bytes for an outgoing HTTP header", size);
 
   orionldState.out.httpHeader[orionldState.out.httpHeaderIx] = header;
 
@@ -328,7 +327,7 @@ void orionldStateErrorAttributeAdd(const char* attributeName)
 
       orionldState.errorAttributeArrayP = (char*) malloc(size);
       if (orionldState.errorAttributeArrayP == NULL)
-        LM_X(1, ("error allocating Error Attribute Array"));
+        KT_X(1, "error allocating Error Attribute Array");
 
       strncpy(orionldState.errorAttributeArrayP, orionldState.errorAttributeArray, size);
       orionldState.errorAttributeArraySize = size;
@@ -337,7 +336,7 @@ void orionldStateErrorAttributeAdd(const char* attributeName)
     {
       orionldState.errorAttributeArrayP = (char*) realloc(orionldState.errorAttributeArrayP, orionldState.errorAttributeArraySize + growSize);
       if (orionldState.errorAttributeArrayP == NULL)
-        LM_X(1, ("error reallocating Error Attribute Array"));
+        KT_X(1, "error reallocating Error Attribute Array");
       orionldState.errorAttributeArraySize = orionldState.errorAttributeArraySize + growSize;
     }
   }
@@ -371,7 +370,7 @@ void orionldStateErrorAttributeAdd(const char* attributeName)
 void orionldStateDelayedKjFreeEnqueue(KjNode* tree)  // Outdeffed
 {
   if (orionldState.delayedKjFreeVecIndex >= orionldState.delayedKjFreeVecSize - 1)
-    LM_X(1, ("Internal Error (the size of orionldState.delayedKjFreeVec needs to be augmented (current value: %d))", orionldState.delayedKjFreeVecSize));
+    KT_X(1, "Internal Error (the size of orionldState.delayedKjFreeVec needs to be augmented (current value: %d))", orionldState.delayedKjFreeVecSize);
 
   orionldState.delayedKjFreeVec[orionldState.delayedKjFreeVecIndex] = tree;
   ++orionldState.delayedKjFreeVecIndex;
@@ -387,8 +386,8 @@ void orionldStateDelayedKjFreeEnqueue(KjNode* tree)  // Outdeffed
 void orionldStateDelayedFreeEnqueue(void* allocatedBuffer)
 {
   if (orionldState.delayedFreeVecIndex >= orionldState.delayedFreeVecSize - 1)
-    LM_X(1, ("DFREE: Internal Error (the size of orionldState.delayedFreeVec needs to be augmented (delayedFreeVecIndex=%d, delayedFreeVecSize=%d))",
-             orionldState.delayedFreeVecIndex, orionldState.delayedFreeVecSize));
+    KT_X(1, "DFREE: Internal Error (the size of orionldState.delayedFreeVec needs to be augmented (delayedFreeVecIndex=%d, delayedFreeVecSize=%d))",
+         orionldState.delayedFreeVecIndex, orionldState.delayedFreeVecSize);
 
   orionldState.delayedFreeVec[orionldState.delayedFreeVecIndex] = allocatedBuffer;
   ++orionldState.delayedFreeVecIndex;
@@ -411,5 +410,5 @@ void orionldStateDelayedFreeCancel(void* allocatedBuffer)
     }
   }
 
-  LM_E(("DFREE: Internal Error (buffer programmed for delayed free not found (%p))", allocatedBuffer));
+  KT_E("DFREE: Internal Error (buffer programmed for delayed free not found (%p))", allocatedBuffer);
 }

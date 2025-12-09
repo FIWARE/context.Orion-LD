@@ -29,9 +29,6 @@ extern "C"
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
-
 #include "orionld/types/OrionldResponseErrorType.h"              // OrionldResponseErrorType
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/entityErrorPush.h"                      // Own interface

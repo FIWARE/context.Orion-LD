@@ -26,15 +26,15 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjLookup.h"                                    // kjLookup
 #include "kjson/kjBuilder.h"                                   // kjArray, ...
 #include "kjson/kjClone.h"                                     // kjClone
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
 #include "orionld/common/orionldState.h"                       // orionldState
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/dbModel/dbModelFromApiEntity.h"              // dbModelFromApiEntity
 #include "orionld/common/batchReplaceEntity.h"                 // Own interface
 
@@ -60,8 +60,8 @@ KjNode* batchReplaceEntity(KjNode* inEntityP, char* entityId, char* entityType, 
   if (dbModelFromApiEntity(dbFinalEntityP, NULL, true, entityId, entityType) == false)
     return NULL;
 
-  LM_T(LmtSR, ("entityType: '%s'", entityType));
-  LM_TREE(dbFinalEntityP, "dbFinalEntity", LmtSR);
+  KT_T(LmtSR, "entityType: '%s'", entityType);
+  KT_TREE(dbFinalEntityP, "dbFinalEntity", LmtSR);
 
   //
   // Fix the entity's creDate (from the version of the entity that was fouind in the database)

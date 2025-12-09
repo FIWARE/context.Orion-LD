@@ -31,8 +31,6 @@ extern "C"
 #include "kjson/kjChildCount.h"                                  // kjChildCount
 }
 
-#include "logMsg/logMsg.h"                                       // Logging
-
 #include "orionld/types/DistOpType.h"                            // DistOpType
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/http/httpHeaderLocationAdd.h"                  // httpHeaderLocationAdd

@@ -24,13 +24,16 @@
 */
 #include <curl/curl.h>                                         // curl
 
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+}
 
 #include "orionld/types/OrionldHttpHeader.h"                   // OrionldHttpHeader
-#include "orionld/context/orionldCoreContext.h"                // orionldDefaultUrlContext, ...
 #include "orionld/common/orionldState.h"                       // orionldState, debugCurl
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/common/orionldRequestSend.h"                 // Own interface
+#include "orionld/context/orionldCoreContext.h"                // orionldDefaultUrlContext, ...
 
 
 
@@ -44,7 +47,7 @@ static size_t writeCallback(void* contents, size_t size, size_t members, void* u
   OrionldResponseBuffer*  rBufP        = (OrionldResponseBuffer*) userP;
   int                     xtraBytes    = 512;
 
-  LM_T(LmtCurl, ("CURL: got %d bytes of payload body: %s", bytesToCopy, contents));
+  KT_T(KtCurl, "CURL: got %d bytes of payload body: %s", bytesToCopy, contents);
 
   if (bytesToCopy + rBufP->used >= rBufP->size)
   {
@@ -53,7 +56,7 @@ static size_t writeCallback(void* contents, size_t size, size_t members, void* u
       rBufP->buf  = (char*) malloc(rBufP->size + bytesToCopy + xtraBytes);
 
       if (rBufP->buf == NULL)
-        LM_X(1, ("Runtime Error (out of memory)"));
+        KT_X(1, "Runtime Error (out of memory)");
 
       rBufP->size = rBufP->size + bytesToCopy + xtraBytes;
 
@@ -69,7 +72,7 @@ static size_t writeCallback(void* contents, size_t size, size_t members, void* u
     }
 
     if (rBufP->buf == NULL)
-      LM_X(1, ("Runtime Error (out of memory)"));
+      KT_X(1, "Runtime Error (out of memory)");
 
     //
     // Save pointer to allocated buffer for later call to free()
@@ -113,35 +116,35 @@ int curlDebug(CURL* handle, curl_infotype type, char* data, size_t size, void* u
   switch (type)
   {
   case CURLINFO_TEXT:
-    LM_T(LmtCurl, ("CURL: %s", data));
+    KT_T(KtCurl, "CURL: %s", data);
     break;
 
   case CURLINFO_HEADER_OUT:
-    LM_T(LmtCurl, ("CURL: Send header"));
+    KT_T(KtCurl, "CURL: Send header");
     break;
 
   case CURLINFO_DATA_OUT:
-    LM_T(LmtCurl, ("CURL: Send data"));
+    KT_T(KtCurl, "CURL: Send data");
     break;
 
   case CURLINFO_SSL_DATA_OUT:
-    LM_T(LmtCurl, ("CURL: Send SSL data"));
+    KT_T(KtCurl, "CURL: Send SSL data");
     break;
 
   case CURLINFO_HEADER_IN:
-    LM_T(LmtCurl, ("CURL: Recv header"));
+    KT_T(KtCurl, "CURL: Recv header");
     break;
 
   case CURLINFO_DATA_IN:
-    LM_T(LmtCurl, ("CURL: Recv data"));
+    KT_T(KtCurl, "CURL: Recv data");
     break;
 
   case CURLINFO_SSL_DATA_IN:
-    LM_T(LmtCurl, ("CURL: Recv SSL data"));
+    KT_T(KtCurl, "CURL: Recv SSL data");
     break;
 
   default:
-    LM_T(LmtCurl, ("CURL: type &d", type));
+    KT_T(KtCurl, "CURL: type &d", type);
     break;
   }
 
@@ -186,10 +189,10 @@ bool orionldRequestSend
   else if ((payload != NULL) && (payloadLen  > 0) && (contentType != NULL))  {}   // OK
   else
   {
-    LM_E(("Inconsistent parameters regarding payload data"));
-    LM_E(("payload at     %p (%s)", payload, payload));
-    LM_E(("payloadLen  == %d", payloadLen));
-    LM_E(("contentType == %s", contentType));
+    KT_E("Inconsistent parameters regarding payload data");
+    KT_E("payload at     %p (%s)", payload, payload);
+    KT_E("payloadLen  == %d", payloadLen);
+    KT_E("contentType == %s", contentType);
 
     *detailPP        = (char*) "Inconsistent parameters regarding payload data";
     rBufP->buf       = NULL;
@@ -213,7 +216,7 @@ bool orionldRequestSend
     rBufP->buf        = (char*) malloc(2048);
 
     if (rBufP == NULL)
-      LM_X(1, ("Out of memory"));
+      KT_X(1, "Out of memory");
 
     rBufP->buf[0] = 0;
     orionldState.delayedFreePointer = rBufP->buf;  // Saved the pointer to be freed once the request thread ends
@@ -237,7 +240,7 @@ bool orionldRequestSend
   get_curl_context(ip, &cc);
   if (cc.curl == NULL)
   {
-    LM_E(("Internal Error (Unable to obtain CURL context)"));
+    KT_E("Internal Error (Unable to obtain CURL context)");
 
     *detailPP        = (char*) "Unable to obtain CURL context";
     rBufP->buf       = NULL;
@@ -274,9 +277,9 @@ bool orionldRequestSend
     char contentLenHeader[128];
 
     snprintf(contentTypeHeader, sizeof(contentTypeHeader), "Content-Type:%s", contentType);
-    LM_T(LmtDistOpRequestHeaders, ("Adding DistOp Request header '%s'", contentTypeHeader));
+    KT_T(KtDistOpRequestHeaders, "Adding DistOp Request header '%s'", contentTypeHeader);
     snprintf(contentLenHeader,  sizeof(contentLenHeader),  "Content-Length:%d", payloadLen);
-    LM_T(LmtDistOpRequestHeaders, ("Adding DistOp Request header '%s'", contentLenHeader));
+    KT_T(KtDistOpRequestHeaders, "Adding DistOp Request header '%s'", contentLenHeader);
 
     headers = curl_slist_append(headers, contentTypeHeader);
     curl_easy_setopt(cc.curl, CURLOPT_HTTPHEADER, headers);
@@ -292,14 +295,14 @@ bool orionldRequestSend
     char linkHeaderString[512];
 
     snprintf(linkHeaderString, sizeof(linkHeaderString), "Link: %s", linkHeader);
-    LM_T(LmtDistOpRequestHeaders, ("Adding DistOp Request header '%s'", linkHeader));
+    KT_T(KtDistOpRequestHeaders, "Adding DistOp Request header '%s'", linkHeader);
     headers = curl_slist_append(headers, linkHeaderString);
     curl_easy_setopt(cc.curl, CURLOPT_HTTPHEADER, headers);
   }
 
   if (acceptHeader != NULL)
   {
-    LM_T(LmtDistOpRequestHeaders, ("Adding DistOp Request header '%s'", acceptHeader));
+    KT_T(KtDistOpRequestHeaders, "Adding DistOp Request header '%s'", acceptHeader);
     headers = curl_slist_append(headers, acceptHeader);
     curl_easy_setopt(cc.curl, CURLOPT_HTTPHEADER, headers);  // Should be enough with one call ...
   }
@@ -311,7 +314,7 @@ bool orionldRequestSend
     OrionldHttpHeader* headerP = &headerV[ix];
 
     snprintf(headerString, sizeof(headerString), "%s:%s", headerName[headerP->type], headerP->value);
-    LM_T(LmtDistOpRequestHeaders, ("Adding DistOp Request header '%s'", headerString));
+    KT_T(KtDistOpRequestHeaders, "Adding DistOp Request header '%s'", headerString);
     headers = curl_slist_append(headers, headerString);
     ++ix;
   }
@@ -320,14 +323,14 @@ bool orionldRequestSend
   if (orionldState.in.authorization != NULL)
   {
     snprintf(headerString, sizeof(headerString), "Authorization:%s", orionldState.in.authorization);
-    LM_T(LmtDistOpRequestHeaders, ("Adding DistOp Request header '%s'", headerString));
+    KT_T(KtDistOpRequestHeaders, "Adding DistOp Request header '%s'", headerString);
     headers = curl_slist_append(headers, headerString);
   }
 
   cCode = curl_easy_perform(cc.curl);
   if (cCode != CURLE_OK)
   {
-    LM_E(("Internal Error (curl_easy_perform returned error code %d)", cCode));
+    KT_E("Internal Error (curl_easy_perform returned error code %d)", cCode);
     *detailPP  = (char*) url;
     rBufP->buf = NULL;
 
@@ -335,7 +338,7 @@ bool orionldRequestSend
       curl_slist_free_all(headers);
 
     release_curl_context(&cc);
-    LM_E(("curl_easy_perform error %d", cCode));
+    KT_E("curl_easy_perform error %d", cCode);
 
     *tryAgainP       = true;  // FIXME: might depend on cCode ...
     *downloadFailedP = true;

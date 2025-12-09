@@ -26,12 +26,11 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjBuilder.h"                                   // kjArray, ...
 #include "kjson/kjLookup.h"                                    // kjLookup
 }
-
-#include "logMsg/logMsg.h"                                     // LM_*
 
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/common/entityErrorPush.h"                    // entityErrorPush
@@ -56,7 +55,7 @@ static bool entityTypeCheck(const char* oldEntityType, KjNode* entityP)
   if (newEntityTypeNodeP != NULL)
   {
     if (strcmp(newEntityTypeNodeP->value.s, oldEntityType) != 0)
-      LM_RE(false, ("Attempt to change Entity Type"));
+      KT_RE(false, "Attempt to change Entity Type");
   }
   else
   {
@@ -149,7 +148,7 @@ int batchEntitiesFinalCheck(KjNode* requestTree, KjNode* errorsArrayP, KjNode* d
         const char* title  = "Invalid payload";
         const char* detail = "Content-Type is 'application/ld+json', but no @context in payload data array item";
 
-        LM_E(("Content-Type is 'application/ld+json', but no @context found for entity '%s'", entityId));
+        KT_E("Content-Type is 'application/ld+json', but no @context found for entity '%s'", entityId);
         entityErrorPush(errorsArrayP, entityId, OrionldBadRequestData, title, detail, 400);
         kjChildRemove(orionldState.requestTree, eP);
         eP = next;
@@ -159,7 +158,7 @@ int batchEntitiesFinalCheck(KjNode* requestTree, KjNode* errorsArrayP, KjNode* d
       contextP = orionldContextFromTree(NULL, OrionldContextFromInline, NULL, contextNodeP);
       if (contextP == NULL)
       {
-        LM_E(("orionldContextFromTree reports error: %s: %s", orionldState.pd.title, orionldState.pd.detail));
+        KT_E("orionldContextFromTree reports error: %s: %s", orionldState.pd.title, orionldState.pd.detail);
         entityErrorPush(errorsArrayP, entityId, OrionldBadRequestData, orionldState.pd.title, orionldState.pd.detail, orionldState.pd.status);
         kjChildRemove(orionldState.requestTree, eP);
         eP = next;
@@ -175,7 +174,7 @@ int batchEntitiesFinalCheck(KjNode* requestTree, KjNode* errorsArrayP, KjNode* d
         const char* title  = "Invalid payload";
         const char* detail = "Content-Type is 'application/json', and an @context is present in the payload data array item";
 
-        LM_E(("Content-Type is 'application/json', and an @context is present in the payload data array item of entity '%s'", entityId));
+        KT_E("Content-Type is 'application/json', and an @context is present in the payload data array item of entity '%s'", entityId);
         entityErrorPush(errorsArrayP, entityId, OrionldBadRequestData, title, detail, 400);
         kjChildRemove(orionldState.requestTree, eP);
         eP = next;
@@ -203,7 +202,7 @@ int batchEntitiesFinalCheck(KjNode* requestTree, KjNode* errorsArrayP, KjNode* d
 
     if ((mustExist == true) && (dbEntityP == NULL))  // FIXME: Only interesting for BATCH UPSERT
     {
-      LM_E(("The entity '%s' does not exist", entityId));
+      KT_E("The entity '%s' does not exist", entityId);
       entityErrorPush(errorsArrayP, entityId, OrionldResourceNotFound, "Entity not found", "Cannot update a non-existing entity", 404);
       kjChildRemove(orionldState.requestTree, eP);
       eP = next;
@@ -212,7 +211,7 @@ int batchEntitiesFinalCheck(KjNode* requestTree, KjNode* errorsArrayP, KjNode* d
 
     if ((cannotExist == true) && (dbEntityP != NULL))  // FIXME: Only interesting for BATCH CREATE
     {
-      LM_E(("The entity '%s' already exists", entityId));
+      KT_E("The entity '%s' already exists", entityId);
       entityErrorPush(errorsArrayP, entityId, OrionldAlreadyExists, "Entity already exists", "Cannot create an existing entity", 409);
       kjChildRemove(orionldState.requestTree, eP);
       eP = next;

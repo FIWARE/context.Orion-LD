@@ -159,6 +159,9 @@ typedef enum OrionldTraceLevels
   // API Model
   KtApiModel                = 1850,
 
+  // Dataset ID
+  KtDatasetId               = 1900,
+
   // DDS
   StDds                     = 2001,
   StDdsPublish              = 2002,
@@ -182,6 +185,7 @@ typedef enum OrionldTraceLevels
   // Misc
   KtLeak                    = 4000,
   KtToDo                    = 4001,
+  KtDateTime                = 4002,
 
   // FT Client
   StDump                    = 5001,

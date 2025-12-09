@@ -27,15 +27,13 @@
 extern "C"
 {
 #include "kbase/kMacros.h"                                     // K_VEC_SIZE
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjLookup.h"                                    // kjLookup
 #include "kjson/kjBuilder.h"                                   // kjString, kjObject, ...
 #include "kjson/kjClone.h"                                     // kjClone
 #include "kjson/kjStringValueLookupInArray.h"                  // kjStringValueLookupInArray
 }
-
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
 
 #include "orionld/context/orionldAttributeExpand.h"            // orionldAttributeExpand
 #include "orionld/common/orionldState.h"                       // orionldState
@@ -53,7 +51,7 @@ static void troeIgnoreMark(KjNode* entityP)
 {
   if (orionldState.troeIgnoreIx >= K_VEC_SIZE(orionldState.troeIgnoreV))
   {
-    LM_W(("TRoE ignore index overflow - this adds an extra entity-instance to the history - should not change anything"));
+    KT_W("TRoE ignore index overflow - this adds an extra entity-instance to the history - should not change anything");
     return;
   }
 
@@ -226,7 +224,7 @@ void duplicatedInstances(KjNode* incomingTree, KjNode* dbEntityV, bool entityRep
 
     if (idP == NULL)
     {
-      LM_E(("Internal Error (no id field found for entity)"));
+      KT_E("Internal Error (no id field found for entity)");
       entityP = next;
       continue;
     }

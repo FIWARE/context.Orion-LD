@@ -24,12 +24,10 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjString, kjObject, ...
 }
-
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
 
 #include "orionld/types/OrionldResponseErrorType.h"              // OrionldResponseErrorType
 #include "orionld/common/orionldState.h"                         // orionldState
@@ -46,7 +44,7 @@ bool entityTypeCheck(KjNode* entityTypeNodeP, bool duplicatedType, char* entityI
   // Entity TYPE is mandatory?
   if ((typeMandatory == true) && (entityTypeNodeP == NULL))
   {
-    LM_W(("Bad Input (UPSERT: mandatory field missing: entity::type)"));
+    KT_W("Bad Input (UPSERT: mandatory field missing: entity::type)");
     entityErrorPush(errorsArrayP, entityId, OrionldBadRequestData, "mandatory field missing", "entity::type", 400);
     return false;
   }
@@ -54,7 +52,7 @@ bool entityTypeCheck(KjNode* entityTypeNodeP, bool duplicatedType, char* entityI
   // Entity TYPE must not be duplicated
   if (duplicatedType == true)
   {
-    LM_W(("Bad Input (UPSERT: Duplicated entity::type)"));
+    KT_W("Bad Input (UPSERT: Duplicated entity::type)");
     entityErrorPush(errorsArrayP, entityId, OrionldBadRequestData, "Duplicated field", "entity::type", 400);
     return false;
   }
@@ -62,7 +60,7 @@ bool entityTypeCheck(KjNode* entityTypeNodeP, bool duplicatedType, char* entityI
   // Entity TYPE must be a string
   if ((entityTypeNodeP != NULL) && (entityTypeNodeP->type != KjString))
   {
-    LM_W(("Bad Input (UPSERT: entity::type not a string)"));
+    KT_W("Bad Input (UPSERT: entity::type not a string)");
     entityErrorPush(errorsArrayP, entityId, OrionldBadRequestData, "field with invalid type", "entity::type", 400);
     return false;
   }
