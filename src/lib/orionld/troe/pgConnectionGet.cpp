@@ -22,8 +22,10 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "orionld/types/PgConnectionPool.h"                    // PgConnectionPool
 #include "orionld/types/PgConnection.h"                        // PgConnection
@@ -81,7 +83,7 @@ PgConnection* pgConnectionGet(const char* db)
   PgConnectionPool* poolP = pgConnectionPoolGet(_db);  // pgConnectionPoolGet creates the pool if it doesn't already exist
 
   if (poolP == NULL)
-    LM_RE(NULL, ("unable to obtain a connection pool reference"));
+    KT_RE(NULL, "unable to obtain a connection pool reference");
 
   // Await a free slot in the pool
   sem_wait(&poolP->queueSem);
@@ -103,7 +105,7 @@ PgConnection* pgConnectionGet(const char* db)
       ConnStatusType pgStatus = PQstatus(cP->connectionP);
       if (pgStatus != CONNECTION_OK)
       {
-        LM_W(("Connection of item %d is lost, trying to re-connect...", ix));
+        KT_W("Connection of item %d is lost, trying to re-connect...", ix);
         // try to re-connect
         PQreset(cP->connectionP);
         // get status again
@@ -115,7 +117,7 @@ PgConnection* pgConnectionGet(const char* db)
           // we free this pointer that it can be used in the next call of pgConnectionGet
           free(poolP->connectionV[ix]);
           poolP->connectionV[ix] = NULL;
-          LM_W(("Connection failed, pointer of item %d was re-set to NULL (%p)", ix, poolP->connectionV[ix]));
+          KT_W("Connection failed, pointer of item %d was re-set to NULL (%p)", ix, poolP->connectionV[ix]);
           // this time no success finding a connection that is working, try in the next loop
           continue;
         }
@@ -150,7 +152,7 @@ PgConnection* pgConnectionGet(const char* db)
       {
         sem_post(&poolP->poolSem);
         sem_post(&poolP->queueSem);
-        LM_RE(NULL, ("Out of memory (unable to allocate room for a Postgres Connection - %d bytes)", sizeof(PgConnection)));
+        KT_RE(NULL, "Out of memory (unable to allocate room for a Postgres Connection - %d bytes)", sizeof(PgConnection));
       }
 
       cP = poolP->connectionV[ix];
@@ -172,10 +174,10 @@ PgConnection* pgConnectionGet(const char* db)
 
   if (cP == NULL)
   {
-    LM_W(("Internal Error (bug in postgres connection pool logic?)"));
-    LM_W(("poolP at %p", poolP));
-    LM_W(("poolP->items: %d", poolP->items));
-    LM_W(("poolP->connectionV at %p", poolP->connectionV));
+    KT_W("Internal Error (bug in postgres connection pool logic?)");
+    KT_W("poolP at %p", poolP);
+    KT_W("poolP->items: %d", poolP->items);
+    KT_W("poolP->connectionV at %p", poolP->connectionV);
 
     return NULL;
   }
@@ -187,7 +189,7 @@ PgConnection* pgConnectionGet(const char* db)
     {
       char* errMsg = PQerrorMessage(cP->connectionP);
       cP->busy = false;  // So the slot can be used again!
-      LM_RE(NULL, ("Database Error (unable to connect to postgres(%s)): %s", _db, errMsg));
+      KT_RE(NULL, "Database Error (unable to connect to postgres(%s)): %s", _db, errMsg);
     }
     else
     {
@@ -213,7 +215,7 @@ PgConnection* pgConnectionGet(const char* db)
 
         // get PG error message for log file
         char* errMsg = PQerrorMessage(cP->connectionP);
-        LM_RE(NULL, ("Database Connection could not be established (%s): %s ", _db, errMsg));
+        KT_RE(NULL, "Database Connection could not be established (%s): %s ", _db, errMsg);
       }
     }
   }

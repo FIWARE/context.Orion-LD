@@ -29,9 +29,6 @@ extern "C"
 #include "kalloc/kaAlloc.h"                                    // kaAlloc
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
-
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/troe/pgQuotedString.h"                       // Own interface
 

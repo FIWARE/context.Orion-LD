@@ -30,8 +30,6 @@ extern "C"
 #include "kjson/KjNode.h"                                     // KjNode
 }
 
-#include "logMsg/logMsg.h"                                    // LM_*
-
 #include "orionld/types/OrionldAttributeType.h"               // NoAttributeType, Property
 #include "orionld/common/orionldState.h"                      // orionldState
 #include "orionld/common/orionldError.h"                      // orionldError

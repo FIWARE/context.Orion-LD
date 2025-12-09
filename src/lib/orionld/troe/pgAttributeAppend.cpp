@@ -24,15 +24,13 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kalloc/kaAlloc.h"                                    // kaAlloc
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjLookup.h"                                    // kjLookup
 #include "kjson/kjRenderSize.h"                                // kjFastRenderSize
 #include "kjson/kjRender.h"                                    // kjFastRender
 }
-
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
 
 #include "orionld/types/PgAppendBuffer.h"                      // PgAppendBuffer
 #include "orionld/common/orionldState.h"                       // orionldState
@@ -136,7 +134,7 @@ void pgAttributeAppend
                comma, instanceId, attributeName, opMode, entityId, observedAt, hasSubProperties, unitCode, datasetId, renderedValue, orionldState.requestTimeString);
     }
     else
-      LM_W(("Relationships of type '%s' aren't allowed", kjValueType(valueNodeP->type)));
+      KT_W("Relationships of type '%s' aren't allowed", kjValueType(valueNodeP->type));
   }
   else if (strcmp(type, "GeoProperty") == 0)
   {
@@ -152,7 +150,7 @@ void pgAttributeAppend
       coordsString = (char*) malloc(10 * 1024);
       if (coordsString == NULL)
       {
-        LM_E(("error allocating 10k for geo property coordinates"));
+        KT_E("error allocating 10k for geo property coordinates");
         return;
       }
       coordsStringLen = 10 * 1024;
@@ -160,7 +158,7 @@ void pgAttributeAppend
       buf = (char*) malloc(11 * 1024);
       if (buf == NULL)
       {
-        LM_E(("error allocating 10k for geo property buffer"));
+        KT_E("error allocating 10k for geo property buffer");
         free(coordsString);
         return;
       }
@@ -260,7 +258,7 @@ void pgAttributeAppend
     {
       if (strcmp(type, "JsonProperty") == 0)
       {
-        LM_W(("TRoE for Compound JsonProperty still to be implemented"));
+        KT_W("TRoE for Compound JsonProperty still to be implemented");
         return;
       }
 
@@ -271,7 +269,7 @@ void pgAttributeAppend
       // if kaAlloc returns null-pointer, the attribute is too big -> do not try to write to null-pointer, report error and return
       if (renderedValue == NULL)
       {
-        LM_E(("error allocating %d bytes for attribute value", renderedValueSize));
+        KT_E("error allocating %d bytes for attribute value", renderedValueSize);
         return;
       }
 
@@ -284,7 +282,7 @@ void pgAttributeAppend
 
   if ((buf == NULL) || (buf[0] == 0))
   {
-    LM_W(("TROE: too big attribute value? (nothing written to history DB)"));
+    KT_W("TROE: too big attribute value? (nothing written to history DB)");
     return;
   }
 

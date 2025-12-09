@@ -22,8 +22,10 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "orionld/troe/pgConnectionPools.h"                    // pgPoolMaster
 #include "orionld/troe/pgConnectionPoolCreate.h"               // pgConnectionPoolCreate
@@ -40,7 +42,7 @@ bool pgConnectionPoolInit(int poolSize)
   // Create the connection pool for the NULL database
   pgPoolMaster = pgConnectionPoolCreate(NULL, poolSize);
   if (pgPoolMaster == NULL)
-    LM_RE(false, ("Database Error (unable to create initial connection pool)"));
+    KT_RE(false, "Database Error (unable to create initial connection pool)");
 
   pgPoolMaster->next = NULL;
   return true;

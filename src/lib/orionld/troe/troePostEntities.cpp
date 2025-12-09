@@ -24,16 +24,16 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjBuilder.h"                                   // kjChildRemove
 #include "kjson/kjRender.h"                                    // kjFastRender
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
 #include "orionld/types/PgTableDefinitions.h"                  // PG_ATTRIBUTE_INSERT_START, PG_SUB_ATTRIBUTE_INSERT_START
 #include "orionld/types/PgAppendBuffer.h"                      // PgAppendBuffer
 #include "orionld/common/orionldState.h"                       // orionldState
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/troe/pgAppendInit.h"                         // pgAppendInit
 #include "orionld/troe/pgAppend.h"                             // pgAppend
 #include "orionld/troe/pgEntityBuild.h"                        // pgEntityBuild
@@ -58,14 +58,14 @@ bool troePostEntities(void)
     entityId = orionldState.wildcard[0];  // troePutEntity passes the Entity ID via wildcards
 
     if (entityId == NULL)
-      LM_RE(false, ("No entity ID"));
+      KT_RE(false, "No entity ID");
   }
 
   if (entityType != NULL)
   {
     if (troeFilterMatch(entityType, entityId) == false)
     {
-      LM_T(LmtConfig, ("Not storing entities of type '%s' in TRoE - filtered out", entityType));
+      KT_T(KtConfig, "Not storing entities of type '%s' in TRoE - filtered out", entityType);
       return true;
     }
   }

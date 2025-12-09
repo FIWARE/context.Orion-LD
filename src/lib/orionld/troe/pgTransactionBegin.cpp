@@ -22,8 +22,10 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "orionld/common/pqHeader.h"                           // Postgres header
 #include "orionld/troe/pgTransactionBegin.h"                   // Own interface
@@ -42,7 +44,7 @@ bool pgTransactionBegin(PGconn* connectionP)
 
   res = PQexec(connectionP, "BEGIN");
   if (res == NULL)
-    LM_RE(false, ("Database Error (PQexec(BEGIN): %s)", PQresStatus(PQresultStatus(res))));
+    KT_RE(false, "Database Error (PQexec(BEGIN): %s)", PQresStatus(PQresultStatus(res)));
   PQclear(res);
 
   return true;

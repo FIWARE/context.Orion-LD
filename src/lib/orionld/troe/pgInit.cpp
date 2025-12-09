@@ -25,8 +25,10 @@
 #include <stdio.h>                                             // popen, fgets
 #include <semaphore.h>                                         // sem_init, sem_take, ...
 
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "orionld/common/pqHeader.h"                           // Postgres header
 #include "orionld/common/orionldState.h"                       // troePort, troePoolSize
@@ -46,7 +48,7 @@ bool pgInit(const char* dbPrefix)
   snprintf(pgPortString, sizeof(pgPortString), "%d", troePort);
 
   if (pgConnectionPoolInit(troePoolSize) == false)
-    LM_RE(false, ("error initializing the postgres connection pools"));
+    KT_RE(false, "error initializing the postgres connection pools");
 
   bool b = pgDatabasePrepare(dbPrefix);
   pgConnectionPoolsPresent();

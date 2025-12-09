@@ -26,12 +26,10 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjBuilder.h"                                   // kjChildRemove, kjChildAdd, ...
 }
-
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
 
 #include "orionld/types/PgAppendBuffer.h"                      // PgAppendBuffer
 #include "orionld/common/orionldState.h"                       // orionldState
@@ -181,7 +179,7 @@ bool pgAttributeBuild
 
   if (skip != NULL)
   {
-    LM_W(("Sorry, attributes of type '%s' are not stored in the Temporal database right now (to be implemented)", skip));
+    KT_W("Sorry, attributes of type '%s' are not stored in the Temporal database right now (to be implemented)", skip);
     return true;
   }
 

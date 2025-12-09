@@ -24,12 +24,10 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kalloc/kaAlloc.h"                                    // kaAlloc
 #include "kjson/KjNode.h"                                      // KjNode
 }
-
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
 
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/troe/kjGeoPolygonExtract.h"                  // kjGeoPolygonExtract
@@ -47,18 +45,18 @@ bool kjGeoMultiPolygonExtract(KjNode* coordinatesP, char* coordsString, int coor
   int   coordsIx            = 1;
 
   if (polygonCoordsString == NULL)
-    LM_RE(false, ("Internal Error (out of memory)"));
+    KT_RE(false, "Internal Error (out of memory)");
 
   coordsString[0] = '(';
 
   for (KjNode* polygonP = coordinatesP->value.firstChildP; polygonP != NULL; polygonP = polygonP->next)
   {
     if (kjGeoPolygonExtract(polygonP, polygonCoordsString, 2048) == false)
-      LM_RE(false, ("kjGeoPolygonExtract failed"));
+      KT_RE(false, "kjGeoPolygonExtract failed");
 
     int slen = strlen(polygonCoordsString);
     if (coordsIx + slen + 1 >= coordsLen)
-      LM_RE(false, ("Internal Error (not enough room in coordsString)"));
+      KT_RE(false, "Internal Error (not enough room in coordsString)");
 
     if (coordsIx != 1)
     {

@@ -60,7 +60,7 @@ typedef enum OrionldTraceLevels
 
   // JSON-LD
   KtArrayReduction          = 301,
-  
+
   // Linked Entities
   StLinked                  = 400,
   StLinkedInline            = 401,
@@ -83,7 +83,7 @@ typedef enum OrionldTraceLevels
   // Subscriptions
   KtSubs                    = 800,
   KtSubordinate             = 801,
-  KtShowChanges             = 802,
+  KtWatchedAttributes       = 802,
 
   // Periodic Subscriptions
   KtPernot                  = 850,
@@ -96,6 +96,7 @@ typedef enum OrionldTraceLevels
   KtSubCache                = 900,
   KtSubCacheSync            = 901,
   KtSubCacheStats           = 902,
+  KtSubCacheMatch           = 903,
 
   // Alterations
   KtAlt                     = 1000,
@@ -103,6 +104,11 @@ typedef enum OrionldTraceLevels
   // Notifications
   KtNotification            = 1100,
   KtNotificationStats       = 1101,
+  KtNotificationHeaders     = 1102,
+  KtNotificationBody        = 1103,
+  KtNotificationSend        = 1104,
+  KtNotificationMsg         = 1105,
+  KtShowChanges             = 1106,
 
   // Distributed Operations
   KtDistOp                  = 1200,
@@ -121,6 +127,8 @@ typedef enum OrionldTraceLevels
 
   // TRoE
   KtTroe                    = 1400,
+  KtTroeFilter              = 1401,
+  KtPgPool                  = 1402,
 
   // Config File
   KtConfig                  = 1500,

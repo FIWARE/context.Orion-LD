@@ -24,12 +24,9 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 }
-
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
-
 
 #include "orionld/troe/kjGeoPointExtract.h"                    // Own interface
 
@@ -50,13 +47,13 @@ bool kjGeoPointExtract(KjNode* coordinatesP, double* longitudeP, double* latitud
     ++children;
 
     if ((childP->type != KjFloat) && (childP->type != KjInt))
-      LM_RE(false, ("Bad Input (an item of 'coordinates' is not a Number)"));
+      KT_RE(false, "Bad Input (an item of 'coordinates' is not a Number)");
 
     childP = childP->next;
   }
 
   if ((children < 2) || (children > 3))
-    LM_RE(false, ("Bad Input (invalid num,ber of coordinates: %d)", children));
+    KT_RE(false, "Bad Input (invalid num,ber of coordinates: %d)", children);
 
   KjNode* longitudeNodeP = coordinatesP->value.firstChildP;
   KjNode* latitudeNodeP  = longitudeNodeP->next;

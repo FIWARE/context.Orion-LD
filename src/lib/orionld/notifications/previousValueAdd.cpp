@@ -26,6 +26,7 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
@@ -33,9 +34,8 @@ extern "C"
 #include "kjson/kjClone.h"                                       // kjClone
 }
 
-#include "logMsg/logMsg.h"
-
 #include "orionld/common/orionldState.h"                         // orionldState, coreContextUrl, userAgentHeader
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/dotForEq.h"                             // dotForEq
 #include "orionld/notifications/previousValueAdd.h"              // Own interface
 
@@ -82,7 +82,7 @@ void previousValueAdd(KjNode* attrP, const char* attrLongName)
 
   if (previousP != NULL)
   {
-    LM_T(LmtShowChanges, ("Adding '%s' to attribute '%s'", previousP->name, attrP->name));
+    KT_T(KtShowChanges, "Adding '%s' to attribute '%s'", previousP->name, attrP->name);
     kjChildAdd(attrP, previousP);
   }
 }

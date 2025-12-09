@@ -24,14 +24,14 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kalloc/kaAlloc.h"                                    // kaAlloc
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjLookup.h"                                    // kjLookup
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
 #include "orionld/common/orionldState.h"                       // orionldState
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/types/OrionldAlteration.h"                   // OrionldAlteration
 #include "orionld/notifications/alteration.h"                  // Own interface
 
@@ -70,7 +70,7 @@ OrionldAlteration* alteration(const char* entityId, const char* entityType, KjNo
 
   orionldState.alterationsTail = alterationP;
 
-  LM_T(LmtAlt, ("Added alteration for entity '%s'", entityId));
+  KT_T(KtAlt, "Added alteration for entity '%s'", entityId);
 
   return alterationP;
 }

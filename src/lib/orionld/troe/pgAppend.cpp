@@ -25,9 +25,6 @@
 #include <string.h>                                            // strlen, strncpy
 #include <stdlib.h>                                            // malloc
 
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
-
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/types/PgAppendBuffer.h"                      // PgAppendBuffer
 #include "orionld/troe/pgAppend.h"                             // Own interface

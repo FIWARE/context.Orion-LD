@@ -24,22 +24,21 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjRender.h"                                    // kjFastRender
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
-
-#include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/types/PgTableDefinitions.h"                  // PG_ATTRIBUTE_INSERT_START, PG_SUB_ATTRIBUTE_INSERT_START
 #include "orionld/types/PgAppendBuffer.h"                      // PgAppendBuffer
+#include "orionld/common/orionldState.h"                       // orionldState
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/troe/pgAppendInit.h"                         // pgAppendInit
 #include "orionld/troe/pgAppend.h"                             // pgAppend
 #include "orionld/troe/pgAttributeBuild.h"                     // pgAttributeBuild
 #include "orionld/troe/pgCommands.h"                           // pgCommands
-#include "orionld/troe/troeFilterMatch.h"                        // troeFilterMatch
-#include "orionld/troe/troePutAttribute.h"                   // Own interface
+#include "orionld/troe/troeFilterMatch.h"                      // troeFilterMatch
+#include "orionld/troe/troePutAttribute.h"                     // Own interface
 
 
 
@@ -59,7 +58,7 @@ bool troePutAttribute(void)
 
   if (troeFilterMatch(orionldState.entityTypeForTroe, orionldState.wildcard[0]) == false)
   {
-    LM_T(LmtConfig, ("Not storing entities of type '%s' in TRoE - filtered out", orionldState.entityTypeForTroe));
+    KT_T(KtConfig, "Not storing entities of type '%s' in TRoE - filtered out", orionldState.entityTypeForTroe);
     return true;
   }
 

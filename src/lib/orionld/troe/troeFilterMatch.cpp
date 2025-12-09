@@ -22,18 +22,18 @@
 *
 * Author: Ken Zangelin
 */
-#include <string.h>                                              // strcmp
+#include <string.h>                                            // strcmp
 
 extern "C"
 {
-#include "kjson/KjNode.h"                                        // KjNode
-#include "kjson/kjLookup.h"                                      // kjLookup
+#include "ktrace/kTrace.h"                                     // KT_*
+#include "kjson/KjNode.h"                                      // KjNode
+#include "kjson/kjLookup.h"                                    // kjLookup
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
-#include "orionld/common/orionldState.h"                         // orionldState, LM_TREE
-#include "orionld/config/configInit.h"                           // configTree
+#include "orionld/common/orionldState.h"                       // orionldState, KT_TREE
+#include "orionld/common/traceLevels.h"                        // KTrace levels
+#include "orionld/config/configInit.h"                         // configTree
 
 
 
@@ -51,7 +51,7 @@ extern "C"
 //
 bool troeFilterMatch(const char* entityType, const char* entityId)
 {
-  LM_T(LmtConfig, ("Entity Type: '%s'", entityType));
+  KT_T(KtConfig, "Entity Type: '%s'", entityType);
 
   KjNode* troeP   = (configTree != NULL)? kjLookup(configTree, "troe") : NULL;
   KjNode* filterP = (troeP != NULL)? kjLookup(troeP, "filter") : NULL;
@@ -59,14 +59,14 @@ bool troeFilterMatch(const char* entityType, const char* entityId)
   if (filterP == NULL)
     return true;
 
-  LM_T(LmtConfig, ("Entity Type: '%s'", entityType));
+  KT_T(KtConfig, "Entity Type: '%s'", entityType);
 
-  LM_TREE(filterP, "Config::troe::filter", LmtConfig);
+  KT_TREE(filterP, "Config::troe::filter", KtConfig);
 
   int types = 0;
   for (KjNode* f = filterP->value.firstChildP; f != NULL; f = f->next)
   {
-    LM_TREE(f, "Config::troe::filter::f", LmtConfig);
+    KT_TREE(f, "Config::troe::filter::f", KtConfig);
     KjNode* idP   = kjLookup(f, "id");
     KjNode* typeV = kjLookup(f, "type");
 
@@ -76,7 +76,7 @@ bool troeFilterMatch(const char* entityType, const char* entityId)
       {
         if (strcmp(entityId, idP->value.s) == 0)
         {
-          LM_T(LmtConfig, ("Match! No type and the entity id '%s' matches", entityId));
+          KT_T(KtConfig, "Match! No type and the entity id '%s' matches", entityId);
           return true;
         }
       }
@@ -86,20 +86,20 @@ bool troeFilterMatch(const char* entityType, const char* entityId)
     for (KjNode* typeP = typeV->value.firstChildP; typeP != NULL; typeP = typeP->next)
     {
       ++types;
-      LM_T(LmtConfig, ("Entity Type in TRoE filter of config file: '%s'", typeP->value.s));
+      KT_T(KtConfig, "Entity Type in TRoE filter of config file: '%s'", typeP->value.s);
       if (strcmp(entityType, typeP->value.s) == 0)
       {
         if (idP != NULL)
         {
           if (strcmp(entityId, idP->value.s) == 0)
           {
-            LM_T(LmtConfig, ("Match! No type and the entity id '%s' matches", entityId));
+            KT_T(KtConfig, "Match! No type and the entity id '%s' matches", entityId);
             return true;
           }
         }
         else
         {
-          LM_T(LmtConfig, ("Match! Type matches and ID not present - storing entity of type '%s' in TRoE", entityType));
+          KT_T(KtConfig, "Match! Type matches and ID not present - storing entity of type '%s' in TRoE", entityType);
           return true;
         }
       }

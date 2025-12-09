@@ -22,13 +22,14 @@
 *
 * Author: Ken Zangelin
 */
+#include <stdio.h>                                             // snprintf
+#include <string.h>                                            // strlen, strncpy
+
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 }
-
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
 
 #include "orionld/troe/kjGeoPointExtract.h"                    // kjGeoPointExtract
 #include "orionld/troe/kjGeoLineStringExtract.h"               // Own interface
@@ -63,14 +64,14 @@ bool kjGeoLineStringExtract(KjNode* coordinatesP, char* lineStringCoordsString, 
     char    pointBuffer[64];
 
     if (kjGeoPointExtract(pointP, &longitude, &latitude, &altitude) == false)
-      LM_RE(false, ("Internal Error (unable to extract longitude/latitude/altitude for a Point) "));
+      KT_RE(false, "Internal Error (unable to extract longitude/latitude/altitude for a Point) ");
 
     snprintf(pointBuffer, sizeof(pointBuffer), "%f %f %f", longitude, latitude, altitude);
 
     int pointBufferLen = strlen(pointBuffer);
 
     if (lineStringCoordsIx + pointBufferLen + 1 >= lineStringCoordsLen)
-      LM_RE(false, ("Not enough room in lineStringCoordsString - fix and recompile"));
+      KT_RE(false, "Not enough room in lineStringCoordsString - fix and recompile");
 
     if (lineStringCoordsIx != 0)  // Add a comma before the Point, unless it's the first point
     {

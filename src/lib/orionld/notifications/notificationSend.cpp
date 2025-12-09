@@ -32,6 +32,8 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
+#include "ktrace/ktTraceLevelCheck.h"                            // ktTraceLevelCheck
 #include "kalloc/kaAlloc.h"                                      // kaAlloc
 #include "kjson/kjRenderSize.h"                                  // kjFastRenderSize
 #include "kjson/kjRender.h"                                      // kjFastRender
@@ -40,13 +42,12 @@ extern "C"
 #include "kjson/kjClone.h"                                       // kjClone
 }
 
-#include "logMsg/logMsg.h"
-
 #include "cache/CachedSubscription.h"                            // CachedSubscription
 
 #include "orionld/types/OrionldAlteration.h"                     // OrionldAlterationMatch, OrionldAlteration, orionldAlterationType
 #include "orionld/types/OrionLdRestService.h"                    // OrionLdRestService
 #include "orionld/common/orionldState.h"                         // orionldState, coreContextUrl, userAgentHeader
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/numberToDate.h"                         // numberToDate
 #include "orionld/common/uuidGenerate.h"                         // uuidGenerate
 #include "orionld/common/eqForDot.h"                             // eqForDot
@@ -99,8 +100,8 @@ static void attributeToSimplified(KjNode* attrP, const char* lang)
 
   // Get the attribute type
   KjNode* attrTypeP = kjLookup(attrP, "type");
-  if (attrTypeP       == NULL)      LM_RVE(("Attribute '%s' has no type", attrP->name));
-  if (attrTypeP->type != KjString)  LM_RVE(("Attribute '%s' has a type that is not a JSON String", attrP->name));
+  if (attrTypeP       == NULL)      KT_RVE("Attribute '%s' has no type", attrP->name);
+  if (attrTypeP->type != KjString)  KT_RVE("Attribute '%s' has a type that is not a JSON String", attrP->name);
 
   // Get the value
   char* valueFieldName = (char*) "value";
@@ -115,7 +116,7 @@ static void attributeToSimplified(KjNode* attrP, const char* lang)
   KjNode* valueP = kjLookup(attrP, valueFieldName);
 
   if (valueP == NULL)
-    LM_RVE(("Attribute '%s' has no value '%s'", attrP->name, valueFieldName));
+    KT_RVE("Attribute '%s' has no value '%s'", attrP->name, valueFieldName);
 
   if ((languangeMap == true) && (lang[0] != 0))
   {
@@ -146,9 +147,9 @@ static void attributeToConcise(KjNode* attrP, bool* simplifiedP, const char* lan
   // Get the attribute type and remove it
   KjNode* attrTypeP = kjLookup(attrP, "type");
   if (attrTypeP == NULL)
-    LM_RVE(("Attribute '%s' has no type", attrP->name));
+    KT_RVE("Attribute '%s' has no type", attrP->name);
   if (attrTypeP->type != KjString)
-    LM_RVE(("Attribute '%s' has a type that is not a JSON String", attrP->name));
+    KT_RVE("Attribute '%s' has a type that is not a JSON String", attrP->name);
 
   kjChildRemove(attrP, attrTypeP);
 
@@ -507,7 +508,7 @@ static KjNode* attributeFilter(KjNode* apiEntityP, OrionldAlterationMatch* mAltP
         if (strcmp(dotName, attrName) == 0)
         {
           clone = true;
-          LM_T(LmtShowChanges, ("Adding the attribute '%s' to a notification entity - add also the previousValue!", attrName));
+          KT_T(KtShowChanges, "Adding the attribute '%s' to a notification entity - add also the previousValue!", attrName);
           break;
         }
       }
@@ -602,7 +603,7 @@ static KjNode* notificationTree(OrionldAlterationMatch* matchList)
   {
     KjNode* apiEntityP = (subP->sysAttrs == false)? matchP->altP->finalApiEntityP : matchP->altP->finalApiEntityWithSysAttrsP;
 
-    LM_T(LmtSysAttrs, ("sysAttrs:%s, apiEntityP at %p", (subP->sysAttrs == true)? "true" : "false", apiEntityP));
+    KT_T(KtSysAttrs, "sysAttrs:%s, apiEntityP at %p", (subP->sysAttrs == true)? "true" : "false", apiEntityP);
     if (apiEntityP == NULL)
       apiEntityP = matchP->altP->finalApiEntityP;  // Temporary !!!
 
@@ -611,10 +612,10 @@ static KjNode* notificationTree(OrionldAlterationMatch* matchList)
     {
       KjNode* idP = kjLookup(apiEntityP, "id");
       if (idP == NULL)
-        LM_X(1, ("Internal Error (notification entity without an id)"));
+        KT_X(1, "Internal Error (notification entity without an id)");
       if (kjEntityIdLookupInEntityArray(dataNodeP, idP->value.s) != NULL)
       {
-        LM_T(LmtNotificationBody, ("Skipping entity '%s'", idP->value.s));
+        KT_T(KtNotificationBody, "Skipping entity '%s'", idP->value.s);
         continue;
       }
     }
@@ -676,16 +677,16 @@ int notificationSend(OrionldAlterationMatch* mAltP, double timestamp, CURL** cur
   bool ngsiv2 = (mAltP->subP->renderFormat >= RF_CROSS_APIS_NORMALIZED);
 
   // <DEBUG>
-  if (lmTraceIsSet(LmtAlt) == true)
+  if (ktTraceLevelCheck(KtAlt) == true)
   {
     for (OrionldAlterationMatch* mP = mAltP; mP != NULL; mP = mP->next)
     {
-      LM_T(LmtAlt, ("AlterationMatch %p", mP));
-      LM_T(LmtAlt, ("  Subscription     %s", mP->subP->subscriptionId));
-      LM_T(LmtAlt, ("  Entity:          %s", mP->altP->entityId));
-      LM_T(LmtAlt, ("  inEntityP:       %p", mP->altP->inEntityP));
-      LM_T(LmtAlt, ("  finalApiEntityP: %p", mP->altP->finalApiEntityP));
-      LM_T(LmtAlt, ("- - - - - -"));
+      KT_T(KtAlt, "AlterationMatch %p", mP);
+      KT_T(KtAlt, "  Subscription     %s", mP->subP->subscriptionId);
+      KT_T(KtAlt, "  Entity:          %s", mP->altP->entityId);
+      KT_T(KtAlt, "  inEntityP:       %p", mP->altP->inEntityP);
+      KT_T(KtAlt, "  finalApiEntityP: %p", mP->altP->finalApiEntityP);
+      KT_T(KtAlt, "- - - - - -");
     }
   }
   // </DEBUG>
@@ -744,7 +745,7 @@ int notificationSend(OrionldAlterationMatch* mAltP, double timestamp, CURL** cur
     else
       requestHeaderLen = snprintf(requestHeader, sizeof(requestHeader), "POST /%s HTTP/1.1\r\n", mAltP->subP->rest);
 
-    LM_T(LmtNotificationSend, ("%s: URL PATH for notification == '%s'", mAltP->subP->subscriptionId, mAltP->subP->rest));
+    KT_T(KtNotificationSend, "%s: URL PATH for notification == '%s'", mAltP->subP->subscriptionId, mAltP->subP->rest);
   }
 
   //
@@ -777,7 +778,7 @@ int notificationSend(OrionldAlterationMatch* mAltP, double timestamp, CURL** cur
 
   // Let's limit the number of headers to 50
   if (headers > 50)
-    LM_X(1, ("Too many HTTP headers (>50) for a Notification - to support that many, the broker needs a SW update and to be recompiled"));
+    KT_X(1, "Too many HTTP headers (>50) for a Notification - to support that many, the broker needs a SW update and to be recompiled");
 
   char          hostHeader[512];
   size_t        hostHeaderLen;
@@ -964,6 +965,6 @@ int notificationSend(OrionldAlterationMatch* mAltP, double timestamp, CURL** cur
   else if (mAltP->subP->protocol == HTTPS)   return httpsNotify(mAltP->subP, ioVec, ioVecLen, timestamp, curlHandlePP);
   else if (mAltP->subP->protocol == MQTT)    return mqttNotify(mAltP->subP,  ioVec, ioVecLen, timestamp);
 
-  LM_W(("%s: Unsupported protocol for notifications: '%s'", mAltP->subP->subscriptionId, mAltP->subP->protocol));
+  KT_W("%s: Unsupported protocol for notifications: '%s'", mAltP->subP->subscriptionId, mAltP->subP->protocol);
   return -1;
 }

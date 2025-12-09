@@ -22,8 +22,10 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "orionld/common/pqHeader.h"                           // Postgres header
 #include "orionld/common/orionldState.h"                       // dbName
@@ -46,7 +48,7 @@ bool pgDatabasePrepare(const char* dbName)
   ConnStatusType  status          = ((nullConnectionP != NULL) && (nullConnectionP->connectionP != NULL))? PQstatus(nullConnectionP->connectionP) : CONNECTION_BAD;
 
   if (status != CONNECTION_OK)
-    LM_RE(false, ("Database Error (unable to connect to postgres - connection/status: %p/%d)", nullConnectionP->connectionP, status));
+    KT_RE(false, "Database Error (unable to connect to postgres - connection/status: %p/%d)", nullConnectionP->connectionP, status);
 
 
   //
@@ -64,7 +66,7 @@ bool pgDatabasePrepare(const char* dbName)
 
   bool r;
   if ((r = pgDatabaseTableCreateAll(connectionP->connectionP)) == false)
-    LM_E(("Database Error (error creating postgres database tables)"));
+    KT_E("Database Error (error creating postgres database tables)");
 
   pgConnectionRelease(connectionP);
 

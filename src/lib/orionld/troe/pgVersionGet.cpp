@@ -25,8 +25,6 @@
 #include <stdio.h>                                             // snprintf
 #include <string.h>                                            // strncpy
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
 #include "orionld/common/pqHeader.h"                           // Postgres header
 #include "orionld/troe/pgConnectionGet.h"                      // pgConnectionGet
 #include "orionld/troe/pgConnectionRelease.h"                  // pgConnectionRelease

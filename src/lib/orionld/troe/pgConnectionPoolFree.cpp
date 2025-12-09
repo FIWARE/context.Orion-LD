@@ -25,9 +25,6 @@
 #include <stdlib.h>                                            // free
 #include <semaphore.h>                                         // sem_destroy
 
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
-
 #include "orionld/types/PgConnectionPool.h"                    // PgConnectionPool
 #include "orionld/troe/pgConnectionPoolFree.h"                 // Own interface
 

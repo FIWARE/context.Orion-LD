@@ -30,8 +30,6 @@ extern "C"
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/dotForEq.h"                             // dotForEq
 #include "orionld/notifications/previousValuePopulate.h"         // previousValuePopulate

@@ -22,12 +22,15 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "orionld/types/PgTableDefinitions.h"                  // PG_ENTITY_INSERT_START
 #include "orionld/types/PgAppendBuffer.h"                      // PgAppendBuffer
 #include "orionld/common/orionldState.h"                       // orionldState
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/common/uuidGenerate.h"                       // uuidGenerate
 #include "orionld/troe/pgAppendInit.h"                         // pgAppendInit
 #include "orionld/troe/pgAppend.h"                             // pgAppend
@@ -48,14 +51,14 @@ bool troeDeleteEntity(void)
   char*           entityId = orionldState.wildcard[0];
   char            instanceId[80];
 
-  LM_T(LmtTroeFilter, ("orionldState.entityTypeForTroe: '%s'", orionldState.entityTypeForTroe));
-  LM_T(LmtTroeFilter, ("entityId:                       '%s'", entityId));
+  KT_T(KtTroeFilter, "orionldState.entityTypeForTroe: '%s'", orionldState.entityTypeForTroe);
+  KT_T(KtTroeFilter, "entityId:                       '%s'", entityId);
 
   if (orionldState.entityTypeForTroe != NULL)
   {
     if (troeFilterMatch(orionldState.entityTypeForTroe, entityId) == false)
     {
-      LM_T(LmtConfig, ("Not storing entities of type '%s' in TRoE - filtered out", orionldState.entityTypeForTroe));
+      KT_T(KtConfig, "Not storing entities of type '%s' in TRoE - filtered out", orionldState.entityTypeForTroe);
       return true;
     }
   }

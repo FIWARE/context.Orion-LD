@@ -31,8 +31,6 @@ extern "C"
 #include "kjson/kjRender.h"                                    // kjFastRender
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
 #include "orionld/types/PgAppendBuffer.h"                      // PgAppendBuffer
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/common/eqForDot.h"                           // eqForDot
