@@ -25,14 +25,12 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                         // KT_*
 #include "kjson/KjNode.h"                                          // KjNode
 #include "kjson/kjBuilder.h"                                       // kjArray, kjChildAdd
 }
 
-#include "logMsg/logMsg.h"                                         // LM_*
-#include "logMsg/traceLevels.h"                                    // Lmt*
-
-#include "mongoBackend/MongoGlobal.h"                              // getMongoConnection, releaseMongoConnection, ...
+#include "mongoBackend/MongoGlobal.h"                              // getMongoConnection, releaseMongoConnection, ...ç
 
 #include "orionld/types/QNode.h"                                   // QNode
 #include "orionld/common/orionldState.h"                           // orionldState
@@ -139,7 +137,7 @@ static bool qFilter(mongo::BSONObjBuilder* queryBuilderP, QNode* qP, char** titl
 
   if (qTreeToBsonObj(qP, &qFilter, titleP, detailP) == false)
   {
-    LM_W(("Bad Input (qTreeToBsonObj: %s: %s)", *titleP, *detailP));
+    KT_W("Bad Input (qTreeToBsonObj: %s: %s)", *titleP, *detailP);
     return false;
   }
 
@@ -183,7 +181,7 @@ static bool geoqNearFilter(mongo::BSONObjBuilder* queryBuilderP, char* geometry,
 
   if ((maxDistance == NULL) && (minDistance == NULL))
   {
-    LM_W(("Bad Input (no distance for 'near' georel)"));
+    KT_W("Bad Input (no distance for 'near' georel)");
     return false;
   }
 
@@ -526,7 +524,7 @@ KjNode* mongoCppLegacyEntitiesQuery(KjNode* entityInfoArrayP, KjNode* attrsP, QN
     }
     catch (const std::exception &e)
     {
-      LM_E(("Database Error (asking for the number of hits: %s)", e.what()));
+      KT_E("Database Error (asking for the number of hits: %s)", e.what());
       arrayP = NULL;
       limit = 0;  // Just to avoid performing the query
     }
@@ -553,14 +551,14 @@ KjNode* mongoCppLegacyEntitiesQuery(KjNode* entityInfoArrayP, KjNode* attrsP, QN
 
         entityP = mongoCppLegacyDataToKjTree(&bsonObj, false, &title, &details);
         if (entityP == NULL)
-          LM_E(("mongoCppLegacyDataToKjTree: %s: %s", title, details));
+          KT_E("mongoCppLegacyDataToKjTree: %s: %s", title, details);
 
         kjChildAdd(arrayP, entityP);
       }
     }
     catch (const std::exception &e)
     {
-      LM_E(("Database Error (%s)", e.what()));
+      KT_E("Database Error (%s)", e.what());
     }
   }
 

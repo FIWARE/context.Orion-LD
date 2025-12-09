@@ -22,10 +22,12 @@
 *
 * Author: Ken Zangelin
 */
-#include "mongo/client/dbclient.h"                             // mongo legacy driver
+#include "mongo/client/dbclient.h"                                  // mongo legacy driver
 
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                          // KT_*
+}
 
 #include "orionld/mongoCppLegacy/mongoCppLegacyDbArrayFieldGet.h"   // Own interface
 
@@ -39,13 +41,13 @@ bool mongoCppLegacyDbArrayFieldGet(const mongo::BSONObj* boP, const char* fieldN
 {
   if (boP->hasField(fieldName) == false)
   {
-    LM_E(("Runtime Error (field '%s' is missing in BSONObj '%s'", fieldName, boP->toString().c_str()));
+    KT_E("Runtime Error (field '%s' is missing in BSONObj '%s'", fieldName, boP->toString().c_str());
     return false;
   }
 
   if (boP->getField(fieldName).type() != mongo::Array)
   {
-    LM_E(("Runtime Error (field '%s' not an array (type=%d) in BSONObj '%s'", fieldName, boP->getField(fieldName).type(), boP->toString().c_str()));
+    KT_E("Runtime Error (field '%s' not an array (type=%d) in BSONObj '%s'", fieldName, boP->getField(fieldName).type(), boP->toString().c_str());
     return false;
   }
 

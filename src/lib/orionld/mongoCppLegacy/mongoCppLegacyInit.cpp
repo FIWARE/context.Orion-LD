@@ -22,10 +22,6 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
-
-
 #include "orionld/mongoCppLegacy/mongoCppLegacyTenantsGet.h"     // mongoCppLegacyTenantsGet
 #include "orionld/mongoCppLegacy/mongoCppLegacyGeoIndexInit.h"   // mongoCppLegacyGeoIndexInit
 #include "orionld/mongoCppLegacy/mongoCppLegacyInit.h"           // Own interface
@@ -44,7 +40,7 @@ void mongoCppLegacyInit(const char* dbHost, const char* dbName)
   // Moving away from the old Mongo C++ Legacy Driver, this is done in mongocInit instead
   //
   // if (mongoCppLegacyTenantsGet() == false)
-  //   LM_X(1, ("Unable to extract tenants from the database - fatal error"));
+  //   KT_X(1, "Unable to extract tenants from the database - fatal error");
   //
 
   mongoCppLegacyGeoIndexInit();

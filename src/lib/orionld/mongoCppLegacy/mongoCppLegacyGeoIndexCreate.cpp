@@ -26,15 +26,14 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                        // KT_*
 #include "kalloc/kaAlloc.h"                                       // kaAlloc
 #include "kalloc/kaStrdup.h"                                      // kaStrdup
 }
 
-#include "logMsg/logMsg.h"                                        // LM_*
-#include "logMsg/traceLevels.h"                                   // Lmt*
+#include "mongoBackend/connectionOperations.h"                    // collectionCreateIndex
 
 #include "orionld/common/orionldState.h"                          // kalloc
-#include "mongoBackend/connectionOperations.h"                    // collectionCreateIndex
 #include "orionld/db/dbGeoIndexAdd.h"                             // dbGeoIndexAdd
 #include "orionld/common/dotForEq.h"                              // dotForEq
 #include "orionld/mongoCppLegacy/mongoCppLegacyGeoIndexCreate.h"  // Own interface
@@ -57,7 +56,7 @@ bool mongoCppLegacyGeoIndexCreate(OrionldTenant* tenantP, const char* attrLongNa
 
   if (collectionCreateIndex(tenantP->entities, BSON(index << "2dsphere"), false, &err) == false)
   {
-    LM_E(("Database Error (error creating 2dsphere index for attribute '%s' for db '%s')", attrNameCopy, tenantP->mongoDbName));
+    KT_E("Database Error (error creating 2dsphere index for attribute '%s' for db '%s')", attrNameCopy, tenantP->mongoDbName);
     return false;
   }
 

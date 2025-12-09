@@ -26,16 +26,14 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
+#include "mongoBackend/MongoGlobal.h"                            // getMongoConnection, releaseMongoConnection, ...
 
 #include "orionld/common/orionldState.h"                         // orionldState
-
-#include "mongoBackend/MongoGlobal.h"                            // getMongoConnection, releaseMongoConnection, ...
 #include "orionld/common/eqForDot.h"                             // eqForDot
 #include "orionld/mongoCppLegacy/mongoCppLegacyDataToKjTree.h"   // mongoCppLegacyDataToKjTree
 #include "orionld/mongoCppLegacy/mongoCppLegacyEntityLookup.h"   // Own interface
@@ -75,7 +73,7 @@ KjNode* mongoCppLegacyEntityLookup(const char* entityId)
 
     kjTree = mongoCppLegacyDataToKjTree(&bsonObj, false, &title, &details);
     if (kjTree == NULL)
-      LM_E(("%s: %s", title, details));
+      KT_E("%s: %s", title, details);
     break;
   }
 

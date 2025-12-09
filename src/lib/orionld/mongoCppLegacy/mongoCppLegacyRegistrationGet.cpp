@@ -26,16 +26,14 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjArray, kjChildAdd, ...
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
+#include "mongoBackend/MongoGlobal.h"                            // getMongoConnection, releaseMongoConnection, ...
 
 #include "orionld/common/orionldState.h"                         // orionldState
-
-#include "mongoBackend/MongoGlobal.h"                            // getMongoConnection, releaseMongoConnection, ...
 #include "orionld/mongoCppLegacy/mongoCppLegacyDataToKjTree.h"   // mongoCppLegacyDataToKjTree
 
 
@@ -84,7 +82,7 @@ KjNode* mongoCppLegacyRegistrationGet(const char* registrationId)
   }
   catch (const std::exception &e)
   {
-    LM_E(("Database Error (%s)", e.what()));
+    KT_E("Database Error (%s)", e.what());
     ok = false;
   }
 
@@ -97,7 +95,7 @@ KjNode* mongoCppLegacyRegistrationGet(const char* registrationId)
     registrationP = mongoCppLegacyDataToKjTree(&bsonObj, false, &title, &details);
 
     if (registrationP == NULL)
-      LM_E(("%s: %s", title, details));
+      KT_E("%s: %s", title, details);
   }
 
   releaseMongoConnection(connectionP);

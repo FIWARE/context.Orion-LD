@@ -24,8 +24,10 @@
 */
 #include "mongo/client/dbclient.h"                             // mongo legacy driver
 
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "orionld/mongoCppLegacy/mongoCppLegacyDbFieldGet.h"   // Own interface
 
@@ -39,7 +41,7 @@ bool mongoCppLegacyDbFieldGet(const mongo::BSONObj* boP, const char* fieldName, 
 {
   if (boP->hasField(fieldName) == false)
   {
-    LM_E(("Runtime Error (field '%s' is missing in BSONObj '%s'", fieldName, boP->toString().c_str()));
+    KT_E("Runtime Error (field '%s' is missing in BSONObj '%s'", fieldName, boP->toString().c_str());
     return false;
   }
 

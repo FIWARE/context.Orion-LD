@@ -22,10 +22,12 @@
 *
 * Author: Ken Zangelin
 */
-#include "mongo/client/dbclient.h"                             // mongo legacy driver
+#include "mongo/client/dbclient.h"                                   // mongo legacy driver
 
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                           // KT_*
+}
 
 #include "orionld/mongoCppLegacy/mongoCppLegacyDbStringFieldGet.h"   // Own interface
 
@@ -39,13 +41,13 @@ char* mongoCppLegacyDbStringFieldGet(const mongo::BSONObj* boP, const char* fiel
 {
   if (boP->hasField(fieldName) == false)
   {
-    LM_E(("Runtime Error (string field '%s' is missing in BSONObj '%s'", fieldName, boP->toString().c_str()));
+    KT_E("Runtime Error (string field '%s' is missing in BSONObj '%s'", fieldName, boP->toString().c_str());
     return NULL;
   }
 
   if (boP->getField(fieldName).type() != mongo::String)
   {
-    LM_E(("Runtime Error (field '%s' not a string (type=%d) in BSONObj '%s'", fieldName, boP->getField(fieldName).type(), boP->toString().c_str()));
+    KT_E("Runtime Error (field '%s' not a string (type=%d) in BSONObj '%s'", fieldName, boP->getField(fieldName).type(), boP->toString().c_str());
     return NULL;
   }
 

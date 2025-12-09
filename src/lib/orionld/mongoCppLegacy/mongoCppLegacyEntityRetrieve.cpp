@@ -30,6 +30,7 @@ extern "C"
 {
 #include "kbase/kMacros.h"                                          // K_FT
 #include "kbase/kTime.h"                                            // kTimeGet
+#include "ktrace/kTrace.h"                                          // KT_*
 #include "kalloc/kaStrdup.h"                                        // kaStrdup
 #include "kjson/KjNode.h"                                           // KjNode
 #include "kjson/kjLookup.h"                                         // kjLookup
@@ -37,12 +38,9 @@ extern "C"
 #include "kjson/kjChildPrepend.h"                                   // kjChildPrepend
 }
 
-#include "logMsg/logMsg.h"                                          // LM_*
-#include "logMsg/traceLevels.h"                                     // Lmt*
+#include "mongoBackend/MongoGlobal.h"                               // getMongoConnection, releaseMongoConnection, ...
 
 #include "orionld/common/orionldState.h"                            // orionldState
-
-#include "mongoBackend/MongoGlobal.h"                               // getMongoConnection, releaseMongoConnection, ...
 #include "orionld/common/numberToDate.h"                            // numberToDate
 #include "orionld/common/eqForDot.h"                                // eqForDot
 #include "orionld/common/performance.h"                             // PERFORMANCE
@@ -69,13 +67,13 @@ static bool timestampToString(KjNode* nodeP)
     timestamp = nodeP->value.i;
   else
   {
-    LM_E(("Internal Error (not a number: %s)", kjValueType(nodeP->type)));
+    KT_E("Internal Error (not a number: %s)", kjValueType(nodeP->type));
     return false;
   }
 
   if (numberToDate(timestamp, dateBuf, 64) == false)
   {
-    LM_E(("Database Error (numberToDate failed)"));
+    KT_E("Database Error (numberToDate failed)");
     return false;
   }
 
@@ -102,12 +100,12 @@ static bool presentationAttributeFix(KjNode* attrP, const char* entityId, bool s
 
     if (typeP == NULL)
     {
-      LM_E(("No 'type' field found"));
+      KT_E("No 'type' field found");
       return false;
     }
     else if (typeP->type != KjString)
     {
-      LM_E(("'type' field not a string"));
+      KT_E("'type' field not a string");
       return false;
     }
 
@@ -121,7 +119,7 @@ static bool presentationAttributeFix(KjNode* attrP, const char* entityId, bool s
 
     if (valueP == NULL)
     {
-      LM_E(("Database Error (the %s '%s' has no value)", typeP->value.s, attrP->name));
+      KT_E("Database Error (the %s '%s' has no value)", typeP->value.s, attrP->name);
       valueP = kjString(orionldState.kjsonP, "value", "Internal Error - attribute value lost");
     }
 
@@ -214,13 +212,13 @@ static bool datamodelAttributeFix(KjNode* attrP, const char* entityId, bool sysA
 
   if (typeP == NULL)
   {
-    LM_E(("Database Error (field 'type' not found for attribute '%s' of entity '%s')", attrP->name, entityId));
+    KT_E("Database Error (field 'type' not found for attribute '%s' of entity '%s')", attrP->name, entityId);
     return false;
   }
 
   if (typeP->type != KjString)
   {
-    LM_E(("Database Error (field 'type' not a String for attribute '%s' of entity '%s')", attrP->name, entityId));
+    KT_E("Database Error (field 'type' not a String for attribute '%s' of entity '%s')", attrP->name, entityId);
     return false;
   }
 
@@ -230,7 +228,7 @@ static bool datamodelAttributeFix(KjNode* attrP, const char* entityId, bool sysA
 
     if (objectP == NULL)
     {
-      LM_E(("Database Error (field 'value' not found for attribute '%s' of entity '%s')", attrP->name, entityId));
+      KT_E("Database Error (field 'value' not found for attribute '%s' of entity '%s')", attrP->name, entityId);
       return false;
     }
 
@@ -242,7 +240,7 @@ static bool datamodelAttributeFix(KjNode* attrP, const char* entityId, bool sysA
 
     if (languageMapP == NULL)
     {
-      LM_E(("Database Error (field 'value' not found for attribute '%s' of entity '%s')", attrP->name, entityId));
+      KT_E("Database Error (field 'value' not found for attribute '%s' of entity '%s')", attrP->name, entityId);
       return false;
     }
 
@@ -364,12 +362,12 @@ static bool datamodelAttributeFix(KjNode* attrP, const char* entityId, bool sysA
       KjNode* typeP = kjLookup(metadataP, "type");
       if (typeP == NULL)
       {
-        LM_E(("Database Error (field 'type' not found for metadata '%s' of attribute '%s' of entity '%s')", metadataP->name, attrP->name, entityId));
+        KT_E("Database Error (field 'type' not found for metadata '%s' of attribute '%s' of entity '%s')", metadataP->name, attrP->name, entityId);
         return false;
       }
       else if (typeP->type != KjString)
       {
-        LM_E(("Database Error (field 'type' not a String for metadata '%s' of attribute '%s' of entity '%s')", metadataP->name, attrP->name, entityId));
+        KT_E("Database Error (field 'type' not a String for metadata '%s' of attribute '%s' of entity '%s')", metadataP->name, attrP->name, entityId);
         return false;
       }
 
@@ -474,7 +472,7 @@ KjNode* mongoCppLegacyEntityRetrieve
 
     dbTree = mongoCppLegacyDataToKjTree(&bsonObj, false, &title, &details);
     if (dbTree == NULL)
-      LM_E(("%s: %s", title, details));
+      KT_E("%s: %s", title, details);
     break;
   }
 
@@ -493,7 +491,7 @@ KjNode* mongoCppLegacyEntityRetrieve
 
   if (dbAttrsP == NULL)
   {
-    LM_E(("Internal Error (field 'attrs' not found for entity '%s')", entityId));
+    KT_E("Internal Error (field 'attrs' not found for entity '%s')", entityId);
     return NULL;
   }
 
@@ -688,7 +686,7 @@ KjNode* mongoCppLegacyEntityRetrieve
     {
       if (presentationAttributeFix(attrP, entityId, sysAttrs, keyValues, lang) == false)
       {
-        LM_E(("Internal Error (presentationAttributeFix failed)"));
+        KT_E("Internal Error (presentationAttributeFix failed)");
         return NULL;
       }
     }
@@ -699,7 +697,7 @@ KjNode* mongoCppLegacyEntityRetrieve
       {
         if (presentationAttributeFix(aP, entityId, sysAttrs, keyValues, lang) == false)
         {
-          LM_E(("presentationAttributeFix failed"));
+          KT_E("presentationAttributeFix failed");
           return NULL;
         }
         ++instances;
@@ -719,7 +717,7 @@ KjNode* mongoCppLegacyEntityRetrieve
 
   if (idP == NULL)
   {
-    LM_E(("Internal Error (field '_id' not found for entity '%s')", entityId));
+    KT_E("Internal Error (field '_id' not found for entity '%s')", entityId);
     return NULL;
   }
 
@@ -728,7 +726,7 @@ KjNode* mongoCppLegacyEntityRetrieve
 
   if (typeP == NULL)
   {
-    LM_E(("Internal Error (field '_id.type' not found for entity '%s')", entityId));
+    KT_E("Internal Error (field '_id.type' not found for entity '%s')", entityId);
     return NULL;
   }
 

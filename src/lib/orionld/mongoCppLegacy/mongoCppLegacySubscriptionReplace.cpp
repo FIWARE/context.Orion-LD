@@ -22,19 +22,16 @@
 *
 * Author: Ken Zangelin
 */
-#include "mongo/client/dbclient.h"                               // MongoDB C++ Client Legacy Driver
+#include "mongo/client/dbclient.h"                                      // MongoDB C++ Client Legacy Driver
 
 extern "C"
 {
-#include "kjson/KjNode.h"                                        // KjNode
+#include "ktrace/kTrace.h"                                              // KT_*
+#include "kjson/KjNode.h"                                               // KjNode
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
-
-#include "orionld/common/orionldState.h"                         // orionldState
-#include "mongoBackend/MongoGlobal.h"                            // getMongoConnection, releaseMongoConnection, ...
-
+#include "mongoBackend/MongoGlobal.h"                                   // getMongoConnection, releaseMongoConnection, ...
+#include "orionld/common/orionldState.h"                                // orionldState
 #include "orionld/mongoCppLegacy/mongoCppLegacyDataToKjTree.h"          // mongoCppLegacyDataToKjTree
 #include "orionld/mongoCppLegacy/mongoCppLegacyKjTreeToBsonObj.h"       // mongoCppLegacyKjTreeToBsonObj
 #include "orionld/mongoCppLegacy/mongoCppLegacySubscriptionReplace.h"   // Own interface
@@ -67,7 +64,7 @@ bool mongoCppLegacySubscriptionReplace(const char* subscriptionId, KjNode* dbSub
   }
   catch (const std::exception &e)
   {
-    LM_E(("Mongo Exception: %s", e.what()));
+    KT_E("Mongo Exception: %s", e.what());
     r = false;
   }
 
