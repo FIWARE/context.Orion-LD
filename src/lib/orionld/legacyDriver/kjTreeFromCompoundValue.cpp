@@ -24,11 +24,10 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjBuilder.h"                                   // kjObject, kjString, kjBoolean, ...
 }
-
-#include "logMsg/logMsg.h"                                     // LM_*
 
 #include "parse/CompoundValueNode.h"                           // CompoundValueNode
 #include "orionld/common/orionldState.h"                       // orionldState
@@ -95,7 +94,7 @@ static KjNode* kjTreeFromCompoundValue2(KjNode* parentP, orion::CompoundValueNod
 
   case orion::ValueTypeNotGiven:
   default:
-    LM_E(("WARNING: no valid value-type"));
+    KT_E("WARNING: no valid value-type");
     nodeP = kjString(orionldState.kjsonP, name, "UNKNOWN TYPE");
     kjChildAdd(parentP, nodeP);
     break;

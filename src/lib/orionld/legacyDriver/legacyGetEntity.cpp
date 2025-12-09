@@ -32,13 +32,12 @@ extern "C"
 #include "kbase/kStringArrayJoin.h"                               // kStringArrayJoin
 #include "kbase/kStringArrayLookup.h"                             // kStringArrayLookup
 #include "kbase/kTime.h"                                          // kTimeGet
+#include "ktrace/kTrace.h"                                        // KT_*
 #include "kalloc/kaStrdup.h"                                      // kaStrdup
 #include "kjson/KjNode.h"                                         // KjNode
 #include "kjson/kjBuilder.h"                                      // kjObject, ...
 #include "kjson/kjParse.h"                                        // kjParse
 }
-
-#include "logMsg/logMsg.h"                                        // LM_*
 
 #include "orionld/types/OrionldHttpHeader.h"                      // OrionldHttpHeader
 #include "orionld/common/orionldState.h"                          // orionldState
@@ -315,8 +314,7 @@ static KjNode* orionldForwardGetEntity(char* entityId, KjNode* regArrayP, KjNode
 
     if (partTree->type != KjObject)
     {
-      LM_W(("Garbage from Context Provider (the response to a forwarded GET /entities/{EID} must be a JSON object - not %s)",
-            kjValueType(partTree->type)));
+      KT_W("Garbage from Context Provider (the response to a forwarded GET /entities/{EID} must be a JSON object - not %s)", kjValueType(partTree->type));
       continue;
     }
 

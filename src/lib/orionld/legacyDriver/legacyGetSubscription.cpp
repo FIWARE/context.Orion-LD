@@ -22,8 +22,10 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+}
 
 #include "mongoBackend/mongoGetSubscriptions.h"                  // mongoGetLdSubscription
 #include "orionld/common/orionldState.h"                         // orionldState
@@ -53,7 +55,7 @@ bool legacyGetSubscription(void)
 
   if (mongoGetLdSubscription(&subscription, subscriptionId, orionldState.tenantP, &orionldState.httpStatusCode, &details) == false)
   {
-    LM_E(("mongoGetLdSubscription error: %s", details));
+    KT_E("mongoGetLdSubscription error: %s", details);
     orionldError(OrionldResourceNotFound, details, subscriptionId, 404);
     return false;
   }

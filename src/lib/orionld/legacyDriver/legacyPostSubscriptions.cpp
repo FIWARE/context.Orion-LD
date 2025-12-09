@@ -28,13 +28,12 @@
 extern "C"
 {
 #include "kbase/kMacros.h"                                     // K_FT
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kalloc/kaStrdup.h"                                   // kaStrdup
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjLookup.h"                                    // kjLookup
 #include "kjson/kjBuilder.h"                                   // kjString, kjChildAdd, ...
 }
-
-#include "logMsg/logMsg.h"                                     // LM_*
 
 #include "apiTypesV2/Subscription.h"                           // Subscription
 #include "rest/OrionError.h"                                   // OrionError
@@ -89,7 +88,7 @@ bool legacyPostSubscriptions(void)
   // kjTreeToSubscription does the pCheckSubscription stuff ... for now ...
   if (kjTreeToSubscription(&sub, &subIdP, &endpointP) == false)
   {
-    LM_E(("kjTreeToSubscription FAILED"));
+    KT_E("kjTreeToSubscription FAILED");
     // orionldError is invoked by kjTreeToSubscription
     return false;
   }
@@ -200,7 +199,7 @@ bool legacyPostSubscriptions(void)
 
   if (subId == "")
   {
-    LM_E(("Error creating subscription"));
+    KT_E("Error creating subscription");
     return false;
   }
 

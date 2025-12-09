@@ -30,8 +30,6 @@ extern "C"
 #include "kjson/KjNode.h"                                        // KjNode
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "rest/ConnectionInfo.h"                                 // ConnectionInfo
 #include "ngsi/ContextAttribute.h"                               // ContextAttribute
 

@@ -26,12 +26,11 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjBuilder.h"                                   // kjObject, kjString, kjBoolean, ...
 #include "kjson/kjLookup.h"                                    // kjLookup
 }
-
-#include "logMsg/logMsg.h"                                     // LM_*
 
 #include "ngsi10/NotifyContextRequest.h"                       // NotifyContextRequest
 
@@ -96,7 +95,7 @@ KjNode* kjTreeFromNotification(NotifyContextRequest* ncrP, const char* context, 
 
     if (numberToDate(orionldState.requestTime, date, sizeof(date)) == false)
     {
-      LM_E(("Runtime Error (numberToDate failed)"));
+      KT_E("Runtime Error (numberToDate failed)");
       return NULL;
     }
     nodeP = kjString(orionldState.kjsonP, "notifiedAt", date);
@@ -148,7 +147,7 @@ KjNode* kjTreeFromNotification(NotifyContextRequest* ncrP, const char* context, 
       nodeP = kjTreeFromContextAttribute(aP, contextP, renderFormat, lang, detailsP);
       if (nodeP == NULL)
       {
-        LM_W(("kjTreeFromContextAttribute returned NULL"));
+        KT_W("kjTreeFromContextAttribute returned NULL");
         continue;
       }
 

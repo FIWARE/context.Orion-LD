@@ -26,11 +26,10 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "ngsi/ContextAttribute.h"                               // ContextAttribute
 
@@ -60,7 +59,7 @@ static bool metadataValueSet(Metadata* mdP, KjNode* valueNodeP)
   case KjArray:      mdP->valueType = orion::ValueTypeObject;  mdP->compoundValueP = kjTreeToCompoundValue(valueNodeP, NULL, 0);  break;
   case KjNull:       mdP->valueType = orion::ValueTypeNull;    break;
   case KjNone:
-    LM_E(("Invalid json type (KjNone!) for value field of metadata '%s'", valueNodeP->name));
+    KT_E("Invalid json type (KjNone!) for value field of metadata '%s'", valueNodeP->name);
     orionldError(OrionldBadRequestData, "Bad Request", "Invalid JSON type", 400);
     return false;
   }
@@ -116,7 +115,7 @@ bool metadataAdd(ContextAttribute* caP, KjNode* nodeP, char* attributeName)
           isProperty = true;
         else
         {
-          LM_E(("Invalid type for metadata '%s': '%s'", kNodeP->name, kNodeP->value.s));
+          KT_E("Invalid type for metadata '%s': '%s'", kNodeP->name, kNodeP->value.s);
           orionldError(OrionldBadRequestData, "Invalid type for sub-attribute", kNodeP->value.s, 400);
           return false;
         }
@@ -166,7 +165,7 @@ bool metadataAdd(ContextAttribute* caP, KjNode* nodeP, char* attributeName)
   }
   catch (...)
   {
-    LM_E(("caught exception from 'new Metadata' - out of memory creating property/relationship for an attribute"));
+    KT_E("caught exception from 'new Metadata' - out of memory creating property/relationship for an attribute");
     mdP = NULL;
   }
 
@@ -218,7 +217,7 @@ bool metadataAdd(ContextAttribute* caP, KjNode* nodeP, char* attributeName)
         mdP->stringValue = valueP->value.s;
       else
       {
-        LM_E(("Internal Error (no value field from DB)"));
+        KT_E("Internal Error (no value field from DB)");
         mdP->stringValue = "value lost in DB";
       }
     }

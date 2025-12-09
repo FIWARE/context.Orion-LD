@@ -27,6 +27,7 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 }
 
@@ -54,7 +55,7 @@ static bool pcheckSubscriptionAcceptAndFormat(OrionldRenderFormat format, MimeTy
   case RF_VALUES:
   case RF_UNIQUE_VALUES:
   case RF_CUSTOM:
-    LM_W(("Bad Input (invalid notification-format for an NGSI-LD subscription)"));
+    KT_W("Bad Input (invalid notification-format for an NGSI-LD subscription)");
     return false;
     break;
 
@@ -63,7 +64,7 @@ static bool pcheckSubscriptionAcceptAndFormat(OrionldRenderFormat format, MimeTy
   case RF_CONCISE:
     if ((accept != MT_JSON) && (accept != MT_JSONLD) && (accept != MT_GEOJSON))
     {
-      LM_W(("Bad Input (invalid notification-accept MimeType for an NGSI-LD notification) - '%s'", mimeTypeToLongString(accept)));
+      KT_W("Bad Input (invalid notification-accept MimeType for an NGSI-LD notification) - '%s'", mimeTypeToLongString(accept));
       return false;
     }
     return true;
@@ -77,7 +78,7 @@ static bool pcheckSubscriptionAcceptAndFormat(OrionldRenderFormat format, MimeTy
   case RF_CROSS_APIS_CONCISE_COMPACT:
     if (accept != MT_JSON)
     {
-      LM_W(("Bad Input (invalid notification-accept MimeType for a cross NGSI-LD to NGSIv2 notification) - '%s'", mimeTypeToLongString(accept)));
+      KT_W("Bad Input (invalid notification-accept MimeType for a cross NGSI-LD to NGSIv2 notification) - '%s'", mimeTypeToLongString(accept));
       return false;
     }
     return true;
@@ -87,7 +88,7 @@ static bool pcheckSubscriptionAcceptAndFormat(OrionldRenderFormat format, MimeTy
     break;
   }
 
-  LM_W(("Bad Input (unknown notification-format for an NGSI-LD subscription)"));
+  KT_W("Bad Input (unknown notification-format for an NGSI-LD subscription)");
 
   return false;
 }
@@ -155,7 +156,7 @@ bool kjTreeToNotification(KjNode* kNodeP, ngsiv2::Subscription* subP, KjNode** e
 
       if ((experimental == false) && ((subP->attrsFormat == RF_CROSS_APIS_SIMPLIFIED) || (subP->attrsFormat == RF_CROSS_APIS_SIMPLIFIED_COMPACT)))
       {
-        LM_W(("Non-supported notification format: %s", itemP->value.s));
+        KT_W("Non-supported notification format: %s", itemP->value.s);
         orionldError(OrionldBadRequestData, "Non-supported notification format", itemP->value.s, 501);
         return false;
       }

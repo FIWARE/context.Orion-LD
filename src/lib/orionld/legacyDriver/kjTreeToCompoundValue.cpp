@@ -27,9 +27,6 @@ extern "C"
 #include "kjson/KjNode.h"                                        // KjNode
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
-
 #include "parse/CompoundValueNode.h"                             // orion::CompoundValueNode
 
 #include "orionld/common/orionldState.h"                         // orionldState

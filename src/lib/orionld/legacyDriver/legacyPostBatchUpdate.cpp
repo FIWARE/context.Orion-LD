@@ -27,48 +27,47 @@
 
 extern "C"
 {
-#include "kbase/kMacros.h"                                      // K_FT
-#include "kjson/KjNode.h"                                       // KjNode
-#include "kjson/kjBuilder.h"                                    // kjString, kjObject, ...
-#include "kjson/kjLookup.h"                                     // kjLookup
-#include "kjson/kjClone.h"                                      // kjClone
-#include "kjson/kjStringValueLookupInArray.h"                   // kjStringValueLookupInArray
+#include "kbase/kMacros.h"                                                             // K_FT
+#include "ktrace/kTrace.h"                                                             // KT_*
+#include "kjson/KjNode.h"                                                              // KjNode
+#include "kjson/kjBuilder.h"                                                           // kjString, kjObject, ...
+#include "kjson/kjLookup.h"                                                            // kjLookup
+#include "kjson/kjClone.h"                                                             // kjClone
+#include "kjson/kjStringValueLookupInArray.h"                                          // kjStringValueLookupInArray
 }
 
-#include "logMsg/logMsg.h"                                      // LM_*
+#include "orionTypes/OrionValueType.h"                                                 // orion::ValueType
+#include "orionTypes/UpdateActionType.h"                                               // ActionType
+#include "parse/CompoundValueNode.h"                                                   // CompoundValueNode
+#include "ngsi/ContextAttribute.h"                                                     // ContextAttribute
+#include "ngsi10/UpdateContextRequest.h"                                               // UpdateContextRequest
+#include "ngsi10/UpdateContextResponse.h"                                              // UpdateContextResponse
+#include "mongoBackend/mongoUpdateContext.h"                                           // mongoUpdateContext
+#include "mongoBackend/MongoGlobal.h"                                                  // getMongoConnection()
 
-#include "orionTypes/OrionValueType.h"                          // orion::ValueType
-#include "orionTypes/UpdateActionType.h"                        // ActionType
-#include "parse/CompoundValueNode.h"                            // CompoundValueNode
-#include "ngsi/ContextAttribute.h"                              // ContextAttribute
-#include "ngsi10/UpdateContextRequest.h"                        // UpdateContextRequest
-#include "ngsi10/UpdateContextResponse.h"                       // UpdateContextResponse
-#include "mongoBackend/mongoUpdateContext.h"                    // mongoUpdateContext
-#include "mongoBackend/MongoGlobal.h"                           // getMongoConnection()
-
-#include "orionld/common/orionldState.h"                        // orionldState
-#include "orionld/common/orionldError.h"                        // orionldError
-#include "orionld/common/SCOMPARE.h"                            // SCOMPAREx
-#include "orionld/common/CHECK.h"                               // CHECK
-#include "orionld/common/entitySuccessPush.h"                   // entitySuccessPush
-#include "orionld/common/entityErrorPush.h"                     // entityErrorPush
-#include "orionld/common/entityLookupById.h"                    // entityLookupById
-#include "orionld/common/removeArrayEntityLookup.h"             // removeArrayEntityLookup
-#include "orionld/common/typeCheckForNonExistingEntities.h"     // typeCheckForNonExistingEntities
-#include "orionld/common/duplicatedInstances.h"                 // duplicatedInstances
-#include "orionld/common/performance.h"                         // PERFORMANCE
-#include "orionld/notifications/previousValues.h"               // previousValues
-#include "orionld/service/orionldServiceInit.h"                 // orionldHostName, orionldHostNameLen
-#include "orionld/context/orionldCoreContext.h"                 // orionldDefaultUrl, orionldCoreContext
-#include "orionld/context/orionldContextPresent.h"              // orionldContextPresent
-#include "orionld/context/orionldContextItemAliasLookup.h"      // orionldContextItemAliasLookup
-#include "orionld/context/orionldContextFromTree.h"             // orionldContextFromTree
-#include "orionld/legacyDriver/kjTreeToUpdateContextRequest.h"  // kjTreeToUpdateContextRequest
-#include "orionld/kjTree/kjEntityIdArrayExtract.h"              // kjEntityIdArrayExtract
-#include "orionld/kjTree/kjEntityArrayErrorPurge.h"             // kjEntityArrayErrorPurge
-#include "orionld/payloadCheck/pCheckEntity.h"                  // pCheckEntity
-#include "orionld/mongoCppLegacy/mongoCppLegacyEntityListLookupWithIdTypeCreDate.h"   // mongoCppLegacyEntityListLookupWithIdTypeCreDate
-#include "orionld/legacyDriver/legacyPostBatchUpdate.h"         // Own Interface
+#include "orionld/common/orionldState.h"                                               // orionldState
+#include "orionld/common/orionldError.h"                                               // orionldError
+#include "orionld/common/SCOMPARE.h"                                                   // SCOMPAREx
+#include "orionld/common/CHECK.h"                                                      // CHECK
+#include "orionld/common/entitySuccessPush.h"                                          // entitySuccessPush
+#include "orionld/common/entityErrorPush.h"                                            // entityErrorPush
+#include "orionld/common/entityLookupById.h"                                           // entityLookupById
+#include "orionld/common/removeArrayEntityLookup.h"                                    // removeArrayEntityLookup
+#include "orionld/common/typeCheckForNonExistingEntities.h"                            // typeCheckForNonExistingEntities
+#include "orionld/common/duplicatedInstances.h"                                        // duplicatedInstances
+#include "orionld/common/performance.h"                                                // PERFORMANCE
+#include "orionld/notifications/previousValues.h"                                      // previousValues
+#include "orionld/service/orionldServiceInit.h"                                        // orionldHostName, orionldHostNameLen
+#include "orionld/context/orionldCoreContext.h"                                        // orionldDefaultUrl, orionldCoreContext
+#include "orionld/context/orionldContextPresent.h"                                     // orionldContextPresent
+#include "orionld/context/orionldContextItemAliasLookup.h"                             // orionldContextItemAliasLookup
+#include "orionld/context/orionldContextFromTree.h"                                    // orionldContextFromTree
+#include "orionld/legacyDriver/kjTreeToUpdateContextRequest.h"                         // kjTreeToUpdateContextRequest
+#include "orionld/kjTree/kjEntityIdArrayExtract.h"                                     // kjEntityIdArrayExtract
+#include "orionld/kjTree/kjEntityArrayErrorPurge.h"                                    // kjEntityArrayErrorPurge
+#include "orionld/payloadCheck/pCheckEntity.h"                                         // pCheckEntity
+#include "orionld/mongoCppLegacy/mongoCppLegacyEntityListLookupWithIdTypeCreDate.h"    // mongoCppLegacyEntityListLookupWithIdTypeCreDate
+#include "orionld/legacyDriver/legacyPostBatchUpdate.h"                                // Own Interface
 
 
 
@@ -314,9 +313,9 @@ bool legacyPostBatchUpdate(void)
         entitySuccessPush(successArrayP, entityId);
       else
       {
-        LM_W(("mongoBackend Reports Error for entity '%s': %s",
-              entityId,
-              mongoResponse.contextElementResponseVector.vec[ix]->statusCode.details.c_str()));
+        KT_W("mongoBackend Reports Error for entity '%s': %s",
+             entityId,
+             mongoResponse.contextElementResponseVector.vec[ix]->statusCode.details.c_str());
 
         entityErrorPush(errorsArrayP,
                         entityId,

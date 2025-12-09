@@ -22,15 +22,12 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
-
-#include "orionld/common/orionldState.h"                         // orionldState
-#include "orionld/common/orionldError.h"                         // orionldError
-#include "orionld/payloadCheck/PCHECK.h"                         // PCHECK_URI
-#include "orionld/mongoCppLegacy/mongoCppLegacyRegistrationExists.h"      // mongoCppLegacyRegistrationExists
-#include "orionld/mongoCppLegacy/mongoCppLegacyRegistrationDelete.h"      // mongoCppLegacyRegistrationDelete
-#include "orionld/legacyDriver/legacyDeleteRegistration.h"       // Own Interface
+#include "orionld/common/orionldState.h"                              // orionldState
+#include "orionld/common/orionldError.h"                              // orionldError
+#include "orionld/payloadCheck/PCHECK.h"                              // PCHECK_URI
+#include "orionld/mongoCppLegacy/mongoCppLegacyRegistrationExists.h"  // mongoCppLegacyRegistrationExists
+#include "orionld/mongoCppLegacy/mongoCppLegacyRegistrationDelete.h"  // mongoCppLegacyRegistrationDelete
+#include "orionld/legacyDriver/legacyDeleteRegistration.h"            // Own Interface
 
 
 

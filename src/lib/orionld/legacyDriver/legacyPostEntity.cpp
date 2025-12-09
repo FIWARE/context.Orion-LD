@@ -30,6 +30,7 @@ extern "C"
 {
 #include "kbase/kMacros.h"                                                // K_VEC_SIZE, K_FT
 #include "kbase/kTime.h"                                                  // kTimeGet
+#include "ktrace/kTrace.h"                                                // KT_*
 #include "kjson/kjBuilder.h"                                              // kjChildRemove, kjChildAdd
 #include "kjson/kjLookup.h"                                               // kjLookup
 #include "kjson/kjClone.h"                                                // kjClone
@@ -38,8 +39,6 @@ extern "C"
 #include "kalloc/kaStrdup.h"                                              // kaStrdup
 #include "kjson/kjStringValueLookupInArray.h"                             // kjStringValueLookupInArray
 }
-
-#include "logMsg/logMsg.h"                                                // LM_*
 
 #include "ngsi/ContextAttribute.h"                                        // ContextAttribute
 #include "ngsi10/UpdateContextRequest.h"                                  // UpdateContextRequest
@@ -383,7 +382,7 @@ bool legacyPostEntity(void)
       // There can be a maximum of ONE item left in the array
       if (defaultInstances > 1)
       {
-        LM_E(("Bad Input (more than one instance without datasetId)"));
+        KT_E("Bad Input (more than one instance without datasetId)");
         orionldError(OrionldBadRequestData, "more than one instance without datasetId for an attribute", attrP->name, 400);
         return false;
       }
@@ -402,7 +401,7 @@ bool legacyPostEntity(void)
         ContextAttribute* caP = new ContextAttribute();
         if (kjTreeToContextAttribute(orionldState.contextP, attrP, caP, NULL, &detail) == false)
         {
-          LM_E(("kjTreeToContextAttribute(%s): %s", attrP->name, detail));
+          KT_E("kjTreeToContextAttribute(%s): %s", attrP->name, detail);
           attributeNotUpdated(notUpdatedP, shortName, "Error converting attribute", detail);
           caP->release();
           delete caP;
@@ -420,7 +419,7 @@ bool legacyPostEntity(void)
       KjNode* datasetIdP = kjLookup(attrP, "datasetId");
       if (datasetIdP != NULL)
       {
-        LM_E(("Bad Input (datasetId given but not an array - should this be allowed?)"));
+        KT_E("Bad Input (datasetId given but not an array - should this be allowed?)");
         detail = (char*) "datasetId given but not an array";
         attributeNotUpdated(notUpdatedP, shortName, detail, NULL);
         continue;
@@ -479,7 +478,7 @@ bool legacyPostEntity(void)
     PERFORMANCE(dbEnd);
 
     if (status != 200)
-      LM_E(("mongoUpdateContext: %d", status));
+      KT_E("mongoUpdateContext: %d", status);
   }
 
   //

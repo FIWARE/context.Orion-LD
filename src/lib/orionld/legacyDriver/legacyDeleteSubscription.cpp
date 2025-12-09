@@ -22,17 +22,19 @@
 *
 * Author: Ken Zangelin and Gabriel Quaresma
 */
-#include "logMsg/logMsg.h"                             // LM_*
-#include "logMsg/traceLevels.h"                        // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                             // KT_*
+}
 
-#include "cache/subCache.h"                            // CachedSubscription, subCacheItemLookup, ...
+#include "cache/subCache.h"                                            // CachedSubscription, subCacheItemLookup, ...
 
-#include "orionld/common/orionldState.h"               // orionldState
-#include "orionld/common/orionldError.h"               // orionldError
-#include "orionld/payloadCheck/PCHECK.h"               // PCHECK_URI
+#include "orionld/common/orionldState.h"                               // orionldState
+#include "orionld/common/orionldError.h"                               // orionldError
+#include "orionld/payloadCheck/PCHECK.h"                               // PCHECK_URI
 #include "orionld/mongoCppLegacy/mongoCppLegacySubscriptionGet.h"      // mongoCppLegacySubscriptionGet
 #include "orionld/mongoCppLegacy/mongoCppLegacySubscriptionDelete.h"   // mongoCppLegacySubscriptionDelete
-#include "orionld/legacyDriver/legacyDeleteSubscription.h"   // Own Interface
+#include "orionld/legacyDriver/legacyDeleteSubscription.h"             // Own Interface
 
 
 
@@ -62,7 +64,7 @@ bool legacyDeleteSubscription(void)
     if (cSubP != NULL)
       subCacheItemRemove(cSubP);
     else
-      LM_W(("The subscription '%s' was successfully removed from DB but does not exist in sub-cache ... (sub-cache is enabled)"));
+      KT_W("The subscription '%s' was successfully removed from DB but does not exist in sub-cache ... (sub-cache is enabled)");
   }
 
   orionldState.httpStatusCode = 204;

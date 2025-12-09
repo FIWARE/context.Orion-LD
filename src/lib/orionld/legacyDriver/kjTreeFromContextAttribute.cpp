@@ -26,12 +26,10 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjBuilder.h"                                   // kjObject, kjString, kjBoolean, ...
 }
-
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
 
 #include "ngsi/ContextAttribute.h"                             // ContextAttribute
 
@@ -268,7 +266,7 @@ KjNode* kjTreeFromContextAttribute(ContextAttribute* caP, OrionldContext* contex
 
       if (numberToDate((time_t) mdP->numberValue, date, sizeof(date)) == false)
       {
-        LM_E(("numberToDate failed"));
+        KT_E("numberToDate failed");
         return NULL;
       }
 

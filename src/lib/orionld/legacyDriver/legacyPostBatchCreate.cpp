@@ -28,6 +28,7 @@
 extern "C"
 {
 #include "kbase/kMacros.h"                                       // K_FT
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjString, kjObject, ...
 #include "kjson/kjLookup.h"                                      // kjLookup
@@ -35,8 +36,6 @@ extern "C"
 #include "kjson/kjRender.h"                                      // kjRender
 #include "kjson/kjStringValueLookupInArray.h"                    // kjStringValueLookupInArray
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionTypes/OrionValueType.h"                           // orion::ValueType
 #include "orionTypes/UpdateActionType.h"                         // ActionType
@@ -234,7 +233,7 @@ bool legacyPostBatchCreate(void)
 
     if (idP == NULL)
     {
-      LM_E(("Internal Error (no 'id' for entity in batch create entity array - how did this get all the way here?)"));
+      KT_E("Internal Error (no 'id' for entity in batch create entity array - how did this get all the way here?)");
       entityP = next;
       continue;
     }
@@ -255,7 +254,7 @@ bool legacyPostBatchCreate(void)
       KjNode* copyIdP = kjLookup(copyP, "id");
       if (copyIdP == NULL)
       {
-        LM_E(("Internal Error (no 'id' for entity in batch create entity array - how did this get all the way here?)"));
+        KT_E("Internal Error (no 'id' for entity in batch create entity array - how did this get all the way here?)");
         copyP = copyNext;
         continue;
       }
@@ -354,7 +353,7 @@ bool legacyPostBatchCreate(void)
     else
     {
       orionldState.noDbUpdate = true;
-      LM_E(("Database Error (mongoUpdateContext returned %d (!200))", orionldState.httpStatusCode));
+      KT_E("Database Error (mongoUpdateContext returned %d (!200))", orionldState.httpStatusCode);
     }
 
     mongoRequest.release();

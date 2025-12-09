@@ -30,8 +30,6 @@ extern "C"
 #include "kjson/kjBuilder.h"                                     // kjObject, kjArray
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "cache/subCache.h"                                      // CachedSubscription, subCacheHeadGet, subCacheItemLookup
 #include "apiTypesV2/Subscription.h"                             // ngsiv2::Subscription
 #include "mongoBackend/mongoGetSubscriptions.h"                  // mongoListSubscriptions

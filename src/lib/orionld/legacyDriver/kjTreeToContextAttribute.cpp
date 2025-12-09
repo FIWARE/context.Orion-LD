@@ -24,10 +24,9 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "rest/ConnectionInfo.h"                                 // ConnectionInfo
 #include "ngsi/ContextAttribute.h"                               // ContextAttribute
@@ -312,7 +311,7 @@ bool kjTreeToContextAttribute(OrionldContext* contextP, KjNode* kNodeP, ContextA
       else
       {
         *detailP = (char*) "Invalid type for attribute";
-        LM_E(("Invalid type for attribute '%s': '%s'", nodeP->name, nodeP->value.s));
+        KT_E("Invalid type for attribute '%s': '%s'", nodeP->name, nodeP->value.s);
         orionldError(OrionldBadRequestData, "Invalid type for attribute", nodeP->value.s, 400);
         return false;
       }
@@ -334,7 +333,7 @@ bool kjTreeToContextAttribute(OrionldContext* contextP, KjNode* kNodeP, ContextA
       {
         // metadataAdd calls orionldError
         *detailP = (char*) "metadataAdd failed";
-        LM_E(("Error adding metadata '%s' to attribute", nodeP->name));
+        KT_E("Error adding metadata '%s' to attribute", nodeP->name);
         return false;
       }
     }
@@ -461,25 +460,25 @@ bool kjTreeToContextAttribute(OrionldContext* contextP, KjNode* kNodeP, ContextA
     {
       if (isGeoProperty == true)
       {
-        LM_E(("value missing for GeoProperty '%s'", kNodeP->name));
+        KT_E("value missing for GeoProperty '%s'", kNodeP->name);
         orionldError(OrionldBadRequestData, "Attribute with type GeoProperty found, but the associated value field is missing", attributeName, 400);
         *detailP = (char*) "value missing for GeoProperty";
       }
       else if (isLanguageProperty == true)
       {
-        LM_E(("value missing for LanguageProperty '%s'", kNodeP->name));
+        KT_E("value missing for LanguageProperty '%s'", kNodeP->name);
         orionldError(OrionldBadRequestData, "Attribute with type LanguageProperty found, but the associated value field is missing", attributeName, 400);
         *detailP = (char*) "value missing for LanguageProperty";
       }
       else if (isTemporalProperty == true)
       {
-        LM_E(("value missing for TemporalProperty '%s'", kNodeP->name));
+        KT_E("value missing for TemporalProperty '%s'", kNodeP->name);
         orionldError(OrionldBadRequestData, "Attribute with type TemporalProperty found, but the associated value field is missing", attributeName, 400);
         *detailP = (char*) "value missing for TemporalProperty";
       }
       else
       {
-        LM_E(("value missing for Property '%s'", kNodeP->name));
+        KT_E("value missing for Property '%s'", kNodeP->name);
         orionldError(OrionldBadRequestData, "Attribute with type Property found, but the associated value field is missing", attributeName, 400);
         *detailP = (char*) "value missing for Property";
       }
@@ -489,7 +488,7 @@ bool kjTreeToContextAttribute(OrionldContext* contextP, KjNode* kNodeP, ContextA
 
     if (valueP->type == KjNull)
     {
-      LM_E(("NULL value for Property '%s'", kNodeP->name));
+      KT_E("NULL value for Property '%s'", kNodeP->name);
       orionldError(OrionldBadRequestData, "Attributes with type Property cannot be given the value NULL", attributeName, 400);
       *detailP = (char*) "NULL value for Property";
       return NULL;
@@ -514,7 +513,7 @@ bool kjTreeToContextAttribute(OrionldContext* contextP, KjNode* kNodeP, ContextA
     {
       if (pcheckLanguagePropertyValue(valueP, attributeName) == false)
       {
-        LM_E(("pcheckLanguageProperty error for %s", attributeName));
+        KT_E("pcheckLanguageProperty error for %s", attributeName);
         // pcheckLanguageProperty fills in error response
         *detailP = (char*) "pcheckLanguageProperty failed";
         orionldState.httpStatusCode = 400;
@@ -568,7 +567,7 @@ bool kjTreeToContextAttribute(OrionldContext* contextP, KjNode* kNodeP, ContextA
           }
           else
           {
-            LM_E(("Invalid member of value as object of Temporal Property: '%s'", nodeP->name));
+            KT_E("Invalid member of value as object of Temporal Property: '%s'", nodeP->name);
             orionldError(OrionldBadRequestData, "Invalid member of value as object of Temporal Property", nodeP->name, 400);
             *detailP = (char*) "Invalid member of value as object of Temporal Property";
             return false;
@@ -577,7 +576,7 @@ bool kjTreeToContextAttribute(OrionldContext* contextP, KjNode* kNodeP, ContextA
 
         if (atValueNodeP == NULL)
         {
-          LM_E(("@value node missing in value-object of Temporal Property '%s'", valueP->name));
+          KT_E("@value node missing in value-object of Temporal Property '%s'", valueP->name);
           orionldError(OrionldBadRequestData, "@value node missing in value-object of Temporal Property", valueP->name, 400);
           *detailP = (char*) "@value node missing in value-object of Temporal Property";
           return false;
@@ -587,7 +586,7 @@ bool kjTreeToContextAttribute(OrionldContext* contextP, KjNode* kNodeP, ContextA
         char* details;
         if ((atTypeNodeP != NULL) && (atValueCheck(atTypeNodeP, atValueNodeP, &title, &details) == false))
         {
-          LM_E(("Invalid temporal value of Temporal Property '%s'", valueP->name));
+          KT_E("Invalid temporal value of Temporal Property '%s'", valueP->name);
           orionldError(OrionldBadRequestData, title, details, 400);
           *detailP = (char*) "Invalid temporal value of Temporal Property";
           return false;

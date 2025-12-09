@@ -24,6 +24,7 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                        // KT_*
 #include "kalloc/kaAlloc.h"                                       // kaAlloc
 #include "kalloc/kaStrdup.h"                                      // kaStrdup
 #include "kjson/KjNode.h"                                         // KjNode
@@ -31,8 +32,6 @@ extern "C"
 #include "kjson/kjClone.h"                                        // kjClone
 #include "kjson/kjLookup.h"                                       // kjLookup
 }
-
-#include "logMsg/logMsg.h"                                        // LM_*
 
 #include "common/string.h"                                        // FT
 #include "ngsi10/QueryContextResponse.h"                          // QueryContextResponse
@@ -143,7 +142,7 @@ KjNode* kjTreeFromQueryContextResponse(bool oneHit, bool keyValues, bool concise
 
   if (responseP->errorCode.code != 200)
   {
-    LM_E(("Error %d from mongoBackend", responseP->errorCode.code));
+    KT_E("Error %d from mongoBackend", responseP->errorCode.code);
     OrionldResponseErrorType errorType = httpStatusCodeToOrionldErrorType(responseP->errorCode.code);
 
     orionldError(errorType, responseP->errorCode.reasonPhrase.c_str(), responseP->errorCode.details.c_str(), 400);
@@ -217,7 +216,7 @@ KjNode* kjTreeFromQueryContextResponse(bool oneHit, bool keyValues, bool concise
       nodeP = kjString(orionldState.kjsonP, "type", alias);
       if (nodeP == NULL)
       {
-        LM_E(("out of memory"));
+        KT_E("out of memory");
         orionldError(OrionldInternalError, "Unable to create tree node", "out of memory", 500);
         return NULL;
       }
@@ -231,7 +230,7 @@ KjNode* kjTreeFromQueryContextResponse(bool oneHit, bool keyValues, bool concise
     {
       if (orionldSysAttrs(ceP->entityId.creDate, ceP->entityId.modDate, top) == false)
       {
-        LM_E(("sysAttrs error"));
+        KT_E("sysAttrs error");
         return NULL;
       }
     }
@@ -271,7 +270,7 @@ KjNode* kjTreeFromQueryContextResponse(bool oneHit, bool keyValues, bool concise
           langValueP = kjTreeFromCompoundValue(aP->compoundValueP, langValueP, valueMayBeCompacted, &details);
           if (langValueP == NULL)
           {
-            LM_E(("kjTreeFromCompoundValue: %s", details));
+            KT_E("kjTreeFromCompoundValue: %s", details);
             orionldError(OrionldInternalError, "Unable to create tree node from a compound value", details, 500);
             return NULL;
           }
@@ -310,7 +309,7 @@ KjNode* kjTreeFromQueryContextResponse(bool oneHit, bool keyValues, bool concise
             {
               if (kjTreeFromCompoundValue(aP->compoundValueP, aTop, valueMayBeCompacted, &details) == NULL)
               {
-                LM_E(("kjTreeFromCompoundValue: %s", details));
+                KT_E("kjTreeFromCompoundValue: %s", details);
                 orionldError(OrionldInternalError, "Unable to create tree node from a compound value", details, 500);
                 return NULL;
               }
@@ -325,7 +324,7 @@ KjNode* kjTreeFromQueryContextResponse(bool oneHit, bool keyValues, bool concise
 
         if (aTop == NULL)
         {
-          LM_E(("Internal Error (Out of memory)"));
+          KT_E("Internal Error (Out of memory)");
           orionldError(OrionldInternalError, "Unable to create tree node", "out of memory", 500);
           return NULL;
         }
@@ -340,7 +339,7 @@ KjNode* kjTreeFromQueryContextResponse(bool oneHit, bool keyValues, bool concise
         aTop = kjObject(orionldState.kjsonP, attrName);
         if (aTop == NULL)
         {
-          LM_E(("Error creating a KjNode Object"));
+          KT_E("Error creating a KjNode Object");
           orionldError(OrionldInternalError, "Unable to create tree node", "out of memory", 500);
           return NULL;
         }
@@ -351,7 +350,7 @@ KjNode* kjTreeFromQueryContextResponse(bool oneHit, bool keyValues, bool concise
           nodeP = kjString(orionldState.kjsonP, "type", aP->type.c_str());
           if (nodeP == NULL)
           {
-            LM_E(("Error creating a KjNode String"));
+            KT_E("Error creating a KjNode String");
             orionldError(OrionldInternalError, "Unable to create tree node", "out of memory", 500);
             return NULL;
           }
@@ -375,7 +374,7 @@ KjNode* kjTreeFromQueryContextResponse(bool oneHit, bool keyValues, bool concise
 
             if (numberToDate(aP->numberValue, date, sizeof(date)) == false)
             {
-              LM_E(("Error creating a stringified date"));
+              KT_E("Error creating a stringified date");
               orionldError(OrionldInternalError, "Unable to create a stringified observedAt date", NULL, 500);
               return NULL;
             }
@@ -409,14 +408,14 @@ KjNode* kjTreeFromQueryContextResponse(bool oneHit, bool keyValues, bool concise
           nodeP = (aP->compoundValueP->valueType == orion::ValueTypeVector)? kjArray(orionldState.kjsonP, valueFieldName) : kjObject(orionldState.kjsonP, valueFieldName);
           if (nodeP == NULL)
           {
-            LM_E(("kjTreeFromCompoundValue: %s", details));
+            KT_E("kjTreeFromCompoundValue: %s", details);
             orionldError(OrionldInternalError, "Unable to create tree node for compound value", "out of memory", 500);
             return NULL;
           }
 
           if (kjTreeFromCompoundValue(aP->compoundValueP, nodeP, valueMayBeCompacted, &details) == NULL)
           {
-            LM_E(("kjTreeFromCompoundValue: %s", details));
+            KT_E("kjTreeFromCompoundValue: %s", details);
             orionldError(OrionldInternalError, "Unable to create tree node from compound value", details, 500);
             return NULL;
           }
@@ -431,7 +430,7 @@ KjNode* kjTreeFromQueryContextResponse(bool oneHit, bool keyValues, bool concise
         {
           if (orionldSysAttrs(aP->creDate, aP->modDate, aTop) == false)
           {
-            LM_E(("sysAttrs error"));
+            KT_E("sysAttrs error");
             return NULL;
           }
         }
@@ -476,7 +475,7 @@ KjNode* kjTreeFromQueryContextResponse(bool oneHit, bool keyValues, bool concise
             {
               if (orionldSysAttrs(mdP->createdAt, mdP->modifiedAt, nodeP) == false)
               {
-                LM_E(("sysAttrs error"));
+                KT_E("sysAttrs error");
                 return NULL;
               }
             }
@@ -491,7 +490,7 @@ KjNode* kjTreeFromQueryContextResponse(bool oneHit, bool keyValues, bool concise
 
                 if (numberToDate(mdP->numberValue, date, sizeof(date)) == false)
                 {
-                  LM_E(("Error creating a stringified date"));
+                  KT_E("Error creating a stringified date");
                   orionldError(OrionldInternalError, "Unable to create a stringified observedAt date", NULL, 500);
                   return NULL;
                 }
@@ -538,7 +537,7 @@ KjNode* kjTreeFromQueryContextResponse(bool oneHit, bool keyValues, bool concise
 
                 if (numberToDate(mdP->numberValue, date, sizeof(date)) == false)
                 {
-                  LM_E(("Error creating a stringified date"));
+                  KT_E("Error creating a stringified date");
                   orionldError(OrionldInternalError, "Unable to create a stringified date", NULL, 500);
                   return NULL;
                 }
@@ -573,7 +572,7 @@ KjNode* kjTreeFromQueryContextResponse(bool oneHit, bool keyValues, bool concise
           }
 
           if (nodeP == NULL)
-            LM_E(("Error in creation of KjNode for metadata (%s)", (details != NULL)? details : "no details"));
+            KT_E("Error in creation of KjNode for metadata (%s)", (details != NULL)? details : "no details");
           else
             kjChildAdd(aTop, nodeP);
         }

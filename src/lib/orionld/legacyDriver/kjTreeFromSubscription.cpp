@@ -30,13 +30,12 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kalloc/kaAlloc.h"                                      // kaAlloc
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjObject, kjString, kjBoolean, ...
 #include "kjson/kjParse.h"                                       // kjParse
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "cache/subCache.h"                                      // CachedSubscription
 #include "apiTypesV2/Subscription.h"                             // Subscription
@@ -352,7 +351,7 @@ KjNode* kjTreeFromSubscription(ngsiv2::Subscription* subscriptionP, CachedSubscr
   const char* mimeType = mimeTypeToLongString(subscriptionP->notification.httpInfo.mimeType);
   if (strcmp(mimeType, "NOMIMETYPE") == 0)
   {
-    LM_W(("Internal Warning (notification mime type %d is not known - defaults to application/ld+json)", subscriptionP->notification.httpInfo.mimeType));
+    KT_W("Internal Warning (notification mime type %d is not known - defaults to application/ld+json)", subscriptionP->notification.httpInfo.mimeType);
     mimeType = (char*) "application/ld+json";   // Default value ?
   }
 

@@ -28,14 +28,12 @@
 extern "C"
 {
 #include "kbase/kMacros.h"                                       // K_VEC_SIZE, K_FT
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/kjBuilder.h"                                     // kjChildRemove
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kalloc/kaAlloc.h"                                      // kaAlloc
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
 
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/common/httpStatusCodeToOrionldErrorType.h"     // httpStatusCodeToOrionldErrorType
@@ -246,7 +244,7 @@ bool legacyDeleteAttribute(void)
   char* attrNameV[1] = { attrNameExpandedEq };
   if (mongoCppLegacyEntityAttributesDelete(entityId, attrNameV, 1) == false)
   {
-    LM_W(("mongoCppLegacyEntityAttributesDelete failed"));
+    KT_W("mongoCppLegacyEntityAttributesDelete failed");
     orionldError(OrionldResourceNotFound, "Entity/Attribute Not Found", attrNameExpanded, 404);
     return false;
   }
