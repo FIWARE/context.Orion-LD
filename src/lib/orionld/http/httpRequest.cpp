@@ -33,6 +33,8 @@ extern "C"
 #include "kjson/kjRenderSize.h"                                // kjFastRenderSize
 }
 
+#include "common/sem.h"                                        // curl_context
+
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/types/OrionldProblemDetails.h"               // OrionldProblemDetails

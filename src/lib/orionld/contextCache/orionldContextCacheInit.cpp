@@ -123,7 +123,7 @@ void orionldContextCacheInit(void)
   //
 
   // 1. Find the Core Context
-  KT_T(LmtCoreContext, "Trying to find the core context (%s)", coreContextUrl);
+  KT_T(KtCoreContext, "Trying to find the core context (%s)", coreContextUrl);
   if (contextArray != NULL)
   {
     KjNode* contextNodeP = contextArray->value.firstChildP;
@@ -159,7 +159,7 @@ void orionldContextCacheInit(void)
   // Still no core context? - try to download it
   if (orionldCoreContextP == NULL)
   {
-    KT_T(LmtCoreContext, "Still no core context - trying to download it (%s)", coreContextUrl);
+    KT_T(KtCoreContext, "Still no core context - trying to download it (%s)", coreContextUrl);
     orionldCoreContextP = orionldContextFromUrl(coreContextUrl, NULL);
     if (orionldCoreContextP == NULL)
       KT_W("Unable to download the core context (%s: %s)", orionldState.pd.title, orionldState.pd.detail);
@@ -168,7 +168,7 @@ void orionldContextCacheInit(void)
   // Still no core context? - use the default core context, meant for airgapped setups
   if (orionldCoreContextP == NULL)
   {
-    KT_T(LmtCoreContext, "Still no core context - no network?  Getting the core context from builtin");
+    KT_T(KtCoreContext, "Still no core context - no network?  Getting the core context from builtin");
 
     //
     // The builtin core context is a string in a read-only segment.
@@ -183,7 +183,7 @@ void orionldContextCacheInit(void)
     memcpy(buf, builtinCoreContext, bufLen + 1);
     orionldCoreContextP = orionldContextFromBuffer(coreContextUrl, OrionldContextBuiltinCoreContext, (char*) builtinCoreContextUrl, buf);
     free(buf);
-    KT_T(LmtContextCache, "Core Context at %p", orionldCoreContextP);
+    KT_T(KtContextCache, "Core Context at %p", orionldCoreContextP);
     if (orionldCoreContextP == NULL)
       KT_X(1, "Unable to create the core context from in-compiled default core context (%s: %s)", orionldState.pd.title, orionldState.pd.detail);
     KT_W("Falling back to Built-in Core Context (hard-coded copy of %s)", builtinCoreContextUrl);

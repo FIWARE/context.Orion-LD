@@ -24,20 +24,20 @@
 */
 extern "C"
 {
-#include "kjson/KjNode.h"                                           // KjNode
-#include "kjson/kjBuilder.h"                                        // kjChildRemove, kjChildAdd, ...
-#include "kjson/kjLookup.h"                                         // kjLookup
+#include "ktrace/kTrace.h"                                       // KT_*
+#include "kjson/KjNode.h"                                        // KjNode
+#include "kjson/kjBuilder.h"                                     // kjChildRemove, kjChildAdd, ...
+#include "kjson/kjLookup.h"                                      // kjLookup
 }
 
-#include "logMsg/logMsg.h"                                          // LM_*
-
-#include "orionld/types/DistOp.h"                                   // DistOp
-#include "orionld/common/orionldState.h"                            // orionldState, entityMaps
-#include "orionld/kjTree/kjEntityIdLookupInEntityArray.h"           // kjEntityIdLookupInEntityArray
-#include "orionld/kjTree/kjEntityNormalizedToConcise.h"             // kjEntityNormalizedToConcise
-#include "orionld/kjTree/kjEntityNormalizedToSimplified.h"          // kjEntityNormalizedToSimplified
-#include "orionld/distOp/distOpEntityMerge.h"                       // distOpEntityMerge
-#include "orionld/distOp/distOpResponseMergeIntoEntityArray.h"      // Own interface
+#include "orionld/types/DistOp.h"                                // DistOp
+#include "orionld/common/orionldState.h"                         // orionldState, entityMaps
+#include "orionld/common/traceLevels.h"                          // KTrace levels
+#include "orionld/kjTree/kjEntityIdLookupInEntityArray.h"        // kjEntityIdLookupInEntityArray
+#include "orionld/kjTree/kjEntityNormalizedToConcise.h"          // kjEntityNormalizedToConcise
+#include "orionld/kjTree/kjEntityNormalizedToSimplified.h"       // kjEntityNormalizedToSimplified
+#include "orionld/distOp/distOpEntityMerge.h"                    // distOpEntityMerge
+#include "orionld/distOp/distOpResponseMergeIntoEntityArray.h"   // Own interface
 
 
 
@@ -47,15 +47,15 @@ extern "C"
 //
 void distOpResponseMergeIntoEntityArray(DistOp* distOpP, KjNode* entityArray)
 {
-  LM_W(("Merging entities for DistOp '%s' (aux: %s)", distOpP->id, (distOpP->regP->mode == RegModeAuxiliary)? "YES" : "NO"));
-  LM_T(LmtSR, ("Got a response. status code: %d. entityArray: %p", distOpP->httpResponseCode, entityArray));
+  KT_W("Merging entities for DistOp '%s' (aux: %s)", distOpP->id, (distOpP->regP->mode == RegModeAuxiliary)? "YES" : "NO");
+  KT_T(KtSR, "Got a response. status code: %d. entityArray: %p", distOpP->httpResponseCode, entityArray);
 
-  LM_TREE(distOpP->responseBody, "Response", LmtSR);
+  KT_TREE(distOpP->responseBody, "Response", KtSR);
 
   if ((distOpP->httpResponseCode == 200) && (distOpP->responseBody != NULL))
   {
-    LM_T(LmtSR, ("Got a body from endpoint registered in reg '%s'", distOpP->regP->regId));
-    LM_T(LmtSR, ("Must merge these new entities with the ones already received"));
+    KT_T(KtSR, "Got a body from endpoint registered in reg '%s'", distOpP->regP->regId);
+    KT_T(KtSR, "Must merge these new entities with the ones already received");
 
     KjNode* entityP = distOpP->responseBody->value.firstChildP;
     KjNode* next;
@@ -78,17 +78,17 @@ void distOpResponseMergeIntoEntityArray(DistOp* distOpP, KjNode* entityArray)
 
         if (baseEntityP == NULL)
         {
-          LM_T(LmtDistOpMerge, ("New Entity '%s' - adding it to the entity array (at %p)", entityId, entityArray));
+          KT_T(KtDistOpMerge, "New Entity '%s' - adding it to the entity array (at %p)", entityId, entityArray);
           kjChildAdd(entityArray, entityP);
         }
         else
         {
-          LM_T(LmtDistOpMerge, ("Existing Entity '%s' - merging it in the entity array (reg-mode: %s)", entityId, registrationModeToString(distOpP->regP->mode)));
+          KT_T(KtDistOpMerge, "Existing Entity '%s' - merging it in the entity array (reg-mode: %s)", entityId, registrationModeToString(distOpP->regP->mode));
           distOpEntityMerge(baseEntityP, entityP, orionldState.uriParamOptions.sysAttrs, distOpP->regP->mode == RegModeAuxiliary);
         }
       }
       else
-        LM_W(("No Entity ID in response from forwarded GET /entities request (reg %s)", distOpP->regP->regId));
+        KT_W("No Entity ID in response from forwarded GET /entities request (reg %s)", distOpP->regP->regId);
 
       entityP = next;
     }

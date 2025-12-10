@@ -26,14 +26,14 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjChildRemove, kjChildAdd
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/kjTree/kjEntityIdLookupInEntityArray.h"        // kjEntityIdLookupInEntityArray
 #include "orionld/distOp/distOpEntityMerge.h"                    // Own interface
 
@@ -146,55 +146,55 @@ void distOpEntityMerge(KjNode* apiEntityP, KjNode* additionP, bool sysAttrs, boo
 
     if (currentP == NULL)
     {
-      LM_T(LmtDistOpMerge, ("New Attribute '%s' - adding it to the entity", attrP->name));
+      KT_T(KtDistOpMerge, "New Attribute '%s' - adding it to the entity", attrP->name);
       kjChildRemove(additionP, attrP);
       kjChildAdd(apiEntityP, attrP);
     }
     else if (createdAt == true)  // Special attribute - need to keep the oldest, not the newest
     {
-      LM_T(LmtDistOpMerge, ("'createdAt' in any type of registration"));
-      LM_T(LmtDistOpMerge, ("Current createdAt:   %s", currentP->value.s));
-      LM_T(LmtDistOpMerge, ("Candidate createdAt: %s", attrP->value.s));
+      KT_T(KtDistOpMerge, "'createdAt' in any type of registration");
+      KT_T(KtDistOpMerge, "Current createdAt:   %s", currentP->value.s);
+      KT_T(KtDistOpMerge, "Candidate createdAt: %s", attrP->value.s);
       if (strcmp(attrP->value.s, currentP->value.s) > 0)
       {
-        LM_T(LmtDistOpMerge, ("Existing Attribute '%s' - keeping it as it is OLDER than the old one", attrP->name));
+        KT_T(KtDistOpMerge, "Existing Attribute '%s' - keeping it as it is OLDER than the old one", attrP->name);
         kjChildRemove(apiEntityP, currentP);
         kjChildRemove(additionP, attrP);
         kjChildAdd(apiEntityP, attrP);
       }
       else
-        LM_T(LmtDistOpMerge, ("Existing Attribute '%s' - ignoring it as it is NEWER than the old one", attrP->name));
+        KT_T(KtDistOpMerge, "Existing Attribute '%s' - ignoring it as it is NEWER than the old one", attrP->name);
     }
     else if (modifiedAt == true)  // Special attribute - non-reified
     {
-      LM_T(LmtDistOpMerge, ("'modifiedAt' in any type of registration"));
-      LM_T(LmtDistOpMerge, ("Current modifiedAt:   %s", currentP->value.s));
-      LM_T(LmtDistOpMerge, ("Candidate modifiedAt: %s", attrP->value.s));
+      KT_T(KtDistOpMerge, "'modifiedAt' in any type of registration");
+      KT_T(KtDistOpMerge, "Current modifiedAt:   %s", currentP->value.s);
+      KT_T(KtDistOpMerge, "Candidate modifiedAt: %s", attrP->value.s);
       if (strcmp(attrP->value.s, currentP->value.s) < 0)
       {
-        LM_T(LmtDistOpMerge, ("Existing Attribute '%s' - keeping it as it is newer than the old one", attrP->name));
+        KT_T(KtDistOpMerge, "Existing Attribute '%s' - keeping it as it is newer than the old one", attrP->name);
         kjChildRemove(apiEntityP, currentP);
         kjChildRemove(additionP, attrP);
         kjChildAdd(apiEntityP, attrP);
       }
       else
-        LM_T(LmtDistOpMerge, ("Existing Attribute '%s' - ignoring it as it is older than the old one", attrP->name));
+        KT_T(KtDistOpMerge, "Existing Attribute '%s' - ignoring it as it is older than the old one", attrP->name);
     }
     else if (auxiliary == false)  // two copies of the same attr ...  and NOT from an auxiliary registration
     {
-      LM_T(LmtDistOpMerge, ("Existing Attribute '%s' in non-Auxiliary registration", attrP->name));
+      KT_T(KtDistOpMerge, "Existing Attribute '%s' in non-Auxiliary registration", attrP->name);
       if (newerAttribute(currentP, attrP) == attrP)
       {
-        LM_T(LmtDistOpMerge, ("Existing Attribute '%s' - keeping it as it is newer than the old one", attrP->name));
+        KT_T(KtDistOpMerge, "Existing Attribute '%s' - keeping it as it is newer than the old one", attrP->name);
         kjChildRemove(apiEntityP, currentP);
         kjChildRemove(additionP, attrP);
         kjChildAdd(apiEntityP, attrP);
       }
       else
-        LM_T(LmtDistOpMerge, ("Existing Attribute '%s' - ignoring it as it is older than the old one", attrP->name));
+        KT_T(KtDistOpMerge, "Existing Attribute '%s' - ignoring it as it is older than the old one", attrP->name);
     }
     else
-      LM_T(LmtDistOpMerge, ("Existing Attribute '%s' - ignoring it as the registration is Auxiliary", attrP->name));
+      KT_T(KtDistOpMerge, "Existing Attribute '%s' - ignoring it as the registration is Auxiliary", attrP->name);
 
     attrP = next;
   }

@@ -60,7 +60,7 @@ bool regMatchSubscription
     EntityInfo* eiP = cSubP->entityIdInfos[ix];
 
     // For now, only match subs/regs with entity type only
-    KT_T(LmtSR, "entityType  : '%s', entityId: '%s'", eiP->entityType.c_str(), eiP->entityId.c_str());
+    KT_T(KtSR, "entityType  : '%s', entityId: '%s'", eiP->entityType.c_str(), eiP->entityId.c_str());
     if ((eiP->entityType != "") && (eiP->entityId == ".*"))
     {
       const char* entityType = eiP->entityType.c_str();
@@ -94,7 +94,7 @@ bool regMatchSubscription
 
             if (strcmp(entityType, typeP->value.s) == 0)
             {
-              KT_T(LmtSR, "Found a matching registration for entity type '%s': %s", entityType, rciP->regId);
+              KT_T(KtSR, "Found a matching registration for entity type '%s': %s", entityType, rciP->regId);
               *entityTypeP = (char*) entityType;
               return true;
             }

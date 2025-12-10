@@ -26,8 +26,12 @@
 #include <string.h>                                              // strcmp
 #include <curl/curl.h>                                           // curl
 
-#include "logMsg/logMsg.h"                                       // LM_T
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+}
 
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/types/DistOp.h"                                // DistOp
 #include "orionld/distOp/distOpLookupByRegId.h"                  // Own interface
 
@@ -42,21 +46,21 @@ DistOp* distOpLookupByRegId(DistOp* distOpList, const char* regId)
   DistOp* distOpP = distOpList;
   bool    local   = strcmp(regId, "@none") == 0;
 
-  LM_T(LmtDistOpList, ("Looking for DistOp '%s'", regId));
+  KT_T(KtDistOpList, "Looking for DistOp '%s'", regId);
   while (distOpP != NULL)
   {
     if ((local == true) && (distOpP->regP == NULL))
     {
-      LM_T(LmtDistOpList, ("Found DistOp '%s'", regId));
+      KT_T(KtDistOpList, "Found DistOp '%s'", regId);
       return distOpP;
     }
 
     if ((distOpP->regP != NULL) && (distOpP->regP->regId != NULL))
     {
-      LM_T(LmtDistOpList, ("Comparing with '%s'", distOpP->regP->regId));
+      KT_T(KtDistOpList, "Comparing with '%s'", distOpP->regP->regId);
       if (strcmp(distOpP->regP->regId, regId) == 0)
       {
-        LM_T(LmtDistOpList, ("Found DistOp for reg '%s'", regId));
+        KT_T(KtDistOpList, "Found DistOp for reg '%s'", regId);
         return distOpP;
       }
     }
@@ -64,6 +68,6 @@ DistOp* distOpLookupByRegId(DistOp* distOpList, const char* regId)
     distOpP = distOpP->next;
   }
 
-  LM_T(LmtDistOpList, ("DistOp for reg '%s' NOT FOUND", regId));
+  KT_T(KtDistOpList, "DistOp for reg '%s' NOT FOUND", regId);
   return NULL;
 }

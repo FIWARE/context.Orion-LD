@@ -33,6 +33,7 @@ extern "C"
 #include "orionld/types/PgTableDefinitions.h"                  // PG_ENTITY_INSERT_START
 #include "orionld/types/PgAppendBuffer.h"                      // PgAppendBuffer
 #include "orionld/common/orionldState.h"                       // orionldState
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/common/uuidGenerate.h"                       // uuidGenerate
 #include "orionld/common/dotForEq.h"                           // dotForEq
 #include "orionld/troe/pgAppendInit.h"                         // pgAppendInit
@@ -59,7 +60,7 @@ bool troeDeleteAttribute(void)
   {
     if (troeFilterMatch(orionldState.entityTypeForTroe, orionldState.wildcard[0]) == false)
     {
-      KT_T(LmtConfig, "Not storing entities of type '%s' in TRoE - filtered out", orionldState.entityTypeForTroe);
+      KT_T(KtConfig, "Not storing entities of type '%s' in TRoE - filtered out", orionldState.entityTypeForTroe);
       return true;
     }
   }

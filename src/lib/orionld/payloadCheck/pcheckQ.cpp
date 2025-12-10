@@ -24,12 +24,14 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                      // KT_*
 #include "kjson/KjNode.h"                                       // KjNode
 }
 
 #include "orionld/types/QNode.h"                                // QNode
 #include "orionld/common/orionldState.h"                        // orionldState
 #include "orionld/common/orionldError.h"                        // orionldError
+#include "orionld/common/traceLevels.h"                         // KTrace levels
 #include "orionld/q/qLex.h"                                     // qLex
 #include "orionld/q/qParse.h"                                   // qParse
 #include "orionld/q/qPresent.h"                                 // qPresent
@@ -63,6 +65,6 @@ QNode* pcheckQ(char* qString)
     return NULL;
   }
 
-  qPresent(qTree, "QP", "pcheckQ", LmtQ);
+  qPresent(qTree, "QP", "pcheckQ", KtQ);
   return qTree;
 }

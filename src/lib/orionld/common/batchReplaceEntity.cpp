@@ -60,8 +60,8 @@ KjNode* batchReplaceEntity(KjNode* inEntityP, char* entityId, char* entityType, 
   if (dbModelFromApiEntity(dbFinalEntityP, NULL, true, entityId, entityType) == false)
     return NULL;
 
-  KT_T(LmtSR, "entityType: '%s'", entityType);
-  KT_TREE(dbFinalEntityP, "dbFinalEntity", LmtSR);
+  KT_T(KtSR, "entityType: '%s'", entityType);
+  KT_TREE(dbFinalEntityP, "dbFinalEntity", KtSR);
 
   //
   // Fix the entity's creDate (from the version of the entity that was fouind in the database)

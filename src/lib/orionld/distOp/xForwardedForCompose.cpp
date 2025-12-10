@@ -27,12 +27,12 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kalloc/kaAlloc.h"                                      // kaAlloc
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/distOp/xForwardedForCompose.h"                 // Own interface
 
 
@@ -59,6 +59,6 @@ char* xForwardedForCompose(char* xForwardedFor, char* newHost)
   else
     snprintf(xff, xffLen, "X-Forwarded-For: %s", newHost);
 
-  LM_T(LmtHeaders, ("xForwardedFor: '%s'", xff));
+  KT_T(KtDistOpLoop, "xForwardedFor: '%s'", xff);
   return xff;
 }

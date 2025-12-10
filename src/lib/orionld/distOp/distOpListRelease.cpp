@@ -24,10 +24,14 @@
 */
 #include <curl/curl.h>                                           // curl
 
-#include "logMsg/logMsg.h"                                       // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+}
 
 #include "orionld/types/DistOp.h"                                // DistOp
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/distOp/distOpListRelease.h"                    // Own interface
 
 
@@ -44,7 +48,7 @@ void distOpListRelease(DistOp* distOpList)
   {
     if (distOpP->curlHandle != NULL)
     {
-      LM_T(LmtLeak, ("Cleaning up a curl handle at %p", distOpP->curlHandle));
+      KT_T(KtLeak, "Cleaning up a curl handle at %p", distOpP->curlHandle);
       curl_easy_cleanup(distOpP->curlHandle);
       distOpP->curlHandle = NULL;
     }

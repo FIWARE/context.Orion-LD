@@ -26,6 +26,7 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjParse.h"                                       // kjParse
 #include "kjson/kjLookup.h"                                      // kjLookup
@@ -33,10 +34,9 @@ extern "C"
 #include "kjson/kjStringValueLookupInArray.h"                    // kjStringValueLookupInArray
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/types/DistOp.h"                                // DistOp
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/curlToBrokerStrerror.h"                 // curlToBrokerStrerror
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
 #include "orionld/distOp/distOpLookupByCurlHandle.h"             // distOpLookupByCurlHandle
@@ -54,7 +54,7 @@ void updatedAttr404Purge(KjNode* failureV, char* attrName)
   if ((failureV == NULL) || (failureV->value.firstChildP == NULL))
     return;
 
-  LM_T(LmtDistOp207, ("********** attribute '%s' is updated - remove 404 failure if present", attrName));
+  KT_T(KtDistOp207, "********** attribute '%s' is updated - remove 404 failure if present", attrName);
 
   int     purgedItems = 0;
   KjNode* failureItemP = failureV->value.firstChildP;
@@ -71,14 +71,14 @@ void updatedAttr404Purge(KjNode* failureV, char* attrName)
         (attributeV != NULL)           &&
         (kjStringValueLookupInArray(attributeV, attrName) != NULL))
     {
-      LM_T(LmtDistOp207, ("Removing '%s' from failureV, as it is present in 'failure' with a 404", attrName));
+      KT_T(KtDistOp207, "Removing '%s' from failureV, as it is present in 'failure' with a 404", attrName);
       kjChildRemove(failureV, failureItemP);
       ++purgedItems;
     }
 
     failureItemP = next;
   }
-  LM_T(LmtDistOp207, ("********** attribute '%s' is updated - %d 404 items were purged", attrName, purgedItems));
+  KT_T(KtDistOp207, "********** attribute '%s' is updated - %d 404 items were purged", attrName, purgedItems);
 }
 
 
@@ -96,7 +96,7 @@ void entityResponseAccumulate(DistOp* distOpP, KjNode* responseBody, KjNode* suc
   {
     distOpP->responseBody = kjParse(orionldState.kjsonP, distOpP->rawResponse);
     if (distOpP->responseBody == NULL)
-      LM_RVE(("Failed to parse the response of a distributed request (Reg '%s')"));
+      KT_RVE("Failed to parse the response of a distributed request (Reg '%s')");
   }
   else
     distOpP->responseBody = NULL;
@@ -104,7 +104,7 @@ void entityResponseAccumulate(DistOp* distOpP, KjNode* responseBody, KjNode* suc
   if (httpResponseCode == 201)
   {
     if (distOpP->operation != DoCreateEntity)
-      LM_W(("Got a 201 response to a forwarded message for distOp operation '%s'", distOpTypes[distOpP->operation]));
+      KT_W("Got a 201 response to a forwarded message for distOp operation '%s'", distOpTypes[distOpP->operation]);
 
     // All the attributes were updated - add them all to "successV"
     for (KjNode* attrP = distOpP->requestBody->value.firstChildP; attrP != NULL; attrP = attrP->next)
@@ -118,7 +118,7 @@ void entityResponseAccumulate(DistOp* distOpP, KjNode* responseBody, KjNode* suc
       {
         KjNode* nodeP = kjString(orionldState.kjsonP, NULL, shortName);
         kjChildAdd(successV, nodeP);
-        LM_T(LmtDistOp207, ("Added attribute '%s' to successV due to a 201 response", shortName));
+        KT_T(KtDistOp207, "Added attribute '%s' to successV due to a 201 response", shortName);
       }
     }
   }
@@ -154,7 +154,7 @@ void entityResponseAccumulate(DistOp* distOpP, KjNode* responseBody, KjNode* suc
         {
           KjNode* nodeP = kjString(orionldState.kjsonP, NULL, shortName);
           kjChildAdd(successV, nodeP);
-          LM_T(LmtDistOp207, ("Added attribute '%s' to successV due to a 204 response", shortName));
+          KT_T(KtDistOp207, "Added attribute '%s' to successV due to a 204 response", shortName);
         }
       }
     }
@@ -162,7 +162,7 @@ void entityResponseAccumulate(DistOp* distOpP, KjNode* responseBody, KjNode* suc
   else if (httpResponseCode == 207)
   {
     if (distOpP->responseBody == NULL)
-      LM_RVE(("Reg %s: empty payload body in a 207 response", distOpP->regP->regId));
+      KT_RVE("Reg %s: empty payload body in a 207 response", distOpP->regP->regId);
 
     if (distOpP->responseBody != NULL)
     {
@@ -287,21 +287,21 @@ void entityResponseAccumulate(DistOp* distOpP, KjNode* responseBody, KjNode* suc
   }
   else if (httpResponseCode == 0)
   {
-    LM_T(LmtDistOpResponse, ("%s: Seems like the request wasn't even sent ... (%s)", distOpP->regP->regId, distOpP->regP->ipAndPort));
+    KT_T(KtDistOpResponse, "%s: Seems like the request wasn't even sent ... (%s)", distOpP->regP->regId, distOpP->regP->ipAndPort);
 
     int         statusCode = 500;
     const char* title      = "Unable to send distributed request";
     const char* detail     = curlToBrokerStrerror(msgP->easy_handle, msgP->data.result, &statusCode);
 
-    LM_E(("CURL Error %d: %s (%s)", msgP->data.result, curl_easy_strerror(msgP->data.result), detail));
+    KT_E("CURL Error %d: %s (%s)", msgP->data.result, curl_easy_strerror(msgP->data.result), detail);
 
     // Mark all attributes of this DistOp as erroneous (those attrs that were sent)
     distOpFailure(responseBody, distOpP, title, detail, statusCode, NULL);
   }
   else if (httpResponseCode == 200)
-    LM_W(("%s: unexpected status code %d (using the accumulator?)", distOpP->regP->regId, httpResponseCode));
+    KT_W("%s: unexpected status code %d (using the accumulator?)", distOpP->regP->regId, httpResponseCode);
   else
-    LM_W(("%s: unexpected status code %d", distOpP->regP->regId, httpResponseCode));
+    KT_W("%s: unexpected status code %d", distOpP->regP->regId, httpResponseCode);
 }
 
 
@@ -316,9 +316,9 @@ void distOpResponseAccumulate(DistOp* distOpP, KjNode* responseBody, KjNode* suc
 
   curl_easy_getinfo(msgP->easy_handle, CURLINFO_RESPONSE_CODE, &httpResponseCode);
 
-  LM_T(LmtDistOpResponse, ("Reg %s: Operation Type:            %s",   distOpP->regP->regId, distOpTypes[distOpP->operation]));
-  LM_T(LmtDistOpResponse, ("Reg %s: Distributed Response Code: %d",   distOpP->regP->regId, httpResponseCode));
-  LM_T(LmtDistOpResponse, ("Reg %s: Distributed Response Body: '%s'", distOpP->regP->regId, distOpP->rawResponse));
+  KT_T(KtDistOpResponse, "Reg %s: Operation Type:            %s",   distOpP->regP->regId, distOpTypes[distOpP->operation]);
+  KT_T(KtDistOpResponse, "Reg %s: Distributed Response Code: %d",   distOpP->regP->regId, httpResponseCode);
+  KT_T(KtDistOpResponse, "Reg %s: Distributed Response Body: '%s'", distOpP->regP->regId, distOpP->rawResponse);
 
   if ((distOpP->operation == DoCreateEntity) ||
       (distOpP->operation == DoUpdateEntity) ||
@@ -336,7 +336,7 @@ void distOpResponseAccumulate(DistOp* distOpP, KjNode* responseBody, KjNode* suc
     //
     // Not Implemented ...
     //
-    LM_W(("operation: %s (real implementation pending - running in \"fall-back\")", distOpTypes[distOpP->operation]));
+    KT_W("operation: %s (real implementation pending - running in \"fall-back\")", distOpTypes[distOpP->operation]);
     if (msgP->data.result == CURLE_OK)
     {
       if ((httpResponseCode >= 200) && (httpResponseCode <= 299))
@@ -350,7 +350,7 @@ void distOpResponseAccumulate(DistOp* distOpP, KjNode* responseBody, KjNode* suc
       const char* title      = "Unable to send distributed request";
       const char* detail     = curlToBrokerStrerror(msgP->easy_handle, msgP->data.result, &statusCode);
 
-      LM_E(("CURL Error %d: %s (%s)", msgP->data.result, curl_easy_strerror(msgP->data.result), detail));
+      KT_E("CURL Error %d: %s (%s)", msgP->data.result, curl_easy_strerror(msgP->data.result), detail);
 
       // Mark all attributes of this DistOp as erroneous (those attrs that were sent)
       distOpFailure(responseBody, distOpP, title, detail, statusCode, NULL);
@@ -411,12 +411,12 @@ void distOpResponses(DistOp* distOpList, KjNode* responseBody, bool exclude404)
 
     if (distOpP != NULL)
     {
-      LM_T(LmtDistOpResponseDetail, ("%s: got some response - accumulating it", distOpP->regP->regId));
+      KT_T(KtDistOpResponseDetail, "%s: got some response - accumulating it", distOpP->regP->regId);
 
       if ((exclude404 == false) || (distOpP->httpResponseCode != 404))
         distOpResponseAccumulate(distOpP, responseBody, successV, failureV, msgP);
     }
     else
-      LM_W(("distOpLookupByCurlHandle failed to find the DistOp - the response from the distributed request will not be handled!!!"));
+      KT_W("distOpLookupByCurlHandle failed to find the DistOp - the response from the distributed request will not be handled!!!");
   }
 }

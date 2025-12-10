@@ -38,8 +38,9 @@ typedef enum OrionldTraceLevels
 
   StRequest                 = 200,
   KtRequest                 = 200,
-  StRequestHeaders          = 201,
-  StRequestParams           = 202,
+  KtResponse                = 201,
+  StRequestHeaders          = 202,
+  StRequestParams           = 203,
   KtSR                      = 210,
 
   // URL Params
@@ -121,6 +122,10 @@ typedef enum OrionldTraceLevels
   KtDistOpRequestHeaders    = 1207,
   KtDistOpResponseHeaders   = 1208,
   KtDistOpRequestParams     = 1209,
+  KtDistOpMerge             = 1210,
+  KtDistOp207               = 1211,
+  KtDistOpLoop              = 1212,
+  KtDistOpResponseBuf       = 1213,
 
   // Entity Maps
   KtEntityMap               = 1300,
@@ -129,6 +134,7 @@ typedef enum OrionldTraceLevels
   KtTroe                    = 1400,
   KtTroeFilter              = 1401,
   KtPgPool                  = 1402,
+  KtSql                     = 1403,
 
   // Config File
   KtConfig                  = 1500,
@@ -186,6 +192,7 @@ typedef enum OrionldTraceLevels
   KtLeak                    = 4000,
   KtToDo                    = 4001,
   KtDateTime                = 4002,
+  KtUriEncode               = 4003,
 
   // FT Client
   StDump                    = 5001,

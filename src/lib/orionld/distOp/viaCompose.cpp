@@ -27,12 +27,12 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kalloc/kaAlloc.h"                                      // kaAlloc
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/distOp/viaCompose.h"                           // Own interface
 
 
@@ -52,13 +52,13 @@ char* viaCompose(char* via, char* self)
   char* viaHeader = kaAlloc(&orionldState.kalloc, viaLen);
 
   if (viaHeader == NULL)
-    LM_X(1, ("Out of memory (kaAlloc failed to allocate %d bytes", viaLen));
+    KT_X(1, "Out of memory (kaAlloc failed to allocate %d bytes", viaLen);
 
   if (via != NULL)
     snprintf(viaHeader, viaLen, "Via: %s, 1.1 %s", via, self);  // Hardcoding HTTP version 1.1 ...
   else
     snprintf(viaHeader, viaLen, "Via: 1.1 %s", self);
 
-  LM_T(LmtHeaders, ("via: '%s'", viaHeader));
+  KT_T(KtDistOpLoop, "via: '%s'", viaHeader);
   return viaHeader;
 }

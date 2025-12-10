@@ -26,9 +26,10 @@
 
 extern "C"
 {
-#include "ktrace/kTrace.h"                                       // KT_*
+#include "ktrace/kTrace.h"                                     // KT_*
 }
 
+#include "common/sem.h"                                        // curl_context
 #include "orionld/types/OrionldHttpHeader.h"                   // OrionldHttpHeader
 #include "orionld/common/orionldState.h"                       // orionldState, debugCurl
 #include "orionld/common/traceLevels.h"                        // KTrace levels

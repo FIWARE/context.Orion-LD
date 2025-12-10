@@ -27,10 +27,9 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kalloc/kaAlloc.h"                                      // kaAlloc
 }
-
-#include "logMsg/logMsg.h"                                       // LM_T
 
 #include "orionld/types/DistOp.h"                                // DistOp
 #include "orionld/types/StringArray.h"                           // StringArray
@@ -64,7 +63,7 @@ void distOpAttrs(DistOp* distOpP, StringArray* attrList)
   char* attrs = kaAlloc(&orionldState.kalloc, attrsLen);
 
   if (attrs == NULL)
-    LM_X(1, ("Out of memory"));
+    KT_X(1, "Out of memory");
 
   bzero(attrs, attrsLen);
 

@@ -26,6 +26,7 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
@@ -33,10 +34,9 @@ extern "C"
 #include "kjson/kjStringValueLookupInArray.h"                    // kjStringValueLookupInArray
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/types/DistOp.h"                                // DistOp
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/eqForDot.h"                             // eqForDot
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
 #include "orionld/distOp/distOpSuccess.h"                        // Own interface
@@ -57,14 +57,14 @@ static void attrNameToSuccess(KjNode* successV, KjNode* failureV, char* attrName
   if (kjStringValueLookupInArray(successV, alias) == NULL)
   {
     KjNode* aNameP = kjString(orionldState.kjsonP, NULL, alias);
-    LM_T(LmtDistOp207, ("Adding '%s' to successV", alias));
+    KT_T(KtDistOp207, "Adding '%s' to successV", alias);
     kjChildAdd(successV, aNameP);
 
     if (failureV != NULL)
       updatedAttr404Purge(failureV, alias);
   }
   else
-    LM_T(LmtDistOp207, ("NOT adding attribute '%s' to successV (it's already present)", alias));
+    KT_T(KtDistOp207, "NOT adding attribute '%s' to successV (it's already present)", alias);
 }
 
 

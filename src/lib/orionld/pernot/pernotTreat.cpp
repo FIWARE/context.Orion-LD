@@ -48,6 +48,14 @@ extern "C"
 
 // -----------------------------------------------------------------------------
 //
+// MIN -
+//
+#define MIN(a, b) ((a) > (b))? (a) : (b)
+
+
+
+// -----------------------------------------------------------------------------
+//
 // dbModelToApiEntities - FIXME: Move to orionld/dbModel
 //
 KjNode* dbModelToApiEntities(KjNode* dbEntityArray, bool sysAttrs, OrionldRenderFormat renderFormat, char* lang)

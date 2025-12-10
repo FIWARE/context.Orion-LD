@@ -26,12 +26,11 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjString, kjObject, ...
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/types/DistOp.h"                                // DistOp
 #include "orionld/types/DistOpType.h"                            // DistOpType
@@ -175,7 +174,7 @@ DistOp* distOpRequests(char* entityId, char* entityType, DistOpType operation, K
       CURLMcode cm = curl_multi_perform(orionldState.curlDoMultiP, &stillRunning);
       if (cm != 0)
       {
-        LM_E(("Internal Error (curl_multi_perform: error %d)", cm));
+        KT_E("Internal Error (curl_multi_perform: error %d)", cm);
         forwards = 0;
         break;
       }
@@ -185,23 +184,23 @@ DistOp* distOpRequests(char* entityId, char* entityType, DistOpType operation, K
         cm = curl_multi_wait(orionldState.curlDoMultiP, NULL, 0, 1000, NULL);
         if (cm != CURLM_OK)
         {
-          LM_E(("Internal Error (curl_multi_wait: error %d", cm));
+          KT_E("Internal Error (curl_multi_wait: error %d", cm);
           break;
         }
       }
 
       if ((++loops >= 1000) && ((loops % 100) == 0))
-        LM_W(("curl_multi_perform doesn't seem to finish ... (%d loops)", loops));
+        KT_W("curl_multi_perform doesn't seem to finish ... (%d loops)", loops);
 
       if (loops > 3000)
       {
-        LM_E(("Internal Error (curl hard timeout at 3000 loops)"));
+        KT_E("Internal Error (curl hard timeout at 3000 loops)");
         break;
       }
     }
 
     if (loops >= 1000)
-      LM_W(("curl_multi_perform finally finished!   (%d loops)", loops));
+      KT_W("curl_multi_perform finally finished!   (%d loops)", loops);
 
 
     // Anything left for a local entity?
