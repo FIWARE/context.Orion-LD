@@ -22,10 +22,16 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                       // LM_T, lmTraceIsSet
-#include "logMsg/traceLevels.h"                                  // distOpListDebug2
+#include <string.h>                                              // strcmp
+
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+#include "ktrace/ktTraceLevelCheck.h"                            // ktTraceLevelCheck
+}
 
 #include "orionld/types/DistOp.h"                                // DistOp
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/distOp/distOpListDebug.h"                      // Own interface
 
 
@@ -36,18 +42,18 @@
 //
 void distOpListDebug(DistOp* distOpList, const char* what)
 {
-  if (lmTraceIsSet(LmtDistOpList) == false)
+  if (ktTraceLevelCheck(KtDistOpList) == false)
     return;
 
-  LM_T(LmtDistOpList, ("Matching registrations (%s):", what));
+  KT_T(KtDistOpList, "Matching registrations (%s):", what);
 
   if (distOpList == NULL)
-    LM_T(LmtDistOpList, ("   None"));
+    KT_T(KtDistOpList, "   None");
 
   int ix = 0;
   for (DistOp* distOpP = distOpList; distOpP != NULL; distOpP = distOpP->next)
   {
-    LM_T(LmtDistOpList, ("   DistOp %d: Reg Id: %s", ix, distOpP->regP->regId));
+    KT_T(KtDistOpList, "   DistOp %d: Reg Id: %s", ix, distOpP->regP->regId);
     ++ix;
   }
 }
@@ -60,48 +66,48 @@ void distOpListDebug(DistOp* distOpList, const char* what)
 //
 void distOpListDebug2(DistOp* distOpP, const char* what)
 {
-  if (lmTraceIsSet(LmtDistOpList) == false)
+  if (ktTraceLevelCheck(KtDistOpList) == false)
     return;
 
-  LM_T(LmtDistOpList, ("----- DistOp List: %s", what));
+  KT_T(KtDistOpList, "----- DistOp List: %s", what);
 
   if (distOpP == NULL)
-    LM_T(LmtDistOpList, ("  None"));
+    KT_T(KtDistOpList, "  None");
 
   while (distOpP != NULL)
   {
-    LM_T(LmtDistOpList, ("  DistOp ID:         %s", distOpP->id));
-    LM_T(LmtDistOpList, ("  Registration:      %s", (distOpP->regP != NULL)? distOpP->regP->regId : "local DB"));
-    LM_T(LmtDistOpList, ("  Operation:         %s", distOpTypes[distOpP->operation]));
+    KT_T(KtDistOpList, "  DistOp ID:         %s", distOpP->id);
+    KT_T(KtDistOpList, "  Registration:      %s", (distOpP->regP != NULL)? distOpP->regP->regId : "local DB");
+    KT_T(KtDistOpList, "  Operation:         %s", distOpTypes[distOpP->operation]);
 
     if (distOpP->error == true)
     {
-      LM_T(LmtDistOpList, ("  Error:"));
-      LM_T(LmtDistOpList, ("    Title:             %s", distOpP->title));
-      LM_T(LmtDistOpList, ("    Detail:            %s", distOpP->detail));
-      LM_T(LmtDistOpList, ("    Status:            %d", distOpP->httpResponseCode));
+      KT_T(KtDistOpList, "  Error:");
+      KT_T(KtDistOpList, "    Title:             %s", distOpP->title);
+      KT_T(KtDistOpList, "    Detail:            %s", distOpP->detail);
+      KT_T(KtDistOpList, "    Status:            %d", distOpP->httpResponseCode);
     }
 
     if (distOpP->requestBody != NULL)
     {
       if (distOpP->operation == DoDeleteBatch)
       {
-        LM_T(LmtDistOpList, ("  Entity IDs:"));
+        KT_T(KtDistOpList, "  Entity IDs:");
         for (KjNode* eIdNodeP = distOpP->requestBody->value.firstChildP; eIdNodeP != NULL; eIdNodeP = eIdNodeP->next)
         {
-          LM_T(LmtDistOpList, ("  o %s", eIdNodeP->value.s));
+          KT_T(KtDistOpList, "  o %s", eIdNodeP->value.s);
         }
       }
       else
       {
-        LM_T(LmtDistOpList, ("  Attributes:"));
+        KT_T(KtDistOpList, "  Attributes:");
 
         int ix = 0;
         for (KjNode* attrP = distOpP->requestBody->value.firstChildP; attrP != NULL; attrP = attrP->next)
         {
           if ((strcmp(attrP->name, "id") != 0) && (strcmp(attrP->name, "type") != 0))
           {
-            LM_T(LmtDistOpList, ("    Attribute %d:   '%s'", ix, attrP->name));
+            KT_T(KtDistOpList, "    Attribute %d:   '%s'", ix, attrP->name);
             ++ix;
           }
         }
@@ -110,47 +116,47 @@ void distOpListDebug2(DistOp* distOpP, const char* what)
 
     if (distOpP->attrList != NULL)
     {
-      LM_T(LmtDistOpList, ("  URL Attributes:        %d", distOpP->attrList->items));
+      KT_T(KtDistOpList, "  URL Attributes:        %d", distOpP->attrList->items);
       for (int ix = 0; ix < distOpP->attrList->items; ix++)
       {
-        LM_T(LmtDistOpList, ("    Attribute %d:   '%s'", ix, distOpP->attrList->array[ix]));
+        KT_T(KtDistOpList, "    Attribute %d:   '%s'", ix, distOpP->attrList->array[ix]);
       }
     }
 
     if (distOpP->attrsParam != NULL)
     {
-      LM_T(LmtDistOpList, ("  URL Attributes:        '%s' (len: %d)", distOpP->attrsParam, distOpP->attrsParamLen));
+      KT_T(KtDistOpList, "  URL Attributes:        '%s' (len: %d)", distOpP->attrsParam, distOpP->attrsParamLen);
     }
 
     if (distOpP->typeList != NULL)
     {
-      LM_T(LmtDistOpList, ("  URL Entity Types:        %d", distOpP->typeList->items));
+      KT_T(KtDistOpList, "  URL Entity Types:        %d", distOpP->typeList->items);
       for (int ix = 0; ix < distOpP->typeList->items; ix++)
       {
-        LM_T(LmtDistOpList, ("    Entity Type %02d:   '%s'", ix, distOpP->typeList->array[ix]));
+        KT_T(KtDistOpList, "    Entity Type %02d:   '%s'", ix, distOpP->typeList->array[ix]);
       }
     }
 
     if (distOpP->idList != NULL)
     {
-      LM_T(LmtDistOpList, ("  URL Entity IDs:        %d", distOpP->idList->items));
+      KT_T(KtDistOpList, "  URL Entity IDs:        %d", distOpP->idList->items);
       for (int ix = 0; ix < distOpP->idList->items; ix++)
       {
-        LM_T(LmtDistOpList, ("    Entity ID %02d:   '%s'", ix, distOpP->idList->array[ix]));
+        KT_T(KtDistOpList, "    Entity ID %02d:   '%s'", ix, distOpP->idList->array[ix]);
       }
     }
 
     if (distOpP->entityId != NULL)
-      LM_T(LmtDistOpList, ("  URL Entity ID:         %s", distOpP->entityId));
+      KT_T(KtDistOpList, "  URL Entity ID:         %s", distOpP->entityId);
     if (distOpP->entityIdPattern != NULL)
-      LM_T(LmtDistOpList, ("  URL Entity ID Pattern: %s", distOpP->entityIdPattern));
+      KT_T(KtDistOpList, "  URL Entity ID Pattern: %s", distOpP->entityIdPattern);
     if (distOpP->entityType != NULL)
-      LM_T(LmtDistOpList, ("  URL Entity TYPE:       %s", distOpP->entityType));
+      KT_T(KtDistOpList, "  URL Entity TYPE:       %s", distOpP->entityType);
 
-    LM_T(LmtDistOpList, ("----------------------------------------"));
+    KT_T(KtDistOpList, "----------------------------------------");
 
     distOpP = distOpP->next;
   }
 
-  LM_T(LmtDistOpList, ("---------------------"));
+  KT_T(KtDistOpList, "---------------------");
 }

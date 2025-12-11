@@ -27,11 +27,10 @@
 extern "C"
 {
 #include "kbase/kMacros.h"                                     // K_FT
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjLookup.h"                                    // kjLookup
 }
-
-#include "logMsg/logMsg.h"                                     // LM_*
 
 #include "common/sem.h"                                        // cacheSemTake, cacheSemGive
 #include "cache/subCache.h"                                    // CachedSubscription, subCacheMatch, tenantMatch
@@ -39,6 +38,7 @@ extern "C"
 #include "orionld/types/QNode.h"                               // QNode, qNodeType
 #include "orionld/types/OrionldAlteration.h"                   // OrionldAlteration, OrionldAlterationMatch, orionldAlterationType
 #include "orionld/common/orionldState.h"                       // orionldState
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/common/dotForEq.h"                           // dotForEq
 #include "orionld/common/dateTime.h"                           // dateTimeFromString
 #include "orionld/q/qBuild.h"                                  // qBuild
@@ -73,7 +73,7 @@ static bool entityIdMatch(CachedSubscription* subP, const char* entityId, int eI
     }
   }
 
-  LM_T(LmtSubCacheMatch, ("Sub '%s': no match due to Entity ID", subP->subscriptionId));
+  KT_T(KtSubCacheMatch, "Sub '%s': no match due to Entity ID", subP->subscriptionId);
   return false;
 }
 
@@ -88,13 +88,13 @@ static bool entityIdMatch(CachedSubscription* subP, const char* entityId, int eI
 //
 static bool entityTypeMatch(CachedSubscription* subP, const char* entityType, int eItems)
 {
-  LM_T(LmtSubCacheMatch, ("Sub '%s': checking entity type", subP->subscriptionId));
+  KT_T(KtSubCacheMatch, "Sub '%s': checking entity type", subP->subscriptionId);
   for (int ix = 0; ix < eItems; ++ix)
   {
     EntityInfo* eiP   = subP->entityIdInfos[ix];
     const char* eType = eiP->entityType.c_str();
 
-    LM_T(LmtSubCacheMatch, ("Sub '%s': matching incoming entity type '%s' to the subs '%s'", subP->subscriptionId, entityType, eType));
+    KT_T(KtSubCacheMatch, "Sub '%s': matching incoming entity type '%s' to the subs '%s'", subP->subscriptionId, entityType, eType);
     if (strcmp(entityType, eType) == 0)
       return true;
 
@@ -102,7 +102,7 @@ static bool entityTypeMatch(CachedSubscription* subP, const char* entityType, in
       return true;
   }
 
-  LM_T(LmtSubCacheMatch, ("Sub '%s': no match due to Entity Type ('%s')", subP->subscriptionId, entityType));
+  KT_T(KtSubCacheMatch, "Sub '%s': no match due to Entity Type ('%s')", subP->subscriptionId, entityType);
   return false;
 }
 
@@ -123,19 +123,19 @@ static bool matchLookup(OrionldAlterationMatch* matchP, OrionldAlterationMatch* 
 {
 #if 0
   // <DEBUG>
-  LM_T(LmtSubCacheMatch, ("Match List:"));
+  KT_T(KtSubCacheMatch, "Match List:");
   for (OrionldAlterationMatch* mP = matchP; mP != NULL; mP = mP->next)
   {
     if (matchP->altAttrP)
-      LM_T(LmtSubCacheMatch, ("o %p: %s %s", mP, mP->subP->subscriptionId, mP->altAttrP->alterationType));
+      KT_T(KtSubCacheMatch, "o %p: %s %s", mP, mP->subP->subscriptionId, mP->altAttrP->alterationType);
     else
-      LM_T(LmtSubCacheMatch, ("o %p: %s (no attr)", mP, mP->subP->subscriptionId));
+      KT_T(KtSubCacheMatch, "o %p: %s (no attr)", mP, mP->subP->subscriptionId);
   }
-  LM_T(LmtSubCacheMatch, ("Compare with:"));
+  KT_T(KtSubCacheMatch, "Compare with:");
   if (itemP->altAttrP)
-    LM_T(LmtSubCacheMatch, ("o %p: %s %s", itemP, itemP->subP->subscriptionId, itemP->altAttrP->alterationType));
+    KT_T(KtSubCacheMatch, "o %p: %s %s", itemP, itemP->subP->subscriptionId, itemP->altAttrP->alterationType);
   else
-    LM_T(LmtSubCacheMatch, ("o %p: %s (no attr)", itemP, itemP->subP->subscriptionId));
+    KT_T(KtSubCacheMatch, "o %p: %s (no attr)", itemP, itemP->subP->subscriptionId);
   // </DEBUG>
 #endif
 
@@ -151,7 +151,7 @@ static bool matchLookup(OrionldAlterationMatch* matchP, OrionldAlterationMatch* 
         // If the altered entity is different, then itemP's entity needs to be added to the datas array of matchP ...
         //
         if (strcmp(itemP->altP->entityId, matchP->altP->entityId) != 0)
-          LM_W(("Different entity (%s vs %s) - need to add it to the notification for sub %s", itemP->altP->entityId, matchP->altP->entityId, matchP->subP->subscriptionId));
+          KT_W("Different entity (%s vs %s) - need to add it to the notification for sub %s", itemP->altP->entityId, matchP->altP->entityId, matchP->subP->subscriptionId);
         // return true;
       }
       else if ((matchP->altAttrP != NULL) && (itemP->altAttrP != NULL))
@@ -274,7 +274,7 @@ static bool falseUpdate(KjNode* attrP, KjNode* dbAttrsP)
 
   if (dbAttrP == NULL)  // New attribute - didn't exist
   {
-    // LM_T(LmtSubCacheMatch, ("FU: NO  - NOT a False Update as '%s' did not exist before", attrP->name));
+    // KT_T(KtSubCacheMatch, "FU: NO  - NOT a False Update as '%s' did not exist before", attrP->name);
     return false;
   }
 
@@ -282,7 +282,7 @@ static bool falseUpdate(KjNode* attrP, KjNode* dbAttrsP)
 
   if (dbAttrValueP == NULL)  // DB ERROR but ... never mind (will never happen)
   {
-    // LM_T(LmtSubCacheMatch, ("FU: NO  - NOT a False Update as '%s' presents a DB error - no value field in the DB", attrP->name));
+    // KT_T(KtSubCacheMatch, "FU: NO  - NOT a False Update as '%s' presents a DB error - no value field in the DB", attrP->name);
     return false;
   }
 
@@ -290,13 +290,13 @@ static bool falseUpdate(KjNode* attrP, KjNode* dbAttrsP)
 
   if (attrValueP == NULL)  // No change in attribute value - false update
   {
-    // LM_T(LmtSubCacheMatch, ("FU: YES - False Update as '%s' has no 'value' field in the normalized input", attrP->name));
+    // KT_T(KtSubCacheMatch, "FU: YES - False Update as '%s' has no 'value' field in the normalized input", attrP->name);
     return true;
   }
 
   if (dbAttrValueP->type != attrValueP->type)  // Change in JSON type - real update
   {
-    // LM_T(LmtSubCacheMatch, ("FU: NO  - NOT a False Update as '%s' the type of the attribute value is altered", attrP->name));
+    // KT_T(KtSubCacheMatch, "FU: NO  - NOT a False Update as '%s' the type of the attribute value is altered", attrP->name);
     return false;
   }
 
@@ -305,8 +305,8 @@ static bool falseUpdate(KjNode* attrP, KjNode* dbAttrsP)
   if ((attrValueP->type == KjBoolean) && (attrValueP->value.b != dbAttrValueP->value.b))    return false;
 
   // FIXME: Object + Array
-  // LM_T(LmtSubCacheMatch, ("FU: PERHAPS - as Object + Array modification checks are still to be implemented (for '%s')", attrP->name));
-  // LM_T(LmtSubCacheMatch, ("FU: YES - False Update as no value change was detected for '%s'", attrP->name));
+  // KT_T(KtSubCacheMatch, "FU: PERHAPS - as Object + Array modification checks are still to be implemented (for '%s')", attrP->name);
+  // KT_T(KtSubCacheMatch, "FU: YES - False Update as no value change was detected for '%s'", attrP->name);
 
   return true;
 }
@@ -350,7 +350,7 @@ static OrionldAlterationMatch* attributeMatch(OrionldAlterationMatch* matchList,
 
         for (int ix = 0; ix < watchAttrs; ix++)
         {
-          LM_T(LmtWatchedAttributes, ("Comparing modified '%s' with watched '%s'", attrP->name, subP->notifyConditionV[ix].c_str()));
+          KT_T(KtWatchedAttributes, "Comparing modified '%s' with watched '%s'", attrP->name, subP->notifyConditionV[ix].c_str());
           if (strcmp(attrP->name, subP->notifyConditionV[ix].c_str()) == 0)
           {
             if ((dbAttrsP == NULL) || (noNotifyFalseUpdate == false) || (falseUpdate(attrP, dbAttrsP) == false))
@@ -397,7 +397,7 @@ static OrionldAlterationMatch* attributeMatch(OrionldAlterationMatch* matchList,
         matchList = matchToMatchList(matchList, subP, altP, NULL, &matches);
     }
     else
-      LM_T(LmtSubCacheMatch, ("Sub '%s' - no match due to Watched Attributes", subP->subscriptionId));
+      KT_T(KtSubCacheMatch, "Sub '%s' - no match due to Watched Attributes", subP->subscriptionId);
   }
 
   for (int aaIx = 0; aaIx < altP->alteredAttributes; aaIx++)
@@ -415,14 +415,14 @@ static OrionldAlterationMatch* attributeMatch(OrionldAlterationMatch* matchList,
 
     if ((watchAttrs > 0) && (nIx == watchAttrs))  // No match found
     {
-      LM_T(LmtSubCacheMatch, ("Sub '%s' - no match due to watchedAttributes", subP->subscriptionId));
+      KT_T(KtSubCacheMatch, "Sub '%s' - no match due to watchedAttributes", subP->subscriptionId);
       continue;
     }
 
     // Is the Alteration type ON for this subscription?
     if (subP->triggers[aaP->alterationType] == false)
     {
-      LM_T(LmtSubCacheMatch, ("Sub '%s' - no match due to Trigger '%s'", subP->subscriptionId, orionldAlterationType(aaP->alterationType)));
+      KT_T(KtSubCacheMatch, "Sub '%s' - no match due to Trigger '%s'", subP->subscriptionId, orionldAlterationType(aaP->alterationType));
       continue;
     }
 
@@ -430,9 +430,9 @@ static OrionldAlterationMatch* attributeMatch(OrionldAlterationMatch* matchList,
   }
 
   if (matches == 0)
-    LM_T(LmtSubCacheMatch, ("Sub '%s' - no match due to Watched Attribute List (or Trigger!)", subP->subscriptionId));
+    KT_T(KtSubCacheMatch, "Sub '%s' - no match due to Watched Attribute List (or Trigger!)", subP->subscriptionId);
   else
-    LM_T(LmtSubCacheMatch, ("Subscription '%s' is a MATCH", subP->subscriptionId));
+    KT_T(KtSubCacheMatch, "Subscription '%s' is a MATCH", subP->subscriptionId);
   *matchesP += matches;
 
   return matchList;
@@ -461,25 +461,25 @@ OrionldAlterationMatch* subCacheAlterationMatch(OrionldAlteration* alterationLis
     {
       if ((multitenancy == true) && (tenantMatch(subP->tenant, orionldState.tenantName) == false))
       {
-        LM_T(LmtSubCacheMatch, ("Sub '%s' - no match due to tenant", subP->subscriptionId));
+        KT_T(KtSubCacheMatch, "Sub '%s' - no match due to tenant", subP->subscriptionId);
         continue;
       }
 
       if (subP->isActive == false)
       {
-        LM_T(LmtSubCacheMatch, ("Sub '%s' - no match due to isActive == false", subP->subscriptionId));
+        KT_T(KtSubCacheMatch, "Sub '%s' - no match due to isActive == false", subP->subscriptionId);
         continue;
       }
 
       if (strcmp(subP->status.c_str(), "active") != 0)
       {
-        LM_T(LmtSubCacheMatch, ("Sub '%s' - no match due to status == '%s' (!= 'active')", subP->subscriptionId, subP->status.c_str()));
+        KT_T(KtSubCacheMatch, "Sub '%s' - no match due to status == '%s' (!= 'active')", subP->subscriptionId, subP->status.c_str());
         continue;
       }
 
       if ((subP->expirationTime > 0) && (subP->expirationTime < orionldState.requestTime))
       {
-        LM_T(LmtSubCacheMatch, ("Sub '%s' - no match due to expiration (now:%f, expired:%f)", subP->subscriptionId, orionldState.requestTime, subP->expirationTime));
+        KT_T(KtSubCacheMatch, "Sub '%s' - no match due to expiration (now:%f, expired:%f)", subP->subscriptionId, orionldState.requestTime, subP->expirationTime);
         subP->status   = "expired";
         subP->isActive = false;
         continue;
@@ -487,7 +487,7 @@ OrionldAlterationMatch* subCacheAlterationMatch(OrionldAlteration* alterationLis
 
       if ((subP->throttling > 0) && ((orionldState.requestTime - subP->lastNotificationTime) < subP->throttling))
       {
-        LM_T(LmtSubCacheMatch, ("Sub '%s' - no match due to throttling", subP->subscriptionId));
+        KT_T(KtSubCacheMatch, "Sub '%s' - no match due to throttling", subP->subscriptionId);
         continue;
       }
 
@@ -515,7 +515,7 @@ OrionldAlterationMatch* subCacheAlterationMatch(OrionldAlteration* alterationLis
       {
         if (qMatch(subP->qP, altP->finalApiEntityP, false) == false)
         {
-          LM_T(LmtSubCacheMatch, ("Sub '%s' - no match due to ldq == '%s'", subP->subscriptionId, subP->qText));
+          KT_T(KtSubCacheMatch, "Sub '%s' - no match due to ldq == '%s'", subP->subscriptionId, subP->qText);
           continue;
         }
       }

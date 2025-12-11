@@ -22,8 +22,10 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "orionld/common/pqHeader.h"                           // Postgres header
 #include "orionld/troe/pgTransactionCommit.h"                  // Own interface
@@ -40,19 +42,19 @@ bool pgTransactionCommit(PGconn* connectionP)
 
   res = PQexec(connectionP, "COMMIT");
   if (res == NULL)
-    LM_RE(false, ("Database Error (PQexec(COMMIT): %s)", PQresStatus(PQresultStatus(res))));
+    KT_RE(false, "Database Error (PQexec(COMMIT): %s)", PQresStatus(PQresultStatus(res)));
   PQclear(res);
 
   if (PQstatus(connectionP) != CONNECTION_OK)
-    LM_E(("Database Error (SQL: bad connection: %d)", PQstatus(connectionP)));  // FIXME: string! (last error?)
+    KT_E("Database Error (SQL: bad connection: %d)", PQstatus(connectionP));  // FIXME: string! (last error?)
 
   PGTransactionStatusType st;
   if ((st = PQtransactionStatus(connectionP)) != PQTRANS_IDLE)
-    LM_E(("Database Error (SQL transaction error: %d)", st));  // FIXME: string! (last error?)
+    KT_E("Database Error (SQL transaction error: %d)", st);  // FIXME: string! (last error?)
 
   char* errorMsg = PQerrorMessage(connectionP);
   if ((errorMsg != NULL) && (errorMsg[0] != 0))
-    LM_E(("Database Error (SQL Commit Error: %s)", errorMsg));
+    KT_E("Database Error (SQL Commit Error: %s)", errorMsg);
 
   return true;
 }

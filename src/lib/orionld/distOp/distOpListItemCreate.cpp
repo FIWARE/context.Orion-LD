@@ -24,17 +24,17 @@
 */
 extern "C"
 {
-#include "kalloc/kaAlloc.h"                                         // kaAlloc
+#include "ktrace/kTrace.h"                                       // KT_*
+#include "kalloc/kaAlloc.h"                                      // kaAlloc
 }
 
-#include "logMsg/logMsg.h"                                          // LM_*
-
-#include "orionld/types/DistOp.h"                                   // DistOp
-#include "orionld/types/DistOpListItem.h"                           // DistOpListItem
-#include "orionld/common/orionldState.h"                            // orionldState, entityMaps
-#include "orionld/regCache/regCacheItemLookup.h"                    // regCacheItemLookup
-#include "orionld/distOp/distOpCreate.h"                            // distOpCreate
-#include "orionld/distOp/distOpLookupByRegId.h"                     // distOpLookupByRegId
+#include "orionld/types/DistOp.h"                                // DistOp
+#include "orionld/types/DistOpListItem.h"                        // DistOpListItem
+#include "orionld/common/orionldState.h"                         // orionldState, entityMaps
+#include "orionld/common/traceLevels.h"                          // KTrace levels
+#include "orionld/regCache/regCacheItemLookup.h"                 // regCacheItemLookup
+#include "orionld/distOp/distOpCreate.h"                         // distOpCreate
+#include "orionld/distOp/distOpLookupByRegId.h"                  // distOpLookupByRegId
 
 
 
@@ -44,19 +44,19 @@ extern "C"
 //
 DistOpListItem* distOpListItemCreate(const char* distOpId, char* idString)
 {
-  LM_T(LmtDistOpList, ("orionldState.distOpList at %p", orionldState.distOpList));
+  KT_T(KtDistOpList, "orionldState.distOpList at %p", orionldState.distOpList);
   DistOp* distOpP = distOpLookupByRegId(orionldState.distOpList, distOpId);
-  LM_T(LmtDistOpList, ("Response: %p", distOpP));
+  KT_T(KtDistOpList, "Response: %p", distOpP);
 
   if (distOpP == NULL)
   {
 #if 0
     //
-    // I think this LM_RE here is incorrect.
+    // I think this KT_RE here is incorrect.
     // The DistOps are for one request only.
     // So, create a new DistOp if it does not exist.
     //
-    LM_RE(NULL, ("Internal Error (unable to find the DistOp '%s'", distOpId));
+    KT_RE(NULL, "Internal Error (unable to find the DistOp '%s'", distOpId);
 #else
     RegCacheItem* rciP = regCacheItemLookup(orionldState.tenantP->regCache, distOpId);
     distOpP = distOpCreate(DoQueryEntity, rciP, NULL, NULL, NULL);
@@ -68,7 +68,7 @@ DistOpListItem* distOpListItemCreate(const char* distOpId, char* idString)
 
   DistOpListItem* itemP = (DistOpListItem*) kaAlloc(&orionldState.kalloc, sizeof(DistOpListItem));
   if (itemP == NULL)
-    LM_X(1, ("Out of memory"));
+    KT_X(1, "Out of memory");
 
   itemP->distOpP   =  distOpP;
   itemP->next      = NULL;

@@ -24,11 +24,10 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjString, kjObject, ...
 }
-
-#include "logMsg/logMsg.h"
 
 #include "orionld/types/OrionldResponseErrorType.h"              // OrionldResponseErrorType
 #include "orionld/common/orionldState.h"                         // orionldState
@@ -71,7 +70,7 @@ bool entityIdAndTypeGet(KjNode* entityNodeP, char** idP, char** typeP, KjNode* e
 
   if (entityIdCheck(idNodeP, idDuplicated, errorsArrayP) == false)
   {
-    LM_E(("entityIdCheck flagged error"));
+    KT_E("entityIdCheck flagged error");
     return false;
   }
 
@@ -81,7 +80,7 @@ bool entityIdAndTypeGet(KjNode* entityNodeP, char** idP, char** typeP, KjNode* e
   {
     if (entityTypeCheck(typeNodeP, typeDuplicated, idNodeP->value.s, false, errorsArrayP) == false)
     {
-      LM_E(("entityTypeCheck flagged error"));
+      KT_E("entityTypeCheck flagged error");
       return false;
     }
 

@@ -24,15 +24,15 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjChildAdd, kjChildRemove
 #include "kjson/kjClone.h"                                       // kjClone
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/notifications/previousValuePopulate.h"         // Own interface
 
 
@@ -57,7 +57,7 @@ void previousValuePopulate(KjNode* dbAttrsP, KjNode* dbAttrP, const char* attrNa
       KjNode* prevValueP = kjClone(orionldState.kjsonP, valueP);
       kjChildAdd(orionldState.previousValues, prevValueP);
       prevValueP->name = (char*) attrName;
-      LM_T(LmtShowChanges, ("Added previousValue for '%s' in orionldState.previousValues", attrName));
+      KT_T(KtShowChanges, "Added previousValue for '%s' in orionldState.previousValues", attrName);
     }
   }
 }

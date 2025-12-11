@@ -38,8 +38,9 @@ typedef enum OrionldTraceLevels
 
   StRequest                 = 200,
   KtRequest                 = 200,
-  StRequestHeaders          = 201,
-  StRequestParams           = 202,
+  KtResponse                = 201,
+  StRequestHeaders          = 202,
+  StRequestParams           = 203,
   KtSR                      = 210,
 
   // URL Params
@@ -60,7 +61,7 @@ typedef enum OrionldTraceLevels
 
   // JSON-LD
   KtArrayReduction          = 301,
-  
+
   // Linked Entities
   StLinked                  = 400,
   StLinkedInline            = 401,
@@ -83,7 +84,7 @@ typedef enum OrionldTraceLevels
   // Subscriptions
   KtSubs                    = 800,
   KtSubordinate             = 801,
-  KtShowChanges             = 802,
+  KtWatchedAttributes       = 802,
 
   // Periodic Subscriptions
   KtPernot                  = 850,
@@ -96,6 +97,7 @@ typedef enum OrionldTraceLevels
   KtSubCache                = 900,
   KtSubCacheSync            = 901,
   KtSubCacheStats           = 902,
+  KtSubCacheMatch           = 903,
 
   // Alterations
   KtAlt                     = 1000,
@@ -103,6 +105,11 @@ typedef enum OrionldTraceLevels
   // Notifications
   KtNotification            = 1100,
   KtNotificationStats       = 1101,
+  KtNotificationHeaders     = 1102,
+  KtNotificationBody        = 1103,
+  KtNotificationSend        = 1104,
+  KtNotificationMsg         = 1105,
+  KtShowChanges             = 1106,
 
   // Distributed Operations
   KtDistOp                  = 1200,
@@ -115,12 +122,19 @@ typedef enum OrionldTraceLevels
   KtDistOpRequestHeaders    = 1207,
   KtDistOpResponseHeaders   = 1208,
   KtDistOpRequestParams     = 1209,
+  KtDistOpMerge             = 1210,
+  KtDistOp207               = 1211,
+  KtDistOpLoop              = 1212,
+  KtDistOpResponseBuf       = 1213,
 
   // Entity Maps
   KtEntityMap               = 1300,
 
   // TRoE
   KtTroe                    = 1400,
+  KtTroeFilter              = 1401,
+  KtPgPool                  = 1402,
+  KtSql                     = 1403,
 
   // Config File
   KtConfig                  = 1500,
@@ -151,6 +165,9 @@ typedef enum OrionldTraceLevels
   // API Model
   KtApiModel                = 1850,
 
+  // Dataset ID
+  KtDatasetId               = 1900,
+
   // DDS
   StDds                     = 2001,
   StDdsPublish              = 2002,
@@ -174,6 +191,8 @@ typedef enum OrionldTraceLevels
   // Misc
   KtLeak                    = 4000,
   KtToDo                    = 4001,
+  KtDateTime                = 4002,
+  KtUriEncode               = 4003,
 
   // FT Client
   StDump                    = 5001,

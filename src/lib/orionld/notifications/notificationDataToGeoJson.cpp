@@ -24,12 +24,11 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjChildRemove, kjChildAdd
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
-
-#include "logMsg/logMsg.h"
 
 #include "orionld/kjTree/kjGeojsonEntitiesTransform.h"           // kjGeojsonEntitiesTransform
 #include "orionld/notifications/notificationDataToGeoJson.h"     // Own interface
@@ -62,5 +61,5 @@ void notificationDataToGeoJson
     kjChildAdd(notificationNodeP, geojsonTree);
   }
   else
-    LM_E(("Internal Error (no 'data' member found in a notification node)"));
+    KT_E("Internal Error (no 'data' member found in a notification node)");
 }

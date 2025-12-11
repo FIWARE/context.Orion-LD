@@ -24,7 +24,12 @@
 */
 #include <string.h>                                              // strstr
 
-#include "logMsg/logMsg.h"                                       // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+}
+
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 
 
 
@@ -34,8 +39,8 @@
 //
 bool viaMatch(char* currentVia, char* next)
 {
-  LM_T(LmtDistOpLoop, ("Loop Detection: Via header:        '%s' (from 'forwarder')", currentVia));
-  LM_T(LmtDistOpLoop, ("Loop Detection: Forward to source: '%s' (next 'forwardee')", next));
+  KT_T(KtDistOpLoop, "Loop Detection: Via header:        '%s' (from 'forwarder')", currentVia);
+  KT_T(KtDistOpLoop, "Loop Detection: Forward to source: '%s' (next 'forwardee')", next);
 
   //
   // For example:
@@ -49,34 +54,34 @@ bool viaMatch(char* currentVia, char* next)
   //
   if (currentVia == NULL)
   {
-    LM_T(LmtDistOpLoop, ("Loop Detection: No Via header present, so no loop detected"));
+    KT_T(KtDistOpLoop, "Loop Detection: No Via header present, so no loop detected");
     return false;
   }
 
   char* subString = strstr(currentVia, next);
   if (subString == NULL)
   {
-    LM_T(LmtDistOpLoop, ("Loop Detection: IP/port (%s) not in Via header, so no loop detected", next));
+    KT_T(KtDistOpLoop, "Loop Detection: IP/port (%s) not in Via header, so no loop detected", next);
     return false;
   }
 
   char charBefore = (subString == currentVia)? ' ' : subString[-1];
   char charAfter  = subString[strlen(next)];
 
-  LM_T(LmtDistOpLoop, ("Loop Detection: subString: '%s'", subString));
-  LM_T(LmtDistOpLoop, ("Loop Detection: charBefore=0x%x, charAfter=0x%x", charBefore & 0xFF, charAfter & 0xFF));
+  KT_T(KtDistOpLoop, "Loop Detection: subString: '%s'", subString);
+  KT_T(KtDistOpLoop, "Loop Detection: charBefore=0x%x, charAfter=0x%x", charBefore & 0xFF, charAfter & 0xFF);
   if (charBefore != ' ')
   {
-    LM_T(LmtDistOpLoop, ("Loop Detection: No Match"));
+    KT_T(KtDistOpLoop, "Loop Detection: No Match");
     return false;
   }
 
   if ((charAfter != 0) && (charAfter != ',') && (charAfter != ' '))
   {
-    LM_T(LmtDistOpLoop, ("Loop Detection: No Match"));
+    KT_T(KtDistOpLoop, "Loop Detection: No Match");
     return false;
   }
 
-  LM_T(LmtDistOpLoop, ("Loop Detection: Detected a loop - must stop it!"));
+  KT_T(KtDistOpLoop, "Loop Detection: Detected a loop - must stop it!");
   return true;
 }

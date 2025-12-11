@@ -24,13 +24,11 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjLookup.h"                                    // kjLookup
 #include "kjson/kjBuilder.h"                                   // kjChildRemove
 }
-
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
 
 #include "orionld/types/PgAppendBuffer.h"                      // PgAppendBuffer
 #include "orionld/types/TroeMode.h"                            // TroeMode, troeMode
@@ -70,7 +68,7 @@ bool pgEntityBuild
     KjNode* entityIdNodeP = kjLookup(entityNodeP, "id");
 
     if (entityIdNodeP == NULL)
-      LM_RE(false, ("entity without id"));
+      KT_RE(false, "entity without id");
 
     entityId = entityIdNodeP->value.s;
     kjChildRemove(entityNodeP, entityIdNodeP);
@@ -81,14 +79,14 @@ bool pgEntityBuild
     KjNode* entityTypeNodeP = kjLookup(entityNodeP, "type");
 
     if (entityTypeNodeP == NULL)
-      LM_RE(false, ("entity without type"));
+      KT_RE(false, "entity without type");
 
     entityType = entityTypeNodeP->value.s;
     kjChildRemove(entityNodeP, entityTypeNodeP);
   }
 
   if ((entityId == NULL) || (entityType == NULL))
-    LM_RE(false, ("Missing Entity id/type"));
+    KT_RE(false, "Missing Entity id/type");
 
   // We have all the entity info - time to add the entity
   pgEntityAppend(entitiesBufferP, opMode, entityId, entityType, instanceId);

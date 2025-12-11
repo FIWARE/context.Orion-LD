@@ -25,8 +25,13 @@
 #include <unistd.h>                                              // close
 #include <sys/uio.h>                                             // iovec, writev
 
-#include "logMsg/logMsg.h"                                       // LM
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+#include "ktrace/ktTraceLevelCheck.h"                            // ktTraceLevelCheck
+}
 
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/orionldServerConnect.h"                 // orionldServerConnect
 #include "orionld/notifications/notificationFailure.h"           // notificationFailure
 #include "cache/CachedSubscription.h"                            // CachedSubscription
@@ -51,27 +56,27 @@ int httpNotify
 )
 {
   // Connect
-  LM_T(LmtNotificationSend, ("%s: Connecting to notification '%s:%d' receptor for HTTP notification", subscriptionId, ip, port));
+  KT_T(KtNotificationSend, "%s: Connecting to notification '%s:%d' receptor for HTTP notification", subscriptionId, ip, port);
   int fd = orionldServerConnect(ip, port);
 
   if (fd == -1)
   {
-    LM_E(("Internal Error (unable to connect to server for notification for subscription '%s': %s)", subscriptionId, strerror(errno)));
+    KT_E("Internal Error (unable to connect to server for notification for subscription '%s': %s)", subscriptionId, strerror(errno));
     notificationFailure(cSubP, pSubP, "Unable to connect to notification endpoint", notificationTime);
     return -1;
   }
 
-  LM_T(LmtNotificationSend, ("%s: Connected to notification receptor '%s:%d' on fd %d", subscriptionId, ip, port, fd));
+  KT_T(KtNotificationSend, "%s: Connected to notification receptor '%s:%d' on fd %d", subscriptionId, ip, port, fd);
 
-  if (lmTraceIsSet(LmtNotificationHeaders) == true)
+  if (ktTraceLevelCheck(KtNotificationHeaders) == true)
   {
     for (int ix = 0; ix < ioVecLen - 1; ix++)
     {
-      LM_T(LmtNotificationHeaders, ("%s: Notification Request Header: '%s'", subscriptionId, ioVec[ix].iov_base));
+      KT_T(KtNotificationHeaders, "%s: Notification Request Header: '%s'", subscriptionId, ioVec[ix].iov_base);
     }
   }
 
-  LM_T(LmtNotificationBody, ("%s: Notification Request Body: %s", subscriptionId, ioVec[ioVecLen - 1].iov_base));
+  KT_T(KtNotificationBody, "%s: Notification Request Body: %s", subscriptionId, ioVec[ioVecLen - 1].iov_base);
 
   // Send
   int nb;
@@ -79,12 +84,12 @@ int httpNotify
   {
     close(fd);
 
-    LM_E(("Internal Error (unable to send to server for notification for subscription '%s' (fd: %d): %s", subscriptionId, fd, strerror(errno)));
+    KT_E("Internal Error (unable to send to server for notification for subscription '%s' (fd: %d): %s", subscriptionId, fd, strerror(errno));
     notificationFailure(cSubP, pSubP, "Unable to write to notification endpoint", notificationTime);
     return -1;
   }
 
-  LM_T(LmtNotificationSend, ("%s: Written %d bytes to fd %d of %s:%d", subscriptionId, nb, fd, ip, port));
+  KT_T(KtNotificationSend, "%s: Written %d bytes to fd %d of %s:%d", subscriptionId, nb, fd, ip, port);
 
   return fd;
 }

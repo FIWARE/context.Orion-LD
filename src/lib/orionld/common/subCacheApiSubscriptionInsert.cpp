@@ -30,13 +30,12 @@ extern "C"
 {
 #include "kbase/kTime.h"                                         // kTimeGet
 #include "kbase/kMacros.h"                                       // K_FT
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // kjBufferCreate
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjRender.h"                                      // kjFastRender
 #include "kjson/kjClone.h"                                       // kjClone
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "cache/CachedSubscription.h"                            // CachedSubscription
 #include "cache/subCache.h"                                      // subCacheItemInsert
@@ -45,12 +44,13 @@ extern "C"
 #include "orionld/types/OrionldContext.h"                        // OrionldContext
 #include "orionld/types/OrionldRenderFormat.h"                   // OrionldRenderFormat
 #include "orionld/types/OrionldMimeType.h"                       // mimeTypeFromString
-#include "orionld/dbModel/dbModelToApiCoordinates.h"             // dbModelToApiCoordinates
-#include "orionld/mqtt/mqttParse.h"                              // mqttParse
-#include "orionld/common/urlParse.h"                             // urlParse
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace levels
+#include "orionld/common/urlParse.h"                             // urlParse
 #include "orionld/common/dateTime.h"                             // dateTimeFromString
 #include "orionld/common/subCacheApiSubscriptionInsert.h"        // Own interface
+#include "orionld/dbModel/dbModelToApiCoordinates.h"             // dbModelToApiCoordinates
+#include "orionld/mqtt/mqttParse.h"                              // mqttParse
 
 
 
@@ -71,7 +71,7 @@ static void subCacheItemFill
   OrionldRenderFormat  rFormat
 )
 {
-  LM_TREE(apiSubscriptionP, "apiSubscriptionP", LmtSubCacheSync);
+  KT_TREE(apiSubscriptionP, "apiSubscriptionP", KtSubCacheSync);
 
   cSubP->tenant              = (tenant == NULL || *tenant == 0)? NULL : strdup(tenant);
   cSubP->servicePath         = strdup("/#");
@@ -83,8 +83,8 @@ static void subCacheItemFill
   cSubP->sysAttrs            = (sysAttrsP != NULL)? sysAttrsP->value.b : false;
   cSubP->renderFormat        = rFormat;
 
-  LM_T(LmtSysAttrs, ("sysAttrs: %s", (cSubP->sysAttrs == true)? "true" : "false"));
-  LM_T(LmtContextCacheStats, ("ldContext: '%s'", cSubP->ldContext));
+  KT_T(KtSysAttrs, "sysAttrs: %s", (cSubP->sysAttrs == true)? "true" : "false");
+  KT_T(KtContextCacheStats, "ldContext: '%s'", cSubP->ldContext);
 
   KjNode* subscriptionIdP    = kjLookup(apiSubscriptionP, "_id");  // "id" was changed to "_id" by orionldPostSubscriptions to accomodate the DB insertion
   KjNode* subscriptionNameP  = kjLookup(apiSubscriptionP, "subscriptionName");  // "name" is accepted too ...
@@ -130,9 +130,9 @@ static void subCacheItemFill
   cSubP->dbCount    = (dbCountP    != NULL)? dbCountP->value.i    : 0;
   cSubP->dbFailures = (dbFailuresP != NULL)? dbFailuresP->value.i : 0;
 
-  LM_T(LmtSubCacheSync, ("%s: dbFailures == %d", subscriptionIdP->value.s, cSubP->dbFailures));
-  LM_T(LmtSubCacheSync, ("%s: count      == %d", subscriptionIdP->value.s, cSubP->count));
-  LM_T(LmtSubCacheSync, ("%s: dbCount    == %d", subscriptionIdP->value.s, cSubP->dbCount));
+  KT_T(KtSubCacheSync, "%s: dbFailures == %d", subscriptionIdP->value.s, cSubP->dbFailures);
+  KT_T(KtSubCacheSync, "%s: count      == %d", subscriptionIdP->value.s, cSubP->count);
+  KT_T(KtSubCacheSync, "%s: dbCount    == %d", subscriptionIdP->value.s, cSubP->dbCount);
 
 
   //
@@ -247,9 +247,9 @@ static void subCacheItemFill
       char*         type            = (typeP          != NULL)? typeP->value.s : NULL;
       char*         isPattern       = (char*) "false";
 
-      LM_T(LmtSR, ("id:           '%s'", id));
-      LM_T(LmtSR, ("idPattern:    '%s'", idPattern));
-      LM_T(LmtSR, ("type:         '%s'", type));
+      KT_T(KtSR, "id:           '%s'", id);
+      KT_T(KtSR, "idPattern:    '%s'", idPattern);
+      KT_T(KtSR, "type:         '%s'", type);
 
       if ((idP == NULL) && (idPattern == NULL))
       {
@@ -268,7 +268,7 @@ static void subCacheItemFill
         }
       }
 
-      LM_T(LmtSR, ("Creating a new EntityInfo (id: '%s', idPattern: '%s', type: '%s')", id, idPattern, type));
+      KT_T(KtSR, "Creating a new EntityInfo (id: '%s', idPattern: '%s', type: '%s')", id, idPattern, type);
       EntityInfo* eP = new EntityInfo(id, type, isPattern, false);
       cSubP->entityIdInfos.push_back(eP);
     }
@@ -308,12 +308,12 @@ static void subCacheItemFill
         cSubP->url          = strdup(uriP->value.s);  // urlParse destroys the input
         urlParse(cSubP->url, &cSubP->protocolString, &cSubP->ip, &cSubP->port, &cSubP->rest);
         cSubP->protocol     = protocolFromString(cSubP->protocolString);
-        LM_T(LmtAlt, ("Sub '%s'. protocol: '%s', IP: '%s', port: %d, rest: '%s'",
-            cSubP->subscriptionId,
-            cSubP->protocolString,
-            cSubP->ip,
-            cSubP->port,
-            cSubP->rest));
+        KT_T(KtAlt, "Sub '%s'. protocol: '%s', IP: '%s', port: %d, rest: '%s'",
+             cSubP->subscriptionId,
+             cSubP->protocolString,
+             cSubP->ip,
+             cSubP->port,
+             cSubP->rest);
         cSubP->protocolString = strdup(cSubP->protocolString);
         cSubP->ip             = strdup(cSubP->ip);
         cSubP->rest           = (cSubP->rest != NULL)? strdup(cSubP->rest) : NULL;
@@ -333,7 +333,7 @@ static void subCacheItemFill
         strncpy(url, uriP->value.s, sizeof(url) - 1);
         if (mqttParse(url, &mqtts, &mqttUser, &mqttPassword, &mqttHost, &mqttPort, &mqttTopic, &detail) == false)
         {
-          LM_E(("Internal Error (unable to parse mqtt URL)"));
+          KT_E("Internal Error (unable to parse mqtt URL)");
           cSubP->isActive = false;
           return;
         }
@@ -393,14 +393,14 @@ static void subCacheItemFill
   {
     std::string errorString;
     if (cSubP->expression.stringFilter.parse(qP->value.s, &errorString) == false)
-      LM_E(("Subscription '%s': invalid 'q': '%s'", cSubP->subscriptionId, qP->value.s));
+      KT_E("Subscription '%s': invalid 'q': '%s'", cSubP->subscriptionId, qP->value.s);
   }
 
   if (mqP != NULL)
   {
     std::string errorString;
     if (cSubP->expression.mdStringFilter.parse(mqP->value.s, &errorString) == false)
-      LM_E(("Subscription '%s': invalid 'mq': '%s'", cSubP->subscriptionId, mqP->value.s));
+      KT_E("Subscription '%s': invalid 'mq': '%s'", cSubP->subscriptionId, mqP->value.s);
   }
 
   if (createdAtP != NULL)
@@ -457,9 +457,9 @@ static CachedSubscription* subCacheApiSubscriptionUpdate
   OrionldRenderFormat  renderFormat
 )
 {
-  LM_T(LmtSubCacheSync, ("Updating Cached Subscription (%p) from DB", cSubP));
+  KT_T(KtSubCacheSync, "Updating Cached Subscription (%p) from DB", cSubP);
 
-  LM_TREE(apiSubscriptionP, "apiSubscription", LmtSubCacheSync);
+  KT_TREE(apiSubscriptionP, "apiSubscription", KtSubCacheSync);
 
   KjNode* modifiedAtNode = kjLookup(apiSubscriptionP, "modifiedAt");
   if (modifiedAtNode == NULL)
@@ -467,16 +467,16 @@ static CachedSubscription* subCacheApiSubscriptionUpdate
     struct timespec now;
     kTimeGet(&now);
     cSubP->modifiedAt = now.tv_sec + now.tv_nsec / 1000000000.0;
-    LM_W(("Invalid subscription id DB - no 'modifiedAt' field"));
+    KT_W("Invalid subscription id DB - no 'modifiedAt' field");
   }
   else
   {
-    LM_T(LmtSubCacheSync, ("%s: modifiedAt in cache: %f", cSubP->subscriptionId, cSubP->modifiedAt));
-    LM_T(LmtSubCacheSync, ("%s: modifiedAt in DB:    %f", cSubP->subscriptionId, modifiedAtNode->value.f));
+    KT_T(KtSubCacheSync, "%s: modifiedAt in cache: %f", cSubP->subscriptionId, cSubP->modifiedAt);
+    KT_T(KtSubCacheSync, "%s: modifiedAt in DB:    %f", cSubP->subscriptionId, modifiedAtNode->value.f);
 
     if (modifiedAtNode->value.f <= cSubP->modifiedAt)
     {
-      LM_T(LmtSubCacheSync, ("%s: incoming is not newer - no change", cSubP->subscriptionId));
+      KT_T(KtSubCacheSync, "%s: incoming is not newer - no change", cSubP->subscriptionId);
       return cSubP;
     }
 
@@ -517,8 +517,8 @@ CachedSubscription* subCacheApiSubscriptionInsert
 
   if (subIdNodeP == NULL)
   {
-    LM_TREE(apiSubscriptionP, "apiSubscriptionP", LmtSubCacheSync);
-    LM_X(1, ("Subscription without id - exiting due to bug"));
+    KT_TREE(apiSubscriptionP, "apiSubscriptionP", KtSubCacheSync);
+    KT_X(1, "Subscription without id - exiting due to bug");
   }
 
   char*               subId = subIdNodeP->value.s;

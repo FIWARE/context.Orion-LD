@@ -22,15 +22,18 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                          // LM_*
-#include "logMsg/traceLevels.h"                                     // LmtMongoc
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+}
 
-#include "orionld/types/DistOp.h"                                   // DistOp
-#include "orionld/common/orionldState.h"                            // orionldState
-#include "orionld/distOp/distOpSend.h"                              // istOpSend
-#include "orionld/distOp/xForwardedForCompose.h"                    // xForwardedForCompose
-#include "orionld/distOp/viaCompose.h"                              // viaCompose
-#include "orionld/distOp/distOpsSend.h"                             // Own interface
+#include "orionld/types/DistOp.h"                                // DistOp
+#include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace levels
+#include "orionld/distOp/distOpSend.h"                           // istOpSend
+#include "orionld/distOp/xForwardedForCompose.h"                 // xForwardedForCompose
+#include "orionld/distOp/viaCompose.h"                           // viaCompose
+#include "orionld/distOp/distOpsSend.h"                          // Own interface
 
 
 
@@ -76,7 +79,7 @@ int distOpsSend(DistOp* distOpList, bool local)
       CURLMcode cm = curl_multi_perform(orionldState.curlDoMultiP, &stillRunning);
       if (cm != 0)
       {
-        LM_E(("Internal Error (curl_multi_perform: error %d)", cm));
+        KT_E("Internal Error (curl_multi_perform: error %d)", cm);
         return -1;
       }
 
@@ -85,23 +88,23 @@ int distOpsSend(DistOp* distOpList, bool local)
         cm = curl_multi_wait(orionldState.curlDoMultiP, NULL, 0, 1000, NULL);
         if (cm != CURLM_OK)
         {
-          LM_E(("Internal Error (curl_multi_wait: error %d", cm));
+          KT_E("Internal Error (curl_multi_wait: error %d", cm);
           return -2;
         }
       }
 
       if ((++loops >= 1000) && ((loops % 100) == 0))
-        LM_W(("curl_multi_perform doesn't seem to finish ... (%d loops)", loops));
+        KT_W("curl_multi_perform doesn't seem to finish ... (%d loops)", loops);
 
       if (loops > 3000)
       {
-        LM_E(("Internal Error (curl hard timeout at 3000 loops)"));
+        KT_E("Internal Error (curl hard timeout at 3000 loops)");
         return -3;
       }
     }
 
     if (loops >= 1000)
-      LM_W(("curl_multi_perform finally finished!   (%d loops)", loops));
+      KT_W("curl_multi_perform finally finished!   (%d loops)", loops);
   }
 
   return forwards;
@@ -130,7 +133,7 @@ int distOpsSend2(DistOpListItem* distOpList)
     if ((distOpP->regP != NULL) && (distOpP->error == false))
     {
       distOpP->entityMap = false;
-      LM_T(LmtEntityMap, ("Setting distOpP->entityMap to '%s'", (distOpP->entityMap == true)? "true" : "false"));
+      KT_T(KtEntityMap, "Setting distOpP->entityMap to '%s'", (distOpP->entityMap == true)? "true" : "false");
 
       if (distOpSend(distOpP, dateHeader, xff, via, false, doItemP->entityIds) == 0)
         distOpP->error = false;
@@ -151,7 +154,7 @@ int distOpsSend2(DistOpListItem* distOpList)
       CURLMcode cm = curl_multi_perform(orionldState.curlDoMultiP, &stillRunning);
       if (cm != 0)
       {
-        LM_E(("Internal Error (curl_multi_perform: error %d)", cm));
+        KT_E("Internal Error (curl_multi_perform: error %d)", cm);
         return -1;
       }
 
@@ -160,23 +163,23 @@ int distOpsSend2(DistOpListItem* distOpList)
         cm = curl_multi_wait(orionldState.curlDoMultiP, NULL, 0, 5000, NULL);
         if (cm != CURLM_OK)
         {
-          LM_E(("Internal Error (curl_multi_wait: error %d", cm));
+          KT_E("Internal Error (curl_multi_wait: error %d", cm);
           return -2;
         }
 
         if (loops > 10000)
         {
-          LM_E(("Internal Error (curl_multi_wait: timeout (%d loops)", loops));
+          KT_E("Internal Error (curl_multi_wait: timeout (%d loops)", loops);
           return -3;
         }
       }
 
       if ((++loops >= 1000) && ((loops % 100) == 0))
-        LM_W(("curl_multi_perform doesn't seem to finish ... (%d loops)", loops));
+        KT_W("curl_multi_perform doesn't seem to finish ... (%d loops)", loops);
     }
 
     if (loops >= 1000)
-      LM_W(("curl_multi_perform finally finished!   (%d loops)", loops));
+      KT_W("curl_multi_perform finally finished!   (%d loops)", loops);
   }
 
   return forwards;

@@ -26,11 +26,9 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 }
-
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
 
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/troe/kjGeoPointExtract.h"                    // kjGeoPointExtract
@@ -54,14 +52,14 @@ bool kjGeoMultiPointExtract(KjNode* coordinatesP, char* coordsString, int coords
     char    pointBuffer[64];
 
     if (kjGeoPointExtract(pointP, &longitude, &latitude, &altitude) == false)
-      LM_RE(false, ("Internal Error (unable to extract longitude/latitude/altitude for a Point) "));
+      KT_RE(false, "Internal Error (unable to extract longitude/latitude/altitude for a Point) ");
 
     snprintf(pointBuffer, sizeof(pointBuffer), "%f %f %f", longitude, latitude, altitude);
 
     int pointBufferLen = strlen(pointBuffer);
 
     if (coordsIx + pointBufferLen + 1 >= coordsLen)
-      LM_RE(false, ("Not enough room in Point Coords String - fix and recompile"));
+      KT_RE(false, "Not enough room in Point Coords String - fix and recompile");
 
     if (coordsIx != 0)  // Add a comma before the Point, unless it's the first point
     {

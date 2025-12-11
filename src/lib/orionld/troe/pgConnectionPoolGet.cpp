@@ -24,8 +24,10 @@
 */
 #include <string.h>                                            // strcmp
 
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "orionld/types/PgConnectionPool.h"                    // PgConnectionPool
 #include "orionld/troe/pgConnectionPools.h"                    // pgPoolMaster
@@ -60,7 +62,7 @@ PgConnectionPool* pgConnectionPoolGet(char* db)
   // No pool found, will have to create a new one
   poolP = pgConnectionPoolCreate(db, pgPoolMaster->items);
   if (poolP == NULL)
-    LM_RE(NULL, ("Database Error (unable to create connection pool for db '%s')", db));
+    KT_RE(NULL, "Database Error (unable to create connection pool for db '%s')", db);
 
   pgConnectionPoolInsert(poolP);
   return poolP;

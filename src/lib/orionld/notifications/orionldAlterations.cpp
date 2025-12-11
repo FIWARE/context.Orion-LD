@@ -24,6 +24,7 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kalloc/kaAlloc.h"                                      // kaAlloc
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
@@ -32,9 +33,8 @@ extern "C"
 #include "kjson/kjRenderSize.h"                                  // kjFastRenderSize
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/dotForEq.h"                             // dotForEq
 #include "orionld/types/OrionldAlteration.h"                     // OrionldAlteration
 #include "orionld/notifications/orionldAlterations.h"            // Own interface
@@ -71,9 +71,9 @@ static bool kjValuesDiffer(KjNode* leftAttr, KjNode* rightAttr)
   if (right == NULL) right = kjLookup(rightAttr, "languageMap");
 
   if (left == NULL)
-    LM_RE(true, ("Internal Error (left KjNode has no value member)"));
+    KT_RE(true, "Internal Error (left KjNode has no value member)");
   if (right == NULL)
-    LM_RE(true, ("Database Error (DB KjNode has no value member)"));
+    KT_RE(true, "Database Error (DB KjNode has no value member)");
 
   if (left->type != right->type)
     return true;
@@ -155,7 +155,7 @@ OrionldAlteration* orionldAlterations(char* entityId, char* entityType, KjNode* 
     int ix = 0;
     for (KjNode* attrP = attrsP->value.firstChildP; attrP != NULL; attrP = attrP->next)
     {
-      LM_T(LmtAlt, ("Alteration for attribute '%s'", attrP->name));
+      KT_T(KtAlt, "Alteration for attribute '%s'", attrP->name);
       char* attrNameEq = kaStrdup(&orionldState.kalloc, attrP->name);  // Must copy to change dot for eq for ...
       dotForEq(attrNameEq);
 

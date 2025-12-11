@@ -26,9 +26,6 @@
 
 #include "mongo/client/dbclient.h"
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
-
 #include "common/statistics.h"
 
 #include "mongoBackend/connectionOperations.h"

@@ -27,6 +27,7 @@
 extern "C"
 {
 #include "kbase/kMacros.h"                                       // K_VEC_SIZE
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
@@ -34,9 +35,8 @@ extern "C"
 #include "kjson/kjNavigate.h"                                    // kjNavigate
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/dbModel/dbModelPathComponentsSplit.h"          // dbModelPathComponentsSplit
 #include "orionld/common/orionldPatchApply.h"                    // Own interface
 
@@ -159,17 +159,17 @@ static void attributeValueNames(KjNode* patchBase, int components, char** compV)
     {
       if (strcmp(typeNodeP->value.s, "Relationship") == 0)
       {
-        LM_T(LmtPatchEntity, ("Changing 'value' for 'object' as '%s' is a Relationship", compV[0]));
+        KT_T(KtSR, "Changing 'value' for 'object' as '%s' is a Relationship", compV[0]);
         compV[1] = (char*) "object";
       }
       else if (strcmp(typeNodeP->value.s, "LanguageProperty") == 0)
       {
-        LM_T(LmtPatchEntity, ("Changing 'value' for 'languageMap' as '%s' is a LanguageProperty", compV[0]));
+        KT_T(KtSR, "Changing 'value' for 'languageMap' as '%s' is a LanguageProperty", compV[0]);
         compV[1] = (char*) "languageMap";
       }
     }
     else
-      LM_T(LmtPatchEntity, ("Didn't find any attribute type!"));
+      KT_T(KtSR, "Didn't find any attribute type!");
   }
   else if ((components >= 3) && (strcmp(compV[2], "value") == 0))
   {
@@ -186,12 +186,12 @@ static void attributeValueNames(KjNode* patchBase, int components, char** compV)
     {
       if (strcmp(typeNodeP->value.s, "Relationship") == 0)
       {
-        LM_T(LmtPatchEntity, ("Changing 'value' for 'object' as '%s' is a Sub-Relationship", compV[0]));
+        KT_T(KtSR, "Changing 'value' for 'object' as '%s' is a Sub-Relationship", compV[0]);
         compV[2] = (char*) "object";
       }
       else if (strcmp(typeNodeP->value.s, "LanguageProperty") == 0)
       {
-        LM_T(LmtPatchEntity, ("Changing 'value' for 'languageMap' as '%s' is a Sub-LanguageProperty", compV[0]));
+        KT_T(KtSR, "Changing 'value' for 'languageMap' as '%s' is a Sub-LanguageProperty", compV[0]);
         compV[2] = (char*) "languageMap";
       }
     }
@@ -213,8 +213,8 @@ void orionldPatchApply(KjNode* patchBase, KjNode* patchP, bool api)
   if (treeNode == NULL)           return;
   if (pathNode->type != KjString) return;
 
-  LM_T(LmtPatchEntity, ("Applying patch for '%s'", pathNode->value.s));
-  // LM_TREE(patchBase, "patchBase", LmtPatchEntity);
+  KT_T(KtSR, "Applying patch for '%s'", pathNode->value.s);
+  // KT_TREE(patchBase, "patchBase", KtSR);
 
   char* compV[7];
   bool  skip       = false;
@@ -227,10 +227,10 @@ void orionldPatchApply(KjNode* patchBase, KjNode* patchP, bool api)
     return;
 
 #if 0
-  LM_T(LmtPatchEntity, ("Components: %d", components));
+  KT_T(KtSR, "Components: %d", components);
   for (int ix = 0; ix < components; ix++)
   {
-    LM_T(LmtPatchEntity, ("component %d: '%s'", ix, compV[ix]));
+    KT_T(KtSR, "component %d: '%s'", ix, compV[ix]);
   }
 #endif
 

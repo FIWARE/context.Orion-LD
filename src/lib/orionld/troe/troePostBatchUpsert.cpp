@@ -24,16 +24,16 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjLookup.h"                                    // kjLookup
 #include "kjson/kjRender.h"                                    // kjFastRender
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
 #include "orionld/types/PgTableDefinitions.h"                  // PG_ATTRIBUTE_INSERT_START, PG_SUB_ATTRIBUTE_INSERT_START
 #include "orionld/types/PgAppendBuffer.h"                      // PgAppendBuffer
 #include "orionld/common/orionldState.h"                       // orionldState
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/common/troeIgnored.h"                        // troeIgnored
 #include "orionld/troe/pgAppendInit.h"                         // pgAppendInit
 #include "orionld/troe/pgAppend.h"                             // pgAppend
@@ -143,7 +143,7 @@ bool troePostBatchUpsert(void)
     {
       if (troeFilterMatch(type, id) == false)
       {
-        LM_T(LmtConfig, ("Not storing entities of type '%s' in TRoE - filtered out (entity id: '%s')", type, id));
+        KT_T(KtConfig, "Not storing entities of type '%s' in TRoE - filtered out (entity id: '%s')", type, id);
         continue;
       }
     }

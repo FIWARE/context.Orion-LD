@@ -22,21 +22,21 @@
 *
 * Author: Ken Zangelin
 */
-#include <curl/curl.h>                                              // curl_multi_info_read, curl_easy_getinfo, ...
+#include <curl/curl.h>                                           // curl_multi_info_read, curl_easy_getinfo, ...
 
 extern "C"
 {
-#include "kjson/kjParse.h"                                          // kjParse
+#include "ktrace/kTrace.h"                                       // KT_*
+#include "kjson/kjParse.h"                                       // kjParse
 }
 
-#include "logMsg/logMsg.h"                                          // LM_*
-
-#include "orionld/types/DistOp.h"                                   // DistOp
-#include "orionld/types/DistOpListItem.h"                           // DistOpListItem
-#include "orionld/common/orionldState.h"                            // orionldState, entityMaps
-#include "orionld/distOp/distOpLookupByCurlHandle.h"                // distOpLookupByCurlHandle
-#include "orionld/distOp/distOpResponseMergeIntoEntityArray.h"      // distOpResponseMergeIntoEntityArray
-#include "orionld/distOp/distOpsReceive2.h"                         // Own interface
+#include "orionld/types/DistOp.h"                                // DistOp
+#include "orionld/types/DistOpListItem.h"                        // DistOpListItem
+#include "orionld/common/orionldState.h"                         // orionldState, entityMaps
+#include "orionld/common/traceLevels.h"                          // KTrace levels
+#include "orionld/distOp/distOpLookupByCurlHandle.h"             // distOpLookupByCurlHandle
+#include "orionld/distOp/distOpResponseMergeIntoEntityArray.h"   // distOpResponseMergeIntoEntityArray
+#include "orionld/distOp/distOpsReceive2.h"                      // Own interface
 
 
 
@@ -46,7 +46,7 @@ extern "C"
 //
 void distOpsReceive2(DistOpListItem* distOpListItem, DistOpResponseTreatFunction treatFunction, void* callbackParam)
 {
-  LM_T(LmtSR, ("Receiving responses"));
+  KT_T(KtSR, "Receiving responses");
   //
   // Read the responses to the forwarded requests
   //
@@ -64,7 +64,7 @@ void distOpsReceive2(DistOpListItem* distOpListItem, DistOpResponseTreatFunction
 
       if (distOpP == NULL)
       {
-        LM_E(("Unable to find the curl handle of a message, presumably a response to a forwarded request"));
+        KT_E("Unable to find the curl handle of a message, presumably a response to a forwarded request");
         continue;
       }
 
@@ -73,8 +73,8 @@ void distOpsReceive2(DistOpListItem* distOpListItem, DistOpResponseTreatFunction
       if ((distOpP->rawResponse != NULL) && (distOpP->rawResponse[0] != 0))
         distOpP->responseBody = kjParse(orionldState.kjsonP, distOpP->rawResponse);
 
-      LM_T(LmtDistOpResponse, ("%s: received a response for a forwarded request", distOpP->regP->regId, distOpP->httpResponseCode));
-      LM_T(LmtDistOpResponse, ("%s: response for a forwarded request: %s", distOpP->regP->regId, distOpP->rawResponse));
+      KT_T(KtDistOpResponse, "%s: received a response for a forwarded request", distOpP->regP->regId, distOpP->httpResponseCode);
+      KT_T(KtDistOpResponse, "%s: response for a forwarded request: %s", distOpP->regP->regId, distOpP->rawResponse);
 
       //
       // Treating here all non-auxiliar registrations.

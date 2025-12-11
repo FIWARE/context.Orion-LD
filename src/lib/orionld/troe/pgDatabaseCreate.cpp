@@ -22,8 +22,10 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "orionld/types/PgConnection.h"                        // PgConnection
 #include "orionld/common/pqHeader.h"                           // Postgres header
@@ -52,7 +54,7 @@ PgConnection* pgDatabaseCreate(PgConnection* nullConnectionP, const char* dbName
   snprintf(sql, sizeof(sql), "CREATE DATABASE %s", dbName);
   res = PQexec(nullConnectionP->connectionP, sql);
   if (res == NULL)
-    LM_RE(NULL, ("Database Error (PQexec(BEGIN): %s)", PQresStatus(PQresultStatus(res))));
+    KT_RE(NULL, "Database Error (PQexec(BEGIN): %s)", PQresStatus(PQresultStatus(res)));
   PQclear(res);
 
 
@@ -61,7 +63,7 @@ PgConnection* pgDatabaseCreate(PgConnection* nullConnectionP, const char* dbName
   //
   dbConnectionP = pgConnectionGet(dbName);
   if ((dbConnectionP == NULL) || (dbConnectionP->connectionP == NULL))
-    LM_RE(NULL, ("Database Error (unable to connect to postgres database '%s')", dbName));
+    KT_RE(NULL, "Database Error (unable to connect to postgres database '%s')", dbName);
 
 #if 0
   //
@@ -72,7 +74,7 @@ PgConnection* pgDatabaseCreate(PgConnection* nullConnectionP, const char* dbName
   {
     PQclear(res);
     pgConnectionRelease(dbConnectionP);
-    LM_RE(NULL, ("Database Error (Failing command: CREATE EXTENSION IF NOT EXISTS timescaledb)"));
+    KT_RE(NULL, "Database Error (Failing command: CREATE EXTENSION IF NOT EXISTS timescaledb)");
   }
   PQclear(res);
 #endif
@@ -85,7 +87,7 @@ PgConnection* pgDatabaseCreate(PgConnection* nullConnectionP, const char* dbName
   {
     PQclear(res);
     pgConnectionRelease(dbConnectionP);
-    LM_RE(NULL, ("Database Error (Failing command: CREATE EXTENSION IF NOT EXISTS postgis)"));
+    KT_RE(NULL, "Database Error (Failing command: CREATE EXTENSION IF NOT EXISTS postgis)");
   }
   PQclear(res);
 

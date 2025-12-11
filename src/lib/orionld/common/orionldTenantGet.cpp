@@ -24,9 +24,6 @@
 */
 #include <semaphore.h>                                           // sem_init
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
-
 #include "orionld/types/OrionldTenant.h"                         // OrionldTenant
 #include "orionld/common/tenantList.h"                           // tenantList, tenantSem
 #include "orionld/common/orionldTenantLookup.h"                  // orionldTenantLookup

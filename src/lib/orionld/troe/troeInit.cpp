@@ -22,8 +22,10 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "orionld/common/orionldState.h"                       // dbName
 #include "orionld/troe/pgInit.h"                               // pgInit
@@ -38,7 +40,7 @@
 bool troeInit(void)
 {
   if (pgInit(dbName) == false)
-    LM_RE(false, ("Basic Postgres Problem - Temporal Representation of Entities is not possible"));
+    KT_RE(false, "Basic Postgres Problem - Temporal Representation of Entities is not possible");
 
   return true;
 }

@@ -26,12 +26,10 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjLookup.h"                                    // kjLookup
 }
-
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
 
 #include "orionld/types/PgAppendBuffer.h"                      // PgAppendBuffer
 #include "orionld/troe/pgAttributeBuild.h"                     // pgAttributeBuild
@@ -53,9 +51,9 @@ void pgAttributesBuild(PgAppendBuffer* attributesBufferP, KjNode* attrList, char
     KjNode* entityIdNodeP = kjLookup(attrList, "id");
 
     if (entityIdNodeP == NULL)
-      LM_RVE(("Internal Error (entity without id)"));
+      KT_RVE("Internal Error (entity without id)");
     else if (entityIdNodeP->type != KjString)
-      LM_RVE(("Internal Error (entity id field not a string (%s))", kjValueType(entityIdNodeP->type)));
+      KT_RVE("Internal Error (entity id field not a string (%s))", kjValueType(entityIdNodeP->type));
 
     entityId = entityIdNodeP->value.s;
   }

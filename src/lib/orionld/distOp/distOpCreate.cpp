@@ -24,12 +24,16 @@
 */
 #include <string.h>                                              // strlen
 
-#include "logMsg/logMsg.h"                                       // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+}
 
 #include "orionld/types/StringArray.h"                           // StringArray, stringArrayClone
 #include "orionld/types/DistOp.h"                                // DistOp
 #include "orionld/types/DistOpType.h"                            // DistOpType
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/distOp/distOpAttrs.h"                          // distOpAttrs
 #include "orionld/distOp/distOpCreate.h"                         // Own interface
 
@@ -51,7 +55,7 @@ DistOp* distOpCreate
   DistOp* distOpP = (DistOp*) kaAlloc(&orionldState.kalloc, sizeof(DistOp));
 
   if (distOpP == NULL)
-    LM_X(1, ("Out of memory"));
+    KT_X(1, "Out of memory");
 
   bzero(distOpP, sizeof(DistOp));
 
@@ -76,9 +80,9 @@ DistOp* distOpCreate
     strncpy(distOpP->id, "@none", sizeof(distOpP->id));
 
   if (distOpP->regP != NULL)
-    LM_T(LmtDistOpList, ("Created distOp '%s', for reg '%s'", distOpP->id, distOpP->regP->regId));
+    KT_T(KtDistOpList, "Created distOp '%s', for reg '%s'", distOpP->id, distOpP->regP->regId);
   else
-    LM_T(LmtDistOpList, ("Created distOp '%s', for 'local DB'", distOpP->id));
+    KT_T(KtDistOpList, "Created distOp '%s', for 'local DB'", distOpP->id);
 
   return distOpP;
 }

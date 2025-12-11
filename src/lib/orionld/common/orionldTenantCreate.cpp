@@ -26,11 +26,9 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kbase/kMacros.h"                                     // K_VEC_SIZE
 }
-
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
 
 #include "orionld/types/OrionldTenant.h"                       // OrionldTenant
 #include "orionld/mongoc/mongocIdIndexCreate.h"                // mongocIdIndexCreate
@@ -53,14 +51,14 @@ OrionldTenant* orionldTenantCreate(const char* tenantName, bool scanRegs, bool r
 {
   if ((tenantName == NULL) || (tenantName[0] == 0))
   {
-    LM_W(("TENANT: Attempt to create the default tenant! (tenantName at %p)", tenantName));
+    KT_W("TENANT: Attempt to create the default tenant! (tenantName at %p)", tenantName);
     return &tenant0;
   }
 
   OrionldTenant* tenantP = (OrionldTenant*) malloc(sizeof(OrionldTenant));
 
   if (tenantP == NULL)
-    LM_RE(NULL, ("Out of memory"));
+    KT_RE(NULL, "Out of memory");
 
   snprintf(tenantP->tenant,          sizeof(tenantP->tenant) - 1,          "%s",                  tenantName);
   snprintf(tenantP->mongoDbName,     sizeof(tenantP->mongoDbName) - 1,     "%s-%s",               dbName, tenantName);
@@ -81,7 +79,7 @@ OrionldTenant* orionldTenantCreate(const char* tenantName, bool scanRegs, bool r
   if (troe)
   {
     if (pgDatabasePrepare(tenantP->troeDbName) != true)
-      LM_E(("Database Error (unable to prepare a new TRoE database for tenant '%s')", orionldState.tenantP->troeDbName));
+      KT_E("Database Error (unable to prepare a new TRoE database for tenant '%s')", orionldState.tenantP->troeDbName);
   }
 
   if (regCache == true)

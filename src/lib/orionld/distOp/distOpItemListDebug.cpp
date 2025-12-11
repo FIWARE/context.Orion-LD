@@ -22,9 +22,13 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                       // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+}
 
 #include "orionld/types/DistOpListItem.h"                        // DistOpListItem
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/distOp/distOpItemListDebug.h"                  // Own interface
 
 
@@ -35,13 +39,15 @@
 //
 void distOpItemListDebug(DistOpListItem* distOpList, const char* msg)
 {
-  LM_T(LmtDistOpList, ("------------- %s -----------------", msg));
   DistOpListItem* itemP = distOpList;
+
+  KT_T(KtDistOpList, "------------- %s -----------------", msg);
+
   while (itemP != NULL)
   {
-    LM_T(LmtDistOpList, ("  DistOp:   %s", itemP->distOpP->id));
-    LM_T(LmtDistOpList, ("  Entities: %s", itemP->entityIds));
-    LM_T(LmtDistOpList, ("  ------------------------------"));
+    KT_T(KtDistOpList, "  DistOp:   %s", itemP->distOpP->id);
+    KT_T(KtDistOpList, "  Entities: %s", itemP->entityIds);
+    KT_T(KtDistOpList, "  ------------------------------");
 
     itemP = itemP->next;
   }

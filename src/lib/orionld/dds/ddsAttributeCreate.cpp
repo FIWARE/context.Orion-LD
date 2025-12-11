@@ -30,8 +30,6 @@ extern "C"
 #include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 }
 
-#include "logMsg/logMsg.h"                                       // LM*
-
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/traceLevels.h"                          // KT_T trace levels
 #include "orionld/service/serviceLookupByServiceRoutine.h"       // serviceLookupByServiceRoutine

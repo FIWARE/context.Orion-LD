@@ -22,11 +22,15 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                          // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+}
 
-#include "orionld/types/DistOp.h"                                   // DistOpListItem
-#include "orionld/distOp/distOpListItemCreate.h"                    // distOpListItemCreate
-#include "orionld/distOp/distOpListItemAdd.h"                       // Own interface
+#include "orionld/types/DistOp.h"                                // DistOpListItem
+#include "orionld/common/traceLevels.h"                          // KTrace levels
+#include "orionld/distOp/distOpListItemCreate.h"                 // distOpListItemCreate
+#include "orionld/distOp/distOpListItemAdd.h"                    // Own interface
 
 
 
@@ -36,7 +40,7 @@
 //
 DistOpListItem* distOpListItemAdd(DistOpListItem* distOpList, const char* distOpId, char* idString)
 {
-  LM_T(LmtEntityMap, ("Creating DistOpListItem for DistOp '%s', entities '%s'", distOpId, idString));
+  KT_T(KtEntityMap, "Creating DistOpListItem for DistOp '%s', entities '%s'", distOpId, idString);
 
   DistOpListItem* doliP = distOpListItemCreate(distOpId, idString);
 

@@ -25,15 +25,15 @@
 extern "C"
 {
 #include "kbase/kMacros.h"                                       // K_VEC_SIZE
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjChildRemove
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/orionldPatchApply.h"                    // orionldPatchApply
 #include "orionld/troe/troePatchEntity.h"                        // troePatchEntity - to reuse the "push to TRoE" of troePatchEntity
 #include "orionld/troe/troeFilterMatch.h"                        // troeFilterMatch
@@ -52,7 +52,7 @@ bool troePatchEntity2(void)
 
   if (troeFilterMatch(orionldState.entityTypeForTroe, orionldState.wildcard[0]) == false)
   {
-    LM_T(LmtConfig, ("Not storing entities of type '%s' in TRoE - filtered out", orionldState.entityTypeForTroe));
+    KT_T(KtConfig, "Not storing entities of type '%s' in TRoE - filtered out", orionldState.entityTypeForTroe);
     return true;
   }
 

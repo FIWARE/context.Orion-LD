@@ -28,6 +28,7 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kalloc/kaAlloc.h"                                      // kaAlloc
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
@@ -36,12 +37,11 @@ extern "C"
 #include "kjson/kjBuilder.h"                                     // kjString, kjChildAdd
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/types/DistOp.h"                                // DistOp
 #include "orionld/types/ApiVersion.h"                            // API_VERSION_NGSILD_V1
 #include "orionld/types/OrionLdRestService.h"                    // OrionLdRestService
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/tenantList.h"                           // tenant0
 #include "orionld/context/orionldCoreContext.h"                  // orionldCoreContextP
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
@@ -163,7 +163,7 @@ void urlEncode(char* from, char* to, int toLen)
   int fromIx = 0;
   int toIx   = 0;
 
-  LM_T(LmtUriEncode, ("In:  '%s'", from));
+  KT_T(KtUriEncode, "In:  '%s'", from);
   while (from[fromIx] != 0)
   {
     char f = from[fromIx];
@@ -185,7 +185,7 @@ void urlEncode(char* from, char* to, int toLen)
   }
 
   to[toIx] = 0;
-  LM_T(LmtUriEncode, ("Out: '%s'", to));
+  KT_T(KtUriEncode, "Out: '%s'", to);
 }
 
 
@@ -236,7 +236,7 @@ static void uriParamAdd(ForwardUrlParts* urlPartsP, const char* key, const char*
     sListP->sLen = snprintf(sListP->sP, sLen, "%s=%s", key, value);
   }
 
-  LM_T(LmtDistOpRequestParams, ("DistOp Request URL Param: %s", sListP->sP));
+  KT_T(KtDistOpRequestParams, "DistOp Request URL Param: %s", sListP->sP);
 
   sListP->next = NULL;
 
@@ -266,7 +266,7 @@ static int responseSave(void* chunk, size_t size, size_t members, void* userP)
   size_t           chunkLen      = members;
   HttpResponse*    httpResponseP = (HttpResponse*) userP;
 
-  LM_T(LmtDistOpResponseBuf, ("Got %d*%d (%d) bytes of response from reg %s", size, members, size*members, httpResponseP->distOpP->regP->regId));
+  KT_T(KtDistOpResponseBuf, "Got %d*%d (%d) bytes of response from reg %s", size, members, size*members, httpResponseP->distOpP->regP->regId);
 
   //
   // Allocate room for the new piece
@@ -279,9 +279,9 @@ static int responseSave(void* chunk, size_t size, size_t members, void* userP)
 
   if (newSize < httpResponseP->bufLen)
   {
-    LM_T(LmtDistOpResponseBuf, ("Copying %d bytes to httpResponseP->buf", chunkLen));
+    KT_T(KtDistOpResponseBuf, "Copying %d bytes to httpResponseP->buf", chunkLen);
     strncpy(&httpResponseP->buf[httpResponseP->bufPos], chunkP, chunkLen);
-    LM_T(LmtDistOpResponseBuf, ("httpResponseP->buf: '%s'", httpResponseP->buf));
+    KT_T(KtDistOpResponseBuf, "httpResponseP->buf: '%s'", httpResponseP->buf);
   }
   else if (newSize >= httpResponseP->bufLen)
   {
@@ -291,21 +291,21 @@ static int responseSave(void* chunk, size_t size, size_t members, void* userP)
     {
       httpResponseP->buf = kaAlloc(&orionldState.kalloc, newSize + 1024);
       if (httpResponseP->buf == NULL)
-        LM_RE(1, ("Out of memory (kaAlloc failed allocating %d bytes for response buffer)", newSize + 1024));
+        KT_RE(1, "Out of memory (kaAlloc failed allocating %d bytes for response buffer)", newSize + 1024);
 
-      LM_T(LmtDistOpResponseBuf, ("Copying %d bytes to httpResponseP->buf", chunkLen));
+      KT_T(KtDistOpResponseBuf, "Copying %d bytes to httpResponseP->buf", chunkLen);
       snprintf(httpResponseP->buf, newSize + 1023, "%s%s", oldBuf, chunkP);
-      LM_T(LmtDistOpResponseBuf, ("httpResponseP->buf: '%s'", httpResponseP->buf));
+      KT_T(KtDistOpResponseBuf, "httpResponseP->buf: '%s'", httpResponseP->buf);
     }
     else
     {
       httpResponseP->buf = (char*) malloc(newSize + 1024);
       if (httpResponseP->buf == NULL)
-        LM_RE(1, ("Out of memory (allocating %d bytes for response buffer)", newSize + 1024));
+        KT_RE(1, "Out of memory (allocating %d bytes for response buffer)", newSize + 1024);
 
-      LM_T(LmtDistOpResponseBuf, ("Copying %d bytes to httpResponseP->buf", chunkLen));
+      KT_T(KtDistOpResponseBuf, "Copying %d bytes to httpResponseP->buf", chunkLen);
       snprintf(httpResponseP->buf, newSize + 1023, "%s%s", oldBuf, chunkP);
-      LM_T(LmtDistOpResponseBuf, ("httpResponseP->buf: '%s'", httpResponseP->buf));
+      KT_T(KtDistOpResponseBuf, "httpResponseP->buf: '%s'", httpResponseP->buf);
 
       if (httpResponseP->mustBeFreed == true)
         free(oldBuf);
@@ -318,8 +318,8 @@ static int responseSave(void* chunk, size_t size, size_t members, void* userP)
   httpResponseP->bufPos = newSize;
 
   httpResponseP->distOpP->rawResponse = httpResponseP->buf;  // Cause ... it might have changed
-  LM_T(LmtDistOpResponseBuf, ("%s: rawResponse now points to httpResponseP->buf (%p)", httpResponseP->distOpP->regP->regId, httpResponseP->buf));
-  LM_T(LmtDistOpResponseBuf, ("httpResponseP->distOpP->rawResponse at %p: %s", httpResponseP->distOpP->rawResponse, httpResponseP->distOpP->rawResponse));
+  KT_T(KtDistOpResponseBuf, "%s: rawResponse now points to httpResponseP->buf (%p)", httpResponseP->distOpP->regP->regId, httpResponseP->buf);
+  KT_T(KtDistOpResponseBuf, "httpResponseP->distOpP->rawResponse at %p: %s", httpResponseP->distOpP->rawResponse, httpResponseP->distOpP->rawResponse);
   return chunkLen;
 }
 
@@ -333,7 +333,7 @@ static size_t responseHeaders(char* buffer, size_t size, size_t nitems, void* us
 {
   HttpResponse* httpResponseP = (HttpResponse*) userdata;
 
-  LM_T(LmtDistOpResponseHeaders, ("Response Header: %s", buffer));
+  KT_T(KtDistOpResponseHeaders, "Response Header: %s", buffer);
 
   if (strncmp(buffer, "HTTP/", 5) == 0)
   {
@@ -354,7 +354,7 @@ static size_t responseHeaders(char* buffer, size_t size, size_t nitems, void* us
       {
         *space = 0;
         httpResponseP->distOpP->httpResponseCode = atoi(status);
-        LM_T(LmtDistOpResponseHeaders, ("httpStatusCode: %d", httpResponseP->httpStatusCode));
+        KT_T(KtDistOpResponseHeaders, "httpStatusCode: %d", httpResponseP->httpStatusCode);
       }
     }
   }
@@ -468,18 +468,18 @@ bool distOpSend(DistOp* distOpP, const char* dateHeader, const char* xForwardedF
     orionldState.curlDoMultiP = curl_multi_init();
     if (orionldState.curlDoMultiP == NULL)
     {
-      LM_E(("Internal Error: curl_multi_init failed"));
+      KT_E("Internal Error: curl_multi_init failed");
       return false;
     }
   }
 
   distOpP->curlHandle = curl_easy_init();
-  LM_T(LmtLeak, ("Got a curl handle at %p", distOpP->curlHandle));
+  KT_T(KtLeak, "Got a curl handle at %p", distOpP->curlHandle);
   if (distOpP->curlHandle == NULL)
   {
     curl_multi_cleanup(orionldState.curlDoMultiP);
     orionldState.curlDoMultiP = NULL;
-    LM_E(("Internal Error: curl_easy_init failed"));
+    KT_E("Internal Error: curl_easy_init failed");
     return false;
   }
 
@@ -498,7 +498,7 @@ bool distOpSend(DistOp* distOpP, const char* dateHeader, const char* xForwardedF
   //
   // Add URI Params
   //
-  LM_T(LmtDistOpRequestParams, ("%s: ---- URL Parameters for %s ------------------------", distOpP->regP->regId, distOpP->id));
+  KT_T(KtDistOpRequestParams, "%s: ---- URL Parameters for %s ------------------------", distOpP->regP->regId, distOpP->id);
   if ((orionldState.verb == HTTP_GET) || (orionldState.verb == HTTP_DELETE))
   {
     if ((orionldState.verb == HTTP_GET) && (distOpP->attrsParam != NULL) && (distOpP->entityMap == false))
@@ -512,11 +512,11 @@ bool distOpSend(DistOp* distOpP, const char* dateHeader, const char* xForwardedF
     //
     if (orionldState.verb == HTTP_GET)
     {
-      LM_T(LmtEntityMap, ("distOpP->entityMap == %s", (distOpP->entityMap == true)? "true" : "false"));
+      KT_T(KtEntityMap, "distOpP->entityMap == %s", (distOpP->entityMap == true)? "true" : "false");
 
       if (distOpP->entityMap == true)
       {
-        LM_T(LmtDistOpRequestParams, ("Adding pick=id as URL param"));
+        KT_T(KtDistOpRequestParams, "Adding pick=id as URL param");
         uriParamAdd(&urlParts, "pick=id", NULL, 7);
       }
       else
@@ -537,9 +537,9 @@ bool distOpSend(DistOp* distOpP, const char* dateHeader, const char* xForwardedF
     {
       char buf[256];
       qRender(distOpP->qNode, API_VERSION_NGSILD_V1, buf, sizeof(buf), NULL);
-      LM_T(LmtDistOpRequestParams, ("DistOp %s has a Q: %s", distOpP->regP->regId, buf));
+      KT_T(KtDistOpRequestParams, "DistOp %s has a Q: %s", distOpP->regP->regId, buf);
       if (orionldState.uriParams.q != NULL)
-        LM_T(LmtDistOpRequestParams, ("The initial request also has a 'q'"));
+        KT_T(KtDistOpRequestParams, "The initial request also has a 'q'");
     }
 
     //
@@ -578,10 +578,10 @@ bool distOpSend(DistOp* distOpP, const char* dateHeader, const char* xForwardedF
   if (orionldState.uriParams.qCopy != NULL)
   {
     uriParamAdd(&urlParts, "q", orionldState.uriParams.qCopy, -1);
-    LM_T(LmtDistOpRequestHeaders, ("%s: orionldState.uriParams.q: '%s'", distOpP->regP->regId, orionldState.uriParams.qCopy));
+    KT_T(KtDistOpRequestHeaders, "%s: orionldState.uriParams.q: '%s'", distOpP->regP->regId, orionldState.uriParams.qCopy);
   }
 
-  LM_T(LmtDistOpRequestParams, ("%s: ---- End of URL Parameters -----------------", distOpP->regP->regId));
+  KT_T(KtDistOpRequestParams, "%s: ---- End of URL Parameters -----------------", distOpP->regP->regId);
 
   //
   // Compose the entire URL and pass it to CURL
@@ -628,9 +628,9 @@ bool distOpSend(DistOp* distOpP, const char* dateHeader, const char* xForwardedF
       KjNode* keyP   = kjLookup(regHeaderP, "key");
       KjNode* valueP = kjLookup(regHeaderP, "value");
 
-      if ((keyP == NULL) || (valueP == NULL))                     { LM_W(("Missing key or value in Registration::contextSourceInfo")); continue; }
-      if ((keyP->type != KjString) || (valueP->type != KjString)) { LM_W(("key or value in Registration::contextSourceInfo is non-string")); continue; }
-      if (strcasecmp(keyP->value.s, "Content-Type") == 0)         { LM_W(("Content-Type is part of the Registration::contextSourceInfo headers, however, that is not implemented yet, sorry")); continue; }
+      if ((keyP == NULL) || (valueP == NULL))                     { KT_W("Missing key or value in Registration::contextSourceInfo"); continue; }
+      if ((keyP->type != KjString) || (valueP->type != KjString)) { KT_W("key or value in Registration::contextSourceInfo is non-string"); continue; }
+      if (strcasecmp(keyP->value.s, "Content-Type") == 0)         { KT_W("Content-Type is part of the Registration::contextSourceInfo headers, however, that is not implemented yet, sorry"); continue; }
 
       //
       // Whatever the key is, if the value is "urn:ngsi-ld:request", then the value is to be taken from the HTTP headers of the original request.
@@ -730,7 +730,7 @@ bool distOpSend(DistOp* distOpP, const char* dateHeader, const char* xForwardedF
     headers = curl_slist_append(headers, tenantHeader);
   }
   else
-    LM_T(LmtDistOpRequestHeaders, ("No tenant header"));
+    KT_T(KtDistOpRequestHeaders, "No tenant header");
 
   // User-Agent
   headers = curl_slist_append(headers, userAgentHeaderNoLF);  // userAgentHeader is initialized in orionldServiceInit()
@@ -740,7 +740,7 @@ bool distOpSend(DistOp* distOpP, const char* dateHeader, const char* xForwardedF
   struct curl_slist* sP = headers;
   while (sP != NULL)
   {
-    LM_T(LmtDistOpRequestHeaders, ("Outgoing HTTP Header '%s'", sP->data));
+    KT_T(KtDistOpRequestHeaders, "Outgoing HTTP Header '%s'", sP->data);
     sP = sP->next;
   }
 
@@ -857,7 +857,7 @@ bool distOpSend(DistOp* distOpP, const char* dateHeader, const char* xForwardedF
   //
   // SEND (sort of - enqueue the request)
   //
-  LM_T(LmtDistOpRequest, ("%s: distributed request '%s' %s %s '%s'", distOpP->regP->regId, distOpP->id, orionldState.verbString, url, (payloadBody == NULL)? "no body" : payloadBody));
+  KT_T(KtDistOpRequest, "%s: distributed request '%s' %s %s '%s'", distOpP->regP->regId, distOpP->id, orionldState.verbString, url, (payloadBody == NULL)? "no body" : payloadBody);
   curl_multi_add_handle(orionldState.curlDoMultiP, distOpP->curlHandle);
 
   return 0;

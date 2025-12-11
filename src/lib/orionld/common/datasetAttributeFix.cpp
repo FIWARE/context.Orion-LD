@@ -26,14 +26,14 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjChildRemove
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/datasetAttributeFix.h"                  // Own interface
 
 
@@ -69,12 +69,12 @@ static bool datasetIdMatch(const char* datasetId)
 //
 void datasetAttributeFix(KjNode* entityP, KjNode* attrP)
 {
-  LM_T(LmtDatasetId, ("Fixing datasetId for attribute '%s'", attrP->name));
-  LM_T(LmtDatasetId, ("----------------------------------------------------------------"));
+  KT_T(KtDatasetId, "Fixing datasetId for attribute '%s'", attrP->name);
+  KT_T(KtDatasetId, "----------------------------------------------------------------");
 
   if (attrP->type == KjArray)
   {
-    LM_T(LmtDatasetId, ("It's an array - remove all non-matching instances (or even the entire attribute)"));
+    KT_T(KtDatasetId, "It's an array - remove all non-matching instances (or even the entire attribute)");
 
     KjNode* attrInstanceP = attrP->value.firstChildP;
     KjNode* next          = NULL;
@@ -86,51 +86,51 @@ void datasetAttributeFix(KjNode* entityP, KjNode* attrP)
       KjNode*     datasetIdP = kjLookup(attrInstanceP, "datasetId");
       const char* datasetId  = (datasetIdP != NULL)? datasetIdP->value.s : "@none";
 
-      LM_T(LmtDatasetId, ("This instance has the datasetId '%s'", datasetId));
+      KT_T(KtDatasetId, "This instance has the datasetId '%s'", datasetId);
 
       if (datasetIdMatch(datasetId) == false)
       {
         // Remove the attribute attribute instance as it doesn't match any datasetId
-        LM_T(LmtDatasetId, ("Remove the attribute instance '%s' as it doesn't match any datasetId", datasetId));
+        KT_T(KtDatasetId, "Remove the attribute instance '%s' as it doesn't match any datasetId", datasetId);
         kjChildRemove(attrP, attrInstanceP);
       }
       else
-        LM_T(LmtDatasetId, ("Keeping the instance '%s'", datasetId));
+        KT_T(KtDatasetId, "Keeping the instance '%s'", datasetId);
 
       attrInstanceP = next;
     }
 
-    LM_TREE(attrP, "Attribute after removing non-matching instances", LmtSR);
+    KT_TREE(attrP, "Attribute after removing non-matching instances", KtSR);
     if (attrP->value.firstChildP == NULL)
     {
-      LM_T(LmtDatasetId, ("No instances left - remove the entire attribute"));
+      KT_T(KtDatasetId, "No instances left - remove the entire attribute");
       kjChildRemove(entityP, attrP);
     }
     else if (attrP->value.firstChildP->next == NULL)
     {
-      LM_T(LmtDatasetId, ("One single instance left - flatten the array into an object"));
+      KT_T(KtDatasetId, "One single instance left - flatten the array into an object");
       attrP->value = attrP->value.firstChildP->value;
       attrP->type  = KjObject;
     }
   }
   else if (attrP->type == KjObject)
   {
-    LM_T(LmtDatasetId, ("It's an object - keep or remove the entire attribute"));
+    KT_T(KtDatasetId, "It's an object - keep or remove the entire attribute");
 
     KjNode*     datasetIdP = kjLookup(attrP, "datasetId");
     const char* datasetId  = (datasetIdP != NULL)? datasetIdP->value.s : "@none";
 
-    LM_T(LmtDatasetId, ("The datasetId of the attribute instance is '%s'", datasetId));
+    KT_T(KtDatasetId, "The datasetId of the attribute instance is '%s'", datasetId);
 
     if (datasetIdMatch(datasetId) == false)
     {
       // Remove the attribute as it has no instance matching the datasetId
-      LM_T(LmtDatasetId, ("Removing the entire attribute '%s'", attrP->name));
+      KT_T(KtDatasetId, "Removing the entire attribute '%s'", attrP->name);
       kjChildRemove(entityP, attrP);
     }
     else
-      LM_T(LmtDatasetId, ("Keeping matching attribute '%s'", attrP->name));
+      KT_T(KtDatasetId, "Keeping matching attribute '%s'", attrP->name);
   }
 
-  LM_T(LmtDatasetId, ("----------------------------------------------------------------"));
+  KT_T(KtDatasetId, "----------------------------------------------------------------");
 }

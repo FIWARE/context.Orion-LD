@@ -31,8 +31,6 @@ extern "C"
 #include "kjson/kjBuilder.h"                                     // kjChildRemove
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/troe/troePostEntities.h"                       // troePostEntities
 #include "orionld/troe/troePutEntity.h"                          // Own interface

@@ -72,7 +72,7 @@ bool qAliasCompact(KjNode* qP, bool compact)
 
     if ((c0 == '(') || (c0 == ')'))
     {
-      KT_T(LmtQ, "Found a parenthesis - skipping it");
+      KT_T(KtQ, "Found a parenthesis - skipping it");
       ++cP;
       varStart = cP;
       out[outIx] = c0;

@@ -35,6 +35,8 @@ extern "C"
 #include "kjson/kjBuilder.h"                                     // kjString, kjChildAdd
 }
 
+#include "common/limits.h"                                       // SERVICE_NAME_MAX_LEN
+
 #include "orionld/types/OrionLdRestService.h"                    // ORIONLD_URIPARAM_LIMIT, ...
 #include "orionld/types/OrionldMimeType.h"                       // mimeTypeFromString
 #include "orionld/types/Verb.h"                                  // Verb

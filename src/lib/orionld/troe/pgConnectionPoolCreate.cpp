@@ -26,8 +26,10 @@
 #include <string.h>                                            // strdup
 #include <semaphore.h>                                         // sem_init
 
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "orionld/types/PgConnectionPool.h"                    // PgConnectionPool
 #include "orionld/troe/pgConnectionPoolCreate.h"               // Own interface
@@ -43,13 +45,13 @@ PgConnectionPool* pgConnectionPoolCreate(const char* db, int poolSize)
   PgConnectionPool* poolP = (PgConnectionPool*) malloc(sizeof(PgConnectionPool));
 
   if (poolP == NULL)
-    LM_RE(NULL, ("Out of memory (unable to allocate room for a postgres connection pool)"));
+    KT_RE(NULL, "Out of memory (unable to allocate room for a postgres connection pool)");
 
   poolP->connectionV = (PgConnection**) calloc(poolSize, sizeof(PgConnection*));
   if (poolP->connectionV == NULL)
   {
     free(poolP);
-    LM_E(("Out of memory (unable to allocate room for the connections of a postgres connection pool)"));
+    KT_E("Out of memory (unable to allocate room for the connections of a postgres connection pool)");
     return NULL;
   }
 
@@ -60,7 +62,7 @@ PgConnectionPool* pgConnectionPoolCreate(const char* db, int poolSize)
     {
       free(poolP->connectionV);
       free(poolP);
-      LM_E(("Out of memory (unable to allocate room for the DB-name of a postgres connection pool)"));
+      KT_E("Out of memory (unable to allocate room for the DB-name of a postgres connection pool)");
       return NULL;
     }
   }

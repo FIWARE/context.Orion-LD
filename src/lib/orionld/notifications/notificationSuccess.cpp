@@ -22,12 +22,15 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                          // LM_*
-#include "logMsg/traceLevels.h"                                     // LmtNotificationStats
+extern "C"
+{
+#include "ktrace/kTrace.h"                                          // KT_*
+}
 
 #include "cache/CachedSubscription.h"                               // CachedSubscription
 
 #include "orionld/common/orionldState.h"                            // promNotifications
+#include "orionld/common/traceLevels.h"                             // KTrace levels
 #include "orionld/prometheus/promCounterIncrease.h"                 // promCounterIncrease
 #include "orionld/mongoc/mongocSubCountersUpdate.h"                 // mongocSubCountersUpdate
 #include "orionld/notifications/notificationSuccess.h"              // Own interface
@@ -40,7 +43,7 @@
 //
 void notificationSuccess(CachedSubscription* subP, const double timestamp)
 {
-  LM_T(LmtNotificationStats, ("%s: notification success (sub at %p)", subP->subscriptionId, subP));
+  KT_T(KtNotificationStats, "%s: notification success (sub at %p)", subP->subscriptionId, subP);
 
   subP->lastSuccess           = timestamp;
   subP->lastNotificationTime  = timestamp;
@@ -55,11 +58,11 @@ void notificationSuccess(CachedSubscription* subP, const double timestamp)
   // - If subP->dirty (number of counter updates since last flush) >= cSubCounters
   //   - AND cSubCounters != 0
   //
-  LM_T(LmtNotificationStats, ("%s: dirty: %d AND cSubCounters=%d", subP->subscriptionId, subP->dirty, cSubCounters));
+  KT_T(KtNotificationStats, "%s: dirty: %d AND cSubCounters=%d", subP->subscriptionId, subP->dirty, cSubCounters);
 
   if ((cSubCounters != 0) && (subP->dirty >= cSubCounters))
   {
-    LM_T(LmtNotificationStats, ("%s: Calling mongocSubCountersUpdate", subP->subscriptionId));
+    KT_T(KtNotificationStats, "%s: Calling mongocSubCountersUpdate", subP->subscriptionId);
 
     mongocSubCountersUpdate(subP->tenantP, subP->subscriptionId, (subP->ldContext != ""), subP->count, subP->failures, 0, subP->lastNotificationTime, subP->lastSuccess, subP->lastFailure, false);
     subP->dirty       = 0;
@@ -69,8 +72,8 @@ void notificationSuccess(CachedSubscription* subP, const double timestamp)
     subP->failures    = 0;
   }
   else
-    LM_T(LmtNotificationStats, ("%s: Not calling mongocSubCountersUpdate (cSubCounters: %d, dirty: %d)",
-                                subP->subscriptionId,
-                                cSubCounters,
-                                subP->dirty));
+    KT_T(KtNotificationStats, "%s: Not calling mongocSubCountersUpdate (cSubCounters: %d, dirty: %d)",
+         subP->subscriptionId,
+         cSubCounters,
+         subP->dirty);
 }

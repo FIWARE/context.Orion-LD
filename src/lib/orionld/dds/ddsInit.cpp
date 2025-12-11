@@ -36,8 +36,6 @@ extern "C"
 #include "kjson/KjNode.h"                                   // KjNode
 }
 
-#include "logMsg/logMsg.h"                                  // lmOut
-
 #include "orionld/types/DdsType.h"                          // DdsType
 #include "orionld/types/DdsService.h"                       // DdsService
 #include "orionld/common/traceLevels.h"                     // Trace levels for KTrace

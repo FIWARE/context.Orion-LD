@@ -24,7 +24,10 @@
 */
 #include <curl/curl.h>                                           // CURL, curl_easy_getinfo
 
-#include "logMsg/logMsg.h"                                       // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+}
 
 #include "orionld/common/curlToBrokerStrerror.h"                 // Own interface
 
@@ -44,13 +47,13 @@ const char* curlToBrokerStrerror(CURL* curlHandle, int curlErrorCode, int* statu
   else if (curlErrorCode == 6)
   {
     *statusCodeP = 504;
-    LM_E(("Unable to resolve host name of registrant"));
+    KT_E("Unable to resolve host name of registrant");
     return "Unable to resolve host name of registrant";
   }
   else if (curlErrorCode == 7)
   {
     *statusCodeP = 504;
-    LM_E(("Unable to connect to registrant"));
+    KT_E("Unable to connect to registrant");
     return "Unable to connect to registrant";
   }
   else if (curlErrorCode == 22)
@@ -63,7 +66,7 @@ const char* curlToBrokerStrerror(CURL* curlHandle, int curlErrorCode, int* statu
       return "Entity already exists";
     else
     {
-      LM_W(("Forwarded request response is of HTTP Status %d", httpStatus));
+      KT_W("Forwarded request response is of HTTP Status %d", httpStatus);
       return "Entity was not created externally, and it did not previously exist";
     }
   }

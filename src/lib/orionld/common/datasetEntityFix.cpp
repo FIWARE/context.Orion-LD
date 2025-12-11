@@ -26,11 +26,11 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/datasetAttributeFix.h"                  // datasetAttributeFix
 #include "orionld/common/datasetEntityFix.h"                     // Own interface
 
@@ -55,7 +55,7 @@ void datasetEntityFix(KjNode* entityP)
         (strcmp(attrP->name, "@type") != 0) &&
         (strcmp(attrP->name, "scope") != 0))
     {
-      LM_T(LmtDatasetId, ("Fixing datasetId for attribute '%s'", attrP->name));
+      KT_T(KtDatasetId, "Fixing datasetId for attribute '%s'", attrP->name);
       datasetAttributeFix(entityP, attrP);
     }
 

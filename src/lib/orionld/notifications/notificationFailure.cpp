@@ -24,11 +24,15 @@
 */
 #include <string.h>                                                 // strncpy
 
-#include "logMsg/logMsg.h"                                          // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                          // KT_*
+}
 
 #include "cache/CachedSubscription.h"                               // CachedSubscription
 
 #include "orionld/common/orionldState.h"                            // promNotifications, promNotificationsFailed
+#include "orionld/common/traceLevels.h"                             // KTrace levels
 #include "orionld/prometheus/promCounterIncrease.h"                 // promCounterIncrease
 #include "orionld/mongoc/mongocSubCountersUpdate.h"                 // mongocSubCountersUpdate
 #include "orionld/notifications/notificationFailure.h"              // Own interface
@@ -41,7 +45,7 @@
 //
 void notificationFailure(CachedSubscription* subP, const char* errorReason, double notificationTime)
 {
-  LM_T(LmtNotificationStats, ("%s: notification failure (timestamp: %f)", subP->subscriptionId, notificationTime));
+  KT_T(KtNotificationStats, "%s: notification failure (timestamp: %f)", subP->subscriptionId, notificationTime);
   bool forcedToPause = false;
 
   subP->lastNotificationTime  = notificationTime;
@@ -56,7 +60,7 @@ void notificationFailure(CachedSubscription* subP, const char* errorReason, doub
   // Force the subscription into "paused" due to too many consecutive errors
   if (subP->consecutiveErrors >= 3)
   {
-    LM_T(LmtNotificationStats, ("%s: force the subscription into PAUSE due to 3 consecutive errors", subP->subscriptionId));
+    KT_T(KtNotificationStats, "%s: force the subscription into PAUSE due to 3 consecutive errors", subP->subscriptionId);
     subP->isActive = false;
     subP->status   = "paused";
     forcedToPause  = true;
@@ -65,7 +69,7 @@ void notificationFailure(CachedSubscription* subP, const char* errorReason, doub
   promCounterIncrease(promNotifications);
   promCounterIncrease(promNotificationsFailed);
 
-  LM_T(LmtNotificationStats, ("%s: dirty: %d, cSubCounters: %d", subP->subscriptionId, subP->dirty, cSubCounters));
+  KT_T(KtNotificationStats, "%s: dirty: %d, cSubCounters: %d", subP->subscriptionId, subP->dirty, cSubCounters);
 
   //
   // Flush to DB?
@@ -101,7 +105,7 @@ void notificationFailure(CachedSubscription* subP, const char* errorReason, doub
 //
 void notificationFailure(PernotSubscription* pSubP, const char* errorReason, double notificationTime)
 {
-  LM_T(LmtNotificationStats, ("%s: notification failure (timestamp: %f)", pSubP->subscriptionId, notificationTime));
+  KT_T(KtNotificationStats, "%s: notification failure (timestamp: %f)", pSubP->subscriptionId, notificationTime);
   bool forcedToPause = false;
 
   pSubP->lastNotificationTime   = notificationTime;
@@ -115,7 +119,7 @@ void notificationFailure(PernotSubscription* pSubP, const char* errorReason, dou
   // Force the subscription into "paused" due to too many consecutive errors
   if (pSubP->consecutiveErrors >= 3)
   {
-    LM_T(LmtNotificationStats, ("%s: force the subscription into PAUSE due to 3 consecutive errors", pSubP->subscriptionId));
+    KT_T(KtNotificationStats, "%s: force the subscription into PAUSE due to 3 consecutive errors", pSubP->subscriptionId);
     pSubP->isActive = false;
     pSubP->state    = SubPaused;
     forcedToPause   = true;
@@ -124,7 +128,7 @@ void notificationFailure(PernotSubscription* pSubP, const char* errorReason, dou
   promCounterIncrease(promNotifications);
   promCounterIncrease(promNotificationsFailed);
 
-  LM_T(LmtNotificationStats, ("%s: dirty: %d, cSubCounters: %d", pSubP->subscriptionId, pSubP->dirty, cSubCounters));
+  KT_T(KtNotificationStats, "%s: dirty: %d, cSubCounters: %d", pSubP->subscriptionId, pSubP->dirty, cSubCounters);
 
   //
   // Flush to DB?
@@ -134,7 +138,7 @@ void notificationFailure(PernotSubscription* pSubP, const char* errorReason, dou
   //
   if (((cSubCounters != 0) && (pSubP->dirty >= cSubCounters)) || (forcedToPause == true))
   {
-    LM_T(LmtNotificationStats, ("%s: Calling mongocSubCountersUpdate", pSubP->subscriptionId));
+    KT_T(KtNotificationStats, "%s: Calling mongocSubCountersUpdate", pSubP->subscriptionId);
 
     // Save to database
     mongocSubCountersUpdate(pSubP->tenantP,
@@ -158,11 +162,11 @@ void notificationFailure(PernotSubscription* pSubP, const char* errorReason, dou
     pSubP->noMatch                 = 0;
   }
   else
-    LM_T(LmtNotificationStats, ("%s: Not calling mongocSubCountersUpdate (cSubCounters: %d, dirty: %d, forcedToPause: %s)",
-                                pSubP->subscriptionId,
-                                cSubCounters,
-                                pSubP->dirty,
-                                (forcedToPause == true)? "true" : "false"));
+    KT_T(KtNotificationStats, "%s: Not calling mongocSubCountersUpdate (cSubCounters: %d, dirty: %d, forcedToPause: %s)",
+         pSubP->subscriptionId,
+         cSubCounters,
+         pSubP->dirty,
+         (forcedToPause == true)? "true" : "false");
 }
 
 

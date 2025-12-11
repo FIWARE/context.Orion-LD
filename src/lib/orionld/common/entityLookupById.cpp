@@ -24,12 +24,11 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjBuilder.h"                                   // kjString, kjObject, ...
 #include "kjson/kjLookup.h"                                    // kjLookup
 }
-
-#include "logMsg/logMsg.h"                                     // LM_*
 
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/types/OrionldResponseErrorType.h"            // OrionldResponseErrorType
@@ -70,16 +69,16 @@ KjNode* entityLookupBy_id_Id(KjNode* entityArray, char* entityId, KjNode** entit
 
     if (_idNodeP == NULL)
     {
-      LM_W(("Database Error? (Entity without _id )"));
+      KT_W("Database Error? (Entity without _id )");
       continue;
     }
 
     KjNode* idNodeP = kjLookup(_idNodeP, "id");
 
     if (idNodeP == NULL)
-      LM_W(("Database Error? (Entity _id without id)"));
+      KT_W("Database Error? (Entity _id without id)");
     else if (idNodeP->type != KjString)
-      LM_W(("Database Error? (Entity _id::id that is not a string)"));
+      KT_W("Database Error? (Entity _id::id that is not a string)");
     else if (strcmp(idNodeP->value.s, entityId) == 0)  // Match
     {
       if (entityTypeNodeP != NULL)

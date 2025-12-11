@@ -22,8 +22,10 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "orionld/common/pqHeader.h"                           // Postgres header
 #include "orionld/common/orionldState.h"                       // troeHost, pgPortString, troeUser, troePwd
@@ -58,12 +60,12 @@ PGconn* pgConnect(const char* db)
       break;
 
     usleep(500);  // Sleep half a millisecond before we try again
-    LM_W(("Unable to connect to postgres database '%s'", db));
+    KT_W("Unable to connect to postgres database '%s'", db);
   }
 
   if (connectionP == NULL)
-    LM_RE(NULL, ("Database Error (unable to connect to postgres(host:'%s', port:%s, user:'%s', pwd:'%s', db:'%s')",
-                 troeHost, pgPortString, troeUser, troePwd, db));
+    KT_RE(NULL, "Database Error (unable to connect to postgres(host:'%s', port:%s, user:'%s', pwd:'%s', db:'%s')",
+          troeHost, pgPortString, troeUser, troePwd, db);
 
   return connectionP;
 }

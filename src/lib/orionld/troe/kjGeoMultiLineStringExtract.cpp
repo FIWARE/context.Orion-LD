@@ -24,11 +24,9 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 }
-
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
 
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/troe/kjGeoLineStringExtract.h"               // kjGeoLineStringExtract
@@ -46,16 +44,16 @@ bool kjGeoMultiLineStringExtract(KjNode* coordinatesP, char* coordsString, int c
   int     coordsIx         = 0;
 
   if (lineStringCoords == NULL)
-    LM_RE(false, ("Internal Error (out of memory)"));
+    KT_RE(false, "Internal Error (out of memory)");
 
   for (KjNode* lineStringP = coordinatesP->value.firstChildP; lineStringP != NULL; lineStringP = lineStringP->next)
   {
     if (kjGeoLineStringExtract(lineStringP, lineStringCoords, 1024) == false)
-      LM_RE(false, ("kjGeoLineStringExtract failed"));
+      KT_RE(false, "kjGeoLineStringExtract failed");
 
     int slen = strlen(lineStringCoords);
     if (coordsIx + slen + 3 >= coordsLen)
-      LM_RE(false, ("Internal Error (not enough room in coordsString)"));
+      KT_RE(false, "Internal Error (not enough room in coordsString)");
 
     if (coordsIx != 0)
     {

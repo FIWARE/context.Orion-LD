@@ -74,8 +74,8 @@ void mhdReply(KjNode* body)
 
   PERFORMANCE(mhdReplyStart);
 
-  KT_T(LmtResponse, "Response Body: '%s'", (body != NULL)? orionldState.responsePayload : "None");
-  KT_T(LmtResponse, "Response Code:  %d", orionldState.httpStatusCode);
+  KT_T(KtResponse, "Response Body: '%s'", (body != NULL)? orionldState.responsePayload : "None");
+  KT_T(KtResponse, "Response Code:  %d", orionldState.httpStatusCode);
 
   //
   // Enqueue response

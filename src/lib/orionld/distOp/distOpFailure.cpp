@@ -26,17 +26,17 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjArray, kljString, kjChildAdd, ...
 #include "kjson/kjStringValueLookupInArray.h"                    // kjStringValueLookupInArray
 }
 
-#include "logMsg/logMsg.h"                                       // LM_T
-
 #include "orionld/types/DistOp.h"                                // DistOp
 #include "orionld/types/OrionldResponseErrorType.h"              // OrionldResponseErrorType
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
 #include "orionld/distOp/distOpFailure.h"                        // Own interface
 
@@ -51,9 +51,9 @@ void distOpFailure(KjNode* responseBody, DistOp* distOpP, const char* title, con
   char* alias  = (attrName != NULL)? orionldContextItemAliasLookup(orionldState.contextP, attrName, NULL, NULL) : NULL;
 
   if (alias != NULL)
-    LM_T(LmtDistOp207, ("Adding attribute '%s' to failureV", alias));
+    KT_T(KtDistOp207, "Adding attribute '%s' to failureV", alias);
   else
-    LM_T(LmtDistOp207, ("Adding item to failureV", alias));
+    KT_T(KtDistOp207, "Adding item to failureV", alias);
 
   if (httpStatus == 404)
   {
@@ -63,7 +63,7 @@ void distOpFailure(KjNode* responseBody, DistOp* distOpP, const char* title, con
       if (kjStringValueLookupInArray(successV, alias) != NULL)
       {
         // The 404 attribute was updated elsewhere => not a 404
-        LM_T(LmtDistOp207, ("NOT Adding attribute '%s' to failureV as it was found in successV", alias));
+        KT_T(KtDistOp207, "NOT Adding attribute '%s' to failureV as it was found in successV", alias);
         return;
       }
     }

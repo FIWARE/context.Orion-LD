@@ -23,9 +23,12 @@
 * Author: Ken Zangelin
 */
 #include <uuid/uuid.h>                                         // uuid_t, uuid_generate_time_safe, uuid_unparse_lower
+#include <string.h>                                            // strlen, strncpy
 
-#include "logMsg/logMsg.h"                                     // Log library
-#include "logMsg/traceLevels.h"                                // LMT_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "orionld/common/uuidGenerate.h"                       // Own interface
 
@@ -45,7 +48,7 @@ char* uuidGenerate(char* buf, int bufSize, const char* prefix)
     minBufSize += strlen(prefix);
 
   if (bufSize < minBufSize)
-    LM_X(1, ("Implementation Error (not enough room to generate a UUID (%d bytes needed, %d supplied)", minBufSize, bufSize));
+    KT_X(1, "Implementation Error (not enough room to generate a UUID (%d bytes needed, %d supplied)", minBufSize, bufSize);
 
   uuid_generate_time_safe(uuid);
 

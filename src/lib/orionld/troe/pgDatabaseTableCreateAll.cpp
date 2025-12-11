@@ -22,8 +22,10 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "orionld/common/pqHeader.h"                           // Postgres header
 #include "orionld/troe/dbCreationCommand.h"                    // dbCreationCommand
@@ -46,13 +48,13 @@
 bool pgDatabaseTableCreateAll(PGconn* connectionP)
 {
   if (pgTransactionBegin(connectionP) == false)
-    LM_RE(false, ("pgTransactionBegin failed"));
+    KT_RE(false, "pgTransactionBegin failed");
 
   PGresult* res = PQexec(connectionP, dbCreationCommand);
   if (res == NULL)
   {
     pgTransactionRollback(connectionP);
-    LM_RE(false, ("Database Error (PQexec(%s): %s)", dbCreationCommand, PQresStatus(PQresultStatus(res))));
+    KT_RE(false, "Database Error (PQexec(%s): %s)", dbCreationCommand, PQresStatus(PQresultStatus(res)));
   }
   PQclear(res);
 
