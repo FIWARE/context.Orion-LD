@@ -183,16 +183,15 @@ int httpsNotify(CachedSubscription* cSubP, struct iovec* ioVec, int ioVecLen, do
   struct curl_slist* headers = NULL;
   for (int ix = 1; ix < ioVecLen - 2; ix++)
   {
+    char header[1024];
+
+    strncpy(header, (char*) ioVec[ix].iov_base, sizeof(header) - 1);
+
     // must not be CRLF-terminated - have to remove last 2 chars
-    uint32_t  headerLen = strlen((char*) ioVec[ix].iov_base);
-    char      header[256];
-    char*     headerP   = (headerLen < 255)? header : kaAlloc(&orionldState.kalloc, headerLen + 1);
+    header[ioVec[ix].iov_len - 2] = 0;
 
-    strncpy(headerP, (char*) ioVec[ix].iov_base, headerLen - 1);
-    headerP[ioVec[ix].iov_len - 2] = 0;
-
-    KT_T(KtNotificationHeaders, "%s: Notification Request Header: '%s'", cSubP->subscriptionId, headerP);
-    headers = curl_slist_append(headers, headerP);
+    KT_T(KtNotificationHeaders, "%s: Notification Request Header: '%s'", cSubP->subscriptionId, header);
+    headers = curl_slist_append(headers, header);
   }
   curl_easy_setopt(curlHandleP, CURLOPT_HTTPHEADER, headers);
 
