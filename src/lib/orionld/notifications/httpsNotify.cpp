@@ -184,9 +184,9 @@ int httpsNotify(CachedSubscription* cSubP, struct iovec* ioVec, int ioVecLen, do
   for (int ix = 1; ix < ioVecLen - 2; ix++)
   {
     // must not be CRLF-terminated - have to remove last 2 chars
-    char      header[256];
     uint32_t  headerLen = strlen((char*) ioVec[ix].iov_base);
-    char*     headerP   = (headerLen < sizeof(header) - 1)? header : kaAlloc(&orionldState.kalloc, headerLen + 1);
+    char      header[256];
+    char*     headerP   = (headerLen < 255)? header : kaAlloc(&orionldState.kalloc, headerLen + 1);
 
     strncpy(headerP, (char*) ioVec[ix].iov_base, headerLen - 1);
     headerP[ioVec[ix].iov_len - 2] = 0;
