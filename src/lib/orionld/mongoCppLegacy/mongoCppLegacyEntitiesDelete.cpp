@@ -30,12 +30,9 @@ extern "C"
 #include "kjson/kjBuilder.h"                                          // kjArray, ...
 }
 
-#include "logMsg/logMsg.h"                                            // LM_*
-#include "logMsg/traceLevels.h"                                       // Lmt*
+#include "mongoBackend/MongoGlobal.h"                                 // getMongoConnection, releaseMongoConnection, ...
 
 #include "orionld/common/orionldState.h"                              // orionldState, dbName
-
-#include "mongoBackend/MongoGlobal.h"                                 // getMongoConnection, releaseMongoConnection, ...
 #include "orionld/mongoCppLegacy/mongoCppLegacyEntitiesDelete.h"      // Own interface
 
 

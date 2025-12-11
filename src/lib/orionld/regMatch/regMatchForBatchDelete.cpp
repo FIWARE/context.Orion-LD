@@ -24,11 +24,10 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/types/RegistrationMode.h"                      // registrationMode
 #include "orionld/types/RegCache.h"                              // RegCache
@@ -36,6 +35,7 @@ extern "C"
 #include "orionld/types/DistOp.h"                                // DistOp
 #include "orionld/types/DistOpType.h"                            // DistOpType
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/distOp/xForwardedForMatch.h"                   // xForwardedForMatch
 #include "orionld/distOp/viaMatch.h"                             // viaMatch
 #include "orionld/regMatch/regMatchOperation.h"                  // regMatchOperation
@@ -62,26 +62,26 @@ DistOp* regMatchForBatchDelete
   {
     if ((regP->mode & regMode) == 0)
     {
-       LM_T(LmtRegMatch, ("%s: No match due to regMode", regP->regId));
+       KT_T(KtRegMatch, "%s: No match due to regMode", regP->regId);
        continue;
     }
 
     // Loop detection
     if (viaMatch(orionldState.in.via, regP->hostAlias) == true)
     {
-      LM_T(LmtRegMatch, ("%s: No Reg Match due to Loop (Via)", regP->regId));
+      KT_T(KtRegMatch, "%s: No Reg Match due to Loop (Via)", regP->regId);
       continue;
     }
 
     if (xForwardedForMatch(orionldState.in.xForwardedFor, regP->ipAndPort) == true)
     {
-      LM_T(LmtRegMatch, ("%s: No match due to loop detection", regP->regId));
+      KT_T(KtRegMatch, "%s: No match due to loop detection", regP->regId);
       continue;
     }
 
     if (regMatchOperation(regP, operation) == false)
     {
-      LM_T(LmtRegMatch, ("%s: No match due to Operation (operation == %d: '%s')", regP->regId, operation, distOpTypes[operation]));
+      KT_T(KtRegMatch, "%s: No match due to Operation (operation == %d: '%s')", regP->regId, operation, distOpTypes[operation]);
       continue;
     }
 
@@ -107,7 +107,7 @@ DistOp* regMatchForBatchDelete
         distOpTail       = distOpP;
         distOpTail->next = NULL;
 
-        LM_T(LmtRegMatch, ("%s: Match!", regP->regId));
+        KT_T(KtRegMatch, "%s: Match!", regP->regId);
       }
     }
   }

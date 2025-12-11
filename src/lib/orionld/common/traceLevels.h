@@ -37,19 +37,31 @@ typedef enum OrionldTraceLevels
   StMhdInit                 = 100,
 
   StRequest                 = 200,
+  KtRequest                 = 200,
   StRequestHeaders          = 201,
   StRequestParams           = 202,
   KtSR                      = 210,
 
   // URL Params
-  KtUrlParam                = 300,
-  KtCsf                     = 301,
-  KtCount                   = 302,
-  KtPick                    = 303,
-  KtFormat                  = 304,
-  KtSysAttrs                = 305,
-  KtQ                       = 306,
+  KtUrlParam                = 250,
+  KtCsf                     = 251,
+  KtCount                   = 252,
+  KtPick                    = 253,
+  KtFormat                  = 254,
+  KtSysAttrs                = 255,
+  KtQ                       = 256,
+  KtQ2                      = 257,
+  KtQ3                      = 258,
+  KtOptions                 = 259,
 
+  // HTTP Headers
+  KtHttpHeader              = 280,
+  KtLinkHeader              = 281,
+
+  // JSON-LD
+  KtArrayReduction          = 301,
+  
+  // Linked Entities
   StLinked                  = 400,
   StLinkedInline            = 401,
   StLinkedInline2           = 402,
@@ -118,12 +130,23 @@ typedef enum OrionldTraceLevels
 
   // Context
   KtContext                 = 1700,
+  KtContextInBody           = 1701,
+  KtExpand                  = 1702,
+  KtCompact                 = 1703,
+  KtCoreContext             = 1704,
+  KtUserContext             = 1705,
+  KtDefaultUserContext      = 1706,
+  KtContextDownload         = 1707,
+  KtContextItem             = 1708,
+  KtContextTree             = 1709,
 
   // Context Cache
   KtContextCache            = 1750,
+  KtContextCacheStats       = 1751,
 
   // DB Model
   KtDbModel                 = 1800,
+  KtAttrNames               = 1801,
 
   // API Model
   KtApiModel                = 1850,
@@ -150,6 +173,7 @@ typedef enum OrionldTraceLevels
 
   // Misc
   KtLeak                    = 4000,
+  KtToDo                    = 4001,
 
   // FT Client
   StDump                    = 5001,

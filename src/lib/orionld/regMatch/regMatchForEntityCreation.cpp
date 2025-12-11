@@ -24,11 +24,10 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
-
-#include "logMsg/logMsg.h"                                       // LM_T
 
 #include "orionld/types/RegistrationMode.h"                      // registrationMode
 #include "orionld/types/RegCache.h"                              // RegCache
@@ -36,6 +35,7 @@ extern "C"
 #include "orionld/types/DistOp.h"                                // DistOp
 #include "orionld/types/DistOpType.h"                            // DistOpType
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/distOp/xForwardedForMatch.h"                   // xForwardedForMatch
 #include "orionld/distOp/viaMatch.h"                             // viaMatch
 #include "orionld/regMatch/regMatchOperation.h"                  // regMatchOperation
@@ -50,29 +50,29 @@ extern "C"
 //
 void distOpListDebug(DistOp* distOpP, const char* what)
 {
-  LM_T(LmtDistOpList, ("----- DistOp List: %s", what));
+  KT_T(KtDistOpList, "----- DistOp List: %s", what);
 
   while (distOpP != NULL)
   {
-    LM_T(LmtDistOpList, ("  Registration:      %s", distOpP->regP->regId));
-    LM_T(LmtDistOpList, ("  Operation:         %s", distOpTypes[distOpP->operation]));
+    KT_T(KtDistOpList, "  Registration:      %s", distOpP->regP->regId);
+    KT_T(KtDistOpList, "  Operation:         %s", distOpTypes[distOpP->operation]);
 
     if (distOpP->error == true)
     {
-      LM_T(LmtDistOpList, ("  Title:             %s", distOpP->title));
-      LM_T(LmtDistOpList, ("  Detail:            %s", distOpP->detail));
-      LM_T(LmtDistOpList, ("  Status:            %d", distOpP->httpResponseCode));
+      KT_T(KtDistOpList, "  Title:             %s", distOpP->title);
+      KT_T(KtDistOpList, "  Detail:            %s", distOpP->detail);
+      KT_T(KtDistOpList, "  Status:            %d", distOpP->httpResponseCode);
     }
 
     if (distOpP->requestBody != NULL)
     {
-      LM_T(LmtDistOpList, ("  Attributes:"));
+      KT_T(KtDistOpList, "  Attributes:");
       int ix = 0;
       for (KjNode* attrP = distOpP->requestBody->value.firstChildP; attrP != NULL; attrP = attrP->next)
       {
         if ((strcmp(attrP->name, "id") != 0) && (strcmp(attrP->name, "type") != 0))
         {
-          LM_T(LmtDistOpList, ("    Attribute %d:   '%s'", ix, attrP->name));
+          KT_T(KtDistOpList, "    Attribute %d:   '%s'", ix, attrP->name);
           ++ix;
         }
       }
@@ -80,17 +80,17 @@ void distOpListDebug(DistOp* distOpP, const char* what)
 
     if (distOpP->attrList != NULL)
     {
-      LM_T(LmtDistOpList, ("  URL Attributes:        %d", distOpP->attrList->items));
+      KT_T(KtDistOpList, "  URL Attributes:        %d", distOpP->attrList->items);
       for (int ix = 0; ix < distOpP->attrList->items; ix++)
       {
-        LM_T(LmtDistOpList, ("    Attribute %d:   '%s'", ix, distOpP->attrList->array[ix]));
+        KT_T(KtDistOpList, "    Attribute %d:   '%s'", ix, distOpP->attrList->array[ix]);
       }
     }
 
     distOpP = distOpP->next;
   }
 
-  LM_T(LmtDistOpList, ("---------------------"));
+  KT_T(KtDistOpList, "---------------------");
 }
 #endif
 
@@ -117,46 +117,46 @@ DistOp* regMatchForEntityCreation
   DistOp* distOpHead = NULL;
   DistOp* distOpTail = NULL;
 
-  LM_T(LmtRegMatch, ("Registration Mode: %d (%s)", regMode, registrationModeToString(regMode)));
-  LM_T(LmtRegMatch, ("Operation:         %d (%s)", operation, distOpTypes[operation]));
-  LM_T(LmtRegMatch, ("Entity ID:         %s", entityId));
-  LM_T(LmtRegMatch, ("Entity Type:       %s", entityType));
+  KT_T(KtRegMatch, "Registration Mode: %d (%s)", regMode, registrationModeToString(regMode));
+  KT_T(KtRegMatch, "Operation:         %d (%s)", operation, distOpTypes[operation]);
+  KT_T(KtRegMatch, "Entity ID:         %s", entityId);
+  KT_T(KtRegMatch, "Entity Type:       %s", entityType);
 
   for (RegCacheItem* regP = orionldState.tenantP->regCache->regList; regP != NULL; regP = regP->next)
   {
     if ((regP->mode & regMode) == 0)
     {
-      // LM_T(LmtRegMatch, ("%s: No Reg Match due to regMode (0x%x vs 0x%x)", regP->regId, regP->mode, regMode));
+      // KT_T(KtRegMatch, "%s: No Reg Match due to regMode (0x%x vs 0x%x)", regP->regId, regP->mode, regMode);
       continue;
     }
 
     // Loop detection
     if (viaMatch(orionldState.in.via, regP->hostAlias) == true)
     {
-      LM_T(LmtRegMatch, ("%s: No Reg Match due to Loop (Via)", regP->regId));
+      KT_T(KtRegMatch, "%s: No Reg Match due to Loop (Via)", regP->regId);
       continue;
     }
 
     if (xForwardedForMatch(orionldState.in.xForwardedFor, regP->ipAndPort) == true)
     {
-      LM_T(LmtRegMatch, ("%s: No Reg Match due to loop detection", regP->regId));
+      KT_T(KtRegMatch, "%s: No Reg Match due to loop detection", regP->regId);
       continue;
     }
 
     if ((regMode != RegModeExclusive) && (regMatchOperation(regP, operation) == false))
     {
-      LM_T(LmtRegMatch, ("%s: No Reg Match due to Operation (operation == %d: '%s')", regP->regId, operation, distOpTypes[operation]));
+      KT_T(KtRegMatch, "%s: No Reg Match due to Operation (operation == %d: '%s')", regP->regId, operation, distOpTypes[operation]);
       continue;
     }
 
     DistOp* distOpP = regMatchInformationArray(regP, operation, entityId, entityType, payloadBody);
     if (distOpP == NULL)
     {
-      LM_T(LmtRegMatch, ("%s: No Reg Match due to Information Array", regP->regId));
+      KT_T(KtRegMatch, "%s: No Reg Match due to Information Array", regP->regId);
       continue;
     }
 
-    LM_T(LmtRegMatch, ("%s: Match!", regP->regId));
+    KT_T(KtRegMatch, "%s: Match!", regP->regId);
 
     //
     // If Exclusive, we now need to check the Operation (DistOpType)
@@ -164,7 +164,7 @@ DistOp* regMatchForEntityCreation
     //
     if ((regMode == RegModeExclusive) && (regMatchOperation(regP, operation) == false))
     {
-      LM_T(LmtRegMatch, ("%s: No Reg Match due to 'matching exclusive registration forbids the Operation' (operation == %d: '%s')", regP->regId, operation, distOpTypes[operation]));
+      KT_T(KtRegMatch, "%s: No Reg Match due to 'matching exclusive registration forbids the Operation' (operation == %d: '%s')", regP->regId, operation, distOpTypes[operation]);
       for (DistOp* doP = distOpP; doP != NULL; doP = doP->next)
       {
         doP->error            = true;

@@ -27,6 +27,7 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
@@ -34,8 +35,6 @@ extern "C"
 #include "kjson/kjRender.h"                                      // kjFastRender
 #include "kjson/kjStringValueLookupInArray.h"                    // kjStringValueLookupInArray
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "mongoBackend/mongoUpdateContext.h"                     // mongoUpdateContext
 
@@ -208,7 +207,7 @@ bool legacyPatchEntity(void)
       //
       // pCheckAttribute should perhaps have a parameter about "ok-to-fail"
       //
-      LM_E(("attributeCheck: title: '%s', detail: '%s', code: %d", orionldState.pd.title, orionldState.pd.detail, orionldState.pd.status));
+      KT_E("attributeCheck: title: '%s', detail: '%s', code: %d", orionldState.pd.title, orionldState.pd.detail, orionldState.pd.status);
       orionldState.pd.status = 200;
       attributeNotUpdated(notUpdatedP, shortName, orionldState.pd.title, orionldState.pd.detail);
       newAttrP = next;
@@ -242,7 +241,7 @@ bool legacyPatchEntity(void)
 
       if (kjTreeToContextAttribute(orionldState.contextP, attrP, caP, NULL, &detail) == false)
       {
-        LM_E(("kjTreeToContextAttribute: %s", detail));
+        KT_E("kjTreeToContextAttribute: %s", detail);
         attributeNotUpdated(notUpdatedP, attrP->name, "Error", detail);
         delete caP;
       }
@@ -295,7 +294,7 @@ bool legacyPatchEntity(void)
   }
   else
   {
-    LM_E(("Error: %s: %s (%d)", orionldState.pd.title, orionldState.pd.detail, orionldState.pd.status));
+    KT_E("Error: %s: %s (%d)", orionldState.pd.title, orionldState.pd.detail, orionldState.pd.status);
     return false;
   }
 

@@ -22,7 +22,10 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                          // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                          // KT_*
+}
 
 #include "orionld/types/QNode.h"                                    // QNode
 #include "orionld/common/orionldState.h"                            // orionldState
@@ -48,14 +51,14 @@ static QNode* qCheck(char* qString)
   if (qList == NULL)
   {
     orionldError(OrionldBadRequestData, "Invalid Q-Filter", detail, 400);
-    LM_RE(NULL, ("Error (qLex: %s: %s)", title, detail));
+    KT_RE(NULL, "Error (qLex: %s: %s)", title, detail);
   }
 
   QNode* qNode = qParse(qList, NULL, true, true, &title, &detail);  // 3rd parameter: forDb=true
   if (qNode == NULL)
   {
     orionldError(OrionldBadRequestData, title, detail, 400);
-    LM_E(("Error (qParse: %s: %s) - but, the subscription will be inserted in the sub-cache without 'q'", title, detail));
+    KT_E("Error (qParse: %s: %s) - but, the subscription will be inserted in the sub-cache without 'q'", title, detail);
   }
 
   return qNode;

@@ -24,12 +24,11 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjArray, kjChildAdd
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "mongoBackend/MongoGlobal.h"                            // getMongoConnection, releaseMongoConnection, ...
 
@@ -112,7 +111,7 @@ KjNode* mongoCppLegacyEntityTypeGet(OrionldProblemDetails* pdP, const char* type
 
     if (kjTree == NULL)
     {
-      LM_E(("%s: %s", title, details));
+      KT_E("%s: %s", title, details);
       continue;
     }
 

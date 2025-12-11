@@ -22,18 +22,16 @@
 *
 * Author: Ken Zangelin
 */
-#include "mongo/client/dbclient.h"                               // MongoDB C++ Client Legacy Driver
+#include "mongo/client/dbclient.h"                                      // MongoDB C++ Client Legacy Driver
 
 extern "C"
 {
-#include "kbase/kMacros.h"                                       // K_FT
-#include "kjson/KjNode.h"                                        // KjNode
+#include "kbase/kMacros.h"                                              // K_FT
+#include "ktrace/kTrace.h"                                              // KT_*
+#include "kjson/KjNode.h"                                               // KjNode
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
-
-#include "mongoBackend/MongoGlobal.h"                            // getMongoConnection, releaseMongoConnection, ...
+#include "mongoBackend/MongoGlobal.h"                                   // getMongoConnection, releaseMongoConnection, ...
 
 #include "orionld/common/orionldState.h"                                // orionldState
 #include "orionld/mongoCppLegacy/mongoCppLegacyKjTreeToBsonObj.h"       // mongoCppLegacyKjTreeToBsonObj
@@ -68,7 +66,7 @@ bool mongoCppLegacyRegistrationReplace(const char* registrationId, KjNode* dbReg
   }
   catch (const std::exception &e)
   {
-    LM_E(("Mongo Exception: %s", e.what()));
+    KT_E("Mongo Exception: %s", e.what());
     ok = false;
   }
 

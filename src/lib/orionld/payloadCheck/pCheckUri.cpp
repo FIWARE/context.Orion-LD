@@ -23,8 +23,13 @@
 * Author: Ken Zangelin
 */
 #include <unistd.h>                                             // NULL
+#include <string.h>                                             // strcmp
+#include <strings.h>                                            // bzero
 
-#include "logMsg/logMsg.h"                                      // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                      // KT_*
+}
 
 #include "orionld/common/orionldError.h"                        // orionldError
 #include "orionld/payloadCheck/pCheckUri.h"                     // Own interface
@@ -178,7 +183,7 @@ bool pCheckUri(const char* uri, const char* name, bool mustBeUri)
       if (validUriChars[(unsigned char) *s] == false)
       {
         orionldError(OrionldBadRequestData, "Invalid URI - invalid character", name, 400);
-        LM_W(("Bad Input (invalid character in URI '%s', at position %d (0x%x)", uri, (int) (s - uri),  *s & 0xFF));
+        KT_W("Bad Input (invalid character in URI '%s', at position %d (0x%x)", uri, (int) (s - uri),  *s & 0xFF);
         return false;
       }
 

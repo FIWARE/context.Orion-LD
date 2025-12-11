@@ -30,14 +30,12 @@ extern "C"
 #include "kbase/kMacros.h"                                     // K_FT
 #include "kbase/kStringSplit.h"                                // kStringSplit
 #include "kbase/kTime.h"                                       // kTimeGet
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kalloc/kaStrdup.h"                                   // kaStrdup
 #include "kjson/kjBuilder.h"                                   // kjArray, kjChildAdd, ...
 #include "kjson/kjLookup.h"                                    // kjLookup
 #include "kjson/kjRender.h"                                    // kjFastRender
 }
-
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
 
 #include "ngsi10/QueryContextRequest.h"                        // QueryContextRequest
 #include "ngsi10/QueryContextResponse.h"                       // QueryContextResponse
@@ -202,7 +200,7 @@ bool legacyGetEntities(void)
 
       if ((strncmp(georelExtra, "minDistance==", 11) != 0) && (strncmp(georelExtra, "maxDistance==", 11) != 0))
       {
-        LM_W(("Bad Input (invalid value for georel parameter: %s)", georelExtra));
+        KT_W("Bad Input (invalid value for georel parameter: %s)", georelExtra);
         orionldError(OrionldBadRequestData, "Invalid value for georel parameter", georel, 400);
         return false;
       }
@@ -218,7 +216,7 @@ bool legacyGetEntities(void)
         (strcmp(geometry, "LineString")      != 0) &&
         (strcmp(geometry, "MultiLineString") != 0))
     {
-      LM_W(("Bad Input (invalid value for URI parameter 'geometry'"));
+      KT_W("Bad Input (invalid value for URI parameter 'geometry'");
       orionldError(OrionldBadRequestData, "Invalid value for URI parameter /geometry/", geometry, 400);
       return false;
     }
@@ -243,12 +241,12 @@ bool legacyGetEntities(void)
       scopeP->release();
       delete scopeP;
 
-      LM_E(("Geo: Scope::fill failed"));
+      KT_E("Geo: Scope::fill failed");
       orionldError(OrionldInternalError, "Invalid Geometry", errorString, 400);
       return false;
     }
 
-    LM_E(("Geo: Scope::fill OK"));
+    KT_E("Geo: Scope::fill OK");
     mongoRequest.restriction.scopeVector.push_back(scopeP);
   }
 
@@ -271,7 +269,7 @@ bool legacyGetEntities(void)
   //
   if ((orionldState.in.idList.items > 1) && (orionldState.in.typeList.items > 1))
   {
-    LM_W(("Bad Input (URI params /id/ and /type/ are both lists - Not Permitted)"));
+    KT_W("Bad Input (URI params /id/ and /type/ are both lists - Not Permitted)");
     orionldError(OrionldBadRequestData, "URI params /id/ and /type/ are both lists", "Not Permitted", 400);
     return false;
   }
@@ -315,7 +313,7 @@ bool legacyGetEntities(void)
 
     if ((lexList = qLex(q, true, &title, &detail)) == NULL)
     {
-      LM_W(("Bad Input (qLex: %s: %s)", title, detail));
+      KT_W("Bad Input (qLex: %s: %s)", title, detail);
       orionldError(OrionldBadRequestData, title, detail, 400);
       mongoRequest.release();
       return false;
@@ -323,7 +321,7 @@ bool legacyGetEntities(void)
 
     if ((qTree = qParse(lexList, NULL, true, true, &title, &detail)) == NULL)
     {
-      LM_W(("Bad Input (qParse: %s: %s)", title, detail));
+      KT_W("Bad Input (qParse: %s: %s)", title, detail);
       orionldError(OrionldBadRequestData, title, detail, 400);
       mongoRequest.release();
       return false;
@@ -339,7 +337,7 @@ bool legacyGetEntities(void)
     mongo::BSONObjBuilder objBuilder;
     if (qTreeToBsonObj(qTree, &objBuilder, &title, &detail) == false)
     {
-      LM_W(("Bad Input (qTreeToBsonObj: %s: %s)", title, detail));
+      KT_W("Bad Input (qTreeToBsonObj: %s: %s)", title, detail);
       orionldError(OrionldBadRequestData, title, detail, 400);
       mongoRequest.release();
       return false;

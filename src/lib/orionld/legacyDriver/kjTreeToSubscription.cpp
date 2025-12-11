@@ -26,6 +26,7 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                        // KT_*
 #include "kjson/KjNode.h"                                         // KjNode
 #include "kjson/kjLookup.h"                                       // kjLookup
 }
@@ -78,7 +79,7 @@ bool oldTreatmentForQ(ngsiv2::Subscription* subP, char* q)
   }
   else if (strstr(q, "~=") != NULL)
   {
-    LM_W(("Pattern Match for subscriptions - not implemented"));
+    KT_W("Pattern Match for subscriptions - not implemented");
     orionldError(OrionldOperationNotSupported, "Not Implemented", "Pattern matching in Q-filter", 501);
     return false;
   }
@@ -92,7 +93,7 @@ bool oldTreatmentForQ(ngsiv2::Subscription* subP, char* q)
 
   if (scopeP->stringFilterP->parse(q, &errorString) == false)
   {
-    LM_E(("Error parsing '%s': %s", scopeP->value.c_str(), errorString.c_str()));
+    KT_E("Error parsing '%s': %s", scopeP->value.c_str(), errorString.c_str());
     delete scopeP->stringFilterP;
     delete scopeP;
     orionldError(OrionldBadRequestData, "Invalid value for Subscription::q", errorString.c_str(), 400);
@@ -241,7 +242,7 @@ bool kjTreeToSubscription(ngsiv2::Subscription* subP, char** subIdPP, KjNode** e
 
       if (kjTreeToEntIdVector(entitiesP, &subP->subject.entities) == false)
       {
-        LM_E(("kjTreeToEntIdVector failed"));
+        KT_E("kjTreeToEntIdVector failed");
         return false;  // orionldError is invoked by kjTreeToEntIdVector
       }
     }
@@ -253,7 +254,7 @@ bool kjTreeToSubscription(ngsiv2::Subscription* subP, char** subIdPP, KjNode** e
 
       if (kjTreeToStringList(watchedAttributesP, &subP->subject.condition.attributes) == false)
       {
-        LM_E(("kjTreeToStringList failed"));
+        KT_E("kjTreeToStringList failed");
         return false;  // orionldError is invoked by kjTreeToStringList
       }
     }
@@ -277,7 +278,7 @@ bool kjTreeToSubscription(ngsiv2::Subscription* subP, char** subIdPP, KjNode** e
 
       if (kjTreeToSubscriptionExpression(geoQP, &subP->subject.condition.expression) == false)
       {
-        LM_E(("kjTreeToSubscriptionExpression failed"));
+        KT_E("kjTreeToSubscriptionExpression failed");
         return false;  // orionldError is invoked by kjTreeToSubscriptionExpression
       }
     }
@@ -300,7 +301,7 @@ bool kjTreeToSubscription(ngsiv2::Subscription* subP, char** subIdPP, KjNode** e
 
       if (kjTreeToNotification(notificationP, subP, endpointPP) == false)
       {
-        LM_E(("kjTreeToNotification failed"));
+        KT_E("kjTreeToNotification failed");
         return false;  // orionldError is invoked by kjTreeToNotification
       }
     }

@@ -28,6 +28,7 @@
 extern "C"
 {
 #include "kbase/kMacros.h"                                      // K_FT
+#include "ktrace/kTrace.h"                                      // KT_*
 #include "kjson/KjNode.h"                                       // KjNode
 #include "kjson/kjBuilder.h"                                    // kjString, kjObject, ...
 #include "kjson/kjLookup.h"                                     // kjLookup
@@ -35,8 +36,6 @@ extern "C"
 #include "kjson/kjRender.h"                                     // kjFastRender    - DEBUG
 #include "kjson/kjStringValueLookupInArray.h"                   // kjStringValueLookupInArray
 }
-
-#include "logMsg/logMsg.h"                                      // LM_*
 
 #include "orionTypes/OrionValueType.h"                          // orion::ValueType
 #include "orionTypes/UpdateActionType.h"                        // ActionType
@@ -350,7 +349,7 @@ bool legacyPostBatchUpsert(void)
             // - removed from incomingTree
             // - not added to "removeArray"
             //
-            LM_W(("Bad Input (orig entity type: '%s'. New entity type: '%s'", typeInDb, typeInPayload));
+            KT_W("Bad Input (orig entity type: '%s'. New entity type: '%s'", typeInDb, typeInPayload);
             entityErrorPush(errorsArrayP, idInDb, OrionldBadRequestData, "non-matching entity type", typeInPayload, 400);
             kjChildRemove(incomingTree, entityP);
             continue;

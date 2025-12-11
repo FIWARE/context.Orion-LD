@@ -22,7 +22,10 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                          // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "orionld/types/DistOp.h"                                // DistOp
 #include "orionld/types/RegistrationMode.h"                      // RegistrationMode
@@ -31,6 +34,7 @@
 #include "orionld/types/RegCache.h"                              // RegCache
 #include "orionld/types/RegCacheItem.h"                          // RegCacheItem
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/regMatch/regMatchOperation.h"                  // regMatchOperation
 #include "orionld/regMatch/regMatchInformationArrayForQuery.h"   // regMatchInformationArrayForQuery
 #include "orionld/distOp/viaMatch.h"                             // viaMatch
@@ -58,34 +62,34 @@ DistOp* regMatchForEntitiesQuery
   {
     if ((regP->mode & regMode) == 0)
     {
-      LM_T(LmtRegMatch, ("%s: No Reg Match due to RegistrationMode ('%s' vs '%s')", regP->regId, registrationModeToString(regP->mode), registrationModeToString(regMode)));
+      KT_T(KtRegMatch, "%s: No Reg Match due to RegistrationMode ('%s' vs '%s')", regP->regId, registrationModeToString(regP->mode), registrationModeToString(regMode));
       continue;
     }
 
     if (regMatchOperation(regP, opType) == false)
     {
-      LM_T(LmtRegMatch, ("%s: No Reg Match due to Operation (operation == '%s')", regP->regId, distOpTypeToString(opType)));
+      KT_T(KtRegMatch, "%s: No Reg Match due to Operation (operation == '%s')", regP->regId, distOpTypeToString(opType));
       continue;
     }
 
     // Loop detection
     if (viaMatch(orionldState.in.via, regP->hostAlias) == true)
     {
-      LM_T(LmtRegMatch, ("%s: No Reg Match due to Loop (Via)", regP->regId));
+      KT_T(KtRegMatch, "%s: No Reg Match due to Loop (Via)", regP->regId);
       continue;
     }
 
     DistOp* distOpP = regMatchInformationArrayForQuery(regP, idListP, typeListP, attrListP);
     if (distOpP == NULL)
     {
-      LM_T(LmtRegMatch, ("%s: No Reg Match due to Information Array", regP->regId));
+      KT_T(KtRegMatch, "%s: No Reg Match due to Information Array", regP->regId);
       continue;
     }
 
     //
     // Add distOpP to the linked list (distOpList)
     //
-    LM_T(LmtRegMatch, ("%s: Reg Match !", regP->regId));
+    KT_T(KtRegMatch, "%s: Reg Match !", regP->regId);
 
     distOpList = distOpListsMerge(distOpList, distOpP);
   }

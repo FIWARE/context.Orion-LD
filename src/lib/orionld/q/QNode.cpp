@@ -22,7 +22,10 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                     // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "orionld/types/QNode.h"                               // Own interface
 #include "orionld/common/orionldState.h"                       // orionldState
@@ -43,7 +46,7 @@ QNode* qNode(QNodeType type)
     nodeP = (QNode*) kaAlloc(&orionldState.kalloc, sizeof(QNode));
 
   if (nodeP == NULL)
-    LM_RE(NULL, ("Internal Error (out of memory)"));
+    KT_RE(NULL, "Internal Error (out of memory)");
 
   nodeP->type    = type;
   nodeP->next    = NULL;

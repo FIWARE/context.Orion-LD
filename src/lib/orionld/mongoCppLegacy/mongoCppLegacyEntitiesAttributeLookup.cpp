@@ -26,17 +26,15 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjArray
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
+#include "mongoBackend/MongoGlobal.h"                            // getMongoConnection, releaseMongoConnection, ...
 
 #include "orionld/common/orionldState.h"                         // orionldState
-
-#include "mongoBackend/MongoGlobal.h"                            // getMongoConnection, releaseMongoConnection, ...
 #include "orionld/common/eqForDot.h"                             // eqForDot
 #include "orionld/mongoCppLegacy/mongoCppLegacyDataToKjTree.h"   // mongoCppLegacyDataToKjTree
 #include "orionld/mongoCppLegacy/mongoCppLegacyEntitiesAttributeLookup.h"   // Own interface
@@ -106,7 +104,7 @@ KjNode* mongoCppLegacyEntitiesAttributeLookup(char** entityArray, int entitiesIn
 
     KjNode* entityP = mongoCppLegacyDataToKjTree(&bsonObj, false, &title, &details);
     if (entityP == NULL)
-      LM_E(("mongoCppLegacyDataToKjTree error: %s: %s", title, details));
+      KT_E("mongoCppLegacyDataToKjTree error: %s: %s", title, details);
     else
       kjChildAdd(kjTree, entityP);
   }

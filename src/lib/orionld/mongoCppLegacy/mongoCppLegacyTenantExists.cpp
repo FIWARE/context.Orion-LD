@@ -28,7 +28,10 @@
 
 #include "mongo/client/dbclient.h"                                   // mongo legacy driver
 
-#include "logMsg/logMsg.h"                                           // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                           // KT_*
+}
 
 #include "mongoBackend/MongoGlobal.h"                                // getMongoConnection
 
@@ -65,7 +68,7 @@ bool mongoCppLegacyTenantExists(const char* tenantName)
 
     if (mongoCppLegacyDbFieldGet(&result, "databases", &bsonElement) == false)
     {
-      LM_E(("Database Error (mongoCppLegacyDbFieldGet('databases') failed)"));
+      KT_E("Database Error (mongoCppLegacyDbFieldGet('databases') failed)");
       return false;
     }
     dbV = bsonElement.Array();
@@ -84,11 +87,11 @@ bool mongoCppLegacyTenantExists(const char* tenantName)
   }
   catch (const std::exception &e)
   {
-    LM_E(("Database Error (listDatabases: %s)", e.what()));
+    KT_E("Database Error (listDatabases: %s)", e.what());
   }
   catch (...)
   {
-    LM_E(("Database Error (listDatabases: %s)", "generic exception"));
+    KT_E("Database Error (listDatabases: %s)", "generic exception");
   }
 
   releaseMongoConnection(connectionP);

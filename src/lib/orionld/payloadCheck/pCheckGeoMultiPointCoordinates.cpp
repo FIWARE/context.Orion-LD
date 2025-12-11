@@ -26,10 +26,9 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                        // KT_*
 #include "kjson/KjNode.h"                                         // KjNode
 }
-
-#include "logMsg/logMsg.h"                                        // LM_*
 
 #include "orionld/common/orionldError.h"                          // orionldError
 #include "orionld/payloadCheck/pCheckGeoPointCoordinates.h"       // pCheckGeoPointCoordinates
@@ -48,7 +47,7 @@ bool pCheckGeoMultiPointCoordinates(KjNode* coordinatesP)
   {
     if (memberP->type != KjArray)
     {
-      LM_W(("Bad Input ('coordinates' must be a JSON Array)"));
+      KT_W("Bad Input ('coordinates' must be a JSON Array)");
       orionldError(OrionldBadRequestData, "Invalid GeoJSON", "'coordinates' in a 'MultiPoint' must be a JSON Array of Arrays", 400);
       return false;
     }

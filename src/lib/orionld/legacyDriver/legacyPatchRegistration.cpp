@@ -24,15 +24,13 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                             // KT_*
 #include "kalloc/kaStrdup.h"                                           // kaStrdup
 #include "kjson/kjLookup.h"                                            // kjLookup
 #include "kjson/kjBuilder.h"                                           // kjChildAdd, ...
 #include "kjson/kjRender.h"                                            // kjRender (DEBUG)
 #include "kjson/kjChildAddOrReplace.h"                                 // kjChildAddOrReplace
 }
-
-#include "logMsg/logMsg.h"                                             // LM_*
-#include "logMsg/traceLevels.h"                                        // Lmt*
 
 #include "orionld/common/orionldState.h"                               // orionldState
 #include "orionld/common/orionldError.h"                               // orionldError
@@ -254,14 +252,14 @@ void ngsildTimeIntervalToAPIv1Datamodel(KjNode* tiP)
 
   dateTime = dateTimeFromString(startP->value.s, errorString, sizeof(errorString));
   if (dateTime < 0)
-    LM_E(("startAt error: %s", errorString));
+    KT_E("startAt error: %s", errorString);
 
   startP->type    = KjFloat;
   startP->value.f = dateTime;
 
   dateTime = dateTimeFromString(endP->value.s, errorString, sizeof(errorString));
   if (dateTime < 0)
-    LM_E(("endAt error: %s", errorString));
+    KT_E("endAt error: %s", errorString);
 
   endP->type      = KjFloat;
   endP->value.f   = dateTime;
@@ -280,7 +278,7 @@ void dbModelFromApiExpires(KjNode* expiresP)
   double timestamp = dateTimeFromString(expiresP->value.s, errorString, sizeof(errorString));
 
   if (timestamp < 0)
-    LM_W(("expiresAt: %s", errorString));
+    KT_W("expiresAt: %s", errorString);
 
   expiresP->value.f  = timestamp;
   expiresP->type     = KjFloat;
@@ -603,12 +601,12 @@ bool legacyPatchRegistration(void)
   OrionldContext* contextP = NULL;  // Needed but not used in legacy implementation
   if (pcheckRegistration(regMode, orionldState.requestTree, registrationId, false, false, &propertyTree, &contextP) == false)
   {
-    LM_E(("pcheckRegistration FAILED"));
+    KT_E("pcheckRegistration FAILED");
     return false;
   }
 
   if (contextP != NULL)
-    LM_W(("Registration @context in place but this is not supported by the legacy implementation of PATCH Registration"));
+    KT_W("Registration @context in place but this is not supported by the legacy implementation of PATCH Registration");
 
 
   //

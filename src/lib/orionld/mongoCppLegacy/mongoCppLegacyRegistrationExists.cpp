@@ -24,11 +24,9 @@
 */
 #include "mongo/client/dbclient.h"                               // MongoDB C++ Client Legacy Driver
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
+#include "mongoBackend/MongoGlobal.h"                            // getMongoConnection, releaseMongoConnection, ...
 
 #include "orionld/common/orionldState.h"                         // orionldState
-#include "mongoBackend/MongoGlobal.h"                            // getMongoConnection, releaseMongoConnection, ...
 
 
 

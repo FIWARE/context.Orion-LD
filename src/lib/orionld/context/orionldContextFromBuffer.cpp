@@ -24,17 +24,16 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjParse.h"                                       // kjParse
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
-
 #include "orionld/types/OrionldContext.h"                        // OrionldContext, OrionldContextOrigin
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/context/orionldContextFromTree.h"              // orionldContextFromTree
 #include "orionld/context/orionldContextFromBuffer.h"            // Own interface
 
@@ -58,7 +57,7 @@ OrionldContext* orionldContextFromBuffer(char* url, OrionldContextOrigin origin,
   {
     char buf[256];
     strncpy(buf, buffer, sizeof(buf) - 1);
-    LM_E(("JSON Parse Error for @context '%s' (first bytes of json: %s)", url, buf));
+    KT_E("JSON Parse Error for @context '%s' (first bytes of json: %s)", url, buf);
 
     orionldError(OrionldBadRequestData, "JSON Parse Error in @context", url, 400);
     return NULL;
@@ -71,7 +70,7 @@ OrionldContext* orionldContextFromBuffer(char* url, OrionldContextOrigin origin,
     return NULL;
   }
 
-  LM_T(LmtCoreContext, ("Parsed the context buffer into a KjNode tree and looked up the @context member"));
+  KT_T(KtCoreContext, "Parsed the context buffer into a KjNode tree and looked up the @context member");
   OrionldContext* contextP = orionldContextFromTree(url, origin, id, contextNodeP);
   return contextP;
 }

@@ -22,24 +22,21 @@
 *
 * Author: Ken Zangelin
 */
-#include "mongo/client/dbclient.h"                               // MongoDB C++ Client Legacy Driver
+#include "mongo/client/dbclient.h"                                                 // MongoDB C++ Client Legacy Driver
 
 extern "C"
 {
-#include "kjson/KjNode.h"                                        // KjNode
-#include "kjson/kjBuilder.h"                                     // kjArray, kjChildAdd, ...
-#include "kjson/kjLookup.h"                                      // kjLookup
+#include "ktrace/kTrace.h"                                                         // KT_*
+#include "kjson/KjNode.h"                                                          // KjNode
+#include "kjson/kjBuilder.h"                                                       // kjArray, kjChildAdd, ...
+#include "kjson/kjLookup.h"                                                        // kjLookup
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
-
-#include "orionld/common/orionldState.h"                         // orionldState
-
-#include "mongoBackend/MongoGlobal.h"                            // getMongoConnection, releaseMongoConnection, ...
-#include "orionld/types/OrionldProblemDetails.h"                 // OrionldProblemDetails
-#include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
-#include "orionld/mongoCppLegacy/mongoCppLegacyDataToKjTree.h"   // mongoCppLegacyDataToKjTree
+#include "mongoBackend/MongoGlobal.h"                                              // getMongoConnection, releaseMongoConnection, ...
+#include "orionld/common/orionldState.h"                                           // orionldState
+#include "orionld/types/OrionldProblemDetails.h"                                   // OrionldProblemDetails
+#include "orionld/context/orionldContextItemAliasLookup.h"                         // orionldContextItemAliasLookup
+#include "orionld/mongoCppLegacy/mongoCppLegacyDataToKjTree.h"                     // mongoCppLegacyDataToKjTree
 #include "orionld/mongoCppLegacy/mongoCppLegacyEntityTypesFromRegistrationsGet.h"  // Own interface
 
 
@@ -56,7 +53,7 @@ void typeExtract(KjNode* regArray, KjNode* typeArray)
 
     if (contextRegistrationV == NULL)
     {
-      LM_W(("No contextRegistration in tree ..."));
+      KT_W("No contextRegistration in tree ...");
       continue;
     }
 
@@ -92,7 +89,7 @@ void entitiesAndPropertiesExtract(KjNode* regArray, KjNode* typeArray)
 
     if (contextRegistrationV == NULL)
     {
-      LM_W(("No contextRegistration in tree ..."));
+      KT_W("No contextRegistration in tree ...");
       continue;
     }
 
@@ -212,7 +209,7 @@ KjNode* mongoCppLegacyEntityTypesFromRegistrationsGet(bool details, const char* 
     KjNode*         regNode = mongoCppLegacyDataToKjTree(&bsonObj, false, &title, &details);
 
     if (regNode == NULL)
-      LM_E(("%s: %s", title, details));
+      KT_E("%s: %s", title, details);
     else
     {
       if (regArray == NULL)

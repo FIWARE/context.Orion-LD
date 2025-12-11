@@ -24,14 +24,12 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjObject, kjString, kjBoolean, ...
 #include "kjson/kjParse.h"                                       // kjParse
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
 
 #include "rest/ConnectionInfo.h"                                 // ConnectionInfo
 #include "apiTypesV2/Registration.h"                             // Registration
@@ -123,7 +121,7 @@ KjNode* kjTreeFromRegistration(ngsiv2::Registration* registrationP)
 
     if (numberToDate(registrationP->expires, dateExp, sizeof(dateExp)) == false)
     {
-      LM_E(("Error creating a stringified date for 'expires'"));
+      KT_E("Error creating a stringified date for 'expires'");
       orionldError(OrionldInternalError, "unable to create a stringified date", NULL, 500);
       return NULL;
     }
@@ -226,7 +224,7 @@ KjNode* kjTreeFromRegistration(ngsiv2::Registration* registrationP)
     // start
     if (numberToDate(registrationP->observationInterval.start, date, sizeof(date)) == false)
     {
-      LM_E(("Error creating a stringified date for 'observationalInterval start'"));
+      KT_E("Error creating a stringified date for 'observationalInterval start'");
       orionldError(OrionldInternalError, "Unable to create a stringified observationalInterval date", NULL, 500);
       return NULL;
     }
@@ -239,7 +237,7 @@ KjNode* kjTreeFromRegistration(ngsiv2::Registration* registrationP)
       // end
       if (numberToDate(registrationP->observationInterval.end, date, sizeof(date)) == false)
       {
-        LM_E(("Error creating a stringified date for 'observationalInterval endAt'"));
+        KT_E("Error creating a stringified date for 'observationalInterval endAt'");
         orionldError(OrionldInternalError, "Unable to create a stringified observationalInterval date", NULL, 500);
         return NULL;
       }
@@ -259,7 +257,7 @@ KjNode* kjTreeFromRegistration(ngsiv2::Registration* registrationP)
     // start
     if (numberToDate(registrationP->managementInterval.start, date, sizeof(date)) == false)
     {
-      LM_E(("Error creating a stringified date for 'managementInterval startAt'"));
+      KT_E("Error creating a stringified date for 'managementInterval startAt'");
       orionldError(OrionldInternalError, "Unable to create a stringified managementInterval date", NULL, 500);
       return NULL;
     }
@@ -272,7 +270,7 @@ KjNode* kjTreeFromRegistration(ngsiv2::Registration* registrationP)
       // end
       if (numberToDate(registrationP->managementInterval.end, date, sizeof(date)) == false)
       {
-        LM_E(("Error creating a stringified date for 'managementInterval endAt'"));
+        KT_E("Error creating a stringified date for 'managementInterval endAt'");
         orionldError(OrionldInternalError, "Unable to create a stringified managementInterval date", NULL, 500);
         return NULL;
       }

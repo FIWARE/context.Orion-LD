@@ -22,7 +22,10 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                     // LM_*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "orionld/types/QNode.h"                               // QNode
 #include "orionld/common/orionldState.h"                       // orionldState
@@ -59,7 +62,7 @@ static bool qNodeVariableChars(char* s, char** titleP, char** detailsP)
     {}
     else
     {
-      LM_W(("Bad Input (invalid character '0x%x')", *s & 0xFF));
+      KT_W("Bad Input (invalid character '0x%x')", *s & 0xFF);
       *titleP = (char*) "ngsi-ld query language: invalid character in variable name";
       *detailsP = s;
       s[1] = 0;
@@ -183,7 +186,7 @@ bool qLexCheck(QNode* qLexP, char** titleP, char** detailsP)
         {
           *titleP   = (char*) "ngsi-ld query language: after non-regexp comparison operator must come a non-regexp Value";
           *detailsP = (char*) qNodeType(nextType);
-          LM_E(("qLex Error: %s: %s", *titleP, *detailsP));
+          KT_E("qLex Error: %s: %s", *titleP, *detailsP);
           return false;
         }
       }

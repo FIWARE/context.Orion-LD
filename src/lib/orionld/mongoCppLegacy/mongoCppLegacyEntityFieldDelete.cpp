@@ -22,19 +22,16 @@
 *
 * Author: Ken Zangelin
 */
-#include "mongo/client/dbclient.h"                               // MongoDB C++ Client Legacy Driver
+#include "mongo/client/dbclient.h"                                   // MongoDB C++ Client Legacy Driver
 
 extern "C"
 {
-#include "kjson/KjNode.h"                                        // KjNode
+#include "kjson/KjNode.h"                                            // KjNode
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
+#include "mongoBackend/MongoGlobal.h"                                // getMongoConnection, releaseMongoConnection, ...
 
-#include "orionld/common/orionldState.h"                         // orionldState, dbName
-
-#include "mongoBackend/MongoGlobal.h"                            // getMongoConnection, releaseMongoConnection, ...
+#include "orionld/common/orionldState.h"                             // orionldState, dbName
 #include "orionld/mongoCppLegacy/mongoCppLegacyEntityFieldDelete.h"  // Own interface
 
 
@@ -50,7 +47,6 @@ bool mongoCppLegacyEntityFieldDelete(const char* entityId, const char* fieldPath
   //
   mongo::BSONObjBuilder  filter;
   filter.append("_id.id", entityId);
-
 
   //
   // Populate update

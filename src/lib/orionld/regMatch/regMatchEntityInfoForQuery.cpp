@@ -26,15 +26,15 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
 
-#include "logMsg/logMsg.h"                                       // LM_T
-
 #include "orionld/types/RegCacheItem.h"                          // RegCacheItem, RegIdPattern
 #include "orionld/types/StringArray.h"                           // StringArray
 #include "orionld/types/DistOp.h"                                // DistOp
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/regMatch/regMatchEntityInfoForQuery.h"         // regMatchEntityInfoForQuery
 
 
@@ -66,7 +66,7 @@ bool regMatchEntityInfoForQuery(RegCacheItem* regP, KjNode* entityInfoP, StringA
   // This should never happen
   if (regEntityTypeP == NULL)
   {
-    LM_E(("%s: invalid registration (no type in information::entities)"));
+    KT_E("%s: invalid registration (no type in information::entities)");
     return false;
   }
 
@@ -90,7 +90,7 @@ bool regMatchEntityInfoForQuery(RegCacheItem* regP, KjNode* entityInfoP, StringA
 
     if (match == false)
     {
-      LM_T(LmtRegMatch, ("%s: No Reg Match due to entity type ('%s' in reg)", regP->regId, entityType));
+      KT_T(KtRegMatch, "%s: No Reg Match due to entity type ('%s' in reg)", regP->regId, entityType);
       return false;
     }
   }
@@ -117,7 +117,7 @@ bool regMatchEntityInfoForQuery(RegCacheItem* regP, KjNode* entityInfoP, StringA
 
       if (match == false)
       {
-        LM_T(LmtRegMatch, ("%s: No Reg Match due to entity id ('%s' in reg)", regP->regId, regEntityId));
+        KT_T(KtRegMatch, "%s: No Reg Match due to entity id ('%s' in reg)", regP->regId, regEntityId);
         return false;
       }
     }
@@ -127,7 +127,7 @@ bool regMatchEntityInfoForQuery(RegCacheItem* regP, KjNode* entityInfoP, StringA
 
       if (ripP == NULL)
       {
-        LM_E(("%s: Internal Error (the regex corresponding to this idPattern could not be found)", regP->regId));
+        KT_E("%s: Internal Error (the regex corresponding to this idPattern could not be found)", regP->regId);
         return false;
       }
       else
@@ -147,7 +147,7 @@ bool regMatchEntityInfoForQuery(RegCacheItem* regP, KjNode* entityInfoP, StringA
 
         if (match == false)
         {
-          LM_T(LmtRegMatch, ("%s: No Reg Match due to entity id (idPattern in registration VS query entity-id-list)", regP->regId));
+          KT_T(KtRegMatch, "%s: No Reg Match due to entity id (idPattern in registration VS query entity-id-list)", regP->regId);
           return false;
         }
       }

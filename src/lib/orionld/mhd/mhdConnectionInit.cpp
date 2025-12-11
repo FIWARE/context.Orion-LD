@@ -35,13 +35,12 @@ extern "C"
 #include "kjson/kjBuilder.h"                                     // kjString, kjChildAdd
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/types/OrionLdRestService.h"                    // ORIONLD_URIPARAM_LIMIT, ...
 #include "orionld/types/OrionldMimeType.h"                       // mimeTypeFromString
 #include "orionld/types/Verb.h"                                  // Verb
 #include "orionld/common/orionldState.h"                         // orionldState, orionldStateInit
 #include "orionld/common/orionldError.h"                         // orionldError
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/performance.h"                          // REQUEST_PERFORMANCE
 #include "orionld/common/tenantList.h"                           // tenant0
 #include "orionld/common/orionldTenantLookup.h"                  // orionldTenantLookup
@@ -49,7 +48,6 @@ extern "C"
 #include "orionld/common/stringStrip.h"                          // stringStrip
 #include "orionld/common/dateTime.h"                             // dateTimeFromString
 #include "orionld/common/forbidden.h"                            // forbidden
-#include "orionld/common/traceLevels.h"                          // K-Trace trace levels
 #include "orionld/http/verbGet.h"                                // verbGet
 #include "orionld/context/orionldContextFromUrl.h"               // orionldContextFromUrl
 #include "orionld/service/orionldServiceInit.h"                  // orionldRestServiceV
@@ -119,7 +117,7 @@ void optionsParse(const char* options)
 
       *cP = 0;  // Zero-terminate
 
-      LM_T(LmtUriParamOptions, ("Got a value for the 'options' URI param: %s", optionStart));
+      KT_T(KtOptions, "Got a value for the 'options' URI param: %s", optionStart);
 
       if      (strcmp(optionStart, "update")        == 0)  orionldState.uriParamOptions.update        = true;
       else if (strcmp(optionStart, "replace")       == 0)  orionldState.uriParamOptions.replace       = true;
@@ -134,7 +132,7 @@ void optionsParse(const char* options)
       else if (strcmp(optionStart, "count")         == 0)
       {
         orionldState.uriParams.count               = true;  // NGSIv2 compatibility
-        LM_T(LmtCount, ("Count is ON"));
+        KT_T(KtCount, "Count is ON");
       }
       else if (strcmp(optionStart, "values")        == 0)  orionldState.uriParamOptions.values        = true;  // NGSIv2 compatibility
       else if (strcmp(optionStart, "unique")        == 0)  orionldState.uriParamOptions.uniqueValues  = true;  // NGSIv2 compatibility
@@ -144,7 +142,7 @@ void optionsParse(const char* options)
       else if (strcmp(optionStart, "upsert")        == 0)  orionldState.uriParamOptions.upsert        = true;  // NGSIv2 compatibility
       else
       {
-        LM_W(("Invalid 'options' value: %s", optionStart));
+        KT_W("Invalid 'options' value: %s", optionStart);
         orionldError(OrionldBadRequestData, "Invalid value for URI param /options/", optionStart, 400);
         return;
       }
@@ -289,9 +287,9 @@ MimeType acceptHeaderParse(char* accept, bool textOk)
     // GET the MIME type, check for new winner
     // REMEMBER:  JSON is the default Mime Type and if equal weight, JSON wins
     //
-    // LM_T(LmtMimeType, ("mimeV[%d]: '%s'", ix, mimeV[ix]));
+    // KT_T(KtMimeType, "mimeV[%d]: '%s'", ix, mimeV[ix]);
     mimeType                 = mimeTypeFromString(mimeV[ix], NULL, true, textOk, &orionldState.acceptMask);
-    // LM_T(LmtMimeType, ("mimeType:   %d", mimeType));
+    // KT_T(KtMimeType, "mimeType:   %d", mimeType);
     orionldState.acceptMask |= (1 << mimeType);  // It's OK to include "NOMIMETYPE"
 
     if (mimeType > MT_NONE)
@@ -314,7 +312,7 @@ MimeType acceptHeaderParse(char* accept, bool textOk)
     }
   }
 
-  // LM_T(LmtMimeType, ("winner: %d (%s)", winner, mimeType(winner)));
+  // KT_T(KtMimeType, "winner: %d (%s)", winner, mimeType(winner));
   return winner;
 }
 
@@ -398,9 +396,9 @@ bool linkHeaderParse(char* value, char** linkP, char** relP, char** typeP)
   *linkEnd = 0;
   *relEnd  = 0;
 
-  LM_T(LmtLinkHeader, ("link: '%s'", linkStart));
-  LM_T(LmtLinkHeader, ("rel:  '%s'", relStart));
-  LM_T(LmtLinkHeader, ("type: '%s'", typeStart));
+  KT_T(KtLinkHeader, "link: '%s'", linkStart);
+  KT_T(KtLinkHeader, "rel:  '%s'", relStart);
+  KT_T(KtLinkHeader, "type: '%s'", typeStart);
 
   *linkP = linkStart;
   *relP  = relStart;
@@ -433,7 +431,7 @@ static bool linkContextGet(char* link)
     if (orionldState.httpStatusCode < 300)
       orionldError(OrionldInternalError, "Unknown error", "Unknown error getting @context via Link header", 500);
 
-    LM_RE(false, ("orionldContextFromUrl returned NULL - no context!"));
+    KT_RE(false, "orionldContextFromUrl returned NULL - no context!");
   }
 
   orionldState.link = orionldState.contextP->url;
@@ -456,7 +454,7 @@ static void linkHeaderTreat(char* value)
   char* rel  = NULL;
   char* type = NULL;
 
-  LM_T(LmtLinkHeader, ("Got a Link header: '%s'", value));
+  KT_T(KtLinkHeader, "Got a Link header: '%s'", value);
 
   // It's a comma-separated list
   char* start             = (char*) value;
@@ -476,12 +474,12 @@ static void linkHeaderTreat(char* value)
     bool r = linkHeaderParse((char*) start, &link, &rel, &type);
     if (r == true)
     {
-      LM_T(LmtLinkHeader, ("Got a Link header: '%s', '%s', '%s'", link, rel, type));
+      KT_T(KtLinkHeader, "Got a Link header: '%s', '%s', '%s'", link, rel, type);
 
       if (strcmp(rel, "next") == 0)
-        LM_T(LmtLinkHeader, ("Next Link: '%s", link));
+        KT_T(KtLinkHeader, "Next Link: '%s", link);
       else if (strcmp(rel, "prev") == 0)
-        LM_T(LmtLinkHeader, ("Prev Link: '%s", link));
+        KT_T(KtLinkHeader, "Prev Link: '%s", link);
       else if (link == NULL)  // Assuming context link header
         orionldError(OrionldInternalError, "Invalid NGSI-LD request", "Link header without link", 400);
       else if (strcmp(rel, "http://www.w3.org/ns/json-ld#context") == 0)
@@ -492,10 +490,10 @@ static void linkHeaderTreat(char* value)
           orionldState.linkHttpHeaderPresent = true;
 
           if (pCheckUri(orionldState.link, "Link", true) == false)
-            LM_W(("pCheckLinkHeader failed"));  // ProblemDetails set by pCheckLinkHeader
+            KT_W("pCheckLinkHeader failed");  // ProblemDetails set by pCheckLinkHeader
           else if (linkContextGet(orionldState.link) == false)  // Lookup/Download if necessary
           {
-            LM_E(("linkContextGet failed"));
+            KT_E("linkContextGet failed");
 
             // Mark error unless already marked
             if (orionldState.httpStatusCode < 300)
@@ -524,7 +522,7 @@ static void linkHeaderTreat(char* value)
 //
 static MHD_Result orionldHttpHeaderReceive(void* cbDataP, MHD_ValueKind kind, const char* key, const char* value)
 {
-  LM_T(LmtHeaders, ("Got an HTTP Header: '%s': '%s'", key, value));
+  KT_T(KtHttpHeader, "Got an HTTP Header: '%s': '%s'", key, value);
 
   //
   // Need to keep track of ALL incoming headers, in case they're asked for in forwarded requests
@@ -565,7 +563,7 @@ static MHD_Result orionldHttpHeaderReceive(void* cbDataP, MHD_ValueKind kind, co
     orionldState.scopes = strSplit((char*) value, ',', orionldState.scopeV, K_VEC_SIZE(orionldState.scopeV));
     if (orionldState.scopes == -1)
     {
-      LM_W(("Bad Input (too many scopes)"));
+      KT_W("Bad Input (too many scopes)");
       orionldError(OrionldBadRequestData, "Bad value for HTTP header /NGSILD-Scope/", value, 400);
     }
   }
@@ -583,7 +581,7 @@ static MHD_Result orionldHttpHeaderReceive(void* cbDataP, MHD_ValueKind kind, co
     {
       const char* details = "HTTP Header /Accept/ contains none of 'application/json', 'application/ld+json', or 'application/geo+json'";
 
-      LM_W(("Bad Input (HTTP Header /Accept/ none of 'application/json', 'application/ld+json', or 'application/geo+json')"));
+      KT_W("Bad Input (HTTP Header /Accept/ none of 'application/json', 'application/ld+json', or 'application/geo+json')");
       orionldError(OrionldBadRequestData, "Invalid Accept mime-type", details, 406);
     }
   }
@@ -702,7 +700,7 @@ static char* hyphensEncode(char* value)
 //
 MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* key, const char* value)
 {
-  LM_T(LmtUriParams, ("Got a URI param '%s': '%s'", key, value));
+  KT_T(KtUrlParam, "Got a URI param '%s': '%s'", key, value);
 
   // NULL/empty URI param value
   if ((value == NULL) || (*value == 0))
@@ -866,7 +864,7 @@ MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
     if (strcmp(value, "true") == 0)
     {
       orionldState.uriParams.count = true;
-      LM_T(LmtCount, ("Count is ON"));
+      KT_T(KtCount, "Count is ON");
     }
     else if (strcmp(value, "false") != 0)
     {
@@ -1221,7 +1219,7 @@ static OrionLdRestService* serviceLookup(void)
     if (strncmp(orionldState.urlPath, subordinatePath, subordinatePathLen) == 0)
     {
       orionldState.wildcard[0] = &orionldState.urlPath[subordinatePathLen];
-      LM_T(LmtSubordinate, ("Got a notification from a subordinate subscription (parent sub: '%s')", orionldState.wildcard[0]));
+      KT_T(KtSubordinate, "Got a notification from a subordinate subscription (parent sub: '%s')", orionldState.wildcard[0]);
       // orionldState.subordinateNotification = true;
       return subordinateNotificationServiceP;
     }
@@ -1422,7 +1420,7 @@ MHD_Result mhdConnectionInit
 
   if (orionldState.httpStatusCode > 207)
   {
-    LM_W(("Error detected in a HTTP header: %s: %s", orionldState.pd.title, orionldState.pd.detail));
+    KT_W("Error detected in a HTTP header: %s: %s", orionldState.pd.title, orionldState.pd.detail);
     return MHD_YES;  // orionldHttpHeaderReceive sets the error
   }
 
@@ -1449,7 +1447,7 @@ MHD_Result mhdConnectionInit
   {
     if ((orionldState.in.contentType != MT_JSON) && (orionldState.in.contentType != MT_JSONLD))
     {
-      LM_W(("Bad Input (invalid Content-Type: '%s')", orionldState.in.contentTypeString));
+      KT_W("Bad Input (invalid Content-Type: '%s')", orionldState.in.contentTypeString);
       orionldError(OrionldBadRequestData, "unsupported format of payload", "only application/json and application/ld+json are supported", 415);
       return MHD_YES;
     }

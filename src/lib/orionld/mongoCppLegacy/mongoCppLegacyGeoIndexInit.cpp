@@ -26,17 +26,15 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                        // KT_*
 #include "kjson/KjNode.h"                                         // KjNode
 #include "kjson/kjLookup.h"                                       // kjLookup
 }
 
-#include "logMsg/logMsg.h"                                        // LM_*
-#include "logMsg/traceLevels.h"                                   // Lmt*
+#include "mongoBackend/MongoGlobal.h"                             // getMongoConnection, releaseMongoConnection, ...
 
 #include "orionld/common/orionldState.h"                          // orionldState
 #include "orionld/common/tenantList.h"                            // tenantList
-
-#include "mongoBackend/MongoGlobal.h"                             // getMongoConnection, releaseMongoConnection, ...
 #include "orionld/db/dbGeoIndexLookup.h"                          // dbGeoIndexLookup
 #include "orionld/mongoCppLegacy/mongoCppLegacyDataToKjTree.h"    // mongoCppLegacyDataToKjTree
 #include "orionld/mongoCppLegacy/mongoCppLegacyGeoIndexCreate.h"  // mongoCppLegacyGeoIndexCreate
@@ -98,13 +96,13 @@ void mongoCppLegacyGeoIndexInit(void)
 
         if (typeP == NULL)
         {
-          LM_E(("Database Error (attribute '%s' has no 'type' field)", attrP->name));
+          KT_E("Database Error (attribute '%s' has no 'type' field)", attrP->name);
           continue;
         }
 
         if (typeP->type != KjString)
         {
-          LM_E(("Database Error (attribute with a 'type' field that is not a string)"));
+          KT_E("Database Error (attribute with a 'type' field that is not a string)");
           continue;
         }
 

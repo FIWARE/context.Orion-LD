@@ -22,28 +22,27 @@
 *
 * Author: Ken Zangelin
 */
-#include <string.h>                                            // strlen
-#include <string>                                              // std::string
-#include <vector>                                              // std::vector
+#include <string.h>                                              // strlen
+#include <string>                                                // std::string
+#include <vector>                                                // std::vector
 
 extern "C"
 {
-#include "kjson/KjNode.h"                                      // KjNode
-#include "kjson/kjBuilder.h"                                   // kjChildAdd, kjObject, kjArray, ...
-#include "kalloc/kaStrdup.h"                                   // kaStrdup
+#include "ktrace/kTrace.h"                                       // KT_*
+#include "kjson/KjNode.h"                                        // KjNode
+#include "kjson/kjBuilder.h"                                     // kjChildAdd, kjObject, kjArray, ...
+#include "kalloc/kaStrdup.h"                                     // kaStrdup
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
-#include "orionld/types/QNode.h"                               // QNode
-#include "orionld/common/orionldState.h"                       // orionldState
-#include "orionld/common/orionldError.h"                       // orionldError
-#include "orionld/kjTree/kjEntityNormalizedToConcise.h"        // kjEntityNormalizedToConcise
-#include "orionld/kjTree/kjEntityNormalizedToSimplified.h"     // kjEntityNormalizedToSimplified
-#include "orionld/payloadCheck/pcheckQuery.h"                  // pcheckQuery
+#include "orionld/types/QNode.h"                                 // QNode
+#include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/orionldError.h"                         // orionldError
+#include "orionld/kjTree/kjEntityNormalizedToConcise.h"          // kjEntityNormalizedToConcise
+#include "orionld/kjTree/kjEntityNormalizedToSimplified.h"       // kjEntityNormalizedToSimplified
+#include "orionld/payloadCheck/pcheckQuery.h"                    // pcheckQuery
 #include "orionld/mongoCppLegacy/mongoCppLegacyEntitiesQuery.h"  // mongoCppLegacyEntitiesQuery
-#include "orionld/dbModel/dbModelToApiEntity.h"                // dbModelToApiEntity2
-#include "orionld/legacyDriver/legacyPostQuery.h"              // Own Interface
+#include "orionld/dbModel/dbModelToApiEntity.h"                  // dbModelToApiEntity2
+#include "orionld/legacyDriver/legacyPostQuery.h"                // Own Interface
 
 
 
@@ -102,7 +101,7 @@ bool legacyPostQuery(void)
 
       if ((entityP = dbModelToApiEntity2(dbEntityP, orionldState.uriParamOptions.sysAttrs, orionldState.out.format, lang, true, &pd)) == NULL)
       {
-        LM_E(("Database Error (%s: %s)", pd.title, pd.detail));
+        KT_E("Database Error (%s: %s)", pd.title, pd.detail);
         orionldState.httpStatusCode = 500;
         return false;
       }

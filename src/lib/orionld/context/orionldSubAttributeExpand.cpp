@@ -22,10 +22,7 @@
 *
 * Author: Ken Zangelin
 */
-#include <string.h>                                              // strchr
-
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
+#include <string.h>                                              // strcmp
 
 #include "orionld/context/orionldContextItemAlreadyExpanded.h"   // orionldContextItemAlreadyExpanded
 #include "orionld/context/orionldContextItemExpand.h"            // orionldContextItemExpand

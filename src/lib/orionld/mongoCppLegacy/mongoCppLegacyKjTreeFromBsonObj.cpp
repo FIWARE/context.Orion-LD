@@ -34,9 +34,6 @@ extern "C"
 #include "kjson/kjBuilder.h"                                         // kjBuilder
 }
 
-#include "logMsg/logMsg.h"                                           // LM_*
-#include "logMsg/traceLevels.h"                                      // Lmt*
-
 #include "orionld/common/orionldState.h"                             // orionldState, orionldStateDelayedFreeEnqueue
 #include "orionld/mongoCppLegacy/mongoCppLegacyKjTreeFromBsonObj.h"  // Own interface
 

@@ -24,26 +24,25 @@
 */
 #include <string>
 
-#include "mongo/client/dbclient.h"                                       // MongoDB C++ Client Legacy Driver
+#include "mongo/client/dbclient.h"                                                   // MongoDB C++ Client Legacy Driver
 
 extern "C"
 {
-#include "kjson/KjNode.h"                                                // KjNode
-#include "kjson/kjBuilder.h"                                             // kjArray, ...
-#include "kjson/kjParse.h"                                               // kjParse
-#include "kjson/kjRender.h"                                              // kjRender - TMP
+#include "ktrace/kTrace.h"                                                           // KT_*
+#include "kjson/KjNode.h"                                                            // KjNode
+#include "kjson/kjBuilder.h"                                                         // kjArray, ...
+#include "kjson/kjParse.h"                                                           // kjParse
+#include "kjson/kjRender.h"                                                          // kjRender - TMP
 }
 
-#include "logMsg/logMsg.h"                                               // LM_*
-#include "logMsg/traceLevels.h"                                          // Lmt*
+#include "mongoBackend/MongoGlobal.h"                                                // getMongoConnection, releaseMongoConnection, ...
+#include "mongoBackend/safeMongo.h"                                                  // getStringFieldF, ...
 
-#include "mongoBackend/MongoGlobal.h"                                    // getMongoConnection, releaseMongoConnection, ...
-#include "mongoBackend/safeMongo.h"                                      // getStringFieldF, ...
-#include "orionld/common/orionldState.h"                                 // orionldState, dbName
-#include "orionld/mongoCppLegacy/mongoCppLegacyDbNumberFieldGet.h"       // mongoCppLegacyDbNumberFieldGet
-#include "orionld/mongoCppLegacy/mongoCppLegacyDbStringFieldGet.h"       // mongoCppLegacyDbStringFieldGet
-#include "orionld/mongoCppLegacy/mongoCppLegacyDbObjectFieldGet.h"       // mongoCppLegacyDbObjectFieldGet
-#include "orionld/mongoCppLegacy/mongoCppLegacyDbArrayFieldGet.h"        // mongoCppLegacyDbArrayFieldGet
+#include "orionld/common/orionldState.h"                                             // orionldState, dbName
+#include "orionld/mongoCppLegacy/mongoCppLegacyDbNumberFieldGet.h"                   // mongoCppLegacyDbNumberFieldGet
+#include "orionld/mongoCppLegacy/mongoCppLegacyDbStringFieldGet.h"                   // mongoCppLegacyDbStringFieldGet
+#include "orionld/mongoCppLegacy/mongoCppLegacyDbObjectFieldGet.h"                   // mongoCppLegacyDbObjectFieldGet
+#include "orionld/mongoCppLegacy/mongoCppLegacyDbArrayFieldGet.h"                    // mongoCppLegacyDbArrayFieldGet
 #include "orionld/mongoCppLegacy/mongoCppLegacyEntityListLookupWithIdTypeCreDate.h"  // Own interface
 
 
@@ -74,7 +73,7 @@ KjNode* mongoCppLegacyEntityListLookupWithIdTypeCreDate(KjNode* entityIdsArray, 
     }
     catch (...)
     {
-      LM_E(("Out of memory?"));
+      KT_E("Out of memory?");
       return NULL;
     }
   }
@@ -102,7 +101,7 @@ KjNode* mongoCppLegacyEntityListLookupWithIdTypeCreDate(KjNode* entityIdsArray, 
   }
   catch (...)
   {
-    LM_E(("mongo query threw an exception"));
+    KT_E("mongo query threw an exception");
     return NULL;
   }
 
@@ -116,35 +115,35 @@ KjNode* mongoCppLegacyEntityListLookupWithIdTypeCreDate(KjNode* entityIdsArray, 
 
     if (!nextSafeOrErrorF(cursorP, &bsonObj, &errorString))
     {
-      LM_E(("Internal Error (unable to extract entity from database: %s)", errorString.c_str()));
+      KT_E("Internal Error (unable to extract entity from database: %s)", errorString.c_str());
       continue;
     }
 
     mongo::BSONObj  idField;
     if (mongoCppLegacyDbObjectFieldGet(&bsonObj, "_id", &idField) == false)
     {
-      LM_E(("Internal Error (unable to extract the field '_id' from an entity"));
+      KT_E("Internal Error (unable to extract the field '_id' from an entity");
       continue;
     }
 
     char* idString = mongoCppLegacyDbStringFieldGet(&idField, "id");
     if (idString == NULL)
     {
-      LM_E(("Internal Error (unable to extract the field '_id.id' from an entity"));
+      KT_E("Internal Error (unable to extract the field '_id.id' from an entity");
       continue;
     }
 
     char* typeString = mongoCppLegacyDbStringFieldGet(&idField, "type");
     if (typeString == NULL)
     {
-      LM_E(("Internal Error (unable to extract the field '_id.type' from the entity '%s'", idString));
+      KT_E("Internal Error (unable to extract the field '_id.type' from the entity '%s'", idString);
       continue;
     }
 
     double creDate;
     if (mongoCppLegacyDbNumberFieldGet(&bsonObj, "creDate", &creDate) == false)
     {
-      LM_E(("Internal Error (unable to extract the field 'creDate' from the entity '%s'", idString));
+      KT_E("Internal Error (unable to extract the field 'creDate' from the entity '%s'", idString);
       continue;
     }
 
@@ -186,7 +185,7 @@ KjNode* mongoCppLegacyEntityListLookupWithIdTypeCreDate(KjNode* entityIdsArray, 
     ++entities;
     if (entities >= 1000)
     {
-      LM_W(("Too many entities - breaking loop at 1000"));
+      KT_W("Too many entities - breaking loop at 1000");
       break;
     }
   }

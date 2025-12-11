@@ -29,9 +29,6 @@ extern "C"
 #include "kjson/KjNode.h"                                          // KjNode
 }
 
-#include "logMsg/logMsg.h"                                         // LM_*
-#include "logMsg/traceLevels.h"                                    // Lmt*
-
 #include "orionld/mongoCppLegacy/mongoCppLegacyKjTreeToBsonObj.h"  // Own interface
 
 

@@ -24,6 +24,7 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                      // KT_*
 #include "kjson/KjNode.h"                                       // KjNode
 }
 
@@ -103,7 +104,7 @@ bool pCheckKeyValueArray(KjNode* csiP, OrionldContext** fwdContextPP)
       // If an @context is given for the registration, make sure it's valid
       if (regCacheItemContextCheck(NULL, valueP->value.s, fwdContextPP) == false)
       {
-        LM_W(("Unable to add Registration @context '%s' for an item in the reg-cache", valueP->value.s));
+        KT_W("Unable to add Registration @context '%s' for an item in the reg-cache", valueP->value.s);
         return 0;
       }
     }

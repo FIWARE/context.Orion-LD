@@ -24,8 +24,6 @@
 */
 #include <bson/bson.h>                                         // BSON
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
 #include "orionld/types/QNode.h"                               // QNode
 #include "orionld/common/orionldError.h"                       // orionldError
 #include "orionld/mongoc/mongocIndexString.h"                  // mongocIndexString

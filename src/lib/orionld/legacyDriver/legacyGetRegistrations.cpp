@@ -31,8 +31,6 @@ extern "C"
 #include "kbase/kStringSplit.h"                               // kStringSplit
 }
 
-#include "logMsg/logMsg.h"                                    // LM_*
-
 #include "common/defaultValues.h"
 #include "common/string.h"                                    // toString
 

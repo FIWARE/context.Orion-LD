@@ -22,10 +22,12 @@
 *
 * Author: Ken Zangelin
 */
-#include "mongo/client/dbclient.h"                             // mongo legacy driver
+#include "mongo/client/dbclient.h"                                   // mongo legacy driver
 
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                           // KT_*
+}
 
 #include "orionld/mongoCppLegacy/mongoCppLegacyDbNumberFieldGet.h"   // Own interface
 
@@ -57,7 +59,7 @@ bool mongoCppLegacyDbNumberFieldGet(const mongo::BSONObj* boP, const char* field
     break;
 
   default:
-    LM_E(("Runtime Error (field '%s' not a number (type=%d) in BSONObj '%s'", fieldName, boP->getField(fieldName).type(), boP->toString().c_str()));
+    KT_E("Runtime Error (field '%s' not a number (type=%d) in BSONObj '%s'", fieldName, boP->getField(fieldName).type(), boP->toString().c_str());
     return false;
   }
 

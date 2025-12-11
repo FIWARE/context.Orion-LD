@@ -24,22 +24,21 @@
 */
 extern "C"
 {
-#include "kjson/KjNode.h"                                      // KjNode
-#include "kjson/kjBuilder.h"                                   // kjString, kjObject, ...
-#include "kjson/kjLookup.h"                                    // kjLookup
+#include "ktrace/kTrace.h"                                                            // KT_*
+#include "kjson/KjNode.h"                                                             // KjNode
+#include "kjson/kjBuilder.h"                                                          // kjString, kjObject, ...
+#include "kjson/kjLookup.h"                                                           // kjLookup
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
-#include "orionld/common/orionldState.h"                       // orionldState
-#include "orionld/common/orionldError.h"                       // orionldError
-#include "orionld/common/SCOMPARE.h"                           // SCOMPAREx
-#include "orionld/common/entitySuccessPush.h"                  // entitySuccessPush
-#include "orionld/common/entityErrorPush.h"                    // entityErrorPush
+#include "orionld/common/orionldState.h"                                              // orionldState
+#include "orionld/common/orionldError.h"                                              // orionldError
+#include "orionld/common/SCOMPARE.h"                                                  // SCOMPAREx
+#include "orionld/common/entitySuccessPush.h"                                         // entitySuccessPush
+#include "orionld/common/entityErrorPush.h"                                           // entityErrorPush
 #include "orionld/mongoCppLegacy/mongoCppLegacyEntitiesDelete.h"                      // mongoCppLegacyEntitiesDelete
 #include "orionld/mongoCppLegacy/mongoCppLegacyEntityListLookupWithIdTypeCreDate.h"   // mongoCppLegacyEntityListLookupWithIdTypeCreDate
-#include "orionld/payloadCheck/PCHECK.h"                       // PCHECK_STRING, PCHECK_URI
-#include "orionld/legacyDriver/legacyPostBatchDelete.h"        // Own interface
+#include "orionld/payloadCheck/PCHECK.h"                                              // PCHECK_STRING, PCHECK_URI
+#include "orionld/legacyDriver/legacyPostBatchDelete.h"                               // Own interface
 
 
 
@@ -63,7 +62,7 @@ bool legacyPostBatchDelete(void)
 
   if (orionldState.requestTree->type != KjArray)
   {
-    LM_W(("Bad Input (Payload must be a JSON Array)"));
+    KT_W("Bad Input (Payload must be a JSON Array)");
     orionldError(OrionldBadRequestData, "Invalid payload", "Must be a JSON Array", 400);
     return false;
   }
@@ -154,7 +153,7 @@ bool legacyPostBatchDelete(void)
   //
   if ((orionldState.requestTree->value.firstChildP != NULL) && (mongoCppLegacyEntitiesDelete(orionldState.requestTree) == false))
   {
-    LM_E(("Database Error (mongoCppLegacyEntitiesDelete returned error)"));
+    KT_E("Database Error (mongoCppLegacyEntitiesDelete returned error)");
     orionldState.httpStatusCode = 500;
     orionldError(OrionldBadRequestData, "Database Error", "mongoCppLegacyEntitiesDelete", 400);
 

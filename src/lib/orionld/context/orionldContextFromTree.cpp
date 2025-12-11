@@ -24,13 +24,11 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kalloc/kaAlloc.h"                                      // kaAlloc
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjFree.h"                                        // kjFree
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
 
 #include "orionld/types/OrionldContext.h"                        // OrionldContext
 #include "orionld/common/orionldState.h"                         // orionldState, kalloc, coreContextUrl
@@ -82,10 +80,7 @@ OrionldContext* orionldContextFromTree(char* url, OrionldContextOrigin origin, c
     id  = NULL;
 
     if (contextP == NULL)
-    {
-      LM_E(("Internal Error (unable to create context)"));
-      return NULL;
-    }
+      KT_RE(NULL, "Internal Error (unable to create context)");
 
 
     contextP->context.array.items     = itemsInArray;
@@ -122,7 +117,7 @@ OrionldContext* orionldContextFromTree(char* url, OrionldContextOrigin origin, c
         if (contextP->context.array.vector[ix] != NULL)
           contextP->context.array.vector[ix]->parent = contextP->id;
         else
-          LM_RE(NULL, ("unable to download context '%s'", url));
+          KT_RE(NULL, "unable to download context '%s'", url);
       }
       else
         contextP->context.array.vector[ix] = cachedContextP;
@@ -154,7 +149,7 @@ OrionldContext* orionldContextFromTree(char* url, OrionldContextOrigin origin, c
         contextP->context.array.vector[0] = orionldContextFromUrl(contextTreeP->value.s, NULL);
 
         if (contextP->context.array.vector[0] == NULL)
-          LM_RE(NULL, ("Context Error from orionldContextFromUrl"));
+          KT_RE(NULL, "Context Error from orionldContextFromUrl");
       }
 
       if (contextP != NULL)

@@ -27,37 +27,36 @@
 
 extern "C"
 {
-#include "kalloc/kaStrdup.h"                                     // kaStrdup
-#include "kjson/KjNode.h"                                        // KjNode
-#include "kjson/kjLookup.h"                                      // kjLookup
-#include "kjson/kjBuilder.h"                                     // kjChildAdd, kjChildRemove
-#include "kjson/kjClone.h"                                       // kjClone
-#include "kjson/kjRender.h"                                      // kjFastRender
+#include "ktrace/kTrace.h"                                                // KT_*
+#include "kalloc/kaStrdup.h"                                              // kaStrdup
+#include "kjson/KjNode.h"                                                 // KjNode
+#include "kjson/kjLookup.h"                                               // kjLookup
+#include "kjson/kjBuilder.h"                                              // kjChildAdd, kjChildRemove
+#include "kjson/kjClone.h"                                                // kjClone
+#include "kjson/kjRender.h"                                               // kjFastRender
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
+#include "ngsi/ContextElement.h"                                          // ContextElement
+#include "mongoBackend/mongoUpdateContext.h"                              // mongoUpdateContext
 
-#include "ngsi/ContextElement.h"                                 // ContextElement
-#include "mongoBackend/mongoUpdateContext.h"                     // mongoUpdateContext
-
-#include "orionld/types/OrionldProblemDetails.h"                 // OrionldProblemDetails
-#include "orionld/types/OrionldContextItem.h"                    // OrionldContextItem
-#include "orionld/types/OrionldHttpHeader.h"                     // OrionldHttpHeader
-#include "orionld/common/orionldState.h"                         // orionldState
-#include "orionld/common/orionldError.h"                         // orionldError
-#include "orionld/common/orionldRequestSend.h"                   // orionldRequestSend
-#include "orionld/common/dotForEq.h"                             // dotForEq
-#include "orionld/common/eqForDot.h"                             // eqForDot
-#include "orionld/common/tenantList.h"                           // tenant0
-#include "orionld/common/dateTime.h"                             // dateTimeFromString
-#include "orionld/payloadCheck/pCheckUri.h"                      // pCheckUri
-#include "orionld/payloadCheck/pCheckAttribute.h"                // pCheckAttribute
-#include "orionld/payloadCheck/PCHECK.h"                         // PCHECK_STRING
-#include "orionld/context/orionldCoreContext.h"                  // orionldCoreContextP
-#include "orionld/context/orionldContextFromTree.h"              // orionldContextFromTree
-#include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
-#include "orionld/contextCache/orionldContextCacheLookup.h"      // orionldContextCacheLookup
-#include "orionld/kjTree/kjTreeRegistrationInfoExtract.h"        // kjTreeRegistrationInfoExtract
+#include "orionld/types/OrionldProblemDetails.h"                          // OrionldProblemDetails
+#include "orionld/types/OrionldContextItem.h"                             // OrionldContextItem
+#include "orionld/types/OrionldHttpHeader.h"                              // OrionldHttpHeader
+#include "orionld/common/orionldState.h"                                  // orionldState
+#include "orionld/common/orionldError.h"                                  // orionldError
+#include "orionld/common/orionldRequestSend.h"                            // orionldRequestSend
+#include "orionld/common/dotForEq.h"                                      // dotForEq
+#include "orionld/common/eqForDot.h"                                      // eqForDot
+#include "orionld/common/tenantList.h"                                    // tenant0
+#include "orionld/common/dateTime.h"                                      // dateTimeFromString
+#include "orionld/payloadCheck/pCheckUri.h"                               // pCheckUri
+#include "orionld/payloadCheck/pCheckAttribute.h"                         // pCheckAttribute
+#include "orionld/payloadCheck/PCHECK.h"                                  // PCHECK_STRING
+#include "orionld/context/orionldCoreContext.h"                           // orionldCoreContextP
+#include "orionld/context/orionldContextFromTree.h"                       // orionldContextFromTree
+#include "orionld/context/orionldContextItemAliasLookup.h"                // orionldContextItemAliasLookup
+#include "orionld/contextCache/orionldContextCacheLookup.h"               // orionldContextCacheLookup
+#include "orionld/kjTree/kjTreeRegistrationInfoExtract.h"                 // kjTreeRegistrationInfoExtract
 #include "orionld/mongoCppLegacy/mongoCppLegacyEntityAttributeLookup.h"   // mongoCppLegacyEntityAttributeLookup
 #include "orionld/mongoCppLegacy/mongoCppLegacyEntityFieldReplace.h"      // mongoCppLegacyEntityFieldReplace
 #include "orionld/mongoCppLegacy/mongoCppLegacyRegistrationLookup.h"      // mongoCppLegacyRegistrationLookup
@@ -200,7 +199,7 @@ bool kjAttributeMerge(KjNode* inAttribute, KjNode* dbAttribute, KjNode* dbAttrib
     KjNode* dbValueP = kjLookup(dbAttribute, "value");
     if (dbValueP == NULL)
     {
-      LM_E(("Database Error (no 'value' member in DB for attribute '%s')", dbAttribute->name));
+      KT_E("Database Error (no 'value' member in DB for attribute '%s')", dbAttribute->name);
       return false;
     }
 
@@ -505,7 +504,7 @@ static bool orionldForwardPatchAttribute
 
   if (reqOk == false)
   {
-    LM_E(("PATCH: orionldRequestSend failed: %s", detail));
+    KT_E("PATCH: orionldRequestSend failed: %s", detail);
     orionldState.httpStatusCode = 500;  // ???
     return false;
   }
@@ -528,17 +527,17 @@ static bool orionldForwardPatchAttribute
 //
 void dbRegistrationsOnlyOneAllowed(KjNode* regArray, int matchingRegs, const char* entityId, const char* attrName)
 {
-  LM_E(("FATAL ERROR: Found more than one (%d) matching registration for an Entity-Attribute pair - this means the database is inconsistent", matchingRegs));
-  LM_E(("The Entity-Attribute pair is: '%s' - '%s'", entityId, attrName));
+  KT_E("FATAL ERROR: Found more than one (%d) matching registration for an Entity-Attribute pair - this means the database is inconsistent", matchingRegs);
+  KT_E("The Entity-Attribute pair is: '%s' - '%s'", entityId, attrName);
 
   for (KjNode* regP = regArray->value.firstChildP; regP != NULL; regP = regP->next)
   {
     KjNode* idNodeP = kjLookup(regP, "id");  // Coming from DB - no '@id' needed
 
     if (idNodeP != NULL)
-      LM_E(("Matching Registration: %s", idNodeP->value.s));
+      KT_E("Matching Registration: %s", idNodeP->value.s);
   }
-  LM_X(1, ("The database needs to be fixed before starting the broker again."));
+  KT_X(1, "The database needs to be fixed before starting the broker again.");
 }
 
 
@@ -897,7 +896,7 @@ bool legacyPatchAttribute(void)
   {
     delete caP;
 
-    LM_E(("kjAttributeToNgsiContextAttribute failed: %s", detail));
+    KT_E("kjAttributeToNgsiContextAttribute failed: %s", detail);
     orionldError(OrionldBadRequestData, "Internal Error", "Unable to convert merged attribute to a struct for mongoBackend", 500);
     return false;
   }

@@ -29,8 +29,6 @@ extern "C"
 #include "kjson/KjNode.h"                                       // KjNode
 }
 
-#include "logMsg/logMsg.h"                                      // LM_*
-
 #include "orionld/common/CHECK.h"                               // OBJECT_CHECK, DUPLICATE_CHECK, STRING_CHECK, ...
 #include "orionld/common/orionldState.h"                        // orionldState
 #include "orionld/common/orionldError.h"                        // orionldError

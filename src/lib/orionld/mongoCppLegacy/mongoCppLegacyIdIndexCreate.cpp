@@ -24,12 +24,14 @@
 */
 #include <string>                                                 // std::string
 
-#include "logMsg/logMsg.h"                                        // LM_*
-#include "logMsg/traceLevels.h"                                   // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                        // KT_*
+}
 
-#include "orionld/types/OrionldTenant.h"                          // OrionldTenant
 #include "mongoBackend/connectionOperations.h"                    // collectionCreateIndex
 
+#include "orionld/types/OrionldTenant.h"                          // OrionldTenant
 #include "orionld/mongoCppLegacy/mongoCppLegacyIdIndexCreate.h"   // Own interface
 
 
@@ -44,7 +46,7 @@ bool mongoCppLegacyIdIndexCreate(OrionldTenant* tenantP)
 
   if (collectionCreateIndex(tenantP->entities, BSON("_id.id" << 1), false, &err) == false)
   {
-    LM_E(("Database Error (error creating entity id (_id.id) index for tenant '%s')", tenantP->tenant));
+    KT_E("Database Error (error creating entity id (_id.id) index for tenant '%s')", tenantP->tenant);
     return false;
   }
 

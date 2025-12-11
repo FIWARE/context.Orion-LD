@@ -32,8 +32,6 @@ extern "C"
 #include "kjson/kjBuilder.h"                                    // kjChildAdd, ...
 }
 
-#include "logMsg/logMsg.h"
-
 #include "orionld/types/RegistrationMode.h"                     // RegistrationMode
 #include "orionld/types/OrionldContext.h"                       // OrionldContext
 #include "orionld/common/orionldState.h"                        // orionldState

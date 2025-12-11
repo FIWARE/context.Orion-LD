@@ -22,12 +22,12 @@
 *
 * Author: Ken Zangelin
 */
+#include <unistd.h>                                              // NULL
+
 extern "C"
 {
 #include "kjson/KjNode.h"                                        // KjNode, kjValueType
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/payloadCheck/pcheckLanguagePropertyValue.h"    // Own interface

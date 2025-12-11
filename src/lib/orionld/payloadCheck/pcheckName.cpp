@@ -22,8 +22,10 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                       // KT_*
+}
 
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/payloadCheck/pcheckName.h"                     // Own interface
@@ -61,7 +63,7 @@ bool pcheckName(char* name, char** detailsPP)
     if ((*name == '=') || (*name == '[') || (*name == ']') || (*name == '&') || (*name == '?') || (*name == '"') ||
         (*name == '\'') || (*name == '\b') || (*name == '\t') || (*name == '\n') || (*name == ' '))
     {
-      LM_W(("Invalid character: 0x%x", *name & 0xFF));
+      KT_W("Invalid character: 0x%x", *name & 0xFF);
       *detailsPP = (char*) "invalid character in name";
       return false;
     }
@@ -103,7 +105,7 @@ bool pCheckName(char* name)
     if ((*name == '=') || (*name == '[') || (*name == ']') || (*name == '&') || (*name == '?') || (*name == '"') ||
         (*name == '\'') || (*name == '\b') || (*name == '\t') || (*name == '\n') || (*name == ' '))
     {
-      LM_W(("Invalid character: 0x%x", *name & 0xFF));
+      KT_W("Invalid character: 0x%x", *name & 0xFF);
       orionldError(OrionldBadRequestData, "Invalid attribute name", "invalid character", 400);
       return false;
     }

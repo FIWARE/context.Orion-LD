@@ -26,6 +26,7 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kalloc/kaAlloc.h"                                    // kaAlloc
 #include "kalloc/kaStrdup.h"                                   // kaStrdup
 #include "kjson/KjNode.h"                                      // KjNode
@@ -211,14 +212,14 @@ bool kjTreeToRegistration(ngsiv2::Registration* regP, char** regIdPP)
   //
   if (orionldState.payloadTypeNode == NULL)
   {
-    LM_W(("Bad Input (Mandatory field missing: Registration::type)"));
+    KT_W("Bad Input (Mandatory field missing: Registration::type)");
     orionldError(OrionldBadRequestData, "Mandatory field missing", "Registration::type", 400);
     return false;
   }
 
   if (strcmp(orionldState.payloadTypeNode->value.s, "ContextSourceRegistration") != 0)
   {
-    LM_W(("Bad Input (Registration type must have the value /Registration/)"));
+    KT_W("Bad Input (Registration type must have the value /Registration/)");
     orionldError(OrionldBadRequestData,
                  "Registration::type must have a value of /ContextSourceRegistration/",
                  orionldState.payloadTypeNode->value.s,
@@ -387,7 +388,6 @@ bool kjTreeToRegistration(ngsiv2::Registration* regP, char** regIdPP)
       char* dotName = orionldAttributeExpand(orionldState.contextP, kNodeP->name, true, NULL);
       kNodeP->name  = kaStrdup(&orionldState.kalloc, dotName);
       dotForEq(kNodeP->name);
-      LM_T(LmtSR, ("KZ: Added registration property '%s'", kNodeP->name));
     }
 
     kNodeP = next;

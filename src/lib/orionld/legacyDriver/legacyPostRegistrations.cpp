@@ -25,8 +25,10 @@
 #include <string>                                              // std::string
 #include <vector>                                              // std::vector
 
-#include "logMsg/logMsg.h"                                     // LM_*
-#include "logMsg/traceLevels.h"                                // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "rest/OrionError.h"                                   // OrionError
 #include "apiTypesV2/Registration.h"                           // Registration
@@ -83,7 +85,7 @@ bool legacyPostRegistrations(void)
   //
   if (kjTreeToRegistration(&reg, &regIdP) == false)
   {
-    LM_E(("kjTreeToRegistration FAILED"));
+    KT_E("kjTreeToRegistration FAILED");
     // orionldError is invoked by kjTreeToRegistration
     return false;
   }

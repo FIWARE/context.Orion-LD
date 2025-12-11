@@ -26,12 +26,12 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 }
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
 #include "orionld/types/QNode.h"                               // QNode
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/q/qMatchCompare.h"                           // Own interface
 
 
@@ -46,14 +46,14 @@ bool qMatchCompare(KjNode* lhsNode, QNode* rhs)
   // For now, assume strings end in ".*" and do a strncmp comparison
   //
   if ((rhs->type != QNodeStringValue) && (rhs->type != QNodeRegexpValue))
-    LM_RE(false, ("rhs is not a String nor a REGEX: %d", rhs->type));
+    KT_RE(false, "rhs is not a String nor a REGEX: %d", rhs->type);
 
   if (lhsNode->type != KjString)
     return false;
 
   int sLen = strlen(rhs->value.s);
 
-  LM_T(LmtCsf, ("Comparing value of '%s' ('%s') to '%s'", lhsNode->name, lhsNode->value.s, rhs->value.s));
+  KT_T(KtCsf, "Comparing value of '%s' ('%s') to '%s'", lhsNode->name, lhsNode->value.s, rhs->value.s);
   if (strncmp(lhsNode->value.s, rhs->value.s, sLen - 2) == 0)
     return true;
 

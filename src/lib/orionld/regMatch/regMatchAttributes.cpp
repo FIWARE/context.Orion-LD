@@ -24,17 +24,17 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjClone.h"                                       // kjClone
 #include "kjson/kjBuilder.h"                                     // kjChildAdd
 #include "kjson/kjStringValueLookupInArray.h"                    // kjStringValueLookupInArray
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-
 #include "orionld/types/RegCacheItem.h"                          // RegCacheItem
 #include "orionld/types/DistOpType.h"                            // DistOpType
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/regMatch/regMatchAttributes.h"                 // Own interface
 
 
@@ -65,7 +65,7 @@ KjNode* regMatchAttributes(RegCacheItem* regP, DistOpType operation, KjNode* pro
       // regMatchForEntityCreation can be used as is.
       // Now, before cloning the payload body for distributed requests, this modification needs to be rolled back.
       //
-      LM_T(LmtRegMatch, ("It's PATCH Attribute, so, the payload body is one level down"));
+      KT_T(KtRegMatch, "It's PATCH Attribute, so, the payload body is one level down");
       payloadBody = payloadBody->value.firstChildP;
     }
 
@@ -141,7 +141,7 @@ KjNode* regMatchAttributes(RegCacheItem* regP, DistOpType operation, KjNode* pro
   }
 
   if (attrObject == NULL)
-    LM_T(LmtRegMatch, ("No match due to no matching attributes"));
+    KT_T(KtRegMatch, "No match due to no matching attributes");
   else if (operation == DoUpdateAttrs)
   {
     //
@@ -155,7 +155,7 @@ KjNode* regMatchAttributes(RegCacheItem* regP, DistOpType operation, KjNode* pro
     // That way, the body of "PATCH Attribute" is on the same level as the body of "POST /entities" and regMatchForEntityCreation can be used as is.
     // Now, before cloning the payload body for distributed requests, this modification needs to be rolled back.
     //
-    LM_T(LmtRegMatch, ("It's PATCH Attribute, so, the payload body is one level down"));
+    KT_T(KtRegMatch, "It's PATCH Attribute, so, the payload body is one level down");
     return attrObject->value.firstChildP;
   }
 

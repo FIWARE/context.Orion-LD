@@ -23,9 +23,7 @@
 * Author: Ken Zangelin
 */
 #include <unistd.h>                                              // NULL
-
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
+#include <string.h>                                              // strncmp
 
 #include "orionld/types/OrionldContext.h"                        // OrionldContext
 #include "orionld/types/OrionldContextItem.h"                    // OrionldContextItem

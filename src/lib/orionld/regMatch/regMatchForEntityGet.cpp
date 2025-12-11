@@ -24,11 +24,10 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionld/types/RegistrationMode.h"                      // registrationMode
 #include "orionld/types/StringArray.h"                           // StringArray
@@ -37,6 +36,7 @@ extern "C"
 #include "orionld/types/DistOp.h"                                // DistOp
 #include "orionld/types/DistOpType.h"                            // DistOpType
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/distOp/xForwardedForMatch.h"                   // xForwardedForMatch
 #include "orionld/distOp/viaMatch.h"                             // viaMatch
 #include "orionld/regMatch/regMatchOperation.h"                  // regMatchOperation
@@ -68,7 +68,7 @@ DistOp* regMatchForEntityGet  // FIXME: +entity-type
   DistOp* distOpHead = NULL;
   DistOp* distOpTail = NULL;
 
-  LM_T(LmtRegMatch, ("entityType: '%s'", entityType));
+  KT_T(KtRegMatch, "entityType: '%s'", entityType);
 
   for (RegCacheItem* regP = orionldState.tenantP->regCache->regList; regP != NULL; regP = regP->next)
   {
@@ -80,39 +80,39 @@ DistOp* regMatchForEntityGet  // FIXME: +entity-type
 
     if ((regP->mode & regMode) == 0)
     {
-       LM_T(LmtRegMatch, ("%s: No match due to regMode", regP->regId));
+       KT_T(KtRegMatch, "%s: No match due to regMode", regP->regId);
        continue;
     }
 
     // Loop detection
     if (viaMatch(orionldState.in.via, regP->hostAlias) == true)
     {
-      LM_T(LmtRegMatch, ("%s: No Reg Match due to Loop (Via)", regP->regId));
+      KT_T(KtRegMatch, "%s: No Reg Match due to Loop (Via)", regP->regId);
       continue;
     }
 
     if (xForwardedForMatch(orionldState.in.xForwardedFor, regP->ipAndPort) == true)
     {
-      LM_T(LmtRegMatch, ("No Reg Match due to loop detection"));
+      KT_T(KtRegMatch, "No Reg Match due to loop detection");
       continue;
     }
 
     if ((regMode != RegModeExclusive) && (regMatchOperation(regP, operation) == false))
     {
-      LM_T(LmtRegMatch, ("%s: No Reg Match due to Operation", regP->regId));
+      KT_T(KtRegMatch, "%s: No Reg Match due to Operation", regP->regId);
       continue;
     }
 
     DistOp* distOpP = regMatchInformationArrayForGet(regP, entityId, entityType, attrV, geoProp);
     if (distOpP == NULL)
     {
-      LM_T(LmtRegMatch, ("%s: No Reg Match due to Information Array", regP->regId));
+      KT_T(KtRegMatch, "%s: No Reg Match due to Information Array", regP->regId);
       continue;
     }
 
     if ((regMode == RegModeExclusive) && (regMatchOperation(regP, operation) == false))
     {
-      LM_T(LmtRegMatch, ("%s: No Reg Match due to Operation (operation == %d: '%s')", regP->regId, operation, distOpTypes[operation]));
+      KT_T(KtRegMatch, "%s: No Reg Match due to Operation (operation == %d: '%s')", regP->regId, operation, distOpTypes[operation]);
       for (DistOp* doP = distOpP; doP != NULL; doP = doP->next)
       {
         doP->error            = true;
@@ -137,7 +137,7 @@ DistOp* regMatchForEntityGet  // FIXME: +entity-type
     distOpTail       = distOpP;
     distOpTail->next = NULL;
 
-    LM_T(LmtRegMatch, ("%s: Reg Match !", regP->regId));
+    KT_T(KtRegMatch, "%s: Reg Match !", regP->regId);
   }
 
   return distOpHead;

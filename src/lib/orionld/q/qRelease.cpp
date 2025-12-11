@@ -24,8 +24,6 @@
 */
 #include <stdlib.h>                                            // free
 
-#include "logMsg/logMsg.h"                                     // LM_*
-
 #include "orionld/types/QNode.h"                               // QNode
 #include "orionld/q/qRelease.h"                                // Own interface
 

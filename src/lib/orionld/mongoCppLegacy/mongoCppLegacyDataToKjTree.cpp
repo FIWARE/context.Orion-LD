@@ -26,14 +26,12 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                           // KT_*
 #include "kalloc/kaStrdup.h"                                         // kaStrdup
 #include "kjson/KjNode.h"                                            // KjNode
 #include "kjson/kjParse.h"                                           // kjParse
 #include "kjson/kjBuilder.h"                                         // kjBuilder
 }
-
-#include "logMsg/logMsg.h"                                           // LM_*
-#include "logMsg/traceLevels.h"                                      // Lmt*
 
 #include "orionld/common/orionldState.h"                             // orionldState, orionldStateDelayedFreeEnqueue
 #include "orionld/mongoBackend/mongoTypeName.h"                      // mongoTypeName
@@ -81,14 +79,14 @@ static void objectToKjTree(KjNode* containerP, mongo::BSONObj* bsonObjP, char** 
     }
     else
     {
-      LM_E(("Unsupported mongo type %d (%s) for field '%s'", type, mongoTypeName(type), nodeName));
+      KT_E("Unsupported mongo type %d (%s) for field '%s'", type, mongoTypeName(type), nodeName);
       continue;
     }
 
     if (nodeP != NULL)
       kjChildAdd(containerP, nodeP);
     else
-      LM_E(("Internal Error - NULL node pointer"));
+      KT_E("Internal Error - NULL node pointer");
   }
 }
 
@@ -131,14 +129,14 @@ static void arrayToKjTree(KjNode* containerP, mongo::BSONArray* bsonArrayP, char
     }
     else
     {
-      LM_E(("Unsupported mongo type %d (%s) for field '%s'", type, mongoTypeName(type), nodeName));
+      KT_E("Unsupported mongo type %d (%s) for field '%s'", type, mongoTypeName(type), nodeName);
       continue;
     }
 
     if (nodeP != NULL)
       kjChildAdd(containerP, nodeP);
     else
-      LM_E(("Internal Error - NULL node pointer"));
+      KT_E("Internal Error - NULL node pointer");
   }
 }
 

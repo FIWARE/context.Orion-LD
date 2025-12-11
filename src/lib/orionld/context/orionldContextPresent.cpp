@@ -24,14 +24,13 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "khash/khash.h"                                         // KHashTable
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
-
 #include "orionld/types/OrionldContext.h"                        // OrionldContext
 #include "orionld/types/OrionldContextItem.h"                    // OrionldContextItem
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/contextCache/orionldContextCache.h"            // ORIONLD_CONTEXT_CACHE_HASH_ARRAY_SIZE
 #include "orionld/context/orionldContextPresent.h"               // Own interface
 
@@ -46,8 +45,8 @@ void orionldContextPresent(const char* prefix, OrionldContext* contextP)
   if (contextP == NULL)
     return;
 
-  LM_T(LmtContexts, ("    %s: Context '%s' (%s)", prefix, contextP->url, contextP->keyValues? "Key-Values" : "Array"));
-  LM_T(LmtContexts, ("    %s: ----------------------------------------------------------------------------", prefix));
+  KT_T(KtContext, "    %s: Context '%s' (%s)", prefix, contextP->url, contextP->keyValues? "Key-Values" : "Array");
+  KT_T(KtContext, "    %s: ----------------------------------------------------------------------------", prefix);
 
   if (contextP->keyValues == true)
   {
@@ -62,7 +61,7 @@ void orionldContextPresent(const char* prefix, OrionldContext* contextP)
       {
         OrionldContextItem* hiP = (OrionldContextItem*) itemP->data;
 
-        LM_T(LmtContexts, ("    %s: key-value[slot %d]: %s -> %s (type: %s)", prefix, slot, hiP->name, hiP->id, hiP->type));
+        KT_T(KtContext, "    %s: key-value[slot %d]: %s -> %s (type: %s)", prefix, slot, hiP->name, hiP->id, hiP->type);
         itemP = itemP->next;
         ++noOfItems;
 
@@ -80,15 +79,15 @@ void orionldContextPresent(const char* prefix, OrionldContext* contextP)
     {
       if (contextP->context.array.vector[iIx] == NULL)
       {
-        LM_T(LmtContexts, ("    %s:   Array Item %d is not ready", prefix, iIx));
+        KT_T(KtContext, "    %s:   Array Item %d is not ready", prefix, iIx);
       }
       else
       {
-        LM_T(LmtContexts, ("    %s:   Array Item %d: %s (%s)",
-                           prefix,
-                           iIx,
-                           contextP->context.array.vector[iIx]->url,
-                           contextP->context.array.vector[iIx]->keyValues? "Key-Values" : "Array"));
+        KT_T(KtContext, "    %s:   Array Item %d: %s (%s)",
+             prefix,
+             iIx,
+             contextP->context.array.vector[iIx]->url,
+             contextP->context.array.vector[iIx]->keyValues? "Key-Values" : "Array");
       }
     }
   }

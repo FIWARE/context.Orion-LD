@@ -24,6 +24,7 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kalloc/kaAlloc.h"                                      // kaAlloc
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
@@ -37,6 +38,7 @@ extern "C"
 #include "orionld/types/RegCacheItem.h"                         // RegCacheItem
 #include "orionld/common/orionldState.h"                        // orionldState
 #include "orionld/common/orionldError.h"                        // orionldError
+#include "orionld/common/traceLevels.h"                         // KTrace levels
 #include "orionld/common/CHECK.h"                               // STRING_CHECK, ...
 #include "orionld/context/orionldAttributeExpand.h"             // orionldAttributeExpand
 #include "orionld/mongoc/mongocEntitiesQuery.h"                 // mongocEntitiesQuery
@@ -65,13 +67,13 @@ static bool attrsMatch(KjNode* propertiesP, KjNode* relationshipsP, KjNode* rciP
 
   if ((propertiesEmpty == true) && (relationshipsEmpty == true))
   {
-    LM_T(LmtRegMatch, ("Overlap as both reg-attrs-arrays are empty"));
+    KT_T(KtRegMatch, "Overlap as both reg-attrs-arrays are empty");
     return true;
   }
 
   if ((rciPropertiesEmpty == true) && (rciRelationshipsEmpty == true))
   {
-    LM_T(LmtRegMatch, ("Overlap as both rci-reg-attrs-arrays are empty"));
+    KT_T(KtRegMatch, "Overlap as both rci-reg-attrs-arrays are empty");
     return true;
   }
 
@@ -81,13 +83,13 @@ static bool attrsMatch(KjNode* propertiesP, KjNode* relationshipsP, KjNode* rciP
     {
       if (kjStringValueLookupInArray(rciPropertiesArray, attrNameP->value.s) != NULL)
       {
-        LM_T(LmtRegMatch, ("overlap for attribute '%s'", attrNameP->value.s));
+        KT_T(KtRegMatch, "overlap for attribute '%s'", attrNameP->value.s);
         return true;
       }
 
       if (kjStringValueLookupInArray(rciRelationshipsArray, attrNameP->value.s) != NULL)
       {
-        LM_T(LmtRegMatch, ("overlap for attribute '%s'", attrNameP->value.s));
+        KT_T(KtRegMatch, "overlap for attribute '%s'", attrNameP->value.s);
         return true;
       }
     }
@@ -99,19 +101,19 @@ static bool attrsMatch(KjNode* propertiesP, KjNode* relationshipsP, KjNode* rciP
     {
       if (kjStringValueLookupInArray(rciPropertiesArray, attrNameP->value.s) != NULL)
       {
-        LM_T(LmtRegMatch, ("overlap for attribute '%s'", attrNameP->value.s));
+        KT_T(KtRegMatch, "overlap for attribute '%s'", attrNameP->value.s);
         return true;
       }
 
       if (kjStringValueLookupInArray(rciRelationshipsArray, attrNameP->value.s) != NULL)
       {
-        LM_T(LmtRegMatch, ("overlap for attribute '%s'", attrNameP->value.s));
+        KT_T(KtRegMatch, "overlap for attribute '%s'", attrNameP->value.s);
         return true;
       }
     }
   }
 
-  LM_T(LmtRegMatch, ("No overlap for attributes"));
+  KT_T(KtRegMatch, "No overlap for attributes");
 
   return false;
 }
@@ -133,7 +135,7 @@ static bool pCheckOverlappingRegistrations
 {
   if (entitiesP == NULL)
   {
-    LM_T(LmtToDo, ("ToDo: check conflict for reg with only attributes"));
+    KT_T(KtToDo, "ToDo: check conflict for reg with only attributes");
     return false;
   }
 
@@ -153,7 +155,7 @@ static bool pCheckOverlappingRegistrations
       if ((currentRegId != NULL) && (strcmp(currentRegId, rciP->regId) == 0))
         continue;
 
-      LM_T(LmtRegMatch, ("Trying registration '%s'", rciP->regId));
+      KT_T(KtRegMatch, "Trying registration '%s'", rciP->regId);
 
       //
       // Conflict must be checked if any of the two regs are Exclusive, BUT not if the other is Auxiliary
@@ -212,19 +214,19 @@ static bool pCheckOverlappingRegistrations
 
             if ((entityIdPattern != NULL) && (rciEntityIdP != NULL))
             {
-              LM_W(("ToDo: Does the pattern '%s' include the entity id '%s'?  If not - continue!", entityIdPattern, rciEntityIdP->value.s));
+              KT_T(KtToDo, "ToDo: Does the pattern '%s' include the entity id '%s'?  If not - continue!", entityIdPattern, rciEntityIdP->value.s);
               continue;
             }
 
             if ((entityId != NULL) && (rciEntityIdPatternP != NULL))
             {
-              LM_W(("ToDo: Does the pattern '%s' include the entity id '%s'?  If not - continue!", rciEntityIdPatternP->value.s, entityId));
+              KT_T(KtToDo, "ToDo: Does the pattern '%s' include the entity id '%s'?  If not - continue!", rciEntityIdPatternP->value.s, entityId);
               continue;
             }
 
             if ((entityIdPattern != NULL) && (rciEntityIdPatternP != NULL))
             {
-              LM_W(("ToDo: Comparison between two idPatterns ..."));
+              KT_T(KtToDo, "ToDo: Comparison between two idPatterns ...");
               continue;
             }
 
@@ -315,7 +317,7 @@ bool pCheckOverlappingEntities(KjNode* entitiesP, KjNode* propertiesP, KjNode* r
           return true;
         }
         if (detail != NULL)
-          LM_E(("mongocEntityLookup: %s", detail));
+          KT_E("mongocEntityLookup: %s", detail);
       }
       else
       {

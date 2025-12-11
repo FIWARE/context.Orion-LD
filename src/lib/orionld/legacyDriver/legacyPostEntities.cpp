@@ -27,14 +27,13 @@
 
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjClone.h"                                       // kjClone
 #include "kjson/kjBuilder.h"                                     // kjString, kjObject, ...
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
 
 #include "orionTypes/OrionValueType.h"                           // orion::ValueType
 #include "orionTypes/UpdateActionType.h"                         // ActionType
@@ -290,7 +289,7 @@ bool legacyPostEntities(void)
     if (kjTreeToContextAttribute(orionldState.contextP, kNodeP, caP, &attrTypeNodeP, &detail) == false)
     {
       // kjTreeToContextAttribute calls orionldError
-      LM_E(("kjTreeToContextAttribute failed: %s", detail));
+      KT_E("kjTreeToContextAttribute failed: %s", detail);
       caP->release();
       delete caP;
       mongoRequest.release();
@@ -338,7 +337,7 @@ bool legacyPostEntities(void)
   }
   else if ((mongoResponse.oe.code != 200) && (mongoResponse.oe.code != 0))
   {
-    LM_E(("mongoUpdateContext: mongo responds with error %d: '%s'", mongoResponse.oe.code, mongoResponse.oe.details.c_str()));
+    KT_E("mongoUpdateContext: mongo responds with error %d: '%s'", mongoResponse.oe.code, mongoResponse.oe.details.c_str());
     orionldError(OrionldBadRequestData, "Internal Error", "Error from Mongo-DB backend", 400);  // 400 ... really?
     return false;
   }

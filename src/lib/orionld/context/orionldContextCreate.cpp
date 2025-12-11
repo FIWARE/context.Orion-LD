@@ -24,13 +24,11 @@
 */
 extern "C"
 {
+#include "ktrace/kTrace.h"                                       // KT_*
 #include "kalloc/kaAlloc.h"                                      // kaAlloc
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/kjClone.h"                                       // kjClone
 }
-
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
 
 #include "orionld/types/OrionldContext.h"                        // OrionldContext
 #include "orionld/common/orionldState.h"                         // orionldState, kalloc
@@ -50,7 +48,7 @@ OrionldContext* orionldContextCreate(const char* url, OrionldContextOrigin origi
   OrionldContext* contextP = (OrionldContext*) kaAlloc(&kalloc, sizeof(OrionldContext));
 
   if (contextP == NULL)
-    LM_X(1, ("out of memory - trying to allocate a OrionldContext of %d bytes", sizeof(OrionldContext)));
+    KT_X(1, "out of memory - trying to allocate a OrionldContext of %d bytes", sizeof(OrionldContext));
 
   contextP->origin    = origin;
   contextP->kind      = OrionldContextCached;  // Default. Changed later to Hosted/Implicit if needed

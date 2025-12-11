@@ -22,20 +22,18 @@
 *
 * Author: Ken Zangelin
 */
-#include "mongo/client/dbclient.h"                               // MongoDB C++ Client Legacy Driver
+#include "mongo/client/dbclient.h"                                                         // MongoDB C++ Client Legacy Driver
 
 extern "C"
 {
-#include "kalloc/kaStrdup.h"                                     // kaStrdup
-#include "kjson/KjNode.h"                                        // KjNode
+#include "ktrace/kTrace.h"                                                                 // KT_*
+#include "kalloc/kaStrdup.h"                                                               // kaStrdup
+#include "kjson/KjNode.h"                                                                  // KjNode
 }
 
-#include "logMsg/logMsg.h"                                       // LM_*
-#include "logMsg/traceLevels.h"                                  // Lmt*
-
-#include "mongoBackend/MongoGlobal.h"                            // getMongoConnection, releaseMongoConnection, ...
-#include "orionld/common/orionldState.h"                         // orionldState, dbName
-#include "orionld/mongoCppLegacy/mongoCppLegacyDataToKjTree.h"   // mongoCppLegacyDataToKjTree
+#include "mongoBackend/MongoGlobal.h"                                                      // getMongoConnection, releaseMongoConnection, ...
+#include "orionld/common/orionldState.h"                                                   // orionldState, dbName
+#include "orionld/mongoCppLegacy/mongoCppLegacyDataToKjTree.h"                             // mongoCppLegacyDataToKjTree
 #include "orionld/mongoCppLegacy/mongoCppLegacySubscriptionMatchEntityIdAndAttributes.h"   // Own interface
 
 
@@ -115,7 +113,7 @@ void mongoCppLegacySubscriptionMatchEntityIdAndAttributes
     subscriptionTree = mongoCppLegacyDataToKjTree(&bsonObj, false, &title, &detail);
     if (subscriptionTree == NULL)
     {
-      LM_E(("Internal Error (unable to create KjNode tree from mongo::BSONObj '%s')", bsonObj.toString().c_str()));
+      KT_E("Internal Error (unable to create KjNode tree from mongo::BSONObj '%s')", bsonObj.toString().c_str());
       continue;
     }
 
