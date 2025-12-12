@@ -121,7 +121,7 @@ KjNode* mongocEntityTypesGet(bool details, const char* entityType)
   bson_error_t error;
 
   // Pipeline-Array in JSON-Format
-  const char *pipeline_json = 
+ const char *pipeline_json = 
   "["
   "  {"
   "    \"$project\": {"
@@ -156,6 +156,11 @@ KjNode* mongocEntityTypesGet(bool details, const char* entityType)
   "        }"
   "      },"
   "      \"attrs\": {\"$addToSet\": \"$attrNames\"}"
+  "    }"
+  "  },"
+  "  {"
+  "    \"$project\": {"
+  "      \"attrs\": {\"$sortArray\": {\"input\": \"$attrs\", \"sortBy\": 1}}"
   "    }"
   "  },"
   "  {"
