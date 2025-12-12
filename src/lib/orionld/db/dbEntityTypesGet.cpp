@@ -331,22 +331,13 @@ KjNode* dbEntityTypesGet(OrionldProblemDetails* pdP, bool details, bool localOnl
   {
     if (orionldState.in.legacy == NULL)
     {
+      // get local entity types from the mongo db
       local  = mongocEntityTypesGet(details, NULL);
       entityTypesFromRegistrationsGet = mongocEntityTypesFromRegistrationsGet;
     }
   } 
 
-  //
-  // See issue #1698
-  // I'd really need to rewrite the whole function.
-  // As cfreyth correctly comments, the pagination limit/offet are about entities (as mongocEntitiesGet is used)
-  // and NOT entity types.
-  //
-  // As a quick and dirty fix:
-  // * Allow limit/offset
-  // * Set default limit to 1000 (unless set to anything else by the user)
-  //
-  // when legacy driver is used
+  // if we dont have local types from mongoc, use the legacy driver to get them
   if (local == NULL)
   {
     if (orionldState.uriParams.limit == 20)
@@ -371,7 +362,7 @@ KjNode* dbEntityTypesGet(OrionldProblemDetails* pdP, bool details, bool localOnl
       else
         local = typesAndAttributesExtractFromEntities(local);
     }
- }
+  }
 
   //
   // GET remote types - i.e. from the "registrations" collection

@@ -30,6 +30,8 @@ extern "C"
 {
 #include "kjson/KjNode.h"                                          // KjNode
 #include "kjson/kjBuilder.h"                                       // kjArray
+#include "ktrace/kTrace.h"                                         // trace messages -
+#include "kjson/kjLookup.h"                                        // kjLookup
 }
 
 #include "logMsg/logMsg.h"                                         // LM_*
@@ -38,19 +40,73 @@ extern "C"
 #include "orionld/mongoc/mongocConnectionGet.h"                    // mongocConnectionGet
 #include "orionld/mongoc/mongocKjTreeFromBson.h"                   // mongocKjTreeFromBson
 #include "orionld/mongoc/mongocEntityTypesGet.h"  // Own interface
+#include "orionld/context/orionldContextItemAliasLookup.h"             // orionldContextItemAliasLookup
+
+
+// -----------------------------------------------------------------------------
+//
+// typeExtractFromMongo -
+//
+void typeExtractFromMongo(KjNode* inputArray, KjNode* typeArray)
+{
+  for (KjNode* arrItemP = inputArray->value.firstChildP; arrItemP != NULL; arrItemP = arrItemP->next)
+  {
+    KjNode* tNode = kjLookup(arrItemP, "_id");
+
+    if (tNode == NULL)
+    {
+      KT_W("No _id found in tree ...");
+      continue;
+    }
+
+    if (tNode != NULL)
+    {
+      kjChildAdd(typeArray, tNode);  
+      // Lookup alias for type name in context
+      tNode->value.s = orionldContextItemAliasLookup(orionldState.contextP, tNode->value.s, NULL, NULL);
+    }
+  }
+}
 
 
 
 // -----------------------------------------------------------------------------
 //
-// FIXME: Move these two functions elsewhere
+// typeAndAttrsExtractFromMongo -
 //
-// They are implemented in mongoCppLegacyEntityTypesGet.cpp
-// But, they don't belong there ...
-//
-extern void typeExtract(KjNode* regArray, KjNode* typeArray);
-extern void entitiesAndPropertiesExtract(KjNode* regArray, KjNode* typeArray);
+void typeAndAttrsExtractFromMongo(KjNode* inputArray, KjNode* typeArray)
+{
+  for (KjNode* arrItemP = inputArray->value.firstChildP; arrItemP != NULL; arrItemP = arrItemP->next)
+  {
+    KjNode* idP = kjLookup(arrItemP, "_id");
+    KjNode* attrP    = kjLookup(arrItemP, "attrs");
+    KjNode* nodeResponseP = kjObject(orionldState.kjsonP, NULL);
 
+    if (idP != NULL)
+    {
+      KjNode* idNodeP  = kjString(orionldState.kjsonP, "id", idP->value.s);
+      kjChildAdd(nodeResponseP, idNodeP);
+      KjNode* typeP = kjString(orionldState.kjsonP, "typeName", orionldContextItemAliasLookup(orionldState.contextP, idP->value.s, NULL, NULL));
+      kjChildAdd(nodeResponseP, typeP);
+    }
+
+    if (attrP != NULL)
+    {
+      // loop over all attributes and add to response
+      KjNode* attribP  = kjArray(orionldState.kjsonP, "attributeNames");
+      for (KjNode* attrItemP = attrP->value.firstChildP; attrItemP != NULL; attrItemP = attrItemP->next)
+      {
+        // lookup alias for attribute name in context
+        KjNode* arrNodeP  = kjString(orionldState.kjsonP, NULL, orionldContextItemAliasLookup(orionldState.contextP, attrItemP->value.s, NULL, NULL));
+        kjChildAdd(attribP, arrNodeP);
+      }
+
+      kjChildAdd(nodeResponseP, attribP);
+    }
+
+    kjChildAdd(typeArray, nodeResponseP); 
+  }
+}
 
 
 // -----------------------------------------------------------------------------
@@ -59,11 +115,12 @@ extern void entitiesAndPropertiesExtract(KjNode* regArray, KjNode* typeArray);
 //
 KjNode* mongocEntityTypesGet(bool details, const char* entityType)
 {
-  // We use a projection for getting all types from mongoDB together with the attributes if 'details' is on
+  // We use a projection for getting all types from mongoDB together with the attributes 
+  // if details == true we will return also the attributes for each type
   bson_t *pipeline = bson_new();
   bson_error_t error;
 
-  // Pipeline-Array aufbauen
+  // Pipeline-Array in JSON-Format
   const char *pipeline_json = 
   "["
   "  {"
@@ -106,16 +163,17 @@ KjNode* mongocEntityTypesGet(bool details, const char* entityType)
   "  }"
   "]";
 
+  // Parse JSON to BSON
   pipeline = bson_new_from_json((const uint8_t *)pipeline_json, -1, &error);
 
   if (!pipeline) {
-      LM_E(("Error parsing pipeline: %s\n", error.message));
+      KT_E("Error parsing pipeline: %s\n", error.message);
       return NULL;
   }
 
 
   // Connection
-  mongocConnectionGet(orionldState.tenantP, DbRegistrations);
+  mongocConnectionGet(orionldState.tenantP, DbEntities);
 
   //
   // Run the query
@@ -126,13 +184,13 @@ KjNode* mongocEntityTypesGet(bool details, const char* entityType)
 
   if ((mongoCursorP = mongoc_collection_aggregate(orionldState.mongoc.entitiesP, MONGOC_QUERY_NONE, pipeline, NULL, readPrefs)) == NULL)
   {
-    LM_E(("Internal Error (mongoc_collection_find_with_opts ERROR)"));
+    KT_E("Internal Error (mongoc_collection_find_with_opts ERROR)");
     mongoc_read_prefs_destroy(readPrefs);
     bson_destroy(pipeline);
     return NULL;
   }
 
-  KjNode*        kjRegArray        = NULL;
+  KjNode*        kjTypeArray        = NULL;
   KjNode*        NodeP = NULL;
   const bson_t*  mongoDocP;
 
@@ -146,15 +204,15 @@ KjNode* mongocEntityTypesGet(bool details, const char* entityType)
       LM_E(("%s: %s", title, detail));
     else
     {
-      if (kjRegArray == NULL)
-        kjRegArray = kjArray(orionldState.kjsonP, NULL);
-      kjChildAdd(kjRegArray, NodeP);
+      if (kjTypeArray == NULL)
+        kjTypeArray = kjArray(orionldState.kjsonP, NULL);
+      kjChildAdd(kjTypeArray, NodeP);
     }
   }
 
   if (mongoc_cursor_error(mongoCursorP, &mongoError))
   {
-    LM_E(("Internal Error (DB Error '%s')", mongoError.message));
+    KT_E("Internal Error (DB Error '%s')", mongoError.message);
     bson_destroy(pipeline);
     mongoc_cursor_destroy(mongoCursorP);
     mongoc_read_prefs_destroy(readPrefs);
@@ -165,15 +223,15 @@ KjNode* mongocEntityTypesGet(bool details, const char* entityType)
   mongoc_cursor_destroy(mongoCursorP);
   mongoc_read_prefs_destroy(readPrefs);
 
-  // FIXME: This part has nothing to do with DB - move out from the database libs
+  // extract infos from the mongo response to the final response format
   KjNode* typeArray = NULL;
-  if (kjRegArray != NULL)
+  if (kjTypeArray != NULL)
   {
     typeArray = kjArray(orionldState.kjsonP, NULL);
     if (details == false)
-      typeExtract(kjRegArray, typeArray);
+      typeExtractFromMongo(kjTypeArray, typeArray);
     else
-      entitiesAndPropertiesExtract(kjRegArray, typeArray);
+      typeAndAttrsExtractFromMongo(kjTypeArray, typeArray);
   }
 
   return typeArray;
