@@ -59,6 +59,7 @@ SET (SOURCES
     mongocTenantsGet.cpp
     mongocEntitiesGet.cpp
     mongocEntityTypesFromRegistrationsGet.cpp
+    mongocEntityTypesGet.cpp
     mongocEntityTypeGet.cpp
     mongocSubscriptionsGet.cpp
     mongocRegistrationExists.cpp

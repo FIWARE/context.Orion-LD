@@ -44,8 +44,8 @@ extern "C"
 #include "orionld/mongoCppLegacy/mongoCppLegacyEntityTypesFromRegistrationsGet.h"  // mongoCppLegacyEntityTypesFromRegistrationsGet
 #include "orionld/mongoc/mongocEntitiesGet.h"                      // mongocEntitiesGet
 #include "orionld/mongoc/mongocEntityTypesFromRegistrationsGet.h"  // mongocEntityTypesFromRegistrationsGet
+#include "orionld/mongoc/mongocEntityTypesGet.h"                   // mongocEntityTypesGet
 #include "orionld/db/dbEntityTypesGet.h"                           // Own interface
-
 
 
 // -----------------------------------------------------------------------------
@@ -331,10 +331,10 @@ KjNode* dbEntityTypesGet(OrionldProblemDetails* pdP, bool details, bool localOnl
   {
     if (orionldState.in.legacy == NULL)
     {
-      entitiesGet                     = mongocEntitiesGet;
+      local  = mongocEntityTypesGet(details, NULL);
       entityTypesFromRegistrationsGet = mongocEntityTypesFromRegistrationsGet;
     }
-  }
+  } 
 
   //
   // See issue #1698
@@ -346,27 +346,32 @@ KjNode* dbEntityTypesGet(OrionldProblemDetails* pdP, bool details, bool localOnl
   // * Allow limit/offset
   // * Set default limit to 1000 (unless set to anything else by the user)
   //
-  if (orionldState.uriParams.limit == 20)
-    orionldState.uriParams.limit = 1000;  // Default limit of 20 is changed to 1000
-
-  //
-  // GET local types - i.e. from the "entities" collection
-  //
-  if (details == false)
-    local  = entitiesGet(NULL, 0, true);
-  else
+  // when legacy driver is used
+  if (local == NULL)
   {
-    char* fields[1] = { (char*) "attrNames" };
-    local  = entitiesGet(fields, 1, true);
-  }
+    if (orionldState.uriParams.limit == 20)
+      orionldState.uriParams.limit = 1000;  // Default limit of 20 is changed to 1000
 
-  if (local != NULL)
-  {
+    //
+    // GET local types - i.e. from the "entities" collection
+    //
+
     if (details == false)
-      local = typesExtract(local);
+      local  = entitiesGet(NULL, 0, true);
     else
-      local = typesAndAttributesExtractFromEntities(local);
-  }
+    {
+      char* fields[1] = { (char*) "attrNames" };
+      local  = entitiesGet(fields, 1, true);
+    }
+
+    if (local != NULL)
+    {
+      if (details == false)
+        local = typesExtract(local);
+      else
+        local = typesAndAttributesExtractFromEntities(local);
+    }
+ }
 
   //
   // GET remote types - i.e. from the "registrations" collection

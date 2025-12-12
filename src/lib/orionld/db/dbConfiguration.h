@@ -66,6 +66,7 @@ typedef bool    (*DbSubscriptionMatchCallback)(const char* entityId, KjNode* sub
 //
 typedef KjNode* (*DbEntitiesGet)(char** fieldV, int fields, bool entityIdPresent);
 typedef KjNode* (*DbEntityTypesFromRegistrationsGet)(bool details, const char* entityType);
+typedef KjNode* (*DbEntityTypesGet)(bool details, const char* entityType);
 
 
 
