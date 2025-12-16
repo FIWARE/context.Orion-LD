@@ -39,7 +39,7 @@ echo "==========================================================================
 payload='{
   "@context": [ "https://fiware.github.io/data-models/context.jsonld" ],
   "id": "urn:ngsi-ld:entity:E1",
-  "type": "https://w3id.org/def/saref4agri#Animal",
+  "type": "https://uri.fiware.org/ns/data-models#Animal",
   "P1": {
     "type": "Property",
     "value": 1
@@ -95,7 +95,7 @@ Link: <https://fiware.github.io/data-models/context.jsonld>; rel="http://www.w3.
 03. GET the entity, without any @context - see entity type as long name
 =======================================================================
 HTTP/1.1 200 OK
-Content-Length: 113
+Content-Length: 119
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -106,7 +106,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "value": 1
     },
     "id": "urn:ngsi-ld:entity:E1",
-    "type": "https://w3id.org/def/saref4agri#Animal"
+    "type": "https://uri.fiware.org/ns/data-models#Animal"
 }
 
 

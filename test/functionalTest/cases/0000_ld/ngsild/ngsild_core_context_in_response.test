@@ -111,7 +111,7 @@ Location: /ngsi-ld/v1/entities/urn:E2
 03. Retrieve urn:E1, with @context https://fiware.github.io/data-models/context.jsonld and Accept ld+json - see core context in response
 ==============================================================================================================================
 HTTP/1.1 200 OK
-Content-Length: 197
+Content-Length: 207
 Content-Type: application/ld+json
 Date: REGEX(.*)
 
@@ -132,7 +132,7 @@ Date: REGEX(.*)
 04. Query entities, with @context https://fiware.github.io/data-models/context.jsonld and Accept ld+json - see core context in response
 =============================================================================================================================
 HTTP/1.1 200 OK
-Content-Length: 397
+Content-Length: 417
 Content-Type: application/ld+json
 Date: REGEX(.*)
 
@@ -167,7 +167,7 @@ Date: REGEX(.*)
 05. POST Query entities, with @context https://fiware.github.io/data-models/context.jsonld and Accept ld+json - see core context in response
 ==================================================================================================================================
 HTTP/1.1 200 OK
-Content-Length: 397
+Content-Length: 417
 Content-Type: application/ld+json
 Date: REGEX(.*)
 
