@@ -34,6 +34,8 @@ extern "C"
 #include "kjson/kjClone.h"                                         // kjClone
 #include "kjson/kjStringValueLookupInArray.h"                      // kjStringValueLookupInArray
 #include "kjson/kjStringArraySortedInsert.h"                       // kjStringArraySortedInsert
+#include "kjson/kjChildCount.h"                                    // kjChildCount
+#include "kjson/kjStringArraySort.h"                               // kjStringArraySort
 }
 
 #include "orionld/common/orionldState.h"                           // orionldState
@@ -188,6 +190,27 @@ static KjNode* typesAndAttributesExtractFromRegistrations(KjNode* array)
 static KjNode* getEntityTypesResponse(KjNode* sortedArrayP)
 {
   char entityTypesId[64];
+  int currentIndex = 0;
+
+  KjNode* typeNodeListP = kjArray(orionldState.kjsonP,  "typeList");
+  for (KjNode* typeValueNodeP = sortedArrayP->value.firstChildP; typeValueNodeP != NULL; typeValueNodeP = typeValueNodeP->next)
+  {
+    // if orionldState.uriParams.offset and orionldState.uriParams.limit are set,
+    // we need to skip and limit the number of returned types
+    if ((orionldState.uriParams.offset > 0) && (currentIndex < orionldState.uriParams.offset))
+    {
+      currentIndex++;
+      continue;
+    }
+    
+    if (currentIndex >= (orionldState.uriParams.offset + orionldState.uriParams.limit))
+      break;
+
+    KjNode* idNodeP = kjString(orionldState.kjsonP, "_id", typeValueNodeP->value.s);
+    kjChildAdd(typeNodeListP, idNodeP);
+
+    currentIndex++;
+  }
 
   uuidGenerate(entityTypesId, sizeof(entityTypesId), "urn:ngsi-ld:EntityTypeList:");
 
@@ -197,7 +220,10 @@ static KjNode* getEntityTypesResponse(KjNode* sortedArrayP)
 
   kjChildAdd(typeNodeResponseP, idNodeP);
   kjChildAdd(typeNodeResponseP, typeNodeP);
-  kjChildAdd(typeNodeResponseP, sortedArrayP);
+  kjChildAdd(typeNodeResponseP, typeNodeListP);
+
+  if (orionldState.uriParams.count)
+      orionldHeaderAdd(&orionldState.out.headers, HttpNgsiv2Count, NULL, kjChildCount(sortedArrayP));
 
   return typeNodeResponseP;
 }
@@ -212,9 +238,21 @@ static KjNode* getEntityTypesResponse(KjNode* sortedArrayP)
 static KjNode* getAvailableEntityTypesDetails(KjNode* sortedArrayP)
 {
   KjNode* typeNodeDetailsListP = kjArray(orionldState.kjsonP,  NULL);
+  int currentIndex = 0;
 
   for (KjNode* typeValueNodeP = sortedArrayP->value.firstChildP; typeValueNodeP != NULL; typeValueNodeP = typeValueNodeP->next)
   {
+    // if orionldState.uriParams.offset and orionldState.uriParams.limit are set,
+    // we need to skip and limit the number of returned types
+    if ((orionldState.uriParams.offset > 0) && (currentIndex < orionldState.uriParams.offset))
+    {
+      currentIndex++;
+      continue;
+    }
+        
+    if (currentIndex >= (orionldState.uriParams.offset + orionldState.uriParams.limit))
+      break;
+
     KjNode* idP                = kjLookup(typeValueNodeP, "id");
     KjNode* typeNameP          = kjLookup(typeValueNodeP, "typeName");
     KjNode* attrsNameP         = kjLookup(typeValueNodeP, "attributeNames");
@@ -238,10 +276,18 @@ static KjNode* getAvailableEntityTypesDetails(KjNode* sortedArrayP)
     }
 
     if (attrsNameP != NULL)
+    {
+      kjStringArraySort(attrsNameP);
       kjChildAdd(typeNodeResponseP, attrsNameP);
+    }
 
     kjChildAdd(typeNodeDetailsListP, typeNodeResponseP);
+    currentIndex++;
   }
+
+  if (orionldState.uriParams.count)
+      orionldHeaderAdd(&orionldState.out.headers, HttpNgsiv2Count, NULL, kjChildCount(sortedArrayP));
+
   return typeNodeDetailsListP;
 }
 
@@ -555,7 +601,6 @@ KjNode* dbEntityTypesGet(OrionldProblemDetails* pdP, bool details, bool localOnl
 
       nodeP = next;
     }
-
 
     return getEntityTypesResponse(sortedArrayP);
   }

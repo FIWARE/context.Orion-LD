@@ -94,6 +94,7 @@ void typeAndAttrsExtractFromMongo(KjNode* inputArray, KjNode* typeArray)
     {
       // loop over all attributes and add to response
       KjNode* attribP  = kjArray(orionldState.kjsonP, "attributeNames");
+
       for (KjNode* attrItemP = attrP->value.firstChildP; attrItemP != NULL; attrItemP = attrItemP->next)
       {
         // lookup alias for attribute name in context
@@ -156,11 +157,6 @@ KjNode* mongocEntityTypesGet(bool details, const char* entityType)
   "        }"
   "      },"
   "      \"attrs\": {\"$addToSet\": \"$attrNames\"}"
-  "    }"
-  "  },"
-  "  {"
-  "    \"$project\": {"
-  "      \"attrs\": {\"$sortArray\": {\"input\": \"$attrs\", \"sortBy\": 1}}"
   "    }"
   "  },"
   "  {"
