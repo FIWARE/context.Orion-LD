@@ -180,10 +180,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     },
     {
         "attributeNames": [
-            "isNotParked",
-            "speed",
             "brandName",
-            "isParked"
+            "isNotParked",
+            "isParked",
+            "speed"
         ],
         "id": "https://uri.etsi.org/ngsi-ld/default-context/T1",
         "type": "EntityType",

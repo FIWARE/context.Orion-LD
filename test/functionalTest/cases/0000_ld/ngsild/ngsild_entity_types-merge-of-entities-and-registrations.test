@@ -218,14 +218,14 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 [
     {
         "attributeNames": [
-            "P2",
-            "R2",
             "P1",
-            "R1",
-            "P4",
-            "R4",
+            "P2",
             "P3",
-            "R3"
+            "P4",
+            "R1",
+            "R2",
+            "R3",
+            "R4"
         ],
         "id": "https://uri.etsi.org/ngsi-ld/default-context/T1",
         "type": "EntityType",
@@ -262,10 +262,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 [
     {
         "attributeNames": [
-            "P2",
-            "R2",
             "P1",
-            "R1"
+            "P2",
+            "R1",
+            "R2"
         ],
         "id": "https://uri.etsi.org/ngsi-ld/default-context/T1",
         "type": "EntityType",
