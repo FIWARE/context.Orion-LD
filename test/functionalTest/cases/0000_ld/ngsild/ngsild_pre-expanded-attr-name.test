@@ -47,7 +47,7 @@ payload='{
     "value": true
   }
 }'
-orionCurl --url /ngsi-ld/v1/entities --payload "$payload" -H 'Link: <https://smartdatamodels.org/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" -H 'Link: <https://fiware.github.io/data-models/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
@@ -67,7 +67,7 @@ echo
 
 echo "03. GET the entity and see the update"
 echo "====================================="
-orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:Entity:001 -H 'Link: <https://smartdatamodels.org/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:Entity:001 -H 'Link: <https://fiware.github.io/data-models/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
@@ -87,7 +87,7 @@ echo
 
 echo "05. GET the entity and see the update"
 echo "====================================="
-orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:Entity:001 -H 'Link: <https://smartdatamodels.org/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:Entity:001 -H 'Link: <https://fiware.github.io/data-models/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
@@ -115,7 +115,7 @@ HTTP/1.1 200 OK
 Content-Length: 88
 Content-Type: application/json
 Date: REGEX(.*)
-Link: <https://smartdatamodels.org/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+Link: <https://fiware.github.io/data-models/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
 
 {
     "boat": {
@@ -140,7 +140,7 @@ HTTP/1.1 200 OK
 Content-Length: 151
 Content-Type: application/json
 Date: REGEX(.*)
-Link: <https://smartdatamodels.org/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+Link: <https://fiware.github.io/data-models/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
 
 {
     "boat": {
