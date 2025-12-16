@@ -30,52 +30,52 @@ orionldStart CB -experimental
 --SHELL--
 
 #
-# 01. Create entity urn:E1, with @context http://smartdatamodels.org/context.jsonld
-# 02. Create entity urn:E1, with @context http://smartdatamodels.org/context.jsonld
-# 03. Retrieve urn:E1, with @context http://smartdatamodels.org/context.jsonld and Accept ld+json - see core context in response
-# 04. Query entities, with @context http://smartdatamodels.org/context.jsonld and Accept ld+json - see core context in response
-# 05. POST Query entities, with @context http://smartdatamodels.org/context.jsonld and Accept ld+json - see core context in response
+# 01. Create entity urn:E1, with @context https://fiware.github.io/data-models/context.jsonld
+# 02. Create entity urn:E1, with @context https://fiware.github.io/data-models/context.jsonld
+# 03. Retrieve urn:E1, with @context https://fiware.github.io/data-models/context.jsonld and Accept ld+json - see core context in response
+# 04. Query entities, with @context https://fiware.github.io/data-models/context.jsonld and Accept ld+json - see core context in response
+# 05. POST Query entities, with @context https://fiware.github.io/data-models/context.jsonld and Accept ld+json - see core context in response
 #
 
-echo "01. Create entity urn:E1, with @context http://smartdatamodels.org/context.jsonld"
+echo "01. Create entity urn:E1, with @context https://fiware.github.io/data-models/context.jsonld"
 echo "================================================================================="
 payload='{
   "id": "urn:E1",
   "type": "ByInvoice",
   "Cash": 100 
 }'
-orionCurl --url /ngsi-ld/v1/entities --payload "$payload" -H 'Link: <http://smartdatamodels.org/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" -H 'Link: <https://fiware.github.io/data-models/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
 
-echo "02. Create entity urn:E1, with @context http://smartdatamodels.org/context.jsonld"
+echo "02. Create entity urn:E1, with @context https://fiware.github.io/data-models/context.jsonld"
 echo "================================================================================="
 payload='{
   "id": "urn:E2",
   "type": "ByInvoice",
   "Cash": 100 
 }'
-orionCurl --url /ngsi-ld/v1/entities --payload "$payload" -H 'Link: <http://smartdatamodels.org/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" -H 'Link: <https://fiware.github.io/data-models/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
 
-echo "03. Retrieve urn:E1, with @context http://smartdatamodels.org/context.jsonld and Accept ld+json - see core context in response"
+echo "03. Retrieve urn:E1, with @context https://fiware.github.io/data-models/context.jsonld and Accept ld+json - see core context in response"
 echo "=============================================================================================================================="
-orionCurl --url /ngsi-ld/v1/entities/urn:E1 --out application/ld+json -H 'Link: <http://smartdatamodels.org/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
+orionCurl --url /ngsi-ld/v1/entities/urn:E1 --out application/ld+json -H 'Link: <https://fiware.github.io/data-models/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
 
-echo "04. Query entities, with @context http://smartdatamodels.org/context.jsonld and Accept ld+json - see core context in response"
+echo "04. Query entities, with @context https://fiware.github.io/data-models/context.jsonld and Accept ld+json - see core context in response"
 echo "============================================================================================================================="
-orionCurl --url /ngsi-ld/v1/entities?type=ByInvoice --out application/ld+json -H 'Link: <http://smartdatamodels.org/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
+orionCurl --url /ngsi-ld/v1/entities?type=ByInvoice --out application/ld+json -H 'Link: <https://fiware.github.io/data-models/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
 
-echo "05. POST Query entities, with @context http://smartdatamodels.org/context.jsonld and Accept ld+json - see core context in response"
+echo "05. POST Query entities, with @context https://fiware.github.io/data-models/context.jsonld and Accept ld+json - see core context in response"
 echo "=================================================================================================================================="
 payload='{
   "type": "Query",
@@ -85,12 +85,12 @@ payload='{
     }
   ]
 }'
-orionCurl --url /ngsi-ld/v1/entityOperations/query --payload "$payload" --out application/ld+json -H 'Link: <http://smartdatamodels.org/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
+orionCurl --url /ngsi-ld/v1/entityOperations/query --payload "$payload" --out application/ld+json -H 'Link: <https://fiware.github.io/data-models/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
 --REGEXPECT--
-01. Create entity urn:E1, with @context http://smartdatamodels.org/context.jsonld
+01. Create entity urn:E1, with @context https://fiware.github.io/data-models/context.jsonld
 =================================================================================
 HTTP/1.1 201 Created
 Content-Length: 0
@@ -99,7 +99,7 @@ Location: /ngsi-ld/v1/entities/urn:E1
 
 
 
-02. Create entity urn:E1, with @context http://smartdatamodels.org/context.jsonld
+02. Create entity urn:E1, with @context https://fiware.github.io/data-models/context.jsonld
 =================================================================================
 HTTP/1.1 201 Created
 Content-Length: 0
@@ -108,7 +108,7 @@ Location: /ngsi-ld/v1/entities/urn:E2
 
 
 
-03. Retrieve urn:E1, with @context http://smartdatamodels.org/context.jsonld and Accept ld+json - see core context in response
+03. Retrieve urn:E1, with @context https://fiware.github.io/data-models/context.jsonld and Accept ld+json - see core context in response
 ==============================================================================================================================
 HTTP/1.1 200 OK
 Content-Length: 197
@@ -117,7 +117,7 @@ Date: REGEX(.*)
 
 {
     "@context": [
-        "http://smartdatamodels.org/context.jsonld",
+        "https://fiware.github.io/data-models/context.jsonld",
         "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
     ],
     "Cash": {
@@ -129,7 +129,7 @@ Date: REGEX(.*)
 }
 
 
-04. Query entities, with @context http://smartdatamodels.org/context.jsonld and Accept ld+json - see core context in response
+04. Query entities, with @context https://fiware.github.io/data-models/context.jsonld and Accept ld+json - see core context in response
 =============================================================================================================================
 HTTP/1.1 200 OK
 Content-Length: 397
@@ -139,7 +139,7 @@ Date: REGEX(.*)
 [
     {
         "@context": [
-            "http://smartdatamodels.org/context.jsonld",
+            "https://fiware.github.io/data-models/context.jsonld",
             "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
         ],
         "Cash": {
@@ -151,7 +151,7 @@ Date: REGEX(.*)
     },
     {
         "@context": [
-            "http://smartdatamodels.org/context.jsonld",
+            "https://fiware.github.io/data-models/context.jsonld",
             "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
         ],
         "Cash": {
@@ -164,7 +164,7 @@ Date: REGEX(.*)
 ]
 
 
-05. POST Query entities, with @context http://smartdatamodels.org/context.jsonld and Accept ld+json - see core context in response
+05. POST Query entities, with @context https://fiware.github.io/data-models/context.jsonld and Accept ld+json - see core context in response
 ==================================================================================================================================
 HTTP/1.1 200 OK
 Content-Length: 397
@@ -174,7 +174,7 @@ Date: REGEX(.*)
 [
     {
         "@context": [
-            "http://smartdatamodels.org/context.jsonld",
+            "https://fiware.github.io/data-models/context.jsonld",
             "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
         ],
         "Cash": {
@@ -186,7 +186,7 @@ Date: REGEX(.*)
     },
     {
         "@context": [
-            "http://smartdatamodels.org/context.jsonld",
+            "https://fiware.github.io/data-models/context.jsonld",
             "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
         ],
         "Cash": {

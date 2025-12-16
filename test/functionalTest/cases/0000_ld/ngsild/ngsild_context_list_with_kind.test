@@ -46,7 +46,7 @@ echo "01. Create context A in the broker (array of two URLs - Hosted + 2 Cached)
 echo "=========================================================================="
 payload='{
   "@context": [
-    "http://smartdatamodels.org/context.jsonld",
+    "https://fiware.github.io/data-models/context.jsonld",
     "https://fiware.github.io/data-models/context.jsonld"
   ]
 }'
@@ -181,7 +181,7 @@ Date: REGEX(.*)
         "localId": "REGEX(.*)"
     },
     {
-        "URL": "http://smartdatamodels.org/context.jsonld",
+        "URL": "https://fiware.github.io/data-models/context.jsonld",
         "createdAt": "202REGEX(.*)",
         "extraInfo": {
             "compactions": 0,
@@ -227,7 +227,7 @@ Date: REGEX(.*)
         "createdAt": "202REGEX(.*)",
         "extraInfo": {
             "URLs": [
-                "http://smartdatamodels.org/context.jsonld",
+                "https://fiware.github.io/data-models/context.jsonld",
                 "https://fiware.github.io/data-models/context.jsonld"
             ],
             "compactions": 0,
@@ -308,7 +308,7 @@ Date: REGEX(.*)
         "createdAt": "202REGEX(.*)",
         "extraInfo": {
             "URLs": [
-                "http://smartdatamodels.org/context.jsonld",
+                "https://fiware.github.io/data-models/context.jsonld",
                 "https://fiware.github.io/data-models/context.jsonld"
             ],
             "compactions": 0,
@@ -371,7 +371,7 @@ Date: REGEX(.*)
 
 [
     "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
-    "http://smartdatamodels.org/context.jsonld",
+    "https://fiware.github.io/data-models/context.jsonld",
     "https://fiware.github.io/data-models/context.jsonld"
 ]
 
@@ -404,7 +404,7 @@ Date: REGEX(.*)
         "localId": "REGEX(.*)"
     },
     {
-        "URL": "http://smartdatamodels.org/context.jsonld",
+        "URL": "https://fiware.github.io/data-models/context.jsonld",
         "createdAt": "202REGEX(.*)",
         "extraInfo": {
             "compactions": 0,

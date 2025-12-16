@@ -55,7 +55,7 @@ payload='{
   },
   "@context": [
     "https://fiware.github.io/NGSI-LD_TestSuite/ldContext/testContext.jsonld",
-    "http://smartdatamodels.org/context.jsonld"
+    "https://fiware.github.io/data-models/context.jsonld"
   ]
 }'
 orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload" --in jsonld
@@ -214,7 +214,7 @@ Date: REGEX(.*)
         "numberOfHits": 1
     },
     {
-        "URL": "http://smartdatamodels.org/context.jsonld",
+        "URL": "https://fiware.github.io/data-models/context.jsonld",
         "createdAt": "202REGEX(.*)",
         "extraInfo": {
             "compactions": 0,
@@ -240,7 +240,7 @@ Date: REGEX(.*)
         "extraInfo": {
             "URLs": [
                 "https://fiware.github.io/NGSI-LD_TestSuite/ldContext/testContext.jsonld",
-                "http://smartdatamodels.org/context.jsonld"
+                "https://fiware.github.io/data-models/context.jsonld"
             ],
             "compactions": 0,
             "expansions": 0,
