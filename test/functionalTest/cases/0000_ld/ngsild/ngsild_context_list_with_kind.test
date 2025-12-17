@@ -166,7 +166,7 @@ Date: REGEX(.*)
         "createdAt": "202REGEX(.*)",
         "extraInfo": {
             "compactions": 0,
-            "expansions": 349,
+            "expansions": 347,
             "hash-table": {
                 "instanceId": "https://uri.etsi.org/ngsi-ld/instanceId",
                 "linkedMaps": "https://uri.etsi.org/ngsi-ld/linkedMaps",
@@ -179,27 +179,6 @@ Date: REGEX(.*)
         },
         "kind": "Cached",
         "localId": "REGEX(.*)"
-    },
-    {
-        "URL": "https://fiware.github.io/data-models/context.jsonld",
-        "createdAt": "202REGEX(.*)",
-        "extraInfo": {
-            "compactions": 0,
-            "expansions": 2,
-            "hash-table": {
-                "carSharing": "https://uri.fiware.org/ns/data-models#carSharing",
-                "copyMachineOrService": "https://uri.fiware.org/ns/data-models#copyMachineOrService",
-                "efficCurve": "https://smart-data-models.github.io/data-models/terms.jsonld#/definitions/efficCurve",
-                "instanceId": "https://uri.etsi.org/ngsi-ld/instanceId",
-                "roadClosed": "https://uri.fiware.org/ns/data-models#roadClosed"
-            },
-            "origin": "Downloaded",
-            "type": "hash-table"
-        },
-        "kind": "Cached",
-        "lastUsage": "202REGEX(.*)",
-        "localId": "REGEX(.*)",
-        "numberOfHits": 1
     },
     {
         "URL": "https://fiware.github.io/data-models/context.jsonld",
@@ -365,13 +344,12 @@ Date: REGEX(.*)
 07. GET all contexts, with kind=Cached - see the 2 URLs from step 1 + the Core Context
 ======================================================================================
 HTTP/1.1 200 OK
-Content-Length: 166
+Content-Length: 122
 Content-Type: application/json
 Date: REGEX(.*)
 
 [
     "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
-    "https://fiware.github.io/data-models/context.jsonld",
     "https://fiware.github.io/data-models/context.jsonld"
 ]
 
@@ -379,7 +357,7 @@ Date: REGEX(.*)
 08. GET all contexts, with kind=Cached AND details - see the 2 URLs from step 1 + the Core Context
 ==================================================================================================
 HTTP/1.1 200 OK
-Content-Length: 1888
+Content-Length: 1207
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -389,7 +367,7 @@ Date: REGEX(.*)
         "createdAt": "202REGEX(.*)",
         "extraInfo": {
             "compactions": 0,
-            "expansions": 349,
+            "expansions": 347,
             "hash-table": {
                 "instanceId": "https://uri.etsi.org/ngsi-ld/instanceId",
                 "linkedMaps": "https://uri.etsi.org/ngsi-ld/linkedMaps",
@@ -402,27 +380,6 @@ Date: REGEX(.*)
         },
         "kind": "Cached",
         "localId": "REGEX(.*)"
-    },
-    {
-        "URL": "https://fiware.github.io/data-models/context.jsonld",
-        "createdAt": "202REGEX(.*)",
-        "extraInfo": {
-            "compactions": 0,
-            "expansions": 2,
-            "hash-table": {
-                "carSharing": "https://uri.fiware.org/ns/data-models#carSharing",
-                "copyMachineOrService": "https://uri.fiware.org/ns/data-models#copyMachineOrService",
-                "efficCurve": "https://smart-data-models.github.io/data-models/terms.jsonld#/definitions/efficCurve",
-                "instanceId": "https://uri.etsi.org/ngsi-ld/instanceId",
-                "roadClosed": "https://uri.fiware.org/ns/data-models#roadClosed"
-            },
-            "origin": "Downloaded",
-            "type": "hash-table"
-        },
-        "kind": "Cached",
-        "lastUsage": "202REGEX(.*)",
-        "localId": "REGEX(.*)",
-        "numberOfHits": 1
     },
     {
         "URL": "https://fiware.github.io/data-models/context.jsonld",
