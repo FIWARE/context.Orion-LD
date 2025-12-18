@@ -202,7 +202,7 @@ KjNode* mongocEntityTypesGet(bool details, const char* entityType)
 
     NodeP = mongocKjTreeFromBson(mongoDocP, &title, &detail);
     if (NodeP == NULL)
-      LM_E(("%s: %s", title, detail));
+      KT_E("%s: %s", title, detail);
     else
     {
       if (kjTypeArray == NULL)

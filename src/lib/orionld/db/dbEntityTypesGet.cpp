@@ -223,7 +223,7 @@ static KjNode* getEntityTypesResponse(KjNode* sortedArrayP)
   kjChildAdd(typeNodeResponseP, typeNodeListP);
 
   if (orionldState.uriParams.count)
-      orionldHeaderAdd(&orionldState.out.headers, HttpNgsiv2Count, NULL, kjChildCount(sortedArrayP));
+      orionldHeaderAdd(&orionldState.out.headers, HttpResultsCount, NULL, kjChildCount(sortedArrayP));
 
   return typeNodeResponseP;
 }
@@ -383,7 +383,11 @@ KjNode* dbEntityTypesGet(OrionldProblemDetails* pdP, bool details, bool localOnl
     }
   } 
 
-  // if we dont have local types from mongoc, use the legacy driver to get them
+  // if we dont have local types from mongoc, the local-pointer is still NULL
+  // if we got an empty list from mongoc, the local-pointer is not NULL (but its firstChildP is NULL)
+  // we assume that if local is NULL, we need to get the types from the legacy driver because -experimental was not used or
+  // the orionldState.in.legacy was set
+  // cannot completly remove legacy driver yet, because of tests with the legacy driver will fail
   if (local == NULL)
   {
     if (orionldState.uriParams.limit == 20)
