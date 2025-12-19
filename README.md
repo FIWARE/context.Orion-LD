@@ -17,7 +17,7 @@ This project is part of [FIWARE](https://www.fiware.org/). For more information 
 Issues on this projects can be reported as [github issues](https://github.com/FIWARE/context.Orion-LD/issues),
 while questions are preferred on [Stack Overflow](http://stackoverflow.com/questions/tagged/fiware-orion), using the tag `fiware-orion`.
 
-> The latest release of Orion-LD is [1.10.0](https://github.com/FIWARE/context.Orion-LD/releases/tag/1.10.0) from August 2025
+> The latest release of Orion-LD is [1.11.0](https://github.com/FIWARE/context.Orion-LD/releases/tag/1.11.0) from December 2025
 
 Orion-LD is a Context Broker and [CEF](https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/About+us)
 [building block](https://joinup.ec.europa.eu/collection/egovernment/solution/cef-context-broker) for context data
@@ -100,11 +100,11 @@ Every merged pull request results in a new fixed tag in dockerhub/quay.io.
 
 Please note that for production and/or performance implementations, there is a thorough guide for that right [here](https://github.com/FIWARE/load-tests)
 
-If you want to use a more stable image, the latest release (as of August 2025) is
-[1.10.0](https://github.com/FIWARE/context.Orion-LD/releases/tag/1.10.0)
+If you want to use a more stable image, the latest release (as of December 2025) is
+[1.11.0](https://github.com/FIWARE/context.Orion-LD/releases/tag/1.11.0)
 
 ```console
-docker run quay.io/fiware/orion-ld:1.10.0
+docker run quay.io/fiware/orion-ld:1.11.0
 ```
 
 Please check [quay.io](https://quay.io/repository/fiware/orion-ld?tab=tags) or [dockerhub](https://hub.docker.com/r/fiware/orion-ld/tags) for other releases.
