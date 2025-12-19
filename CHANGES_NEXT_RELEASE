@@ -1,6 +1,7 @@
 ## Fixed Issues:
   #XXXX: Relationships that are arrays were not saved to Postgres
   #XXXX: Fixed a crash for a combination of entityMaps, pick, and traces on (-t 219)
+  #1698: Retrive Entity Types
 
 ## New Features:
   #XXXX: Support for Linked Entities for Entity Retrieval
@@ -11,6 +12,7 @@
 
 ## Library version updates
   #XXXX: kjson from v0.8.3 to v0.9.1
+  #XXXX: ktrace from v0.2 to v0.3
   #XXXX: libmicrohttpd from v0.9.75 to v1.0.2
   #XXXX: libmongoc from v1.24.2 to v2.2.0
 
