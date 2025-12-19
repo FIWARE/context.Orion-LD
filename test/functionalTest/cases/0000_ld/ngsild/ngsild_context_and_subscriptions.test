@@ -55,7 +55,7 @@ payload='{
   },
   "@context": [
     "https://fiware.github.io/NGSI-LD_TestSuite/ldContext/testContext.jsonld",
-    "http://smartdatamodels.org/context.jsonld"
+    "https://fiware.github.io/data-models/context.jsonld"
   ]
 }'
 orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload" --in jsonld
@@ -179,7 +179,7 @@ Date: REGEX(.*)
         "createdAt": "202REGEX(.*)",
         "extraInfo": {
             "compactions": 1,
-            "expansions": 350,
+            "expansions": 348,
             "hash-table": {
                 "instanceId": "https://uri.etsi.org/ngsi-ld/instanceId",
                 "linkedMaps": "https://uri.etsi.org/ngsi-ld/linkedMaps",
@@ -215,16 +215,16 @@ Date: REGEX(.*)
         "numberOfHits": 1
     },
     {
-        "URL": "http://smartdatamodels.org/context.jsonld",
+        "URL": "https://fiware.github.io/data-models/context.jsonld",
         "createdAt": "202REGEX(.*)",
         "extraInfo": {
             "compactions": 0,
-            "expansions": 2,
+            "expansions": 0,
             "hash-table": {
+                "anyVehicle": "https://uri.fiware.org/ns/data-models#anyVehicle",
+                "areaServed": "https://schema.org/areaServed",
                 "carSharing": "https://uri.fiware.org/ns/data-models#carSharing",
                 "copyMachineOrService": "https://uri.fiware.org/ns/data-models#copyMachineOrService",
-                "efficCurve": "https://smart-data-models.github.io/data-models/terms.jsonld#/definitions/efficCurve",
-                "instanceId": "https://uri.etsi.org/ngsi-ld/instanceId",
                 "roadClosed": "https://uri.fiware.org/ns/data-models#roadClosed"
             },
             "origin": "Downloaded",
@@ -241,7 +241,7 @@ Date: REGEX(.*)
         "extraInfo": {
             "URLs": [
                 "https://fiware.github.io/NGSI-LD_TestSuite/ldContext/testContext.jsonld",
-                "http://smartdatamodels.org/context.jsonld"
+                "https://fiware.github.io/data-models/context.jsonld"
             ],
             "compactions": 0,
             "expansions": 0,

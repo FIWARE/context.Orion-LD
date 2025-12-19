@@ -53,7 +53,7 @@ payload='{
       "type":"Property",
       "value": 2
    },
-   "@context": ["https://smartdatamodels.org/context.jsonld"]
+   "@context": ["https://fiware.github.io/data-models/context.jsonld"]
 }'
 orionCurl --url /ngsi-ld/v1/entities --payload "$payload" --in jsonld
 echo
@@ -78,7 +78,7 @@ payload='{
       "accept": "application/json"
     }
   },
-  "@context": "https://smartdatamodels.org/context.jsonld"
+  "@context": "https://fiware.github.io/data-models/context.jsonld"
 }'
 orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload" --in jsonld
 echo
@@ -92,7 +92,7 @@ payload='{
     "type":"Property",
     "value": 40
   },
-  "@context": ["https://smartdatamodels.org/context.jsonld"]
+  "@context": ["https://fiware.github.io/data-models/context.jsonld"]
 }'
 orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:AirQualityObserved:Guadalajara:ES1537A/attrs -X PATCH --payload "$payload" --in jsonld
 echo
@@ -113,7 +113,7 @@ payload='{
     "type":"Property",
     "value": 2
   },
-  "@context": ["https://smartdatamodels.org/context.jsonld"]
+  "@context": ["https://fiware.github.io/data-models/context.jsonld"]
 }'
 orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:AirQualityObserved:Guadalajara:ES1537A/attrs -X PATCH --payload "$payload" --in jsonld
 echo
@@ -172,7 +172,7 @@ User-Agent: orionld/REGEX(.*)
 Host: REGEX(.*)
 Accept: application/json
 Content-Type: application/json
-Link: <https://smartdatamodels.org/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+Link: <https://fiware.github.io/data-models/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
 Ngsild-Attribute-Format: Normalized
 
 {

@@ -114,7 +114,7 @@ payload='{
     "Road": 23
   },
   "Museum": { "object": "urn:ngsi-ld:Building:R2" },
-  "@context": [ "http://smartdatamodels.org/context.jsonld" ]
+  "@context": [ "https://fiware.github.io/data-models/context.jsonld" ]
 }'
 orionCurl --url /ngsi-ld/v1/entities/urn:E1 -X PUT --payload "$payload" --in jsonld
 echo
@@ -130,7 +130,7 @@ echo
 
 echo "08. GET E1 with @context - see shortnames"
 echo "========================================="
-orionCurl --url /ngsi-ld/v1/entities/urn:E1 -H 'Link: <http://smartdatamodels.org/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
+orionCurl --url /ngsi-ld/v1/entities/urn:E1 -H 'Link: <https://fiware.github.io/data-models/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
@@ -300,7 +300,7 @@ HTTP/1.1 200 OK
 Content-Length: 172
 Content-Type: application/json
 Date: REGEX(.*)
-Link: <http://smartdatamodels.org/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+Link: <https://fiware.github.io/data-models/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
 
 {
     "Museum": {

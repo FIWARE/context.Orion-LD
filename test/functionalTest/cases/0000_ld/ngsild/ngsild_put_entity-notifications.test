@@ -96,7 +96,7 @@ echo
 echo "05. PUT E1 with an attribute A1, and with an @context in payload body"
 echo "====================================================================="
 payload='{
-  "@context": [ "http://smartdatamodels.org/context.jsonld" ],
+  "@context": [ "https://fiware.github.io/data-models/context.jsonld" ],
   "type": "T",
   "A1": 3
 }'

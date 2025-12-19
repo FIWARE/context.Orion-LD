@@ -77,7 +77,7 @@ echo
 
 echo "04. GET all (1000 is the pagination limit for entities in GET /types)"
 echo "====================================================================="
-orionCurl --url /ngsi-ld/v1/types
+orionCurl --url "/ngsi-ld/v1/types?limit=100&offset=0"
 echo
 echo
 

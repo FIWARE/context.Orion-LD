@@ -57,7 +57,7 @@ payload='{
       "uri": "http://localhost:'$LISTENER_PORT'/notify"
     }   
   },
-  "@context": "https://smartdatamodels.org/context.jsonld"
+  "@context": "https://fiware.github.io/data-models/context.jsonld"
 }'
 orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload" --in application/ld+json --tenant openiot
 echo
@@ -73,7 +73,7 @@ payload='{
     "type": "Property",
     "value": 127
   },
-  "@context": "https://smartdatamodels.org/context.jsonld"
+  "@context": "https://fiware.github.io/data-models/context.jsonld"
 }'
 orionCurl --url /ngsi-ld/v1/entities --payload "$payload" --in application/ld+json --tenant openiot
 echo
@@ -119,7 +119,7 @@ Host: localhost:REGEX(.*)
 Accept: application/json
 Ngsild-Tenant: openiot
 Content-Type: application/json; charset=utf-8
-Link: <https://smartdatamodels.org/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+Link: <https://fiware.github.io/data-models/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
 
 {
     "data": [

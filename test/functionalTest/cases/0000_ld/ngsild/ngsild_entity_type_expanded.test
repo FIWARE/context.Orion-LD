@@ -37,9 +37,9 @@ orionldStart CB
 echo "01. Create an entity E1 with an already expanded type, containing a hash sign"
 echo "============================================================================="
 payload='{
-  "@context": [ "http://smartdatamodels.org/context.jsonld" ],
+  "@context": [ "https://fiware.github.io/data-models/context.jsonld" ],
   "id": "urn:ngsi-ld:entity:E1",
-  "type": "https://w3id.org/def/saref4agri#Animal",
+  "type": "https://uri.fiware.org/ns/data-models#Animal",
   "P1": {
     "type": "Property",
     "value": 1
@@ -52,7 +52,7 @@ echo
 
 echo "02. GET the entity, with an @context containing the 'already expanded type' - see entity type as short name"
 echo "==========================================================================================================="
-orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:entity:E1 -H 'Link: <http://smartdatamodels.org/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:entity:E1 -H 'Link: <https://fiware.github.io/data-models/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
@@ -80,7 +80,7 @@ HTTP/1.1 200 OK
 Content-Length: 81
 Content-Type: application/json
 Date: REGEX(.*)
-Link: <http://smartdatamodels.org/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+Link: <https://fiware.github.io/data-models/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
 
 {
     "P1": {
@@ -95,7 +95,7 @@ Link: <http://smartdatamodels.org/context.jsonld>; rel="http://www.w3.org/ns/jso
 03. GET the entity, without any @context - see entity type as long name
 =======================================================================
 HTTP/1.1 200 OK
-Content-Length: 113
+Content-Length: 119
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -106,7 +106,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "value": 1
     },
     "id": "urn:ngsi-ld:entity:E1",
-    "type": "https://w3id.org/def/saref4agri#Animal"
+    "type": "https://uri.fiware.org/ns/data-models#Animal"
 }
 
 

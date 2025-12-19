@@ -49,7 +49,7 @@ payload='{
       "accept": "application/json"
     }
   },
-   "@context": "https://smartdatamodels.org/context.jsonld"
+   "@context": "https://fiware.github.io/data-models/context.jsonld"
 }'
 orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload" -H "Content-Type: application/ld+json" -H 'fiware-service: test' -H 'fiware-servicepath: /#'
 echo

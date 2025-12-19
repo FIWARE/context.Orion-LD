@@ -53,7 +53,7 @@ payload='{
     }
   }
 }'
-orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload" -H 'Link: <https://smartdatamodels.org/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload" -H 'Link: <https://fiware.github.io/data-models/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
@@ -67,7 +67,7 @@ payload='{
   "occupationRate": {"type": "Property", "value": "low"},
   "peopleOccupancy": {"type": "Property", "value": 4}
 }'
-orionCurl --url /ngsi-ld/v1/entities -X POST --payload "$payload" -H 'Link: <https://smartdatamodels.org/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
+orionCurl --url /ngsi-ld/v1/entities -X POST --payload "$payload" -H 'Link: <https://fiware.github.io/data-models/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 
@@ -108,7 +108,7 @@ Ngsiv2-Attrsformat: keyValues
 Host: REGEX(.*)
 Accept: application/json
 Content-Type: application/json; charset=utf-8
-Link: <https://smartdatamodels.org/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+Link: <https://fiware.github.io/data-models/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
 
 {
     "data": [

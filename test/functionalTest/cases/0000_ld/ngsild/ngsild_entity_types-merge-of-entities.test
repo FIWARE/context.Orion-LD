@@ -223,10 +223,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 [
     {
         "attributeNames": [
-            "P2",
-            "R2",
             "P1",
-            "R1"
+            "P2",
+            "R1",
+            "R2"
         ],
         "id": "https://uri.etsi.org/ngsi-ld/default-context/T1",
         "type": "EntityType",
@@ -263,10 +263,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 [
     {
         "attributeNames": [
-            "P2",
-            "R2",
             "P1",
-            "R1"
+            "P2",
+            "R1",
+            "R2"
         ],
         "id": "https://uri.etsi.org/ngsi-ld/default-context/T1",
         "type": "EntityType",
@@ -322,10 +322,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 [
     {
         "attributeNames": [
-            "P2",
-            "R2",
             "P1",
-            "R1"
+            "P2",
+            "R1",
+            "R2"
         ],
         "id": "https://uri.etsi.org/ngsi-ld/default-context/T1",
         "type": "EntityType",
@@ -333,10 +333,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     },
     {
         "attributeNames": [
-            "P2",
-            "R2",
             "P1",
-            "R1"
+            "P2",
+            "R1",
+            "R2"
         ],
         "id": "https://uri.etsi.org/ngsi-ld/default-context/T2",
         "type": "EntityType",
@@ -374,10 +374,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 [
     {
         "attributeNames": [
-            "P2",
-            "R2",
             "P1",
-            "R1"
+            "P2",
+            "R1",
+            "R2"
         ],
         "id": "https://uri.etsi.org/ngsi-ld/default-context/T1",
         "type": "EntityType",
@@ -385,10 +385,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     },
     {
         "attributeNames": [
-            "P2",
-            "R2",
             "P1",
-            "R1"
+            "P2",
+            "R1",
+            "R2"
         ],
         "id": "https://uri.etsi.org/ngsi-ld/default-context/T2",
         "type": "EntityType",

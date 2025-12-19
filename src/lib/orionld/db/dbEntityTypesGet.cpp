@@ -34,6 +34,8 @@ extern "C"
 #include "kjson/kjClone.h"                                         // kjClone
 #include "kjson/kjStringValueLookupInArray.h"                      // kjStringValueLookupInArray
 #include "kjson/kjStringArraySortedInsert.h"                       // kjStringArraySortedInsert
+#include "kjson/kjChildCount.h"                                    // kjChildCount
+#include "kjson/kjStringArraySort.h"                               // kjStringArraySort
 }
 
 #include "orionld/common/orionldState.h"                           // orionldState
@@ -44,8 +46,8 @@ extern "C"
 #include "orionld/mongoCppLegacy/mongoCppLegacyEntityTypesFromRegistrationsGet.h"  // mongoCppLegacyEntityTypesFromRegistrationsGet
 #include "orionld/mongoc/mongocEntitiesGet.h"                      // mongocEntitiesGet
 #include "orionld/mongoc/mongocEntityTypesFromRegistrationsGet.h"  // mongocEntityTypesFromRegistrationsGet
+#include "orionld/mongoc/mongocEntityTypesGet.h"                   // mongocEntityTypesGet
 #include "orionld/db/dbEntityTypesGet.h"                           // Own interface
-
 
 
 // -----------------------------------------------------------------------------
@@ -188,6 +190,27 @@ static KjNode* typesAndAttributesExtractFromRegistrations(KjNode* array)
 static KjNode* getEntityTypesResponse(KjNode* sortedArrayP)
 {
   char entityTypesId[64];
+  int currentIndex = 0;
+
+  KjNode* typeNodeListP = kjArray(orionldState.kjsonP,  "typeList");
+  for (KjNode* typeValueNodeP = sortedArrayP->value.firstChildP; typeValueNodeP != NULL; typeValueNodeP = typeValueNodeP->next)
+  {
+    // if orionldState.uriParams.offset and orionldState.uriParams.limit are set,
+    // we need to skip and limit the number of returned types
+    if ((orionldState.uriParams.offset > 0) && (currentIndex < orionldState.uriParams.offset))
+    {
+      currentIndex++;
+      continue;
+    }
+    
+    if (currentIndex >= (orionldState.uriParams.offset + orionldState.uriParams.limit))
+      break;
+
+    KjNode* idNodeP = kjString(orionldState.kjsonP, "_id", typeValueNodeP->value.s);
+    kjChildAdd(typeNodeListP, idNodeP);
+
+    currentIndex++;
+  }
 
   uuidGenerate(entityTypesId, sizeof(entityTypesId), "urn:ngsi-ld:EntityTypeList:");
 
@@ -197,7 +220,10 @@ static KjNode* getEntityTypesResponse(KjNode* sortedArrayP)
 
   kjChildAdd(typeNodeResponseP, idNodeP);
   kjChildAdd(typeNodeResponseP, typeNodeP);
-  kjChildAdd(typeNodeResponseP, sortedArrayP);
+  kjChildAdd(typeNodeResponseP, typeNodeListP);
+
+  if (orionldState.uriParams.count)
+      orionldHeaderAdd(&orionldState.out.headers, HttpResultsCount, NULL, kjChildCount(sortedArrayP));
 
   return typeNodeResponseP;
 }
@@ -212,9 +238,21 @@ static KjNode* getEntityTypesResponse(KjNode* sortedArrayP)
 static KjNode* getAvailableEntityTypesDetails(KjNode* sortedArrayP)
 {
   KjNode* typeNodeDetailsListP = kjArray(orionldState.kjsonP,  NULL);
+  int currentIndex = 0;
 
   for (KjNode* typeValueNodeP = sortedArrayP->value.firstChildP; typeValueNodeP != NULL; typeValueNodeP = typeValueNodeP->next)
   {
+    // if orionldState.uriParams.offset and orionldState.uriParams.limit are set,
+    // we need to skip and limit the number of returned types
+    if ((orionldState.uriParams.offset > 0) && (currentIndex < orionldState.uriParams.offset))
+    {
+      currentIndex++;
+      continue;
+    }
+        
+    if (currentIndex >= (orionldState.uriParams.offset + orionldState.uriParams.limit))
+      break;
+
     KjNode* idP                = kjLookup(typeValueNodeP, "id");
     KjNode* typeNameP          = kjLookup(typeValueNodeP, "typeName");
     KjNode* attrsNameP         = kjLookup(typeValueNodeP, "attributeNames");
@@ -238,10 +276,18 @@ static KjNode* getAvailableEntityTypesDetails(KjNode* sortedArrayP)
     }
 
     if (attrsNameP != NULL)
+    {
+      kjStringArraySort(attrsNameP);
       kjChildAdd(typeNodeResponseP, attrsNameP);
+    }
 
     kjChildAdd(typeNodeDetailsListP, typeNodeResponseP);
+    currentIndex++;
   }
+
+  if (orionldState.uriParams.count)
+      orionldHeaderAdd(&orionldState.out.headers, HttpNgsiv2Count, NULL, kjChildCount(sortedArrayP));
+
   return typeNodeDetailsListP;
 }
 
@@ -331,41 +377,41 @@ KjNode* dbEntityTypesGet(OrionldProblemDetails* pdP, bool details, bool localOnl
   {
     if (orionldState.in.legacy == NULL)
     {
-      entitiesGet                     = mongocEntitiesGet;
+      // get local entity types from the mongo db
+      local  = mongocEntityTypesGet(details, NULL);
       entityTypesFromRegistrationsGet = mongocEntityTypesFromRegistrationsGet;
     }
-  }
+  } 
 
-  //
-  // See issue #1698
-  // I'd really need to rewrite the whole function.
-  // As cfreyth correctly comments, the pagination limit/offet are about entities (as mongocEntitiesGet is used)
-  // and NOT entity types.
-  //
-  // As a quick and dirty fix:
-  // * Allow limit/offset
-  // * Set default limit to 1000 (unless set to anything else by the user)
-  //
-  if (orionldState.uriParams.limit == 20)
-    orionldState.uriParams.limit = 1000;  // Default limit of 20 is changed to 1000
-
-  //
-  // GET local types - i.e. from the "entities" collection
-  //
-  if (details == false)
-    local  = entitiesGet(NULL, 0, true);
-  else
+  // if we dont have local types from mongoc, the local-pointer is still NULL
+  // if we got an empty list from mongoc, the local-pointer is not NULL (but its firstChildP is NULL)
+  // we assume that if local is NULL, we need to get the types from the legacy driver because -experimental was not used or
+  // the orionldState.in.legacy was set
+  // cannot completly remove legacy driver yet, because of tests with the legacy driver will fail
+  if (local == NULL)
   {
-    char* fields[1] = { (char*) "attrNames" };
-    local  = entitiesGet(fields, 1, true);
-  }
+    if (orionldState.uriParams.limit == 20)
+      orionldState.uriParams.limit = 1000;  // Default limit of 20 is changed to 1000
 
-  if (local != NULL)
-  {
+    //
+    // GET local types - i.e. from the "entities" collection
+    //
+
     if (details == false)
-      local = typesExtract(local);
+      local  = entitiesGet(NULL, 0, true);
     else
-      local = typesAndAttributesExtractFromEntities(local);
+    {
+      char* fields[1] = { (char*) "attrNames" };
+      local  = entitiesGet(fields, 1, true);
+    }
+
+    if (local != NULL)
+    {
+      if (details == false)
+        local = typesExtract(local);
+      else
+        local = typesAndAttributesExtractFromEntities(local);
+    }
   }
 
   //
@@ -559,7 +605,6 @@ KjNode* dbEntityTypesGet(OrionldProblemDetails* pdP, bool details, bool localOnl
 
       nodeP = next;
     }
-
 
     return getEntityTypesResponse(sortedArrayP);
   }
