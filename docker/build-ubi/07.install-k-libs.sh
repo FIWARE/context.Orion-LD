@@ -71,6 +71,6 @@ make install
 # ktrace
 #
 cd ${ROOT_FOLDER}/ktrace
-git checkout release/0.2
+git checkout release/0.3
 make
 make install
