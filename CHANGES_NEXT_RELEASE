@@ -1,23 +1,6 @@
 ## Fixed Issues:
-  #XXXX: Relationships that are arrays were not saved to Postgres
-  #XXXX: Fixed a crash for a combination of entityMaps, pick, and traces on (-t 219)
-  #1698: Retrive Entity Types
-
 ## New Features:
-  #XXXX: Support for Linked Entities for Entity Retrieval
-  #XXXX: Support for Linked Entities for Entity Query (not the query language though)
-  #XXXX: Support for the 'valueType' sub-attribute for properties
-  #XXXX: Support for the HEAD HTTP method
-  #XXXX: Support for GET Attribute (local only and no support for datasetId)
-
 ## Library version updates
-  #XXXX: kjson from v0.8.3 to v0.9.1
-  #XXXX: ktrace from v0.2 to v0.3
-  #XXXX: libmicrohttpd from v0.9.75 to v1.0.2
-  #XXXX: libmongoc from v1.24.2 to v2.2.0
-
 ## DDS
-  #XXXX: Support for DDS Services
-
 ## Multi-Attribute (datasetId)
 ## Notes
