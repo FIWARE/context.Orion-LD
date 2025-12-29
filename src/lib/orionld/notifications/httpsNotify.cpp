@@ -29,6 +29,7 @@ extern "C"
 {
 #include "ktrace/kTrace.h"                                       // KT_*
 #include "ktrace/ktTraceLevelCheck.h"                            // ktTraceLevelCheck
+#include "kalloc/kaStrdup.h"                                     // kaStrdup
 }
 
 #include "cache/CachedSubscription.h"                            // CachedSubscription
@@ -183,7 +184,7 @@ int httpsNotify(CachedSubscription* cSubP, struct iovec* ioVec, int ioVecLen, do
   struct curl_slist* headers = NULL;
   for (int ix = 1; ix < ioVecLen - 2; ix++)
   {
-    char* item = (char*) ioVec[ix].iov_base;
+    char* item = kaStrdup(&orionldState.kalloc, (char*) ioVec[ix].iov_base);
 
     // must not be CRLF-terminated - have to remove last 2 chars
     item[ioVec[ix].iov_len - 2] = 0;
