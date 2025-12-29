@@ -29,6 +29,7 @@ extern "C"
 {
 #include "ktrace/kTrace.h"                                       // KT_*
 #include "ktrace/ktTraceLevelCheck.h"                            // ktTraceLevelCheck
+#include "kalloc/kaStrdup.h"                                     // kaStrdup
 }
 
 #include "cache/CachedSubscription.h"                            // CachedSubscription
@@ -183,15 +184,13 @@ int httpsNotify(CachedSubscription* cSubP, struct iovec* ioVec, int ioVecLen, do
   struct curl_slist* headers = NULL;
   for (int ix = 1; ix < ioVecLen - 2; ix++)
   {
-    char header[1024];
-
-    strncpy(header, (char*) ioVec[ix].iov_base, sizeof(header) - 1);
+    char* item = kaStrdup(&orionldState.kalloc, (char*) ioVec[ix].iov_base);
 
     // must not be CRLF-terminated - have to remove last 2 chars
-    header[ioVec[ix].iov_len - 2] = 0;
+    item[ioVec[ix].iov_len - 2] = 0;
 
-    KT_T(KtNotificationHeaders, "%s: Notification Request Header: '%s'", cSubP->subscriptionId, header);
-    headers = curl_slist_append(headers, header);
+    KT_T(KtNotificationHeaders, "%s: Notification Request Header: '%s'", cSubP->subscriptionId, item);
+    headers = curl_slist_append(headers, item);
   }
   curl_easy_setopt(curlHandleP, CURLOPT_HTTPHEADER, headers);
 

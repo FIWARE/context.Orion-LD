@@ -1,4 +1,6 @@
 ## Fixed Issues:
+  #1495 - bug with very long HTTP headers in HTTPS notifications
+
 ## New Features:
 ## Library version updates
 ## DDS
