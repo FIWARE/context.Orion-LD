@@ -26,7 +26,7 @@ Crash with HTTPS Subscription - issue #1495
 --SHELL-INIT--
 ${SCRIPT_HOME}/httpsPrepare.sh --keyFileName /tmp/harnessTest.key --certFileName /tmp/harnessTest.pem
 dbInit CB
-orionldStart CB -mongocOnly -kt 280,1102
+orionldStart CB -mongocOnly
 accumulatorStart --pretty-print --https --key /tmp/harnessTest.key --cert /tmp/harnessTest.pem
 
 --SHELL--
