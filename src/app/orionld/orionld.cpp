@@ -359,8 +359,8 @@ bool            kTraceInfo       = false;
 #define PAGE_SIZE_DESC         "default page size (no of entities, subscriptions, registrations)"
 #define DUC_URL_DESC           "URL to default user context"
 #define EXTRAS_DESC            "Extra stuff, non-NGSI-LD, like 'origin' in subs/regs"
-#define KTRACE_LEVELS_DESC     "K-Trace levels"
-#define KTRACE_INFO_DESC       "Turn off K-Trace INFO messages"
+#define KTRACE_LEVELS_DESC     "K-Trace trace levels"
+#define KTRACE_INFO_DESC       "K-Trace INFO messages"
 #define KTOSCREEN_DESC         "K-Trace to stdout"
 
 
@@ -472,7 +472,7 @@ PaArgument paArgs[] =
   { "-configFile",            configFile,               "CONFIG_FILE",               PaString,  PaOpt,  _i "",             PaNL,  PaNL,             CONFIG_FILE_DESC          },
   { "-duc",                   defaultUserContextUrl,    "DUC_URL",                   PaString,  PaOpt,  _i "",             PaNL,  PaNL,             DUC_URL_DESC              },
   { "-kt",                    kTraceLevels,             "KTRACE_LEVELS",             PaString,  PaOpt,  _i "",             PaNL,  PaNL,             KTRACE_LEVELS_DESC        },
-  { "-ki",                    &kTraceInfo,              "KTRACE_INFO",               PaBool,    PaOpt,  true,             false,  true,             KTRACE_INFO_DESC          },
+  { "-ki",                    &kTraceInfo,              "KTRACE_INFO",               PaBool,    PaOpt,  false,            false,  true,             KTRACE_INFO_DESC          },
   { "-kToScreen",             &kToScreen,               "KTOSCREEN",                 PaBool,    PaOpt,  false,            false,  true,             KTOSCREEN_DESC            },
 
   PA_END_OF_ARGS
