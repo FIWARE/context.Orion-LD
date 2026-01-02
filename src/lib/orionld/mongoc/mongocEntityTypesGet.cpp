@@ -61,7 +61,7 @@ void typeExtractFromMongo(KjNode* inputArray, KjNode* typeArray)
 
     if (tNode != NULL)
     {
-      kjChildAdd(typeArray, tNode);  
+      kjChildAdd(typeArray, tNode);
       // Lookup alias for type name in context
       tNode->value.s = orionldContextItemAliasLookup(orionldState.contextP, tNode->value.s, NULL, NULL);
     }
@@ -105,9 +105,10 @@ void typeAndAttrsExtractFromMongo(KjNode* inputArray, KjNode* typeArray)
       kjChildAdd(nodeResponseP, attribP);
     }
 
-    kjChildAdd(typeArray, nodeResponseP); 
+    kjChildAdd(typeArray, nodeResponseP);
   }
 }
+
 
 
 // -----------------------------------------------------------------------------
@@ -116,62 +117,61 @@ void typeAndAttrsExtractFromMongo(KjNode* inputArray, KjNode* typeArray)
 //
 KjNode* mongocEntityTypesGet(bool details, const char* entityType)
 {
-  // We use a projection for getting all types from mongoDB together with the attributes 
+  //
+  // We use a projection for getting all types from mongoDB together with the attributes
   // if details == true we will return also the attributes for each type
-  bson_t *pipeline = bson_new();
-  bson_error_t error;
+  //
+  bson_t*       pipeline = bson_new();
+  bson_error_t  error;
 
   // Pipeline-Array in JSON-Format
- const char *pipeline_json = 
-  "["
-  "  {"
-  "    \"$project\": {"
-  "      \"type\": {"
-  "        \"$ifNull\": [\"$_id.type\", null]"
-  "      },"
-  "      \"attrNames\": 1"
-  "    }"
-  "  },"
-  "  {"
-  "    \"$project\": {"
-  "      \"attrNames\": {"
-  "        \"$cond\": {"
-  "          \"if\": {\"$eq\": [\"$attrNames\", []]},"
-  "          \"then\": [null],"
-  "          \"else\": \"$attrNames\""
-  "        }"
-  "      },"
-  "      \"type\": 1"
-  "    }"
-  "  },"
-  "  {"
-  "    \"$unwind\": \"$attrNames\""
-  "  },"
-  "  {"
-  "    \"$group\": {"
-  "      \"_id\": {"
-  "        \"$cond\": {"
-  "          \"if\": {\"$in\": [\"$type\", [null, \"\"]]},"
-  "          \"then\": \"\","
-  "          \"else\": \"$type\""
-  "        }"
-  "      },"
-  "      \"attrs\": {\"$addToSet\": \"$attrNames\"}"
-  "    }"
-  "  },"
-  "  {"
-  "    \"$sort\": {\"_id\": 1}"
-  "  }"
-  "]";
+  const char *pipeline_json =
+    "["
+    "  {"
+    "    \"$project\": {"
+    "      \"type\": {"
+    "        \"$ifNull\": [\"$_id.type\", null]"
+    "      },"
+    "      \"attrNames\": 1"
+    "    }"
+    "  },"
+    "  {"
+    "    \"$project\": {"
+    "      \"attrNames\": {"
+    "        \"$cond\": {"
+    "          \"if\": {\"$eq\": [\"$attrNames\", []]},"
+    "          \"then\": [null],"
+    "          \"else\": \"$attrNames\""
+    "        }"
+    "      },"
+    "      \"type\": 1"
+    "    }"
+    "  },"
+    "  {"
+    "    \"$unwind\": \"$attrNames\""
+    "  },"
+    "  {"
+    "    \"$group\": {"
+    "      \"_id\": {"
+    "        \"$cond\": {"
+    "          \"if\": {\"$in\": [\"$type\", [null, \"\"]]},"
+    "          \"then\": \"\","
+    "          \"else\": \"$type\""
+    "        }"
+    "      },"
+    "      \"attrs\": {\"$addToSet\": \"$attrNames\"}"
+    "    }"
+    "  },"
+    "  {"
+    "    \"$sort\": {\"_id\": 1}"
+    "  }"
+    "]";
 
   // Parse JSON to BSON
-  pipeline = bson_new_from_json((const uint8_t *)pipeline_json, -1, &error);
+  pipeline = bson_new_from_json((const uint8_t*) pipeline_json, -1, &error);
 
-  if (!pipeline) {
-      KT_E("Error parsing pipeline: %s\n", error.message);
-      return NULL;
-  }
-
+  if (!pipeline)
+    KT_RE(NULL, "Error parsing pipeline: %s\n", error.message);
 
   // Connection
   mongocConnectionGet(orionldState.tenantP, DbEntities);
@@ -179,11 +179,11 @@ KjNode* mongocEntityTypesGet(bool details, const char* entityType)
   //
   // Run the query
   //
-  mongoc_cursor_t*      mongoCursorP;
   bson_error_t          mongoError;
-  mongoc_read_prefs_t*  readPrefs   = mongoc_read_prefs_new(MONGOC_READ_NEAREST);
+  mongoc_read_prefs_t*  readPrefs    = mongoc_read_prefs_new(MONGOC_READ_NEAREST);
+  mongoc_cursor_t*      mongoCursorP = mongoc_collection_aggregate(orionldState.mongoc.entitiesP, MONGOC_QUERY_NONE, pipeline, NULL, readPrefs);
 
-  if ((mongoCursorP = mongoc_collection_aggregate(orionldState.mongoc.entitiesP, MONGOC_QUERY_NONE, pipeline, NULL, readPrefs)) == NULL)
+  if (mongoCursorP == NULL)
   {
     KT_E("Internal Error (mongoc_collection_find_with_opts ERROR)");
     mongoc_read_prefs_destroy(readPrefs);
@@ -192,7 +192,7 @@ KjNode* mongocEntityTypesGet(bool details, const char* entityType)
   }
 
   KjNode*        kjTypeArray        = NULL;
-  KjNode*        NodeP = NULL;
+  KjNode*        nodeP              = NULL;
   const bson_t*  mongoDocP;
 
   while (mongoc_cursor_next(mongoCursorP, &mongoDocP))
@@ -200,14 +200,15 @@ KjNode* mongocEntityTypesGet(bool details, const char* entityType)
     char* title;
     char* detail;
 
-    NodeP = mongocKjTreeFromBson(mongoDocP, &title, &detail);
-    if (NodeP == NULL)
+    nodeP = mongocKjTreeFromBson(mongoDocP, &title, &detail);
+    if (nodeP == NULL)
       KT_E("%s: %s", title, detail);
     else
     {
       if (kjTypeArray == NULL)
         kjTypeArray = kjArray(orionldState.kjsonP, NULL);
-      kjChildAdd(kjTypeArray, NodeP);
+
+      kjChildAdd(kjTypeArray, nodeP);
     }
   }
 
@@ -229,6 +230,7 @@ KjNode* mongocEntityTypesGet(bool details, const char* entityType)
   if (kjTypeArray != NULL)
   {
     typeArray = kjArray(orionldState.kjsonP, NULL);
+
     if (details == false)
       typeExtractFromMongo(kjTypeArray, typeArray);
     else
