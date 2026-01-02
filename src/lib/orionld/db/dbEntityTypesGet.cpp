@@ -202,7 +202,7 @@ static KjNode* getEntityTypesResponse(KjNode* sortedArrayP)
       currentIndex++;
       continue;
     }
-    
+
     if (currentIndex >= (orionldState.uriParams.offset + orionldState.uriParams.limit))
       break;
 
@@ -249,7 +249,7 @@ static KjNode* getAvailableEntityTypesDetails(KjNode* sortedArrayP)
       currentIndex++;
       continue;
     }
-        
+
     if (currentIndex >= (orionldState.uriParams.offset + orionldState.uriParams.limit))
       break;
 
@@ -381,7 +381,7 @@ KjNode* dbEntityTypesGet(OrionldProblemDetails* pdP, bool details, bool localOnl
       local  = mongocEntityTypesGet(details, NULL);
       entityTypesFromRegistrationsGet = mongocEntityTypesFromRegistrationsGet;
     }
-  } 
+  }
 
   // if we dont have local types from mongoc, the local-pointer is still NULL
   // if we got an empty list from mongoc, the local-pointer is not NULL (but its firstChildP is NULL)
