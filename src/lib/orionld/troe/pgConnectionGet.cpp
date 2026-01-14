@@ -65,12 +65,12 @@ static char* wsTrim(char* s)
 //
 PgConnection* pgConnectionGet(const char* db)
 {
-  char* _db = (char*)db;
+  char* _db = (char*) db;
 
   //
   // Empty tenant => use default db name
   //
-  // Note that a non-NULL 'db' that points to an empty string "" correcponds to the default database (orion)
+  // Note that a non-NULL 'db' that points to an empty string "" corresponds to the default database (orion)
   // Something very different is db == NULL - the "default" postgres database - to where we need to connect to create new databases
   //
   if ((db != NULL) && (*db == 0))

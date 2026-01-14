@@ -1,0 +1,217 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Issue #1779
+
+--SHELL-INIT--
+dbInit CB
+dbInit CB t1
+pgInit ftest
+pgInit ftest_t1
+orionldStart CB -experimental -troe -logForHumans -disableFileLog -multiservice
+ftClientStart
+
+--SHELL--
+
+#
+# 01. Create an entity CowEvent:20260113161457
+# 02. Create a matching subscription
+# 03. PATCH CowEvent:20260113161457, provoke a notification to ftClient
+# 04. Dump the ftClient to see the notification
+# 05. Ping the broker to make sure it's still alive
+#
+
+echo "01. Create an entity CowEvent:20260113161457"
+echo "============================================"
+payload='{
+  "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context.jsonld",
+  "id": "urn:ngsi-ld:CowEvent:20260113161457",
+  "type": "CowEvent",
+  "refAbout": {
+    "type": "Relationship",
+    "object": "urn:ngsi-ld:Cow:20260113161457"
+  },
+  "eventName": {
+    "type": "Property",
+    "value": "Рождение"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" --tenant t1 --in application/ld+json --out application/ld+json
+echo
+echo
+
+
+echo "02. Create a matching subscription"
+echo "=================================="
+payload='{
+  "id": "urn:s1",
+  "type": "Subscription",
+  "entities": [
+    {
+      "type": "CowEvent"
+    }
+  ],
+  "notification": {
+    "endpoint": {
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload" --tenant t1
+echo
+echo
+
+
+echo "03. PATCH CowEvent:20260113161457, provoke a notification to ftClient"
+echo "====================================================================="
+payload='{
+  "@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context.jsonld",
+  "id": "urn:ngsi-ld:CowEvent:20260113161457",
+  "refAbout": {
+    "type": "Relationship",
+    "object": "urn:ngsi-ld:Cow:20260113161457"
+  },
+  "eventName": {
+    "type": "Property",
+    "value": "Течка"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:CowEvent:20260113161457 --payload "$payload" -X PATCH --in application/ld+json --out application/ld+json --tenant t1
+echo
+echo
+
+
+echo "04. Dump the ftClient to see the notification"
+echo "============================================="
+sleep 1
+orionCurl --url /dump --port $FT_PORT --noPayloadCheck
+echo
+echo
+
+
+echo "05. Ping the broker to make sure it's still alive"
+echo "================================================="
+orionCurl --url /ngsi-ld/v1/entities?local=true --tenant t1
+echo
+echo
+
+
+--REGEXPECT--
+01. Create an entity CowEvent:20260113161457
+============================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:CowEvent:20260113161457
+NGSILD-Tenant: t1
+
+
+
+02. Create a matching subscription
+==================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/subscriptions/urn:s1
+NGSILD-Tenant: t1
+
+
+
+03. PATCH CowEvent:20260113161457, provoke a notification to ftClient
+=====================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+04. Dump the ftClient to see the notification
+=============================================
+HTTP/1.1 200 OK
+Content-Length: 846
+Date: REGEX(.*)
+
+POST /notify?subscriptionId=urn:s1
+Content-Length: 360
+Content-Type: application/json
+User-Agent: orionld/REGEX(.*)
+Host: 127.0.0.1:7701
+Accept: application/json
+Ngsild-Attribute-Format: Normalized
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+Ngsild-Tenant: t1
+
+{
+  "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+  "type": "Notification",
+  "subscriptionId": "urn:s1",
+  "notifiedAt": "202REGEX(.*)",
+  "data": [
+    {
+      "id": "urn:ngsi-ld:CowEvent:20260113161457",
+      "type": "CowEvent",
+      "refAbout": {
+        "type": "Relationship",
+        "object": "urn:ngsi-ld:Cow:20260113161457"
+      },
+      "eventName": {
+        "type": "Property",
+        "value": "REGEX(.*)"
+      }
+    }
+  ]
+}
+
+
+
+05. Ping the broker to make sure it's still alive
+=================================================
+HTTP/1.1 200 OK
+Content-Length: 194
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+NGSILD-Tenant: t1
+
+[
+    {
+        "eventName": {
+            "type": "Property",
+            "value": "REGEX(.*)"
+        },
+        "id": "urn:ngsi-ld:CowEvent:20260113161457",
+        "refAbout": {
+            "object": "urn:ngsi-ld:Cow:20260113161457",
+            "type": "Relationship"
+        },
+        "type": "CowEvent"
+    }
+]
+
+
+--TEARDOWN--
+brokerStop CB
+ftClientStop
+dbDrop CB
+dbDrop CB t1
+pgDrop ftest
+pgDrop ftest_t1
