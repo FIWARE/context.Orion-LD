@@ -688,6 +688,6 @@ id,valuetype,entityid,attrinstanceid,unitcode,text,number,boolean,compound,obser
 
 --TEARDOWN--
 brokerStop CB
-#dbDrop CB
+dbDrop CB
 pgInit $CB_DB_NAME
 accumulatorStop
