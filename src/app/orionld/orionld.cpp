@@ -1011,6 +1011,7 @@ int main(int argC, char* argV[])
   // Vars for kTrace, to be configured along with logMsg (verbose, debug, "log to screen", etc)
   KBool          kLogToScreen = KTRUE;
   char*          kLogLevel    = (char*) "DEBUG";
+  char*          kLogDir      = paLogDir;
   KBool          kFixme       = KFALSE;
 
   //
@@ -1024,6 +1025,7 @@ int main(int argC, char* argV[])
   if (disableFileLog && fg)
   {
     kLogToScreen = KTRUE;
+    kLogDir      = NULL;
     paConfig("log to screen", (void*) true);
     paConfig("log to file",   (void*) false);
   }
@@ -1036,6 +1038,7 @@ int main(int argC, char* argV[])
   else if (disableFileLog)
   {
     kLogToScreen = KFALSE;
+    kLogDir      = NULL;
     paConfig("log to screen", (void*) false);
     paConfig("log to file",   (void*) false);
   }
@@ -1058,7 +1061,7 @@ int main(int argC, char* argV[])
   //
   // Initializing the new logging library, kTrace
   //
-  int kt = ktInit("Orion-LD", paLogDir, kLogToScreen, kLogLevel, kTraceLevels, paVerbose, paDebug, kFixme);
+  int kt = ktInit("Orion-LD", kLogDir, kLogToScreen, kLogLevel, kTraceLevels, paVerbose, paDebug, kFixme);
   if (kt != 0)
   {
     fprintf(stderr, "Error initializing logging library\n");
