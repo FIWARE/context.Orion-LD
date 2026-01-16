@@ -38,6 +38,7 @@ SET (SOURCES
     orionldGetSubscription.cpp
     orionldGetRegistrations.cpp
     orionldGetRegistration.cpp
+    orionldGetRelationships.cpp
     orionldDeleteEntity.cpp
     orionldDeleteAttribute.cpp
     orionldDeleteRegistration.cpp

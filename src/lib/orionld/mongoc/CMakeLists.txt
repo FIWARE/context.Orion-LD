@@ -47,6 +47,7 @@ SET (SOURCES
     mongocKjTreeFromBson.cpp
     mongocKjTreeToBson.cpp
     mongocRegistrationLookup.cpp
+    mongocRelationshipsGet.cpp
     mongocServerVersionGet.cpp
     mongocSubCachePopulateByTenant.cpp
     mongocSubCountersUpdate.cpp
