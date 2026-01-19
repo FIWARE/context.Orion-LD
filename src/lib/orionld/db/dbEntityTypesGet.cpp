@@ -286,7 +286,7 @@ static KjNode* getAvailableEntityTypesDetails(KjNode* sortedArrayP)
   }
 
   if (orionldState.uriParams.count)
-      orionldHeaderAdd(&orionldState.out.headers, HttpNgsiv2Count, NULL, kjChildCount(sortedArrayP));
+      orionldHeaderAdd(&orionldState.out.headers, HttpResultsCount, NULL, kjChildCount(sortedArrayP));
 
   return typeNodeDetailsListP;
 }
