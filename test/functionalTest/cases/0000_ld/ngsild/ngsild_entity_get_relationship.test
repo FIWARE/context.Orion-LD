@@ -1,0 +1,157 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Query Broker for all entities that having a relationship to a specific entity.
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -experimental
+
+--SHELL--
+
+#
+# 01. Create an entity urn:ngsi-ld:Building:store001
+# 02. Create an entity urn:ngsi-ld:Building:store002
+# 03. GET entity list of entities related to urn:ngsi-ld:r:001
+# 04. GET entity list of entities related to urn:ngsi-ld:r:003
+#
+
+echo "01. Create an entity urn:ngsi-ld:Building:store001"
+echo "=================================================="
+payload='{
+  "id": "urn:ngsi-ld:Building:store001",
+  "type": "Building",
+  "name": { "type": "Property", "value": "Bosebrucke Enikauf" },
+  "Relationship1": 
+  {
+    "type": "Relationship",
+    "object": "urn:ngsi-ld:r:001"
+  },
+  "Relationship2":  {
+    "type": "Relationship",
+    "object": "urn:ngsi-ld:r:002"
+  },
+  "Relationship3":  {
+    "type": "Relationship",
+    "object": "urn:ngsi-ld:r:003"
+  },
+  "@context": "https://fiware.github.io/tutorials.Step-by-Step/data-models-context.jsonld"
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" -H "Content-Type: application/ld+json"
+echo
+echo
+
+echo "02. Create an entity urn:ngsi-ld:Building:store002"
+echo "=================================================="
+payload='{
+  "id": "urn:ngsi-ld:Building:store002",
+  "type": "Building",
+  "name": { "type": "Property", "value": "Bosebrucke Enikauf" },
+  "Relationship1": 
+  {
+    "type": "Relationship",
+    "object": "urn:ngsi-ld:r:003"
+  },
+  "Relationship2":  {
+    "type": "Relationship",
+    "object": "urn:ngsi-ld:r:004"
+  },
+  "Relationship3":  {
+    "type": "Relationship",
+    "object": "urn:ngsi-ld:r:005"
+  },
+  "@context": "https://fiware.github.io/tutorials.Step-by-Step/data-models-context.jsonld"
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" -H "Content-Type: application/ld+json"
+echo
+echo
+
+echo "03. GET entity list of entities related to urn:ngsi-ld:r:001"
+echo "============================================================"
+orionCurl --url /ngsi-ld/ex/relationships?id=urn:ngsi-ld:r:001 -H 'Link: <https://fiware.github.io/tutorials.Step-by-Step/data-models-context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
+echo
+echo
+
+
+echo "04. GET entity list of entities related to urn:ngsi-ld:r:003"
+echo "============================================================"
+orionCurl --url /ngsi-ld/ex/relationships?id=urn:ngsi-ld:r:003 -H 'Link: <https://fiware.github.io/tutorials.Step-by-Step/data-models-context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
+echo
+echo
+
+
+--REGEXPECT--
+01. Create an entity urn:ngsi-ld:Building:store001
+==================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:Building:store001
+
+
+
+02. Create an entity urn:ngsi-ld:Building:store002
+==================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:Building:store002
+
+
+
+03. GET entity list of entities related to urn:ngsi-ld:r:001
+============================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://fiware.github.io/tutorials.Step-by-Step/data-models-context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+{
+    "id": "urn:ngsi-ld:r:001",
+    "referencedBy": {
+        "urn:ngsi-ld:Building:store001": "Relationship1"
+    }
+}
+
+
+04. GET entity list of entities related to urn:ngsi-ld:r:003
+============================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://fiware.github.io/tutorials.Step-by-Step/data-models-context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+{
+    "id": "urn:ngsi-ld:r:003",
+    "referencedBy": {
+        "urn:ngsi-ld:Building:store001": "Relationship3",
+        "urn:ngsi-ld:Building:store002": "Relationship1"
+    }
+}
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
