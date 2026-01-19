@@ -36,12 +36,13 @@ extern "C"
 #include "orionld/types/RegCache.h"                              // RegCache
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/context/orionldContextItemExpand.h"            // orionldContextItemExpand
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
-#include "orionld/mongoc/mongocRelationshipsGet.h"                  // mongocRelationshipsGet
-#include "orionld/serviceRoutines/orionldGetRelationships.h"        // Own Interface
+#include "orionld/mongoc/mongocRelationshipsGet.h"               // mongocRelationshipsGet
+#include "orionld/serviceRoutines/orionldGetRelationships.h"     // Own Interface
 
-#include "orionld/common/traceLevels.h"                          // KTrace levels
+
 
 
 
@@ -57,26 +58,32 @@ bool orionldGetRelationships(void)
   // If the broker is started with '-experimental', then mongocEntityTypeGet is to be used instead of mongoCppEntityTypeGet.
   // - Except if the HTTP Header 'legacy' is used
   //
-  KT_T(StLinked, "Getting Entity '%s'", orionldState.wildcard[0]);
+  if (orionldState.uriParams.id == NULL)
+  {
+    orionldError(OrionldBadRequestData, "No entity id specified in URL", "No entity id specified in URL", 400);
+    return false;
+  }
 
+  KT_T(StLinked, "Getting Entity '%s'", orionldState.uriParams.id);
+
+  // pipelines are only supported with the new MongoDB C++ driver so serve the endpoint only when experimental mode is on and legacy mode is not requested
   if ((experimental == true) && (orionldState.in.legacy == NULL))
-    referencedEntitiesP = mongocRelationshipsGet(orionldState.wildcard[0]);
+    referencedEntitiesP = mongocRelationshipsGet(orionldState.uriParams.id);
   else
   {
     // output error and return
-    KT_E("GetRelationships dos only support the new MongoDB C++ driver (start orionld with -experimental)");
-    orionldError(OrionldInternalError, "Endpoint not supported", "GetRelationships dos only support the new MongoDB C++ driver (start orionld with -experimental)", 500);
+    orionldError(OrionldInternalError, "Endpoint not supported", "GetRelationships does only support the new MongoDB C++ driver (start orionld with -experimental)", 500);
     return false;
   }
  
   
   orionldState.responseTree = kjObject(orionldState.kjsonP, NULL);
-  kjChildAdd(orionldState.responseTree, kjString(orionldState.kjsonP, "id", orionldState.wildcard[0]));
+  kjChildAdd(orionldState.responseTree, kjString(orionldState.kjsonP, "id", orionldState.uriParams.id));
 
-  KjNode* idNodeP  = kjArray(orionldState.kjsonP, "referencedBy"); 
-  kjChildAdd(orionldState.responseTree, idNodeP);
+  //KjNode* idNodeP  = kjArray(orionldState.kjsonP, "referencedBy"); 
+  kjChildAdd(orionldState.responseTree, referencedEntitiesP);
 
-  idNodeP->value.firstChildP = referencedEntitiesP->value.firstChildP;  
+  //idNodeP->value.firstChildP = referencedEntitiesP;  
   
   orionldState.httpStatusCode = 200;
   return true;

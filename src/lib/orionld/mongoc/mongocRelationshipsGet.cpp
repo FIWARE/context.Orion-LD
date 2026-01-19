@@ -37,21 +37,23 @@ extern "C"
 #include "logMsg/logMsg.h"                                         // LM_*
 
 #include "orionld/common/orionldState.h"                           // orionldState
+#include "orionld/common/eqForDot.h"                               // eqForDot
 #include "orionld/mongoc/mongocConnectionGet.h"                    // mongocConnectionGet
 #include "orionld/mongoc/mongocKjTreeFromBson.h"                   // mongocKjTreeFromBson
-#include "orionld/mongoc/mongocRelationshipsGet.h"  // Own interface
-#include "orionld/context/orionldContextItemAliasLookup.h"             // orionldContextItemAliasLookup
+#include "orionld/mongoc/mongocRelationshipsGet.h"                 // Own interface
+#include "orionld/context/orionldContextItemAliasLookup.h"         // orionldContextItemAliasLookup
 
 
 // -----------------------------------------------------------------------------
 //
 // relExtractFromMongo -
 //
-void relExtractFromMongo(KjNode* inputArray, KjNode* typeArray)
+void relExtractFromMongo(KjNode* inputArray, KjNode* relArray)
 {
   for (KjNode* arrItemP = inputArray->value.firstChildP; arrItemP != NULL; arrItemP = arrItemP->next)
   {
     KjNode* tNode = kjLookup(arrItemP, "entityId");
+    KjNode* attrName = kjLookup(arrItemP, "attrName");
 
     if (tNode == NULL)
     {
@@ -59,11 +61,24 @@ void relExtractFromMongo(KjNode* inputArray, KjNode* typeArray)
       continue;
     }
 
+    if (attrName == NULL)
+    {
+      KT_W("No entityId found in tree ...");
+      continue;
+    }
+
     if (tNode != NULL)
     {
-      kjChildAdd(typeArray, tNode);
+      
       // Lookup alias for type name in context
       tNode->value.s = orionldContextItemAliasLookup(orionldState.contextP, tNode->value.s, NULL, NULL);
+      eqForDot(attrName->value.s);
+      attrName->value.s = orionldContextItemAliasLookup(orionldState.contextP, attrName->value.s, NULL, NULL);
+
+      // create new node with entityId and attribute name
+      KjNode* relNode = kjString(orionldState.kjsonP, tNode->value.s, attrName->value.s);
+
+      kjChildAdd(relArray, relNode);
     }
   }
 }
@@ -82,7 +97,7 @@ KjNode* mongocRelationshipsGet(const char* entityName)
   bson_t*       pipeline = bson_new();
   bson_error_t  error;
 
-  // Pipeline-Array in JSON-Format with entityName parameter
+  // Pipeline-Array in JSON-Format with entityName parameter -> returns all entities having a relationship attribute pointing to entityName
   char pipeline_json[1024];
   snprintf(pipeline_json, sizeof(pipeline_json),
     "["
@@ -92,19 +107,37 @@ KjNode* mongocRelationshipsGet(const char* entityName)
     "    }"
     "  },"
     "  {"
-    "    \"$match\": {"
-    "      \"attrsArray\": {"
-    "        \"$elemMatch\": {"
-    "          \"v.type\": \"Relationship\","
-    "          \"v.value\": \"%s\""
+    "    \"$addFields\": {"
+    "      \"relAttr\": {"
+    "        \"$first\": {"
+    "          \"$filter\": {"
+    "            \"input\": \"$attrsArray\","
+    "            \"as\": \"a\","
+    "            \"cond\": {"
+    "              \"$and\": ["
+    "                { \"$eq\": [\"$$a.v.type\", \"Relationship\"] },"
+    "                { \"$eq\": [\"$$a.v.value\", \"%s\"] }"
+    "              ]"
+    "            }"
+    "          }"
     "        }"
     "      }"
     "    }"
     "  },"
-    "  { \"$project\": { \"entityId\": \"$_id.id\", \"_id\": 0 } }"
+    "  {"
+    "    \"$match\": {"
+    "      \"relAttr\": { \"$ne\": null }"
+    "    }"
+    "  },"
+    "  {"
+    "    \"$project\": {"
+    "      \"entityId\": \"$_id.id\","
+    "      \"attrName\": \"$relAttr.k\","
+    "      \"_id\": 0"
+    "    }"
+    "  }"
     "]",
     entityName);
-
   // Parse JSON to BSON
   pipeline = bson_new_from_json((const uint8_t*) pipeline_json, -1, &error);
 
@@ -167,7 +200,7 @@ KjNode* mongocRelationshipsGet(const char* entityName)
   KjNode* typeArray = NULL;
   if (kjTypeArray != NULL)
   {
-    typeArray = kjArray(orionldState.kjsonP, NULL);
+    typeArray = kjObject(orionldState.kjsonP, "referencedBy");
     relExtractFromMongo(kjTypeArray, typeArray);
   }
 
