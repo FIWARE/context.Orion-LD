@@ -66,20 +66,16 @@ void relExtractFromMongo(KjNode* inputArray, KjNode* relArray)
       KT_W("No entityId found in tree ...");
       continue;
     }
-
-    if (tNode != NULL)
-    {
       
-      // Lookup alias for type name in context
-      tNode->value.s = orionldContextItemAliasLookup(orionldState.contextP, tNode->value.s, NULL, NULL);
-      eqForDot(attrName->value.s);
-      attrName->value.s = orionldContextItemAliasLookup(orionldState.contextP, attrName->value.s, NULL, NULL);
+    // Lookup alias for type name in context
+    tNode->value.s = orionldContextItemAliasLookup(orionldState.contextP, tNode->value.s, NULL, NULL);
+    eqForDot(attrName->value.s);
+    attrName->value.s = orionldContextItemAliasLookup(orionldState.contextP, attrName->value.s, NULL, NULL);
 
-      // create new node with entityId and attribute name
-      KjNode* relNode = kjString(orionldState.kjsonP, tNode->value.s, attrName->value.s);
+    // create new node with entityId and attribute name
+    KjNode* relNode = kjString(orionldState.kjsonP, tNode->value.s, attrName->value.s);
 
-      kjChildAdd(relArray, relNode);
-    }
+    kjChildAdd(relArray, relNode);
   }
 }
 
