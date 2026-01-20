@@ -52,7 +52,7 @@ extern "C"
 //
 bool orionldGetRelationships(void)
 {
-  KjNode*                referencedEntitiesP;
+  KjNode* referencedEntitiesP;
 
   //
   // If the broker is started with '-experimental', then mongocEntityTypeGet is to be used instead of mongoCppEntityTypeGet.
@@ -66,24 +66,13 @@ bool orionldGetRelationships(void)
 
   KT_T(StLinked, "Getting Entity '%s'", orionldState.uriParams.id);
 
-  // pipelines are only supported with the new MongoDB C++ driver so serve the endpoint only when experimental mode is on and legacy mode is not requested
-  if ((experimental == true) && (orionldState.in.legacy == NULL))
-    referencedEntitiesP = mongocRelationshipsGet(orionldState.uriParams.id);
-  else
-  {
-    // output error and return
-    orionldError(OrionldInternalError, "Endpoint not supported", "GetRelationships does only support the new MongoDB C++ driver (start orionld with -experimental)", 500);
-    return false;
-  }
- 
+  // get all the entities referencing the given entity id via a Relationship attribute
+  referencedEntitiesP = mongocRelationshipsGet(orionldState.uriParams.id);
   
   orionldState.responseTree = kjObject(orionldState.kjsonP, NULL);
   kjChildAdd(orionldState.responseTree, kjString(orionldState.kjsonP, "id", orionldState.uriParams.id));
 
-  //KjNode* idNodeP  = kjArray(orionldState.kjsonP, "referencedBy"); 
   kjChildAdd(orionldState.responseTree, referencedEntitiesP);
-
-  //idNodeP->value.firstChildP = referencedEntitiesP;  
   
   orionldState.httpStatusCode = 200;
   return true;

@@ -21,7 +21,7 @@
 # VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
 
 --NAME--
-Query Broker for all entities that having a relationship to a specific entity.
+Query Broker for all entities having a relationship to a specific entity.
 
 --SHELL-INIT--
 dbInit CB

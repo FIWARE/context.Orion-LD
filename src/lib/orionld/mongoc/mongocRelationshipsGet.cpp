@@ -1,6 +1,6 @@
 /*
 *
-* Copyright 2025 FIWARE Foundation e.V.
+* Copyright 2026 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -28,31 +28,31 @@
 
 extern "C"
 {
+#include "kalloc/kaStrdup.h"                                       // kaStrdup
 #include "kjson/KjNode.h"                                          // KjNode
 #include "kjson/kjBuilder.h"                                       // kjArray
 #include "ktrace/kTrace.h"                                         // trace messages -
 #include "kjson/kjLookup.h"                                        // kjLookup
 }
 
-#include "logMsg/logMsg.h"                                         // LM_*
-
 #include "orionld/common/orionldState.h"                           // orionldState
 #include "orionld/common/eqForDot.h"                               // eqForDot
+#include "orionld/context/orionldContextItemAliasLookup.h"         // orionldContextItemAliasLookup
 #include "orionld/mongoc/mongocConnectionGet.h"                    // mongocConnectionGet
 #include "orionld/mongoc/mongocKjTreeFromBson.h"                   // mongocKjTreeFromBson
 #include "orionld/mongoc/mongocRelationshipsGet.h"                 // Own interface
-#include "orionld/context/orionldContextItemAliasLookup.h"         // orionldContextItemAliasLookup
+
 
 
 // -----------------------------------------------------------------------------
 //
 // relExtractFromMongo -
 //
-void relExtractFromMongo(KjNode* inputArray, KjNode* relArray)
+static void relExtractFromMongo(KjNode* inputArray, KjNode* relArray)
 {
   for (KjNode* arrItemP = inputArray->value.firstChildP; arrItemP != NULL; arrItemP = arrItemP->next)
   {
-    KjNode* tNode = kjLookup(arrItemP, "entityId");
+    KjNode* tNode    = kjLookup(arrItemP, "entityId");
     KjNode* attrName = kjLookup(arrItemP, "attrName");
 
     if (tNode == NULL)
@@ -69,8 +69,10 @@ void relExtractFromMongo(KjNode* inputArray, KjNode* relArray)
       
     // Lookup alias for type name in context
     tNode->value.s = orionldContextItemAliasLookup(orionldState.contextP, tNode->value.s, NULL, NULL);
-    eqForDot(attrName->value.s);
-    attrName->value.s = orionldContextItemAliasLookup(orionldState.contextP, attrName->value.s, NULL, NULL);
+
+    char* attrEqName =  kaStrdup(&orionldState.kalloc, attrName->value.s);
+    eqForDot(attrEqName);
+    attrName->value.s = orionldContextItemAliasLookup(orionldState.contextP, attrEqName, NULL, NULL);
 
     // create new node with entityId and attribute name
     KjNode* relNode = kjString(orionldState.kjsonP, tNode->value.s, attrName->value.s);
@@ -92,9 +94,8 @@ KjNode* mongocRelationshipsGet(const char* entityName)
   //
   bson_t*       pipeline = bson_new();
   bson_error_t  error;
+  char pipeline_json[1024]; // Pipeline-Array in JSON-Format with entityName parameter -> returns all entities having a relationship attribute pointing to entityName
 
-  // Pipeline-Array in JSON-Format with entityName parameter -> returns all entities having a relationship attribute pointing to entityName
-  char pipeline_json[1024];
   snprintf(pipeline_json, sizeof(pipeline_json),
     "["
     "  {"
@@ -134,6 +135,7 @@ KjNode* mongocRelationshipsGet(const char* entityName)
     "  }"
     "]",
     entityName);
+
   // Parse JSON to BSON
   pipeline = bson_new_from_json((const uint8_t*) pipeline_json, -1, &error);
 
@@ -181,11 +183,10 @@ KjNode* mongocRelationshipsGet(const char* entityName)
 
   if (mongoc_cursor_error(mongoCursorP, &mongoError))
   {
-    KT_E("Internal Error (DB Error '%s')", mongoError.message);
     bson_destroy(pipeline);
     mongoc_cursor_destroy(mongoCursorP);
     mongoc_read_prefs_destroy(readPrefs);
-    return NULL;
+    KT_RE(NULL, "Internal Error (DB Error '%s')", mongoError.message);
   }
 
   bson_destroy(pipeline);
