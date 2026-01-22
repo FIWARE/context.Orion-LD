@@ -32,8 +32,6 @@ extern "C"
 #include "ktrace/kTrace.h"                             // trace messages - ktrace library
 }
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
 
 #include "orionld/common/orionldState.h"               // mongoServerVersion
 #include "orionld/common/traceLevels.h"                // KTrace levels
@@ -152,9 +150,9 @@ static DBClientBase* mongoConnect
       }
 
       if (tryNo == 0)
-        LM_E(("Database Startup Error (cannot connect to mongo - doing %d retries with a %d millisecond interval)", retries, RECONNECT_DELAY));
+        KT_E("Database Startup Error (cannot connect to mongo - doing %d retries with a %d millisecond interval)", retries, RECONNECT_DELAY);
       else
-        LM_T(LmtLegacy, ("Try %d connecting to mongo failed", tryNo));
+        KT_T(KtLegacy, "Try %d connecting to mongo failed", tryNo);
 
       usleep(RECONNECT_DELAY * 1000);  // usleep accepts microseconds, RECONNECT_DELAY is in millis
     }
@@ -187,9 +185,9 @@ static DBClientBase* mongoConnect
 
       if (tryNo == 0)
       {
-        LM_E(("Database Startup Error (cannot connect to mongo - doing %d retries with a %d millisecond interval)",
+        KT_E("Database Startup Error (cannot connect to mongo - doing %d retries with a %d millisecond interval)",
               retries,
-              RECONNECT_DELAY));
+              RECONNECT_DELAY);
       }
 
       usleep(RECONNECT_DELAY * 1000);  // usleep accepts microseconds, RECONNECT_DELAY is in millis
@@ -263,7 +261,7 @@ static DBClientBase* mongoConnect
   strncpy(mongoServerVersion, versionString.c_str(), sizeof(mongoServerVersion) - 1);
   if (!versionParse(versionString, mongoVersionMayor, mongoVersionMinor, extra))
   {
-    LM_E(("Database Startup Error (invalid version format: %s)", versionString.c_str()));
+    KT_E("Database Startup Error (invalid version format: %s)", versionString.c_str());
     return NULL;
   }
 
@@ -299,12 +297,12 @@ int mongoConnectionPoolInit
   //
   // Create the pool
   //
-  LM_T(LmtMongoPool, ("Creating a mongo connection pool of %d slots", poolSize));
+  KT_T(StMongoPool, "Creating a mongo connection pool of %d slots", poolSize);
 
   connectionPool  = (MongoConnection*) calloc(sizeof(MongoConnection), poolSize);
   if (connectionPool == NULL)
   {
-    LM_E(("Runtime Error (insufficient memory to create connection pool of %d connections)", poolSize));
+    KT_E("Runtime Error (insufficient memory to create connection pool of %d connections)", poolSize);
     return -1;
   }
   connectionPoolSize = poolSize;
@@ -319,7 +317,7 @@ int mongoConnectionPoolInit
     connectionPool[ix].connection = mongoConnect(host, db, rplSet, username, passwd, multitenant, writeConcern, timeout);
 
     if ((connectionPool[ix].connection == NULL) && (ix == 0))
-      LM_X(1, ("Database Error (unable connect to mongo after a number of retries)"));
+      KT_X(1, "Database Error (unable connect to mongo after a number of retries)");
   }
 
   //
@@ -329,7 +327,7 @@ int mongoConnectionPoolInit
 
   if (r != 0)
   {
-    LM_E(("Runtime Error (cannot create connection pool semaphore)"));
+    KT_E("Runtime Error (cannot create connection pool semaphore)");
     return -1;
   }
 
@@ -340,7 +338,7 @@ int mongoConnectionPoolInit
   r = sem_init(&connectionSem, 0, connectionPoolSize);
   if (r != 0)
   {
-    LM_E(("Runtime Error (cannot create connection semaphore-set)"));
+    KT_E("Runtime Error (cannot create connection semaphore-set)");
     return -1;
   }
 
@@ -404,7 +402,7 @@ DBClientBase* mongoPoolConnectionGet(void)
     {
       connectionPool[ix].free = false;
       connection = connectionPool[ix].connection;
-      // LM_T(LmtMongoPool, ("Found a mongo connection in slot %d (%p)", ix, connection));
+      // KT_T(KtMongoPool, "Found a mongo connection in slot %d (%p)", ix, connection);
       break;
     }
   }
@@ -412,7 +410,7 @@ DBClientBase* mongoPoolConnectionGet(void)
   sem_post(&connectionPoolSem);
 
   if (connection == NULL)
-    LM_X(1, ("No mongo pool connection available"));
+    KT_X(1, "No mongo pool connection available");
 
   return connection;
 }
@@ -436,7 +434,7 @@ void mongoPoolConnectionRelease(DBClientBase* connection)
       ok = true;
       connectionPool[ix].free = true;
       sem_post(&connectionSem);
-      // LM_T(LmtMongoPool, ("Releasing a mongo connection in slot %d (%p)", ix, connection));
+      // KT_T(KtMongoPool, "Releasing a mongo connection in slot %d (%p)", ix, connection);
       break;
     }
   }
@@ -444,7 +442,7 @@ void mongoPoolConnectionRelease(DBClientBase* connection)
   sem_post(&connectionPoolSem);
 
   if (ok == false)
-    LM_T(LmtMongoPool, ("Not able to release mongo connection at %p", connection));
+    KT_T(StMongoPool, "Not able to release mongo connection at %p", connection);
 }
 
 

@@ -28,10 +28,13 @@
 
 #include "mongo/client/dbclient.h"
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"                           // trace messages - ktrace library
+}
 
 #include "orionld/types/OrionldTenant.h"
+#include "orionld/common/traceLevels.h"              // KTrace levels
 #include "common/sem.h"
 #include "common/statistics.h"
 #include "common/idCheck.h"
@@ -263,7 +266,7 @@ static void extractSubscriptionIdAsString(Subscription* s, const BSONObj* rP)
   //
   if (rP->hasField("_id") == false)
   {
-    LM_E(("Runtime Error (field '_id' is missing in subscription"));
+    KT_E("Runtime Error (field '_id' is missing in subscription)");
     return;
   }
 
@@ -385,7 +388,7 @@ void mongoListSubscriptions
 
   reqSemTake(__FUNCTION__, "Mongo List Subscriptions", SemReadOp, &reqSemTaken);
 
-  LM_T(LmtLegacy, ("Mongo List Subscriptions"));
+  KT_T(KtLegacy, "Mongo List Subscriptions");
 
   /* ONTIMEINTERVAL subscriptions are not part of NGSIv2, so they are excluded.
    * Note that expiration is not taken into account (in the future, a q= query
@@ -431,12 +434,12 @@ void mongoListSubscriptions
 
     if (!nextSafeOrErrorF(cursor, &r, &err))
     {
-      LM_E(("Runtime Error (exception in nextSafe(): %s - query: %s)", err.c_str(), q.toString().c_str()));
+      KT_E("Runtime Error (exception in nextSafe(): %s - query: %s)", err.c_str(), q.toString().c_str());
       continue;
     }
 
     docs++;
-    LM_T(LmtLegacy, ("retrieved document [%d]: '%s'", docs, r.toString().c_str()));
+    KT_T(KtLegacy, "retrieved document [%d]: '%s'", docs, r.toString().c_str());
 
     Subscription  sub;
 
@@ -483,7 +486,7 @@ void mongoGetSubscription
 
   reqSemTake(__FUNCTION__, "Mongo Get Subscription", SemReadOp, &reqSemTaken);
 
-  LM_T(LmtLegacy, ("Mongo Get Subscription"));
+  KT_T(KtLegacy, "Mongo Get Subscription");
 
   std::auto_ptr<DBClientCursor>  cursor;
   BSONObj                        q = BSON("_id" << oid);
@@ -508,12 +511,12 @@ void mongoGetSubscription
     if (!nextSafeOrErrorF(cursor, &r, &err))
     {
       releaseMongoConnection(connection);
-      LM_E(("Runtime Error (exception in nextSafe(): %s - query: %s)", err.c_str(), q.toString().c_str()));
+      KT_E("Runtime Error (exception in nextSafe(): %s - query: %s)", err.c_str(), q.toString().c_str());
       reqSemGive(__FUNCTION__, "Mongo Get Subscription", reqSemTaken);
       *oe = OrionError(SccReceiverInternalError, std::string("exception in nextSafe(): ") + err.c_str());
       return;
     }
-    LM_T(LmtLegacy, ("retrieved document: '%s'", r.toString().c_str()));
+    KT_T(KtLegacy, "retrieved document: '%s'", r.toString().c_str());
 
     extractSubscriptionId(subP, &r);
     extractDescription(subP, &r);
@@ -525,7 +528,7 @@ void mongoGetSubscription
     {
       releaseMongoConnection(connection);
       // Ooops, we expect only one
-      LM_T(LmtLegacy, ("more than one subscription: '%s'", idSub.c_str()));
+      KT_T(KtLegacy, "more than one subscription: '%s'", idSub.c_str());
       reqSemGive(__FUNCTION__, "Mongo Get Subscription", reqSemTaken);
       *oe = OrionError(SccConflict);
 
@@ -535,7 +538,7 @@ void mongoGetSubscription
   else
   {
     releaseMongoConnection(connection);
-    LM_T(LmtLegacy, ("subscription not found: '%s'", idSub.c_str()));
+    KT_T(KtLegacy, "subscription not found: '%s'", idSub.c_str());
     reqSemGive(__FUNCTION__, "Mongo Get Subscription", reqSemTaken);
     *oe = OrionError(SccContextElementNotFound, ERROR_DESC_NOT_FOUND_SUBSCRIPTION, ERROR_NOT_FOUND);
 
@@ -593,13 +596,13 @@ bool mongoGetLdSubscription
     if (!nextSafeOrErrorF(cursor, &r, &err))
     {
       releaseMongoConnection(connection);
-      LM_E(("Runtime Error (exception in nextSafe(): %s - query: %s)", err.c_str(), q.toString().c_str()));
+      KT_E("Runtime Error (exception in nextSafe(): %s - query: %s)", err.c_str(), q.toString().c_str());
       reqSemGive(__FUNCTION__, "Mongo Get Subscription", reqSemTaken);
       *detailsP    = (char*) "Runtime Error (exception in nextSafe)";
       *statusCodeP = 500;
       return false;
     }
-    LM_T(LmtLegacy, ("retrieved document: '%s'", r.toString().c_str()));
+    KT_T(KtLegacy, "retrieved document: '%s'", r.toString().c_str());
 
     extractSubscriptionIdAsString(subP, &r);
     extractDescription(subP, &r);
@@ -621,7 +624,7 @@ bool mongoGetLdSubscription
       releaseMongoConnection(connection);
 
       // Ooops, we expected only one
-      LM_T(LmtLegacy, ("more than one subscription: '%s'", subId));
+      KT_T(KtLegacy, "more than one subscription: '%s'", subId);
       reqSemGive(__FUNCTION__, "Mongo Get Subscription", reqSemTaken);
       *detailsP    = (char*) "more than one subscription matched";
       *statusCodeP = 409;
@@ -631,7 +634,7 @@ bool mongoGetLdSubscription
   else
   {
     releaseMongoConnection(connection);
-    LM_T(LmtLegacy, ("subscription not found: '%s'", subId));
+    KT_T(KtLegacy, "subscription not found: '%s'", subId);
     reqSemGive(__FUNCTION__, "Mongo Get Subscription", reqSemTaken);
     *detailsP    = (char*) "subscription not found";
     *statusCodeP = 404;
@@ -664,7 +667,7 @@ bool mongoGetLdSubscriptions
 
   reqSemTake(__FUNCTION__, "Mongo GET Subscriptions", SemReadOp, &reqSemTaken);
 
-  LM_T(LmtLegacy, ("Mongo GET Subscriptions"));
+  KT_T(KtLegacy, "Mongo GET Subscriptions");
 
   /* ONTIMEINTERVAL subscriptions are not part of NGSIv2, so they are excluded.
    * Note that expiration is not taken into account (in the future, a q= query
@@ -712,12 +715,12 @@ bool mongoGetLdSubscriptions
 
     if (!nextSafeOrErrorF(cursor, &r, &err))
     {
-      LM_E(("Runtime Error (exception in nextSafe(): %s - query: %s)", err.c_str(), q.toString().c_str()));
+      KT_E("Runtime Error (exception in nextSafe(): %s - query: %s)", err.c_str(), q.toString().c_str());
       continue;
     }
 
     docs++;
-    LM_T(LmtLegacy, ("retrieved document [%d]: '%s'", docs, r.toString().c_str()));
+    KT_T(KtLegacy, "retrieved document [%d]: '%s'", docs, r.toString().c_str());
 
     Subscription s;
 

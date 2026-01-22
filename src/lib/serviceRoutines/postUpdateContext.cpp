@@ -25,7 +25,11 @@
 #include <string>
 #include <vector>
 
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+#include "orionld/common/traceLevels.h"
 
 #include "orionld/types/ApiVersion.h"                            // ApiVersion
 #include "orionld/common/orionldState.h"                         // orionldState
@@ -160,7 +164,7 @@ static void updateForward(ConnectionInfo* ciP, UpdateContextRequest* upcrP, Upda
   std::string     out;
   int             r;
 
-  LM_T(LmtSR, ("forward updateContext request payload: %s", payload.c_str()));
+  KT_T(KtSR, "forward updateContext request payload: %s", payload.c_str());
 
   std::map<std::string, std::string> noHeaders;
   r = httpRequestSend(ip,
@@ -183,11 +187,11 @@ static void updateForward(ConnectionInfo* ciP, UpdateContextRequest* upcrP, Upda
   if (r != 0)
   {
     upcrsP->errorCode.fill(SccContextElementNotFound, "error forwarding update");
-    LM_E(("Runtime Error (error forwarding 'Update' to providing application)"));
+    KT_E("Runtime Error (error forwarding 'Update' to providing application)");
     return;
   }
 
-  LM_T(LmtSR, ("forward updateContext response payload: %s", out.c_str()));
+  KT_T(KtSR, "forward updateContext response payload: %s", out.c_str());
 
 
   //
@@ -204,7 +208,7 @@ static void updateForward(ConnectionInfo* ciP, UpdateContextRequest* upcrP, Upda
     // This is really an internal error in the Context Provider
     // It is not in the orion broker though, so 404 is returned
     //
-    LM_W(("Other Error (context provider response to UpdateContext is empty)"));
+    KT_W("Other Error (context provider response to UpdateContext is empty)");
     upcrsP->errorCode.fill(SccContextElementNotFound, "invalid context provider response");
     return;
   }
@@ -227,7 +231,7 @@ static void updateForward(ConnectionInfo* ciP, UpdateContextRequest* upcrP, Upda
 
   if (s != "OK")
   {
-    LM_W(("Internal Error (error parsing reply from prov app: %s)", errorMsg.c_str()));
+    KT_W("Internal Error (error parsing reply from prov app: %s)", errorMsg.c_str());
     upcrsP->errorCode.fill(SccContextElementNotFound, "");
     parseData.upcr.res.release();
     parseData.upcrs.res.release();
@@ -540,7 +544,7 @@ std::string postUpdateContext
 
       if (aP == NULL)
       {
-        LM_E(("Internal Error (attribute '%s' not found)", ceP->contextAttributeVector[aIx]->name.c_str()));
+        KT_E("Internal Error (attribute '%s' not found)", ceP->contextAttributeVector[aIx]->name.c_str());
       }
       else
       {
@@ -577,7 +581,7 @@ std::string postUpdateContext
       //
       // If we find a contextElement without attributes here, then something is wrong
       //
-      LM_E(("Orion Bug (empty contextAttributeVector for ContextElementResponse %d)", cerIx));
+      KT_E("Orion Bug (empty contextAttributeVector for ContextElementResponse %d)", cerIx);
     }
     else
     {
@@ -653,7 +657,7 @@ std::string postUpdateContext
   {
     if (requestV[ix]->contextProvider == "")
     {
-      LM_E(("Internal Error (empty context provider string)"));
+      KT_E("Internal Error (empty context provider string)");
       continue;
     }
 

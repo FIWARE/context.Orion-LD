@@ -23,10 +23,13 @@
 * Author: Ken Zangelin
 */
 #include <string>
+#include <string.h>
 #include <vector>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
 #include "orionld/common/orionldState.h"                         // orionldState
 
@@ -40,6 +43,9 @@
 #include "serviceRoutinesV2/logLevelTreat.h"
 #include "alarmMgr/alarmMgr.h"
 
+
+// Store current log level for GET requests
+static char currentLogLevel[32] = "WARN";
 
 
 /* ****************************************************************************
@@ -78,7 +84,8 @@ std::string changeLogLevel
     if (strcasecmp(orionldState.uriParams.level, "warning") == 0)
       orionldState.uriParams.level = (char*) "WARN";
 
-    lmLevelMaskSetString(orionldState.uriParams.level);
+    // Store the log level (ktrace doesn't have dynamic log level control)
+    strncpy(currentLogLevel, orionldState.uriParams.level, sizeof(currentLogLevel) - 1);
   }
   else
   {
@@ -104,7 +111,5 @@ std::string getLogLevel
   ParseData*                 parseDataP
 )
 {
-  std::string  level = lmLevelMaskStringGet();
-
-  return "{\"level\":\"" + level + "\"}";
+  return std::string("{\"level\":\"") + currentLogLevel + "\"}";
 }

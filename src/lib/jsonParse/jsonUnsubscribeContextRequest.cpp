@@ -25,8 +25,12 @@
 #include <string>
 #include <vector>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+
+#include "orionld/common/traceLevels.h"
 
 #include "common/globals.h"
 #include "jsonParse/JsonNode.h"
@@ -40,7 +44,7 @@
 */
 static std::string subscriptionId(const std::string& path, const std::string& value, ParseData* parseDataP)
 {
-  LM_T(LmtLegacy, ("%s: %s", path.c_str(), value.c_str()));
+  KT_T(KtLegacy, "%s: %s", path.c_str(), value.c_str());
   parseDataP->uncr.res.subscriptionId.set(value);
   return "OK";
 }

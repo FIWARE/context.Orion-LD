@@ -25,7 +25,10 @@
 *
 * Author: Ken Zangelin
 */
-#include "logMsg/logMsg.h"             /* LM_W                               */
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 #include "parseArgs/parseArgs.h"       /* PaSeverity, PaWarning              */
 
 

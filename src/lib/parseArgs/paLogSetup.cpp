@@ -26,11 +26,14 @@
 #include <cstdlib>                    /* C++ free(.)                         */
 
 #include "parseArgs/baStd.h"          /* BA standard header file             */
-#include "logMsg/logMsg.h"            /* lmVerbose, lmDebug, ...             */
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
 #include "parseArgs/paPrivate.h"      /* PaTypeUnion, config variables, ...  */
 #include "parseArgs/paBuiltin.h"      /* paLogDir                            */
-#include "parseArgs/paTraceLevels.h"  /* LmtPaEnvVal, ...                    */
+#include "parseArgs/paTraceLevels.h"  /* KtPaEnvVal, ...                     */
 #include "parseArgs/paConfig.h"       /* paConfigActions                     */
 #include "parseArgs/paWarning.h"      /* paWaringInit, paWarningAdd          */
 #include "parseArgs/paLogSetup.h"     /* Own interface                       */
@@ -39,7 +42,7 @@
 
 /* ****************************************************************************
 *
-*
+* File descriptors for logging (kept for compatibility)
 */
 int  lmFd   = -1;
 int  lmSd   = -1;
@@ -70,82 +73,22 @@ int paLmSdGet(void)
 
 /* ****************************************************************************
 *
-* paLogSetup - 
+* paLogSetup - initialize ktrace logging
 */
 extern char* paExtraLogSuffix;
 int paLogSetup(void)
 {
-  LmStatus    s = LmsOk;
-  char        w[512];
+  // Initialize ktrace
+  const char* logDir = (paLogToFile && paLogDir[0] != 0) ? paLogDir : NULL;
 
-  if (paLogToFile == true)
-  {
-    // printf("paLogDir == '%s'\n", paLogDir);
-    if (paLogDir[0] != 0)
-    {
-      // printf("Using paLogDir '%s'", paLogDir);
-      s = lmPathRegister(paLogDir, paLogFileLineFormat, paLogFileTimeFormat, &lmFd, paLogAppend);
-    }
-    else
-    {
-      // printf("Using paLogFilePath: '%s'\n", paLogFilePath);
-      s = lmPathRegister(paLogFilePath, paLogFileLineFormat, paLogFileTimeFormat, &lmFd, paLogAppend);
-    }
-
-    if (s != LmsOk)
-    {
-      snprintf(w, sizeof(w), "lmPathRegister: %s", lmStrerror(s));
-      PA_WARNING(PasLogFile, w);
-      return -2;
-    }
-  }
-
-  if (paLogToScreen)
-  {
-    int fd = 1;
-
-    if (paLogScreenToStderr)
-    {
-      fd = 2;
-    }
-
-    s = lmFdRegister(fd, paLogScreenLineFormat, paLogScreenTimeFormat, "stdout", &lmSd);
-    if (s != LmsOk)
-    {
-      snprintf(w, sizeof(w), "lmFdRegister: %s", lmStrerror(s));
-      PA_WARNING(PasLogFile, w);
-      return -3;
-    }
-  }
-
-  if (paLogToFile || paLogToScreen || lmNoTracesToFileIfHookActive)
-  {
-    if ((s = lmInit()) != LmsOk)
-    {
-      snprintf(w, sizeof(w), "lmInit: %s", lmStrerror(s));
-      PA_WARNING(PasLogFile, w);
-      return -4;
-    }
-
-    lmToDo     = false;
-    lmVerbose  = false;
-    lmVerbose2 = false;
-    lmVerbose3 = false;
-    lmVerbose4 = false;
-    lmVerbose5 = false;
-    lmDebug    = false;
-    lmReads    = false;
-    lmWrites   = false;
-    lmSilent   = false;
-    /* lmBug     = false; */
-
-    lmTraceSet((char*) "");
-
-    if (paLogToScreen && paLogScreenOnlyErrors)
-    {
-      lmOnlyErrors(lmSd);
-    }
-  }
+  ktInit(paProgName,         // progName
+         logDir,             // logDir (NULL if not logging to file)
+         paLogToScreen,      // logToScreen
+         paLogLevel,         // logLevel
+         paTraceV,           // traceLevels
+         paVerbose,          // verbose
+         paDebug,            // debug
+         false);             // fixme
 
   return 0;
 }

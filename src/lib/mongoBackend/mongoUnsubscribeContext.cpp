@@ -24,10 +24,14 @@
 */
 #include <string>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"                                // trace messages - ktrace library
+}
 
 #include "orionld/types/OrionldTenant.h"
+
+#include "orionld/common/traceLevels.h"                   // KTrace levels
 
 #include "common/sem.h"
 #include "common/errorMessages.h"
@@ -67,7 +71,7 @@ HttpStatusCode mongoUnsubscribeContext
 
   reqSemTake(__FUNCTION__, "ngsi10 unsubscribe request", SemWriteOp, &reqSemTaken);
 
-  LM_T(LmtLegacy, ("Unsubscribe Context"));
+  KT_T(KtLegacy, "Unsubscribe Context");
 
   /* No matter if success or failure, the subscriptionId in the response is always the one
    * in the request
@@ -103,7 +107,7 @@ HttpStatusCode mongoUnsubscribeContext
     else  // SccReceiverInternalError
     {
       responseP->oe.fill(SccReceiverInternalError, responseP->statusCode.details, "InternalError");
-      LM_E(("Runtime Error (exception getting OID: %s)", responseP->statusCode.details.c_str()));
+      KT_E("Runtime Error (exception getting OID: %s)", responseP->statusCode.details.c_str());
     }
 
     return SccOk;
@@ -149,9 +153,9 @@ HttpStatusCode mongoUnsubscribeContext
   //
   // Removing subscription from mongo subscription cache
   //
-  LM_T(LmtLegacy, ("removing subscription '%s' (tenant '%s') from mongo subscription cache",
+  KT_T(KtLegacy, "removing subscription '%s' (tenant '%s') from mongo subscription cache",
                      requestP->subscriptionId.get().c_str(),
-                     tenantP->tenant));
+                     tenantP->tenant);
 
   cacheSemTake(__FUNCTION__, "Removing subscription from cache");
 
@@ -194,7 +198,7 @@ bool mongoDeleteLdSubscription
   {
     reqSemGive(__FUNCTION__, "ngsi10 unsubscribe request (mongo db exception)", reqSemTaken);
 
-    LM_E(("collectionFindOne error: %s", err.c_str()));
+    KT_E("collectionFindOne error: %s", err.c_str());
     *details         = (char*) "error finding the subscription";
     *httpStatusCodeP = 500;
 
@@ -230,7 +234,7 @@ bool mongoDeleteLdSubscription
   //
   // Removing subscription from mongo subscription cache
   //
-  LM_T(LmtLegacy, ("removing subscription '%s' (tenant '%s') from mongo subscription cache", subId, tenantP->tenant));
+  KT_T(KtLegacy, "removing subscription '%s' (tenant '%s') from mongo subscription cache", subId, tenantP->tenant);
 
   cacheSemTake(__FUNCTION__, "Removing subscription from cache");
 

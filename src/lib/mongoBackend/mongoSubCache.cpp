@@ -33,8 +33,12 @@ extern "C"
 #include "kbase/kTime.h"                                       // kTimeGet
 }
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"                                  // trace messages - ktrace library
+}
+
+#include "orionld/common/traceLevels.h"                     // KTrace levels
 
 #include "common/sem.h"
 #include "common/string.h"
@@ -92,7 +96,7 @@ int mongoSubCacheItemInsert(const char* tenant, const BSONObj& sub)
 
   if (!sub.hasField("_id"))
   {
-    LM_E(("Database Error (subscription without subscription-id in database)"));
+    KT_E("Database Error (subscription without subscription-id in database)");
     return -1;
   }
 
@@ -101,7 +105,7 @@ int mongoSubCacheItemInsert(const char* tenant, const BSONObj& sub)
   if (_id.eoo() == true)
   {
     std::string details = std::string("error retrieving _id field in doc: '") + sub.toString() + "'";
-    LM_E(("Database Error (%s)", details.c_str()));
+    KT_E("Database Error (%s)", details.c_str());
     alarmMgr.dbError(details);
     return -1;
   }
@@ -112,7 +116,7 @@ int mongoSubCacheItemInsert(const char* tenant, const BSONObj& sub)
     subId = _id.OID().toString().c_str();
   else
   {
-    LM_E(("Database Error (invalid type for _id field in a subscription)"));
+    KT_E("Database Error (invalid type for _id field in a subscription)");
     alarmMgr.dbError("Database Error (invalid type for _id field in a subscription)");
     return -1;
   }
@@ -130,7 +134,7 @@ int mongoSubCacheItemInsert(const char* tenant, const BSONObj& sub)
   if (cSubP == NULL)
   {
     // FIXME P7: See github issue #1362
-    LM_X(1, ("Runtime Error (cannot allocate memory for a cached subscription: %s)", strerror(errno)));
+    KT_X(1, "Runtime Error (cannot allocate memory for a cached subscription: %s)", strerror(errno));
     return -2;
   }
 
@@ -209,7 +213,7 @@ int mongoSubCacheItemInsert(const char* tenant, const BSONObj& sub)
 
           if (!cSubP->expression.stringFilter.parse(q, &errorString))
           {
-            LM_E(("Runtime Error (error parsing string filter: %s)", errorString.c_str()));
+            KT_E("Runtime Error (error parsing string filter: %s)", errorString.c_str());
             subCacheItemDestroy(cSubP);
             delete cSubP;
             return -5;
@@ -226,7 +230,7 @@ int mongoSubCacheItemInsert(const char* tenant, const BSONObj& sub)
         {
           if (!cSubP->expression.mdStringFilter.parse(cSubP->expression.mq.c_str(), &errorString))
           {
-            LM_E(("Runtime Error (error parsing md string filter: %s)", errorString.c_str()));
+            KT_E("Runtime Error (error parsing md string filter: %s)", errorString.c_str());
             subCacheItemDestroy(cSubP);
             delete cSubP;
             return -6;
@@ -255,7 +259,7 @@ int mongoSubCacheItemInsert(const char* tenant, const BSONObj& sub)
 
     if (!entity.hasField(CSUB_ENTITY_ID))
     {
-      LM_W(("Runtime Error (got a subscription without id)"));
+      KT_W("Runtime Error (got a subscription without id)");
       continue;
     }
 
@@ -276,7 +280,7 @@ int mongoSubCacheItemInsert(const char* tenant, const BSONObj& sub)
 
   if (cSubP->entityIdInfos.size() == 0)
   {
-    LM_E(("ERROR (no patterned entityId) - cleaning up"));
+    KT_E("ERROR (no patterned entityId) - cleaning up");
     subCacheItemDestroy(cSubP);
     delete cSubP;
     return -3;
@@ -397,7 +401,7 @@ int mongoSubCacheItemInsert
   if (cSubP == NULL)
   {
     // FIXME P7: See github issue #1362
-    LM_X(1, ("Runtime Error (cannot allocate memory for a cached subscription: %s)", strerror(errno)));
+    KT_X(1, "Runtime Error (cannot allocate memory for a cached subscription: %s)", strerror(errno));
     return -3;
   }
 
@@ -415,7 +419,7 @@ int mongoSubCacheItemInsert
 
     if (!entity.hasField(CSUB_ENTITY_ID))
     {
-      LM_W(("Runtime Error (got a subscription without id)"));
+      KT_W("Runtime Error (got a subscription without id)");
       continue;
     }
 
@@ -568,7 +572,7 @@ void mongoSubCacheRefresh(const std::string& database)
   char*                          tenant      = tenantFromDb(database.c_str());
   char                           collectionPath[80];
 
-  LM_T(LmtLegacySubCacheRefresh, ("Refreshing sub-cache"));
+  KT_T(KtLegacySubCacheRefresh, "Refreshing sub-cache");
 
   snprintf(collectionPath, sizeof(collectionPath), "%s.csubs", database.c_str());
 
@@ -593,7 +597,7 @@ void mongoSubCacheRefresh(const std::string& database)
 
     if (!nextSafeOrErrorF(cursor, &sub, &err))
     {
-      LM_E(("Runtime Error (exception in nextSafe(): %s - query: %s)", err.c_str(), query.toString().c_str()));
+      KT_E("Runtime Error (exception in nextSafe(): %s - query: %s)", err.c_str(), query.toString().c_str());
       continue;
     }
 
@@ -632,7 +636,7 @@ static void mongoSubCountersUpdateCount
   update = BSON("$inc" << BSON(CSUB_COUNT << count));
 
   if (collectionUpdate(collection.c_str(), condition, update, false, &err) != true)
-    LM_E(("Internal Error (error updating 'count' for a subscription)"));
+    KT_E("Internal Error (error updating 'count' for a subscription)");
 }
 
 
@@ -661,7 +665,7 @@ static void mongoSubCountersUpdateFailures
   update = BSON("$inc" << BSON(CSUB_FAILURES << failures));
 
   if (collectionUpdate(collection.c_str(), condition, update, false, &err) != true)
-    LM_E(("Internal Error (error updating 'failures' for a subscription)"));
+    KT_E("Internal Error (error updating 'failures' for a subscription)");
 }
 
 
@@ -699,7 +703,7 @@ static void mongoSubCountersUpdateLastNotificationTime
 
   if (collectionUpdate(collection.c_str(), condition, update, false, &err) != true)
   {
-    LM_E(("Internal Error (error updating 'lastNotification' for a subscription)"));
+    KT_E("Internal Error (error updating 'lastNotification' for a subscription)");
   }
 }
 
@@ -738,7 +742,7 @@ static void mongoSubCountersUpdateLastFailure
 
   if (collectionUpdate(collection.c_str(), condition, update, false, &err) != true)
   {
-    LM_E(("Internal Error (error updating 'lastFailure' for a subscription)"));
+    KT_E("Internal Error (error updating 'lastFailure' for a subscription)");
   }
 }
 
@@ -777,7 +781,7 @@ static void mongoSubCountersUpdateLastSuccess
 
   if (collectionUpdate(collection.c_str(), condition, update, false, &err) != true)
   {
-    LM_E(("Internal Error (error updating 'lastSuccess' for a subscription)"));
+    KT_E("Internal Error (error updating 'lastSuccess' for a subscription)");
   }
 }
 
@@ -802,7 +806,7 @@ void mongoSubCountersUpdate
 {
   if (subId == "")
   {
-    LM_E(("Runtime Error (empty subscription id)"));
+    KT_E("Runtime Error (empty subscription id)");
     return;
   }
 
@@ -813,10 +817,10 @@ void mongoSubCountersUpdate
   else
     snprintf(collectionPath, sizeof(collectionPath), "%s.csubs", dbName);
 
-  LM_T(LmtSubCacheStats, ("Updating sub::count to %ll", count));
-  LM_T(LmtSubCacheStats, ("lastNotificationTime: %f", lastNotificationTime));
-  LM_T(LmtSubCacheStats, ("lastFailure:          %f", lastFailure));
-  LM_T(LmtSubCacheStats, ("lastSuccess:          %f", lastSuccess));
+  KT_T(KtSubCacheStats, "Updating sub::count to %ll", count);
+  KT_T(KtSubCacheStats, "lastNotificationTime: %f", lastNotificationTime);
+  KT_T(KtSubCacheStats, "lastFailure:          %f", lastFailure);
+  KT_T(KtSubCacheStats, "lastSuccess:          %f", lastSuccess);
 
   if (count                 > 0)  mongoSubCountersUpdateCount(collectionPath, subId, count, ngsild);
   if (failures              > 0)  mongoSubCountersUpdateFailures(collectionPath, subId, failures, ngsild);

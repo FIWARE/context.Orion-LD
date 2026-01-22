@@ -24,8 +24,12 @@
 */
 #include <string>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+
+#include "orionld/common/traceLevels.h"
 
 #include "parse/nullTreat.h"
 
@@ -38,7 +42,7 @@ struct ParseData;
 */
 std::string jsonNullTreat(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Not treating JSON node '%s'", path.c_str()));
+  KT_T(KtLegacy, "Not treating JSON node '%s'", path.c_str());
 
   return "OK";
 }

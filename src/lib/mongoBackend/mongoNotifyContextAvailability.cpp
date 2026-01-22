@@ -25,8 +25,6 @@
 #include <string>
 #include <map>
 
-#include "logMsg/traceLevels.h"
-
 #include "orionld/types/OrionldTenant.h"             // OrionldTenant
 #include "orionld/common/orionldState.h"             // orionldState
 

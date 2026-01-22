@@ -25,7 +25,12 @@
 #include <string>
 #include <vector>
 
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+
+#include "orionld/common/traceLevels.h"
 
 #include "common/MimeType.h"
 #include "rest/HttpHeaders.h"

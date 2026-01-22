@@ -26,12 +26,18 @@
 
 #include "rapidjson/document.h"
 
-#include "logMsg/logMsg.h"
 
 #include "orionld/types/ApiVersion.h"                // ApiVersion
 #include "orionld/common/orionldState.h"             // orionldState
 
 #include "common/errorMessages.h"
+
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+
+#include "orionld/common/traceLevels.h"
 #include "ngsi/ContextAttribute.h"
 #include "parse/CompoundValueNode.h"
 #include "parse/forbiddenChars.h"
@@ -154,7 +160,7 @@ static std::string parseContextAttributeObject
     }
     else  // ERROR
     {
-      LM_W(("Bad Input (unrecognized property for ContextAttribute - '%s')", name.c_str()));
+      KT_W("Bad Input (unrecognized property for ContextAttribute - '%s')", name.c_str());
       return "unrecognized property for context attribute";
     }
   }
@@ -167,7 +173,7 @@ static std::string parseContextAttributeObject
 
     if (caP->numberValue < 0)
     {
-      LM_E(("dateTimeFromString: %s", errorString));
+      KT_E("dateTimeFromString: %s", errorString);
       return "date has invalid format";
     }
 

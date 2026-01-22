@@ -218,6 +218,10 @@ extern bool               disableCusNotif;
 extern bool               insecureNotif;
 extern bool               ngsiv1Autocast;
 
+// Thread-local transaction/correlator IDs (previously in logMsg)
+extern __thread char      transactionId[66];
+extern __thread char      correlatorId[64];
+
 
 
 /* ****************************************************************************

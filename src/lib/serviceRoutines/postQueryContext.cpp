@@ -25,7 +25,11 @@
 #include <string>
 #include <vector>
 
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+#include "orionld/common/traceLevels.h"
 
 #include "orionld/types/ApiVersion.h"                          // ApiVersion
 #include "orionld/types/OrionldHeader.h"                       // orionldHeaderAdd
@@ -122,7 +126,7 @@ static bool queryForward(ConnectionInfo* ciP, QueryContextRequest* qcrP, QueryCo
   std::string     out;
   int             r;
 
-  LM_T(LmtSR, ("forward queryContext request payload: %s", payload.c_str()));
+  KT_T(KtSR, "forward queryContext request payload: %s", payload.c_str());
 
   std::map<std::string, std::string> noHeaders;
   r = httpRequestSend(ip,
@@ -144,11 +148,11 @@ static bool queryForward(ConnectionInfo* ciP, QueryContextRequest* qcrP, QueryCo
 
   if (r != 0)
   {
-    LM_W(("Runtime Error (error forwarding 'Query' to providing application)"));
+    KT_W("Runtime Error (error forwarding 'Query' to providing application)");
     return false;
   }
 
-  LM_T(LmtSR, ("forward queryContext response payload: %s", out.c_str()));
+  KT_T(KtSR, "forward queryContext response payload: %s", out.c_str());
 
 
   //
@@ -166,7 +170,7 @@ static bool queryForward(ConnectionInfo* ciP, QueryContextRequest* qcrP, QueryCo
     // This is really an internal error in the Context Provider
     // It is not in the orion broker though, so 404 is returned
     //
-    LM_W(("Other Error (context provider response to QueryContext is empty)"));
+    KT_W("Other Error (context provider response to QueryContext is empty)");
     return false;
   }
 
@@ -197,7 +201,7 @@ static bool queryForward(ConnectionInfo* ciP, QueryContextRequest* qcrP, QueryCo
 
   if (s != "OK")
   {
-    LM_W(("Internal Error (error parsing reply from prov app: %s)", errorMsg.c_str()));
+    KT_W("Internal Error (error parsing reply from prov app: %s)", errorMsg.c_str());
     parseData.qcr.res.release();
     parseData.qcrs.res.release();
     return false;
@@ -506,7 +510,7 @@ std::string postQueryContext
   {
     if (requestV[fIx]->contextProvider == "")
     {
-      LM_E(("Internal Error (empty context provider string)"));
+      KT_E("Internal Error (empty context provider string)");
       continue;
     }
 

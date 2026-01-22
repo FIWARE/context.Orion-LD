@@ -26,7 +26,10 @@
 #include <vector>
 #include <map>
 
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
 #include "orionld/types/ApiVersion.h"
 #include "orionld/common/orionldState.h"

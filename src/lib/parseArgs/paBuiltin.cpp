@@ -23,6 +23,7 @@
 * Author: Ken Zangelin
 */
 #include <stdio.h>                /* sprintf                                  */
+#include <string.h>               /* strcmp                                   */
 #include <cstdlib>                /* C++ free                                 */
 
 #include "parseArgs/baStd.h"      /* BA standard header file                  */

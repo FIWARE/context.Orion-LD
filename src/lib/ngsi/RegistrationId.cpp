@@ -24,8 +24,11 @@
 */
 #include <string>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+#include "orionld/common/traceLevels.h"
 
 #include "common/globals.h"
 #include "common/idCheck.h"
@@ -128,7 +131,7 @@ std::string RegistrationId::render(RequestType requestType, bool comma)
     if (requestType == RegisterResponse)  // registrationId is MANDATORY for RegisterContextResponse
     {
       string = "000000000000000000000000";
-      LM_I(("No registrationId - setting the registrationId to 24 zeroes"));
+      KT_I("No registrationId - setting the registrationId to 24 zeroes");
     }
     else
     {

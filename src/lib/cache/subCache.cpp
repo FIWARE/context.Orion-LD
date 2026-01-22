@@ -36,9 +36,10 @@ extern "C"
 #include "kalloc/kaStrdup.h"                         // kaStrdup
 #include "kalloc/kaBufferReset.h"                    // kaBufferReset
 #include "kjson/kjFree.h"                            // kjFree
+#include "ktrace/kTrace.h"                           // KT_T, KT_E, KT_W
 }
 
-#include "logMsg/logMsg.h"
+#include "orionld/common/traceLevels.h"              // KtSubCacheMatch, ...
 
 #include "common/sem.h"
 #include "common/string.h"
@@ -178,7 +179,7 @@ bool EntityInfo::match
   }
   else
   {
-    LM_T(LmtSubCacheMatch, ("No match due to Entity ID"));
+    KT_T(KtSubCacheMatch, "No match due to Entity ID");
     matchedId = false;
   }
 
@@ -193,7 +194,7 @@ bool EntityInfo::match
     }
     else if ((type != "")  && (entityType != "") && (entityType != type))
     {
-      LM_T(LmtSubCacheMatch, ("No match due to Entity Type"));
+      KT_T(KtSubCacheMatch, "No match due to Entity Type");
       matchedType = false;
     }
     else
@@ -445,21 +446,21 @@ static bool subMatch
       if ((cSubP->tenant != NULL) && (cSubP->tenant[0] != 0))
       {
         // No match due to tenant I
-        LM_T(LmtSubCacheMatch, ("No match due to tenant I"));
+        KT_T(KtSubCacheMatch, "No match due to tenant I");
         return false;
       }
 
       if ((tenant != NULL) && (tenant[0] != 0))
       {
         // No match due to tenant II
-        LM_T(LmtSubCacheMatch, ("No match due to tenant II"));
+        KT_T(KtSubCacheMatch, "No match due to tenant II");
         return false;
       }
     }
     else if (strcmp(cSubP->tenant, tenant) != 0)
     {
       // No match due to tenant III
-      LM_T(LmtSubCacheMatch, ("No match due to tenant III"));
+      KT_T(KtSubCacheMatch, "No match due to tenant III");
       return false;
     }
   }
@@ -467,7 +468,7 @@ static bool subMatch
   if (servicePathMatch(cSubP, (char*) servicePath) == false)
   {
     // No match due to servicePath
-    LM_T(LmtSubCacheMatch, ("No match due to servicePath"));
+    KT_T(KtSubCacheMatch, "No match due to servicePath");
     return false;
   }
 
@@ -481,7 +482,7 @@ static bool subMatch
   if (!attributeMatch(cSubP, attrV))
   {
     // No match due to attributes
-    LM_T(LmtSubCacheMatch, ("No match due to attributes"));
+    KT_T(KtSubCacheMatch, "No match due to attributes");
     return false;
   }
 
@@ -946,7 +947,7 @@ bool subCacheItemInsert
 
     if (cSubP->contextP == NULL)
     {
-      LM_E(("Internal Error (%s: %s)", orionldState.pd.title, orionldState.pd.status));
+      KT_E("Internal Error (%s: %s)", orionldState.pd.title, orionldState.pd.status);
       cSubP->contextP = orionldState.contextP;
     }
   }
@@ -1216,7 +1217,7 @@ int subCacheItemRemove(CachedSubscription* cSubP)
     current = current->next;
   }
 
-  LM_E(("Runtime Error (item to remove from sub-cache not found)"));
+  KT_E("Runtime Error (item to remove from sub-cache not found)");
   return -1;
 }
 
@@ -1230,15 +1231,15 @@ void subCacheDebug(const char* prefix, const char* title)
 {
   CachedSubscription* subP = subCache.head;
 
-  LM_T(LmtSubCacheDebug, ("%s%s", prefix, title));
+  KT_T(KtSubCacheDebug, "%s%s", prefix, title);
   while (subP != NULL)
   {
-    LM_T(LmtSubCacheDebug, ("%s  * Subscription %s:",       prefix, subP->subscriptionId));
-    LM_T(LmtSubCacheDebug, ("%s    - lastNotification: %f", prefix, subP->lastNotificationTime));
-    LM_T(LmtSubCacheDebug, ("%s    - lastSuccess:      %f", prefix, subP->lastSuccess));
-    LM_T(LmtSubCacheDebug, ("%s    - lastFailure:      %f", prefix, subP->lastFailure));
-    LM_T(LmtSubCacheDebug, ("%s    - timesSent:        %d", prefix, subP->count));
-    LM_T(LmtSubCacheDebug, ("%s", prefix));
+    KT_T(KtSubCacheDebug, "%s  * Subscription %s:",       prefix, subP->subscriptionId);
+    KT_T(KtSubCacheDebug, "%s    - lastNotification: %f", prefix, subP->lastNotificationTime);
+    KT_T(KtSubCacheDebug, "%s    - lastSuccess:      %f", prefix, subP->lastSuccess);
+    KT_T(KtSubCacheDebug, "%s    - lastFailure:      %f", prefix, subP->lastFailure);
+    KT_T(KtSubCacheDebug, "%s    - timesSent:        %d", prefix, subP->count);
+    KT_T(KtSubCacheDebug, "%s", prefix);
 
     subP = subP->next;
   }
@@ -1260,7 +1261,7 @@ void subCacheRefresh(bool refresh)
 {
   // subCacheDebug("KZ", "------------- BEFORE REFRESH ------------------------");
 
-  LM_T(LmtSubCache, ("Refreshing sub-cache"));
+  KT_T(KtSubCache, "Refreshing sub-cache");
 
   // Recreate the subCache for the default tenant
   if (experimental)
@@ -1377,7 +1378,7 @@ void subCacheSync(void)
   //
   // 2. Refresh cache (count set to 0)
   //
-  LM_T(LmtSubCacheSync, ("================================= Refreshing subscription cache ====================="));
+  KT_T(KtSubCacheSync, "================================= Refreshing subscription cache =====================");
   subCacheRefresh(true);
 
 
@@ -1521,7 +1522,7 @@ void subCacheStart(void)
 
   if (ret != 0)
   {
-    LM_E(("Runtime Error (error creating thread: %d)", ret));
+    KT_E("Runtime Error (error creating thread: %d)", ret);
     return;
   }
 
@@ -1572,22 +1573,22 @@ void subCacheItemNotificationErrorStatus(const std::string& tenant, const std::s
     const char* errorString = "intent to update error status of non-existing subscription";
 
     alarmMgr.badInput(orionldState.clientIp, errorString);
-    LM_W(("no sub found (subId: '%s') - counters/timestamps lost", subscriptionId.c_str()));
+    KT_W("no sub found (subId: '%s') - counters/timestamps lost", subscriptionId.c_str());
     return;
   }
 
-  LM_T(LmtSubCacheStats, ("%s: Setting lastNotificationTime to %f (old value in cache: %f)", subP->subscriptionId, kNow));
+  KT_T(KtSubCacheStats, "%s: Setting lastNotificationTime to %f (old value in cache: %f)", subP->subscriptionId, kNow);
   subP->lastNotificationTime = kNow;
 
   if (errors == 0)
   {
     subP->lastSuccess  = kNow;
-    LM_T(LmtSubCacheStats, ("%s: Setting lastSuccess to %f (in cache)", subP->subscriptionId, subP->lastSuccess));
+    KT_T(KtSubCacheStats, "%s: Setting lastSuccess to %f (in cache)", subP->subscriptionId, subP->lastSuccess);
   }
   else
   {
     subP->lastFailure  = kNow;
-    LM_T(LmtSubCacheStats, ("%s: Setting lastFailure to %f (in cache)", subP->subscriptionId, subP->lastFailure));
+    KT_T(KtSubCacheStats, "%s: Setting lastFailure to %f (in cache)", subP->subscriptionId, subP->lastFailure);
   }
 
   cacheSemGive(__FUNCTION__, "Looking up an item for lastSuccess/Failure");

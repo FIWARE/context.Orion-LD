@@ -34,8 +34,6 @@ extern "C"
 #include "kjson/kjLookup.h"                                        // kjLookup
 }
 
-#include "logMsg/logMsg.h"                                         // LM_*
-
 #include "orionld/common/orionldState.h"                           // orionldState
 #include "orionld/mongoc/mongocConnectionGet.h"                    // mongocConnectionGet
 #include "orionld/mongoc/mongocKjTreeFromBson.h"                   // mongocKjTreeFromBson
@@ -81,12 +79,15 @@ void typeAndAttrsExtractFromMongo(KjNode* inputArray, KjNode* typeArray)
     KjNode* idP = kjLookup(arrItemP, "_id");
     KjNode* attrP    = kjLookup(arrItemP, "attrs");
     KjNode* nodeResponseP = kjObject(orionldState.kjsonP, NULL);
+    KJSON_ALLOC_CHECK(nodeResponseP);
 
     if (idP != NULL)
     {
       KjNode* idNodeP  = kjString(orionldState.kjsonP, "id", idP->value.s);
+      KJSON_ALLOC_CHECK(idNodeP);
       kjChildAdd(nodeResponseP, idNodeP);
       KjNode* typeP = kjString(orionldState.kjsonP, "typeName", orionldContextItemAliasLookup(orionldState.contextP, idP->value.s, NULL, NULL));
+      KJSON_ALLOC_CHECK(typeP);
       kjChildAdd(nodeResponseP, typeP);
     }
 
@@ -94,11 +95,13 @@ void typeAndAttrsExtractFromMongo(KjNode* inputArray, KjNode* typeArray)
     {
       // loop over all attributes and add to response
       KjNode* attribP  = kjArray(orionldState.kjsonP, "attributeNames");
+      KJSON_ALLOC_CHECK(attribP);
 
       for (KjNode* attrItemP = attrP->value.firstChildP; attrItemP != NULL; attrItemP = attrItemP->next)
       {
         // lookup alias for attribute name in context
         KjNode* arrNodeP  = kjString(orionldState.kjsonP, NULL, orionldContextItemAliasLookup(orionldState.contextP, attrItemP->value.s, NULL, NULL));
+        KJSON_ALLOC_CHECK(arrNodeP);
         kjChildAdd(attribP, arrNodeP);
       }
 
@@ -206,7 +209,10 @@ KjNode* mongocEntityTypesGet(bool details, const char* entityType)
     else
     {
       if (kjTypeArray == NULL)
+      {
         kjTypeArray = kjArray(orionldState.kjsonP, NULL);
+        KJSON_ALLOC_CHECK(kjTypeArray);
+      }
 
       kjChildAdd(kjTypeArray, nodeP);
     }
@@ -230,6 +236,7 @@ KjNode* mongocEntityTypesGet(bool details, const char* entityType)
   if (kjTypeArray != NULL)
   {
     typeArray = kjArray(orionldState.kjsonP, NULL);
+    KJSON_ALLOC_CHECK(typeArray);
 
     if (details == false)
       typeExtractFromMongo(kjTypeArray, typeArray);

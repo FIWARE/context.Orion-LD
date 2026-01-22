@@ -31,9 +31,6 @@ extern "C"
 #include "kbase/kTime.h"                                       // kTimeGet, kTimeDiff
 }
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
-
 #include "orionld/types/OrionldTenant.h"                       // OrionldTenant
 #include "common/string.h"
 #include "common/sem.h"

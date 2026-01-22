@@ -25,8 +25,11 @@
 #include <stdio.h>
 #include <string>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+#include "orionld/common/traceLevels.h"
 
 #include "common/globals.h"
 #include "common/tag.h"

@@ -25,7 +25,11 @@
 #include <stdlib.h>                  /* free, ...                            */
 #include <string.h>                  /* strdup, ...                          */
 
-#include "logMsg/logMsg.h"           /* lmTraceSet                           */
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+#include "orionld/common/traceLevels.h"
 
 #include "parseArgs/paPrivate.h"     /* PaTypeUnion, config variables, ...   */
 #include "parseArgs/paTraceLevels.h" /* LmtPaDefaultValues, ...              */
@@ -37,13 +41,6 @@
 
 
 
-/* ****************************************************************************
-*
-* lmlib variables
-* These variables are non-static in logMsg.cpp but not declared 'extern' in logMsg.cpp
-* Thus, global variables in lmlib, but only meant for libpa. 
-*/
-extern bool lmPreamble;
 
 
 
@@ -550,7 +547,7 @@ int paConfig(const char* item, const void* value, const void* value2)
   }
   else if (strcmp(item, "no preamble") == 0)
   {
-    lmPreamble = false;
+    // lmPreamble removed - ktrace doesn't use it
   }
   else if (strcmp(item, "prefix") == 0)
   {
@@ -686,7 +683,7 @@ int paConfig(const char* item, const void* value, const void* value2)
 
     if (ok == true)
     {
-      lmLevelMaskSetString((char*) val);
+      // lmLevelMaskSetString removed - ktrace doesn't use log level masks
     }
     else
     {
@@ -699,7 +696,7 @@ int paConfig(const char* item, const void* value, const void* value2)
   }
   else if (strcmp(item, "log level mask") == 0)
   {
-    lmLevelMaskSet((int) val);
+    // lmLevelMaskSet removed - ktrace doesn't use log level masks
   }
   else if (strcmp(item, "version") == 0)
   {
@@ -856,11 +853,11 @@ int paConfig(const char* item, const void* value, const void* value2)
   }
   else if (strcmp(item, "if hook active, no traces to file") == 0)
   {
-    lmNoTracesToFileIfHookActive = true;
+    // lmNoTracesToFileIfHookActive removed - ktrace doesn't use it
   }
   else if (strcmp(item, "even if hook active, no traces to file") == 0)
   {
-    lmNoTracesToFileIfHookActive = false;
+    // lmNoTracesToFileIfHookActive removed - ktrace doesn't use it
   }
   else
   {
@@ -901,71 +898,18 @@ int paConfigActions(bool preTreat)
     paVerbose = true;
   }
 
-  lmVerbose       = paVerbose;
-  lmVerbose2      = paVerbose2;
-  lmVerbose3      = paVerbose3;
-  lmVerbose4      = paVerbose4;
-  lmVerbose5      = paVerbose5;
-  lmDebug         = paDebug;
-  lmToDo          = paToDo;
-  lmReads         = paReads;
-  lmWrites        = paWrites;
-  lmFix           = paFix;
-  lmBug           = paBug;
-  lmDoubt         = paDoubt;
-  lmBuf           = paBuf;
-  lmAssertAtExit  = paAssertAtExit;
-  lmSilent        = paSilent;
+  // Map parseArgs verbose/debug to ktrace equivalents
+  ktVerbose = paVerbose;
+  ktDebug   = paDebug;
 
   if (preTreat)
   {
-    lmTraceSet(paTracelevels);
+    ktTraceLevelSet(paTracelevels);
   }
   else
   {
-    LM_ENTRY();
-    lmTraceSet(paTraceV);
-
-    if (paNoClear == true)
-    {
-      lmDontClear();
-    }
-
-    if ((paClearAt != -1) || (paKeepLines != -1) || (paLastLines != -1))
-    {
-      /* logMsg must be changed to not change -1 values */
-      lmClearAt(paClearAt, paKeepLines, paLastLines);
-    }
-
-    if (paSilent)
-    {
-      strncpy(paLogLevel, "ERROR", sizeof(paLogLevel) - 1);
-    }
-
-    if (paLogLevel[0] != 0)
-    {
-      bool ok = true;
-
-      if (paValidLogLevels != NULL)
-      {
-        ok = validLogLevelCheck(paValidLogLevels, paLogLevel);
-      }
-
-      if (ok == true)
-      {
-        lmLevelMaskSetString(paLogLevel);
-      }
-      else
-      {
-        char w[300];
-
-        snprintf(w, sizeof(w), "invalid log level string: %s", (char*) paLogLevel);
-        PA_WARNING(PasBadValue, w);
-      }
-    }
-
-    LM_T(LmtPaConfigAction, ("setting trace levels to '%s'", paTraceV));
-    LM_EXIT();
+    ktTraceLevelSet(paTraceV);
+    KT_T(KtPaConfigAction, "setting trace levels to '%s'", paTraceV);
   }
 
   return 0;

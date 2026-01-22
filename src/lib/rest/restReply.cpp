@@ -24,7 +24,12 @@
 */
 #include <string>
 
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+
+#include "orionld/common/traceLevels.h"
 
 #include "orionld/types/ApiVersion.h"                          // ApiVersion
 #include "orionld/common/orionldState.h"                       // orionldState
@@ -72,8 +77,8 @@ void restReply(ConnectionInfo* ciP, const char* answer)
   if ((orionldState.apiVersion != API_VERSION_NGSILD_V1) && (ciP->servicePathV.size() > 0))
     spath = (char*) ciP->servicePathV[0].c_str();
 
-  LM_T(LmtResponse, ("Response Body: '%s'", (answer != NULL)? answer : "None" ));
-  LM_T(LmtResponse, ("Response Code:  %d", orionldState.httpStatusCode));
+  KT_T(KtResponse, "Response Body: '%s'", (answer != NULL)? answer : "None");
+  KT_T(KtResponse, "Response Code:  %d", orionldState.httpStatusCode);
 
   response = MHD_create_response_from_buffer(answerLen, (char*) answer, MHD_RESPMEM_MUST_COPY);
   bool metrics = (orionldState.apiVersion != API_VERSION_NGSILD_V1) && metricsMgr.isOn();
@@ -82,7 +87,7 @@ void restReply(ConnectionInfo* ciP, const char* answer)
     if (metrics == true)
       metricsMgr.add(orionldState.tenantP->tenant, spath, METRIC_TRANS_IN_ERRORS, 1);
 
-    LM_E(("Runtime Error (MHD_create_response_from_buffer FAILED)"));
+    KT_E("Runtime Error (MHD_create_response_from_buffer FAILED)");
 
     if (orionldState.responsePayloadAllocated == true)
     {
@@ -256,7 +261,7 @@ void restErrorReplyGet(ConnectionInfo* ciP, int statusCode, const std::string& d
   {
     OrionError oe(errorCode);
 
-    LM_E(("Unknown request type: '%d'", ciP->restServiceP->request));
+    KT_E("Unknown request type: '%d'", ciP->restServiceP->request);
     orionldState.httpStatusCode = oe.code;
     *outStringP = oe.setStatusCodeAndSmartRender(orionldState.apiVersion, &orionldState.httpStatusCode);
   }

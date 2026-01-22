@@ -27,7 +27,10 @@
 #include <string>                 /* std::string                             */
 
 #include "parseArgs/baStd.h"      /* BA standard header file                 */
-#include "logMsg/logMsg.h"        /* lmVerbose, lmDebug, ...                 */
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
 #include "parseArgs/parseArgs.h"  /* progName                                */
 #include "parseArgs/paWarning.h"  /* paWarningAdd                            */

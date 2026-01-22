@@ -30,9 +30,6 @@
 
 #include "orionld/types/OrionldTenant.h"                           // OrionldTenant
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
-
 #include "common/defaultValues.h"
 #include "apiTypesV2/Subscription.h"
 #include "cache/subCache.h"

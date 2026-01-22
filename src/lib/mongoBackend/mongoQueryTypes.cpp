@@ -27,10 +27,14 @@
 #include <map>
 #include <set>
 
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"                                // trace messages - ktrace library
+}
 
 #include "orionld/types/ApiVersion.h"                    // ApiVersion
 #include "orionld/common/orionldState.h"                 // orionldState
+#include "orionld/common/traceLevels.h"                  // KTrace levels
 
 #include "common/sem.h"
 #include "common/statistics.h"
@@ -117,7 +121,7 @@ static void getAttributeTypes
 
     if (!nextSafeOrErrorF(cursor, &r, &err))
     {
-      LM_E(("Runtime Error (exception in nextSafe(): %s - query: %s)", err.c_str(), query.toString().c_str()));
+      KT_E("Runtime Error (exception in nextSafe(): %s - query: %s)", err.c_str(), query.toString().c_str());
       continue;
     }
 
@@ -198,7 +202,7 @@ static unsigned int countCmd(OrionldTenant* tenantP, const BSONArray& pipelineFo
 
   if (!runCollectionCommand(tenantP->mongoDbName, cmd, &result, &err))
   {
-    LM_E(("Runtime Error (executing: %s, error %s)", cmd.toString().c_str(), err.c_str()));
+    KT_E("Runtime Error (executing: %s, error %s)", cmd.toString().c_str(), err.c_str());
     return 0;
   }
 
@@ -219,7 +223,7 @@ static unsigned int countCmd(OrionldTenant* tenantP, const BSONArray& pipelineFo
   }
   else
   {
-    LM_E(("Runtime Error (executing: %s, result hasn't cursor field", cmd.toString().c_str()));
+    KT_E("Runtime Error (executing: %s, result hasn't cursor field", cmd.toString().c_str());
   }
 
   return 0;
@@ -324,7 +328,7 @@ HttpStatusCode mongoEntityTypesValues
   }
 
   // Processing result to build response
-  LM_T(LmtLegacy, ("aggregation result: %s", result.toString().c_str()));
+  KT_T(KtLegacy, "aggregation result: %s", result.toString().c_str());
 
   std::vector<BSONElement> resultsArray = std::vector<BSONElement>();
 
@@ -348,7 +352,7 @@ HttpStatusCode mongoEntityTypesValues
     BSONObj     resultItem = resultsArray[ix].embeddedObject();
     std::string type;
 
-    LM_T(LmtLegacy, ("result item[%d]: %s", ix, resultItem.toString().c_str()));
+    KT_T(KtLegacy, "result item[%d]: %s", ix, resultItem.toString().c_str());
 
     if (getFieldF(&resultItem, "_id").isNull())
     {
@@ -618,8 +622,8 @@ HttpStatusCode mongoAttributesForEntityType
   // Setting the name of the entity type for the response
   responseP->entityType.type = entityType;
 
-  LM_T(LmtLegacy, ("Query Types Attribute for <%s>", entityType.c_str()));
-  LM_T(LmtLegacy, ("Offset: %d, Limit: %d, Count: %s", orionldState.uriParams.offset, orionldState.uriParams.limit, (count == true)? "true" : "false"));
+  KT_T(KtLegacy, "Query Types Attribute for <%s>", entityType.c_str());
+  KT_T(KtLegacy, "Offset: %d, Limit: %d, Count: %s", orionldState.uriParams.offset, orionldState.uriParams.limit, (count == true)? "true" : "false");
 
   reqSemTake(__FUNCTION__, "query types attributes request", SemReadOp, &reqSemTaken);
 
@@ -674,7 +678,7 @@ HttpStatusCode mongoAttributesForEntityType
   }
 
   /* Processing result to build response */
-  LM_T(LmtLegacy, ("aggregation result: %s", result.toString().c_str()));
+  KT_T(KtLegacy, "aggregation result: %s", result.toString().c_str());
 
   std::vector<BSONElement> resultsArray = std::vector<BSONElement>();
 

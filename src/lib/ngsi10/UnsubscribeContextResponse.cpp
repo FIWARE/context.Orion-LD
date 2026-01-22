@@ -24,8 +24,10 @@
 */
 #include <string>
 
-#include "logMsg/traceLevels.h"
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 #include "common/tag.h"
 #include "ngsi/StatusCode.h"
 #include "ngsi10/UnsubscribeContextResponse.h"

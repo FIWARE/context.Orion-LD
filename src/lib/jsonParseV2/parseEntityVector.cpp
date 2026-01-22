@@ -26,7 +26,13 @@
 
 #include "rapidjson/document.h"
 
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+
+#include "orionld/common/traceLevels.h"
+
 
 #include "ngsi/ContextAttribute.h"
 

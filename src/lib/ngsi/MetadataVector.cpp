@@ -26,8 +26,11 @@
 #include <string>
 #include <vector>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+#include "orionld/common/traceLevels.h"
 
 #include "common/globals.h"
 #include "common/tag.h"
@@ -195,7 +198,7 @@ void MetadataVector::push_back(Metadata* item)
   }
   catch (...)
   {
-    LM_E(("Out of memory"));
+    KT_E("Out of memory");
   }
 }
 

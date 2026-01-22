@@ -24,10 +24,14 @@
 */
 #include <string>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"                                // trace messages - ktrace library
+}
 
 #include "common/globals.h"
+
+#include "orionld/common/traceLevels.h"                   // KTrace levels
 #include "common/MimeType.h"
 #include "common/sem.h"
 #include "alarmMgr/alarmMgr.h"
@@ -91,7 +95,7 @@ HttpStatusCode mongoUpdateContextAvailabilitySubscription
     }
     else  // SccReceiverInternalError
     {
-      LM_E(("Runtime Error (exception getting OID: %s)", responseP->errorCode.details.c_str()));
+      KT_E("Runtime Error (exception getting OID: %s)", responseP->errorCode.details.c_str());
     }
 
     return SccOk;
@@ -164,7 +168,7 @@ HttpStatusCode mongoUpdateContextAvailabilitySubscription
     int64_t expiration = orionldState.requestTime + requestP->duration.parse();
 
     newSub.append(CASUB_EXPIRATION, (long long) expiration);
-    LM_T(LmtLegacy, ("New subscription expiration: %l", expiration));
+    KT_T(KtLegacy, "New subscription expiration: %l", expiration);
   }
 
   /* Reference is not updatable, so it is appended directly */

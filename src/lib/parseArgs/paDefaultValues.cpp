@@ -27,7 +27,11 @@
 #include <cstdlib>                      /* C++ free()                        */
 
 #include "parseArgs/baStd.h"            /* BA standard header file           */
-#include "logMsg/logMsg.h"              /* LM_ENTRY, LM_EXIT, ...            */
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+#include "orionld/common/traceLevels.h"
 
 #include "parseArgs/parseArgs.h"        /* PaArgument                        */
 #include "parseArgs/paPrivate.h"        /* paBuiltin                         */
@@ -47,7 +51,6 @@ int paDefaultValues(PaiArgument* paList)
   PaiArgument*  aP;
   char          w[512];
 
-  LM_ENTRY();
 
   paIterateInit();
   while ((aP = paIterateNext(paList)) != NULL)
@@ -62,11 +65,11 @@ int paDefaultValues(PaiArgument* paList)
     aP->from = PafDefault;
     if (aP->type != PaString)
     {
-      LM_T(LmtPaDefVal, ("setting default value for '%s' (0x%x)", aP->name, (int) aP->def));
+      KT_T(KtPaDefVal, "setting default value for '%s' (0x%x)", aP->name, (int) aP->def);
     }
     else
     {
-      LM_T(LmtPaDefVal, ("setting default value for '%s' (%s)", aP->name, (char*) aP->def));
+      KT_T(KtPaDefVal, "setting default value for '%s' (%s)", aP->name, (char*) aP->def);
     }
 
     defP = (int64_t*) &aP->def;
@@ -108,14 +111,13 @@ int paDefaultValues(PaiArgument* paList)
 
     if (aP->type != PaString)
     {
-      LM_T(LmtPaDefVal, ("default value for '%s' is set", aP->name));
+      KT_T(KtPaDefVal, "default value for '%s' is set", aP->name);
     }
     else
     {
-      LM_T(LmtPaDefVal, ("default value for '%s' is set to '%s'", aP->name, (char*) aP->varP));
+      KT_T(KtPaDefVal, "default value for '%s' is set to '%s'", aP->name, (char*) aP->varP);
     }
   }
 
-  LM_EXIT();
   return 0;
 }

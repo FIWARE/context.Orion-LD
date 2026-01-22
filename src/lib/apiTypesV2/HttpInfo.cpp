@@ -26,7 +26,10 @@
 #include <map>
 
 #include "mongo/client/dbclient.h"
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
 #include "common/JsonHelper.h"
 #include "mongoBackend/dbConstants.h"
@@ -231,7 +234,7 @@ void HttpInfo::fill(const BSONObj* boP)
     if (mqttParse(url, &mqtts, &mqttUser, &mqttPassword, &mqttHost, &mqttPort, &mqttTopic, &detail) == false)
     {
       free(url);
-      LM_E(("Internal Error (unable to parse mqtt URL)"));
+      KT_E("Internal Error (unable to parse mqtt URL)");
       return;
     }
 

@@ -29,9 +29,12 @@
 #include <vector>
 #include <math.h>    // modf
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
+#include "orionld/common/traceLevels.h"
 #include "common/string.h"
 #include "common/limits.h"
 #include "alarmMgr/alarmMgr.h"
@@ -773,7 +776,7 @@ char* strToLower(char* to, const char* from, int toSize)
 
   if (toSize < fromSize + 1)
   {
-    LM_E(("Runtime Error (cannot copy %d bytes into a buffer of %d bytes)", fromSize + 1, toSize));
+    KT_E("Runtime Error (cannot copy %d bytes into a buffer of %d bytes)", fromSize + 1, toSize);
     fromSize = toSize;
   }
 

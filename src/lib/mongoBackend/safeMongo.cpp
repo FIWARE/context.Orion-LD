@@ -27,7 +27,14 @@
 #include <string>
 #include <vector>
 
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"                                // trace messages - ktrace library
+}
+
+#include "orionld/common/traceLevels.h"                   // KTrace levels
+
+#include "common/limits.h"                                 // STRING_SIZE_FOR_INT
 #include "ngsi/SubscriptionId.h"
 #include "ngsi/RegistrationId.h"
 #include "ngsi/StatusCode.h"
@@ -72,12 +79,12 @@ bool getObjectField(BSONObj* outObjectP, const BSONObj* bP, const char* field, c
   }
   else
   {
-    LM_E(("Runtime Error (object field '%s' is missing in BSONObj <%s> from caller %s:%d)", field, bP->toString().c_str(), caller, line));
+    KT_E("Runtime Error (object field '%s' is missing in BSONObj <%s> from caller %s:%d)", field, bP->toString().c_str(), caller, line);
     return false;
   }
 
-  LM_E(("Runtime Error (field '%s' was supposed to be an OBJECT but type=%d in BSONObj <%s> from caller %s:%d)",
-        field, type, bP->toString().c_str(), caller, line));
+  KT_E("Runtime Error (field '%s' was supposed to be an OBJECT but type=%d in BSONObj <%s> from caller %s:%d)",
+        field, type, bP->toString().c_str(), caller, line);
 
   return false;
 }
@@ -106,13 +113,13 @@ bool getArrayField(BSONArray* outArrayP, const BSONObj* bP, const char* field, c
   }
   else
   {
-    LM_E(("Runtime Error (array field '%s' is missing in BSONObj <%s> from caller %s:%d)",
-          field, bP->toString().c_str(), caller, line));
+    KT_E("Runtime Error (array field '%s' is missing in BSONObj <%s> from caller %s:%d)",
+          field, bP->toString().c_str(), caller, line);
     return false;
   }
 
-  LM_E(("Runtime Error (field '%s' was supposed to be an ARRAY but type=%d in BSONObj <%s> from caller %s:%d)",
-        field, type, bP->toString().c_str(), caller, line));
+  KT_E("Runtime Error (field '%s' was supposed to be an ARRAY but type=%d in BSONObj <%s> from caller %s:%d)",
+        field, type, bP->toString().c_str(), caller, line);
 
   return false;
 }
@@ -138,12 +145,12 @@ const char* getStringField(const BSONObj* bP, const char* field, const char* cal
   else
   {
     // Sometimes this is an error, far from always - I should add a parameter 'bool mandatory' to not send non-errors as errors to log file
-    LM_E(("Runtime Error (string field '%s' is missing in BSONObj <%s> from caller %s:%d)", field, bP->toString().c_str(), caller, line));
+    KT_E("Runtime Error (string field '%s' is missing in BSONObj <%s> from caller %s:%d)", field, bP->toString().c_str(), caller, line);
     return "";
   }
 
-  LM_E(("Runtime Error (field '%s' was supposed to be a STRING but type=%d in BSONObj <%s> from caller %s:%d)",
-        field, type, bP->toString().c_str(), caller, line));
+  KT_E("Runtime Error (field '%s' was supposed to be a STRING but type=%d in BSONObj <%s> from caller %s:%d)",
+        field, type, bP->toString().c_str(), caller, line);
 
   return "";
 }
@@ -168,13 +175,13 @@ double getNumberField(const BSONObj* bP, const char* field, const char* caller, 
   }
   else
   {
-    LM_E(("Runtime Error (double field '%s' is missing in BSONObj <%s> from caller %s:%d)",
-          field, bP->toString().c_str(), caller, line));
+    KT_E("Runtime Error (double field '%s' is missing in BSONObj <%s> from caller %s:%d)",
+          field, bP->toString().c_str(), caller, line);
     return -1;
   }
 
-  LM_E(("Runtime Error (field '%s' was supposed to be a NUMBERDOUBLE but type=%d in BSONObj <%s> from caller %s:%d)",
-        field, bP->getField(field).type(), bP->toString().c_str(), caller, line));
+  KT_E("Runtime Error (field '%s' was supposed to be a NUMBERDOUBLE but type=%d in BSONObj <%s> from caller %s:%d)",
+        field, bP->getField(field).type(), bP->toString().c_str(), caller, line);
 
   return -1;
 }
@@ -199,13 +206,13 @@ int getIntField(const BSONObj* bP, const char* field, const char* caller, int li
   }
   else
   {
-    LM_E(("Runtime Error (NumberInt field '%s' is missing in BSONObj <%s> from caller %s:%d)",
-          field, bP->toString().c_str(), caller, line));
+    KT_E("Runtime Error (NumberInt field '%s' is missing in BSONObj <%s> from caller %s:%d)",
+          field, bP->toString().c_str(), caller, line);
     return -1;
   }
 
-  LM_E(("Runtime Error (field '%s' was supposed to be a NUMBERINT but type=%d in BSONObj <%s> from caller %s:%d)",
-        field, bP->getField(field).type(), bP->toString().c_str(), caller, line));
+  KT_E("Runtime Error (field '%s' was supposed to be a NUMBERINT but type=%d in BSONObj <%s> from caller %s:%d)",
+        field, bP->getField(field).type(), bP->toString().c_str(), caller, line);
 
   return -1;
 }
@@ -232,13 +239,13 @@ long long getIntOrLongFieldAsLong(const BSONObj* bP, const char* field, const ch
   }
   else
   {
-    LM_E(("Runtime Error (int/long field '%s' is missing in BSONObj <%s> from caller %s:%d)",
-          field, bP->toString().c_str(), caller, line));
+    KT_E("Runtime Error (int/long field '%s' is missing in BSONObj <%s> from caller %s:%d)",
+          field, bP->toString().c_str(), caller, line);
     return -1;
   }
 
-  LM_E(("Runtime Error (field '%s' was supposed to be int or long but type=%d in BSONObj <%s> from caller %s:%d)",
-        field, type, bP->toString().c_str(), caller, line));
+  KT_E("Runtime Error (field '%s' was supposed to be int or long but type=%d in BSONObj <%s> from caller %s:%d)",
+        field, type, bP->toString().c_str(), caller, line);
 
   return -1;
 }
@@ -264,12 +271,12 @@ bool getBoolField(const BSONObj* bP, const char* field, const char* caller, int 
   }
   else
   {
-    LM_E(("Runtime Error (bool field '%s' is missing in BSONObj <%s>)", field, bP->toString().c_str()));
+    KT_E("Runtime Error (bool field '%s' is missing in BSONObj <%s>)", field, bP->toString().c_str());
     return false;
   }
 
-  LM_E(("Runtime Error (field '%s' was supposed to be a bool but type=%d in BSONObj <%s> from caller %s:%d)",
-        field, type, bP->toString().c_str(), caller, line));
+  KT_E("Runtime Error (field '%s' was supposed to be a bool but type=%d in BSONObj <%s> from caller %s:%d)",
+        field, type, bP->toString().c_str(), caller, line);
 
   return false;
 }
@@ -299,17 +306,17 @@ double getNumberFieldAsDouble(const BSONObj* bP, const char* field, bool okToNot
     if (okToNotExist == true)
       return 0;
 
-    LM_E(("Runtime Error (double/int/long field '%s' is missing in BSONObj <%s> from caller %s:%d)",
+    KT_E("Runtime Error (double/int/long field '%s' is missing in BSONObj <%s> from caller %s:%d)",
           field,
           bP->toString().c_str(),
           caller,
-          line));
+          line);
 
     return -1;
   }
 
-  LM_E(("Runtime Error (field '%s' was supposed to be a Number (double/int/long) but the type=%d in BSONObj <%s> from caller %s:%d)",
-        field, type, bP->toString().c_str(), caller, line));
+  KT_E("Runtime Error (field '%s' was supposed to be a Number (double/int/long) but the type=%d in BSONObj <%s> from caller %s:%d)",
+        field, type, bP->toString().c_str(), caller, line);
 
   return -1;
 }
@@ -325,11 +332,11 @@ BSONElement getField(const BSONObj* bP, const char* field, const char* caller, i
   if (bP->hasField(field))
     return bP->getField(field);
 
-  LM_E(("Runtime Error (field '%s' is missing in BSONObj <%s> from caller %s:%d)",
+  KT_E("Runtime Error (field '%s' is missing in BSONObj <%s> from caller %s:%d)",
         field,
         bP->toString().c_str(),
         caller,
-        line));
+        line);
 
   return BSONElement();
 }
@@ -371,8 +378,8 @@ void setStringVector
         }
         else
         {
-          LM_E(("Runtime Error (element %d in array was supposed to be a STRING but type=%d from caller %s:%d)",
-                ix, ba[ix].type(), caller, line));
+          KT_E("Runtime Error (element %d in array was supposed to be a STRING but type=%d from caller %s:%d)",
+                ix, ba[ix].type(), caller, line);
           v->clear();
 
           return;  // Error reported in logfile ...
@@ -384,14 +391,14 @@ void setStringVector
   }
   else
   {
-    LM_E(("Runtime Error (object field '%s' is missing in BSONObj <%s> from caller %s:%d)",
-          field, bP->toString().c_str(), caller, line));
+    KT_E("Runtime Error (object field '%s' is missing in BSONObj <%s> from caller %s:%d)",
+          field, bP->toString().c_str(), caller, line);
 
     return;
   }
 
-  LM_E(("Runtime Error (field '%s' was supposed to be an array but type=%d in BSONObj <%s> from caller %s:%d)",
-        field, type, bP->toString().c_str(), caller, line));
+  KT_E("Runtime Error (field '%s' was supposed to be an array but type=%d in BSONObj <%s> from caller %s:%d)",
+        field, type, bP->toString().c_str(), caller, line);
 }
 
 
@@ -414,12 +421,12 @@ bool moreSafe(const std::auto_ptr<DBClientCursor>& cursor)
   }
   catch (const std::exception& e)
   {
-    LM_E(("Fatal Error (more() exception: %s)", e.what()));
+    KT_E("Fatal Error (more() exception: %s)", e.what());
     return false;
   }
   catch (...)
   {
-    LM_E(("Fatal Error (more() exception: generic)"));
+    KT_E("Fatal Error (more() exception: generic)");
     return false;
   }
 }

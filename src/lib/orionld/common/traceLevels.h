@@ -25,6 +25,31 @@
 *
 * Author: Ken Zangelin
 */
+extern "C"
+{
+#include "ktrace/ktGlobals.h"                  // ktTraceLevels
+}
+
+
+
+// ----------------------------------------------------------------------------
+//
+// ktTraceIsSet - check if a trace level is set
+//
+#define ktTraceIsSet(level) ((ktTraceLevels[(level) / 32] & (1 << ((level) % 32))) != 0)
+
+
+
+// ----------------------------------------------------------------------------
+//
+// lmTransaction* stubs - ktrace doesn't have transaction tracking, so these are no-ops
+//
+#define lmTransactionStart(...)
+#define lmTransactionEnd()
+#define lmTransactionSetFrom(x)
+#define lmTransactionSetService(x)
+#define lmTransactionSetSubservice(x)
+#define lmTransactionReset()
 
 
 
@@ -98,6 +123,8 @@ typedef enum OrionldTraceLevels
   KtSubCacheSync            = 901,
   KtSubCacheStats           = 902,
   KtSubCacheMatch           = 903,
+  KtSubCacheDebug           = 904,
+  KtSubCacheFlush           = 905,
 
   // Alterations
   KtAlt                     = 1000,
@@ -126,15 +153,22 @@ typedef enum OrionldTraceLevels
   KtDistOp207               = 1211,
   KtDistOpLoop              = 1212,
   KtDistOpResponseBuf       = 1213,
+  KtDistOpSubMatch          = 1214,
 
   // Entity Maps
   KtEntityMap               = 1300,
+  KtEntityMapRetrieve       = 1301,
+  KtEntityMapDetail         = 1302,
+
+  // GeoJSON
+  KtGeoJSON                 = 1350,
 
   // TRoE
   KtTroe                    = 1400,
   KtTroeFilter              = 1401,
   KtPgPool                  = 1402,
   KtSql                     = 1403,
+  KtPostgres                = 1404,
 
   // Config File
   KtConfig                  = 1500,
@@ -157,10 +191,12 @@ typedef enum OrionldTraceLevels
   // Context Cache
   KtContextCache            = 1750,
   KtContextCacheStats       = 1751,
+  KtContextCachePersist     = 1752,
 
   // DB Model
   KtDbModel                 = 1800,
   KtAttrNames               = 1801,
+  KtDbModel2                = 1802,
 
   // API Model
   KtApiModel                = 1850,
@@ -188,11 +224,25 @@ typedef enum OrionldTraceLevels
   KtCurl                    = 3001,
   KtMqtt                    = 3010,
 
+  // Legacy (old mongo C++ driver code, old parsers, etc.)
+  KtLegacy                  = 3100,
+  KtLegacySubMatch          = 3101,
+  KtLegacySubCacheRefresh   = 3102,
+
   // Misc
   KtLeak                    = 4000,
   KtToDo                    = 4001,
   KtDateTime                = 4002,
   KtUriEncode               = 4003,
+  KtSemaphore               = 4004,
+  KtKjParse                 = 4005,
+  KtTenants                 = 4006,
+  KtRegex                   = 4007,
+  KtMimeType                = 4008,
+  KtBug                     = 4009,
+  KtPatchEntity             = 4010,
+  KtPatchEntity2            = 4011,
+  KtPerformance             = 4012,
 
   // FT Client
   StDump                    = 5001,

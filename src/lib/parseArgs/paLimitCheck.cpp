@@ -23,10 +23,14 @@
 * Author: Ken Zangelin
 */
 #include <cinttypes>                  /* PRId64, PRIu64                      */
-
+#include <string.h>                   /* strcmp, strlen                      */
 #include <cstdlib>                    /* C++ free                            */
 
-#include "logMsg/logMsg.h"            /* lmVerbose, lmDebug, ...             */
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+#include "orionld/common/traceLevels.h"
 
 #include "parseArgs/parseArgs.h"      /* Own interface                       */
 #include "parseArgs/paPrivate.h"      /* PaTypeUnion, config variables, ...  */
@@ -84,18 +88,18 @@ static int limits(PaiArgument* paList, PaiArgument* aP)
 
   if (aP->min == aP->max)
   {
-    LM_T(LmtPaLimits, ("'%s': limits equal - no limit check", aP->name));
+    KT_T(KtPaLimits, "'%s': limits equal - no limit check", aP->name);
     lower = false;
     upper = false;
   }
   else if (aP->min == PaNoLim)
   {
-    LM_T(LmtPaLimits, ("'%s': no lower limit check", aP->name));
+    KT_T(KtPaLimits, "'%s': no lower limit check", aP->name);
     lower = false;
   }
   else if (aP->max == PaNoLim)
   {
-    LM_T(LmtPaLimits, ("'%s': no upper limit check", aP->name));
+    KT_T(KtPaLimits, "'%s': no upper limit check", aP->name);
     upper = false;
   }
 
@@ -104,7 +108,7 @@ static int limits(PaiArgument* paList, PaiArgument* aP)
     return 0;
   }
 
-  LM_T(LmtPaLimits, ("limit check for %s", aP->name));
+  KT_T(KtPaLimits, "limit check for %s", aP->name);
 
   w[0]    = 0;
   i64Val  = *((int64_t*)        aP->varP);
@@ -123,7 +127,7 @@ static int limits(PaiArgument* paList, PaiArgument* aP)
   case PaString:
     if (lower && (strcmp((char*) aP->varP, (char*) aP->min) < 0))
     {
-      LM_E(("low limit error for %s (strcmp(\"%s\", \"%s\")')", aP->name, aP->varP, aP->min));
+      KT_E("low limit error for %s (strcmp(\"%s\", \"%s\")')", aP->name, aP->varP, aP->min);
       snprintf(valS, sizeof(valS), "%s", (char*) aP->varP);
       snprintf(w, sizeof(w), "value(\"%s\") < minimum(\"%s\") (%s)",
                (char*) aP->varP,
@@ -132,7 +136,7 @@ static int limits(PaiArgument* paList, PaiArgument* aP)
     }
     else if (upper && (strcmp((char*) aP->varP, (char*) aP->max) > 0))
     {
-      LM_E(("high limit error for %s", aP->name));
+      KT_E("high limit error for %s", aP->name);
       snprintf(valS, sizeof(valS), "%s", (char*) aP->varP);
       snprintf(w, sizeof(w), "value(\"%s\") > maximum(\"%s\") (%s)",
                (char*) aP->varP,
@@ -142,8 +146,8 @@ static int limits(PaiArgument* paList, PaiArgument* aP)
     break;
 
   case PaInt:
-    LM_T(LmtPaLimits, ("checking '%s' (value %d): limits '%d' - '%d'",
-                       aP->name, iVal, aP->min, aP->max));
+    KT_T(KtPaLimits, "checking '%s' (value %d): limits '%d' - '%d'",
+                       aP->name, iVal, aP->min, aP->max);
     if ((lower && (iVal < (int) aP->min)) || (upper && (iVal > (int) aP->max)))
     {
       snprintf(valS, sizeof(valS), "%d", iVal);
@@ -156,8 +160,8 @@ static int limits(PaiArgument* paList, PaiArgument* aP)
     break;
 
   case PaIntU:
-    LM_T(LmtPaLimits, ("checking '%s' (value %d): limits '%d' - '%d'",
-                       aP->name, uiVal, aP->min, aP->max));
+    KT_T(KtPaLimits, "checking '%s' (value %d): limits '%d' - '%d'",
+                       aP->name, uiVal, aP->min, aP->max);
     if ((lower && (uiVal < (unsigned int) aP->min)) || (upper && (uiVal > (unsigned int) aP->max)))
     {
       snprintf(valS, sizeof(valS), "%u", uiVal);
@@ -170,8 +174,8 @@ static int limits(PaiArgument* paList, PaiArgument* aP)
     break;
 
   case PaInt64:
-    LM_T(LmtPaLimits, ("checking '%s' (value %lld): limits '%d' - '%d'",
-                       aP->name, i64Val, aP->min, aP->max));
+    KT_T(KtPaLimits, "checking '%s' (value %lld): limits '%d' - '%d'",
+                       aP->name, i64Val, aP->min, aP->max);
     if ((lower && (i64Val < aP->min)) || (upper && (i64Val > aP->max)))
     {
       snprintf(valS, sizeof(valS), "%" PRId64, i64Val);
@@ -184,8 +188,8 @@ static int limits(PaiArgument* paList, PaiArgument* aP)
     break;
 
   case PaIntU64:
-    LM_T(LmtPaLimits, ("checking '%s' (value %lu): limits '%d' - '%d'",
-                       aP->name, ui64Val, aP->min, aP->max));
+    KT_T(KtPaLimits, "checking '%s' (value %lu): limits '%d' - '%d'",
+                       aP->name, ui64Val, aP->min, aP->max);
     if ((lower && (uiVal < (uint64_t) aP->min)) || (upper && (uiVal > (uint64_t) aP->max)))
     {
       snprintf(valS, sizeof(valS), "%" PRIu64, ui64Val);
@@ -198,8 +202,8 @@ static int limits(PaiArgument* paList, PaiArgument* aP)
     break;
 
   case PaShort:
-    LM_T(LmtPaLimits, ("checking '%s' (value %d): limits '%d' - '%d'",
-                       aP->name, sVal, aP->min, aP->max));
+    KT_T(KtPaLimits, "checking '%s' (value %d): limits '%d' - '%d'",
+                       aP->name, sVal, aP->min, aP->max);
     if ((lower && (sVal < (int16_t) aP->min)) || (upper && (sVal > (int16_t) aP->max)))
     {
       snprintf(valS, sizeof(valS), "%d", sVal);
@@ -212,8 +216,8 @@ static int limits(PaiArgument* paList, PaiArgument* aP)
     break;
 
   case PaShortU:
-    LM_T(LmtPaLimits, ("checking '%s' (value %d): limits '%d' - '%d'",
-                       aP->name, usVal, aP->min, aP->max));
+    KT_T(KtPaLimits, "checking '%s' (value %d): limits '%d' - '%d'",
+                       aP->name, usVal, aP->min, aP->max);
     if ((lower && (usVal < (uint16_t) aP->min)) || (upper && (usVal > (uint16_t) aP->max)))
     {
       snprintf(valS, sizeof(valS), "%u", usVal);
@@ -226,8 +230,8 @@ static int limits(PaiArgument* paList, PaiArgument* aP)
     break;
 
   case PaChar:
-    LM_T(LmtPaLimits, ("checking '%s' (value %d): limits '%d' - '%d'",
-                       aP->name, cVal, aP->min, aP->max));
+    KT_T(KtPaLimits, "checking '%s' (value %d): limits '%d' - '%d'",
+                       aP->name, cVal, aP->min, aP->max);
     if ((lower && (cVal < (char) aP->min)) || (upper && (cVal > (char) aP->max)))
     {
       snprintf(valS, sizeof(valS), "%d", cVal);
@@ -240,8 +244,8 @@ static int limits(PaiArgument* paList, PaiArgument* aP)
     break;
 
   case PaCharU:
-    LM_T(LmtPaLimits, ("checking '%s' (value %d): limits '%d' - '%d'",
-                       aP->name, ucVal, aP->min, aP->max));
+    KT_T(KtPaLimits, "checking '%s' (value %d): limits '%d' - '%d'",
+                       aP->name, ucVal, aP->min, aP->max);
     if ((lower && (ucVal < (uint8_t) aP->min)) || (upper && (ucVal > (uint8_t) aP->max)))
     {
       snprintf(valS, sizeof(valS), "%u", ucVal);
@@ -254,8 +258,8 @@ static int limits(PaiArgument* paList, PaiArgument* aP)
     break;
 
   case PaFloat:
-    LM_T(LmtPaLimits, ("checking '%s' (value %d): limits '%f' - '%f'",
-                       aP->name, fVal, aP->min, aP->max));
+    KT_T(KtPaLimits, "checking '%s' (value %d): limits '%f' - '%f'",
+                       aP->name, fVal, aP->min, aP->max);
     if ((lower && (fVal < (float) aP->min)) || (upper && (fVal > (float) aP->max)))
     {
       snprintf(valS, sizeof(valS), "%f", fVal);
@@ -268,8 +272,8 @@ static int limits(PaiArgument* paList, PaiArgument* aP)
     break;
 
   case PaDouble:
-    LM_T(LmtPaLimits, ("checking '%s' (value %d): limits '%f' - '%f'",
-                       aP->name, dVal, aP->min, aP->max));
+    KT_T(KtPaLimits, "checking '%s' (value %d): limits '%f' - '%f'",
+                       aP->name, dVal, aP->min, aP->max);
     if ((lower && (dVal < (double) aP->min)) || (upper && (dVal > (double) aP->max)))
     {
       snprintf(valS, sizeof(valS), "%f", dVal);
@@ -315,18 +319,15 @@ int paLimitCheck(PaiArgument* paList)
 {
   PaiArgument* aP;
 
-  LM_ENTRY();
 
   paIterateInit();
   while ((aP = paIterateNext(paList)) != NULL)
   {
     if (limits(paList, aP) == -1)
     {
-      LM_EXIT();
       return -1;
     }
   }
 
-  LM_EXIT();
   return 0;
 }

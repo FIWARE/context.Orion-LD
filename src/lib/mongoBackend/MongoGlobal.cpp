@@ -33,8 +33,12 @@
 
 #include "mongo/client/dbclient.h"
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"                                         // trace messages - ktrace library
+}
+
+#include "orionld/common/traceLevels.h"                            // KTrace levels
 
 #include "common/limits.h"
 #include "common/globals.h"
@@ -230,12 +234,12 @@ void mongoInit
   double tmo = timeout / 1000.0;  // milliseconds to float value in seconds
 
   if (!mongoStart(dbHost, dbName.c_str(), rplSet, user, pwd, mtenant, tmo, writeConcern, dbPoolSize, mutexTimeStat))
-    LM_X(1, ("Fatal Error (MongoDB error)"));
+    KT_X(1, "Fatal Error (MongoDB error)");
 
   if (user[0] != 0)
-    LM_I(("Connected to mongo at %s:%s as user '%s'", dbHost, dbName.c_str(), user));
+    KT_I("Connected to mongo at %s:%s as user '%s'", dbHost, dbName.c_str(), user);
   else
-    LM_I(("Connected to mongo at %s:%s", dbHost, dbName.c_str()));
+    KT_I("Connected to mongo at %s:%s", dbHost, dbName.c_str());
 
   setDbPrefix(dbName);
 
@@ -258,7 +262,7 @@ void mongoInit
     std::vector<std::string> orionDbs;
 
     getOrionDatabases(&orionDbs);
-    LM_T(LmtMongoPool, ("There are %d Orion databases, the connection pool size is: %d", orionDbs.size(), dbPoolSize));
+    KT_T(StMongoPool, "There are %d Orion databases, the connection pool size is: %d", orionDbs.size(), dbPoolSize);
 
     for (unsigned int ix = 0; ix < orionDbs.size(); ++ix)
     {
@@ -288,7 +292,7 @@ static void shutdownClient(void)
 
   if (!status.isOK())
   {
-    LM_E(("Database Shutdown Error %s (cannot shutdown mongo client)", status.toString().c_str()));
+    KT_E("Database Shutdown Error %s (cannot shutdown mongo client)", status.toString().c_str());
   }
 }
 
@@ -318,7 +322,10 @@ bool mongoStart
   static bool alreadyDone = false;
 
   if (alreadyDone == true)
-    LM_RE(false, ("Runtime Error (mongoStart already called - can only be called once)"));
+  {
+    KT_E("Runtime Error (mongoStart already called - can only be called once)");
+    return false;
+  }
 
   alreadyDone = true;
 
@@ -326,7 +333,10 @@ bool mongoStart
 
   mongo::Status status = mongo::client::initialize();
   if (!status.isOK())
-    LM_RE(false, ("Database Startup Error %s (cannot initialize mongo client)", status.toString().c_str()));
+  {
+    KT_E("Database Startup Error %s (cannot initialize mongo client)", status.toString().c_str());
+    return false;
+  }
 
   atexit(shutdownClient);
 
@@ -341,7 +351,7 @@ bool mongoStart
                               poolSize,
                               semTimeStat) != 0)
   {
-    LM_E(("Database Startup Error (unable to initialize the mongo connection pool)"));
+    KT_E("Database Startup Error (unable to initialize the mongo connection pool)");
     return false;
   }
 
@@ -1014,7 +1024,7 @@ bool processAreaScopeV2(const Scope* scoP, BSONObj* areaQueryP)
   }
   else
   {
-    LM_E(("Runtime Error (unknown area type: %d)", scoP->areaType));
+    KT_E("Runtime Error (unknown area type: %d)", scoP->areaType);
     return false;
   }
 
@@ -1054,7 +1064,7 @@ bool processAreaScopeV2(const Scope* scoP, BSONObj* areaQueryP)
   }
   else
   {
-    LM_E(("Runtime Error (unknown georel type: '%s')", scoP->georel.type.c_str()));
+    KT_E("Runtime Error (unknown georel type: '%s')", scoP->georel.type.c_str());
     return false;
   }
 
@@ -1474,14 +1484,14 @@ bool entitiesQuery
     catch (const std::exception &e)
     {
       *err = e.what();
-      LM_E(("Runtime Error (exception in nextSafe(): %s - query: %s)", e.what(), query.toString().c_str()));
+      KT_E("Runtime Error (exception in nextSafe(): %s - query: %s)", e.what(), query.toString().c_str());
       releaseMongoConnection(connection);
       return false;
     }
     catch (...)
     {
       *err = "generic exception at nextSafe()";
-      LM_E(("Runtime Error (generic exception in nextSafe() - query: %s)", query.toString().c_str()));
+      KT_E("Runtime Error (generic exception in nextSafe() - query: %s)", query.toString().c_str());
       releaseMongoConnection(connection);
       return false;
     }
@@ -1551,7 +1561,7 @@ bool entitiesQuery
     *limitReached = (cerV->size() >= (unsigned int) limit);
     if (*limitReached)
     {
-      LM_W(("entities limit reached"));
+      KT_W("entities limit reached");
       PERFORMANCE_END(7, "entitiesQuery, limits");
       return true;
     }
@@ -1912,7 +1922,7 @@ bool registrationsQuery
     BSONObj r;
     if (!nextSafeOrErrorF(cursor, &r, err))
     {
-      LM_E(("Runtime Error (exception in nextSafe(): %s - query: %s)", err->c_str(), query.toString().c_str()));
+      KT_E("Runtime Error (exception in nextSafe(): %s - query: %s)", err->c_str(), query.toString().c_str());
       continue;
     }
     docs++;
@@ -2336,7 +2346,7 @@ static BSONArray processConditionVector
     }
     else
     {
-      LM_E(("Runtime Error (unknown condition type: '%s')", nc->type.c_str()));
+      KT_E("Runtime Error (unknown condition type: '%s')", nc->type.c_str());
     }
   }
 

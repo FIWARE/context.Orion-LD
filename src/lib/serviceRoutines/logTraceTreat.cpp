@@ -23,10 +23,13 @@
 * Author: Ken Zangelin
 */
 #include <string>
+#include <string.h>
 #include <vector>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
 #include "orionld/common/orionldState.h"                     // orionldState
 
@@ -40,6 +43,9 @@
 #include "orionld/types/Verb.h"                              // verbToString
 #include "serviceRoutines/logTraceTreat.h"                   // Own interface
 
+
+// Store current trace level string for GET requests
+static char currentTraceLevels[256] = "";
 
 
 /* ****************************************************************************
@@ -67,25 +73,18 @@ std::string logTraceTreat
 
   if ((components == 2) && (orionldState.verb == HTTP_DELETE))
   {
-    lmTraceSet(NULL);
+    ktTraceLevelSet("");
+    currentTraceLevels[0] = 0;
     out = orionLogReply(ciP, "tracelevels", "all trace levels off");
   }
   else if ((components == 3) && (orionldState.verb == HTTP_DELETE))
   {
-    if (strspn(compV[2].c_str(), "0123456789-,'") != strlen(compV[2].c_str()))
-    {
-      out = orionLogReply(ciP, "tracelevels", "poorly formatted trace level string");
-      return out;
-    }
-
-    lmTraceSub(compV[2].c_str());
-    out = orionLogReply(ciP, "tracelevels_removed", compV[2]);
+    // ktrace doesn't support removing individual trace levels
+    out = orionLogReply(ciP, "tracelevels", "removing individual trace levels not supported - use DELETE /log/trace to clear all");
   }
   else if ((components == 2) && (orionldState.verb == HTTP_GET))
   {
-    char tLevels[256];
-    lmTraceGet(tLevels, sizeof(tLevels));
-    out = orionLogReply(ciP, "tracelevels", tLevels);
+    out = orionLogReply(ciP, "tracelevels", currentTraceLevels);
   }
   else if ((components == 3) && (orionldState.verb == HTTP_PUT))
   {
@@ -95,8 +94,8 @@ std::string logTraceTreat
       return out;
     }
 
-    lmTraceSet(NULL);
-    lmTraceSet(compV[2].c_str());
+    ktTraceLevelSet(compV[2].c_str());
+    strncpy(currentTraceLevels, compV[2].c_str(), sizeof(currentTraceLevels) - 1);
     out = orionLogReply(ciP, "tracelevels", compV[2]);
   }
   else
