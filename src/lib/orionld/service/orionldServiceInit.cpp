@@ -77,6 +77,7 @@ extern "C"
 #include "orionld/serviceRoutines/orionldGetEntityType.h"            // orionldGetEntityType
 #include "orionld/serviceRoutines/orionldGetEntityAttributes.h"      // orionldGetEntityAttributes
 #include "orionld/serviceRoutines/orionldGetEntityAttribute.h"       // orionldGetEntityAttribute
+#include "orionld/serviceRoutines/orionldGetRelationships.h"         // orionldGetRelationships
 
 #include "orionld/serviceRoutines/orionldGetContexts.h"              // orionldGetContexts
 #include "orionld/serviceRoutines/orionldGetContext.h"               // orionldGetContext
@@ -594,6 +595,12 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
     serviceP->options   |= ORIONLD_SERVICE_OPTION_NO_CONTEXT_TYPE_CHECK;
 
     serviceP->uriParams |= ORIONLD_URIPARAM_RELOAD;
+  }
+  else if (serviceP->serviceRoutine == orionldGetRelationships)
+  {
+    serviceP->options   |= ORIONLD_SERVICE_OPTION_CORE_CONTEXT_IN_RESPONSE;
+    serviceP->options   |= ORIONLD_SERVICE_OPTION_DATASET_SUPPORT;
+    serviceP->uriParams |= ORIONLD_URIPARAM_IDLIST;
   }
 
   if (troe)  // CLI Option to turn on Temporal Representation of Entities

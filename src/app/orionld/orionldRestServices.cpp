@@ -82,6 +82,7 @@
 #include "orionld/serviceRoutines/orionldPatchTemporalAttributeInstance.h"
 #include "orionld/serviceRoutines/orionldPostTemporalAttributes.h"
 #include "orionld/serviceRoutines/orionldGetDdsTopics.h"
+#include "orionld/serviceRoutines/orionldGetRelationships.h"
 
 #include "orionld/types/OrionLdRestService.h"      // OrionLdRestServiceSimplified
 #include "orionld/orionldRestServices.h"           // Own Interface
@@ -116,6 +117,7 @@ static OrionLdRestServiceSimplified getServiceV[] =
   { "/ngsi-ld/ex/v1/tenants",              orionldGetTenants          },
   { "/ngsi-ld/ex/v1/dbIndexes",            orionldGetDbIndexes        },
   { "/ngsi-ld/ex/v1/dds/topics",           orionldGetDdsTopics        },
+  { "/ngsi-ld/ex/relationships",           orionldGetRelationships    }
 };
 static const int getServices = (sizeof(getServiceV) / sizeof(getServiceV[0]));
 
@@ -226,7 +228,8 @@ static OrionLdRestServiceSimplified optionsServiceV[] =
   { "/ngsi-ld/v1/temporal/entities/*/attrs",       orionldOptions },
   { "/ngsi-ld/v1/temporal/entities/*",             orionldOptions },
   { "/ngsi-ld/v1/temporal/entities",               orionldOptions },
-  { "/ngsi-ld/v1/temporal/entityOperations/query", orionldOptions }
+  { "/ngsi-ld/v1/temporal/entityOperations/query", orionldOptions },
+  { "/ngsi-ld/ex/relationships",                   orionldOptions }
 };
 static const int optionsServices = (sizeof(optionsServiceV) / sizeof(optionsServiceV[0]));
 
