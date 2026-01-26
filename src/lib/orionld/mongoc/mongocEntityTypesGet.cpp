@@ -41,6 +41,18 @@ extern "C"
 #include "orionld/context/orionldContextItemAliasLookup.h"             // orionldContextItemAliasLookup
 
 
+
+// -----------------------------------------------------------------------------
+//
+// KJSON_ALLOC_CHECK - check allocation result and return NULL on failure
+//
+#ifndef KJSON_ALLOC_CHECK
+#define KJSON_ALLOC_CHECK(ptr)       do { if ((ptr) == NULL) { KT_E("Out of memory"); return NULL; } } while (0)
+#define KJSON_ALLOC_CHECK_VOID(ptr)  do { if ((ptr) == NULL) { KT_E("Out of memory"); return; } } while (0)
+#endif
+
+
+
 // -----------------------------------------------------------------------------
 //
 // typeExtractFromMongo -
@@ -79,15 +91,15 @@ void typeAndAttrsExtractFromMongo(KjNode* inputArray, KjNode* typeArray)
     KjNode* idP = kjLookup(arrItemP, "_id");
     KjNode* attrP    = kjLookup(arrItemP, "attrs");
     KjNode* nodeResponseP = kjObject(orionldState.kjsonP, NULL);
-    KJSON_ALLOC_CHECK(nodeResponseP);
+    KJSON_ALLOC_CHECK_VOID(nodeResponseP);
 
     if (idP != NULL)
     {
       KjNode* idNodeP  = kjString(orionldState.kjsonP, "id", idP->value.s);
-      KJSON_ALLOC_CHECK(idNodeP);
+      KJSON_ALLOC_CHECK_VOID(idNodeP);
       kjChildAdd(nodeResponseP, idNodeP);
       KjNode* typeP = kjString(orionldState.kjsonP, "typeName", orionldContextItemAliasLookup(orionldState.contextP, idP->value.s, NULL, NULL));
-      KJSON_ALLOC_CHECK(typeP);
+      KJSON_ALLOC_CHECK_VOID(typeP);
       kjChildAdd(nodeResponseP, typeP);
     }
 
@@ -95,13 +107,13 @@ void typeAndAttrsExtractFromMongo(KjNode* inputArray, KjNode* typeArray)
     {
       // loop over all attributes and add to response
       KjNode* attribP  = kjArray(orionldState.kjsonP, "attributeNames");
-      KJSON_ALLOC_CHECK(attribP);
+      KJSON_ALLOC_CHECK_VOID(attribP);
 
       for (KjNode* attrItemP = attrP->value.firstChildP; attrItemP != NULL; attrItemP = attrItemP->next)
       {
         // lookup alias for attribute name in context
         KjNode* arrNodeP  = kjString(orionldState.kjsonP, NULL, orionldContextItemAliasLookup(orionldState.contextP, attrItemP->value.s, NULL, NULL));
-        KJSON_ALLOC_CHECK(arrNodeP);
+        KJSON_ALLOC_CHECK_VOID(arrNodeP);
         kjChildAdd(attribP, arrNodeP);
       }
 

@@ -35,19 +35,9 @@ extern "C"
 #include "ktrace/kTrace.h"
 }
 
+#include "orionld/common/orionldState.h"                         // orionldState
+
 #include "alarmMgr/AlarmManager.h"
-
-
-
-/* ****************************************************************************
-*
-* badInputSeen - 
-*
-* badInputSeen is a variable to keep track of whether a BadInput has already been issued
-* for the current request.
-* We only want ONE Bad Input per request.
-*/
-__thread bool badInputSeen = false;
 
 
 
@@ -386,12 +376,12 @@ bool AlarmManager::notificationErrorReset(const std::string& url)
 */
 bool AlarmManager::badInput(const std::string& ip, const std::string& details)
 {
-  if (badInputSeen == true)
+  if (orionldState.badInputSeen == true)
   {
     return false;
   }
 
-  badInputSeen = true;
+  orionldState.badInputSeen = true;
 
   semTake();
 

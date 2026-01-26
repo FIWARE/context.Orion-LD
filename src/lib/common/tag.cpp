@@ -357,5 +357,3 @@ std::string valueTag
 
   return valueTag(key, val, showComma, false, false);
 }
-
-

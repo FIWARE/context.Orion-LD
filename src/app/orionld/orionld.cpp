@@ -76,6 +76,8 @@ extern "C"
 {
 #include "kbase/kInit.h"                                    // kInit
 #include "kbase/kStringSplit.h"                             // kStringSplit
+#include "ktrace/kTrace.h"                                  // trace messages - ktrace library
+#include "ktrace/ktTraceLevelSetOne.h"                      // ktTraceLevelSetOne
 #include "kalloc/kaInit.h"                                  // kaInit
 #include "kalloc/kaBufferInit.h"                            // kaBufferInit
 #include "kalloc/kaBufferReset.h"                           // kaBufferReset
@@ -83,7 +85,6 @@ extern "C"
 #include "kjson/kjFree.h"                                   // kjFree
 #include "kjson/kjBuilder.h"                                // kjChildAdd
 #include "kjson/kjLookup.h"                                 // kjLookup
-#include "ktrace/kTrace.h"                                  // trace messages - ktrace library
 }
 
 #include "parseArgs/parseArgs.h"
@@ -1068,7 +1069,7 @@ int main(int argC, char* argV[])
   if ((debugCurl == true) && ((ktTraceIsSet(KtCurl) == false) || (strcmp(paLogLevel, "DEBUG") != 0)))
   {
     strncpy(paLogLevel, "DEBUG", sizeof(paLogLevel) - 1);
-    ktTraceLevelSet("3001");  // FIXME: need a function in ktrace to set individual trace levels, using the enum (KtCurl = 3001, currently ... may change!)
+    ktTraceLevelSetOne((int) KtCurl);
   }
 
   if (wip[0] != 0)

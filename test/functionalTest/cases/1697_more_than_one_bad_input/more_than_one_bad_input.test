@@ -26,7 +26,7 @@ More than ONE Bad Input in a request
 
 --SHELL-INIT--
 dbInit CB
-brokerStart CB 0 IPv4 -logSummary 3 -relogAlarms
+brokerStart CB 0 IPv4 -ki -logSummary 3 -relogAlarms
 
 
 --SHELL--
@@ -62,14 +62,14 @@ echo
 
 echo "03. grep SUMMARY in log-file (4 transactions, 1 bad input)"
 echo "=========================================================="
-egrep 'SUMMARY' /tmp/${BROKER}.log | awk -F'|' '{ print $10 }' | awk -F= '{ print $2 }' | sed 's/(/_/g' | sed 's/)/_/g' | tail -4
+egrep 'Transactions:|DB status:|Notification failure|Bad input' /tmp/Orion-LD.log | sed 's/^I: [0-9]*\.[0-9]*: logSummary.cpp\[[0-9]*\]: logSummary: //' | sed 's/[()]/_/g'
 echo
 echo
 
 
 echo "04. grep BadInput in log-file (4 lines found)"
 echo "============================================="
-grep BadInput /tmp/${BROKER}.log | awk -F'|' '{ print $10 }' | awk -F= '{ print $2 }'
+grep BadInput /tmp/Orion-LD.log | sed 's/^[WE]: [0-9]*\.[0-9]*: [^:]*: [^:]*: //'
 echo
 echo
 

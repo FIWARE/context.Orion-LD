@@ -36,12 +36,16 @@
 *
 * orionLogReply -
 */
-std::string orionLogReply(ConnectionInfo* ciP, const std::string& what, const std::string& value)
+std::string orionLogReply(ConnectionInfo* ciP, const std::string& what, const std::string& value, const char* tag2, const char* value2)
 {
-   std::string out = "";
+   std::string out   = "";
+   bool        comma = (value2 != NULL);
 
    out += '{';
-   out += valueTag(what, value);
+   out += valueTag(what, value, comma);
+   if (value2 != NULL)
+     out += valueTag(tag2, value2, false);
+
    out += '}';
 
    orionldState.httpStatusCode = SccOk;

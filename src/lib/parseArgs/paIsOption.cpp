@@ -26,14 +26,11 @@
 #include <string>                     /* std::string                         */
 #include <cstdlib>                    /* C++ free                            */
 
-#ifndef MAX
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-#endif
-
 #include "parseArgs/baStd.h"          /* BA standard header file             */
 extern "C"
 {
 #include "ktrace/kTrace.h"
+#include "kbase/kMacros.h"            /* K_MAX                               */
 }
 
 #include "parseArgs/parseArgs.h"      /* PaArgument, ...                     */
@@ -61,7 +58,7 @@ bool paIsOption(PaiArgument* paList, char* string)
       continue;
     }
 
-    len = MAX(strlen(aP->option), strlen(string));
+    len = K_MAX(strlen(aP->option), strlen(string));
 
     if (strncmp(aP->option, string, len) == 0)
     {

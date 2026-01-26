@@ -30,6 +30,7 @@
 extern "C"
 {
 #include "ktrace/kTrace.h"                                // trace messages - ktrace library
+#include "kbase/kMacros.h"                                // K_MIN
 }
 
 #include "orionld/types/ApiVersion.h"                    // ApiVersion
@@ -701,7 +702,7 @@ HttpStatusCode mongoAttributesForEntityType
 
   /* See comment above in the other method regarding this strategy to implement pagination */
   unsigned int total = orionldState.uriParams.offset + orionldState.uriParams.limit;
-  for (unsigned int ix = orionldState.uriParams.offset; ix < MIN(resultsArray.size(), total); ++ix)
+  for (unsigned int ix = orionldState.uriParams.offset; ix < K_MIN(resultsArray.size(), total); ++ix)
   {
     BSONObj      result  = resultsArray[ix].embeddedObject();
     BSONElement  idField = getFieldF(&result, "_id");

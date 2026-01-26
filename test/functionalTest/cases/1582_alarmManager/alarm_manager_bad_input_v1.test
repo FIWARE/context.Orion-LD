@@ -99,7 +99,7 @@ echo
 
 echo "07. grep in log-file"
 echo "===================="
-egrep 'Raising alarm|Releasing alarm' /tmp/${BROKER}.log | awk -F'|' '{ print $10 }' | awk -F= '{ print $2 }'
+egrep 'Raising alarm|Releasing alarm' /tmp/Orion-LD.log | awk -F: '{ print $4":"$5":"$6":"$7 }'
 echo
 echo
 
@@ -192,9 +192,9 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 07. grep in log-file
 ====================
-Raising alarm BadInput REGEX(.*)
-Releasing alarm BadInput REGEX((0.0.0.0|127.0.0.1))
-Raising alarm BadInput REGEX((0.0.0.0|127.0.0.1)): bad verb for url '/v1/updateContext', method 'PROUST'
+ badInput: Raising alarm BadInput REGEX(.*)
+ badInputReset: Releasing alarm BadInput REGEX((0.0.0.0|127.0.0.1))
+ badInput: Raising alarm BadInput REGEX((0.0.0.0|127.0.0.1)): bad verb for url '/v1/updateContext', method 'PROUST'
 
 
 --TEARDOWN--

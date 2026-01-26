@@ -172,14 +172,9 @@ typedef enum Ngsiv2Flavour
 /* ****************************************************************************
 *
 * useful macros
+*
+* NOTE: Use K_MIN/K_MAX from kbase/kMacros.h instead of MIN/MAX
 */
-#ifndef MIN
-#  define MIN(a, b)     ((a) < (b)? (a) : (b))
-#endif
-
-#ifndef MAX
-#  define MAX(a, b)     ((a) > (b)? (a) : (b))
-#endif
 
 
 

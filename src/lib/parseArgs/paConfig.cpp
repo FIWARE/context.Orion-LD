@@ -904,11 +904,11 @@ int paConfigActions(bool preTreat)
 
   if (preTreat)
   {
-    ktTraceLevelSet(paTracelevels);
+    ktTraceLevelSet(paTracelevels, KTRUE);
   }
   else
   {
-    ktTraceLevelSet(paTraceV);
+    ktTraceLevelSet(paTraceV, KTRUE);
     KT_T(KtPaConfigAction, "setting trace levels to '%s'", paTraceV);
   }
 

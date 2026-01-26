@@ -22,8 +22,8 @@
 *
 * Author: Ken Zangelin
 */
-#include <string>
 #include <string.h>
+#include <string>
 #include <vector>
 
 extern "C"

@@ -28,14 +28,11 @@
 #include <unistd.h>                   /* getpid                              */
 #include <string>                     /* std::string                         */
 
-#ifndef MAX
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-#endif
-
 #include "parseArgs/baStd.h"          /* BA standard header file             */
 extern "C"
 {
 #include "ktrace/kTrace.h"
+#include "kbase/kMacros.h"            /* K_MAX                               */
 }
 #include "orionld/common/traceLevels.h"
 
@@ -401,7 +398,7 @@ void paExtendedUsage(void)
     {
       snprintf(name, sizeof(name), "[%s]", aP->description);
     }
-    optNameMaxLen = MAX(strlen(name), (unsigned int) optNameMaxLen);
+    optNameMaxLen = K_MAX(strlen(name), (unsigned int) optNameMaxLen);
 
 
     /* 2. Variable Name */
@@ -409,7 +406,7 @@ void paExtendedUsage(void)
     if (PA_IS_VARIABLE(aP))
     {
       paEnvName(aP, name, sizeof(name));
-      varNameMaxLen = MAX(strlen(name), (unsigned int) varNameMaxLen);
+      varNameMaxLen = K_MAX(strlen(name), (unsigned int) varNameMaxLen);
     }
 
 
@@ -444,7 +441,7 @@ void paExtendedUsage(void)
       snprintf(vals, sizeof(vals), "%s <= %s <= %s", escape(out, minVal), name, escape(out2, maxVal));
     }
 
-    valsMaxLen = MAX(strlen(vals), (unsigned int) valsMaxLen);
+    valsMaxLen = K_MAX(strlen(vals), (unsigned int) valsMaxLen);
   }
 
   snprintf(format, sizeof(format), "%%-%ds %%-%ds %%-%ds %%-%ds %%s\n",
@@ -728,7 +725,6 @@ static void paManHelp(void)
 */
 void paHelp(void)
 {
-
   paManHelp();
   exit(1);
 

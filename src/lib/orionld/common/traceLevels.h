@@ -30,6 +30,8 @@ extern "C"
 #include "ktrace/ktGlobals.h"                  // ktTraceLevels
 }
 
+#include "common/globals.h"                    // transactionIdSet
+
 
 
 // ----------------------------------------------------------------------------
@@ -43,8 +45,9 @@ extern "C"
 // ----------------------------------------------------------------------------
 //
 // lmTransaction* stubs - ktrace doesn't have transaction tracking, so these are no-ops
+// lmTransactionStart calls transactionIdSet() to increment the transaction counter
 //
-#define lmTransactionStart(...)
+#define lmTransactionStart(...) transactionIdSet()
 #define lmTransactionEnd()
 #define lmTransactionSetFrom(x)
 #define lmTransactionSetService(x)

@@ -269,7 +269,7 @@ echo
 
 echo "15. Check the warning about loop detection in the log"
 echo "====================================================="
-egrep 'lvl=W' /tmp/${BROKER}.log | grep "Notification loop detected for entity"
+egrep '^W: ' /tmp/Orion-LD.log | grep "Notification loop detected for entity"
 echo
 echo
 
@@ -542,7 +542,7 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 15. Check the warning about loop detection in the log
 =====================================================
-REGEX(.*) msg=Notification loop detected for entity id <E> type <Thing>, skipping subscription triggering
+REGEX(.*) Notification loop detected for entity id <E> type <Thing>, skipping subscription triggering
 
 
 --TEARDOWN--

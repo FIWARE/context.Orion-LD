@@ -63,6 +63,7 @@ static void* logSummary(void* vP)
 {
   int period = *((int*) vP);
 
+  KT_I("In log summary thread");
   while (1)
   {
     int64_t transactionsNow;
@@ -125,6 +126,7 @@ static void* logSummary(void* vP)
     if (biRaisedNew   < 0)  { biRaisedNew   = LONG_MAX - biRaisedInLastSummary   + biRaised;   }
     if (biReleasedNew < 0)  { biReleasedNew = LONG_MAX - biReleasedInLastSummary + biReleased; }
 
+    KT_I("In log summary thread: transactionsNow == %d", transactionsNow);
     if (transactionsNow != 0)
     {
       KT_I("Transactions: %lu (new: %lu)", transactionsNow, diff);
@@ -184,6 +186,7 @@ int logSummaryInit(int* periodP)
   pthread_t  tid;
   int        ret;
 
+  KT_I("Starting log summary thread");
   ret = pthread_create(&tid, NULL, logSummary, (void*) periodP);
   if (ret != 0)
   {

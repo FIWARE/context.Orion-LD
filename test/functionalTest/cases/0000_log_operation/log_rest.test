@@ -25,7 +25,7 @@ Log configuration via REST
 
 --SHELL-INIT--
 dbInit CB
-brokerStart CB 200-255
+orionldStart CB -kt 200-255
 
 --SHELL--
 echo "=== 1. GET trace level"
@@ -151,37 +151,38 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 === 6. GET trace level
 HTTP/1.1 200 OK
-Content-Length: 27
+Content-Length: 26
 Content-Type: application/json
 Date: REGEX(.*)
 Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 {
-    "tracelevels": "19, 21-25"
+    "tracelevels": "19,21-25"
 }
 
 
 === 7. DELETE trace level
 HTTP/1.1 200 OK
-Content-Length: 28
+Content-Length: 47
 Content-Type: application/json
 Date: REGEX(.*)
 Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 {
-    "tracelevels_removed": "23"
+    "removed": "23",
+    "tracelevels": "19,21-22,24-25"
 }
 
 
 === 8. GET trace level
 HTTP/1.1 200 OK
-Content-Length: 34
+Content-Length: 32
 Content-Type: application/json
 Date: REGEX(.*)
 Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 {
-    "tracelevels": "19, 21-22, 24-25"
+    "tracelevels": "19,21-22,24-25"
 }
 
 
@@ -199,13 +200,13 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 === 10. GET trace level
 HTTP/1.1 200 OK
-Content-Length: 23
+Content-Length: 18
 Content-Type: application/json
 Date: REGEX(.*)
 Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 {
-    "tracelevels": "empty"
+    "tracelevels": ""
 }
 
 

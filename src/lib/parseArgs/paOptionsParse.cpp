@@ -27,14 +27,11 @@
 #include <stdlib.h>                    /* atoi                               */
 #include <string>                      /* std::string                        */
 
-#ifndef MAX
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-#endif
-
 #include "parseArgs/baStd.h"           /* BA standard header file            */
 extern "C"
 {
 #include "ktrace/kTrace.h"
+#include "kbase/kMacros.h"             /* K_MAX                              */
 }
 #include "orionld/common/traceLevels.h"
 
@@ -141,7 +138,7 @@ static PaiArgument* argFind
 
       len = strlen(aP->option);
       if (strict == STRICT)
-        len = MAX(strlen(string), (unsigned int) len);
+        len = K_MAX(strlen(string), (unsigned int) len);
 
       if (len == 0)
       {
