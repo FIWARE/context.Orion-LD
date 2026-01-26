@@ -35,7 +35,7 @@ done
 # kbase
 #
 cd ${ROOT_FOLDER}/kbase
-git checkout release/0.8.2
+git checkout release/0.10
 make
 make install
 
@@ -45,7 +45,7 @@ make install
 for kproj in klog kalloc khash
 do
     cd ${ROOT_FOLDER}/$kproj
-    git checkout release/0.8
+    git checkout release/0.10
     make
     make install
 done
@@ -54,7 +54,7 @@ done
 # kjson
 #
 cd ${ROOT_FOLDER}/kjson
-git checkout release/0.9.1
+git checkout release/0.10
 make
 make install
 
@@ -62,7 +62,7 @@ make install
 # kargs
 #
 cd ${ROOT_FOLDER}/kargs
-git checkout release/0.2
+git checkout release/0.10
 make
 make install
 
@@ -71,6 +71,6 @@ make install
 # ktrace
 #
 cd ${ROOT_FOLDER}/ktrace
-git checkout release/0.3
+git checkout release/0.10
 make
 make install
