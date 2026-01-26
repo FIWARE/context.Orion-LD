@@ -31,46 +31,27 @@ do
 done
 
 
-#
-# kbase
-#
-cd ${ROOT_FOLDER}/kbase
-git checkout release/0.10
-make
-make install
+function debug()
+{
+    wd="$1"
+    echo In directory $wd
+    echo branches:
+    git branch
+    echo
+}
+
+
 
 #
-# klog kalloc khash
+# kbase klog kalloc khash
 #
-for kproj in klog kalloc khash
+for kproj in kbase ktrace klog kargs kalloc khash kjson 
 do
     cd ${ROOT_FOLDER}/$kproj
+    debug $PWD
+    echo checking out release/0.10
     git checkout release/0.10
     make
     make install
+    echo "-----------------------------------------------"
 done
-
-#
-# kjson
-#
-cd ${ROOT_FOLDER}/kjson
-git checkout release/0.10
-make
-make install
-
-#
-# kargs
-#
-cd ${ROOT_FOLDER}/kargs
-git checkout release/0.10
-make
-make install
-
-
-#
-# ktrace
-#
-cd ${ROOT_FOLDER}/ktrace
-git checkout release/0.10
-make
-make install
