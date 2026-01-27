@@ -215,15 +215,12 @@ To download, build and install:
 The *Eclipse Paho* project provides open-source client implementations of MQTT and MQTT-SN messaging protocols aimed at new, existing, and emerging applications for the Internet of Things (IoT). Source: https://www.eclipse.org/paho
 
 ```bash
-aptitude -y install doxygen
-aptitude -y install graphviz
 rm -f /usr/local/lib/libpaho*
 cd ~/git
 git clone https://github.com/eclipse/paho.mqtt.c.git
 cd paho.mqtt.c
 git fetch -a
 git checkout tags/v1.3.1
-make html
 make
 sudo make install
 
@@ -249,6 +246,121 @@ sudo systemctl start mosquitto
 sudo systemctl enable mosquitto
 ```
 
+### Fast-DDS (optional, for DDS support)
+
+Fast-DDS is eProsima's implementation of the DDS (Data Distribution Service) standard. It enables Orion-LD to communicate with DDS-based systems.
+
+#### Dependencies
+```bash
+sudo aptitude install -y libtinyxml2-dev libboost-all-dev libyaml-cpp-dev libasio-dev
+```
+
+#### foonathan_memory_vendor
+```bash
+sudo mkdir -p /opt/Fast-DDS
+sudo chown $USER:$GROUP /opt/Fast-DDS
+cd /opt/Fast-DDS
+git clone https://github.com/eProsima/foonathan_memory_vendor.git
+cd foonathan_memory_vendor
+git checkout v1.3.1
+mkdir build && cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_SHARED_LIBS=ON
+cmake --build . --target install
+```
+
+#### Fast-CDR
+```bash
+cd /opt/Fast-DDS
+git clone https://github.com/eProsima/Fast-CDR.git
+cd Fast-CDR
+git checkout v2.3.0
+mkdir build && cd build
+cmake ..
+sudo cmake --build . --target install
+```
+
+#### Fast-DDS
+```bash
+cd /opt/Fast-DDS
+git clone https://github.com/eProsima/Fast-DDS.git
+cd Fast-DDS
+git checkout v3.3.0
+mkdir build && cd build
+cmake ..
+sudo cmake --build . --target install
+```
+
+#### DDS Dev Utils
+```bash
+cd /opt/Fast-DDS
+git clone https://github.com/eProsima/dev-utils.git
+cd dev-utils
+git checkout v1.3.0
+
+# cmake_utils
+mkdir -p build/cmake_utils && cd build/cmake_utils
+cmake ../../cmake_utils
+sudo cmake --build . --target install
+
+# cpp_utils
+cd ../..
+mkdir -p build/cpp_utils && cd build/cpp_utils
+cmake ../../cpp_utils
+sudo cmake --build . --target install
+```
+
+#### DDS Pipe
+```bash
+cd /opt/Fast-DDS
+git clone https://github.com/eProsima/DDS-Pipe.git
+cd DDS-Pipe
+git checkout v1.3.0
+
+# ddspipe_core
+cd ddspipe_core
+mkdir build && cd build
+cmake ..
+sudo cmake --build . --target install
+
+# ddspipe_participants
+cd ../../ddspipe_participants
+mkdir build && cd build
+cmake ..
+sudo cmake --build . --target install
+
+# ddspipe_yaml
+cd ../../ddspipe_yaml
+mkdir build && cd build
+cmake ..
+sudo cmake --build . --target install
+```
+
+#### FIWARE DDS Enabler
+```bash
+sudo aptitude install -y liblz4-dev libzstd-dev libjsoncpp-dev
+
+cd /opt/Fast-DDS
+git clone https://github.com/eProsima/FIWARE-DDS-Enabler.git
+cd FIWARE-DDS-Enabler
+git checkout main
+
+# ddsenabler_participants
+mkdir -p build/ddsenabler_participants && cd build/ddsenabler_participants
+cmake ../../ddsenabler_participants
+sudo cmake --build . --target install
+
+# ddsenabler_yaml
+cd ../..
+mkdir -p build/ddsenabler_yaml && cd build/ddsenabler_yaml
+cmake ../../ddsenabler_yaml
+sudo cmake --build . --target install
+
+# ddsenabler
+cd ../..
+mkdir -p build/ddsenabler && cd build/ddsenabler
+cmake ../../ddsenabler
+sudo cmake --build . --target install
+```
 
 ## Source code of Orion-LD
 
