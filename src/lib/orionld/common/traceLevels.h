@@ -53,6 +53,10 @@ extern "C"
 #define lmTransactionSetService(x)
 #define lmTransactionSetSubservice(x)
 #define lmTransactionReset()
+#define lmTraceLevelSet(level, onOff)
+
+// Old trace level constants - stubs for compatibility
+#define LmtLegacy 0
 
 
 

@@ -24,7 +24,10 @@
 */
 #include <string>
 
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
 #include "rest/OrionError.h"
 #include "rest/ConnectionInfo.h"
