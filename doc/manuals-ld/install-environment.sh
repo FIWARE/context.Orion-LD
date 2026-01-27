@@ -27,7 +27,9 @@ set -e
 
 # Configuration
 INSTALL_DDS=${INSTALL_DDS:-false}           # Set to true to install DDS support
+INSTALL_TESTS=${INSTALL_TESTS:-false}       # Set to true to install test dependencies
 K_LIBS_VERSION="release/0.10"
+GMOCK_VERSION="1.5.0"
 MONGO_C_DRIVER_VERSION="2.2.0"
 LIBMICROHTTPD_VERSION="0.9.75"
 RAPIDJSON_VERSION="1.0.2"
@@ -395,6 +397,64 @@ install_mongodb() {
 }
 
 # ============================================================================
+# Test dependencies
+# ============================================================================
+
+install_unit_test_deps() {
+    local GROUP=$(get_group)
+    log_section "Installing Unit Test dependencies (gtest/gmock)"
+
+    log_step "Installing ${RED}gdb${NC}"
+    sudo aptitude -y install gdb >/dev/null 2>>$LOGFILE
+    log_done
+
+    log_step "Installing ${RED}gmock ${GMOCK_VERSION}${NC}"
+    sudo mkdir -p /opt/gmock >/dev/null 2>>$LOGFILE
+    sudo chown $USER:$GROUP /opt/gmock >/dev/null 2>>$LOGFILE
+    cd /opt/gmock >/dev/null 2>>$LOGFILE
+
+    wget https://src.fedoraproject.org/repo/pkgs/gmock/gmock-${GMOCK_VERSION}.tar.bz2/d738cfee341ad10ce0d7a0cc4209dd5e/gmock-${GMOCK_VERSION}.tar.bz2 >/dev/null 2>>$LOGFILE
+    tar xfvj gmock-${GMOCK_VERSION}.tar.bz2 >/dev/null 2>>$LOGFILE
+    cd gmock-${GMOCK_VERSION} >/dev/null 2>>$LOGFILE
+    ./configure >/dev/null 2>>$LOGFILE
+    make >/dev/null 2>>$LOGFILE
+    sudo make install >/dev/null 2>>$LOGFILE
+    log_done
+}
+
+install_functional_test_deps() {
+    log_section "Installing Functional Test dependencies"
+
+    log_step "Installing ${RED}netcat and bc${NC}"
+    sudo aptitude -y install netcat bc >/dev/null 2>>$LOGFILE
+    log_done
+
+    log_step "Installing ${RED}python3-virtualenv${NC}"
+    sudo aptitude -y install python3-virtualenv >/dev/null 2>>$LOGFILE
+    log_done
+
+    log_step "Setting up ${RED}Python virtual environment${NC}"
+    cd ~/git/context.Orion-LD >/dev/null 2>>$LOGFILE
+    virtualenv -p python3 .venv >/dev/null 2>>$LOGFILE
+    . .venv/bin/activate >/dev/null 2>>$LOGFILE
+    pip install -r scripts/requirements.txt >/dev/null 2>>$LOGFILE
+    deactivate >/dev/null 2>>$LOGFILE
+    log_done
+
+    log_step "Creating ${RED}python symlink${NC}"
+    sudo ln -sf /usr/bin/python3 /usr/bin/python >/dev/null 2>>$LOGFILE
+    log_done
+
+    echo ""
+    echo "To run functional tests:"
+    echo "  cd ~/git/context.Orion-LD"
+    echo "  . .venv/bin/activate"
+    echo "  export PATH=\$PATH:\$PWD/scripts"
+    echo "  test/functionalTest/testHarness.sh"
+    echo ""
+}
+
+# ============================================================================
 # Main installation for Ubuntu
 # ============================================================================
 
@@ -447,7 +507,7 @@ Ubuntu_common() {
     if [ "$INSTALL_DDS" = true ]; then
         install_fastdds
     else
-        echo -e "\n${BLUE}Skipping DDS installation${NC} (set INSTALL_DDS=true to enable)\n"
+        echo -e "\n${BLUE}Skipping DDS installation${NC} (use --with-dds to enable)\n"
     fi
 
     # Orion-LD
@@ -457,6 +517,14 @@ Ubuntu_common() {
 
     # MongoDB
     install_mongodb
+
+    # Test dependencies (optional)
+    if [ "$INSTALL_TESTS" = true ]; then
+        install_unit_test_deps
+        install_functional_test_deps
+    else
+        echo -e "\n${BLUE}Skipping test dependencies${NC} (use --with-tests to enable)\n"
+    fi
 
     echo -e "\n${GREEN}Installation complete!${NC}\n"
     echo "You can now run: orionld -fg"
@@ -478,10 +546,12 @@ check_linux_version() {
 }
 
 usage() {
-    echo "Usage: $0 [--with-dds]"
+    echo "Usage: $0 [--with-dds] [--with-tests]"
     echo ""
     echo "Options:"
     echo "  --with-dds    Install DDS (Fast-DDS) support"
+    echo "  --with-tests  Install test dependencies (gtest/gmock for unit tests,"
+    echo "                python virtualenv for functional tests)"
     echo ""
     echo "Supported distributions:"
     echo "  - Ubuntu 20.04"
@@ -495,6 +565,10 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         --with-dds)
             INSTALL_DDS=true
+            shift
+            ;;
+        --with-tests)
+            INSTALL_TESTS=true
             shift
             ;;
         --help|-h)
