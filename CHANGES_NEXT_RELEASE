@@ -27,5 +27,10 @@
   - Improved SHELL-INIT error display formatting in test harness
 
 ## DDS
+  - New CLI option for dds: -ddsOnCreate  (publish new attribute on DDS - it's OFF by default)
+  - Added DDS support for Entity Creation (if enabled via CLI -ddsOnCreate - off by default)
+  - Added DDS support for Batch Create (if enabled via CLI -ddsOnCreate)
+  - Added DDS support for Batch Upsert (for already existing attributes - all attrs if -ddsPublishOnCreate)
+
 ## Multi-Attribute (datasetId)
 ## Notes

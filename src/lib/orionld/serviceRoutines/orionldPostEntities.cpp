@@ -23,6 +23,7 @@
 * Author: Ken Zangelin
 */
 #include <unistd.h>                                              // NULL, gethostname
+#include <string.h>                                              // strcmp
 #include <strings.h>                                             // bzero
 
 extern "C"
@@ -58,6 +59,7 @@ extern "C"
 #include "orionld/distOp/distOpFailure.h"                        // distOpFailure
 #include "orionld/distOp/distOpRequests.h"                       // distOpRequests
 #include "orionld/distOp/distOpResponses.h"                      // distOpResponses
+#include "orionld/dds/ddsPublishAttribute.h"                     // ddsPublishAttribute
 #include "orionld/serviceRoutines/orionldPostEntity.h"           // orionldPostEntity
 #include "orionld/serviceRoutines/orionldPostEntities.h"         // Own interface
 
@@ -279,14 +281,21 @@ bool orionldPostEntities(void)
   //
   sysAttrsToEntity(orionldState.alterations->finalApiEntityWithSysAttrsP);
 
-#if 0
   //
-  // We publish on DDS if 'ddsSupport' is on.
+  // We publish on DDS if 'ddsSupport' is on and 'ddsPublishOnCreate' is true (this is entity creation).
   // BUT, we don't publish if the info comes from DDS, obviously!
   //
-  if ((ddsSupport == true) && (orionldState.ddsSample == false))
-    ddsPublishEntity(ddsTopicType, orionldState.alterations->entityType, orionldState.alterations->entityId, orionldState.alterations->finalApiEntityP);
-#endif
+  if ((ddsSupport == true) && (ddsPublishOnCreate == true) && (orionldState.ddsSample == false))
+  {
+    KjNode* finalApiEntityP = orionldState.alterations->finalApiEntityP;
+    for (KjNode* attrP = finalApiEntityP->value.firstChildP; attrP != NULL; attrP = attrP->next)
+    {
+      if (strcmp(attrP->name, "id")   == 0) continue;
+      if (strcmp(attrP->name, "type") == 0) continue;
+
+      ddsPublishAttribute(entityId, attrP->name, attrP, false);
+    }
+  }
 
   if (cloneForTroeP != NULL)
     orionldState.requestTree = cloneForTroeP;

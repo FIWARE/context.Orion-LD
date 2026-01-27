@@ -22,6 +22,8 @@
 *
 * Author: Ken Zangelin
 */
+#include <string.h>                                            // strcmp
+
 extern "C"
 {
 #include "ktrace/kTrace.h"                                     // KT_*
@@ -48,6 +50,7 @@ extern "C"
 #include "orionld/mongoc/mongocEntitiesUpsert.h"               // mongocEntitiesUpsert
 #include "orionld/notifications/alteration.h"                  // alteration
 #include "orionld/common/eqForDot.h"                           // eqForDot
+#include "orionld/dds/ddsPublishAttribute.h"                   // ddsPublishAttribute
 #include "orionld/serviceRoutines/orionldPostBatchCreate.h"    // Own interface
 
 
@@ -185,14 +188,19 @@ bool orionldPostBatchCreate(void)
       KjNode* initialDbEntityP  = NULL;  // FIXME: initialDbEntity might not be NULL
 
       alteration(entityId, entityType, finalApiEntityP, inEntityP, initialDbEntityP);
-#if 0
-      if (ddsSupport)
+
+      if ((ddsSupport == true) && (ddsPublishOnCreate == true) && (orionldState.ddsSample == false))
       {
-        KT_V("Publishing entity '%s', type '%s' on DDS", entityId, entityType);
+        KT_T(StDds, "Publishing entity '%s', type '%s' on DDS", entityId, entityType);
         dbModelToApiAttributeNames(finalApiEntityP);
-        ddsPublishEntity(ddsTopicType, entityType, entityId, finalApiEntityP);
+        for (KjNode* attrP = finalApiEntityP->value.firstChildP; attrP != NULL; attrP = attrP->next)
+        {
+          if (strcmp(attrP->name, "id")   == 0) continue;
+          if (strcmp(attrP->name, "type") == 0) continue;
+
+          ddsPublishAttribute(entityId, attrP->name, attrP, false);
+        }
       }
-#endif
     }
 
     inEntityP = next;
