@@ -8,8 +8,6 @@
   #XXXX - Experimental GET /ngsi-ld/ex/relationships endpoint to query reverse relationships -
           all entities referencing a given entity via relationship attributes.
 
-## Library version updates
-
 ## Logging
   - Replaced logMsg library with ktrace logging system
 
@@ -31,6 +29,12 @@
   - Added DDS support for Entity Creation (if enabled via CLI -ddsOnCreate - off by default)
   - Added DDS support for Batch Create (if enabled via CLI -ddsOnCreate)
   - Added DDS support for Batch Upsert (for already existing attributes - all attrs if -ddsPublishOnCreate)
+  - Improved the experimental support for DDS Services - Orion-LD can act as a client to invoke DDS/ROS2 services via entity attribute updates
+
+## Library version updates
+N/A
 
 ## Multi-Attribute (datasetId)
+N/A
+
 ## Notes
