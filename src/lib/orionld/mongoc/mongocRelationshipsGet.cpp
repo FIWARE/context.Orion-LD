@@ -66,7 +66,7 @@ static void relExtractFromMongo(KjNode* inputArray, KjNode* relArray)
       KT_W("No entityId found in tree ...");
       continue;
     }
-      
+
     // Lookup alias for type name in context
     tNode->value.s = orionldContextItemAliasLookup(orionldState.contextP, tNode->value.s, NULL, NULL);
 
@@ -87,6 +87,13 @@ static void relExtractFromMongo(KjNode* inputArray, KjNode* relArray)
 //
 // mongocRelationshipsGet -
 //
+// PARAMETERS
+//   entityName
+//
+// NOTE
+// The local variable pipeline_json is a Pipeline-Array in JSON-Format with entityName parameter ->
+// returns all entities having a relationship attribute pointing to entityName
+//
 KjNode* mongocRelationshipsGet(const char* entityName)
 {
   //
@@ -94,7 +101,7 @@ KjNode* mongocRelationshipsGet(const char* entityName)
   //
   bson_t*       pipeline = bson_new();
   bson_error_t  error;
-  char pipeline_json[1024]; // Pipeline-Array in JSON-Format with entityName parameter -> returns all entities having a relationship attribute pointing to entityName
+  char          pipeline_json[1024];
 
   snprintf(pipeline_json, sizeof(pipeline_json),
     "["

@@ -26,7 +26,10 @@
 #include <sstream>
 #include <vector>
 
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
 #include "orionld/common/orionldState.h"                         // orionldState
 

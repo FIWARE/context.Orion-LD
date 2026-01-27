@@ -31,13 +31,19 @@
 
 #include "rapidjson/document.h"
 
-#include "logMsg/logMsg.h"
 
 #include "orionld/common/orionldState.h"             // orionldState
 #include "orionld/common/dateTime.h"                 // dateTimeFromString
 
 #include "alarmMgr/alarmMgr.h"
 #include "common/globals.h"
+
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+
+#include "orionld/common/traceLevels.h"
 #include "common/errorMessages.h"
 #include "common/RenderFormat.h"
 #include "common/string.h"
@@ -202,7 +208,7 @@ std::string parseSubscription(ConnectionInfo* ciP, SubscriptionUpdate* subsP, bo
       eT = (uint64_t) dateTimeFromString(expires.c_str(), errorString, sizeof(errorString));
       if (eT == -1)
       {
-        LM_E(("dateTimeFromString: %s", errorString));
+        KT_E("dateTimeFromString: %s", errorString);
         return badInput(ciP, "expires has an invalid format");
       }
     }

@@ -24,27 +24,20 @@
 */
 #include <semaphore.h>
 #include <errno.h>
+#include <string.h>
 #include <sys/types.h>
 
 #include <string>
 #include <map>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+
+#include "orionld/common/orionldState.h"                         // orionldState
 
 #include "alarmMgr/AlarmManager.h"
-
-
-
-/* ****************************************************************************
-*
-* badInputSeen - 
-*
-* badInputSeen is a variable to keep track of whether a BadInput has already been issued
-* for the current request.
-* We only want ONE Bad Input per request.
-*/
-__thread bool badInputSeen = false;
 
 
 
@@ -99,7 +92,7 @@ int AlarmManager::semInit(void)
 {
   if (sem_init(&sem, 0, 1) == -1)
   {
-    LM_E(("Runtime Error (error initializing 'alarm mgr' semaphore: %s)", strerror(errno)));
+    KT_E("Runtime Error (error initializing 'alarm mgr' semaphore: %s)", strerror(errno));
     return -1;
   }
 
@@ -207,7 +200,7 @@ bool AlarmManager::dbError(const std::string& details)
   {
     if (dbErrorLogAlways)
     {
-      LM_E(("Repeated Database Error: %s", details.c_str()));
+      KT_E("Repeated Database Error: %s", details.c_str());
     }
 
     return false;
@@ -218,7 +211,7 @@ bool AlarmManager::dbError(const std::string& details)
   dbOk = false;
   semGive();
 
-  LM_E(("Raising alarm DatabaseError: %s", details.c_str()));
+  KT_E("Raising alarm DatabaseError: %s", details.c_str());
   return true;
 }
 
@@ -242,7 +235,7 @@ bool AlarmManager::dbErrorReset(void)
   dbOk = true;
   semGive();
 
-  LM_E(("Releasing alarm DatabaseError"));
+  KT_E("Releasing alarm DatabaseError");
   return true;
 }
 
@@ -323,7 +316,7 @@ bool AlarmManager::notificationError(const std::string& url, const std::string& 
 
     if (notificationErrorLogAlways)
     {
-      LM_W(("Repeated NotificationError %s: %s", url.c_str(), details.c_str()));
+      KT_W("Repeated NotificationError %s: %s", url.c_str(), details.c_str());
     }
 
     semGive();
@@ -335,7 +328,7 @@ bool AlarmManager::notificationError(const std::string& url, const std::string& 
   notificationV[url] = 1;
   semGive();
 
-  LM_W(("Raising alarm NotificationError %s: %s", url.c_str(), details.c_str()));
+  KT_W("Raising alarm NotificationError %s: %s", url.c_str(), details.c_str());
 
   return true;
 }
@@ -362,7 +355,7 @@ bool AlarmManager::notificationErrorReset(const std::string& url)
   ++notificationErrorResets;
   semGive();
 
-  LM_W(("Releasing alarm NotificationError %s", url.c_str()));
+  KT_W("Releasing alarm NotificationError %s", url.c_str());
 
   return true;
 }
@@ -383,12 +376,12 @@ bool AlarmManager::notificationErrorReset(const std::string& url)
 */
 bool AlarmManager::badInput(const std::string& ip, const std::string& details)
 {
-  if (badInputSeen == true)
+  if (orionldState.badInputSeen == true)
   {
     return false;
   }
 
-  badInputSeen = true;
+  orionldState.badInputSeen = true;
 
   semTake();
 
@@ -400,7 +393,7 @@ bool AlarmManager::badInput(const std::string& ip, const std::string& details)
 
     if (badInputLogAlways)
     {
-      LM_W(("Repeated BadInput %s: %s", ip.c_str(), details.c_str()));
+      KT_W("Repeated BadInput %s: %s", ip.c_str(), details.c_str());
     }
 
     semGive();
@@ -412,7 +405,7 @@ bool AlarmManager::badInput(const std::string& ip, const std::string& details)
   badInputV[ip] = 1;
   semGive();
 
-  LM_W(("Raising alarm BadInput %s: %s", ip.c_str(), details.c_str()));
+  KT_W("Raising alarm BadInput %s: %s", ip.c_str(), details.c_str());
 
   return true;
 }
@@ -439,7 +432,7 @@ bool AlarmManager::badInputReset(const std::string& ip)
   ++badInputResets;
   semGive();
 
-  LM_W(("Releasing alarm BadInput %s", ip.c_str()));
+  KT_W("Releasing alarm BadInput %s", ip.c_str());
 
   return true;
 }

@@ -24,7 +24,11 @@
 */
 #include <string>
 
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+#include "orionld/common/traceLevels.h"
 
 #include "orionld/types/ApiVersion.h"                   // ApiVersion
 #include "orionld/common/orionldState.h"                // orionldState
@@ -256,7 +260,7 @@ ContextElementResponse::ContextElementResponse
         break;
 
       default:
-        LM_E(("Runtime Error (unknown attribute value type in DB: %d ('value' field of attribute: %s))", getFieldF(&attr, ENT_ATTRS_VALUE).type(), ca.name.c_str()));
+        KT_E("Runtime Error (unknown attribute value type in DB: %d ('value' field of attribute: %s))", getFieldF(&attr, ENT_ATTRS_VALUE).type(), ca.name.c_str());
       }
     }
 

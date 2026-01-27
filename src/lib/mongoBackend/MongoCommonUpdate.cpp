@@ -39,11 +39,11 @@ extern "C"
 #include "kjson/kjRender.h"                                        // kjFastRender
 #include "kjson/kjRenderSize.h"                                    // kjFastRenderSize
 #include "kjson/kjSort.h"                                          // kjSort
+#include "ktrace/kTrace.h"                                         // trace messages - ktrace library
 }
 
-#include "logMsg/logMsg.h"
-
 #include "orionld/types/ApiVersion.h"                              // ApiVersion
+#include "orionld/common/traceLevels.h"                            // KTrace levels
 
 #include "common/limits.h"
 #include "common/globals.h"
@@ -231,7 +231,7 @@ static bool equalMetadataValues(const BSONObj* md1, const BSONObj* md2)
       break;
 
     default:
-      LM_E(("Runtime Error (unknown JSON type for metadata NGSI type: %d)", getFieldF(md1, ENT_ATTRS_MD_TYPE).type()));
+      KT_E("Runtime Error (unknown JSON type for metadata NGSI type: %d)", getFieldF(md1, ENT_ATTRS_MD_TYPE).type());
       return false;
       break;
     }
@@ -272,7 +272,7 @@ static bool equalMetadataValues(const BSONObj* md1, const BSONObj* md2)
     return getFieldF(md2, ENT_ATTRS_MD_VALUE).isNull();
 
   default:
-    LM_E(("Runtime Error (unknown metadata value type in DB: %d)", getFieldF(md1, ENT_ATTRS_MD_VALUE).type()));
+    KT_E("Runtime Error (unknown metadata value type in DB: %d)", getFieldF(md1, ENT_ATTRS_MD_VALUE).type());
     return false;
   }
 }
@@ -356,7 +356,7 @@ static bool attrValueChanged(const BSONObj& attr, ContextAttribute* caP, ApiVers
     return caP->valueType != orion::ValueTypeNull;
 
   default:
-    LM_E(("Runtime Error (unknown attribute value type in DB: %d)", getFieldF(&attr, ENT_ATTRS_VALUE).type()));
+    KT_E("Runtime Error (unknown attribute value type in DB: %d)", getFieldF(&attr, ENT_ATTRS_VALUE).type());
     return false;
   }
 }
@@ -459,7 +459,7 @@ static void appendMetadata
     break;
 
   default:
-    LM_E(("Runtime Error (unknown metadata type)"));
+    KT_E("Runtime Error (unknown metadata type)");
   }
 
   mdBuilder->append(effectiveName, bsonmd.obj());
@@ -488,7 +488,10 @@ static bool compoundValueDiffers(CompoundValueNode* newValueP, mongo::BSONObj* o
     oldValueTree = mongoCppLegacyDataToKjTree(oldValueAsBsonP, false, &title, &details);
 
   if ((newValueTree == NULL) || (oldValueTree == NULL))
-    LM_RE(true, ("%s: %s", title, details));
+  {
+    KT_E("%s: %s", title, details);
+    return true;
+  }
 
   int   bufSizeOld = kjFastRenderSize(oldValueTree);
   int   bufSizeNew = kjFastRenderSize(newValueTree);
@@ -603,7 +606,7 @@ static bool mergeAttrInfo(const BSONObj& attr, ContextAttribute* caP, BSONObj* m
       break;
 
     default:
-      LM_E(("Runtime Error (unknown attribute value type in DB: %d)", getFieldF(&attr, ENT_ATTRS_VALUE).type()));
+      KT_E("Runtime Error (unknown attribute value type in DB: %d)", getFieldF(&attr, ENT_ATTRS_VALUE).type());
     }
   }
 
@@ -1315,18 +1318,18 @@ static bool addTriggeredSubscriptions_withCache
     aList.fill(cSubP->attributes);
 
     // Throttling
-    LM_T(LmtLegacySubMatch, ("Subscription:         %s", cSubP->subscriptionId));
-    LM_T(LmtLegacySubMatch, ("NOW:                  %f", orionldState.requestTime));
-    LM_T(LmtLegacySubMatch, ("lastNotificationTime: %f", cSubP->lastNotificationTime));
-    LM_T(LmtLegacySubMatch, ("DIFF:                 %f", orionldState.requestTime - cSubP->lastNotificationTime));
-    LM_T(LmtLegacySubMatch, ("throttling:           %f", cSubP->throttling));
-    LM_T(LmtLegacySubMatch, ("lastSuccess:          %f", cSubP->lastSuccess));
-    LM_T(LmtLegacySubMatch, ("lastFailure:          %f", cSubP->lastFailure));
+    KT_T(KtLegacySubMatch, "Subscription:         %s", cSubP->subscriptionId);
+    KT_T(KtLegacySubMatch, "NOW:                  %f", orionldState.requestTime);
+    KT_T(KtLegacySubMatch, "lastNotificationTime: %f", cSubP->lastNotificationTime);
+    KT_T(KtLegacySubMatch, "DIFF:                 %f", orionldState.requestTime - cSubP->lastNotificationTime);
+    KT_T(KtLegacySubMatch, "throttling:           %f", cSubP->throttling);
+    KT_T(KtLegacySubMatch, "lastSuccess:          %f", cSubP->lastSuccess);
+    KT_T(KtLegacySubMatch, "lastFailure:          %f", cSubP->lastFailure);
     if ((cSubP->throttling != -1) && (cSubP->lastNotificationTime != 0))
     {
       if ((orionldState.requestTime - cSubP->lastNotificationTime) < cSubP->throttling)
       {
-        LM_T(LmtLegacySubMatch, ("No notification due to throttling (last: %f vs now: %f)", orionldState.requestTime, cSubP->lastNotificationTime));
+        KT_T(KtLegacySubMatch, "No notification due to throttling (last: %f vs now: %f)", orionldState.requestTime, cSubP->lastNotificationTime);
         continue;
       }
     }
@@ -1348,7 +1351,7 @@ static bool addTriggeredSubscriptions_withCache
 
     if (!subP->stringFilterSet(&cSubP->expression.stringFilter, &errorString))
     {
-      LM_E(("Runtime Error (error setting string filter: %s)", errorString.c_str()));
+      KT_E("Runtime Error (error setting string filter: %s)", errorString.c_str());
       delete subP;
       cacheSemGive(__FUNCTION__, "match subs for notifications");
       return false;
@@ -1356,7 +1359,7 @@ static bool addTriggeredSubscriptions_withCache
 
     if (!subP->mdStringFilterSet(&cSubP->expression.mdStringFilter, &errorString))
     {
-      LM_E(("Runtime Error (error setting metadata string filter: %s)", errorString.c_str()));
+      KT_E("Runtime Error (error setting metadata string filter: %s)", errorString.c_str());
       delete subP;
       cacheSemGive(__FUNCTION__, "match subs for notifications");
       return false;
@@ -1644,7 +1647,7 @@ static bool addTriggeredSubscriptions_noCache
 
     if (!nextSafeOrErrorF(cursor, &sub, &err))
     {
-      LM_E(("Runtime Error (exception in nextSafe(): %s - query: %s)", err.c_str(), bgP->query.toString().c_str()));
+      KT_E("Runtime Error (exception in nextSafe(): %s - query: %s)", err.c_str(), bgP->query.toString().c_str());
       continue;
     }
     BSONElement  idField  = getFieldF(&sub, "_id");
@@ -1731,7 +1734,7 @@ static bool addTriggeredSubscriptions_noCache
             delete stringFilterP;
             delete bgP;
 
-            LM_E(("Runtime Error (%s)", err.c_str()));
+            KT_E("Runtime Error (%s)", err.c_str());
             releaseMongoConnection(connection);
             return false;
           }
@@ -1744,7 +1747,7 @@ static bool addTriggeredSubscriptions_noCache
               delete stringFilterP;
               delete bgP;
 
-              LM_E(("Runtime Error (error setting string filter: %s)", errorString.c_str()));
+              KT_E("Runtime Error (error setting string filter: %s)", errorString.c_str());
               releaseMongoConnection(connection);
               return false;
             }
@@ -1763,7 +1766,7 @@ static bool addTriggeredSubscriptions_noCache
             delete mdStringFilterP;
             delete bgP;
 
-            LM_E(("Runtime Error (%s)", err.c_str()));
+            KT_E("Runtime Error (%s)", err.c_str());
             releaseMongoConnection(connection);
             return false;
           }
@@ -1776,7 +1779,7 @@ static bool addTriggeredSubscriptions_noCache
               delete mdStringFilterP;
               delete bgP;
 
-              LM_E(("Runtime Error (error setting string filter: %s)", errorString.c_str()));
+              KT_E("Runtime Error (error setting string filter: %s)", errorString.c_str());
               releaseMongoConnection(connection);
               return false;
             }
@@ -1984,11 +1987,11 @@ static void setPreviousValueMetadata(ContextElementResponse* notifyCerP)
         break;
 
       case orion::ValueTypeNotGiven:
-        LM_E(("Runtime Error (value not given for metadata)"));
+        KT_E("Runtime Error (value not given for metadata)");
         break;
 
       default:
-        LM_E(("Runtime Error (unknown value type: %d)", previousValueP->valueType));
+        KT_E("Runtime Error (unknown value type: %d)", previousValueP->valueType);
       }
     }
     else
@@ -2181,8 +2184,8 @@ static bool processSubscriptions
 
       if (tSubP->throttling > sinceLastNotification)
       {
-        LM_T(LmtLegacy, ("blocked due to throttling, current time is: %f", current));
-        LM_T(LmtLegacy, ("ignored '%s' due to throttling, current time is: %f", tSubP->cacheSubId.c_str(), current));
+        KT_T(KtLegacy, "blocked due to throttling, current time is: %f", current);
+        KT_T(KtLegacy, "ignored '%s' due to throttling, current time is: %f", tSubP->cacheSubId.c_str(), current);
         continue;
       }
     }
@@ -2214,7 +2217,7 @@ static bool processSubscriptions
         // (Probably the whole if clause will disapear when the missing part of #1705 gets implemented,
         // moving geo-stuff strings to a filter object in TriggeredSubscription class
 
-        LM_E(("Runtime Error (code cannot reach this point, error: %s)", filterErr));
+        KT_E("Runtime Error (code cannot reach this point, error: %s)", filterErr);
         continue;
       }
 
@@ -2330,8 +2333,8 @@ static bool processSubscriptions
         }
         else
         {
-          LM_E(("Runtime Error (cached subscription '%s' for tenant '%s' not found)",
-                tSubP->cacheSubId.c_str(), tSubP->tenantP->tenant));
+          KT_E("Runtime Error (cached subscription '%s' for tenant '%s' not found)",
+                tSubP->cacheSubId.c_str(), tSubP->tenantP->tenant);
         }
 
         cacheSemGive(__FUNCTION__, "update lastNotificationTime for cached subscription");
@@ -2590,7 +2593,7 @@ static void updateAttrInNotifyCer
       }
       else
       {
-        LM_W(("Unexpected actionType %s", actionType.c_str()));
+        KT_W("Unexpected actionType %s", actionType.c_str());
       }
 
       return;
@@ -3003,7 +3006,7 @@ static bool processContextAttributeVector
       oe->fill(SccBadRequest, details, "BadRequest");
 
       // If we reach this point, there's a BUG in the parse layer checks
-      LM_E(("Runtime Error (unknown actionType)"));
+      KT_E("Runtime Error (unknown actionType)");
       return false;
     }
 
@@ -3044,7 +3047,7 @@ static bool processContextAttributeVector
 
   if (loopDetected)
   {
-    LM_W(("Notification loop detected for entity id <%s> type <%s>, skipping subscription triggering", entityId.c_str(), entityType.c_str()));
+    KT_W("Notification loop detected for entity id <%s> type <%s>, skipping subscription triggering", entityId.c_str(), entityType.c_str());
   }
   else if (!addTriggeredSubscriptions(entityId, entityType, modifiedAttrs, subsToNotify, err, tenantP, servicePathV))
   {
@@ -3260,7 +3263,7 @@ static bool createEntity
 
   if (!collectionInsert(tenantP->entities, insertedDoc.obj(), errDetail))
   {
-    LM_E(("Internal Error (%s)", errDetail->c_str()));
+    KT_E("Internal Error (%s)", errDetail->c_str());
     oeP->fill(SccReceiverInternalError, *errDetail, "InternalError");
     return false;
   }
@@ -4026,7 +4029,7 @@ void processContextElement
 
     if (!nextSafeOrErrorF(cursor, &r, &err))
     {
-      LM_E(("Runtime Error (exception in nextSafe(): %s - query: %s)", err.c_str(), query.toString().c_str()));
+      KT_E("Runtime Error (exception in nextSafe(): %s - query: %s)", err.c_str(), query.toString().c_str());
       continue;
     }
 
@@ -4149,7 +4152,7 @@ void processContextElement
 
       if (!createEntity(enP, ceP->contextAttributeVector, orionldState.requestTime, &errDetail, tenantP, servicePathV, apiVersion, fiwareCorrelator, &(responseP->oe)))
       {
-        LM_E(("Internal Error (createEntity failed)"));
+        KT_E("Internal Error (createEntity failed)");
         cerP->statusCode.fill(SccInvalidParameter, errDetail);
         // In this case, responseP->oe is not filled, as createEntity() deals internally with that
       }

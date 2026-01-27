@@ -26,8 +26,10 @@
 #include <vector>
 
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
 #include "ngsi/ParseData.h"
 #include "ngsi9/DiscoverContextAvailabilityRequest.h"

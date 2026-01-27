@@ -27,10 +27,6 @@
 
 #include "mongo/client/dbclient.h"                             // mongo::BSONObj
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
-
-
 #include "apiTypesV2/Registration.h"                             // ngsiv2::Registration
 #include "rest/HttpStatusCode.h"                                 // HttpStatusCode
 #include "common/statistics.h"                                   // TIME_STAT_MONGO_READ_WAIT_START

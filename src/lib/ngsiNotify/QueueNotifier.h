@@ -25,8 +25,12 @@
 *
 * Author: Orion dev team
 */
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+
+#include "orionld/common/traceLevels.h"
 
 #include "common/SyncQOverflow.h"
 #include "common/RenderFormat.h"

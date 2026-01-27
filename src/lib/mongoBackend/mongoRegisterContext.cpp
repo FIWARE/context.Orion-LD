@@ -27,8 +27,10 @@
 
 #include "mongo/client/dbclient.h"
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"                                // trace messages - ktrace library
+}
 
 #include "orionld/common/orionldState.h"             // orionldState
 #include "orionld/types/OrionldTenant.h"             // OrionldTenant
@@ -111,7 +113,7 @@ HttpStatusCode mongoRegisterContext
     }
     else  // SccReceiverInternalError
     {
-      LM_E(("Runtime Error (exception getting OID: %s)", responseP->errorCode.details.c_str()));
+      KT_E("Runtime Error (exception getting OID: %s)", responseP->errorCode.details.c_str());
     }
 
     return SccOk;

@@ -26,9 +26,13 @@
 #include <string>
 #include <vector>
 
+extern "C"
+{
+#include "ktrace/kTrace.h"                                // trace messages - ktrace library
+}
+
 #include "common/string.h"
 #include "common/globals.h"
-#include "logMsg/logMsg.h"
 #include "ngsi/ContextAttribute.h"
 
 // FIXME P5: the following could be not necessary if we optimize the valueBson() thing. See
@@ -72,7 +76,7 @@ static bool getDateExpiration
     return true;
   }
 
-  LM_E(("Runtime Error (attribute detected as date expiration but invalid type: %s)", caP->type.c_str()));
+  KT_E("Runtime Error (attribute detected as date expiration but invalid type: %s)", caP->type.c_str());
   *errDetail = "error processing date expiration attribute, see log traces";
 
   return false;

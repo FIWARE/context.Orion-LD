@@ -26,8 +26,14 @@
 
 #include "rapidjson/document.h"
 
-#include "logMsg/logMsg.h"
 #include "common/limits.h"
+
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+
+#include "orionld/common/traceLevels.h"
 #include "ngsi/Metadata.h"
 #include "parse/CompoundValueNode.h"
 

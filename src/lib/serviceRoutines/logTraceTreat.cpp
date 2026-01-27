@@ -23,10 +23,13 @@
 * Author: Ken Zangelin
 */
 #include <string>
+#include <string.h>
 #include <vector>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
 #include "orionld/common/orionldState.h"                     // orionldState
 
@@ -54,7 +57,7 @@ std::string logTraceTreat
   ParseData*                 parseDataP
 )
 {
-  std::string out  = "OK";
+  std::string out  = "Error";
   std::string path = "";
 
   for (int ix = 0; ix < components; ++ix)
@@ -65,44 +68,35 @@ std::string logTraceTreat
       path += "/";
   }
 
-  if ((components == 2) && (orionldState.verb == HTTP_DELETE))
+  if (components == 2)
   {
-    lmTraceSet(NULL);
-    out = orionLogReply(ciP, "tracelevels", "all trace levels off");
+    if (orionldState.verb == HTTP_DELETE)
+    {
+      ktTraceLevelSet("", KTRUE);
+      out = orionLogReply(ciP, "tracelevels", "all trace levels off");
+    }
+    else if (orionldState.verb == HTTP_GET)
+      out = orionLogReply(ciP, "tracelevels", ktTraceLevelGet());
   }
-  else if ((components == 3) && (orionldState.verb == HTTP_DELETE))
+  else if (components == 3)
   {
     if (strspn(compV[2].c_str(), "0123456789-,'") != strlen(compV[2].c_str()))
-    {
       out = orionLogReply(ciP, "tracelevels", "poorly formatted trace level string");
-      return out;
-    }
-
-    lmTraceSub(compV[2].c_str());
-    out = orionLogReply(ciP, "tracelevels_removed", compV[2]);
-  }
-  else if ((components == 2) && (orionldState.verb == HTTP_GET))
-  {
-    char tLevels[256];
-    lmTraceGet(tLevels, sizeof(tLevels));
-    out = orionLogReply(ciP, "tracelevels", tLevels);
-  }
-  else if ((components == 3) && (orionldState.verb == HTTP_PUT))
-  {
-    if (strspn(compV[2].c_str(), "0123456789-,'") != strlen(compV[2].c_str()))
+    else if (orionldState.verb == HTTP_DELETE)
     {
-      out = orionLogReply(ciP, "tracelevels", "poorly formatted trace level string");
-      return out;
+      ktTraceLevelReset(compV[2].c_str());
+      out = orionLogReply(ciP, "tracelevels", ktTraceLevelGet(), "removed", compV[2].c_str());
     }
-
-    lmTraceSet(NULL);
-    lmTraceSet(compV[2].c_str());
-    out = orionLogReply(ciP, "tracelevels", compV[2]);
+    else if (orionldState.verb == HTTP_PUT)
+    {
+      ktTraceLevelSet(compV[2].c_str(), KTRUE);
+      out = orionLogReply(ciP, "tracelevels", ktTraceLevelGet());
+    }
   }
-  else
+
+  if (out == "Error")
   {
     OrionError error(SccBadRequest, std::string("bad URL/Verb: ") + verbToString(orionldState.verb) + " " + path);
-
     TIMED_RENDER(out = error.render());
   }
 

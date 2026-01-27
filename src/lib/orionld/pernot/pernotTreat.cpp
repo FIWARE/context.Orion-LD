@@ -32,6 +32,7 @@ extern "C"
 #include "kjson/kjBufferCreate.h"                           // kjBufferCreate
 #include "kjson/KjNode.h"                                   // KjNode
 #include "kjson/kjBuilder.h"                                // kjArray, ...
+#include "kbase/kMacros.h"                                  // K_MIN
 }
 
 #include "orionld/types/OrionldRenderFormat.h"              // OrionldRenderFormat
@@ -43,14 +44,6 @@ extern "C"
 #include "orionld/dbModel/dbModelToApiEntity.h"             // dbModelToApiEntity2
 #include "orionld/pernot/pernotSend.h"                      // pernotSend
 #include "orionld/pernot/pernotTreat.h"                     // Own interface
-
-
-
-// -----------------------------------------------------------------------------
-//
-// MIN -
-//
-#define MIN(a, b) ((a) > (b))? (a) : (b)
 
 
 
@@ -149,7 +142,7 @@ static void* pernotTreat(void* vP)
     ok = false;
   else
   {
-    int entitiesSent = MIN(count, orionldState.uriParams.limit);
+    int entitiesSent = K_MIN(count, orionldState.uriParams.limit);
     if (entitiesSent < count)
     {
       orionldState.uriParams.count = false;

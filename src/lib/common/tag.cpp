@@ -23,10 +23,17 @@
 * Author: Ken Zangelin
 */
 #include <stdio.h>
+#include <string.h>
+#include <errno.h>
 #include <string>
 #include <sstream>
 
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+
+#include "orionld/common/traceLevels.h"
 #include "common/tag.h"
 
 
@@ -52,7 +59,7 @@ char* htmlEscape(const char* s)
   
   if (out == NULL)
   {
-    LM_E(("Internal Error (allocating %d bytes: %s)", newLen, strerror(errno)));
+    KT_E("Internal Error (allocating %d bytes: %s)", newLen, strerror(errno));
     return NULL;
   }
 
@@ -350,5 +357,3 @@ std::string valueTag
 
   return valueTag(key, val, showComma, false, false);
 }
-
-

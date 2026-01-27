@@ -27,7 +27,11 @@
 #include <cstdlib>                    /* C++ free                            */
 
 #include "parseArgs/baStd.h"          /* BA standard header file             */
-#include "logMsg/logMsg.h"            /* LM_T                                */
+extern "C"
+{
+#include "ktrace/kTrace.h"
+#include "kbase/kMacros.h"            /* K_MAX                               */
+}
 
 #include "parseArgs/parseArgs.h"      /* PaArgument, ...                     */
 #include "parseArgs/paTraceLevels.h"  /* LmtXXX                              */
@@ -46,7 +50,6 @@ bool paIsOption(PaiArgument* paList, char* string)
   int           len;
   PaiArgument*  aP;
 
-  LM_ENTRY();
   paIterateInit();
   while ((aP = paIterateNext(paList)) != NULL)
   {
@@ -55,15 +58,13 @@ bool paIsOption(PaiArgument* paList, char* string)
       continue;
     }
 
-    len = MAX(strlen(aP->option), strlen(string));
+    len = K_MAX(strlen(aP->option), strlen(string));
 
     if (strncmp(aP->option, string, len) == 0)
     {
-      LM_EXIT();
       return true;
     }
   }
 
-  LM_EXIT();
   return false;
 }

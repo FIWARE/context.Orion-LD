@@ -26,11 +26,14 @@
 #include <map>
 #include <vector>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"                                // trace messages - ktrace library
+}
 
 #include "orionld/types/OrionldTenant.h"               // OrionldTenant
 #include "orionld/common/orionldState.h"               // orionldState
+#include "orionld/common/traceLevels.h"                // KTrace levels
 #include "common/statistics.h"
 #include "common/sem.h"
 #include "alarmMgr/alarmMgr.h"
@@ -62,7 +65,7 @@ static HttpStatusCode processDiscoverContextAvailability
   std::string  err;
   long long    count = -1;
 
-  LM_T(LmtLegacy, ("Offset: %d, Limit: %d, Details: %s", offset, limit, (details == true)? "true" : "false"));
+  KT_T(KtLegacy, "Offset: %d, Limit: %d, Details: %s", offset, limit, (details == true)? "true" : "false");
 
   if (!registrationsQuery(requestP->entityIdVector,
                           requestP->attributeList,
@@ -138,7 +141,7 @@ HttpStatusCode mongoDiscoverContextAvailability
 
   reqSemTake(__FUNCTION__, "mongo ngsi9 discovery request", SemReadOp, &reqSemTaken);
 
-  LM_T(LmtLegacy, ("DiscoverContextAvailability Request"));
+  KT_T(KtLegacy, "DiscoverContextAvailability Request");
 
   HttpStatusCode hsCode = processDiscoverContextAvailability(requestP,
                                                              responseP,

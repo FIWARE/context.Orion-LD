@@ -374,96 +374,149 @@ function localBrokerStart()
   if [ "$role" == "CB" ]
   then
     port=$CB_PORT
-    CB_START_CMD="$CB_START_CMD_PREFIX -port $CB_PORT -extras -pidpath $CB_PID_FILE  -dbhost $dbHost:$dbPort -db $CB_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption $extraParams"
+    brokerLogFile="/tmp/Orion-LD.log"
+    CB_START_CMD="$CB_START_CMD_PREFIX -port $CB_PORT -extras -dbhost $dbHost:$dbPort -db $CB_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption $extraParams"
   elif [ "$role" == "CB2" ]
   then
     mkdir -p $CB2_LOG_DIR
     port=$CB2_PORT
-    CB_START_CMD="$CB_START_CMD_PREFIX -port $CB2_PORT -extras -pidpath $CB2_PID_FILE  -dbhost $dbHost:$dbPort -db $CB_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption -logDir $CB2_LOG_DIR $extraParams"
+    brokerLogFile="$CB2_LOG_DIR/Orion-LD.log"
+    CB_START_CMD="$CB_START_CMD_PREFIX -port $CB2_PORT -extras -dbhost $dbHost:$dbPort -db $CB_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption -logDir $CB2_LOG_DIR $extraParams"
   elif [ "$role" == "CP1" ]
   then
     mkdir -p $CP1_LOG_DIR
     port=$CP1_PORT
-    CB_START_CMD="$CB_START_CMD_PREFIX -port $CP1_PORT -extras -pidpath $CP1_PID_FILE -dbhost $dbHost:$dbPort -db $CP1_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption -logDir $CP1_LOG_DIR $extraParams"
+    brokerLogFile="$CP1_LOG_DIR/Orion-LD.log"
+    CB_START_CMD="$CB_START_CMD_PREFIX -port $CP1_PORT -extras -dbhost $dbHost:$dbPort -db $CP1_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption -logDir $CP1_LOG_DIR $extraParams"
   elif [ "$role" == "CP2" ]
   then
     mkdir -p $CP2_LOG_DIR
     port=$CP2_PORT
-    CB_START_CMD="$CB_START_CMD_PREFIX -port $CP2_PORT -extras -pidpath $CP2_PID_FILE -dbhost $dbHost:$dbPort -db $CP2_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption -logDir $CP2_LOG_DIR $extraParams"
+    brokerLogFile="$CP2_LOG_DIR/Orion-LD.log"
+    CB_START_CMD="$CB_START_CMD_PREFIX -port $CP2_PORT -extras -dbhost $dbHost:$dbPort -db $CP2_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption -logDir $CP2_LOG_DIR $extraParams"
   elif [ "$role" == "CP3" ]
   then
     mkdir -p $CP3_LOG_DIR
     port=$CP3_PORT
-    CB_START_CMD="$CB_START_CMD_PREFIX -port $CP3_PORT -extras -pidpath $CP3_PID_FILE -dbhost $dbHost:$dbPort -db $CP3_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption -logDir $CP3_LOG_DIR $extraParams"
+    brokerLogFile="$CP3_LOG_DIR/Orion-LD.log"
+    CB_START_CMD="$CB_START_CMD_PREFIX -port $CP3_PORT -extras -dbhost $dbHost:$dbPort -db $CP3_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption -logDir $CP3_LOG_DIR $extraParams"
   elif [ "$role" == "CP4" ]
   then
     mkdir -p $CP4_LOG_DIR
     port=$CP4_PORT
-    CB_START_CMD="$CB_START_CMD_PREFIX -port $CP4_PORT -extras -pidpath $CP4_PID_FILE -dbhost $dbHost:$dbPort -db $CP4_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption -logDir $CP4_LOG_DIR $extraParams"
+    brokerLogFile="$CP4_LOG_DIR/Orion-LD.log"
+    CB_START_CMD="$CB_START_CMD_PREFIX -port $CP4_PORT -extras -dbhost $dbHost:$dbPort -db $CP4_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption -logDir $CP4_LOG_DIR $extraParams"
   elif [ "$role" == "CP5" ]
   then
     mkdir -p $CP5_LOG_DIR
     port=$CP5_PORT
-    CB_START_CMD="$CB_START_CMD_PREFIX -port $CP5_PORT -extras -pidpath $CP5_PID_FILE -dbhost $dbHost:$dbPort -db $CP5_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption -logDir $CP5_LOG_DIR $extraParams"
+    brokerLogFile="$CP5_LOG_DIR/Orion-LD.log"
+    CB_START_CMD="$CB_START_CMD_PREFIX -port $CP5_PORT -extras -dbhost $dbHost:$dbPort -db $CP5_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption -logDir $CP5_LOG_DIR $extraParams"
   elif [ "$role" == "CP6" ]
   then
     mkdir -p $CP6_LOG_DIR
     port=$CP6_PORT
-    CB_START_CMD="$CB_START_CMD_PREFIX -port $CP6_PORT -extras -pidpath $CP6_PID_FILE -dbhost $dbHost:$dbPort -db $CP6_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption -logDir $CP6_LOG_DIR $extraParams"
+    brokerLogFile="$CP6_LOG_DIR/Orion-LD.log"
+    CB_START_CMD="$CB_START_CMD_PREFIX -port $CP6_PORT -extras -dbhost $dbHost:$dbPort -db $CP6_DB_NAME -dbPoolSize $POOL_SIZE -t $traceLevels $IPvOption -logDir $CP6_LOG_DIR $extraParams"
   fi
 
   # In case the PID file still exists ... (happens after crashes)
   \rm -f /tmp/orion_${port}.pid
 
-  #  
+  #
   # Start broker under valgrind if VALGRIND set to 1 and if it's the 'main' broker
-  # 
+  #
   # This is IMPORTANT
   # In test cases involving more than **one** broker - valgrind is run only for the CB, not CP1 etc.
   # Having valgrind run for *every broker* destroys the result of the main broker (the 'CB' broker).
-  # The 'other' brokers mess up the output file from valgrind, i.e. the result of the main broker 
+  # The 'other' brokers mess up the output file from valgrind, i.e. the result of the main broker
   # is destroyed.
   # So, now ONLY the broker started as 'CB' is started under VALGRIND
-  # 
+  #
   # [ A *number* of old leaks were discovered when this modification was made. ]
   #
+  brokerStartErr=/tmp/brokerStartErr_${port}.tmp
+  rm -f "$brokerLogFile"
   if [ "$VALGRIND" == "" ] || [ "$port" != "$CB_PORT" ]
   then
     if [ "$verbose" == "on" ]
     then
       echo Starting broker: $CB_START_CMD
     fi
-    $CB_START_CMD > /dev/null
-    brokerPid=$!
+    $CB_START_CMD > $brokerStartErr 2>&1 &
+
+    # Poll for port to be open (broker daemonizes so we can't track PID)
+    typeset -i loopNo
+    loopNo=0
+    while [ $loopNo -lt 200 ]
+    do
+      # Check if broker is listening on port
+      nc -zv localhost $port &>/dev/null </dev/null
+      if [ "$?" == "0" ]
+      then
+        logMsg The orion context broker has started, listening on port $port
+        echo "Broker started after $loopNo checks" >> /tmp/brokerStartCounter
+        break
+      fi
+
+      # Port not open - check if broker died with error (E: or X: from ktrace)
+      if [ -s "$brokerStartErr" ] && grep -qE "^E:|^X:" "$brokerStartErr"
+      then
+        echo "ERROR: Broker failed during startup"
+        echo "Command: $CB_START_CMD"
+        grep -E "^E:|^X:" "$brokerStartErr"
+        rm -f $brokerStartErr
+        exit 1
+      fi
+
+      # Also check the log file for fatal errors (ktrace writes there, not to stderr)
+      if [ -s "$brokerLogFile" ] && grep -qE "^X:" "$brokerLogFile"
+      then
+        echo "ERROR: Broker failed during startup (from log file)"
+        echo "Command: $CB_START_CMD"
+        grep -E "^X:" "$brokerLogFile"
+        rm -f $brokerStartErr
+        exit 1
+      fi
+
+      sleep .05
+      loopNo=$loopNo+1
+    done
+
+    # Timeout - broker not listening
+    if [ $loopNo -ge 200 ]
+    then
+      echo "ERROR: Broker startup timeout (10s)"
+      echo "Command: $CB_START_CMD"
+      rm -f $brokerStartErr
+      exit 1
+    fi
+
     if [ "$verbose" == "on" ]
     then
-      echo Broker PID: $brokerPid
+      echo "$BROKER is running as $role"
     fi
   else
     #
     # Important: the -v flag must be present so that the text "X errors in context Y of Z" is present in the output
     #
     valgrind -v --leak-check=full --show-leak-kinds=definite,indirect --track-origins=yes --trace-children=yes --suppressions=$REPO_HOME/test/valgrind/suppressions.supp $CB_START_CMD > /tmp/valgrind.out 2>&1 &
-  fi
-
-  # Waiting for broker/valgrind to start
-  brokerStartAwait $port
-  if [ "$result" != 0 ]
-  then
-    echo "Unable to start $BROKER as $role"
-    exit 1
-  else
-    if [ "$verbose" == "on" ]
+    # For valgrind, use the old brokerStartAwait
+    brokerStartAwait $port
+    if [ "$result" != 0 ]
     then
-      echo "$BROKER is running as $role"
+      echo "Unable to start $BROKER as $role (valgrind)"
+      exit 1
     fi
   fi
+  rm -f $brokerStartErr
 
   # Test to see whether we have a broker running on $port. If not raise an error
   brokerPidLines=$(ps -fe | grep $BROKER | grep $port | wc -l)
   if [ $brokerPidLines != 1 ]
   then
     echo "Unable to start $BROKER as $role"
+    echo "Broker command was: $CB_START_CMD"
     exit 1
   fi
 
@@ -648,28 +701,78 @@ function orionldStart
   # In case the PID file still exists ... (happens after crashes)
   \rm -f /tmp/orion_${port}.pid
 
-  BROKER_START_CMD="orionld -port $port -extras -db $db -logDir $logDir -pidpath $pidFile -harakiri $extraParams"
+  BROKER_START_CMD="orionld -port $port -extras -db $db -logDir $logDir -harakiri $extraParams"
   echo "BROKER_START_CMD: $BROKER_START_CMD" >> /tmp/orionldStart
 
   #
   # Only the main CB can run under valgrind
   #
+  brokerStartErr=/tmp/brokerStartErr_${port}.tmp
+  brokerLogFile="$logDir/Orion-LD.log"
+  rm -f "$brokerLogFile"
   if [ "$VALGRIND" == "" ] || [ "$port" != "$CB_PORT" ]
   then
-    $BROKER_START_CMD > /dev/null
+    $BROKER_START_CMD > $brokerStartErr 2>&1 &
+
+    # Poll for port to be open (broker daemonizes so we can't track PID)
+    typeset -i loopNo
+    loopNo=0
+    while [ $loopNo -lt 200 ]
+    do
+      # Check if broker is listening on port
+      nc -zv localhost $port &>/dev/null </dev/null
+      if [ "$?" == "0" ]
+      then
+        logMsg The orion context broker has started, listening on port $port
+        echo "Broker started after $loopNo checks" >> /tmp/brokerStartCounter
+        break
+      fi
+
+      # Port not open - check if broker died with error (E: or X: from ktrace)
+      if [ -s "$brokerStartErr" ] && grep -qE "^E:|^X:" "$brokerStartErr"
+      then
+        echo "ERROR: Broker failed during startup"
+        echo "Command: $BROKER_START_CMD"
+        grep -E "^E:|^X:" "$brokerStartErr"
+        rm -f $brokerStartErr
+        exit 1
+      fi
+
+      # Also check the log file for fatal errors (ktrace writes there, not to stderr)
+      if [ -s "$brokerLogFile" ] && grep -qE "^X:" "$brokerLogFile"
+      then
+        echo "ERROR: Broker failed during startup (from log file)"
+        echo "Command: $BROKER_START_CMD"
+        grep -E "^X:" "$brokerLogFile"
+        rm -f $brokerStartErr
+        exit 1
+      fi
+
+      sleep .05
+      loopNo=$loopNo+1
+    done
+
+    # Timeout - broker not listening
+    if [ $loopNo -ge 200 ]
+    then
+      echo "ERROR: Broker startup timeout (10s)"
+      echo "Command: $BROKER_START_CMD"
+      rm -f $brokerStartErr
+      exit 1
+    fi
   else
     # Use the CLI --gen-suppressions=all for valgrind to get suppressions (to put in suppressions.supp)
     # valgrind -v --leak-check=full --show-leak-kinds=definite,indirect --track-origins=yes --trace-children=yes --suppressions=$REPO_HOME/test/valgrind/suppressions.supp --gen-suppressions=all $BROKER_START_CMD > /tmp/valgrind.out 2>&1 &
     valgrind   -v --leak-check=full --show-leak-kinds=definite,indirect --track-origins=yes --trace-children=yes --suppressions=$REPO_HOME/test/valgrind/suppressions.supp                        $BROKER_START_CMD > /tmp/valgrind.out 2>&1 &
+    # For valgrind, use the old brokerStartAwait
+    brokerStartAwait $port
+    if [ "$result" != 0 ]
+    then
+      echo "Unable to start broker as $role (valgrind)"
+      exit 1
+    fi
   fi
-
-  # Waiting for broker/valgrind to start
-  brokerStartAwait $port
-  if [ "$result" != 0 ]
-  then
-    echo "Unable to start broker as $role"
-    exit 1
-  fi
+  rm -f $brokerStartErr
 }
 
 

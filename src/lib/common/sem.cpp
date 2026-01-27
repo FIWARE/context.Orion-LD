@@ -25,11 +25,16 @@
 #include <semaphore.h>
 #include <errno.h>
 #include <time.h>
+#include <string.h>
 #include <map>  // for curl contexts
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
+#include "orionld/common/traceLevels.h"
+#include "common/globals.h"
 #include "common/sem.h"
 #include "common/clockFunctions.h"
 
@@ -74,25 +79,25 @@ int semInit(SemOpType _reqPolicy, bool semTimeStat, int shared, int takenInitial
 {
   if (sem_init(&reqSem, shared, takenInitially) == -1)
   {
-    LM_E(("Runtime Error (error initializing 'req' semaphore: %s)", strerror(errno)));
+    KT_E("Runtime Error (error initializing 'req' semaphore: %s)", strerror(errno));
     return -1;
   }
 
   if (sem_init(&transSem, shared, takenInitially) == -1)
   {
-    LM_E(("Runtime Error (error initializing 'transactionId' semaphore: %s)", strerror(errno)));
+    KT_E("Runtime Error (error initializing 'transactionId' semaphore: %s)", strerror(errno));
     return -1;
   }
 
   if (sem_init(&cacheSem, shared, takenInitially) == -1)
   {
-    LM_E(("Runtime Error (error initializing 'cache' semaphore: %s)", strerror(errno)));
+    KT_E("Runtime Error (error initializing 'cache' semaphore: %s)", strerror(errno));
     return -1;
   }
 
   if (sem_init(&timeStatSem, shared, takenInitially) == -1)
   {
-    LM_E(("Runtime Error (error initializing 'timeStat' semaphore: %s)", strerror(errno)));
+    KT_E("Runtime Error (error initializing 'timeStat' semaphore: %s)", strerror(errno));
     return -1;
   }
 
@@ -144,7 +149,7 @@ int reqSemTake(const char* who, const char* what, SemOpType reqType, bool* taken
     return -1;
   }
 
-  LM_T(LmtSemaphore, ("%s taking the 'req' semaphore for '%s'", who, what));
+  KT_T(KtSemaphore, "%s taking the 'req' semaphore for '%s'", who, what);
 
   struct timespec startTime;
   struct timespec endTime;
@@ -165,7 +170,7 @@ int reqSemTake(const char* who, const char* what, SemOpType reqType, bool* taken
     clock_addtime(&accReqSemTime, &diffTime);
   }
 
-  LM_T(LmtSemaphore, ("%s has the 'req' semaphore", who));
+  KT_T(KtSemaphore, "%s has the 'req' semaphore", who);
 
   *taken = true;
   return r;
@@ -273,7 +278,7 @@ int transSemTake(const char* who, const char* what)
 {
   int r;
 
-  LM_T(LmtSemaphore, ("%s taking the 'trans' semaphore for '%s'", who, what));
+  KT_T(KtSemaphore, "%s taking the 'trans' semaphore for '%s'", who, what);
 
   struct timespec startTime;
   struct timespec endTime;
@@ -294,7 +299,7 @@ int transSemTake(const char* who, const char* what)
     clock_addtime(&accTransSemTime, &diffTime);
   }
 
-  LM_T(LmtSemaphore, ("%s has the 'trans' semaphore", who));
+  KT_T(KtSemaphore, "%s has the 'trans' semaphore", who);
 
   return r;
 }
@@ -309,7 +314,7 @@ int cacheSemTake(const char* who, const char* what)
 {
   int r;
 
-  LM_T(LmtSemaphore, ("%s taking the 'cache' semaphore for '%s'", who, what));
+  KT_T(KtSemaphore, "%s taking the 'cache' semaphore for '%s'", who, what);
 
   struct timespec startTime;
   struct timespec endTime;
@@ -330,7 +335,7 @@ int cacheSemTake(const char* who, const char* what)
     clock_addtime(&accCacheSemTime, &diffTime);
   }
 
-  LM_T(LmtSemaphore, ("%s has the 'cache' semaphore", who));
+  KT_T(KtSemaphore, "%s has the 'cache' semaphore", who);
 
   return r;
 }
@@ -350,11 +355,11 @@ int reqSemGive(const char* who, const char* what, bool semTaken)
 
   if (what != NULL)
   {
-    LM_T(LmtSemaphore, ("%s gives the 'req' semaphore for '%s'", who, what));
+    KT_T(KtSemaphore, "%s gives the 'req' semaphore for '%s'", who, what);
   }
   else
   {
-    LM_T(LmtSemaphore, ("%s gives the 'req' semaphore", who));
+    KT_T(KtSemaphore, "%s gives the 'req' semaphore", who);
   }
 
   return sem_post(&reqSem);
@@ -370,11 +375,11 @@ int transSemGive(const char* who, const char* what)
 {
   if (what != NULL)
   {
-    LM_T(LmtSemaphore, ("%s gives the 'trans' semaphore for '%s'", who, what));
+    KT_T(KtSemaphore, "%s gives the 'trans' semaphore for '%s'", who, what);
   }
   else
   {
-    LM_T(LmtSemaphore, ("%s gives the 'trans' semaphore", who));
+    KT_T(KtSemaphore, "%s gives the 'trans' semaphore", who);
   }
 
   return sem_post(&transSem);
@@ -390,11 +395,11 @@ int cacheSemGive(const char* who, const char* what)
 {
   if (what != NULL)
   {
-    LM_T(LmtSemaphore, ("%s gives the 'cache' semaphore for '%s'", who, what));
+    KT_T(KtSemaphore, "%s gives the 'cache' semaphore for '%s'", who, what);
   }
   else
   {
-    LM_T(LmtSemaphore, ("%s gives the 'cache' semaphore", who));
+    KT_T(KtSemaphore, "%s gives the 'cache' semaphore", who);
   }
 
   return sem_post(&cacheSem);
@@ -410,7 +415,7 @@ int timeStatSemTake(const char* who, const char* what)
 {
   int r;
 
-  LM_T(LmtSemaphore, ("%s taking the 'timeStat' semaphore for '%s'", who, what));
+  KT_T(KtSemaphore, "%s taking the 'timeStat' semaphore for '%s'", who, what);
 
   struct timespec startTime;
   struct timespec endTime;
@@ -431,7 +436,7 @@ int timeStatSemTake(const char* who, const char* what)
     clock_addtime(&accTimeStatSemTime, &diffTime);
   }
 
-  LM_T(LmtSemaphore, ("%s has the 'timeStat' semaphore", who));
+  KT_T(KtSemaphore, "%s has the 'timeStat' semaphore", who);
 
   return r;
 }
@@ -446,11 +451,11 @@ int timeStatSemGive(const char* who, const char* what)
 {
   if (what != NULL)
   {
-    LM_T(LmtSemaphore, ("%s gives the 'timeStat' semaphore for '%s'", who, what));
+    KT_T(KtSemaphore, "%s gives the 'timeStat' semaphore for '%s'", who, what);
   }
   else
   {
-    LM_T(LmtSemaphore, ("%s gives the 'timeStat' semaphore", who));
+    KT_T(KtSemaphore, "%s gives the 'timeStat' semaphore", who);
   }
 
   return sem_post(&timeStatSem);
@@ -630,7 +635,7 @@ static int get_curl_context_reuse(const std::string& key, struct curl_context* p
 
   if (s != 0)
   {
-    LM_E(("Runtime Error (pthread_mutex_lock failure)"));
+    KT_E("Runtime Error (pthread_mutex_lock failure)");
     ++contexts_mutex_errors;
     return s;
   }
@@ -651,7 +656,7 @@ static int get_curl_context_reuse(const std::string& key, struct curl_context* p
         pthread_mutex_unlock(&contexts_mutex);
         ++contexts_mutex_errors;
         contexts_mutex_taken = false;
-        LM_E(("Runtime Error (malloc)"));
+        KT_E("Runtime Error (malloc)");
         return -1;
       }
 
@@ -661,7 +666,7 @@ static int get_curl_context_reuse(const std::string& key, struct curl_context* p
         pthread_mutex_unlock(&contexts_mutex);
         contexts_mutex_taken = false;
         ++contexts_mutex_errors;
-        LM_E(("Runtime Error (pthread_mutex_init)"));
+        KT_E("Runtime Error (pthread_mutex_init)");
         free(pm);
         return s;
       }
@@ -682,7 +687,7 @@ static int get_curl_context_reuse(const std::string& key, struct curl_context* p
   if (s != 0)
   {
     ++contexts_mutex_errors;
-    LM_E(("Runtime Error (pthread_mutex_unlock)"));
+    KT_E("Runtime Error (pthread_mutex_unlock)");
     return s;
   }
 
@@ -705,7 +710,7 @@ static int get_curl_context_reuse(const std::string& key, struct curl_context* p
     if (s != 0)
     {
       ++endpoint_mutexes_errors;
-      LM_E(("Runtime Error (pthread_mutex_lock)"));
+      KT_E("Runtime Error (pthread_mutex_lock)");
       return s;
     }
     ++endpoint_mutexes_taken;
@@ -719,7 +724,7 @@ static int get_curl_context_reuse(const std::string& key, struct curl_context* p
       if (s != 0)
       {
         ++contexts_mutex_errors;
-        LM_E(("Runtime Error (pthread_mutex_lock)"));
+        KT_E("Runtime Error (pthread_mutex_lock)");
         return s;
       }
       contexts_mutex_taken = true;
@@ -729,7 +734,7 @@ static int get_curl_context_reuse(const std::string& key, struct curl_context* p
       if (s != 0)
       {
         ++contexts_mutex_errors;
-        LM_E(("Runtime Error (pthread_mutex_unlock)"));
+        KT_E("Runtime Error (pthread_mutex_unlock)");
         return s;
       }
       contexts_mutex_taken = false;
@@ -752,7 +757,7 @@ static int get_curl_context_new(const std::string& key, struct curl_context* pcc
 
   if (pcc->curl == NULL)
   {
-    LM_E(("Runtime Error (curl_easy_init)"));
+    KT_E("Runtime Error (curl_easy_init)");
     return -1;
   }
 
@@ -801,7 +806,7 @@ static int release_curl_context_reuse(struct curl_context *pcc, bool final)
 
     if (s != 0)
     {
-      LM_E(("Runtime Error (pthread_mutex_unlock)"));
+      KT_E("Runtime Error (pthread_mutex_unlock)");
       ++endpoint_mutexes_errors;
       return s;
     }

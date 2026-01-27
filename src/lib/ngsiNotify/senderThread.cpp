@@ -20,8 +20,12 @@
 *
 * Author: Fermín Galán Márquez
 */
-#include "logMsg/traceLevels.h"
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+
+#include "orionld/common/traceLevels.h"
 
 #include "common/statistics.h"
 #include "common/limits.h"
@@ -73,7 +77,7 @@ void* startSenderThread(void* p)
       {
         std::string  out;
 
-        LM_T(LmtNotificationMsg, ("Sending HTTP Notification for subscription '%s'", params->subscriptionId.c_str()));
+        KT_T(KtNotificationMsg, "Sending HTTP Notification for subscription '%s'", params->subscriptionId.c_str());
         r = httpRequestSend(params->ip,
                             params->port,
                             params->protocol,
@@ -97,7 +101,7 @@ void* startSenderThread(void* p)
       {
         char* topic = (char*) params->resource.c_str();
 
-        LM_T(LmtNotificationMsg, ("Sending MQTT Notification for subscription '%s'", params->subscriptionId.c_str()));
+        KT_T(KtNotificationMsg, "Sending MQTT Notification for subscription '%s'", params->subscriptionId.c_str());
         r = mqttNotification(params->ip.c_str(),
                              params->port,
                              topic,

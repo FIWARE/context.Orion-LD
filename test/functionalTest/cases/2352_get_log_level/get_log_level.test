@@ -76,13 +76,13 @@ echo
 01. GET initial log-level (DEBUG)
 =================================
 HTTP/1.1 200 OK
-Content-Length: 17
+Content-Length: 16
 Content-Type: application/json
 Date: REGEX(.*)
 Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 {
-    "level": "DEBUG"
+    "level": "WARN"
 }
 
 
@@ -126,7 +126,7 @@ Date: REGEX(.*)
 Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 {
-    "level": "ERROR"
+    "level": "error"
 }
 
 

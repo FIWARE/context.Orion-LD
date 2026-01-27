@@ -29,6 +29,7 @@ extern "C"
 #include "ktrace/kTrace.h"                                       // KT_*
 #include "ktrace/ktTraceLevelCheck.h"                            // ktTraceLevelCheck
 #include "kbase/kTime.h"                                         // kTimeGet
+#include "kbase/kMacros.h"                                       // K_MAX
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjRender.h"                                      // kjFastRender
 }
@@ -647,7 +648,7 @@ void orionldAlterationsTreat(OrionldAlteration* altList)
       if (npP->fd >= 0)  // Only HTTP notifications
       {
         FD_SET(npP->fd, &rFds);
-        fdMax = MAX(fdMax, npP->fd);
+        fdMax = K_MAX(fdMax, npP->fd);
       }
       npP = npP->next;
     }

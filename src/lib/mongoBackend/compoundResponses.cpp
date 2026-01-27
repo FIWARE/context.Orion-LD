@@ -25,8 +25,11 @@
 #include <string>
 #include <vector>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"                                // trace messages - ktrace library
+}
+
 #include "mongoBackend/compoundResponses.h"
 #include "orionld/common/eqForDot.h"            // eqForDot
 
@@ -56,7 +59,7 @@ static void addCompoundNode(orion::CompoundValueNode* cvP, const BSONElement& e)
       (e.type() != mongo::Object)       &&
       (e.type() != mongo::Array))
   {
-    LM_E(("Runtime Error (unknown BSON type: %d)", e.type()));
+    KT_E("Runtime Error (unknown BSON type: %d)", e.type());
     return;
   }
 

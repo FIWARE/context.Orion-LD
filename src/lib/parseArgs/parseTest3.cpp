@@ -22,7 +22,10 @@
 *
 * Author: developer
 */
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 #include "parseArgs/parseArgs.h"
 
 
@@ -40,7 +43,7 @@ int main(int argC, char* argV[])
   paParse(NULL, argC, argV, 1, FALSE);
 
   lmVerbose = true;
-  LM_V(("line with newlines ...\n 1\n2\n3\n4\n"));
+  KT_V("line with newlines ...\n 1\n2\n3\n4\n");
 
   return 0;
 }

@@ -77,7 +77,6 @@ SET (ORIONLD_LIBS
     orionld_common
     orionld_context
     orionld_types
-    lm
 )
 
 SET (STATIC_LIBS

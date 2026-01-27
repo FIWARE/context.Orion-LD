@@ -177,13 +177,13 @@ static KjNode* orionldForwardGetEntityPart(KjNode* registrationP, char* entityId
   {
     newUriParamAttrsString = (char*) kaAlloc(&orionldState.kalloc, registrationAttrs * 200);
     attrsToAlias(orionldState.contextP, registrationAttrV, registrationAttrs);
-    kStringArrayJoin(newUriParamAttrsString, registrationAttrV, registrationAttrs, ",");
+    kStringArrayJoin(newUriParamAttrsString, registrationAttrs * 200, registrationAttrV, registrationAttrs, ",");
   }
   else if ((uriParamAttrs != 0) && (registrationAttrs == 0))
   {
     newUriParamAttrsString = (char*) kaAlloc(&orionldState.kalloc, uriParamAttrs * 200);
     attrsToAlias(orionldState.contextP, uriParamAttrV, uriParamAttrs);
-    kStringArrayJoin(newUriParamAttrsString, uriParamAttrV, uriParamAttrs, ",");
+    kStringArrayJoin(newUriParamAttrsString, uriParamAttrs * 200, uriParamAttrV, uriParamAttrs, ",");
   }
   else
   {
@@ -200,7 +200,7 @@ static KjNode* orionldForwardGetEntityPart(KjNode* registrationP, char* entityId
       return NULL;
 
     attrsToAlias(orionldState.contextP, attrsV, attrs);
-    kStringArrayJoin(newUriParamAttrsString, attrsV, attrs, ",");
+    kStringArrayJoin(newUriParamAttrsString, 200 * 30, attrsV, attrs, ",");
   }
 
 

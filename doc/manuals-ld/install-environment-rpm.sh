@@ -19,8 +19,8 @@
 # For those usages not covered by this license please contact with
 # iot_support at tid dot es
 #
-# Author: Fernando Lopez (original)
-# Updated: 2025 - Added DDS, Prometheus, updated k-libs to 0.10
+# RPM-based distributions (RHEL, CentOS, AlmaLinux, Rocky Linux, Fedora)
+# Based on docker/build-ubi scripts
 #
 
 set -e
@@ -29,12 +29,13 @@ set -e
 INSTALL_DDS=${INSTALL_DDS:-false}           # Set to true to install DDS support
 INSTALL_TESTS=${INSTALL_TESTS:-false}       # Set to true to install test dependencies
 K_LIBS_VERSION="release/0.10"
-GMOCK_VERSION="1.5.0"
 MONGO_C_DRIVER_VERSION="2.2.0"
 LIBMICROHTTPD_VERSION="0.9.75"
 RAPIDJSON_VERSION="1.0.2"
 PAHO_VERSION="v1.3.1"
 PROMETHEUS_VERSION="release-0.1.3"
+GNUTLS_VERSION="3.8.8"
+GMOCK_VERSION="1.5.0"
 
 # Colors for output
 RED='\033[1;31m'
@@ -63,35 +64,57 @@ get_group() {
     id | sed 's/(/ /g' | sed 's/)/ /g' | awk '{print $4}'
 }
 
+# Detect package manager (yum or dnf)
+detect_pkg_manager() {
+    if command -v dnf &> /dev/null; then
+        echo "dnf"
+    else
+        echo "yum"
+    fi
+}
+
+PKG_MGR=$(detect_pkg_manager)
+
 # ============================================================================
 # Installation functions
 # ============================================================================
 
-install_aptitude() {
-    log_step "Installing ${RED}aptitude${NC}"
-    sudo apt-get update >/dev/null 2>>$LOGFILE
-    sudo apt-get -y install aptitude >/dev/null 2>>$LOGFILE
-    log_done
-}
-
 install_build_tools() {
-    log_step "Installing ${RED}build tools (build-essential, cmake, scons, curl, git, wget)${NC}"
-    sudo aptitude -y install build-essential cmake scons curl git wget >/dev/null 2>>$LOGFILE
+    log_step "Installing ${RED}build tools${NC}"
+    sudo $PKG_MGR -y install \
+        bzip2 ca-certificates python3 python2 cmake curl wget git make \
+        gcc-c++ >/dev/null 2>>$LOGFILE
     log_done
 }
 
 install_libraries() {
     log_step "Installing ${RED}dependency libraries${NC}"
-    sudo aptitude -y install \
-        libssl-dev gnutls-dev libcurl4-gnutls-dev libsasl2-dev \
-        libgcrypt-dev uuid-dev libboost-all-dev libz-dev \
-        libpq-dev >/dev/null 2>>$LOGFILE
+    sudo $PKG_MGR -y install \
+        libcurl-devel libgcrypt-devel zlib-devel openssl-devel \
+        libuuid-devel cyrus-sasl-devel libicu libicu-devel \
+        boost-devel >/dev/null 2>>$LOGFILE
+    log_done
+}
+
+install_epel() {
+    log_step "Installing ${RED}EPEL repository${NC}"
+    sudo $PKG_MGR -y install epel-release >/dev/null 2>>$LOGFILE || true
     log_done
 }
 
 install_mongo_legacy_driver() {
-    log_step "Installing ${RED}libmongoclient-dev (legacy driver)${NC}"
-    sudo aptitude -y install libmongoclient-dev >/dev/null 2>>$LOGFILE
+    local GROUP=$(get_group)
+    log_step "Installing ${RED}MongoDB legacy C++ driver${NC}"
+
+    sudo mkdir -p /opt/mongoclient >/dev/null 2>>$LOGFILE
+    sudo chown $USER:$GROUP /opt/mongoclient >/dev/null 2>>$LOGFILE
+    cd /opt/mongoclient >/dev/null 2>>$LOGFILE
+
+    wget https://github.com/mongodb/mongo-cxx-driver/archive/legacy-1.1.2.tar.gz >/dev/null 2>>$LOGFILE
+    tar xfvz legacy-1.1.2.tar.gz >/dev/null 2>>$LOGFILE
+    cd mongo-cxx-driver-legacy-1.1.2 >/dev/null 2>>$LOGFILE
+    sudo $PKG_MGR -y install scons >/dev/null 2>>$LOGFILE
+    scons install --prefix=/usr/local >/dev/null 2>>$LOGFILE
     log_done
 }
 
@@ -99,6 +122,19 @@ install_mongo_c_driver() {
     local GROUP=$(get_group)
     log_step "Installing ${RED}mongo-c-driver ${MONGO_C_DRIVER_VERSION}${NC}"
 
+    # Need newer cmake for mongo-c-driver 2.x
+    log_done
+    log_step "Installing ${RED}CMake 3.15${NC} (required for mongo-c-driver)"
+    cd /tmp >/dev/null 2>>$LOGFILE
+    wget https://cmake.org/files/v3.15/cmake-3.15.7.tar.gz >/dev/null 2>>$LOGFILE
+    tar zxvf cmake-3.15.7.tar.gz >/dev/null 2>>$LOGFILE
+    cd cmake-3.15.7 >/dev/null 2>>$LOGFILE
+    ./bootstrap --prefix=/usr/local >/dev/null 2>>$LOGFILE
+    make -j$(nproc) >/dev/null 2>>$LOGFILE
+    sudo make install >/dev/null 2>>$LOGFILE
+    log_done
+
+    log_step "Installing ${RED}mongo-c-driver ${MONGO_C_DRIVER_VERSION}${NC}"
     sudo mkdir -p /opt/mongoc >/dev/null 2>>$LOGFILE
     sudo chown $USER:$GROUP /opt/mongoc >/dev/null 2>>$LOGFILE
     cd /opt/mongoc >/dev/null 2>>$LOGFILE
@@ -108,9 +144,28 @@ install_mongo_c_driver() {
     cd mongo-c-driver-${MONGO_C_DRIVER_VERSION} >/dev/null 2>>$LOGFILE
     mkdir -p cmake-build >/dev/null 2>>$LOGFILE
     cd cmake-build >/dev/null 2>>$LOGFILE
-    cmake -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF .. >/dev/null 2>>$LOGFILE
-    cmake --build . >/dev/null 2>>$LOGFILE
-    sudo cmake --build . --target install >/dev/null 2>>$LOGFILE
+    /usr/local/bin/cmake -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF .. >/dev/null 2>>$LOGFILE
+    make >/dev/null 2>>$LOGFILE
+    sudo make install >/dev/null 2>>$LOGFILE
+    log_done
+}
+
+install_gnutls() {
+    local GROUP=$(get_group)
+    log_step "Installing ${RED}GnuTLS ${GNUTLS_VERSION}${NC}"
+
+    sudo $PKG_MGR -y install libtasn1-devel p11-kit-devel libunistring-devel >/dev/null 2>>$LOGFILE
+
+    sudo mkdir -p /opt/gnutls >/dev/null 2>>$LOGFILE
+    sudo chown $USER:$GROUP /opt/gnutls >/dev/null 2>>$LOGFILE
+    cd /opt/gnutls >/dev/null 2>>$LOGFILE
+
+    wget https://www.gnupg.org/ftp/gcrypt/gnutls/v3.8/gnutls-${GNUTLS_VERSION}.tar.xz >/dev/null 2>>$LOGFILE
+    tar xvf gnutls-${GNUTLS_VERSION}.tar.xz >/dev/null 2>>$LOGFILE
+    cd gnutls-${GNUTLS_VERSION} >/dev/null 2>>$LOGFILE
+    ./configure --with-included-libtasn1 --with-included-unistring --without-p11-kit --disable-doc >/dev/null 2>>$LOGFILE
+    make >/dev/null 2>>$LOGFILE
+    sudo make install >/dev/null 2>>$LOGFILE
     log_done
 }
 
@@ -191,16 +246,16 @@ install_paho_mqtt() {
 
 install_paho_python() {
     log_step "Installing ${RED}paho-mqtt Python library${NC}"
-    sudo aptitude -y install python3-pip >/dev/null 2>>$LOGFILE
+    sudo $PKG_MGR -y install python3-pip >/dev/null 2>>$LOGFILE
     pip3 install paho-mqtt >/dev/null 2>>$LOGFILE
     log_done
 }
 
 install_mosquitto() {
     log_step "Installing and enabling ${RED}Eclipse Mosquitto${NC}"
-    sudo aptitude -y install mosquitto >/dev/null 2>>$LOGFILE
-    sudo systemctl start mosquitto >/dev/null 2>>$LOGFILE
-    sudo systemctl enable mosquitto >/dev/null 2>>$LOGFILE
+    sudo $PKG_MGR -y install mosquitto >/dev/null 2>>$LOGFILE
+    sudo systemctl start mosquitto >/dev/null 2>>$LOGFILE || true
+    sudo systemctl enable mosquitto >/dev/null 2>>$LOGFILE || true
     log_done
 }
 
@@ -227,14 +282,46 @@ install_prometheus_client() {
     log_done
 }
 
+install_postgres_client() {
+    log_step "Installing ${RED}PostgreSQL client libraries${NC}"
+
+    # Add PostgreSQL repo
+    sudo $PKG_MGR -y install https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm >/dev/null 2>>$LOGFILE || true
+
+    sudo $PKG_MGR -y install yum-utils >/dev/null 2>>$LOGFILE || true
+
+    # Disable default postgresql module if using dnf
+    if [ "$PKG_MGR" = "dnf" ]; then
+        sudo dnf -y module disable postgresql >/dev/null 2>>$LOGFILE || true
+    fi
+
+    sudo $PKG_MGR -y install postgresql13 postgresql13-contrib libpqxx-devel postgresql13-devel postgresql13-libs >/dev/null 2>>$LOGFILE || true
+    log_done
+}
+
 install_fastdds() {
     local GROUP=$(get_group)
     log_section "Installing Fast-DDS (optional)"
 
+    # Enable powertools/crb repo for dependencies
+    log_step "Enabling ${RED}PowerTools/CRB repository${NC}"
+    if [ "$PKG_MGR" = "dnf" ]; then
+        sudo dnf config-manager --set-enabled powertools >/dev/null 2>>$LOGFILE || \
+        sudo dnf config-manager --set-enabled crb >/dev/null 2>>$LOGFILE || true
+    fi
+    log_done
+
     # Dependencies
     log_step "Installing ${RED}DDS dependencies${NC}"
-    sudo aptitude -y install libtinyxml2-dev libyaml-cpp-dev libasio-dev \
-        liblz4-dev libzstd-dev libjsoncpp-dev >/dev/null 2>>$LOGFILE
+    sudo $PKG_MGR -y install tinyxml2-devel boost-devel yaml-cpp-devel yaml-cpp \
+        lz4-devel libzstd-devel json-devel >/dev/null 2>>$LOGFILE
+    log_done
+
+    # ASIO (not in standard repos)
+    log_step "Installing ${RED}ASIO${NC}"
+    cd /tmp >/dev/null 2>>$LOGFILE
+    wget https://ftp.rpmfind.net/linux/opensuse/ports/i586/tumbleweed/repo/oss/i586/asio-devel-1.30.2-1.3.i586.rpm --no-check-certificate >/dev/null 2>>$LOGFILE
+    sudo rpm -i --nodeps asio-devel-1.30.2-1.3.i586.rpm >/dev/null 2>>$LOGFILE || true
     log_done
 
     sudo mkdir -p /opt/Fast-DDS >/dev/null 2>>$LOGFILE
@@ -368,23 +455,19 @@ compile_orionld() {
 install_mongodb() {
     log_section "Installing MongoDB Server"
 
-    log_step "Installing gnupg and importing MongoDB GPG key"
-    sudo aptitude -y install gnupg >/dev/null 2>>$LOGFILE
-    echo -n "  "
-    wget -qO - https://www.mongodb.org/static/pgp/server-4.4.asc | sudo apt-key add -
-
-    log_step "Creating MongoDB repository list"
-    # Detect Ubuntu version
-    UBUNTU_CODENAME=$(lsb_release -cs)
-    echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu ${UBUNTU_CODENAME}/mongodb-org/4.4 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.4.list >/dev/null 2>>$LOGFILE
-    log_done
-
-    log_step "Updating package database"
-    sudo aptitude -y update >/dev/null 2>>$LOGFILE
+    log_step "Adding MongoDB repository"
+    cat <<EOF | sudo tee /etc/yum.repos.d/mongodb-org-4.4.repo >/dev/null 2>>$LOGFILE
+[mongodb-org-4.4]
+name=MongoDB Repository
+baseurl=https://repo.mongodb.org/yum/redhat/\$releasever/mongodb-org/4.4/x86_64/
+gpgcheck=1
+enabled=1
+gpgkey=https://www.mongodb.org/static/pgp/server-4.4.asc
+EOF
     log_done
 
     log_step "Installing MongoDB packages"
-    sudo aptitude -y install mongodb-org >/dev/null 2>>$LOGFILE
+    sudo $PKG_MGR -y install mongodb-org >/dev/null 2>>$LOGFILE
     log_done
 
     log_step "Starting MongoDB daemon"
@@ -405,7 +488,7 @@ install_unit_test_deps() {
     log_section "Installing Unit Test dependencies (gtest/gmock)"
 
     log_step "Installing ${RED}gdb${NC}"
-    sudo aptitude -y install gdb >/dev/null 2>>$LOGFILE
+    sudo $PKG_MGR -y install gdb >/dev/null 2>>$LOGFILE
     log_done
 
     log_step "Installing ${RED}gmock ${GMOCK_VERSION}${NC}"
@@ -425,17 +508,18 @@ install_unit_test_deps() {
 install_functional_test_deps() {
     log_section "Installing Functional Test dependencies"
 
-    log_step "Installing ${RED}netcat and bc${NC}"
-    sudo aptitude -y install netcat bc >/dev/null 2>>$LOGFILE
+    log_step "Installing ${RED}nc and bc${NC}"
+    sudo $PKG_MGR -y install nc bc >/dev/null 2>>$LOGFILE
     log_done
 
     log_step "Installing ${RED}python3-virtualenv${NC}"
-    sudo aptitude -y install python3-virtualenv >/dev/null 2>>$LOGFILE
+    sudo $PKG_MGR -y install python3-virtualenv >/dev/null 2>>$LOGFILE || \
+    pip3 install virtualenv >/dev/null 2>>$LOGFILE
     log_done
 
     log_step "Setting up ${RED}Python virtual environment${NC}"
     cd ~/git/context.Orion-LD >/dev/null 2>>$LOGFILE
-    virtualenv -p python3 .venv >/dev/null 2>>$LOGFILE
+    python3 -m virtualenv .venv >/dev/null 2>>$LOGFILE || virtualenv -p python3 .venv >/dev/null 2>>$LOGFILE
     . .venv/bin/activate >/dev/null 2>>$LOGFILE
     pip install -r scripts/requirements.txt >/dev/null 2>>$LOGFILE
     deactivate >/dev/null 2>>$LOGFILE
@@ -455,38 +539,28 @@ install_functional_test_deps() {
 }
 
 # ============================================================================
-# Main installation for Ubuntu
+# Main installation
 # ============================================================================
 
-Ubuntu20.04() {
-    Ubuntu_common
-}
-
-Ubuntu22.04() {
-    Ubuntu_common
-}
-
-Ubuntu24.04() {
-    Ubuntu_common
-}
-
-Ubuntu_common() {
-    log_section "Installing Orion-LD from source code"
+rpm_common() {
+    log_section "Installing Orion-LD from source code (RPM-based)"
     echo "Log file: $LOGFILE"
+    echo "Package manager: $PKG_MGR"
     echo ""
 
     # Ensure ~/git exists
     mkdir -p ~/git
 
     # Basic setup
-    install_aptitude
+    install_epel
     install_build_tools
     install_libraries
-    install_mongo_legacy_driver
 
     # Build dependencies from source
     log_section "Building dependencies from source"
+    install_mongo_legacy_driver
     install_mongo_c_driver
+    install_gnutls
     install_libmicrohttpd
     install_rapidjson
 
@@ -502,6 +576,10 @@ Ubuntu_common() {
     # Prometheus
     log_section "Installing Prometheus metrics support"
     install_prometheus_client
+
+    # PostgreSQL client
+    log_section "Installing PostgreSQL client"
+    install_postgres_client
 
     # DDS (optional)
     if [ "$INSTALL_DDS" = true ]; then
@@ -526,11 +604,14 @@ Ubuntu_common() {
         echo -e "\n${BLUE}Skipping test dependencies${NC} (use --with-tests to enable)\n"
     fi
 
+    # Update library cache
+    sudo ldconfig
+
     echo -e "\n${GREEN}Installation complete!${NC}\n"
     echo "You can now run: orionld -fg"
     echo ""
-    echo "Note: If you installed Prometheus client, you may need to set:"
-    echo "  export LD_LIBRARY_PATH=~/git/prometheus-client-c/prom/build:~/git/prometheus-client-c/promhttp/build"
+    echo "Note: You may need to set LD_LIBRARY_PATH:"
+    echo "  export LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:\$LD_LIBRARY_PATH"
     echo ""
 }
 
@@ -538,11 +619,15 @@ Ubuntu_common() {
 # Entry point
 # ============================================================================
 
-check_linux_version() {
-    distributor=$(lsb_release -a 2>/dev/null | grep Distributor | awk '{print $3}')
-    release=$(lsb_release -a 2>/dev/null | grep Release | awk '{print $2}')
-    version="${distributor}${release}"
-    echo $version
+check_linux_distro() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        echo "$ID"
+    elif [ -f /etc/redhat-release ]; then
+        echo "rhel"
+    else
+        echo "unknown"
+    fi
 }
 
 usage() {
@@ -554,9 +639,11 @@ usage() {
     echo "                python virtualenv for functional tests)"
     echo ""
     echo "Supported distributions:"
-    echo "  - Ubuntu 20.04"
-    echo "  - Ubuntu 22.04"
-    echo "  - Ubuntu 24.04"
+    echo "  - RHEL 8/9"
+    echo "  - CentOS 8 Stream"
+    echo "  - AlmaLinux 8/9"
+    echo "  - Rocky Linux 8/9"
+    echo "  - Fedora"
     echo ""
 }
 
@@ -583,14 +670,15 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-version=$(check_linux_version)
+distro=$(check_linux_distro)
 
-# Check if we have a function for this version
-if declare -f "$version" > /dev/null; then
-    eval $version
-else
-    echo "Unsupported distribution: $version"
-    echo ""
-    echo "Attempting generic Ubuntu installation..."
-    Ubuntu_common
-fi
+case $distro in
+    rhel|centos|almalinux|rocky|fedora)
+        rpm_common
+        ;;
+    *)
+        echo "Warning: Unrecognized distribution '$distro'"
+        echo "Attempting RPM-based installation anyway..."
+        rpm_common
+        ;;
+esac

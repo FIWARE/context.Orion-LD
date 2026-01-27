@@ -27,7 +27,7 @@ Log Summary
 
 --SHELL-INIT--
 dbInit CB
-brokerStart CB 0 IPv4 -logSummary 5
+orionldStart CB -ki -logSummary 2
 
 --SHELL--
 
@@ -44,13 +44,13 @@ brokerStart CB 0 IPv4 -logSummary 5
 # 02. POST /v2/entities with invalid JSON
 # 03. GETT /v2/entities - bad verb
 # 04. POST /v2/entities without payload
-# 05. Sleep 5 secs, awaiting a log summary report
+# 05. sleep 2 secs, awaiting a log summary report
 # 06. grep SUMMARY in log-file (4 transactions, 1 bad input)
 # 07. GET /v2/entities (just to clear out Bad Input)
-# 08. Sleep 5 secs, awaiting a second log summary
+# 08. sleep 2 secs, awaiting a second log summary
 # 09. grep SUMMARY in log-file (1 transaction and NO bad input since last time, also, Bad Input is no longer active)
 # 10. PUT /v2/noService
-# 11. Sleep 5 secs, awaiting a third log summary
+# 11. sleep 2 secs, awaiting a third log summary
 # 12. grep SUMMARY in log-file (1 transaction and one bad input since last time)
 #
 
@@ -83,16 +83,16 @@ echo
 echo
 
 
-echo "05. Sleep 5 secs, awaiting a log summary report"
+echo "05. sleep 2 secs, awaiting a log summary report"
 echo "==============================================="
-sleep 5
+sleep 2
 echo
 echo
 
 
-echo "06. grep SUMMARY in log-file (4 transactions, 1 bad input)"
-echo "=========================================================="
-egrep 'SUMMARY' /tmp/${BROKER}.log | awk -F'|' '{ print $10 }' | awk -F= '{ print $2 }' | sed 's/(/_/g' | sed 's/)/_/g'
+echo "06. grep log summary in log-file (4 transactions, 1 bad input)"
+echo "============================================================="
+egrep 'Transactions:|DB status:|Notification failure|Bad input' /tmp/Orion-LD.log | sed 's/^I: [0-9]*\.[0-9]*: logSummary.cpp\[[0-9]*\]: logSummary: //' | sed 's/[()]/_/g'
 echo
 echo
 
@@ -104,16 +104,16 @@ echo
 echo
 
 
-echo "08. Sleep 5 secs, awaiting a second log summary"
+echo "08. sleep 2 secs, awaiting a second log summary"
 echo "==============================================="
-sleep 5
+sleep 2
 echo
 echo
 
 
-echo "09. grep SUMMARY in log-file (1 transaction and NO bad input since last time, also, Bad Input is no longer active)"
-echo "=================================================================================================================="
-egrep 'SUMMARY' /tmp/${BROKER}.log | awk -F'|' '{ print $10 }' | awk -F= '{ print $2 }' | sed 's/(/_/g' | sed 's/)/_/g'
+echo "09. grep log summary in log-file (1 transaction and NO bad input since last time, also, Bad Input is no longer active)"
+echo "====================================================================================================================="
+egrep 'Transactions:|DB status:|Notification failure|Bad input' /tmp/Orion-LD.log | sed 's/^I: [0-9]*\.[0-9]*: logSummary.cpp\[[0-9]*\]: logSummary: //' | sed 's/[()]/_/g'
 echo
 echo
 
@@ -125,16 +125,16 @@ echo
 echo
 
 
-echo "11. Sleep 5 secs, awaiting a third log summary"
+echo "11. sleep 2 secs, awaiting a third log summary"
 echo "=============================================="
-sleep 5
+sleep 2
 echo
 echo
 
 
-echo "12. grep SUMMARY in log-file (1 transaction and one bad input since last time)"
-echo "=============================================================================="
-egrep 'SUMMARY' /tmp/${BROKER}.log | awk -F'|' '{ print $10 }' | awk -F= '{ print $2 }' | sed 's/(/_/g' | sed 's/)/_/g'
+echo "12. grep log summary in log-file (1 transaction and one bad input since last time)"
+echo "================================================================================="
+egrep 'Transactions:|DB status:|Notification failure|Bad input' /tmp/Orion-LD.log | sed 's/^I: [0-9]*\.[0-9]*: logSummary.cpp\[[0-9]*\]: logSummary: //' | sed 's/[()]/_/g'
 echo
 echo
 
@@ -198,12 +198,12 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 }
 
 
-05. Sleep 5 secs, awaiting a log summary report
+05. sleep 2 secs, awaiting a log summary report
 ===============================================
 
 
-06. grep SUMMARY in log-file (4 transactions, 1 bad input)
-==========================================================
+06. grep log summary in log-file (4 transactions, 1 bad input)
+=============================================================
 Transactions: REGEX((4 _new: 4_|5 _new: 5_))
 DB status: ok, raised: _total: 0, new: 0_, released: _total: 0, new: 0_
 Notification failure active alarms: 0, raised: _total: 0, new: 0_, released: _total: 0, new: 0_
@@ -221,12 +221,12 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 []
 
 
-08. Sleep 5 secs, awaiting a second log summary
+08. sleep 2 secs, awaiting a second log summary
 ===============================================
 
 
-09. grep SUMMARY in log-file (1 transaction and NO bad input since last time, also, Bad Input is no longer active)
-==================================================================================================================
+09. grep log summary in log-file (1 transaction and NO bad input since last time, also, Bad Input is no longer active)
+=====================================================================================================================
 Transactions: REGEX((4 _new: 4_|5 _new: 5_))
 DB status: ok, raised: _total: 0, new: 0_, released: _total: 0, new: 0_
 Notification failure active alarms: 0, raised: _total: 0, new: 0_, released: _total: 0, new: 0_
@@ -252,12 +252,12 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 }
 
 
-11. Sleep 5 secs, awaiting a third log summary
+11. sleep 2 secs, awaiting a third log summary
 ==============================================
 
 
-12. grep SUMMARY in log-file (1 transaction and one bad input since last time)
-==============================================================================
+12. grep log summary in log-file (1 transaction and one bad input since last time)
+=================================================================================
 Transactions: REGEX((4 _new: 4_|5 _new: 5_))
 DB status: ok, raised: _total: 0, new: 0_, released: _total: 0, new: 0_
 Notification failure active alarms: 0, raised: _total: 0, new: 0_, released: _total: 0, new: 0_

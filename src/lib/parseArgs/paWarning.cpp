@@ -27,7 +27,10 @@
 #include <string>                     /* std::string                         */
 
 #include "parseArgs/baStd.h"          /* BA_VEC_SIZE, ...                    */
-#include "logMsg/logMsg.h"            /* lmTraceSet                          */
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
 #include "parseArgs/paPrivate.h"      /* PaTypeUnion, config variables, ...  */
 #include "parseArgs/paTraceLevels.h"  /* LmtPaDefaultValues, ...             */
@@ -85,7 +88,7 @@ void paWarningAdd(PaSeverity severity, char* txt)
   paWarning[ix].string   = strdup(txt);
   paWarning[ix].severity = severity;
 
-  // LM_W((paWarning[ix].string));
+  // KT_W(paWarning[ix].string);
   ++ix;
 
   ++paWarnings;

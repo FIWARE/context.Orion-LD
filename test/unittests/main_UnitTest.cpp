@@ -34,7 +34,10 @@
 #include "parseArgs/paBuiltin.h"        // paLsHost, paLsPort
 #include "parseArgs/paIsSet.h"
 
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
 #undef _i
 #include "common/globals.h"
@@ -151,7 +154,7 @@ PaArgument paArgs[] =
 */
 void exitFunction(int code, const std::string& reason)
 {
-  LM_E(("Orion library asks to exit %d: '%s', but no exit is allowed inside unit tests", code, reason.c_str()));
+  KT_E("Orion library asks to exit %d: '%s', but no exit is allowed inside unit tests", code, reason.c_str());
 }
 
 
@@ -175,7 +178,7 @@ int main(int argC, char** argV)
 
   paParse(paArgs, argC, (char**) argV, 1, false);
 
-  LM_M(("Init tests"));
+  KT_V("Init tests");
   orionldTenantInit();
   orionInit(exitFunction, orionUnitTestVersion, SemReadWriteOp, false, false, false, false, false);
   // Note that multitenancy and mutex time stats are disabled for unit test mongo init
@@ -190,7 +193,7 @@ int main(int argC, char** argV)
   orionldState.uriParams.offset = 0;
   orionldState.uriParams.limit = 0;
 
-  LM_M(("Run all tests"));
+  KT_V("Run all tests");
   ::testing::InitGoogleMock(&argC, argV);
   return RUN_ALL_TESTS();
 }
