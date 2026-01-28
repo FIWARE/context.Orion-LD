@@ -205,7 +205,9 @@ KjNode* mongocRelationshipsGet(const char* entityName)
 
   // create 'referencedBy' array
   typeArray = kjObject(orionldState.kjsonP, "referencedBy");
-
+  if (typeArray == NULL)
+    KT_X(1, "Internal Error (creating 'referencedBy' array): kjObject: out of memory");
+  
   // fill 'referencedBy' array if we have relationships
   if (kjTypeArray != NULL)
     relExtractFromMongo(kjTypeArray, typeArray);
