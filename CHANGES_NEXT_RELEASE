@@ -17,23 +17,27 @@
   - Added scripts for automated instllation (both for apt and rpm) as an alternative to the installation guides,
     and added a note about these scripts in the beginning of the installation guides
 
-## Functional Test Suite
-  - Fixed functional test notification_different_sizes.test (added -ki flag for KT_I messages, sed to strip ktrace prefix)
-  - Fixed functional test dds_prepopulate_entity-II.test (added sleep for DDS timing)
-  - Improved broker startup error detection in test harness (polls for port, checks for E:/X: errors)
-  - Improved SHELL-INIT error display formatting in test harness
-
 ## DDS
-  - New CLI option for dds: -ddsOnCreate  (publish new attribute on DDS - it's OFF by default)
-  - Added DDS support for Entity Creation (if enabled via CLI -ddsOnCreate - off by default)
-  - Added DDS support for Batch Create (if enabled via CLI -ddsOnCreate)
-  - Added DDS support for Batch Upsert (for already existing attributes - all attrs if -ddsPublishOnCreate)
+  - Added DDS support for Batch Upsert
   - Improved the experimental support for DDS Services - Orion-LD can act as a client to invoke DDS/ROS2 services via entity attribute updates
 
 ## Library version updates
 N/A
 
-## Multi-Attribute (datasetId)
+## Multi-Attributes (datasetId)
 N/A
 
 ## Notes
+### Functional Test Suite (for implementors)
+  - Fixed functional test notification_different_sizes.test (added -ki flag for KT_I messages, sed to strip ktrace prefix)
+  - Fixed functional test dds_prepopulate_entity-II.test (added sleep for DDS timing)
+  - Improved broker startup error detection in test harness (polls for port, checks for E:/X: errors)
+  - Improved SHELL-INIT error display formatting in test harness
+
+### DDS
+  Orion-LD, at least for now, does not add DDS types/topics to the DDS system.
+  Meaning, new attributes are not pushed to DDS, ever.
+  However, this possible future feature has been prepared, under an if that always evaluates to false.
+  - Prepared DDS support for Entity Creation
+  - Prepared DDS support for Batch Create
+  - Prepared DDS support for Batch Upsert (the new entities/attributes)   
