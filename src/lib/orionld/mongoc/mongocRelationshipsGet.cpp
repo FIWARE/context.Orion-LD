@@ -202,11 +202,13 @@ KjNode* mongocRelationshipsGet(const char* entityName)
 
   // extract infos from the mongo response to the final response format
   KjNode* typeArray = NULL;
+
+  // create 'referencedBy' array
+  typeArray = kjObject(orionldState.kjsonP, "referencedBy");
+
+  // fill 'referencedBy' array if we have relationships
   if (kjTypeArray != NULL)
-  {
-    typeArray = kjObject(orionldState.kjsonP, "referencedBy");
     relExtractFromMongo(kjTypeArray, typeArray);
-  }
 
   return typeArray;
 }
