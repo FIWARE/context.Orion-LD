@@ -27,8 +27,11 @@
 
 #include "mongo/client/dbclient.h"
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+#include "orionld/common/traceLevels.h"
 
 #include "orionld/common/tenantList.h"     // tenant0
 
@@ -272,14 +275,14 @@ static void prepareDatabase(bool useSubCache = true)
                       "attrs" << BSON_ARRAY("A1" << "A3" << "A4") <<
                       "conditions" << BSON_ARRAY("A1" << "A2" << "A4" << "A5"));
 
-  LM_M(("Creating 5 entities"));
+  KT_V("Creating 5 entities");
   connection->insert(ENTITIES_COLL, en1);
   connection->insert(ENTITIES_COLL, en2);
   connection->insert(ENTITIES_COLL, en3);
   connection->insert(ENTITIES_COLL, en4);
   connection->insert(ENTITIES_COLL, en5);
 
-  LM_M(("Creating 5 subscriptions"));
+  KT_V("Creating 5 subscriptions");
   connection->insert(SUBSCRIBECONTEXT_COLL, sub1);
   connection->insert(SUBSCRIBECONTEXT_COLL, sub2);
   connection->insert(SUBSCRIBECONTEXT_COLL, sub3);

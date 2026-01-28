@@ -26,8 +26,10 @@
 #include <vector>
 #include <map>
 
-#include "logMsg/traceLevels.h"
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 #include "ngsi10/QueryContextResponse.h"
 #include "apiTypesV2/Entities.h"
 

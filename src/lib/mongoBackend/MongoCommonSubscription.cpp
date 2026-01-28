@@ -28,10 +28,14 @@
 
 #include "mongo/client/dbclient.h"
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"                                // trace messages - ktrace library
+}
 
 #include "orionld/types/OrionldTenant.h"                       // OrionldTenant
+
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/types/Verb.h"                                // Verb, verbToString
 
 #include "common/defaultValues.h"
@@ -67,7 +71,7 @@ std::string setNewSubscriptionId(BSONObjBuilder* b)
   oid.init();
   b->append("_id", oid);
 
-  LM_T(LmtLegacy, ("Subscription _id: %s", oid.toString().c_str()));
+  KT_T(KtLegacy, "Subscription _id: %s", oid.toString().c_str());
   return oid.toString();
 }
 
@@ -80,7 +84,7 @@ std::string setNewSubscriptionId(BSONObjBuilder* b)
 void setExpiration(const Subscription& sub, BSONObjBuilder* b)
 {
   b->append(CSUB_EXPIRATION, sub.expires);
-  LM_T(LmtLegacy, ("Subscription expiration: %lu", sub.expires));
+  KT_T(KtLegacy, "Subscription expiration: %lu", sub.expires);
 }
 
 
@@ -96,7 +100,7 @@ static void setCustomHttpInfo(const HttpInfo& httpInfo, BSONObjBuilder* b)
     std::string method = verbToString(httpInfo.verb);
 
     b->append(CSUB_METHOD, method);
-    LM_T(LmtLegacy, ("Subscription method: %s", method.c_str()));
+    KT_T(KtLegacy, "Subscription method: %s", method.c_str());
   }
 
   if (httpInfo.headers.size() > 0)
@@ -110,7 +114,7 @@ static void setCustomHttpInfo(const HttpInfo& httpInfo, BSONObjBuilder* b)
     BSONObj headersObj = headersBuilder.obj();
 
     b->append(CSUB_HEADERS, headersObj);
-    LM_T(LmtLegacy, ("Subscription headers: %s", headersObj.toString().c_str()));
+    KT_T(KtLegacy, "Subscription headers: %s", headersObj.toString().c_str());
   }
 
   if (httpInfo.qs.size() > 0)
@@ -125,13 +129,13 @@ static void setCustomHttpInfo(const HttpInfo& httpInfo, BSONObjBuilder* b)
     BSONObj qsObj = qsBuilder.obj();
 
     b->append(CSUB_QS, qsObj);
-    LM_T(LmtLegacy, ("Subscription qs: %s", qsObj.toString().c_str()));
+    KT_T(KtLegacy, "Subscription qs: %s", qsObj.toString().c_str());
   }
 
   if (httpInfo.payload != "")
   {
     b->append(CSUB_PAYLOAD, httpInfo.payload);
-    LM_T(LmtLegacy, ("Subscription payload: %s", httpInfo.payload.c_str()));
+    KT_T(KtLegacy, "Subscription payload: %s", httpInfo.payload.c_str());
   }
 }
 
@@ -188,7 +192,7 @@ void setHttpInfo(const Subscription& sub, BSONObjBuilder* b)
 void setThrottling(const Subscription& sub, BSONObjBuilder* b)
 {
   b->append(CSUB_THROTTLING, sub.throttling);
-  LM_T(LmtLegacy, ("Subscription throttling: %f", sub.throttling));
+  KT_T(KtLegacy, "Subscription throttling: %f", sub.throttling);
 }
 
 
@@ -200,7 +204,7 @@ void setThrottling(const Subscription& sub, BSONObjBuilder* b)
 void setServicePath(const char* servicePath, BSONObjBuilder* b)
 {
   b->append(CSUB_SERVICE_PATH, servicePath);
-  LM_T(LmtLegacy, ("Subscription servicePath: %s", servicePath));
+  KT_T(KtLegacy, "Subscription servicePath: %s", servicePath);
 }
 
 
@@ -214,7 +218,7 @@ void setDescription(const Subscription& sub, BSONObjBuilder* b)
   if (sub.description != "")
   {
     b->append(CSUB_DESCRIPTION, sub.description);
-    LM_T(LmtLegacy, ("Subscription description: %s", sub.description.c_str()));
+    KT_T(KtLegacy, "Subscription description: %s", sub.description.c_str());
   }
 }
 
@@ -229,7 +233,7 @@ void setStatus(const Subscription& sub, BSONObjBuilder* b)
   std::string  status = (sub.status == "")? STATUS_ACTIVE : sub.status;
 
   b->append(CSUB_STATUS, status);
-  LM_T(LmtLegacy, ("Subscription status: %s", status.c_str()));
+  KT_T(KtLegacy, "Subscription status: %s", status.c_str());
 }
 
 
@@ -290,7 +294,7 @@ void setEntities(const Subscription& sub, BSONObjBuilder* b)
   BSONArray entitiesArr = entities.arr();
 
   b->append(CSUB_ENTITIES, entitiesArr);
-  LM_T(LmtLegacy, ("Subscription entities: %s", entitiesArr.toString().c_str()));
+  KT_T(KtLegacy, "Subscription entities: %s", entitiesArr.toString().c_str());
 }
 
 
@@ -310,7 +314,7 @@ void setAttrs(const Subscription& sub, BSONObjBuilder* b)
 
   BSONArray attrsArr = attrs.arr();
   b->append(CSUB_ATTRS, attrsArr);
-  LM_T(LmtLegacy, ("Subscription attributes: %s", attrsArr.toString().c_str()));
+  KT_T(KtLegacy, "Subscription attributes: %s", attrsArr.toString().c_str());
 }
 
 
@@ -364,7 +368,7 @@ void setCondsAndInitialNotify
                                             blacklist);
 
   b->append(CSUB_CONDITIONS, conds);
-  LM_T(LmtLegacy, ("Subscription conditions: %s", conds.toString().c_str()));
+  KT_T(KtLegacy, "Subscription conditions: %s", conds.toString().c_str());
 }
 
 
@@ -376,7 +380,7 @@ void setCondsAndInitialNotify
 void setLastNotification(double lastNotification, BSONObjBuilder* b)
 {
   b->append(CSUB_LASTNOTIFICATION, lastNotification);
-  LM_T(LmtLegacy, ("Subscription lastNotification: %f", lastNotification));
+  KT_T(KtLegacy, "Subscription lastNotification: %f", lastNotification);
 }
 
 
@@ -388,7 +392,7 @@ void setLastNotification(double lastNotification, BSONObjBuilder* b)
 void setCount(long long count, BSONObjBuilder* b)
 {
   b->append(CSUB_COUNT, count);
-  LM_T(LmtLegacy, ("Subscription count: %lu", count));
+  KT_T(KtLegacy, "Subscription count: %lu", count);
 }
 
 
@@ -400,7 +404,7 @@ void setCount(long long count, BSONObjBuilder* b)
 void setLastFailure(double lastFailure, BSONObjBuilder* b)
 {
   b->append(CSUB_LASTFAILURE, lastFailure);
-  LM_T(LmtLegacy, ("Subscription lastFailure: %f", lastFailure));
+  KT_T(KtLegacy, "Subscription lastFailure: %f", lastFailure);
 }
 
 
@@ -412,7 +416,7 @@ void setLastFailure(double lastFailure, BSONObjBuilder* b)
 void setLastSuccess(double lastSuccess, BSONObjBuilder* b)
 {
   b->append(CSUB_LASTSUCCESS, lastSuccess);
-  LM_T(LmtLegacy, ("Subscription lastSuccess: %lu", lastSuccess));
+  KT_T(KtLegacy, "Subscription lastSuccess: %lu", lastSuccess);
 }
 
 
@@ -431,7 +435,7 @@ void setExpression(const Subscription& sub, BSONObjBuilder* b)
                             "geoproperty"    << sub.subject.condition.expression.geoproperty);
 
   b->append(CSUB_EXPR, expression);
-  LM_T(LmtLegacy, ("Subscription expression: %s", expression.toString().c_str()));
+  KT_T(KtLegacy, "Subscription expression: %s", expression.toString().c_str());
 }
 
 
@@ -445,7 +449,7 @@ void setFormat(const Subscription& sub, BSONObjBuilder* b)
   std::string format = renderFormatToString(sub.attrsFormat);
 
   b->append(CSUB_FORMAT, format);
-  LM_T(LmtLegacy, ("Subscription format: %s", format.c_str()));
+  KT_T(KtLegacy, "Subscription format: %s", format.c_str());
 }
 
 
@@ -459,7 +463,7 @@ void setBlacklist(const Subscription& sub, BSONObjBuilder* b)
   bool bl = sub.notification.blacklist;
 
   b->append(CSUB_BLACKLIST, bl);
-  LM_T(LmtLegacy, ("Subscription blacklist: %s", bl ? "true" : "false"));
+  KT_T(KtLegacy, "Subscription blacklist: %s", bl ? "true" : "false");
 }
 
 
@@ -480,7 +484,7 @@ void setMetadata(const Subscription& sub, BSONObjBuilder* b)
   BSONArray metadataArr = metadata.arr();
 
   b->append(CSUB_METADATA, metadataArr);
-  LM_T(LmtLegacy, ("Subscription metadata: %s", metadataArr.toString().c_str()));
+  KT_T(KtLegacy, "Subscription metadata: %s", metadataArr.toString().c_str());
 }
 
 
@@ -532,7 +536,7 @@ void setName(const ngsiv2::Subscription& sub, mongo::BSONObjBuilder* bobP)
   if (sub.name != "")
   {
     bobP->append(CSUB_NAME, sub.name);
-    LM_T(LmtLegacy, ("Subscription name: %s", sub.name.c_str()));
+    KT_T(KtLegacy, "Subscription name: %s", sub.name.c_str());
   }
 }
 
@@ -545,7 +549,7 @@ void setName(const ngsiv2::Subscription& sub, mongo::BSONObjBuilder* bobP)
 void setMimeType(const ngsiv2::Subscription& sub, mongo::BSONObjBuilder* bobP)
 {
   bobP->append(CSUB_MIMETYPE, sub.notification.httpInfo.mimeType);
-  LM_T(LmtLegacy, ("Subscription mimeType: %s", mimeTypeToLongString(sub.notification.httpInfo.mimeType)));
+  KT_T(KtLegacy, "Subscription mimeType: %s", mimeTypeToLongString(sub.notification.httpInfo.mimeType));
 }
 
 
@@ -559,7 +563,7 @@ void setCsf(const ngsiv2::Subscription& sub, mongo::BSONObjBuilder* bobP)
   if (sub.csf != "")
   {
     bobP->append("csf", sub.csf);
-    LM_T(LmtLegacy, ("Subscription CSF: %s", sub.csf.c_str()));
+    KT_T(KtLegacy, "Subscription CSF: %s", sub.csf.c_str());
   }
 }
 

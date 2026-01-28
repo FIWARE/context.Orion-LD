@@ -25,8 +25,12 @@
 #include <string>
 #include <vector>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+
+#include "orionld/common/traceLevels.h"
 
 #include "orionld/common/orionldState.h"             // orionldState
 
@@ -48,7 +52,7 @@
 */
 static std::string contextElement(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("new contextElement"));
+  KT_T(KtLegacy, "new contextElement");
   reqDataP->upcr.ceP = new ContextElement();
 
   reqDataP->upcr.res.contextElementVector.push_back(reqDataP->upcr.ceP);
@@ -70,7 +74,7 @@ static std::string contextElement(const std::string& path, const std::string& va
 static std::string entityIdId(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
   reqDataP->upcr.ceP->entityId.id = value;
-  LM_T(LmtLegacy, ("Set 'id' to '%s' for an entity", reqDataP->upcr.ceP->entityId.id.c_str()));
+  KT_T(KtLegacy, "Set 'id' to '%s' for an entity", reqDataP->upcr.ceP->entityId.id.c_str());
 
   return "OK";
 }
@@ -84,7 +88,7 @@ static std::string entityIdId(const std::string& path, const std::string& value,
 static std::string entityIdType(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
   reqDataP->upcr.ceP->entityId.type = value;
-  LM_T(LmtLegacy, ("Set 'type' to '%s' for an entity", reqDataP->upcr.ceP->entityId.type.c_str()));
+  KT_T(KtLegacy, "Set 'type' to '%s' for an entity", reqDataP->upcr.ceP->entityId.type.c_str());
 
   return "OK";
 }
@@ -97,7 +101,7 @@ static std::string entityIdType(const std::string& path, const std::string& valu
 */
 static std::string entityIdIsPattern(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Got an entityId:isPattern: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got an entityId:isPattern: '%s'", value.c_str());
 
   reqDataP->upcr.ceP->entityId.isPattern = value;
 
@@ -113,7 +117,7 @@ static std::string entityIdIsPattern(const std::string& path, const std::string&
 static std::string attributeDomainName(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
   reqDataP->upcr.ceP->attributeDomainName.set(value);
-  LM_T(LmtLegacy, ("Got an attributeDomainName: '%s'", reqDataP->upcr.ceP->attributeDomainName.get().c_str()));
+  KT_T(KtLegacy, "Got an attributeDomainName: '%s'", reqDataP->upcr.ceP->attributeDomainName.get().c_str());
 
   return "OK";
 }
@@ -126,7 +130,7 @@ static std::string attributeDomainName(const std::string& path, const std::strin
 */
 static std::string attribute(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("%s: %s", path.c_str(), value.c_str()));
+  KT_T(KtLegacy, "%s: %s", path.c_str(), value.c_str());
 
   reqDataP->upcr.attributeP = new ContextAttribute("", "", "");
   reqDataP->upcr.attributeP->valueType = orion::ValueTypeNotGiven;
@@ -144,7 +148,7 @@ static std::string attribute(const std::string& path, const std::string& value, 
 static std::string attributeName(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
   reqDataP->upcr.attributeP->name = value;
-  LM_T(LmtLegacy, ("Set 'name' to '%s' for a contextElement Attribute", reqDataP->upcr.attributeP->name.c_str()));
+  KT_T(KtLegacy, "Set 'name' to '%s' for a contextElement Attribute", reqDataP->upcr.attributeP->name.c_str());
 
   return "OK";
 }
@@ -158,7 +162,7 @@ static std::string attributeName(const std::string& path, const std::string& val
 static std::string attributeType(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
   reqDataP->upcr.attributeP->type = value;
-  LM_T(LmtLegacy, ("Set 'type' to '%s' for a contextElement attribute", reqDataP->upcr.attributeP->type.c_str()));
+  KT_T(KtLegacy, "Set 'type' to '%s' for a contextElement attribute", reqDataP->upcr.attributeP->type.c_str());
 
   return "OK";
 }
@@ -172,11 +176,11 @@ static std::string attributeType(const std::string& path, const std::string& val
 static std::string attributeValue(const std::string& path, const std::string& value, ParseData* parseDataP)
 {
   parseDataP->lastContextAttribute = parseDataP->upcr.attributeP;
-  LM_T(LmtLegacy, ("Set parseDataP->lastContextAttribute to: %p", parseDataP->lastContextAttribute));
+  KT_T(KtLegacy, "Set parseDataP->lastContextAttribute to: %p", parseDataP->lastContextAttribute);
 
   parseDataP->upcr.attributeP->stringValue = value;
   parseDataP->upcr.attributeP->valueType = orion::ValueTypeString;
-  LM_T(LmtLegacy, ("Set value to '%s' for a contextElement attribute", parseDataP->upcr.attributeP->stringValue.c_str()));
+  KT_T(KtLegacy, "Set value to '%s' for a contextElement attribute", parseDataP->upcr.attributeP->stringValue.c_str());
 
   return "OK";
 }
@@ -189,7 +193,7 @@ static std::string attributeValue(const std::string& path, const std::string& va
 */
 static std::string metadata(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Creating a metadata"));
+  KT_T(KtLegacy, "Creating a metadata");
 
   reqDataP->upcr.contextMetadataP = new Metadata();
   reqDataP->upcr.attributeP->metadataVector.push_back(reqDataP->upcr.contextMetadataP);
@@ -205,7 +209,7 @@ static std::string metadata(const std::string& path, const std::string& value, P
 */
 static std::string metadataName(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Got a metadata name: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got a metadata name: '%s'", value.c_str());
   reqDataP->upcr.contextMetadataP->name = value;
 
   return "OK";
@@ -219,7 +223,7 @@ static std::string metadataName(const std::string& path, const std::string& valu
 */
 static std::string metadataType(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Got a metadata type: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got a metadata type: '%s'", value.c_str());
   reqDataP->upcr.contextMetadataP->type = value;
 
   return "OK";
@@ -233,7 +237,7 @@ static std::string metadataType(const std::string& path, const std::string& valu
 */
 static std::string metadataValue(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Got a metadata value: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got a metadata value: '%s'", value.c_str());
   reqDataP->upcr.contextMetadataP->stringValue = value;
   reqDataP->upcr.contextMetadataP->valueType = orion::ValueTypeString;
   return "OK";
@@ -247,7 +251,7 @@ static std::string metadataValue(const std::string& path, const std::string& val
 */
 static std::string domainMetadata(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Creating a reg metadata"));
+  KT_T(KtLegacy, "Creating a reg metadata");
 
   reqDataP->upcr.domainMetadataP = new Metadata();
   reqDataP->upcr.ceP->domainMetadataVector.push_back(reqDataP->upcr.domainMetadataP);
@@ -263,7 +267,7 @@ static std::string domainMetadata(const std::string& path, const std::string& va
 */
 static std::string domainMetadataName(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Got a reg metadata name: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got a reg metadata name: '%s'", value.c_str());
   reqDataP->upcr.domainMetadataP->name = value;
 
   return "OK";
@@ -277,7 +281,7 @@ static std::string domainMetadataName(const std::string& path, const std::string
 */
 static std::string domainMetadataType(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Got a reg metadata type: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got a reg metadata type: '%s'", value.c_str());
   reqDataP->upcr.domainMetadataP->type = value;
 
   return "OK";
@@ -291,7 +295,7 @@ static std::string domainMetadataType(const std::string& path, const std::string
 */
 static std::string domainMetadataValue(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Got a reg metadata value: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got a reg metadata value: '%s'", value.c_str());
   reqDataP->upcr.domainMetadataP->stringValue = value;
   reqDataP->upcr.domainMetadataP->valueType = orion::ValueTypeString;
   return "OK";
@@ -305,7 +309,7 @@ static std::string domainMetadataValue(const std::string& path, const std::strin
 */
 static std::string updateAction(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Got an updateAction: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got an updateAction: '%s'", value.c_str());
   reqDataP->upcr.res.updateActionType = parseActionTypeV1(value);
 
   return "OK";

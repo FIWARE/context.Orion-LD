@@ -25,8 +25,12 @@
 #include <exception>
 #include <string>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+
+#include "orionld/common/traceLevels.h"
 
 #include "orionld/common/orionldState.h"                    // orionldState
 
@@ -199,7 +203,7 @@ std::string jsonTreat
     return "OK";
   }
 
-  LM_T(LmtLegacy, ("Treating a JSON request: '%s'", content));
+  KT_T(KtLegacy, "Treating a JSON request: '%s'", content);
 
   if (reqP == NULL)
   {
@@ -220,7 +224,7 @@ std::string jsonTreat
     *reqPP = reqP;
   }
 
-  LM_T(LmtLegacy, ("Treating '%s' request", reqP->keyword.c_str()));
+  KT_T(KtLegacy, "Treating '%s' request", reqP->keyword.c_str());
 
   reqP->init(parseDataP);
 
@@ -261,7 +265,7 @@ std::string jsonTreat
   {
     orion::compoundValueEnd(ciP, parseDataP);
   }
-  if ((lmTraceIsSet(LmtLegacy)) && (compoundInfo.compoundValueP != NULL))
+  if ((ktTraceIsSet(KtLegacy)) && (compoundInfo.compoundValueP != NULL))
   {
     compoundInfo.compoundValueP->shortShow("after parse: ");
   }

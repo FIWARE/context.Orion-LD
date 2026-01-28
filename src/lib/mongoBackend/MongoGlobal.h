@@ -33,11 +33,15 @@
 
 #include "mongo/client/dbclient.h"
 
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
 #include "orionld/types/ApiVersion.h"
 
 #include "rest/uriParamNames.h"                // Default values for URI parameters
+#include "common/limits.h"                     // DEFAULT_PAGINATION_LIMIT_INT
 #include "common/RenderFormat.h"
 #include "ngsi/EntityId.h"
 #include "ngsi/ContextRegistrationAttribute.h"

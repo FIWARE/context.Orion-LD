@@ -27,8 +27,6 @@
 #include <vector>
 #include <map>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
 #include "common/globals.h"
 #include "common/sem.h"
 #include "common/limits.h"

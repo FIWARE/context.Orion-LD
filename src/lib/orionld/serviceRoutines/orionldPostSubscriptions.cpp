@@ -104,7 +104,7 @@ SubordinateSubscription* subordinateCreate(CachedSubscription* cSubP, RegCacheIt
 
   for (SubordinateSubscription* subordinateP = cSubP->subordinateP; subordinateP != NULL; subordinateP = subordinateP->next)
   {
-    runNo = MAX(runNo, subordinateP->runNo) + 1;
+    runNo = K_MAX(runNo, subordinateP->runNo) + 1;
   }
 
   //

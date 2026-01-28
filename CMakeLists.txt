@@ -260,7 +260,6 @@ SET (ORION_LIBS
     metricsMgr
     logSummary
     orionld_prometheus
-    lm
     pa
 )
 
@@ -368,7 +367,6 @@ endif (UNIT_TEST)
 #
 if (error EQUAL 0)
   MESSAGE("cmake: OK")
-  ADD_SUBDIRECTORY(src/lib/logMsg)
   ADD_SUBDIRECTORY(src/lib/parseArgs)
   ADD_SUBDIRECTORY(src/lib/common)
   ADD_SUBDIRECTORY(src/lib/orionTypes)

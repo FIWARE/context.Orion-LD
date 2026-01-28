@@ -25,8 +25,12 @@
 #include <string>
 #include <vector>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+
+#include "orionld/common/traceLevels.h"
 
 #include "orionld/common/orionldState.h"             // orionldState
 
@@ -52,7 +56,7 @@ static std::string contextRegistration(const std::string& path, const std::strin
   // LM_T(LmtLegacy, ("%s: %s", path.c_str(), value.c_str()));
 
   reqDataP->rcr.res.contextRegistrationVector.push_back(reqDataP->rcr.crP);
-  LM_T(LmtLegacy, ("%s: %s", path.c_str(), value.c_str()));
+  KT_T(KtLegacy, "%s: %s", path.c_str(), value.c_str());
 
   return "OK";
 }
@@ -65,7 +69,7 @@ static std::string contextRegistration(const std::string& path, const std::strin
 */
 static std::string entityId(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("%s: %s", path.c_str(), value.c_str()));
+  KT_T(KtLegacy, "%s: %s", path.c_str(), value.c_str());
 
   reqDataP->rcr.entityIdP = new EntityId();
 
@@ -87,7 +91,7 @@ static std::string entityId(const std::string& path, const std::string& value, P
 static std::string entityIdId(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
   reqDataP->rcr.entityIdP->id = value;
-  LM_T(LmtLegacy, ("Set 'id' to '%s' for an entity", reqDataP->rcr.entityIdP->id.c_str()));
+  KT_T(KtLegacy, "Set 'id' to '%s' for an entity", reqDataP->rcr.entityIdP->id.c_str());
 
   return "OK";
 }
@@ -101,7 +105,7 @@ static std::string entityIdId(const std::string& path, const std::string& value,
 static std::string entityIdType(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
   reqDataP->rcr.entityIdP->type = value;
-  LM_T(LmtLegacy, ("Set 'type' to '%s' for an entity", reqDataP->rcr.entityIdP->type.c_str()));
+  KT_T(KtLegacy, "Set 'type' to '%s' for an entity", reqDataP->rcr.entityIdP->type.c_str());
 
   return "OK";
 }
@@ -114,7 +118,7 @@ static std::string entityIdType(const std::string& path, const std::string& valu
 */
 static std::string entityIdIsPattern(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Got an entityId:isPattern: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got an entityId:isPattern: '%s'", value.c_str());
 
   if (!isTrue(value) && !isFalse(value))
   {
@@ -139,7 +143,7 @@ static std::string entityIdIsPattern(const std::string& path, const std::string&
 */
 static std::string crAttribute(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("%s: %s", path.c_str(), value.c_str()));
+  KT_T(KtLegacy, "%s: %s", path.c_str(), value.c_str());
 
   reqDataP->rcr.attributeP = new ContextRegistrationAttribute("", "");
   reqDataP->rcr.crP->contextRegistrationAttributeVector.push_back(reqDataP->rcr.attributeP);
@@ -156,7 +160,7 @@ static std::string crAttribute(const std::string& path, const std::string& value
 static std::string craName(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
   reqDataP->rcr.attributeP->name = value;
-  LM_T(LmtLegacy, ("Set 'name' to '%s' for a contextRegistrationAttribute", reqDataP->rcr.attributeP->name.c_str()));
+  KT_T(KtLegacy, "Set 'name' to '%s' for a contextRegistrationAttribute", reqDataP->rcr.attributeP->name.c_str());
 
   return "OK";
 }
@@ -170,7 +174,7 @@ static std::string craName(const std::string& path, const std::string& value, Pa
 static std::string craType(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
   reqDataP->rcr.attributeP->type = value;
-  LM_T(LmtLegacy, ("Set 'type' to '%s' for a contextRegistrationAttribute", reqDataP->rcr.attributeP->type.c_str()));
+  KT_T(KtLegacy, "Set 'type' to '%s' for a contextRegistrationAttribute", reqDataP->rcr.attributeP->type.c_str());
 
   return "OK";
 }
@@ -189,8 +193,7 @@ static std::string craIsDomain(const std::string& path, const std::string& value
   }
 
   reqDataP->rcr.attributeP->isDomain = value;
-  LM_T(LmtLegacy, ("Set 'isDomain' to '%s' for a contextRegistrationAttribute",
-                  reqDataP->rcr.attributeP->isDomain.c_str()));
+  KT_T(KtLegacy, "Set 'isDomain' to '%s' for a contextRegistrationAttribute", reqDataP->rcr.attributeP->isDomain.c_str());
 
   return "OK";
 }
@@ -203,7 +206,7 @@ static std::string craIsDomain(const std::string& path, const std::string& value
 */
 static std::string craMetadata(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Creating a metadata"));
+  KT_T(KtLegacy, "Creating a metadata");
 
   reqDataP->rcr.attributeMetadataP = new Metadata();
   reqDataP->rcr.attributeP->metadataVector.push_back(reqDataP->rcr.attributeMetadataP);
@@ -219,7 +222,7 @@ static std::string craMetadata(const std::string& path, const std::string& value
 */
 static std::string craMetadataName(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Got a metadata name: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got a metadata name: '%s'", value.c_str());
   reqDataP->rcr.attributeMetadataP->name = value;
 
   return "OK";
@@ -233,7 +236,7 @@ static std::string craMetadataName(const std::string& path, const std::string& v
 */
 static std::string craMetadataType(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Got a metadata type: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got a metadata type: '%s'", value.c_str());
   reqDataP->rcr.attributeMetadataP->type = value;
 
   return "OK";
@@ -247,7 +250,7 @@ static std::string craMetadataType(const std::string& path, const std::string& v
 */
 static std::string craMetadataValue(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Got a metadata value: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got a metadata value: '%s'", value.c_str());
   reqDataP->rcr.attributeMetadataP->stringValue = value;
   reqDataP->rcr.attributeMetadataP->valueType = orion::ValueTypeString;
 
@@ -262,7 +265,7 @@ static std::string craMetadataValue(const std::string& path, const std::string& 
 */
 static std::string regMetadata(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Creating a reg metadata"));
+  KT_T(KtLegacy, "Creating a reg metadata");
 
   reqDataP->rcr.registrationMetadataP = new Metadata();
   reqDataP->rcr.crP->registrationMetadataVector.push_back(reqDataP->rcr.registrationMetadataP);
@@ -278,7 +281,7 @@ static std::string regMetadata(const std::string& path, const std::string& value
 */
 static std::string regMetadataName(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Got a reg metadata name: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got a reg metadata name: '%s'", value.c_str());
   reqDataP->rcr.registrationMetadataP->name = value;
 
   return "OK";
@@ -292,7 +295,7 @@ static std::string regMetadataName(const std::string& path, const std::string& v
 */
 static std::string regMetadataType(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Got a reg metadata type: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got a reg metadata type: '%s'", value.c_str());
   reqDataP->rcr.registrationMetadataP->type = value;
 
   return "OK";
@@ -306,7 +309,7 @@ static std::string regMetadataType(const std::string& path, const std::string& v
 */
 static std::string regMetadataValue(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Got a reg metadata value: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got a reg metadata value: '%s'", value.c_str());
   reqDataP->rcr.registrationMetadataP->stringValue = value;
   reqDataP->rcr.registrationMetadataP->valueType = orion::ValueTypeString;
   return "OK";
@@ -320,7 +323,7 @@ static std::string regMetadataValue(const std::string& path, const std::string& 
 */
 static std::string providingApplication(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Got a providing application: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got a providing application: '%s'", value.c_str());
   reqDataP->rcr.crP->providingApplication.set(value);
 
   return "OK";
@@ -334,9 +337,9 @@ static std::string providingApplication(const std::string& path, const std::stri
 */
 static std::string duration(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Got a duration: '%s'. Saving in %p", value.c_str(), &reqDataP->rcr.res.duration));
+  KT_T(KtLegacy, "Got a duration: '%s'. Saving in %p", value.c_str(), &reqDataP->rcr.res.duration);
   reqDataP->rcr.res.duration.set(value);
-  LM_T(LmtLegacy, ("Got a duration: SAVED!"));
+  KT_T(KtLegacy, "Got a duration: SAVED!");
   return "OK";
 }
 
@@ -348,7 +351,7 @@ static std::string duration(const std::string& path, const std::string& value, P
 */
 static std::string registrationId(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Got a registration id: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got a registration id: '%s'", value.c_str());
   reqDataP->rcr.res.registrationId.set(value);
 
   return "OK";

@@ -24,7 +24,10 @@
 */
 #include <string>
 
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
 #include "serviceRoutines/putIndividualContextEntityAttribute.h"
 #include "serviceRoutines/badRequest.h"

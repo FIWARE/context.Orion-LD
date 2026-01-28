@@ -22,8 +22,12 @@
 *
 * Author: Orion dev team
 */
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+
+#include "orionld/common/traceLevels.h"
 
 #include "common/string.h"
 #include "common/RenderFormat.h"
@@ -40,7 +44,7 @@
 */
 QueueNotifier::QueueNotifier(size_t queueSize, int numThreads): queue(queueSize), workers(&queue, numThreads)
 {
-  LM_T(LmtLegacy, ("Setting up queue and threads for notifications"));
+  KT_T(KtLegacy, "Setting up queue and threads for notifications");
 }
 
 
@@ -93,7 +97,7 @@ void QueueNotifier::sendNotifyContextRequest
   if (!enqueued)
   {
     QueueStatistics::incReject(notificationsNum);
-    LM_E(("Runtime Error (notification queue is full)"));
+    KT_E("Runtime Error (notification queue is full)");
     for (unsigned ix = 0; ix < paramsV->size(); ix++)
     {
       delete (*paramsV)[ix];

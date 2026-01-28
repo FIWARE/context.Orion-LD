@@ -26,7 +26,10 @@
 
 #include "unittests/unittest.h"
 
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
 #include "serviceRoutines/getIndividualContextEntityAttributes.h"
 #include "serviceRoutines/badRequest.h"

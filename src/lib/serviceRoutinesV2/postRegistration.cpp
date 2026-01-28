@@ -25,7 +25,10 @@
 #include <string>
 #include <vector>
 
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/types/OrionldHeader.h"                       // orionldHeaderAdd

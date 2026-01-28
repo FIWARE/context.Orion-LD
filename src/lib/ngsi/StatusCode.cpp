@@ -27,8 +27,11 @@
 #include <stdlib.h>
 #include <string>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+#include "orionld/common/traceLevels.h"
 
 #include "common/globals.h"
 #include "common/string.h"
@@ -219,13 +222,13 @@ void StatusCode::fill(const struct UpdateContextResponse& ucrs)
   }
   else if (ucrs.contextElementResponseVector.vec.size() > 1)
   {
-    LM_W(("Filling StatusCode from UpdateContextResponse with more than one contextElementResponse, picking one of them ..."));
+    KT_W("Filling StatusCode from UpdateContextResponse with more than one contextElementResponse, picking one of them ...");
     fill(ucrs.contextElementResponseVector.vec[0]->statusCode);
   }
   else
   {
     // Empty UpdateContextResponse::contextElementResponseVector AND unfilled UpdateContextResponse::errorCode
-    LM_E(("Internal Error (can't fill StatusCode from UpdateContextResponse)"));
+    KT_E("Internal Error (can't fill StatusCode from UpdateContextResponse)");
     fill(SccReceiverInternalError, "can't fill StatusCode from UpdateContextResponse");
   }
 }

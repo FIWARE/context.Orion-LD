@@ -33,7 +33,12 @@ extern "C"
 
 #include "mongo/client/dbclient.h"
 
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+
+#include "orionld/common/traceLevels.h"
 
 #include "common/string.h"
 #include "common/errorMessages.h"
@@ -143,7 +148,7 @@ bool StringFilterItem::valueParse(char* s, std::string* errorStringP)
   b = valueGet(s, &valueType, &numberValue, &stringValue, &boolValue, errorStringP);
   if (b == false)
   {
-    LM_E(("valueGet FAILED!"));
+    KT_E("valueGet FAILED!");
     return false;
   }
 
@@ -471,7 +476,7 @@ bool StringFilterItem::valueGet
   {
     if (forbiddenChars(s, "="))  // For NGSI-LD, attr long names have had the dots replaced by '='
     {
-      LM_E(("forbidden characters in String Filter '%s'", s));
+      KT_E("forbidden characters in String Filter '%s'", s);
       *errorStringP = std::string("forbidden characters in String Filter");
       return false;
     }
@@ -825,7 +830,7 @@ int StringFilterItem::render(char* buf, int bufLen)
 
   if (attributeNameLen >= bufLen)
   {
-    LM_E(("Not enough room in rendering output buffer"));
+    KT_E("Not enough room in rendering output buffer");
     return -1;
   }
 
@@ -861,7 +866,7 @@ int StringFilterItem::render(char* buf, int bufLen)
 
   if (needChars >= bufLen)
   {
-    LM_E(("Not enough room in rendering output buffer"));
+    KT_E("Not enough room in rendering output buffer");
     return -1;
   }
 
@@ -1196,7 +1201,7 @@ MatchResult StringFilterItem::matchEquals(Metadata* mdP)
   }
   else
   {
-    LM_E(("Runtime Error (valueType '%s' is not treated)", valueTypeName()));
+    KT_E("Runtime Error (valueType '%s' is not treated)", valueTypeName());
     return MrIncompatibleType;
   }
 
@@ -1299,7 +1304,7 @@ MatchResult StringFilterItem::matchEquals(orion::CompoundValueNode* cvP)
   }
   else
   {
-    LM_E(("Runtime Error (valueType '%s' is not treated)", valueTypeName()));
+    KT_E("Runtime Error (valueType '%s' is not treated)", valueTypeName());
     return MrIncompatibleType;
   }
 
@@ -1421,7 +1426,7 @@ MatchResult StringFilterItem::matchEquals(ContextAttribute* caP)
   }
   else
   {
-    LM_E(("Runtime Error (valueType '%s' is not treated)", valueTypeName()));
+    KT_E("Runtime Error (valueType '%s' is not treated)", valueTypeName());
     return MrIncompatibleType;
   }
 
@@ -1973,7 +1978,7 @@ bool StringFilter::render(char* buf, int bufLen, std::string* errorStringP)
     if (chars == -1)
     {
       *errorStringP = "Internal error - Not enough room in rendering output buffer of StringFilter";
-      LM_E((errorStringP->c_str()));
+      KT_E(errorStringP->c_str());
       return false;
     }
 
@@ -2612,7 +2617,7 @@ bool StringFilter::fill(StringFilter* sfP, std::string* errorStringP)
     if (!sfi->fill(sfP->filters[ix], errorStringP))
     {
       delete sfi;
-      LM_E(("Runtime Error (error filling StringFilterItem: %s)", errorStringP->c_str()));
+      KT_E("Runtime Error (error filling StringFilterItem: %s)", errorStringP->c_str());
       return false;
     }
 

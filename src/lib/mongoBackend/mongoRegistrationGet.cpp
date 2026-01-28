@@ -27,10 +27,14 @@
 
 #include "mongo/client/dbclient.h"
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"                                // trace messages - ktrace library
+}
 
 #include "orionld/types/OrionldTenant.h"
+
+#include "orionld/common/traceLevels.h"                   // KTrace levels
 
 #include "rest/ConnectionInfo.h"
 #include "common/idCheck.h"
@@ -78,7 +82,7 @@ void mongoRegistrationGet
 
   reqSemTake(__FUNCTION__, "Mongo Get Registration", SemReadOp, &reqSemTaken);
 
-  LM_T(LmtLegacy, ("Mongo Get Registration"));
+  KT_T(KtLegacy, "Mongo Get Registration");
 
   std::auto_ptr<mongo::DBClientCursor>  cursor;
 
@@ -102,12 +106,12 @@ void mongoRegistrationGet
     if (!nextSafeOrErrorF(cursor, &bob, &err))
     {
       releaseMongoConnection(connection);
-      LM_E(("Runtime Error (exception in nextSafe(): %s - query: %s)", err.c_str(), q.toString().c_str()));
+      KT_E("Runtime Error (exception in nextSafe(): %s - query: %s)", err.c_str(), q.toString().c_str());
       reqSemGive(__FUNCTION__, "Mongo Get Registration", reqSemTaken);
       oeP->fill(SccReceiverInternalError, std::string("exception in nextSafe(): ") + err.c_str());
       return;
     }
-    LM_T(LmtLegacy, ("retrieved document: '%s'", bob.toString().c_str()));
+    KT_T(KtLegacy, "retrieved document: '%s'", bob.toString().c_str());
 
     //
     // Fill in the Registration with data retrieved from the data base
@@ -118,7 +122,7 @@ void mongoRegistrationGet
     if (mongoSetDataProvided(regP, &bob, false) == false)
     {
       releaseMongoConnection(connection);
-      LM_W(("Bad Input (getting registrations with more than one CR is not yet implemented, see issue 3044)"));
+      KT_W("Bad Input (getting registrations with more than one CR is not yet implemented, see issue 3044)");
       reqSemGive(__FUNCTION__, "Mongo Get Registration", reqSemTaken);
       oeP->fill(SccReceiverInternalError, err);
       return;
@@ -135,7 +139,7 @@ void mongoRegistrationGet
     if (moreSafe(cursor))  // Can only be one ...
     {
       releaseMongoConnection(connection);
-      LM_T(LmtLegacy, ("more than one registration: '%s'", regId.c_str()));
+      KT_T(KtLegacy, "more than one registration: '%s'", regId.c_str());
       reqSemGive(__FUNCTION__, "Mongo Get Registration", reqSemTaken);
       oeP->fill(SccConflict, "");
       return;
@@ -144,7 +148,7 @@ void mongoRegistrationGet
   else
   {
     releaseMongoConnection(connection);
-    LM_T(LmtLegacy, ("registration not found: '%s'", regId.c_str()));
+    KT_T(KtLegacy, "registration not found: '%s'", regId.c_str());
     reqSemGive(__FUNCTION__, "Mongo Get Registration", reqSemTaken);
     oeP->fill(SccContextElementNotFound, ERROR_DESC_NOT_FOUND_REGISTRATION, ERROR_NOT_FOUND);
 
@@ -182,7 +186,7 @@ void mongoRegistrationsGet
 
   reqSemTake(__FUNCTION__, "Mongo Get Registrations", SemReadOp, &reqSemTaken);
 
-  LM_T(LmtLegacy, ("Mongo Get Registrations"));
+  KT_T(KtLegacy, "Mongo Get Registrations");
 
   std::auto_ptr<mongo::DBClientCursor>  cursor;
   mongo::Query                          q;
@@ -199,7 +203,7 @@ void mongoRegistrationsGet
   mongo::DBClientBase* connection = getMongoConnection();
   if (!collectionRangedQuery(connection, tenantP->registrations, q, limit, offset, &cursor, countP, &err))
   {
-    LM_E(("collectionRangedQuery failed"));
+    KT_E("collectionRangedQuery failed");
     releaseMongoConnection(connection);
     TIME_STAT_MONGO_READ_WAIT_STOP();
     reqSemGive(__FUNCTION__, "Mongo Get Registrations", reqSemTaken);
@@ -217,11 +221,11 @@ void mongoRegistrationsGet
 
     if (!nextSafeOrErrorF(cursor, &bob, &err))
     {
-      LM_E(("Runtime Error (exception in nextSafe(): %s - query: %s)", err.c_str(), q.toString().c_str()));
+      KT_E("Runtime Error (exception in nextSafe(): %s - query: %s)", err.c_str(), q.toString().c_str());
       continue;
     }
 
-    LM_T(LmtLegacy, ("retrieved document [%d]: '%s'", docs, bob.toString().c_str()));
+    KT_T(KtLegacy, "retrieved document [%d]: '%s'", docs, bob.toString().c_str());
     ++docs;
 
     //
@@ -233,7 +237,7 @@ void mongoRegistrationsGet
     if (mongoSetDataProvided(&reg, &bob, false) == false)
     {
       releaseMongoConnection(connection);
-      LM_W(("Bad Input (getting registrations with more than one CR is not yet implemented, see issue 3044)"));
+      KT_W("Bad Input (getting registrations with more than one CR is not yet implemented, see issue 3044)");
       reqSemGive(__FUNCTION__, "Mongo Get Registrations", reqSemTaken);
       oeP->fill(SccReceiverInternalError, err);
       return;

@@ -95,7 +95,6 @@ cpp_check src/lib/jsonParseV2
 cpp_check src/lib/apiTypesV2
 cpp_check src/lib/mongoBackend
 cpp_check src/lib/serviceRoutinesV2
-cpp_check src/lib/logMsg
 cpp_check src/lib/parseArgs
 cpp_check src/lib/cache
 cpp_check src/lib/alarmMgr

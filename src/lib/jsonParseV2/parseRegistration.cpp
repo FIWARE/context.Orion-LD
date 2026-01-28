@@ -26,12 +26,18 @@
 
 #include "rapidjson/document.h"
 
-#include "logMsg/logMsg.h"
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/dateTime.h"                             // dateTimeFromString
 
 #include "common/string.h"
+
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+
+#include "orionld/common/traceLevels.h"
 #include "common/errorMessages.h"
 #include "common/globals.h"
 #include "rest/ConnectionInfo.h"
@@ -347,7 +353,7 @@ std::string parseRegistration(ConnectionInfo* ciP, ngsiv2::Registration* regP)
       expiresValue = dateTimeFromString(expires.c_str(), errorString, sizeof(errorString));
       if (expiresValue == -1)
       {
-        LM_E(("dateTimeFromString: %s", errorString));
+        KT_E("dateTimeFromString: %s", errorString);
         return badInput(ciP, "the field /expires/ has an invalid format");
       }
     }

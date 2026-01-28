@@ -254,7 +254,7 @@ EntityMap* entityMapCreate(DistOp* distOpList, char* idPattern, QNode* qNode, Or
 
 #if 0
   // ------------------- <DEBUG>
-  if (lmTraceIsSet(KtEntityMap) == true)
+  if (ktTraceIsSet(KtEntityMap) == true)
   {
     int ix = 0;
 

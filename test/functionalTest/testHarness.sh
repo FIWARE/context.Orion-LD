@@ -507,6 +507,35 @@ function exitFunction()
       fi
   fi
 
+  # SHELL-INIT errors are critical - save details to temp file for display after timing line
+  if [ "$CB_FT_VERBOSE" == "" ] && [ "$loud" != "on" ]
+  then
+      if [ $exitCode == 10 ] || [ $exitCode == 20 ] || [ $exitCode == 11 ]
+      then
+          shellInitErrorFile=/tmp/shellInitError_$$.tmp
+          rm -f $shellInitErrorFile
+          if [ "$stdoutFile" != "" ] && [ -f "$stdoutFile" ] && [ -s "$stdoutFile" ]
+          then
+              echo >> $shellInitErrorFile
+              echo "$stdoutFile:" >> $shellInitErrorFile
+              cat $stdoutFile | sed 's/^/   /' >> $shellInitErrorFile
+          fi
+          if [ "$stderrFile" != "" ] && [ -f "$stderrFile" ] && [ -s "$stderrFile" ]
+          then
+              echo >> $shellInitErrorFile
+              echo "$stderrFile:" >> $shellInitErrorFile
+              cat $stderrFile | sed 's/^/   /' >> $shellInitErrorFile
+          fi
+          if [ -s /tmp/Orion-LD.log ]
+          then
+              echo >> $shellInitErrorFile
+              echo "/tmp/Orion-LD.log:" >> $shellInitErrorFile
+              tail -20 /tmp/Orion-LD.log | sed 's/^/   /' >> $shellInitErrorFile
+          fi
+          echo >> $shellInitErrorFile
+      fi
+  fi
+
   if [ "$stopOnError" == "on" ] || [ "$forced" == "DIE" ]
   then
     echo $ME/$NAME: $errorString
@@ -1619,6 +1648,13 @@ do
         echo $xsecs seconds
     else
         echo "$xsecs seconds - ERROR: $errorText"
+        # Show SHELL-INIT error details if saved
+        shellInitErrorFile=/tmp/shellInitError_$$.tmp
+        if [ -f "$shellInitErrorFile" ]
+        then
+            cat $shellInitErrorFile
+            rm -f $shellInitErrorFile
+        fi
     fi
   else
     echo "SUCCESS"

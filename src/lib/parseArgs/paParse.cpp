@@ -30,7 +30,10 @@
 #include <string>                         /* std::string                     */
 
 #include "parseArgs/baStd.h"              /* BA standard header file         */
-#include "logMsg/logMsg.h"                /* lmVerbose, lmDebug, ...         */
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
 #include "parseArgs/paPrivate.h"          /* PaTypeUnion, config variables,  */
 #include "parseArgs/paTraceLevels.h"      /* LmtPaEnvVal, ...                */
@@ -50,6 +53,16 @@
 #include "parseArgs/paIxLookup.h"         /* paIxLookup                      */
 #include "parseArgs/paOptions.h"          /* paOptionsNoOf                   */
 #include "parseArgs/parseArgs.h"          /* Own interface                   */
+#include "parseArgs/paParse.h"            /* progNameV                       */
+
+
+
+/* ****************************************************************************
+*
+* Global variables (previously defined in logMsg library)
+*/
+char* progName   = NULL;
+char  progNameV[512];
 
 
 

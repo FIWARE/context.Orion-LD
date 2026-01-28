@@ -25,8 +25,10 @@
 #include <string>
 #include <vector>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
 #include "orionld/common/orionldState.h"                        // orionldState
 
@@ -94,7 +96,7 @@ std::string exitTreat
       // Not very important anyway. This 'hack' is just to avoid
       // false leaks in the valgrind test suite.
       //
-      LM_W(("Subscription cache is synchronizing, wait a few seconds before dying"));
+      KT_W("Subscription cache is synchronizing, wait a few seconds before dying");
       sleep(2);
     }
 

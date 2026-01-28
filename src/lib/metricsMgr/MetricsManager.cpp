@@ -29,8 +29,10 @@
 #include <string>
 #include <map>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
 #include "common/JsonHelper.h"
 #include "rest/rest.h"
@@ -108,7 +110,7 @@ bool MetricsManager::init(bool _on, bool _semWaitStatistics)
 
   if (sem_init(&sem, 0, 1) == -1)
   {
-    LM_E(("Runtime Error (error initializing 'metrics mgr' semaphore: %s)", strerror(errno)));
+    KT_E("Runtime Error (error initializing 'metrics mgr' semaphore: %s)", strerror(errno));
     return false;
   }
 

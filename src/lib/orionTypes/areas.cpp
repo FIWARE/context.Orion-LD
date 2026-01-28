@@ -28,7 +28,11 @@
 #include <string>
 #include <vector>
 
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+#include "orionld/common/traceLevels.h"
 
 #include "orionld/types/ApiVersion.h"                              // ApiVersion
 
@@ -569,7 +573,7 @@ int Georel::parse(const char* in, char** errorStringP)
     else
     {
       *errorStringP = (char*) "Invalid modifier in georel parameter";
-      LM_E(("Invalid modifier in georel parameter: '%s'", item));
+      KT_E("Invalid modifier in georel parameter: '%s'", item);
       return -1;
     }
   }
@@ -680,7 +684,7 @@ int Geometry::parse(ApiVersion apiVersion, const char* in, char** errorStringP)
     }
     else
     {
-      LM_E(("items[ix] == '%s' - invalid selector in geometry specification", items[ix].c_str()));
+      KT_E("items[ix] == '%s' - invalid selector in geometry specification", items[ix].c_str());
       *errorStringP = (char*) "Invalid selector in geometry specification";
       return -1;
     }

@@ -28,9 +28,13 @@
 
 #include "orionld/types/ApiVersion.h"                    // ApiVersion
 
+extern "C"
+{
+#include "ktrace/kTrace.h"                                // trace messages - ktrace library
+}
+
 #include "common/string.h"
 #include "common/globals.h"
-#include "logMsg/logMsg.h"
 #include "ngsi/ContextAttribute.h"
 #include "parse/CompoundValueNode.h"
 #include "rest/OrionError.h"
@@ -253,7 +257,7 @@ static bool getGeoJson
     return true;
   }
 
-  LM_E(("Runtime Error (attribute detected as location but unknown type: %s)", caP->type.c_str()));
+  KT_E("Runtime Error (attribute detected as location but unknown type: %s)", caP->type.c_str());
   *errDetail = "error processing geo location attribute, see log traces";
 
   return false;

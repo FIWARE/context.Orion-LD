@@ -25,12 +25,16 @@
 #include <string>
 #include <vector>
 
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+
+#include "orionld/common/traceLevels.h"
+
 #include "orionld/common/orionldState.h"             // orionldState
 
 #include "common/globals.h"
-
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
 
 #include "ngsi/ContextAttribute.h"
 #include "ngsi/Metadata.h"
@@ -49,7 +53,7 @@
 */
 static std::string subscriptionId(const std::string& path, const std::string& value, ParseData* parseDataP)
 {
-  LM_T(LmtLegacy, ("Got a subscriptionId: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got a subscriptionId: '%s'", value.c_str());
   parseDataP->ncr.res.subscriptionId.set(value);
   return "OK";
 }
@@ -62,7 +66,7 @@ static std::string subscriptionId(const std::string& path, const std::string& va
 */
 static std::string originator(const std::string& path, const std::string& value, ParseData* parseDataP)
 {
-  LM_T(LmtLegacy, ("Got an originator: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got an originator: '%s'", value.c_str());
   parseDataP->ncr.res.originator.set(value);
   return "OK";
 }
@@ -89,7 +93,7 @@ static std::string contextResponse(const std::string& path, const std::string& v
 static std::string entityIdId(const std::string& path, const std::string& value, ParseData* parseDataP)
 {
   parseDataP->ncr.cerP->contextElement.entityId.id = value;
-  LM_T(LmtLegacy, ("Set 'id' to '%s' for an entity", parseDataP->ncr.cerP->contextElement.entityId.id.c_str()));
+  KT_T(KtLegacy, "Set 'id' to '%s' for an entity", parseDataP->ncr.cerP->contextElement.entityId.id.c_str());
 
   return "OK";
 }
@@ -103,7 +107,7 @@ static std::string entityIdId(const std::string& path, const std::string& value,
 static std::string entityIdType(const std::string& path, const std::string& value, ParseData* parseDataP)
 {
   parseDataP->ncr.cerP->contextElement.entityId.type = value;
-  LM_T(LmtLegacy, ("Set 'type' to '%s' for an entity", parseDataP->ncr.cerP->contextElement.entityId.type.c_str()));
+  KT_T(KtLegacy, "Set 'type' to '%s' for an entity", parseDataP->ncr.cerP->contextElement.entityId.type.c_str());
 
   return "OK";
 }
@@ -116,7 +120,7 @@ static std::string entityIdType(const std::string& path, const std::string& valu
 */
 static std::string entityIdIsPattern(const std::string& path, const std::string& value, ParseData* parseDataP)
 {
-  LM_T(LmtLegacy, ("Got an entityId:isPattern: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got an entityId:isPattern: '%s'", value.c_str());
   parseDataP->ncr.cerP->contextElement.entityId.isPattern = value;
 
   if (!isTrue(value) && !isFalse(value))
@@ -135,7 +139,7 @@ static std::string entityIdIsPattern(const std::string& path, const std::string&
 */
 static std::string attributeDomainName(const std::string& path, const std::string& value, ParseData* parseDataP)
 {
-  LM_T(LmtLegacy, ("Got an attributeDomainName: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got an attributeDomainName: '%s'", value.c_str());
   parseDataP->ncr.cerP->contextElement.attributeDomainName.set(value);
   return "OK";
 }
@@ -148,7 +152,7 @@ static std::string attributeDomainName(const std::string& path, const std::strin
 */
 static std::string attribute(const std::string& path, const std::string& value, ParseData* parseDataP)
 {
-  LM_T(LmtLegacy, ("Creating an attribute"));
+  KT_T(KtLegacy, "Creating an attribute");
   parseDataP->ncr.attributeP = new ContextAttribute();
   parseDataP->ncr.cerP->contextElement.contextAttributeVector.push_back(parseDataP->ncr.attributeP);
   return "OK";
@@ -162,7 +166,7 @@ static std::string attribute(const std::string& path, const std::string& value, 
 */
 static std::string attributeName(const std::string& path, const std::string& value, ParseData* parseDataP)
 {
-  LM_T(LmtLegacy, ("Got an attribute name: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got an attribute name: '%s'", value.c_str());
   parseDataP->ncr.attributeP->name = value;
   return "OK";
 }
@@ -175,7 +179,7 @@ static std::string attributeName(const std::string& path, const std::string& val
 */
 static std::string attributeType(const std::string& path, const std::string& value, ParseData* parseDataP)
 {
-  LM_T(LmtLegacy, ("Got an attribute type: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got an attribute type: '%s'", value.c_str());
   parseDataP->ncr.attributeP->type = value;
   return "OK";
 }
@@ -188,7 +192,7 @@ static std::string attributeType(const std::string& path, const std::string& val
 */
 static std::string attributeValue(const std::string& path, const std::string& value, ParseData* parseDataP)
 {
-  LM_T(LmtLegacy, ("Got an attribute value: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got an attribute value: '%s'", value.c_str());
   parseDataP->lastContextAttribute = parseDataP->ncr.attributeP;
   parseDataP->ncr.attributeP->stringValue = value;
   parseDataP->ncr.attributeP->valueType = orion::ValueTypeString;
@@ -203,9 +207,9 @@ static std::string attributeValue(const std::string& path, const std::string& va
 */
 static std::string statusCodeCode(const std::string& path, const std::string& value, ParseData* parseDataP)
 {
-  LM_T(LmtLegacy, ("Got a statusCode code: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got a statusCode code: '%s'", value.c_str());
   parseDataP->ncr.cerP->statusCode.code = (HttpStatusCode) atoi(value.c_str());
-  LM_T(LmtLegacy, ("Got a statusCode code: %d", (int) parseDataP->ncr.cerP->statusCode.code));
+  KT_T(KtLegacy, "Got a statusCode code: %d", (int) parseDataP->ncr.cerP->statusCode.code);
   return "OK";
 }
 
@@ -217,7 +221,7 @@ static std::string statusCodeCode(const std::string& path, const std::string& va
 */
 static std::string statusCodeReasonPhrase(const std::string& path, const std::string& value, ParseData* parseDataP)
 {
-  LM_T(LmtLegacy, ("Got a statusCode reasonPhrase: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got a statusCode reasonPhrase: '%s'", value.c_str());
   parseDataP->ncr.cerP->statusCode.reasonPhrase = value;  // OK - parsing step reading reasonPhrase
   return "OK";
 }
@@ -230,7 +234,7 @@ static std::string statusCodeReasonPhrase(const std::string& path, const std::st
 */
 static std::string statusCodeDetails(const std::string& path, const std::string& value, ParseData* parseDataP)
 {
-  LM_T(LmtLegacy, ("Got a statusCode details: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got a statusCode details: '%s'", value.c_str());
   parseDataP->ncr.cerP->statusCode.details = value;
   return "OK";
 }
@@ -243,7 +247,7 @@ static std::string statusCodeDetails(const std::string& path, const std::string&
 */
 static std::string attributeMetadata(const std::string& path, const std::string& value, ParseData* parseDataP)
 {
-  LM_T(LmtLegacy, ("Creating an attributeMetadata"));
+  KT_T(KtLegacy, "Creating an attributeMetadata");
   parseDataP->ncr.attributeMetadataP = new Metadata();
   parseDataP->ncr.attributeP->metadataVector.push_back(parseDataP->ncr.attributeMetadataP);
   return "OK";
@@ -257,7 +261,7 @@ static std::string attributeMetadata(const std::string& path, const std::string&
 */
 static std::string attributeMetadataName(const std::string& path, const std::string& value, ParseData* parseDataP)
 {
-  LM_T(LmtLegacy, ("Got an attributeMetadata name: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got an attributeMetadata name: '%s'", value.c_str());
   parseDataP->ncr.attributeMetadataP->name = value;
   return "OK";
 }
@@ -270,7 +274,7 @@ static std::string attributeMetadataName(const std::string& path, const std::str
 */
 static std::string attributeMetadataType(const std::string& path, const std::string& value, ParseData* parseDataP)
 {
-  LM_T(LmtLegacy, ("Got an attributeMetadata type: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got an attributeMetadata type: '%s'", value.c_str());
   parseDataP->ncr.attributeMetadataP->type = value;
   return "OK";
 }
@@ -283,7 +287,7 @@ static std::string attributeMetadataType(const std::string& path, const std::str
 */
 static std::string attributeMetadataValue(const std::string& path, const std::string& value, ParseData* parseDataP)
 {
-  LM_T(LmtLegacy, ("Got an attributeMetadata value: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got an attributeMetadata value: '%s'", value.c_str());
   parseDataP->ncr.attributeMetadataP->stringValue = value;
   parseDataP->ncr.attributeMetadataP->valueType = orion::ValueTypeString;
   return "OK";
@@ -297,7 +301,7 @@ static std::string attributeMetadataValue(const std::string& path, const std::st
 */
 static std::string domainMetadata(const std::string& path, const std::string& value, ParseData* parseDataP)
 {
-  LM_T(LmtLegacy, ("Creating a domainMetadata"));
+  KT_T(KtLegacy, "Creating a domainMetadata");
   parseDataP->ncr.domainMetadataP = new Metadata();
   parseDataP->ncr.cerP->contextElement.domainMetadataVector.push_back(parseDataP->ncr.domainMetadataP);
   return "OK";
@@ -311,7 +315,7 @@ static std::string domainMetadata(const std::string& path, const std::string& va
 */
 static std::string domainMetadataName(const std::string& path, const std::string& value, ParseData* parseDataP)
 {
-  LM_T(LmtLegacy, ("Got a domainMetadata name: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got a domainMetadata name: '%s'", value.c_str());
   parseDataP->ncr.domainMetadataP->name = value;
   return "OK";
 }
@@ -324,7 +328,7 @@ static std::string domainMetadataName(const std::string& path, const std::string
 */
 static std::string domainMetadataType(const std::string& path, const std::string& value, ParseData* parseDataP)
 {
-  LM_T(LmtLegacy, ("Got a domainMetadata type: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got a domainMetadata type: '%s'", value.c_str());
   parseDataP->ncr.domainMetadataP->type = value;
   return "OK";
 }
@@ -337,7 +341,7 @@ static std::string domainMetadataType(const std::string& path, const std::string
 */
 static std::string domainMetadataValue(const std::string& path, const std::string& value, ParseData* parseDataP)
 {
-  LM_T(LmtLegacy, ("Got a domainMetadata value: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got a domainMetadata value: '%s'", value.c_str());
   parseDataP->ncr.domainMetadataP->stringValue = value;
   parseDataP->ncr.domainMetadataP->valueType = orion::ValueTypeString;
   return "OK";

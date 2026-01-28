@@ -13,10 +13,10 @@ COPY ./docker/build-ubi/*.sh /tmp/build/
 RUN /tmp/build/01.install-build-dependencies.sh
 RUN /tmp/build/02.install-mongo-driver.sh
 RUN /tmp/build/03.install-gnutls.sh
-RUN /tmp/build/04.install-fastdds.sh
+RUN /tmp/build/04.install-k-libs.sh
 RUN /tmp/build/05.install-lib-microhttp.sh
 RUN /tmp/build/06.install-paho-client.sh
-RUN /tmp/build/07.install-k-libs.sh
+RUN /tmp/build/07.install-fastdds.sh
 RUN /tmp/build/08.install-mongoc-driver.sh
 RUN /tmp/build/09.install-postgres-client.sh
 RUN /tmp/build/10.install-rapid-json.sh

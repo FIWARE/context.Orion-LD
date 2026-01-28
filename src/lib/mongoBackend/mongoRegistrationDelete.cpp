@@ -27,10 +27,14 @@
 
 #include "mongo/client/dbclient.h"
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"                                // trace messages - ktrace library
+}
 
 #include "orionld/types/OrionldTenant.h"
+
+#include "orionld/common/traceLevels.h"                   // KTrace levels
 
 #include "common/sem.h"
 #include "common/statistics.h"
@@ -71,7 +75,7 @@ void mongoRegistrationDelete
 
   reqSemTake(__FUNCTION__, "Mongo Delete Registration", SemWriteOp, &reqSemTaken);
 
-  LM_T(LmtLegacy, ("Mongo Delete Registration"));
+  KT_T(KtLegacy, "Mongo Delete Registration");
 
   std::auto_ptr<mongo::DBClientCursor>  cursor;
   mongo::BSONObj                        q;
@@ -104,18 +108,18 @@ void mongoRegistrationDelete
     if (!nextSafeOrErrorF(cursor, &r, &err))
     {
       releaseMongoConnection(connection);
-      LM_E(("Runtime Error (exception in nextSafe(): %s - query: %s)", err.c_str(), q.toString().c_str()));
+      KT_E("Runtime Error (exception in nextSafe(): %s - query: %s)", err.c_str(), q.toString().c_str());
       reqSemGive(__FUNCTION__, "Mongo Delete Registration", reqSemTaken);
       oeP->fill(SccReceiverInternalError, std::string("exception in nextSafe(): ") + err.c_str());
       return;
     }
 
-    LM_T(LmtLegacy, ("retrieved document: '%s'", r.toString().c_str()));
+    KT_T(KtLegacy, "retrieved document: '%s'", r.toString().c_str());
 
     if (moreSafe(cursor))  // There can only be one registration for a given ID
     {
       releaseMongoConnection(connection);
-      LM_T(LmtLegacy, ("more than one registration: '%s'", regId.c_str()));
+      KT_T(KtLegacy, "more than one registration: '%s'", regId.c_str());
       reqSemGive(__FUNCTION__, "Mongo Delete Registration", reqSemTaken);
       oeP->fill(SccConflict, "");
       return;
@@ -124,7 +128,7 @@ void mongoRegistrationDelete
     if (!collectionRemove(tenantP->registrations, q, &err))
     {
       releaseMongoConnection(connection);
-      LM_E(("Runtime Error (exception in collectionRemove(): %s - query: %s", err.c_str(), q.toString().c_str()));
+      KT_E("Runtime Error (exception in collectionRemove(): %s - query: %s", err.c_str(), q.toString().c_str());
       reqSemGive(__FUNCTION__, "Mongo Delete Registration", reqSemTaken);
       oeP->fill(SccReceiverInternalError, std::string("exception in collectionRemove(): ") + err.c_str());
       return;
@@ -133,7 +137,7 @@ void mongoRegistrationDelete
   else
   {
     releaseMongoConnection(connection);
-    LM_T(LmtLegacy, ("registration not found: '%s'", regId.c_str()));
+    KT_T(KtLegacy, "registration not found: '%s'", regId.c_str());
     reqSemGive(__FUNCTION__, "Mongo Delete Registration", reqSemTaken);
     oeP->fill(SccContextElementNotFound, ERROR_DESC_NOT_FOUND_REGISTRATION, ERROR_NOT_FOUND);
 

@@ -26,8 +26,10 @@
 #include <string>
 #include <vector>
 
-#include "logMsg/traceLevels.h"
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
 #include "common/tag.h"
 #include "common/limits.h"

@@ -117,7 +117,7 @@ static OrionLdRestServiceSimplified getServiceV[] =
   { "/ngsi-ld/ex/v1/tenants",              orionldGetTenants          },
   { "/ngsi-ld/ex/v1/dbIndexes",            orionldGetDbIndexes        },
   { "/ngsi-ld/ex/v1/dds/topics",           orionldGetDdsTopics        },
-  { "/ngsi-ld/ex/v1/relationships",           orionldGetRelationships    }
+  { "/ngsi-ld/ex/v1/relationships",        orionldGetRelationships    }
 };
 static const int getServices = (sizeof(getServiceV) / sizeof(getServiceV[0]));
 

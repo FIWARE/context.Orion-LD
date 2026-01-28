@@ -68,12 +68,12 @@ bool orionldGetRelationships(void)
 
   // get all the entities referencing the given entity id via a Relationship attribute
   referencedEntitiesP = mongocRelationshipsGet(orionldState.uriParams.id);
-  
+
   orionldState.responseTree = kjObject(orionldState.kjsonP, NULL);
   kjChildAdd(orionldState.responseTree, kjString(orionldState.kjsonP, "id", orionldState.uriParams.id));
 
   kjChildAdd(orionldState.responseTree, referencedEntitiesP);
-  
+
   orionldState.httpStatusCode = 200;
   return true;
 }

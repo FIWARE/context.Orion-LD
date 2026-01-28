@@ -32,7 +32,11 @@
 #include "orionld/common/orionldState.h"
 #include "orionld/common/performance.h"
 
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"                                // trace messages - ktrace library
+}
+
 #include "common/string.h"
 #include "common/statistics.h"
 #include "common/clockFunctions.h"
@@ -84,7 +88,7 @@ bool collectionQuery
 {
   if (connection == NULL)
   {
-    LM_E(("Fatal Error (null DB connection)"));
+    KT_E("Fatal Error (null DB connection)");
     *err = "null DB connection";
 
     return false;
@@ -102,7 +106,7 @@ bool collectionQuery
     {
       throw DBException("Null cursor from mongo (details on this is found in the source code)", 0);
     }
-    // LM_I(("Database Operation Successful (query: %s)", q.toString().c_str()));
+    // KT_I("Database Operation Successful (query: %s)", q.toString().c_str());
   }
   catch (const std::exception &e)
   {
@@ -157,7 +161,7 @@ bool collectionRangedQuery
 
   if (connection == NULL)
   {
-    LM_E(("Fatal Error (null DB connection)"));
+    KT_E("Fatal Error (null DB connection)");
     *err = "null DB connection";
 
     return false;
@@ -185,7 +189,7 @@ bool collectionRangedQuery
       }
     }
 
-    // LM_I(("Database Operation Successful (query: %s)", q.toString().c_str()));
+    // KT_I("Database Operation Successful (query: %s)", q.toString().c_str());
   }
   catch (const std::exception &e)
   {
@@ -237,7 +241,7 @@ bool collectionCount
   if (connection == NULL)
   {
     TIME_STAT_MONGO_READ_WAIT_STOP();
-    LM_E(("Fatal Error (null DB connection)"));
+    KT_E("Fatal Error (null DB connection)");
     *err = "null DB connection";
 
     return false;
@@ -248,7 +252,7 @@ bool collectionCount
     *c = connection->count(col, q);
     releaseMongoConnection(connection);
     TIME_STAT_MONGO_READ_WAIT_STOP();
-    // LM_I(("Database Operation Successful (count: %s)", q.toString().c_str()));
+    // KT_I("Database Operation Successful (count: %s)", q.toString().c_str());
   }
   catch (const std::exception& e)
   {
@@ -304,7 +308,7 @@ bool collectionFindOne
   {
     TIME_STAT_MONGO_READ_WAIT_STOP();
 
-    LM_E(("Fatal Error (null DB connection)"));
+    KT_E("Fatal Error (null DB connection)");
     *err = "null DB connection";
 
     return false;
@@ -315,7 +319,7 @@ bool collectionFindOne
     *doc = connection->findOne(col, q);
     releaseMongoConnection(connection);
     TIME_STAT_MONGO_READ_WAIT_STOP();
-    // LM_I(("Database Operation Successful (findOne: %s)", q.toString().c_str()));
+    // KT_I("Database Operation Successful (findOne: %s)", q.toString().c_str());
   }
   catch (const std::exception &e)
   {
@@ -370,7 +374,7 @@ bool collectionInsert
   {
     TIME_STAT_MONGO_WRITE_WAIT_STOP();
 
-    LM_E(("Fatal Error (null DB connection)"));
+    KT_E("Fatal Error (null DB connection)");
     *err = "null DB connection";
 
     return false;
@@ -381,7 +385,7 @@ bool collectionInsert
     connection->insert(col, doc);
     releaseMongoConnection(connection);
     TIME_STAT_MONGO_WRITE_WAIT_STOP();
-    // LM_I(("Database Operation Successful (insert: %s)", doc.toString().c_str()));
+    // KT_I("Database Operation Successful (insert: %s)", doc.toString().c_str());
   }
   catch (const std::exception &e)
   {
@@ -438,7 +442,7 @@ bool collectionUpdate
   {
     TIME_STAT_MONGO_WRITE_WAIT_STOP();
 
-    LM_E(("Fatal Error (null DB connection)"));
+    KT_E("Fatal Error (null DB connection)");
     *err = "null DB connection";
 
     return false;
@@ -449,11 +453,11 @@ bool collectionUpdate
     connection->update(col, q, doc, upsert);
     releaseMongoConnection(connection);
     TIME_STAT_MONGO_WRITE_WAIT_STOP();
-    // LM_I(("Database Operation Successful (update: <%s, %s>)", q.toString().c_str(), doc.toString().c_str()));
+    // KT_I("Database Operation Successful (update: <%s, %s>)", q.toString().c_str(), doc.toString().c_str());
   }
   catch (const std::exception& e)
   {
-    LM_E(("Database Error: %s", e.what()));
+    KT_E("Database Error: %s", e.what());
     releaseMongoConnection(connection);
     TIME_STAT_MONGO_WRITE_WAIT_STOP();
 
@@ -505,7 +509,7 @@ bool collectionRemove
   {
     TIME_STAT_MONGO_WRITE_WAIT_STOP();
 
-    LM_E(("Fatal Error (null DB connection)"));
+    KT_E("Fatal Error (null DB connection)");
     *err = "null DB connection";
 
     return false;
@@ -516,7 +520,7 @@ bool collectionRemove
     connection->remove(col, q);
     releaseMongoConnection(connection);
     TIME_STAT_MONGO_WRITE_WAIT_STOP();
-    // LM_I(("Database Operation Successful (remove: %s)", q.toString().c_str()));
+    // KT_I("Database Operation Successful (remove: %s)", q.toString().c_str());
   }
   catch (const std::exception &e)
   {
@@ -571,7 +575,7 @@ bool collectionCreateIndex
   if (connection == NULL)
   {
     TIME_STAT_MONGO_COMMAND_WAIT_STOP();
-    LM_E(("Fatal Error (null DB connection)"));
+    KT_E("Fatal Error (null DB connection)");
 
     return false;
   }
@@ -594,7 +598,7 @@ bool collectionCreateIndex
 
     releaseMongoConnection(connection);
     TIME_STAT_MONGO_COMMAND_WAIT_STOP();
-    // LM_I(("Database Operation Successful (createIndex: %s)", indexes.toString().c_str()));
+    // KT_I("Database Operation Successful (createIndex: %s)", indexes.toString().c_str());
   }
   catch (const std::exception &e)
   {
@@ -682,7 +686,7 @@ bool runCollectionCommand
     if (connection == NULL)
     {
       TIME_STAT_MONGO_COMMAND_WAIT_STOP();
-      LM_E(("Fatal Error (null DB connection)"));
+      KT_E("Fatal Error (null DB connection)");
 
       return false;
     }
@@ -696,7 +700,7 @@ bool runCollectionCommand
       releaseMongoConnection(connection);
       TIME_STAT_MONGO_COMMAND_WAIT_STOP();
     }
-    // LM_I(("Database Operation Successful (command: %s)", command.toString().c_str()));
+    // KT_I("Database Operation Successful (command: %s)", command.toString().c_str());
   }
   catch (const std::exception &e)
   {
@@ -850,7 +854,7 @@ extern bool connectionAuth
           ", auth_error='" + authErr + "'";
 
       *err = "Database Startup Error (" + msg + ")";
-      LM_E((err->c_str()));
+      KT_E("%s", err->c_str());
 
       return false;
     }
@@ -863,7 +867,7 @@ extern bool connectionAuth
         ", expection='" + e.what() + "'";
 
     *err = "Database Startup Error (" + msg + ")";
-    LM_E((err->c_str()));
+    KT_E("%s", err->c_str());
 
     return false;
   }
@@ -875,7 +879,7 @@ extern bool connectionAuth
         ", expection=generic";
 
     *err = "Database Startup Error (" + msg + ")";
-    LM_E((err->c_str()));
+    KT_E("%s", err->c_str());
 
     return false;
   }

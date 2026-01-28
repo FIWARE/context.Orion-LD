@@ -24,8 +24,12 @@
 */
 #include <string>
 
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
+#include "orionld/common/traceLevels.h"
 #include "orionld/types/ApiVersion.h"
 
 #include "common/globals.h"
@@ -253,7 +257,7 @@ std::string CompoundValueNode::finish(void)
 {
   error = "OK";
 
-  if (lmTraceIsSet(LmtLegacy))
+  if (ktTraceIsSet(KtLegacy))
   {
     show("");
   }
@@ -406,64 +410,43 @@ void CompoundValueNode::shortShow(const std::string& indent)
 {
   if ((rootP == this) && (valueType == orion::ValueTypeVector))
   {
-    LM_T(LmtLegacy,      ("%s%s (toplevel vector)",
-                                 indent.c_str(),
-                                 name.c_str()));
+    KT_T(KtLegacy, "%s%s (toplevel vector)", indent.c_str(), name.c_str());
   }
   else if (rootP == this)
   {
-    LM_T(LmtLegacy,      ("%s%s (toplevel object)",
-                                 indent.c_str(),
-                                 name.c_str()));
+    KT_T(KtLegacy, "%s%s (toplevel object)", indent.c_str(), name.c_str());
   }
   else if (valueType == orion::ValueTypeVector)
   {
-    LM_T(LmtLegacy,      ("%s%s (vector)",
-                                 indent.c_str(),
-                                 name.c_str()));
+    KT_T(KtLegacy, "%s%s (vector)", indent.c_str(), name.c_str());
   }
   else if (valueType == orion::ValueTypeObject)
   {
-    LM_T(LmtLegacy,      ("%s%s (object)",
-                                 indent.c_str(),
-                                 name.c_str()));
+    KT_T(KtLegacy, "%s%s (object)", indent.c_str(), name.c_str());
   }
   else if (valueType == orion::ValueTypeString)
   {
-    LM_T(LmtLegacy,      ("%s%s (%s)",
-                                 indent.c_str(),
-                                 name.c_str(),
-                                 stringValue.c_str()));
+    KT_T(KtLegacy, "%s%s (%s)", indent.c_str(), name.c_str(), stringValue.c_str());
     return;
   }
   else if (valueType == orion::ValueTypeBoolean)
   {
-    LM_T(LmtLegacy,      ("%s%s (%s)",
-                                 indent.c_str(),
-                                 name.c_str(),
-                                 (boolValue == true)? "true" : "false"));
+    KT_T(KtLegacy, "%s%s (%s)", indent.c_str(), name.c_str(), (boolValue == true)? "true" : "false");
     return;
   }
   else if (valueType == orion::ValueTypeNull)
   {
-    LM_T(LmtLegacy,      ("%s%s (null)",
-                                 indent.c_str(),
-                                 name.c_str()));
+    KT_T(KtLegacy, "%s%s (null)", indent.c_str(), name.c_str());
     return;
   }
   else if (valueType == orion::ValueTypeNotGiven)
   {
-    LM_T(LmtLegacy,      ("%s%s (not given)",
-                                 indent.c_str(),
-                                 name.c_str()));
+    KT_T(KtLegacy, "%s%s (not given)", indent.c_str(), name.c_str());
     return;
   }
   else if (valueType == orion::ValueTypeNumber)
   {
-    LM_T(LmtLegacy,      ("%s%s (%f)",
-                                 indent.c_str(),
-                                 name.c_str(),
-                                 numberValue));
+    KT_T(KtLegacy, "%s%s (%f)", indent.c_str(), name.c_str(), numberValue);
     return;
   }
 
@@ -483,57 +466,35 @@ void CompoundValueNode::show(const std::string& indent)
 {
   if (name != "")
   {
-    LM_T(LmtLegacy, ("%sname:      %s",
-                                indent.c_str(),
-                                name.c_str()));
+    KT_T(KtLegacy, "%sname:      %s", indent.c_str(), name.c_str());
   }
 
-  LM_T(LmtLegacy, ("%scontainer: %s",
-                              indent.c_str(),
-                              container->name.c_str()));
-  LM_T(LmtLegacy, ("%slevel:     %d",
-                              indent.c_str(),
-                              level));
-  LM_T(LmtLegacy, ("%ssibling:   %d",
-                              indent.c_str(),
-                              siblingNo));
-  LM_T(LmtLegacy, ("%stype:      %s",
-                              indent.c_str(),
-                              orion::valueTypeName(valueType)));
-  LM_T(LmtLegacy, ("%spath:      %s",
-                              indent.c_str(),
-                              path.c_str()));
-  LM_T(LmtLegacy, ("%srootP:     %s",
-                              indent.c_str(),
-                              rootP->name.c_str()));
+  KT_T(KtLegacy, "%scontainer: %s", indent.c_str(), container->name.c_str());
+  KT_T(KtLegacy, "%slevel:     %d", indent.c_str(), level);
+  KT_T(KtLegacy, "%ssibling:   %d", indent.c_str(), siblingNo);
+  KT_T(KtLegacy, "%stype:      %s", indent.c_str(), orion::valueTypeName(valueType));
+  KT_T(KtLegacy, "%spath:      %s", indent.c_str(), path.c_str());
+  KT_T(KtLegacy, "%srootP:     %s", indent.c_str(), rootP->name.c_str());
 
   if (valueType == orion::ValueTypeString)
   {
-    LM_T(LmtLegacy, ("%sString Value:     %s",
-                                indent.c_str(),
-                                stringValue.c_str()));
+    KT_T(KtLegacy, "%sString Value:     %s", indent.c_str(), stringValue.c_str());
   }
   else if (valueType == orion::ValueTypeBoolean)
   {
-    LM_T(LmtLegacy, ("%sBool Value:     %s",
-                                indent.c_str(),
-                                (boolValue == false)? "false" : "true"));
+    KT_T(KtLegacy, "%sBool Value:     %s", indent.c_str(), (boolValue == false)? "false" : "true");
   }
   else if (valueType == orion::ValueTypeNumber)
   {
-    LM_T(LmtLegacy, ("%sNumber Value:     %f",
-                                indent.c_str(),
-                                numberValue));
+    KT_T(KtLegacy, "%sNumber Value:     %f", indent.c_str(), numberValue);
   }
   else if (valueType == orion::ValueTypeNull)
   {
-    LM_T(LmtLegacy, ("%sNull",
-                                indent.c_str()));
+    KT_T(KtLegacy, "%sNull", indent.c_str());
   }
   else if (valueType == orion::ValueTypeNotGiven)
   {
-    LM_T(LmtLegacy, ("%sNotGiven",
-                                indent.c_str()));
+    KT_T(KtLegacy, "%sNotGiven", indent.c_str());
   }
   else if (childV.size() != 0)
   {
@@ -548,10 +509,7 @@ void CompoundValueNode::show(const std::string& indent)
       }
     }
 
-    LM_T(LmtLegacy, ("%s%lu children (%s)",
-                                indent.c_str(),
-                                childV.size(),
-                                childrenString.c_str()));
+    KT_T(KtLegacy, "%s%lu children (%s)", indent.c_str(), childV.size(), childrenString.c_str());
 
     for (uint64_t ix = 0; ix < childV.size(); ++ix)
     {
@@ -559,7 +517,7 @@ void CompoundValueNode::show(const std::string& indent)
     }
   }
 
-  LM_T(LmtLegacy, (""));
+  KT_T(KtLegacy, "");
 }
 
 
@@ -785,7 +743,7 @@ std::string CompoundValueNode::toJson(bool isLastElement, bool comma)
   }
   else if (valueType == orion::ValueTypeNotGiven)
   {
-    LM_E(("Runtime Error (value not given (%s))", name.c_str()));
+    KT_E("Runtime Error (value not given (%s))", name.c_str());
     if (container->valueType == orion::ValueTypeVector)
       out = "null";
     else
@@ -924,12 +882,12 @@ CompoundValueNode* CompoundValueNode::clone(void)
 
     case orion::ValueTypeNotGiven:
       me = NULL;
-      LM_E(("Runtime Error (value not given in compound node value)"));
+      KT_E("Runtime Error (value not given in compound node value)");
       break;
 
     default:
       me = NULL;
-      LM_E(("Runtime Error (unknown compound node value type: %d)", valueType));
+      KT_E("Runtime Error (unknown compound node value type: %d)", valueType);
     }
   }
 

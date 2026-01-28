@@ -26,8 +26,6 @@
 #include <string>
 #include <sstream>
 
-#include "logMsg/logMsg.h"
-
 #include "orionld/common/tenantList.h"               // tenant0
 #include "apiTypesV2/HttpInfo.h"
 #include "common/RenderFormat.h"

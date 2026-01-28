@@ -29,11 +29,10 @@
 extern "C"
 {
 #include "kbase/kTime.h"                             // kTimeGet
+#include "ktrace/kTrace.h"
 }
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
-
+#include "orionld/common/traceLevels.h"
 #include "orionld/common/orionldState.h"  // orionldState
 #include "common/Timer.h"
 

@@ -24,8 +24,12 @@
 */
 #include <string>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+
+#include "orionld/common/traceLevels.h"
 
 #include "orionld/common/orionldState.h"                       // orionldState
 
@@ -48,7 +52,7 @@ namespace orion
 */
 void compoundValueEnd(ConnectionInfo* ciP, ParseData* parseDataP)
 {
-  LM_T(LmtLegacy, ("Compound END"));
+  KT_T(KtLegacy, "Compound END");
 
   // Finish the compound value - error check included
   std::string status = compoundInfo.compoundValueRoot->finish();
@@ -75,9 +79,9 @@ void compoundValueEnd(ConnectionInfo* ciP, ParseData* parseDataP)
   // owner of this compound value tree.
   //
 
-  LM_T(LmtLegacy, ("Set compoundValueP (%p) for attribute at %p",
+  KT_T(KtLegacy, "Set compoundValueP (%p) for attribute at %p",
                    compoundInfo.compoundValueRoot,
-                   parseDataP->lastContextAttribute));
+                   parseDataP->lastContextAttribute);
 
   //
   // Special case for updateContextAttributeRequest. This payload has no

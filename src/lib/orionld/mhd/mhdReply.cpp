@@ -67,7 +67,7 @@ void mhdReply(KjNode* body)
     if (orionldState.uriParams.prettyPrint == false)
       kjFastRender(body, orionldState.responsePayload);
     else
-      kjRender(orionldState.kjsonP, body, orionldState.responsePayload, responsePayloadSize);
+      kjRender(orionldState.kjsonP, body, orionldState.responsePayload);
 
     PERFORMANCE(renderEnd);
   }
