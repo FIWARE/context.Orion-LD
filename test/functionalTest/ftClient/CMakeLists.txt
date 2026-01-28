@@ -32,6 +32,11 @@ SET (SOURCES
     getDdsDump.cpp
     postDdsSub.cpp
     postDdsPub.cpp
+    getDdsServiceRequests.cpp
+    deleteDdsServiceRequests.cpp
+    postDdsServiceReply.cpp
+    postDdsType.cpp
+    postDdsService.cpp
     ddsPublish.cpp
     NgsildSampleTypeObjectSupport.cxx
     NgsildSamplePubSubTypes.cxx

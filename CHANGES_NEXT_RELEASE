@@ -1,14 +1,11 @@
 ## Fixed Issues:
   #1495 - bug with very long HTTP headers in HTTPS notifications
   #1878 - too verbose and no way to turn off INFO messages
-  #1698 - by switching /ngsi-ld/v1/types to use the MongoDB aggregation-based query
-  #XXXX - Added a bunch of checking for NULL from malloc/kaAlloc, eand exiting if the allocation fails
+  #1698 - Retrieving all Entity Types only returns the Types of the first 20 elements
+  #XXXX - Added a bunch of checking for NULL from malloc/kaAlloc, and exiting if the allocation fails
 
 ## New Features:
-  #XXXX - Experimental GET /ngsi-ld/ex/relationships endpoint to query reverse relationships -
-          all entities referencing a given entity via relationship attributes.
-
-## Library version updates
+  #XXXX - GET /ngsi-ld/ex/v1/relationships?id=<entityId> - to retrieve all entities referencing a specific entity
 
 ## Logging
   - Replaced logMsg library with ktrace logging system
@@ -20,12 +17,27 @@
   - Added scripts for automated instllation (both for apt and rpm) as an alternative to the installation guides,
     and added a note about these scripts in the beginning of the installation guides
 
-## Functional Test Suite
+## DDS
+  - Added DDS support for Batch Upsert
+  - Improved the experimental support for DDS Services - Orion-LD can act as a client to invoke DDS/ROS2 services via entity attribute updates
+
+## Library version updates
+N/A
+
+## Multi-Attributes (datasetId)
+N/A
+
+## Notes
+### Functional Test Suite (for implementors)
   - Fixed functional test notification_different_sizes.test (added -ki flag for KT_I messages, sed to strip ktrace prefix)
   - Fixed functional test dds_prepopulate_entity-II.test (added sleep for DDS timing)
   - Improved broker startup error detection in test harness (polls for port, checks for E:/X: errors)
   - Improved SHELL-INIT error display formatting in test harness
 
-## DDS
-## Multi-Attribute (datasetId)
-## Notes
+### DDS
+  Orion-LD, at least for now, does not add DDS types/topics to the DDS system.
+  Meaning, new attributes are not pushed to DDS, ever.
+  However, this possible future feature has been prepared, under an if that always evaluates to false.
+  - Prepared DDS support for Entity Creation
+  - Prepared DDS support for Batch Create
+  - Prepared DDS support for Batch Upsert (the new entities/attributes)   

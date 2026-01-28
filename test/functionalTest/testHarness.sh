@@ -89,18 +89,13 @@ fi
 #
 # DISABLED - functests that are disabled, for some reason
 #
-# NOTE the last functest: 'test/functionalTest/cases/dds_prepopulate_service_from_dds.test'.
-#      Its real path is:  'test/functionalTest/cases/0000_ld/dds/dds_prepopulate_service_from_dds.test'.
-#      There's an error somewhere. Skipping those two dirs (0000_ld/dds) makes it work.
-#
 DISABLED=('test/functionalTest/cases/1156_qfilters_and_compounds/qfilters_and_compounds_equals_null.test' \
           'test/functionalTest/cases/0000_bad_requests/exit.test' \
           'test/functionalTest/cases/2207_not_spurious_decimals_in_custom_notifications/not_spurious_decimals_in_custom_notifications.test' \
           'test/functionalTest/cases/0917_queryContext_behaves_differently/query_with_and_without_forwarding.test' \
           'test/functionalTest/cases/0000_ipv6_support/ipv4_only.test' \
           'test/functionalTest/cases/0000_ipv6_support/ipv6_only.test' \
-          'test/functionalTest/cases/1310_suspect_200OK/suspect_200OK.test' \
-          'test/functionalTest/cases/dds_prepopulate_service_from_dds.test');
+          'test/functionalTest/cases/1310_suspect_200OK/suspect_200OK.test');
 
 
 

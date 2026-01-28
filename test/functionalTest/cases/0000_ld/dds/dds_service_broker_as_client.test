@@ -1,0 +1,215 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Test of Orion-LD as DDS Service Client with ftClient as DDS Service Server
+
+--SHELL-INIT--
+# Create config files for broker and ftClient
+$REPO_HOME/scripts/configFile.sh --ddsService "add_two_ints,Calculator,urn:ngsi-ld:calc:1,operation" > $HOME/.orionld
+$REPO_HOME/scripts/configFile.sh --ddsService "add_two_ints,Calculator,urn:ngsi-ld:calc:1,operation" > $HOME/.ftClient
+
+# Start ftClient with DDS support
+ftClientStart --dds
+
+# Wait for ftClient to initialize DDS
+sleep 1
+
+dbInit CB
+orionldStart CB -mongocOnly -wip dds
+
+# Give DDS time for service discovery
+sleep 0.5
+
+--SHELL--
+
+#
+# This test verifies that Orion-LD can communicate with ftClient acting as a DDS service server:
+# 1. ftClient loads DDS type definitions from files in the repo
+# 2. ftClient announces itself as a server for the add_two_ints service
+# 3. The broker discovers the service via DDS
+# 4. When the 'operation' attribute is updated, the broker sends a service request
+# 5. ftClient receives the request (visible via GET /dds/service/requests)
+#
+# Test steps:
+# 01. Load DDS types into ftClient from repo
+# 02. Announce ftClient as DDS service server for add_two_ints
+# 03. GET urn:ngsi-ld:calc:1 - entity should exist with 'operation' attribute
+# 04. PATCH the operation attribute with {a: 5, b: 3} to trigger a DDS service request
+# 05. GET the entity again to verify the attribute value
+# 06. GET /dds/service/requests from ftClient to see received requests
+#
+
+echo "01. Load DDS types into ftClient from repo"
+echo "==========================================="
+payload='{
+  "path": "'$REPO_HOME'/test/functionalTest/ddsTypes"
+}'
+orionCurl --url /dds/type --port $FT_PORT --payload "$payload"
+echo
+echo
+
+
+echo "02. Announce ftClient as DDS service server for add_two_ints"
+echo "============================================================="
+payload='{
+  "name": "add_two_ints",
+  "requestType": "example_interfaces::srv::dds_::AddTwoInts_Request_",
+  "replyType": "example_interfaces::srv::dds_::AddTwoInts_Response_"
+}'
+orionCurl --url /dds/service --port $FT_PORT --payload "$payload"
+echo
+echo
+
+
+echo "03. GET urn:ngsi-ld:calc:1 - entity should exist with operation attribute"
+echo "=========================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:calc:1
+echo
+echo
+
+
+echo "04. PATCH the operation attribute to trigger a DDS service request"
+echo "==================================================================="
+payload='{
+  "operation": {
+    "type": "Property",
+    "value": {
+      "a": 5,
+      "b": 3
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:calc:1 -X PATCH --payload "$payload"
+echo
+echo
+
+
+echo "05. GET the entity again to verify the attribute value"
+echo "======================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:calc:1
+echo
+echo
+
+
+echo "06. GET /dds/service/requests from ftClient to see received requests"
+echo "====================================================================="
+orionCurl --url /dds/service/requests --port $FT_PORT
+echo
+echo
+
+
+--REGEXPECT--
+01. Load DDS types into ftClient from repo
+===========================================
+HTTP/1.1 201 Created
+Content-Length: REGEX(.*)
+Date: REGEX(.*)
+
+{
+    "path": "REGEX(.*)/test/functionalTest/ddsTypes",
+    "typesLoaded": 2
+}
+
+
+02. Announce ftClient as DDS service server for add_two_ints
+=============================================================
+HTTP/1.1 REGEX(.*)
+Content-Length: REGEX(.*)
+Date: REGEX(.*)
+
+{
+    "announced": REGEX((true|false)),
+    "replyType": "example_interfaces::srv::dds_::AddTwoInts_Response_",
+    "requestType": "example_interfaces::srv::dds_::AddTwoInts_Request_",
+    "service": "add_two_ints"
+}
+
+
+03. GET urn:ngsi-ld:calc:1 - entity should exist with operation attribute
+==========================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+    },
+    "id": "urn:ngsi-ld:calc:1",
+    "operation": {
+        "type": "Property",
+        "value": "uninitialized"
+    },
+    "type": "Calculator"
+}
+
+
+04. PATCH the operation attribute to trigger a DDS service request
+===================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+05. GET the entity again to verify the attribute value
+=======================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+    },
+    "id": "urn:ngsi-ld:calc:1",
+    "operation": {
+        "type": "Property",
+        "value": {
+            "a": 5,
+            "b": 3
+        }
+    },
+    "type": "Calculator"
+}
+
+
+06. GET /dds/service/requests from ftClient to see received requests
+=====================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Date: REGEX(.*)
+
+
+
+--TEARDOWN--
+ftClientStop
+brokerStop CB
+dbDrop CB
+rm -f $HOME/.orionld
+rm -f $HOME/.ftClient
