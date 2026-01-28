@@ -47,6 +47,13 @@ jobs:
           java-version: '17'
           java-package: jdk
 
+      - name: Configure testcontainers
+        run: |
+          # Create empty config to suppress "file not found" warning
+          touch ~/.testcontainers.properties
+          # Pre-pull the image so testcontainers doesn't need to parse the variable
+          docker pull localhost:5000/orion-ld:latest
+
       - name: Run tests
         run: mvn clean test -B -ntp
         env:
