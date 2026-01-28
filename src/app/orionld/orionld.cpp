@@ -354,7 +354,6 @@ bool            kTraceInfo       = false;
 #define EXTRAS_DESC            "Extra stuff, non-NGSI-LD, like 'origin' in subs/regs"
 #define KTRACE_LEVELS_DESC     "K-Trace trace levels"
 #define KTRACE_INFO_DESC       "K-Trace INFO messages"
-#define DDS_ON_CREATE_DESC     "publish new entities/attributes to DDS on creation"
 #define KTOSCREEN_DESC         "K-Trace to stdout"
 
 
@@ -466,7 +465,6 @@ PaArgument paArgs[] =
   { "-kt",                    kTraceLevels,             "KTRACE_LEVELS",             PaString,  PaOpt,  _i "",             PaNL,  PaNL,             KTRACE_LEVELS_DESC        },
   { "-ki",                    &kTraceInfo,              "KTRACE_INFO",               PaBool,    PaOpt,  false,            false,  true,             KTRACE_INFO_DESC          },
   { "-kToScreen",             &kToScreen,               "KTOSCREEN",                 PaBool,    PaOpt,  false,            false,  true,             KTOSCREEN_DESC            },
-  { "-ddsOnCreate",           &ddsPublishOnCreate,      "DDS_ON_CREATE",             PaBool,    PaOpt,  false,            false,  true,             DDS_ON_CREATE_DESC        },
 
   PA_END_OF_ARGS
 };

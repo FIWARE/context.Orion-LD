@@ -120,5 +120,6 @@ Usage: orionld  [option '-U' (extended usage)]
                 [option '-kt' <K-Trace trace levels>]
                 [option '-ki' (K-Trace INFO messages)]
                 [option '-kToScreen' (K-Trace to stdout)]
+                [option '-ddsOnCreate' (publish new entities/attributes to DDS on creation)]
 
 --TEARDOWN--
