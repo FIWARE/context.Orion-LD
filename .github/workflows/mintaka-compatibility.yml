@@ -48,6 +48,6 @@ jobs:
           java-package: jdk
 
       - name: Run tests
-        run: mvn clean test
+        run: mvn clean test -B -ntp
         env:
           ORION_IMAGE: localhost:5000/orion-ld:latest
