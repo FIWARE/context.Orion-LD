@@ -99,8 +99,8 @@ orionCurl --url /ngsi-ld/ex/v1/relationships?id=urn:ngsi-ld:r:003 -H 'Link: <htt
 echo
 echo
 
-echo "05. GET entity list of entities related to urn:ngsi-ld:Building:store002 (shoud be empty)"
-echo "========================================================================================="
+echo "05. GET entity list of entities related to urn:ngsi-ld:Building:store002 (should be empty)"
+echo "=========================================================================================="
 orionCurl --url /ngsi-ld/ex/v1/relationships?id=urn:ngsi-ld:Building:store002 -H 'Link: <https://fiware.github.io/tutorials.Step-by-Step/data-models-context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
@@ -157,8 +157,8 @@ Link: <https://fiware.github.io/tutorials.Step-by-Step/data-models-context.jsonl
 }
 
 
-05. GET entity list of entities related to urn:ngsi-ld:Building:store002 (shoud be empty)
-=========================================================================================
+05. GET entity list of entities related to urn:ngsi-ld:Building:store002 (should be empty)
+==========================================================================================
 HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
 Content-Type: application/json
