@@ -2,13 +2,48 @@ name: Unit Test
 
 on:
   pull_request:
+  workflow_dispatch:
 
 env:
   IMAGE_NAME: localhost:5000/orion-ld-test:latest
 
 jobs:
+  check-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Check for source or unittest changes
+        id: check
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manual trigger - running tests"
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Get changed files
+          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          echo "Changed files:"
+          echo "$CHANGED"
+
+          # Check if any src/ or test/unittests/ files changed
+          if echo "$CHANGED" | grep -qE '^(src/|test/unittests/)'; then
+            echo "Source or unit test changes detected - running tests"
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          else
+            echo "::notice::Skipping unit tests - no changes in src/ or test/unittests/"
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          fi
+
   unit:
     runs-on: ubuntu-latest
+    needs: check-changes
+    if: needs.check-changes.outputs.should_run == 'true'
 
     services:
       registry:
