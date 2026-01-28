@@ -28,10 +28,13 @@
 #include <string>
 #include <vector>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"                           // trace messages - ktrace library
+}
 
 #include "orionld/types/OrionldTenant.h"             // OrionldTenant
+#include "orionld/common/traceLevels.h"              // KTrace levels
 #include "orionld/common/orionldState.h"             // orionldState
 
 #include "common/string.h"
@@ -99,7 +102,7 @@ static bool processSubscriptions
                                          tenantP,
                                          fiwareCorrelator))
     {
-      LM_T(LmtLegacy, ("Notification failure"));
+      KT_T(KtLegacy, "Notification failure");
       ret = false;
     }
 
@@ -224,7 +227,7 @@ static bool addTriggeredSubscriptions
       "}" +
       "return false; " +
     "}";
-  LM_T(LmtLegacy, ("JS function: %s", function.c_str()));
+  KT_T(KtLegacy, "JS function: %s", function.c_str());
 
 
   std::string     entPatternQ = CSUB_ENTITIES "." CSUB_ENTITY_ISPATTERN;
@@ -255,7 +258,7 @@ static bool addTriggeredSubscriptions
 
     if (!nextSafeOrErrorF(cursor, &sub, &err))
     {
-      LM_E(("Runtime Error (exception in nextSafe(): %s - query: %s)", err.c_str(), query.toString().c_str()));
+      KT_E("Runtime Error (exception in nextSafe(): %s - query: %s)", err.c_str(), query.toString().c_str());
       continue;
     }
     BSONElement idField = getFieldF(&sub, "_id");
@@ -283,7 +286,7 @@ static bool addTriggeredSubscriptions
 
       httpInfo.url = getStringFieldF(&sub, CASUB_REFERENCE);
 
-      LM_T(LmtLegacy, ("adding subscription: '%s'", sub.toString().c_str()));
+      KT_T(KtLegacy, "adding subscription: '%s'", sub.toString().c_str());
 
       //
       // FIXME P4: Once ctx availability notification formats get defined for NGSIv2,
@@ -337,7 +340,7 @@ HttpStatusCode processRegisterContext
   /* Calculate expiration (using the current time and the duration field in the request) */
   double expiration = orionldState.requestTime + requestP->duration.parse();
 
-  LM_T(LmtLegacy, ("Registration expiration: %lu", expiration));
+  KT_T(KtLegacy, "Registration expiration: %lu", expiration);
 
   /* Create the mongoDB registration document */
   BSONObjBuilder reg;
@@ -382,12 +385,12 @@ HttpStatusCode processRegisterContext
       if (en->type == "")
       {
         entities.append(BSON(REG_ENTITY_ID << en->id));
-        LM_T(LmtLegacy, ("Entity registration: {id: %s}", en->id.c_str()));
+        KT_T(KtLegacy, "Entity registration: {id: %s}", en->id.c_str());
       }
       else
       {
         entities.append(BSON(REG_ENTITY_ID << en->id << REG_ENTITY_TYPE << en->type));
-        LM_T(LmtLegacy, ("Entity registration: {id: %s, type: %s}", en->id.c_str(), en->type.c_str()));
+        KT_T(KtLegacy, "Entity registration: {id: %s, type: %s}", en->id.c_str(), en->type.c_str());
       }
     }
 
@@ -398,10 +401,10 @@ HttpStatusCode processRegisterContext
       ContextRegistrationAttribute* cra = cr->contextRegistrationAttributeVector[jx];
 
       attrs.append(BSON(REG_ATTRS_NAME << cra->name << REG_ATTRS_TYPE << cra->type << "isDomain" << cra->isDomain));
-      LM_T(LmtLegacy, ("Attribute registration: {name: %s, type: %s, isDomain: %s}",
+      KT_T(KtLegacy, "Attribute registration: {name: %s, type: %s, isDomain: %s}",
                       cra->name.c_str(),
                       cra->type.c_str(),
-                      cra->isDomain.c_str()));
+                      cra->isDomain.c_str());
 
       unsigned int size = requestP->contextRegistrationVector[ix]->contextRegistrationAttributeVector[jx]->metadataVector.size();
       for (unsigned int kx = 0; kx < size; ++kx)
@@ -416,8 +419,8 @@ HttpStatusCode processRegisterContext
         REG_ATTRS << attrs.arr() <<
         REG_PROVIDING_APPLICATION << requestP->contextRegistrationVector[ix]->providingApplication.get()));
 
-    LM_T(LmtLegacy, ("providingApplication registration: %s",
-                    requestP->contextRegistrationVector[ix]->providingApplication.c_str()));
+    KT_T(KtLegacy, "providingApplication registration: %s",
+                    requestP->contextRegistrationVector[ix]->providingApplication.c_str());
 
     std::string err;
 

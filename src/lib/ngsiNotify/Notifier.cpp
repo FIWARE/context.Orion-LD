@@ -35,7 +35,10 @@ extern "C"
 #include "kjson/kjBuilder.h"                                   // kjChildAdd, kjChildRemove
 }
 
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
 #include "orionld/types/ApiVersion.h"                          // ApiVersion
 #include "orionld/types/Verb.h"                                // Verb, verbToString
@@ -113,7 +116,7 @@ void Notifier::sendNotifyContextRequest
 
     if (ret != 0)
     {
-      LM_E(("Runtime Error (error creating thread: %d)", ret));
+      KT_E("Runtime Error (error creating thread: %d)", ret);
       for (unsigned ix = 0; ix < paramsV->size(); ix++)
       {
         delete (*paramsV)[ix];
@@ -189,7 +192,7 @@ void Notifier::sendNotifyContextAvailabilityRequest
     int ret = pthread_create(&tid, NULL, startSenderThread, paramsV);
     if (ret != 0)
     {
-      LM_E(("Runtime Error (error creating thread: %d)", ret));
+      KT_E("Runtime Error (error creating thread: %d)", ret);
       return;
     }
     pthread_detach(tid);
@@ -354,7 +357,7 @@ static std::vector<SenderThreadParams*>* buildSenderParamsCustom
 
     if (!parseUrl(url, host, port, uriPath, protocol))
     {
-      LM_E(("Runtime Error (not sending NotifyContextRequest: malformed URL: '%s')", httpInfo.url.c_str()));
+      KT_E("Runtime Error (not sending NotifyContextRequest: malformed URL: '%s')", httpInfo.url.c_str());
       return paramsV;  // empty vector
     }
 
@@ -508,7 +511,7 @@ std::vector<SenderThreadParams*>* Notifier::buildSenderParams
       subP = subCacheItemLookup(tenant.c_str(), ncrP->subscriptionId.c_str());
       if (subP == NULL)
       {
-        LM_E(("Unable to find subscription: %s", ncrP->subscriptionId.c_str()));
+        KT_E("Unable to find subscription: %s", ncrP->subscriptionId.c_str());
         return paramsV;
       }
 
@@ -518,7 +521,7 @@ std::vector<SenderThreadParams*>* Notifier::buildSenderParams
 
       if (kjTree == NULL)
       {
-        LM_E(("kjTreeFromNotification error: %s", details));
+        KT_E("kjTreeFromNotification error: %s", details);
         return paramsV;
       }
 
@@ -566,7 +569,7 @@ std::vector<SenderThreadParams*>* Notifier::buildSenderParams
     }
     else if (!parseUrl(httpInfo.url, host, port, uriPath, protocol))
     {
-      LM_E(("Runtime Error (not sending NotifyContextRequest: malformed URL: '%s')", httpInfo.url.c_str()));
+      KT_E("Runtime Error (not sending NotifyContextRequest: malformed URL: '%s')", httpInfo.url.c_str());
       return paramsV;  //empty vector
     }
 

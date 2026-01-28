@@ -24,8 +24,12 @@
 */
 #include <pthread.h>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+
+#include "orionld/common/traceLevels.h"
 
 #include "common/clockFunctions.h"
 #include "common/statistics.h"
@@ -62,7 +66,7 @@ int QueueWorkers::start()
 
     if (rc != 0)
     {
-      LM_E(("Internal Error (pthread_create: %s)", strerror(errno)));
+      KT_E("Internal Error (pthread_create: %s)", strerror(errno));
       return rc;
     }
   }
@@ -86,7 +90,7 @@ static void* workerFunc(void* pSyncQ)
 
   if (curl == NULL)
   {
-    LM_E(("Runtime Error (curl_easy_init)"));
+    KT_E("Runtime Error (curl_easy_init)");
     pthread_exit(NULL);
   }
 
@@ -130,14 +134,14 @@ static void* workerFunc(void* pSyncQ)
 
       if (simulatedNotification)
       {
-        LM_T(LmtLegacy, ("simulatedNotification is 'true', skipping outgoing request"));
+        KT_T(KtLegacy, "simulatedNotification is 'true', skipping outgoing request");
         __sync_fetch_and_add(&noOfSimulatedNotifications, 1);
       }
       else if (params->protocol == "mqtt")  // Notification to be sent via MQTT broker
       {
         char* topic = (char*) params->resource.c_str();
 
-        LM_T(LmtNotificationMsg, ("Sending MQTT Notification for subscription '%s'", params->subscriptionId.c_str()));
+        KT_T(KtNotificationMsg, "Sending MQTT Notification for subscription '%s'", params->subscriptionId.c_str());
         r = mqttNotification(params->ip.c_str(),
                              params->port,
                              topic,
@@ -158,7 +162,7 @@ static void* workerFunc(void* pSyncQ)
         if (ngsildSubscription == false)
           subscriptionId = NULL;
  
-        LM_T(LmtNotificationMsg, ("Sending HTTP Notification for subscription '%s'", params->subscriptionId.c_str()));
+        KT_T(KtNotificationMsg, "Sending HTTP Notification for subscription '%s'", params->subscriptionId.c_str());
         r = httpRequestSendWithCurl(curl,
                                     params->ip,
                                     params->port,

@@ -27,7 +27,10 @@
 #include <stdlib.h>               /* strtol, ...                             */
 
 #include "parseArgs/baStd.h"      /* BA standard header file                 */
-#include "logMsg/logMsg.h"        /* LM_ENTRY, LM_EXIT, ...                  */
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 #include "parseArgs/parseArgs.h"  /* PaArgument                              */
 #include "parseArgs/paPrivate.h"  /* PafDefault, ...                         */
 #include "parseArgs/paIterate.h"  /* paIterateInit, paIterateNext            */

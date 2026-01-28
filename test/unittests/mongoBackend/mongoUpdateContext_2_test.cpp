@@ -28,8 +28,11 @@
 #include "gtest/gtest.h"
 #include "mongo/client/dbclient.h"
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+#include "orionld/common/traceLevels.h"
 
 #include "orionld/common/tenantList.h"     // tenant0
 
@@ -3650,7 +3653,7 @@ TEST(mongoUpdateContextRequest, updateNativeTypes)
     EXPECT_TRUE(findAttr(attrNames, "A4"));
     EXPECT_STREQ("T", C_STR_FIELD(a3, "type"));
     EXPECT_TRUE(a3.getField("value").isNull());
-    LM_W(("a3 value == '%s'", a3.getField("value").toString().c_str()));
+    KT_W("a3 value == '%s'", a3.getField("value").toString().c_str());
     EXPECT_EQ(1360232700, a3.getIntField("modDate"));
     EXPECT_STREQ("TA4", C_STR_FIELD(a4, "type"));
     EXPECT_FALSE(a4.hasField("value"));

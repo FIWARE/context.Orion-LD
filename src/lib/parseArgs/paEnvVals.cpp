@@ -24,9 +24,14 @@
 */
 
 #include <stdlib.h>                       /* getenv                          */
+#include <string.h>                       /* strcpy, strcmp                  */
 
 #include "parseArgs/baStd.h"              /* BA standard header file         */
-#include "logMsg/logMsg.h"                /* lmVerbose, lmDebug, ...         */
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+#include "orionld/common/traceLevels.h"
 
 #include "parseArgs/paPrivate.h"          /* PaTypeUnion, config variables,  */
 #include "parseArgs/paTraceLevels.h"      /* LmtPaEnvVal, ...                */
@@ -100,23 +105,23 @@ int paEnvVals(PaiArgument* paList)
     char* val;
     char  envVarName[80];
 
-    LM_T(LmtPaEnvVal, ("got aP '%s'", aP->name));
+    KT_T(KtPaEnvVal, "got aP '%s'", aP->name);
 
     if ((aP->what & PawVariable) == 0)
     {
-      LM_T(LmtPaEnvVal, ("skipping aP '%s' as it is no variable", aP->name));
+      KT_T(KtPaEnvVal, "skipping aP '%s' as it is no variable", aP->name);
       continue;
     }
 
     paEnvName(aP, envVarName, sizeof(envVarName));
 
-    LM_T(LmtPaEnvVal, ("looking for '%s'", envVarName));
+    KT_T(KtPaEnvVal, "looking for '%s'", envVarName);
 
     val = getenv(envVarName);
     if (val)
     {
       aP->from = PafEnvVar;
-      LM_T(LmtPaEnvVal, ("got value '%s' for %s", val, envVarName));
+      KT_T(KtPaEnvVal, "got value '%s' for %s", val, envVarName);
 
       switch (aP->type)
       {
@@ -137,45 +142,43 @@ int paEnvVals(PaiArgument* paList)
         break;
 
       case PaSList:
-        LM_TODO(("string list ..."));
         break;
 
       case PaIList:
-        LM_TODO(("int list ..."));
         break;
 
       case PaInt:
       case PaIntU:
         *((int*) aP->varP) = baStoi(val);
-        LM_T(LmtPaEnvVal, ("got value %d for %s", *((int*) aP->varP), envVarName));
+        KT_T(KtPaEnvVal, "got value %d for %s", *((int*) aP->varP), envVarName);
         break;
 
       case PaInt64:
       case PaIntU64:
         *((int64_t*) aP->varP) = baStoi(val);
-        LM_T(LmtPaEnvVal, ("got value %d for %s", *((int*) aP->varP), envVarName));
+        KT_T(KtPaEnvVal, "got value %d for %s", *((int*) aP->varP), envVarName);
         break;
 
       case PaShort:
       case PaShortU:
         *((int16_t*) (int64_t) aP->varP) = baStoi(val);
-        LM_T(LmtPaEnvVal, ("got value %d for %s", *((int16_t*) aP->varP), envVarName));
+        KT_T(KtPaEnvVal, "got value %d for %s", *((int16_t*) aP->varP), envVarName);
         break;
 
       case PaFloat:
         *((float*) (int64_t) aP->varP) = baStof(val);
-        LM_T(LmtPaEnvVal, ("got value %f for %s", *((float*) aP->varP), envVarName));
+        KT_T(KtPaEnvVal, "got value %f for %s", *((float*) aP->varP), envVarName);
         break;
 
       case PaDouble:
         *((double*) (int64_t) aP->varP) = baStod(val);
-        LM_T(LmtPaEnvVal, ("got value %f for %s", *((double*) aP->varP), envVarName));
+        KT_T(KtPaEnvVal, "got value %f for %s", *((double*) aP->varP), envVarName);
         break;
 
       case PaChar:
       case PaCharU:
         *((char*) (int64_t) aP->varP) = baStoi(val);
-        LM_T(LmtPaEnvVal, ("got value %d for %s", *((char*) aP->varP), envVarName));
+        KT_T(KtPaEnvVal, "got value %d for %s", *((char*) aP->varP), envVarName);
         break;
 
       default:

@@ -1,4 +1,6 @@
-# Copyright 2013 Telefonica Investigacion y Desarrollo, S.A.U
+#!/bin/bash
+
+# Copyright 2014 Telefonica Investigacion y Desarrollo, S.A.U
 #
 # This file is part of Orion Context Broker.
 #
@@ -18,26 +20,38 @@
 # For those usages not covered by this license please contact with
 # iot_support at tid dot es
 
-CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
 
-SET (HEADERS
-	logMsg.h
-	traceLevels.h
-	time.h
-)
+set -e
 
-SET (SOURCES
-    logMsg.cpp
-    time.cpp
-)
+echo
+echo -e "\e[1;32m Debian Builder: installing k libs \e[0m"
+for kproj in kbase klog kalloc kjson khash kargs ktrace
+do
+    git clone https://gitlab.com/kzangeli/${kproj}.git ${ROOT_FOLDER}/$kproj
+done
 
 
-# Include directories
-# -----------------------------------------------------------------
-include_directories("${PROJECT_SOURCE_DIR}/src/lib")
+function debug()
+{
+    wd="$1"
+    echo In directory $wd
+    echo branches:
+    git branch
+    echo
+}
 
 
-# Library declaration
-# -----------------------------------------------------------------
-ADD_LIBRARY(lm STATIC ${SOURCES} ${HEADERS})
-SET (LIBLM ${PROJECT_BINARY_DIR}/src/logMsg/liblm.a CACHE INTERNAL "")
+
+#
+# kbase klog kalloc khash
+#
+for kproj in kbase ktrace klog kargs kalloc khash kjson 
+do
+    cd ${ROOT_FOLDER}/$kproj
+    debug $PWD
+    echo checking out release/0.10
+    git checkout release/0.10
+    make
+    make install
+    echo "-----------------------------------------------"
+done

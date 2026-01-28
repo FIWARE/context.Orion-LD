@@ -27,8 +27,6 @@
 
 #include "mongo/client/dbclient.h"
 
-#include "logMsg/logMsg.h"
-
 #include "orionld/types/OrionldTenant.h"            // OrionldTenant
 
 #include "common/sem.h"

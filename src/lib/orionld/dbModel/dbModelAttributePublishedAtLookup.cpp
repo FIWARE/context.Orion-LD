@@ -23,6 +23,7 @@
 * Author: Ken Zangelin
 */
 #include <unistd.h>                                              // NULL
+#include <stdint.h>                                              // types: int64_t, ...
 
 extern "C"
 {

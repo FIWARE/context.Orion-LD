@@ -386,6 +386,7 @@ typedef struct OrionldConnectionState
   char*                   httpVersion;
   Verb                    verb;
   bool                    badVerb;             // ToDo: verb == NOVERB should cover this
+  bool                    badInputSeen;        // To track if a BadInput alarm has already been issued for the current request
   char*                   verbString;          // For error handling the incorrect verb is needed for the error response
   KjNode*                 payloadContextNode;
   KjNode*                 payloadIdNode;

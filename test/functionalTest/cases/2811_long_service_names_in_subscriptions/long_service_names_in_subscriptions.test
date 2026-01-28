@@ -90,7 +90,7 @@ echo
 
 echo "04. grep in log file to make sure there are NO ERRORS"
 echo "====================================================="
-grep ERR /tmp/${BROKER}.log
+egrep ^E:  /tmp/Orion-LD.log
 echo
 echo
 

@@ -26,12 +26,17 @@
 #include <stdint.h>
 #include <math.h>
 #include <stdio.h>
+#include <string.h>
+#include <errno.h>
 
 #include <string>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
+#include "orionld/common/traceLevels.h"
 #include "common/globals.h"
 #include "common/sem.h"
 #include "alarmMgr/alarmMgr.h"
@@ -50,6 +55,10 @@ int                    startTime            = -1;
 int                    statisticsTime       = -1;
 OrionExitFunction      orionExitFunction    = NULL;
 static struct timeval  logStartTime;
+
+// Thread-local transaction/correlator IDs (previously in logMsg)
+__thread char          transactionId[66];
+__thread char          correlatorId[64];
 bool                   countersStatistics   = false;
 bool                   semWaitStatistics    = false;
 bool                   timingStatistics     = false;
@@ -250,7 +259,7 @@ double getCurrentTime(void)
 {
   if (getTimer() == NULL)
   {
-    LM_W(("getTimer() == NULL - calling exit function for library user"));
+    KT_W("getTimer() == NULL - calling exit function for library user");
     orionExitFunction(1, "getTimer() == NULL");
     return -1;
   }

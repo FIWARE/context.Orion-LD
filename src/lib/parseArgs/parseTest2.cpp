@@ -25,7 +25,10 @@
 #include <stdio.h>
 #include <string>
 
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
 #include "parseArgs/parseArgs.h"
 
@@ -42,7 +45,7 @@ int main(int argC, char* argV[])
   paConfig("msgs to stdout", (void*) FALSE);
   paParse(NULL, argC, argV, 1, FALSE);
 
-  LM_V(("verbose message"));
+  KT_V("verbose message");
   if (paResultString[0] != 0)
   {
     printf("Got a paResultString:\n%s", paResultString);

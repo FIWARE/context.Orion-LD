@@ -35,14 +35,17 @@
 extern "C"
 {
 #include "kbase/kTime.h"                                         // kTimeGet, kTimeDiff
-#include "ktrace/kTrace.h"                                       // KT_I
 #include "kalloc/kaBufferReset.h"                                // kaBufferReset
 #include "kjson/kjFree.h"                                        // kjFree
 #include "kjson/kjRender.h"                                      // kjFastRender
 }
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+
+#include "orionld/common/traceLevels.h"
 
 #include "common/limits.h"
 #include "common/string.h"
@@ -101,7 +104,7 @@ extern "C"
   float           diffF;                                 \
                                                          \
   kTimeDiff(&start, &end, &diff, &diffF);                \
-  LM_T(LmtPerformance, ("TPUT: %s %f", text, diffF));    \
+  KT_T(KtPerformance, "TPUT: %s %f", text, diffF);    \
 }
 
 
@@ -225,7 +228,7 @@ MHD_Result uriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* ckey, c
         orionldState.httpStatusCode = error.code;
         ciP->answer                 = error.smartRender(orionldState.apiVersion);
 
-        LM_E(("Invalid value for URI parameter 'limit': '%s'", val));
+        KT_E("Invalid value for URI parameter 'limit': '%s'", val);
         return MHD_YES;
       }
 
@@ -239,7 +242,7 @@ MHD_Result uriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* ckey, c
       orionldState.httpStatusCode = error.code;
       ciP->answer                 = error.smartRender(orionldState.apiVersion);
 
-      LM_E(("Invalid value for URI parameter 'limit': '%s'", val));
+      KT_E("Invalid value for URI parameter 'limit': '%s'", val);
       return MHD_YES;
     }
     else if (limit == 0)
@@ -296,7 +299,7 @@ MHD_Result uriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* ckey, c
     alarmMgr.badInput(orionldState.clientIp, details);
     orionldState.httpStatusCode = error.code;
     ciP->answer                 = error.smartRender(orionldState.apiVersion);
-    LM_W(("Bad Input (forbidden character in URI parameter value: %s=%s)", key.c_str(), val));
+    KT_W("Bad Input (forbidden character in URI parameter value: %s=%s)", key.c_str(), val);
   }
 
   return MHD_YES;
@@ -354,7 +357,7 @@ static MHD_Result httpHeaderGet(void* cbDataP, MHD_ValueKind kind, const char* k
   }
   else
   {
-    LM_W(("'unsupported' HTTP header: '%s', value '%s'", key, value));
+    KT_W("'unsupported' HTTP header: '%s', value '%s'", key, value);
   }
 
   return MHD_YES;
@@ -402,7 +405,7 @@ void requestCompleted
       // Also, if something went wrong during processing, the SR can flag this by setting the requestTree to NULL
       //
       if (orionldState.troeError == true)
-        LM_E(("Internal Error (something went wrong during TRoE processing)"));
+        KT_E("Internal Error (something went wrong during TRoE processing)");
       else
       {
         //
@@ -621,8 +624,8 @@ void requestCompleted
     else
       kTimeDiff(&performanceTimestamps.mongoBackendStart, &performanceTimestamps.mongoBackendEnd, &mongo, &mongoF);
 
-    LM_T(LmtPerformance, ("TPUT: Entire request - DB:        %f", allF - mongoF));  // Only for REQUEST_PERFORMANCE
-    LM_T(LmtPerformance, ("TPUT: mongoConnect Accumulated:   %f (%d calls)", performanceTimestamps.mongoConnectAccumulated, performanceTimestamps.getMongoConnectionCalls));
+    KT_T(KtPerformance, "TPUT: Entire request - DB:        %f", allF - mongoF);  // Only for REQUEST_PERFORMANCE
+    KT_T(KtPerformance, "TPUT: mongoConnect Accumulated:   %f (%d calls)", performanceTimestamps.mongoConnectAccumulated, performanceTimestamps.getMongoConnectionCalls);
   }
 #endif
 
@@ -835,7 +838,7 @@ int servicePathSplit(ConnectionInfo* ciP)
     // This was previously an LM_T trace, but we have "promoted" it to INFO as
     // it is needed to check logs in a .test case (case 0392 service_path_http_header.test)
     //
-    LM_K(("Service Path %d: '%s'", ix, ciP->servicePathV[ix].c_str()));  // Sacred - used by functest service_path_http_header.test
+    KT_I("Service Path %d: '%s'", ix, ciP->servicePathV[ix].c_str());  // Sacred - used by functest service_path_http_header.test
   }
 
 
@@ -1108,7 +1111,7 @@ ConnectionInfo* connectionTreatInit
   //
   if ((ciP = new ConnectionInfo(connection)) == NULL)
   {
-    LM_E(("Runtime Error (error allocating ConnectionInfo)"));
+    KT_E("Runtime Error (error allocating ConnectionInfo)");
     // No METRICS here ... Without ConnectionInfo we have no service/subService ...
     *retValP = MHD_NO;
     return NULL;
@@ -1154,7 +1157,7 @@ ConnectionInfo* connectionTreatInit
   // Error detected in HTTP headers?
   if (orionldState.httpStatusCode != 200)
   {
-    LM_E(("ERROR in HTTP Headers (%s: %s)", orionldState.pd.title, orionldState.pd.detail));
+    KT_E("ERROR in HTTP Headers (%s: %s)", orionldState.pd.title, orionldState.pd.detail);
     OrionError oe((HttpStatusCode) orionldState.httpStatusCode, orionldState.pd.detail);
     ciP->answer = oe.smartRender(orionldState.apiVersion);
 
@@ -1172,7 +1175,7 @@ ConnectionInfo* connectionTreatInit
 
   if (orionldState.httpStatusCode >= 400)
   {
-    LM_W(("Bad Request (error in URI parameters - %s: %s)", orionldState.pd.title, orionldState.pd.detail));
+    KT_W("Bad Request (error in URI parameters - %s: %s)", orionldState.pd.title, orionldState.pd.detail);
     if (orionldState.httpStatusCode != 406)
     {
       OrionError oe(SccBadRequest, orionldState.pd.title? orionldState.pd.title : "TITLE");
@@ -1187,6 +1190,7 @@ ConnectionInfo* connectionTreatInit
   // Transaction starts here
   //
   lmTransactionStart("from", "", ip, port, url);  // Incoming REST request starts
+  (void) port;  // Suppress unused variable warning - was used by lmTransactionStart
 
   //
   // X-Real-IP and X-Forwarded-For (used by a potential proxy on top of Orion) overrides ip.
@@ -1200,6 +1204,7 @@ ConnectionInfo* connectionTreatInit
     transactionIp = orionldState.in.xForwardedFor;
 
   lmTransactionSetFrom(transactionIp);
+  (void) transactionIp;  // Suppress unused variable warning - was used by lmTransactionSetFrom
 
   MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, uriArgumentGet, ciP);
 
@@ -1457,7 +1462,7 @@ static MHD_Result connectionTreat
       orionldState.httpStatusCode = 400;
       ciP->answer                 = error.smartRender(orionldState.apiVersion);
 
-      LM_W(("Forbidden chars in URL"));
+      KT_W("Forbidden chars in URL");
       return MHD_YES;
     }
 
@@ -1466,7 +1471,7 @@ static MHD_Result connectionTreat
       if (orionldState.orionldErrorDone == false)
       {
         OrionError error(SccNotImplemented, "Non NGSI-LD requests are not supported with -mongocOnly is set");
-        LM_E(("Non NGSI-LD requests are not supported with -mongocOnly is set"));
+        KT_E("Non NGSI-LD requests are not supported with -mongocOnly is set");
 
         orionldState.httpStatusCode = 501;
         ciP->answer                 = error.smartRender(orionldState.apiVersion);
@@ -1496,7 +1501,7 @@ static MHD_Result connectionTreat
     if (keyValuesEtAl == false)
     {
       OrionError error(SccBadRequest, "Invalid value for URI param /options/");
-      LM_W(("Bad Input (Invalid value for URI param /options/)"));
+      KT_W("Bad Input (Invalid value for URI param /options/)");
 
       orionldState.httpStatusCode = 400;
       ciP->answer                 = error.smartRender(orionldState.apiVersion);
@@ -1621,6 +1626,7 @@ static MHD_Result connectionTreat
   //
   // Check Content-Type and Content-Length for GET/DELETE requests
   //
+  KT_W("orionldState.in.contentType: %s", mimeType(orionldState.in.contentType));
   if ((orionldState.in.contentType != MT_NOTGIVEN) && (orionldState.in.contentType != MT_NONE) && (orionldState.in.contentLength == 0) && ((orionldState.verb == HTTP_GET) || (orionldState.verb == HTTP_DELETE)))
   {
     const char*  details = "Orion accepts no payload for GET/DELETE requests. HTTP header Content-Type is thus forbidden";
@@ -1701,7 +1707,7 @@ static int restStart(IpVersion ipVersion, const char* httpsKey = NULL, const cha
 
   if (port == 0)
   {
-    LM_X(1, ("Fatal Error (please call restInit before starting the REST service)"));
+    KT_X(1, "Fatal Error (please call restInit before starting the REST service)");
   }
 
   if (threadPoolSize != 0)
@@ -1731,7 +1737,7 @@ static int restStart(IpVersion ipVersion, const char* httpsKey = NULL, const cha
     memset(&sad, 0, sizeof(sad));
     if (inet_pton(AF_INET, bindIp, &(sad.sin_addr.s_addr)) != 1)
     {
-      LM_X(2, ("Fatal Error (V4 inet_pton fail for %s)", bindIp));
+      KT_X(2, "Fatal Error (V4 inet_pton fail for %s)", bindIp);
     }
 
     sad.sin_family = AF_INET;
@@ -1818,7 +1824,7 @@ static int restStart(IpVersion ipVersion, const char* httpsKey = NULL, const cha
     memset(&sad_v6, 0, sizeof(sad_v6));
     if (inet_pton(AF_INET6, bindIPv6, &(sad_v6.sin6_addr.s6_addr)) != 1)
     {
-      LM_X(4, ("Fatal Error (V6 inet_pton fail for %s)", bindIPv6));
+      KT_X(4, "Fatal Error (V6 inet_pton fail for %s)", bindIPv6);
     }
 
     sad_v6.sin6_family = AF_INET6;
@@ -1905,7 +1911,7 @@ static int restStart(IpVersion ipVersion, const char* httpsKey = NULL, const cha
 
   if (mhdStartError == true)
   {
-    LM_X(5, ("Fatal Error (error starting REST interface - on port %d)", port));
+    KT_X(5, "Fatal Error (error starting REST interface - on port %d)", port);
   }
 
   return 0;

@@ -24,11 +24,17 @@
 */
 #include <cinttypes>                  /* PRId64, PRIu64                      */
 #include <stdlib.h>                   /* system                              */
+#include <string.h>                   /* strdup, strlen, memset, strncat     */
 #include <unistd.h>                   /* getpid                              */
 #include <string>                     /* std::string                         */
 
 #include "parseArgs/baStd.h"          /* BA standard header file             */
-#include "logMsg/logMsg.h"            /* lmVerbose, lmDebug, ...             */
+extern "C"
+{
+#include "ktrace/kTrace.h"
+#include "kbase/kMacros.h"            /* K_MAX                               */
+}
+#include "orionld/common/traceLevels.h"
 
 #include "parseArgs/parseArgs.h"      /* PaArgument                          */
 #include "parseArgs/paPrivate.h"      /* PaTypeUnion, paBuiltins, ...        */
@@ -116,7 +122,7 @@ static void getApVals
   PaTypeUnion*  maxP;
   char          out[256];
 
-  LM_T(LmtPaApVals, ("Fixing def, min, max, real values for %s", aP->name));
+  KT_T(KtPaApVals, "Fixing def, min, max, real values for %s", aP->name);
 
   if (aP->def == PaNoDef)
   {
@@ -230,8 +236,8 @@ static void getApVals
     break;
   }
 
-  LM_T(LmtPaApVals, ("Get def(%s), min(%s), max(%s), real(%s) values for %s",
-                     defVal, minVal, maxVal, realVal, aP->name));
+  KT_T(KtPaApVals, "Get def(%s), min(%s), max(%s), real(%s) values for %s",
+                     defVal, minVal, maxVal, realVal, aP->name);
 }
 
 
@@ -249,7 +255,7 @@ void paUsage(void)
   int           ix       = -1;
   bool          firstUserOptionFound = false;
 
-  LM_T(LmtPaUsage, ("presenting usage"));
+  KT_T(KtPaUsage, "presenting usage");
 
   spacePad = (char*) strdup(progName);
   memset(spacePad, 0x20202020, strlen(spacePad));  /* replace progName */
@@ -392,7 +398,7 @@ void paExtendedUsage(void)
     {
       snprintf(name, sizeof(name), "[%s]", aP->description);
     }
-    optNameMaxLen = MAX(strlen(name), (unsigned int) optNameMaxLen);
+    optNameMaxLen = K_MAX(strlen(name), (unsigned int) optNameMaxLen);
 
 
     /* 2. Variable Name */
@@ -400,7 +406,7 @@ void paExtendedUsage(void)
     if (PA_IS_VARIABLE(aP))
     {
       paEnvName(aP, name, sizeof(name));
-      varNameMaxLen = MAX(strlen(name), (unsigned int) varNameMaxLen);
+      varNameMaxLen = K_MAX(strlen(name), (unsigned int) varNameMaxLen);
     }
 
 
@@ -435,7 +441,7 @@ void paExtendedUsage(void)
       snprintf(vals, sizeof(vals), "%s <= %s <= %s", escape(out, minVal), name, escape(out2, maxVal));
     }
 
-    valsMaxLen = MAX(strlen(vals), (unsigned int) valsMaxLen);
+    valsMaxLen = K_MAX(strlen(vals), (unsigned int) valsMaxLen);
   }
 
   snprintf(format, sizeof(format), "%%-%ds %%-%ds %%-%ds %%-%ds %%s\n",
@@ -719,8 +725,6 @@ static void paManHelp(void)
 */
 void paHelp(void)
 {
-  LM_ENTRY();
-
   paManHelp();
   exit(1);
 
@@ -743,7 +747,7 @@ void paHelp(void)
     char  start[512];
     char  end[512];
 
-    LM_T(LmtHelp, ("Got help file '%s'", paHelpFile));
+    KT_T(KtHelp, "Got help file '%s'", paHelpFile);
 
     snprintf(s, sizeof(s), "----- %s Help -----\n", progName);
     strncat(paResultString, s, sizeof(paResultString) - 1);
@@ -773,7 +777,7 @@ void paHelp(void)
             if (helpVar[ix].varP == NULL)
               continue;
 
-            LM_T(LmtHelp, ("found variable '%s'", helpVar[ix].varName));
+            KT_T(KtHelp, "found variable '%s'", helpVar[ix].varName);
             ++changes;
 
             strncpy(end, &tmp[strlen(helpVar[ix].varName)], sizeof(end) - 1);

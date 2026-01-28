@@ -29,7 +29,11 @@ extern "C"
 #include "kalloc/kaStrdup.h"                              // kaStrdup
 }
 
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+#include "orionld/common/traceLevels.h"
 
 #include "orionld/types/ApiVersion.h"                              // ApiVersion
 
@@ -148,7 +152,7 @@ int Scope::fill
     if (*cP != '[')
     {
       // Error
-      LM_E(("Geo: Converting NGSI-LD polygon coordinates: not starting with '['"));
+      KT_E("Geo: Converting NGSI-LD polygon coordinates: not starting with '['");
       *errorStringP = (char*) "Converting NGSI-LD polygon coordinates: not starting with '['";
       return -1;
     }
@@ -160,7 +164,7 @@ int Scope::fill
     if (*cP != '[')
     {
       // Error
-      LM_E(("Geo: Converting NGSI-LD polygon coordinates: not starting with '[['"));
+      KT_E("Geo: Converting NGSI-LD polygon coordinates: not starting with '[['");
       *errorStringP = (char*) "Converting NGSI-LD polygon coordinates: not starting with '[['";
       return -1;
     }
@@ -186,7 +190,7 @@ int Scope::fill
           ;
         else
         {
-          LM_E(("Geo: Converting NGSI-LD polygon coordinates: invalid character: '%c' (whole string: %s)", *cP, in));
+          KT_E("Geo: Converting NGSI-LD polygon coordinates: invalid character: '%c' (whole string: %s)", *cP, in);
           *errorStringP = (char*) "Converting NGSI-LD polygon coordinates: invalid character";
           return -1;
         }
@@ -229,7 +233,7 @@ int Scope::fill
         }
         else  // Error
         {
-          LM_E(("Geo: Invalid polygon: '%s' (at: '%s')", in, cP));
+          KT_E("Geo: Invalid polygon: '%s' (at: '%s')", in, cP);
           *errorStringP = (char*) "Invalid polygon";
           return -1;
         }
@@ -240,13 +244,13 @@ int Scope::fill
 
     if (something == false)
     {
-      LM_E(("Garbage coordinates URI param?"));
+      KT_E("Garbage coordinates URI param?");
       *errorStringP = (char*) "Garbage coordinates URI param?";
       return -1;
     }
     else if (coords == 1)
     {
-      LM_E(("At least TWO coordinates must be present"));
+      KT_E("At least TWO coordinates must be present");
       *errorStringP = (char*) "At least TWO coordinates must be present";
       return -1;
     }
@@ -264,7 +268,7 @@ int Scope::fill
   //
   if (geometry.parse(apiVersion, geometryString, errorStringP) != 0)
   {
-    LM_E(("geometry.parse: %s", *errorStringP));
+    KT_E("geometry.parse: %s", *errorStringP);
     return -1;
   }
 
@@ -276,7 +280,7 @@ int Scope::fill
   {
     if (georel.parse(georelString2, errorStringP) != 0)
     {
-      LM_E(("geometry.parse: %s", *errorStringP));
+      KT_E("geometry.parse: %s", *errorStringP);
       return -1;
     }
   }
@@ -291,7 +295,7 @@ int Scope::fill
      */
 
     *errorStringP = (char*) "line geometry cannot be used with coveredBy georel";
-    LM_E(("geometry.parse: %s", *errorStringP));
+    KT_E("geometry.parse: %s", *errorStringP);
     return -1;
   }
 
@@ -304,7 +308,7 @@ int Scope::fill
      */
 
     *errorStringP = (char*) "point geometry cannot be used with coveredBy georel";
-    LM_E(("geometry.parse: %s", *errorStringP));
+    KT_E("geometry.parse: %s", *errorStringP);
     return -1;
   }
 
@@ -317,7 +321,7 @@ int Scope::fill
      */
 
     *errorStringP = (char*) "georel /near/ used with geometry different than point";
-    LM_E(("geometry.parse: %s", *errorStringP));
+    KT_E("geometry.parse: %s", *errorStringP);
     return -1;
   }
 
@@ -327,7 +331,7 @@ int Scope::fill
   if ((coordsString2 == NULL) || (*coordsString2 == 0))
   {
     *errorStringP = (char*) "no coordinates for geometry";
-    LM_E(("geometry.parse: %s", *errorStringP));
+    KT_E("geometry.parse: %s", *errorStringP);
     return -1;
   }
 
@@ -335,7 +339,7 @@ int Scope::fill
   if (points == 0)
   {
     *errorStringP = (char*) "erroneous coordinates for geometry";
-    LM_E(("geometry.parse: %s", *errorStringP));
+    KT_E("geometry.parse: %s", *errorStringP);
     return -1;
   }
 
@@ -369,7 +373,7 @@ int Scope::fill
       if (error == true)
       {
         *errorStringP = (char*) "invalid coordinates for point";
-        LM_E(("geometry.parse: %s (%d coords)", *errorStringP, coords));
+        KT_E("geometry.parse: %s (%d coords)", *errorStringP, coords);
         pointVectorRelease(pointV);
         pointV.clear();
         return -1;
@@ -387,7 +391,7 @@ int Scope::fill
     if (!str2double(coordV[0].c_str(), &latitude))
     {
       *errorStringP = (char*) "invalid coordinates";
-      LM_E(("geometry.parse: %s", *errorStringP));
+      KT_E("geometry.parse: %s", *errorStringP);
       pointVectorRelease(pointV);
       pointV.clear();
       return -1;
@@ -396,7 +400,7 @@ int Scope::fill
     if (!str2double(coordV[1].c_str(), &longitude))
     {
       *errorStringP = (char*) "invalid coordinates";
-      LM_E(("geometry.parse: %s", *errorStringP));
+      KT_E("geometry.parse: %s", *errorStringP);
       pointVectorRelease(pointV);
       pointV.clear();
       return -1;
@@ -420,7 +424,7 @@ int Scope::fill
     if (apiVersion == API_VERSION_NGSI_V2)
     {
       *errorStringP = (char*) "circle geometry is not supported by Orion API v2";
-      LM_E(("geometry.parse: %s", *errorStringP));
+      KT_E("geometry.parse: %s", *errorStringP);
       pointVectorRelease(pointV);
       pointV.clear();
       return -1;
@@ -430,7 +434,7 @@ int Scope::fill
       if (pointV.size() != 1)
       {
         *errorStringP = (char*) "Too many coordinates for circle";
-        LM_E(("geometry.parse: %s", *errorStringP));
+        KT_E("geometry.parse: %s", *errorStringP);
         pointVectorRelease(pointV);
         pointV.clear();
         return -1;
@@ -453,7 +457,7 @@ int Scope::fill
     if ((apiVersion == API_VERSION_NGSI_V1) && (pointV.size() < 3))
     {
       *errorStringP = (char*) "Too few coordinates for polygon";
-      LM_E(("geometry.parse: %s", *errorStringP));
+      KT_E("geometry.parse: %s", *errorStringP);
       pointVectorRelease(pointV);
       pointV.clear();
       return -1;
@@ -461,7 +465,7 @@ int Scope::fill
     else if ((apiVersion == API_VERSION_NGSI_V2) && (pointV.size() < 4))
     {
       *errorStringP = (char*) "Too few coordinates for polygon";
-      LM_E(("geometry.parse: %s", *errorStringP));
+      KT_E("geometry.parse: %s", *errorStringP);
       pointVectorRelease(pointV);
       pointV.clear();
       return -1;
@@ -473,7 +477,7 @@ int Scope::fill
     if ((apiVersion == API_VERSION_NGSI_V2) && (pointV[0]->equals(pointV[pointV.size() - 1]) == false))
     {
       *errorStringP = (char*) "First and last point in polygon not the same";
-      LM_E(("geometry.parse: %s", *errorStringP));
+      KT_E("geometry.parse: %s", *errorStringP);
       pointVectorRelease(pointV);
       pointV.clear();
       return -1;
@@ -494,7 +498,7 @@ int Scope::fill
     if (pointV.size() < 2)
     {
       *errorStringP = (char*) "invalid number of coordinates for /line/";
-      LM_E(("geometry.parse: %s", *errorStringP));
+      KT_E("geometry.parse: %s", *errorStringP);
       pointVectorRelease(pointV);
       pointV.clear();
       return -1;
@@ -513,7 +517,7 @@ int Scope::fill
     if (pointV.size() != 2)
     {
       *errorStringP = (char*) "invalid number of coordinates for /box/";
-      LM_E(("geometry.parse: %s", *errorStringP));
+      KT_E("geometry.parse: %s", *errorStringP);
       pointVectorRelease(pointV);
       pointV.clear();
       return -1;
@@ -526,7 +530,7 @@ int Scope::fill
     if (!orderCoordsForBox(&minLat, &maxLat, &minLon, &maxLon, pointV[0]->latitude(), pointV[1]->latitude(), pointV[0]->longitude(), pointV[1]->longitude()))
     {
       *errorStringP = (char*) "box coordinates are not defining an actual box";
-      LM_E(("geometry.parse: %s", *errorStringP));
+      KT_E("geometry.parse: %s", *errorStringP);
       pointVectorRelease(pointV);
       pointV.clear();
       return -1;
@@ -551,7 +555,7 @@ int Scope::fill
     if (pointV.size() != 1)
     {
       *errorStringP = (char*) "invalid number of coordinates for /point/";
-      LM_E(("geometry.parse: %s", *errorStringP));
+      KT_E("geometry.parse: %s", *errorStringP);
       pointVectorRelease(pointV);
       pointV.clear();
       return -1;
@@ -565,7 +569,7 @@ int Scope::fill
   {
     areaType = orion::NoArea;
     *errorStringP = (char*) "invalid area-type";
-    LM_E(("geometry.parse: %s", *errorStringP));
+    KT_E("geometry.parse: %s", *errorStringP);
 
     pointVectorRelease(pointV);
     pointV.clear();

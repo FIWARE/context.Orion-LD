@@ -76,6 +76,8 @@ extern "C"
 {
 #include "kbase/kInit.h"                                    // kInit
 #include "kbase/kStringSplit.h"                             // kStringSplit
+#include "ktrace/kTrace.h"                                  // trace messages - ktrace library
+#include "ktrace/ktTraceLevelSetOne.h"                      // ktTraceLevelSetOne
 #include "kalloc/kaInit.h"                                  // kaInit
 #include "kalloc/kaBufferInit.h"                            // kaBufferInit
 #include "kalloc/kaBufferReset.h"                           // kaBufferReset
@@ -83,7 +85,6 @@ extern "C"
 #include "kjson/kjFree.h"                                   // kjFree
 #include "kjson/kjBuilder.h"                                // kjChildAdd
 #include "kjson/kjLookup.h"                                 // kjLookup
-#include "ktrace/kTrace.h"                                  // trace messages - ktrace library
 }
 
 #include "parseArgs/parseArgs.h"
@@ -127,8 +128,6 @@ extern "C"
 #include "orionld/orionRestServices.h"
 #include "orionld/orionldRestServices.h"
 
-#include "orionld/mongoc/mongocServerVersionGet.h"            // mongocServerVersionGet
-#include "orionld/context/orionldContextFromUrl.h"            // contextDownloadListInit, contextDownloadListRelease
 #include "orionld/socketService/socketServiceInit.h"          // socketServiceInit
 #include "orionld/socketService/socketServiceRun.h"           // socketServiceRun
 
@@ -139,10 +138,6 @@ extern "C"
 #include "orionld/distOp/distOpInit.h"                        // distOpInit
 #include "orionld/dds/ddsInit.h"                              // ddsInit
 #include "orionld/dds/ddsServiceList.h"                       // ddsServiceList
-
-#include "orionld/version.h"
-#include "orionld/orionRestServices.h"
-#include "orionld/orionldRestServices.h"
 
 using namespace orion;
 
@@ -182,7 +177,6 @@ char            dbAuthMechanism[64];
 bool            dbSSL;
 char            dbCertFile[256];
 char            dbURI[1024];
-char            pidPath[256];
 bool            harakiri;
 bool            useOnlyIPv4;
 bool            useOnlyIPv6;
@@ -206,7 +200,7 @@ int             notificationThreadNum;
 bool            noCache;
 unsigned int    connectionMemory;
 unsigned int    maxConnections;
-unsigned int    reqPoolSize;
+int             reqPoolSize;
 
 unsigned long long  inReqPayloadMaxSize;
 unsigned long long  outReqMsgMaxSize;
@@ -267,7 +261,6 @@ bool            kTraceInfo       = false;
 *
 * Definitions to make paArgs lines shorter ...
 */
-#define PIDPATH                _i "/tmp/contextBroker.pid"
 #define IP_ALL                 _i "0.0.0.0"
 #define LOCALHOST              _i "localhost"
 #define ONE_MONTH_PERIOD       (3600 * 24 * 31)
@@ -277,7 +270,6 @@ bool            kTraceInfo       = false;
 #define FG_DESC                "don't start as daemon"
 #define LOCALIP_DESC           "IP to receive new connections"
 #define PORT_DESC              "port to receive new connections"
-#define PIDPATH_DESC           "pid file path"
 #define DBHOST_DESC            "database host"
 #define RPLSET_DESC            "replica set"
 #define DBUSER_DESC            "database user"
@@ -305,7 +297,7 @@ bool            kTraceInfo       = false;
 #define NO_CACHE               "disable subscription cache for lookups"
 #define CONN_MEMORY_DESC       "maximum memory size per connection (in kilobytes)"
 #define MAX_CONN_DESC          "maximum number of simultaneous connections"
-#define REQ_POOL_SIZE          "size of thread pool for incoming connections"
+#define REQ_POOL_SIZE          "size of thread pool for incoming connections (-1: auto = CPU cores * 2, 0: thread-per-connection)"
 #define IN_REQ_PAYLOAD_MAX_SIZE_DESC   "maximum size (in bytes) of the payload of incoming requests"
 #define OUT_REQ_MSG_MAX_SIZE_DESC      "maximum size (in bytes) of outgoing forward and notification request messages"
 #define SIMULATED_NOTIF_DESC   "simulate notifications instead of actual sending them (only for testing)"
@@ -389,7 +381,6 @@ PaArgument paArgs[] =
   { "-fg",                    &fg,                      "FOREGROUND",                PaBool,    PaOpt,  false,            false,  true,             FG_DESC                  },
   { "-localIp",               bindAddress,              "LOCALIP",                   PaString,  PaOpt,  IP_ALL,           PaNL,   PaNL,             LOCALIP_DESC             },
   { "-port",                  &port,                    "PORT",                      PaInt,     PaOpt,  1026,             1024,   65535,            PORT_DESC                },
-  { "-pidpath",               pidPath,                  "PID_PATH",                  PaString,  PaOpt,  PIDPATH,          PaNL,   PaNL,             PIDPATH_DESC             },
   { "-dbhost",                dbHost,                   "MONGO_HOST",                PaString,  PaOpt,  LOCALHOST,        PaNL,   PaNL,             DBHOST_DESC              },
   { "-rplSet",                rplSet,                   "MONGO_REPLICA_SET",         PaString,  PaOpt,  _i "",            PaNL,   PaNL,             RPLSET_DESC              },
   { "-dbuser",                dbUser,                   "MONGO_USER",                PaString,  PaOpt,  _i "",            PaNL,   PaNL,             DBUSER_DESC              },
@@ -420,7 +411,7 @@ PaArgument paArgs[] =
   { "-noCache",               &noCache,                 "NOCACHE",                   PaBool,    PaOpt,  false,            false,  true,             NO_CACHE                 },
   { "-connectionMemory",      &connectionMemory,        "CONN_MEMORY",               PaUInt,    PaOpt,  64,               0,      1024,             CONN_MEMORY_DESC         },
   { "-maxConnections",        &maxConnections,          "MAX_CONN",                  PaUInt,    PaOpt,  1020,             1,      PaNL,             MAX_CONN_DESC            },
-  { "-reqPoolSize",           &reqPoolSize,             "TRQ_POOL_SIZE",             PaUInt,    PaOpt,  0,                0,      1024,             REQ_POOL_SIZE            },
+  { "-reqPoolSize",           &reqPoolSize,             "TRQ_POOL_SIZE",             PaInt,     PaOpt,  -1,               -1,     1024,             REQ_POOL_SIZE            },
   { "-inReqPayloadMaxSize",   &inReqPayloadMaxSize,     "IN_REQ_PAYLOAD_MAX_SIZE",   PaULong,   PaOpt,  MB(1),            0,      PaNL,             IN_REQ_PAYLOAD_MAX_SIZE_DESC },
   { "-outReqMsgMaxSize",      &outReqMsgMaxSize,        "OUT_REQ_MSG_MAX_SIZE",      PaULong,   PaOpt,  MB(8),            0,      PaNL,             OUT_REQ_MSG_MAX_SIZE_DESC    },
   { "-notificationMode",      &notificationMode,        "NOTIF_MODE",                PaString,  PaOpt,  _i "transient",   PaNL,   PaNL,             NOTIFICATION_MODE_DESC   },
@@ -463,7 +454,6 @@ PaArgument paArgs[] =
   { "-noswap",                &noswap,                  "NOSWAP",                    PaBool,    PaHid,  false,            false,  true,             NOSWAP_DESC              },
   { "-lmtmp",                 &lmtmp,                   "TMP_TRACES",                PaBool,    PaHid,  true,             false,  true,             TMPTRACES_DESC           },
   { "-debugCurl",             &debugCurl,               "DEBUG_CURL",                PaBool,    PaHid,  false,            false,  true,             DEBUG_CURL_DESC          },
-  { "-lmtmp",                 &lmtmp,                   "TMP_TRACES",                PaBool,    PaHid,  true,             false,  true,             TMPTRACES_DESC           },
   { "-noprom",                &noprom,                  "NO_PROM",                   PaBool,    PaHid,  false,            false,  true,             NO_PROM_DESC             },
   { "-noArrayReduction",      &noArrayReduction,        "NO_ARRAY_REDUCTION",        PaBool,    PaHid,  false,            false,  true,             NO_ARR_REDUCT_DESC       },
   { "-extras",                &extras,                  "EXTRAS",                    PaBool,    PaHid,  false,            false,  true,             EXTRAS_DESC              },
@@ -867,15 +857,15 @@ static void libLogFunction
   // KT_I("Got a lib log message, severity: %d: %s", severity, libLogBuffer);
 
   if (severity == 1)
-    lmOut(libLogBuffer, 'E', fileName, lineNo, functionName, 0, NULL);
+    ktOut(fileName, lineNo, functionName, 'E', -1, "%s", libLogBuffer);
   else if (severity == 2)
-    lmOut(libLogBuffer, 'W', fileName, lineNo, functionName, 0, NULL);
+    ktOut(fileName, lineNo, functionName, 'W', -1, "%s", libLogBuffer);
   else if (severity == 3)
-    lmOut(libLogBuffer, 'I', fileName, lineNo, functionName, 0, NULL);
+    ktOut(fileName, lineNo, functionName, 'I', -1, "%s", libLogBuffer);
   else if (severity == 4)
-    lmOut(libLogBuffer, 'V', fileName, lineNo, functionName, 0, NULL);
+    ktOut(fileName, lineNo, functionName, 'V', -1, "%s", libLogBuffer);
   else if (severity == 5)
-    lmOut(libLogBuffer, 'T', fileName, lineNo, functionName, level + LmtKjlParse, NULL);
+    ktOut(fileName, lineNo, functionName, 'T', level + KtKjParse, "%s", libLogBuffer);
 }
 
 
@@ -1074,12 +1064,12 @@ int main(int argC, char* argV[])
   if (coreContextUrl == NULL)
     KT_X(1, "Invalid version for the Core Context: %s (valid: v1.0|v1.3|v1.4|v1.5|v1.6|v1.7)", coreContextVersion);
 
-  lmTimeFormat(0, (char*) "%Y-%m-%dT%H:%M:%S");
+  // lmTimeFormat(0, (char*) "%Y-%m-%dT%H:%M:%S");  // ktrace has its own time format
 
-  if ((debugCurl == true) && ((lmTraceIsSet(LmtCurl) == false) || (strcmp(paLogLevel, "DEBUG") != 0)))
+  if ((debugCurl == true) && ((ktTraceIsSet(KtCurl) == false) || (strcmp(paLogLevel, "DEBUG") != 0)))
   {
     strncpy(paLogLevel, "DEBUG", sizeof(paLogLevel) - 1);
-    lmTraceLevelSet(LmtCurl, true);
+    ktTraceLevelSetOne((int) KtCurl);
   }
 
   if (wip[0] != 0)
@@ -1328,6 +1318,20 @@ int main(int argC, char* argV[])
 
   if (distributed)
     distOpInit();
+
+  //
+  // If reqPoolSize is -1 (auto), set it to number of CPU cores * 2
+  //
+  if (reqPoolSize == -1)
+  {
+    long cores = sysconf(_SC_NPROCESSORS_ONLN);
+    if (cores > 0)
+      reqPoolSize = cores * 2;
+    else
+      reqPoolSize = 4;  // Fallback if sysconf fails
+
+    KT_I("Auto-configured reqPoolSize to %d (CPU cores: %ld)", reqPoolSize, cores);
+  }
 
   if (https)
   {

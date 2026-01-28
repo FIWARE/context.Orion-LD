@@ -29,9 +29,12 @@
 #include <limits.h>
 #include <sys/types.h>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
+#include "common/globals.h"                        // transactionIdGet
 #include "alarmMgr/alarmMgr.h"
 #include "logSummary/logSummary.h"
 
@@ -60,6 +63,7 @@ static void* logSummary(void* vP)
 {
   int period = *((int*) vP);
 
+  KT_I("In log summary thread");
   while (1)
   {
     int64_t transactionsNow;
@@ -122,30 +126,31 @@ static void* logSummary(void* vP)
     if (biRaisedNew   < 0)  { biRaisedNew   = LONG_MAX - biRaisedInLastSummary   + biRaised;   }
     if (biReleasedNew < 0)  { biReleasedNew = LONG_MAX - biReleasedInLastSummary + biReleased; }
 
+    KT_I("In log summary thread: transactionsNow == %d", transactionsNow);
     if (transactionsNow != 0)
     {
-      LM_S(("Transactions: %lu (new: %lu)", transactionsNow, diff));
+      KT_I("Transactions: %lu (new: %lu)", transactionsNow, diff);
 
-      LM_S(("DB status: %s, raised: (total: %d, new: %d), released: (total: %d, new: %d)",
+      KT_I("DB status: %s, raised: (total: %d, new: %d), released: (total: %d, new: %d)",
             deActive? "erroneous" : "ok",
             deRaised,
             deRaisedNew,
             deReleased,
-            deReleasedNew));
+            deReleasedNew);
 
-      LM_S(("Notification failure active alarms: %d, raised: (total: %d, new: %d), released: (total: %d, new: %d)",
+      KT_I("Notification failure active alarms: %d, raised: (total: %d, new: %d), released: (total: %d, new: %d)",
             neActive,
             neRaised,
             neRaisedNew,
             neReleased,
-            neReleasedNew));
+            neReleasedNew);
 
-      LM_S(("Bad input active alarms: %d, raised: (total: %d, new: %d), released: (total: %d, new: %d)",
+      KT_I("Bad input active alarms: %d, raised: (total: %d, new: %d), released: (total: %d, new: %d)",
             biActive,
             biRaised,
             biRaisedNew,
             biReleased,
-            biReleasedNew));
+            biReleasedNew);
     }
 
     deRaisedInLastSummary   = deRaised;
@@ -181,10 +186,11 @@ int logSummaryInit(int* periodP)
   pthread_t  tid;
   int        ret;
 
+  KT_I("Starting log summary thread");
   ret = pthread_create(&tid, NULL, logSummary, (void*) periodP);
   if (ret != 0)
   {
-    LM_E(("Runtime Error (error creating thread: %d)", ret));
+    KT_E("Runtime Error (error creating thread: %d)", ret);
     return -2;
   }
   pthread_detach(tid);

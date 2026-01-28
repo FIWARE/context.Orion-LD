@@ -26,7 +26,13 @@
 
 #include "rapidjson/document.h"
 
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+
+#include "orionld/common/traceLevels.h"
+
 
 #include "orionTypes/OrionValueType.h"
 #include "alarmMgr/alarmMgr.h"
@@ -131,7 +137,7 @@ static std::string parseMetadataObject(const rapidjson::Value& start, Metadata* 
 
     if (mdP->numberValue == -1)
     {
-      LM_E(("dateTimeFromString: %s", errorString));
+      KT_E("dateTimeFromString: %s", errorString);
       alarmMgr.badInput(orionldState.clientIp, "date has invalid format");
       return "date has invalid format";
     }

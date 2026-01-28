@@ -73,8 +73,11 @@
 #include "parseArgs/paBuiltin.h"
 #include "parseArgs/paIsSet.h"
 #include "parseArgs/paUsage.h"
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+#include "orionld/common/traceLevels.h"
 
 #include "jsonParse/jsonRequest.h"
 #include "rest/ConnectionInfo.h"
@@ -378,7 +381,7 @@ int pidFile(bool justCheck)
 {
   if (fileExists(pidPath))
   {
-    LM_E(("PID-file '%s' found. A broker seems to be running already", pidPath));
+    KT_E("PID-file '%s' found. A broker seems to be running already", pidPath);
     return 1;
   }
 
@@ -395,7 +398,7 @@ int pidFile(bool justCheck)
 
   if (fd == -1)
   {
-    LM_E(("PID File (open '%s': %s)", pidPath, strerror(errno)));
+    KT_E("PID File (open '%s': %s)", pidPath, strerror(errno));
     return 2;
   }
 
@@ -406,7 +409,7 @@ int pidFile(bool justCheck)
   nb = write(fd, buffer, sz);
   if (nb != sz)
   {
-    LM_E(("PID File (written %d bytes and not %d to '%s': %s)", nb, sz, pidPath, strerror(errno)));
+    KT_E("PID File (written %d bytes and not %d to '%s': %s)", nb, sz, pidPath, strerror(errno));
     return 3;
   }
 
@@ -433,7 +436,7 @@ void daemonize(void)
   pid = fork();
   if (pid == -1)
   {
-    LM_X(1, ("Fatal Error (fork: %s)", strerror(errno)));
+    KT_X(1, "Fatal Error (fork: %s)", strerror(errno));
   }
 
   // Exiting father process
@@ -450,14 +453,14 @@ void daemonize(void)
   sid = setsid();
   if (sid == -1)
   {
-    LM_X(1, ("Fatal Error (setsid: %s)", strerror(errno)));
+    KT_X(1, "Fatal Error (setsid: %s)", strerror(errno));
   }
 
   // Change current working directory.
   // This prevents the current directory from being locked; hence not being able to remove it.
   if (chdir("/") == -1)
   {
-    LM_X(1, ("Fatal Error (chdir: %s)", strerror(errno)));
+    KT_X(1, "Fatal Error (chdir: %s)", strerror(errno));
   }
 
   // We have to call this after a fork, see: http://api.mongodb.org/cplusplus/2.2.2/classmongo_1_1_o_i_d.html
@@ -472,14 +475,14 @@ void daemonize(void)
 */
 void sigHandler(int sigNo)
 {
-  LM_I(("Signal Handler (caught signal %d)", sigNo));
+  KT_I("Signal Handler (caught signal %d)", sigNo);
 
   switch (sigNo)
   {
   case SIGINT:
   case SIGTERM:
   case SIGHUP:
-    LM_I(("Orion context broker exiting due to receiving a signal"));
+    KT_I("Orion context broker exiting due to receiving a signal");
     exit(0);
     break;
   }
@@ -495,11 +498,11 @@ void orionExit(int code, const std::string& reason)
 {
   if (code == 0)
   {
-    LM_I(("Orion context broker exits in an ordered manner (%s)", reason.c_str()));
+    KT_I("Orion context broker exits in an ordered manner (%s)", reason.c_str());
   }
   else
   {
-    LM_E(("Fatal Error (reason: %s)", reason.c_str()));
+    KT_E("Fatal Error (reason: %s)", reason.c_str());
   }
 
   exit(code);
@@ -521,9 +524,9 @@ void exitFunc(void)
 
 #ifdef DEBUG
   // Take mongo req-sem ?
-  LM_T(LmtSubCache, ("try-taking req semaphore"));
+  KT_T(KtSubCache, "try-taking req semaphore");
   reqSemTryToTake();
-  LM_T(LmtSubCache, ("calling subCacheDestroy"));
+  KT_T(KtSubCache, "calling subCacheDestroy");
   subCacheDestroy();
 #endif
 
@@ -534,7 +537,7 @@ void exitFunc(void)
 
   if (unlink(pidPath) != 0)
   {
-    LM_T(LmtSoftError, ("error removing PID file '%s': %s", pidPath, strerror(errno)));
+    KT_T(KtSoftError, "error removing PID file '%s': %s", pidPath, strerror(errno));
   }
 }
 
@@ -571,7 +574,7 @@ static void contextBrokerInit(std::string dbPrefix, bool multitenant)
 
     if (rc != 0)
     {
-      LM_X(1,("Runtime Error starting notification queue workers (%d)", rc));
+      KT_X(1, "Runtime Error starting notification queue workers (%d)", rc);
     }
 
     pNotifier = pQNotifier;
@@ -602,21 +605,21 @@ static int loadFile(char* path, char* out, int outSize)
 
   if (fd == -1)
   {
-    LM_E(("HTTPS Error (error opening '%s': %s)", path, strerror(errno)));
+    KT_E("HTTPS Error (error opening '%s': %s)", path, strerror(errno));
     return -1;
   }
 
   if (stat(path, &statBuf) != 0)
   {
     close(fd);
-    LM_E(("HTTPS Error (error 'stating' '%s': %s)", path, strerror(errno)));
+    KT_E("HTTPS Error (error 'stating' '%s': %s)", path, strerror(errno));
     return -1;
   }
 
   if (statBuf.st_size > outSize)
   {
     close(fd);
-    LM_E(("HTTPS Error (file '%s' is TOO BIG (%d) - max size is %d bytes)", path, outSize));
+    KT_E("HTTPS Error (file '%s' is TOO BIG (%d) - max size is %d bytes)", path, outSize);
     return -1;
   }
 
@@ -625,13 +628,13 @@ static int loadFile(char* path, char* out, int outSize)
 
   if (nb == -1)
   {
-    LM_E(("HTTPS Error (reading from '%s': %s)", path, strerror(errno)));
+    KT_E("HTTPS Error (reading from '%s': %s)", path, strerror(errno));
     return -1;
   }
 
   if (nb != statBuf.st_size)
   {
-    LM_E(("HTTPS Error (invalid size read from '%s': %d, wanted %d)", path, nb, statBuf.st_size));
+    KT_E("HTTPS Error (invalid size read from '%s': %d, wanted %d)", path, nb, statBuf.st_size);
     return -1;
   }
 
@@ -656,7 +659,7 @@ static void rushParse(char* rush, std::string* rushHostP, uint16_t* rushPortP)
 
   if (colon == NULL)
   {
-    LM_X(1, ("Fatal Error (Bad syntax of '-rush' value: '%s' - expected syntax: 'host:port')", rush));
+    KT_X(1, "Fatal Error (Bad syntax of '-rush' value: '%s' - expected syntax: 'host:port')", rush);
   }
 
   *colon = 0;
@@ -667,7 +670,7 @@ static void rushParse(char* rush, std::string* rushHostP, uint16_t* rushPortP)
 
   if ((*rushHostP == "") || (*rushPortP == 0))
   {
-    LM_X(1, ("Fatal Error (bad syntax of '-rush' value: '%s' - expected syntax: 'host:port')", copy));
+    KT_X(1, "Fatal Error (bad syntax of '-rush' value: '%s' - expected syntax: 'host:port')", copy);
   }
 
   free(copy);
@@ -722,17 +725,17 @@ static void notificationModeParse(char *notifModeArg, int *pQueueSize, int *pNum
   flds_num = sscanf(notifModeArg, "%m[^:]:%d:%d", &mode, pQueueSize, pNumThreads);
   if (errno != 0)
   {
-    LM_X(1, ("Fatal Error parsing notification mode: sscanf (%s)", strerror(errno)));
+    KT_X(1, "Fatal Error parsing notification mode: sscanf (%s)", strerror(errno));
   }
   if (flds_num == 3 && strcmp(mode, "threadpool") == 0)
   {
     if (*pQueueSize <= 0)
     {
-      LM_X(1, ("Fatal Error parsing notification mode: invalid queue size (%d)", *pQueueSize));
+      KT_X(1, "Fatal Error parsing notification mode: invalid queue size (%d)", *pQueueSize);
     }
     if (*pNumThreads <= 0)
     {
-      LM_X(1, ("Fatal Error parsing notification mode: invalid number of threads (%d)",*pNumThreads));
+      KT_X(1, "Fatal Error parsing notification mode: invalid number of threads (%d)",*pNumThreads);
     }
   }
   else if (flds_num == 1 && strcmp(mode, "threadpool") == 0)
@@ -745,7 +748,7 @@ static void notificationModeParse(char *notifModeArg, int *pQueueSize, int *pNum
              (strcmp(mode, "transient") == 0 || strcmp(mode, "persistent") == 0)
              ))
   {
-    LM_X(1, ("Fatal Error parsing notification mode: invalid mode (%s)", notifModeArg));
+    KT_X(1, "Fatal Error parsing notification mode: invalid mode (%s)", notifModeArg);
   }
 
   // get rid of params, if any, in notifModeArg
@@ -812,7 +815,7 @@ int main(int argC, char* argV[])
   paConfig("man shortdescription",          (void*) "Options:");
   paConfig("man description",               (void*) description);
   paConfig("man author",                    (void*) "Telefonica I+D");
-  paConfig("man version",                   (void*) versionString.c_str());
+  paConfig("man version",                   (void*) versionString.c_str();
   paConfig("log to file",                   (void*) true);
   paConfig("log file line format",          (void*) LOG_FILE_LINE_FORMAT);
   paConfig("log file time format",          (void*) "%Y-%m-%dT%H:%M:%S");
@@ -871,29 +874,29 @@ int main(int argC, char* argV[])
 
   if (strlen(dbName) > DB_NAME_MAX_LEN)
   {
-    LM_X(1, ("dbName too long (max %d characters)", DB_NAME_MAX_LEN));
+    KT_X(1, "dbName too long (max %d characters)", DB_NAME_MAX_LEN);
   }
 
   if (useOnlyIPv6 && useOnlyIPv4)
   {
-    LM_X(1, ("Fatal Error (-ipv4 and -ipv6 can not be activated at the same time. They are incompatible)"));
+    KT_X(1, "Fatal Error (-ipv4 and -ipv6 can not be activated at the same time. They are incompatible)");
   }
 
   if (https)
   {
     if (httpsKeyFile[0] == 0)
     {
-      LM_X(1, ("Fatal Error (when option '-https' is used, option '-key' is mandatory)"));
+      KT_X(1, "Fatal Error (when option '-https' is used, option '-key' is mandatory)");
     }
     if (httpsCertFile[0] == 0)
     {
-      LM_X(1, ("Fatal Error (when option '-https' is used, option '-cert' is mandatory)"));
+      KT_X(1, "Fatal Error (when option '-https' is used, option '-cert' is mandatory)");
     }
   }
 
   notificationModeParse(notificationMode, &notificationQueueSize, &notificationThreadNum); // This should be called before contextBrokerInit()
-  LM_T(LmtNotifier, ("notification mode: '%s', queue size: %d, num threads %d", notificationMode, notificationQueueSize, notificationThreadNum));
-  LM_I(("Orion Context Broker is running"));
+  KT_T(KtNotifier, "notification mode: '%s', queue size: %d, num threads %d", notificationMode, notificationQueueSize, notificationThreadNum);
+  KT_I("Orion Context Broker is running");
 
   if (fg == false)
   {
@@ -912,9 +915,9 @@ int main(int argC, char* argV[])
   //
   char* x = (char*) malloc(100000);
   snprintf(x, sizeof(x), "A hundred thousand bytes lost here");
-  LM_M(("x: '%s'", x));  // Outdeffed
+  // LM_M removed - ktrace doesn't have LM_M
   x = (char*) "LOST";
-  LM_M(("x: '%s'", x));  // Outdeffed
+  // LM_M removed - ktrace doesn't have LM_M
 #endif
 
   IpVersion    ipVersion        = IPDUAL;
@@ -942,13 +945,13 @@ int main(int argC, char* argV[])
   // Startup libcurl
   if (curl_global_init(CURL_GLOBAL_SSL) != 0)
   {
-    LM_X(1, ("Fatal Error (could not initialize libcurl)"));
+    KT_X(1, "Fatal Error (could not initialize libcurl)");
   }
 
   if (rush[0] != 0)
   {
     rushParse(rush, &rushHost, &rushPort);
-    LM_T(LmtRush, ("rush host: '%s', rush port: %d", rushHost.c_str(), rushPort));
+    KT_T(KtRush, "rush host: '%s', rush port: %d", rushHost.c_str(), rushPort);
   }
 
   if (noCache == false)
@@ -968,7 +971,7 @@ int main(int argC, char* argV[])
   }
   else
   {
-    LM_T(LmtSubCache, ("noCache == false"));
+    KT_T(KtSubCache, "noCache == false");
   }
 
   // Given that contextBrokerInit() may create thread (in the threadpool notification mode,
@@ -983,15 +986,15 @@ int main(int argC, char* argV[])
 
     if (loadFile(httpsKeyFile, httpsPrivateServerKey, 2048) != 0)
     {
-      LM_X(1, ("Fatal Error (loading private server key from '%s')", httpsKeyFile));
+      KT_X(1, "Fatal Error (loading private server key from '%s')", httpsKeyFile);
     }
     if (loadFile(httpsCertFile, httpsCertificate, 2048) != 0)
     {
-      LM_X(1, ("Fatal Error (loading certificate from '%s')", httpsCertFile));
+      KT_X(1, "Fatal Error (loading certificate from '%s')", httpsCertFile);
     }
 
-    LM_T(LmtHttps, ("httpsKeyFile:  '%s'", httpsKeyFile));
-    LM_T(LmtHttps, ("httpsCertFile: '%s'", httpsCertFile));
+    KT_T(KtHttps, "httpsKeyFile:  '%s'", httpsKeyFile);
+    KT_T(KtHttps, "httpsCertFile: '%s'", httpsCertFile);
 
     orionRestServicesInit(ipVersion,
                           bindAddress,
@@ -1029,10 +1032,10 @@ int main(int argC, char* argV[])
                           NULL);
   }
 
-  LM_I(("Startup completed"));
+  KT_I("Startup completed");
   if (simulatedNotification)
   {
-    LM_W(("simulatedNotification is 'true', outgoing notifications won't be sent"));
+    KT_W("simulatedNotification is 'true', outgoing notifications won't be sent");
   }
 
   while (1)

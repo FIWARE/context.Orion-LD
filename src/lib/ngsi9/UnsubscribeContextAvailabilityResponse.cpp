@@ -24,8 +24,11 @@
 */
 #include <string>
 
-#include "logMsg/traceLevels.h"
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+#include "orionld/common/traceLevels.h"
 #include "common/tag.h"
 #include "ngsi/StatusCode.h"
 #include "ngsi9/UnsubscribeContextAvailabilityResponse.h"

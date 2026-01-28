@@ -25,8 +25,11 @@
 #include <stdio.h>
 #include <string>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+#include "orionld/common/traceLevels.h"
 
 #include "orionld/types/ApiVersion.h"                // ApiVersion
 #include "orionld/common/orionldState.h"             // orionldState
@@ -126,11 +129,11 @@ void ContextAttribute::bsonAppendAttrValue(BSONObjBuilder& bsonAttr, const std::
       break;
 
     case ValueTypeNotGiven:
-      LM_E(("Runtime Error (value not given in compound value)"));
+      KT_E("Runtime Error (value not given in compound value)");
       break;
 
     default:
-      LM_E(("Runtime Error (unknown attribute type: %d)", valueType));
+      KT_E("Runtime Error (unknown attribute type: %d)", valueType);
   }
 }
 
@@ -185,11 +188,11 @@ void ContextAttribute::valueBson(BSONObjBuilder& bsonAttr, const std::string& at
     }
     else if (compoundValueP->valueType == ValueTypeNotGiven)
     {
-      LM_E(("Runtime Error (value not given in compound value)"));
+      KT_E("Runtime Error (value not given in compound value)");
     }
     else
     {
-      LM_E(("Runtime Error (Unknown type in compound value)"));
+      KT_E("Runtime Error (Unknown type in compound value)");
     }
   }
 }
@@ -560,11 +563,11 @@ std::string ContextAttribute::renderAsJsonObject
         break;
 
       case ValueTypeNotGiven:
-        LM_E(("Runtime Error (value not given in compound value)"));
+        KT_E("Runtime Error (value not given in compound value)");
         break;
 
       default:
-        LM_E(("Runtime Error (unknown value type: %d)", valueType));
+        KT_E("Runtime Error (unknown value type: %d)", valueType);
       }
 
       //
@@ -689,11 +692,11 @@ std::string ContextAttribute::render
         break;
 
       case ValueTypeNotGiven:
-        LM_E(("Runtime Error (value not given in compound value)"));
+        KT_E("Runtime Error (value not given in compound value)");
         break;
 
       default:
-        LM_E(("Runtime Error (unknown value type: %d)", valueType));
+        KT_E("Runtime Error (unknown value type: %d)", valueType);
       }
 
       out += valueTag("value",
@@ -839,7 +842,7 @@ std::string ContextAttribute::toJson
     }
     else if (valueType == orion::ValueTypeNotGiven)
     {
-      LM_E(("Runtime Error (value not given in compound value)"));
+      KT_E("Runtime Error (value not given in compound value)");
     }
   }
   else  // Render mode: normalized 
@@ -904,7 +907,7 @@ std::string ContextAttribute::toJson
     }
     else if (valueType == orion::ValueTypeNotGiven)
     {
-      LM_E(("Runtime Error (value not given in compound value)"));
+      KT_E("Runtime Error (value not given in compound value)");
     }
     else
     {
@@ -990,7 +993,7 @@ std::string ContextAttribute::toJsonAsValue
         break;
 
       case orion::ValueTypeNotGiven:
-        LM_E(("Runtime Error (value not given in compound value)"));
+        KT_E("Runtime Error (value not given in compound value)");
         break;
 
       default:

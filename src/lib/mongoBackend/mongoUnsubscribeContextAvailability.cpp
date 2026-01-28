@@ -24,8 +24,11 @@
 */
 #include <string>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"                                // trace messages - ktrace library
+}
+
 #include "alarmMgr/alarmMgr.h"
 #include "common/sem.h"
 #include "ngsi9/UnsubscribeContextAvailabilityRequest.h"
@@ -83,7 +86,7 @@ HttpStatusCode mongoUnsubscribeContextAvailability
     }
     else  // SccReceiverInternalError
     {
-      LM_E(("Runtime Error (exception getting OID: %s)", responseP->statusCode.details.c_str()));
+      KT_E("Runtime Error (exception getting OID: %s)", responseP->statusCode.details.c_str());
     }
 
     return SccOk;

@@ -28,7 +28,12 @@
 #include <string>                      /* std::string                        */
 
 #include "parseArgs/baStd.h"           /* BA standard header file            */
-#include "logMsg/logMsg.h"             /* lmVerbose, lmDebug, ...            */
+extern "C"
+{
+#include "ktrace/kTrace.h"
+#include "kbase/kMacros.h"             /* K_MAX                              */
+}
+#include "orionld/common/traceLevels.h"
 
 #include "parseArgs/parseArgs.h"       /* PaArgument                         */
 #include "parseArgs/paPrivate.h"       /* PaTypeUnion, config variables, ... */
@@ -116,7 +121,6 @@ static PaiArgument* argFind
   PaiArgument*  foundP       = NULL;
   int           foundNameLen = 0;
 
-  LM_ENTRY();
 
   paIterateInit();
   PA_M(("----- Looking up '%s' -----", string));
@@ -134,11 +138,10 @@ static PaiArgument* argFind
 
       len = strlen(aP->option);
       if (strict == STRICT)
-        len = MAX(strlen(string), (unsigned int) len);
+        len = K_MAX(strlen(string), (unsigned int) len);
 
       if (len == 0)
       {
-        LM_EXIT();
         return NULL;
       }
 
@@ -163,7 +166,6 @@ static PaiArgument* argFind
       else
       {
         aP->aux = 1;
-        LM_EXIT();
         return aP;
       }
     }
@@ -173,7 +175,6 @@ static PaiArgument* argFind
 
   PA_M(("----- returning foundP ... -----"));
 
-  LM_EXIT();
   return foundP;
 }
 
@@ -224,14 +225,14 @@ static int iListFix(int* iV, char* s, int* error)
     iV[ix + 1] = baStoi(s);
     s = &tmP[1];
 
-    LM_T(LmtPaIList, ("item %d in int-list: %d", ix + 1, iV[ix + 1]));
-    LM_T(LmtPaIList, ("rest: '%s'", s));
+    KT_T(KtPaIList, "item %d in int-list: %d", ix + 1, iV[ix + 1]);
+    KT_T(KtPaIList, "rest: '%s'", s);
     ++ix;
 
     baWsStrip(s);
   }
 
-  LM_T(LmtPaIList, ("got %d items in int-list", ix));
+  KT_T(KtPaIList, "got %d items in int-list", ix);
 
   *error = PaOk;
 
@@ -250,8 +251,8 @@ static int sListFix(char** sV, char* s, int* error)
   char*    endP  = &s[strlen(s)];
   int64_t  ix    = 0;
 
-  LM_T(LmtPaSList, ("incoming list: '%s'", s));
-  LM_T(LmtPaSList, ("list vector at %p", sV));
+  KT_T(KtPaSList, "incoming list: '%s'", s);
+  KT_T(KtPaSList, "list vector at %p", sV);
   baWsStrip(s);
 
   while ((int64_t) tmP < (int64_t) endP)
@@ -282,8 +283,8 @@ static int sListFix(char** sV, char* s, int* error)
     // 3. We have an option - record it!
     ++ix;
     sV[ix] = s;
-    LM_T(LmtPaSList, ("Found item %d in string-list: '%s'", ix + 1, s));
-    LM_T(LmtPaSList, ("rest: '%s'", s));
+    KT_T(KtPaSList, "Found item %d in string-list: '%s'", ix + 1, s);
+    KT_T(KtPaSList, "rest: '%s'", s);
 
     // 4. Point 's' to end-of the recently found option (if needed)
     if (tmP)
@@ -292,13 +293,13 @@ static int sListFix(char** sV, char* s, int* error)
     }
     else
     {
-      LM_T(LmtPaSList, ("A total of %d items in string-list", ix));
+      KT_T(KtPaSList, "A total of %d items in string-list", ix);
       sV[0] = (char*) ix;
       break;
     }
   }
 
-  LM_T(LmtPaSList, ("got %d items in string-list", ix));
+  KT_T(KtPaSList, "got %d items in string-list", ix);
 
   *error = PaOk;
   return ix;
@@ -335,7 +336,6 @@ int paOptionsParse(PaiArgument* paList, char* argV[], int argC)
   bool          extendedUsage = false;
   char          w[512];
 
-  LM_ENTRY();
   w[0] = 0;
 
   PA_M(("incoming arg list of %d args", argC));
@@ -382,7 +382,7 @@ int paOptionsParse(PaiArgument* paList, char* argV[], int argC)
       continue;
     }
 
-    LM_T(LmtPaApVals, ("found option '%s'", aP->name));
+    KT_T(KtPaApVals, "found option '%s'", aP->name);
 
     if (aP->varP == (void*) &paUsageVar)
     {
@@ -435,7 +435,7 @@ int paOptionsParse(PaiArgument* paList, char* argV[], int argC)
 
         snprintf(w, sizeof(w), "boolean option '%s' doesn't take parameters", paFullName(aP, e, sizeof(e)));
         snprintf(tmp, sizeof(tmp), "%c%s", argV[argNo][0], &argV[argNo][2]);
-        LM_W(("Changing arg %d from '%s' to '%s'", argNo, argV[argNo], tmp));
+        KT_W("Changing arg %d from '%s' to '%s'", argNo, argV[argNo], tmp);
         snprintf(argV[argNo], strlen(argV[argNo]), "%s", tmp);
         --argNo;
       }
@@ -464,7 +464,7 @@ int paOptionsParse(PaiArgument* paList, char* argV[], int argC)
         return -1;
       }
 
-      LM_T(LmtPaApVals, ("got value %d for %s", *((int*) aP->varP), aP->name));
+      KT_T(KtPaApVals, "got value %d for %s", *((int*) aP->varP), aP->name);
       break;
 
     case PaInt64:
@@ -475,7 +475,7 @@ int paOptionsParse(PaiArgument* paList, char* argV[], int argC)
         return -1;
       }
 
-      LM_T(LmtPaApVals, ("got value %ul for %s", *((int64_t*) aP->varP), aP->name));
+      KT_T(KtPaApVals, "got value %ul for %s", *((int64_t*) aP->varP), aP->name);
       break;
 
     case PaChar:
@@ -486,7 +486,7 @@ int paOptionsParse(PaiArgument* paList, char* argV[], int argC)
         return -1;
       }
 
-      LM_T(LmtPaApVals, ("got value %d for %s", *((char*) aP->varP), aP->name));
+      KT_T(KtPaApVals, "got value %d for %s", *((char*) aP->varP), aP->name);
       break;
 
     case PaShort:
@@ -497,45 +497,45 @@ int paOptionsParse(PaiArgument* paList, char* argV[], int argC)
         return -1;
       }
 
-      LM_T(LmtPaApVals, ("got value %d for %s", *((int16_t*) aP->varP), aP->name));
+      KT_T(KtPaApVals, "got value %d for %s", *((int16_t*) aP->varP), aP->name);
       break;
 
     case PaFloat:
       *((float*) aP->varP) = baStof(valueP);
       *eP = PaOk;
-      LM_T(LmtPaApVals, ("got value %f for %s", *((float*) aP->varP), aP->name));
+      KT_T(KtPaApVals, "got value %f for %s", *((float*) aP->varP), aP->name);
       break;
 
     case PaDouble:
       *((double*) aP->varP) = baStof(valueP);
       *eP = PaOk;
-      LM_T(LmtPaApVals, ("got value %f for %s", *((double*) aP->varP), aP->name));
+      KT_T(KtPaApVals, "got value %f for %s", *((double*) aP->varP), aP->name);
       break;
 
     case PaString:
       strcpy((char*) aP->varP, valueP);
-      LM_T(LmtPaApVals, ("got value '%s' for %s", (char*) aP->varP, aP->name));
+      KT_T(KtPaApVals, "got value '%s' for %s", (char*) aP->varP, aP->name);
       *eP = PaOk;
       break;
 
     case PaIList:
-      LM_T(LmtPaIList, ("setting list '%s' to var %s", valueP, aP->name));
+      KT_T(KtPaIList, "setting list '%s' to var %s", valueP, aP->name);
       iListFix((int*) aP->varP, valueP, eP);
       break;
 
     case PaSList:
-      LM_T(LmtPaSList, ("setting list '%s' to var %s", valueP, aP->name));
+      KT_T(KtPaSList, "setting list '%s' to var %s", valueP, aP->name);
       sListFix((char**) aP->varP, valueP, eP);
       break;
 
     case PaBoolean:
     case PaLastArg:
-      LM_T(LmtPaApVals, ("PaList, PaBoolean, PaLastArg ..."));
+      KT_T(KtPaApVals, "PaList, PaBoolean, PaLastArg ...");
       *eP = PaOk;
       break;
 
     default:
-      LM_W(("bad type for option '%s'", aP->name));
+      KT_W("bad type for option '%s'", aP->name);
     }
 
     if (*eP != PaOk)
@@ -544,7 +544,7 @@ int paOptionsParse(PaiArgument* paList, char* argV[], int argC)
     }
 
     aP->used++;
-    LM_V(("%s used %d times", aP->name, aP->used));
+    KT_V("%s used %d times", aP->name, aP->used);
   }
 
 
@@ -565,6 +565,5 @@ int paOptionsParse(PaiArgument* paList, char* argV[], int argC)
     return -2;
   }
 
-  LM_EXIT();
   return 0;
 }

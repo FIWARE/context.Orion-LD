@@ -1,9 +1,31 @@
 ## Fixed Issues:
   #1495 - bug with very long HTTP headers in HTTPS notifications
   #1878 - too verbose and no way to turn off INFO messages
+  #1698 - by switching /ngsi-ld/v1/types to use the MongoDB aggregation-based query
+  #XXXX - Added a bunch of checking for NULL from malloc/kaAlloc, eand exiting if the allocation fails
 
 ## New Features:
+  #XXXX - Experimental GET /ngsi-ld/ex/relationships endpoint to query reverse relationships -
+          all entities referencing a given entity via relationship attributes.
+
 ## Library version updates
+
+## Logging
+  - Replaced logMsg library with ktrace logging system
+
+## Documentation
+  - Added STYLE_GUIDE.md - coding style guidelines for the project
+  - Added Implementation.md - detailed document on the implementation of Orion-LD
+  - All installation guides are now up-to-date
+  - Added scripts for automated instllation (both for apt and rpm) as an alternative to the installation guides,
+    and added a note about these scripts in the beginning of the installation guides
+
+## Functional Test Suite
+  - Fixed functional test notification_different_sizes.test (added -ki flag for KT_I messages, sed to strip ktrace prefix)
+  - Fixed functional test dds_prepopulate_entity-II.test (added sleep for DDS timing)
+  - Improved broker startup error detection in test harness (polls for port, checks for E:/X: errors)
+  - Improved SHELL-INIT error display formatting in test harness
+
 ## DDS
 ## Multi-Attribute (datasetId)
 ## Notes

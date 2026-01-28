@@ -27,7 +27,11 @@
 
 #include "parseArgs/parseArgs.h"
 #include "parseArgs/paConfig.h"
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+#include "orionld/common/traceLevels.h"
 
 
 #ifndef FALSE
@@ -138,7 +142,7 @@ int main(int argC, char* argV[])
   paConfig("remove builtin", "-v");
 #endif
 
-  LM_V(("parsing arguments"));
+  KT_V("parsing arguments");
   paParse(paArgs, argC, argV, 1, FALSE);
 
   printf("long:          %ld\n", l);
@@ -174,15 +178,15 @@ int main(int argC, char* argV[])
   printf("f1: %f\n", f1);
   printf("d1: %f\n", d1);
 
-  LM_V(("Verbose message"));
-  LM_D(("Debug message"));
+  KT_V("Verbose message");
+  KT_D("Debug message");
 
   {
     int ix;
 
     for (ix = 0; ix < 255; ix++)
     {
-      LM_T(ix, ("Trace level %d is on", ix));
+      KT_T(ix, "Trace level %d is on", ix);
     }
   }
 
@@ -192,13 +196,13 @@ int main(int argC, char* argV[])
 
     for (ix = 0; ix < 5000; ix++)
     {
-      LM_F(("FORCED   %d", ix));  // This LM_F use is for a test program for the ParseArgs library
-      LM_M(("MESSAGE  %d", ix));  // This LM_M use is for a test program for the ParseArgs library
-      LM_W(("WARNING  %d", ix));
-      LM_E(("ERROR    %d", ix));
-      LM_V(("VERBOSE  %d", ix));
-      LM_D(("DEBUG    %d", ix));
-      LM_T(ix % 256, ("traceLevel %d", ix % 256));
+      KT_F("FORCED   %d", ix);  // This KT_F use is for a test program for the ParseArgs library
+      KT_M("MESSAGE  %d", ix);  // This KT_M use is for a test program for the ParseArgs library
+      KT_W("WARNING  %d", ix);
+      KT_E("ERROR    %d", ix);
+      KT_V("VERBOSE  %d", ix);
+      KT_D("DEBUG    %d", ix);
+      KT_T(ix % 256, "traceLevel %d", ix % 256);
     }
   }
 

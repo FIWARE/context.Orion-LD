@@ -25,7 +25,7 @@ Metrics without emptied reported items that stay
 
 --SHELL-INIT--
 dbInit CB
-brokerStart CB 0-255 IPv4 -multiservice
+orionldStart CB -kt 0-255 -multiservice
 
 --SHELL--
 

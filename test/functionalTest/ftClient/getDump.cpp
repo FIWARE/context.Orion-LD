@@ -174,7 +174,7 @@ KjNode* getDump(int* statusCodeP)
       int   bodyLen = kjRenderSize(orionldState.kjsonP, bodyP) + 512;
       char* body    = kaAlloc(orionldState.kjsonP->kallocP, bodyLen);
 
-      kjRender(orionldState.kjsonP, bodyP, body, bodyLen);
+      kjRender(orionldState.kjsonP, bodyP, body);
       KT_T(StRequest, "body: '%s'", body);
       strcpy(&buf[bufIx], body);
       bufIx += strlen(body);

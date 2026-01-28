@@ -38,8 +38,12 @@
 #include <iostream>
 #include <sstream>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+
+#include "orionld/common/traceLevels.h"
 
 #include "orionld/common/orionldState.h"                  // orionldState
 #include "common/string.h"
@@ -108,7 +112,7 @@ size_t writeMemoryCallback(void* contents, size_t size, size_t nmemb, void* user
   mem->memory = (char*) realloc(mem->memory, mem->size + realsize + 1);
   if (mem->memory == NULL)
   {
-    LM_E(("Runtime Error (out of memory)"));
+    KT_E("Runtime Error (out of memory)");
     return 0;
   }
 
@@ -298,7 +302,7 @@ int httpRequestSendWithCurl
   {
     if (metricsMgr.isOn())
       metricsMgr.add(tenant, servicePath0, METRIC_TRANS_OUT_ERRORS, 1);
-    LM_E(("Runtime Error (port is ZERO)"));
+    KT_E("Runtime Error (port is ZERO)");
     lmTransactionEnd();
 
     *outP = "error";
@@ -309,7 +313,7 @@ int httpRequestSendWithCurl
   {
     if (metricsMgr.isOn())
       metricsMgr.add(tenant, servicePath0, METRIC_TRANS_OUT_ERRORS, 1);
-    LM_E(("Runtime Error (ip is empty)"));
+    KT_E("Runtime Error (ip is empty)");
     lmTransactionEnd();
 
     *outP = "error";
@@ -320,7 +324,7 @@ int httpRequestSendWithCurl
   {
     if (metricsMgr.isOn())
       metricsMgr.add(tenant, servicePath0, METRIC_TRANS_OUT_ERRORS, 1);
-    LM_E(("Runtime Error (verb is empty)"));
+    KT_E("Runtime Error (verb is empty)");
     lmTransactionEnd();
 
     *outP = "error";
@@ -331,7 +335,7 @@ int httpRequestSendWithCurl
   {
     if (metricsMgr.isOn())
       metricsMgr.add(tenant, servicePath0, METRIC_TRANS_OUT_ERRORS, 1);
-    LM_E(("Runtime Error (resource is empty)"));
+    KT_E("Runtime Error (resource is empty)");
     lmTransactionEnd();
 
     *outP = "error";
@@ -342,7 +346,7 @@ int httpRequestSendWithCurl
   {
     if (metricsMgr.isOn())
       metricsMgr.add(tenant, servicePath0, METRIC_TRANS_OUT_ERRORS, 1);
-    LM_E(("Runtime Error (Content-Type is empty but there is actual content)"));
+    KT_E("Runtime Error (Content-Type is empty but there is actual content)");
     lmTransactionEnd();
 
     *outP = "error";
@@ -353,7 +357,7 @@ int httpRequestSendWithCurl
   {
     if (metricsMgr.isOn())
       metricsMgr.add(tenant, servicePath0, METRIC_TRANS_OUT_ERRORS, 1);
-    LM_E(("Runtime Error (Content-Type non-empty but there is no content)"));
+    KT_E("Runtime Error (Content-Type non-empty but there is no content)");
     lmTransactionEnd();
 
     *outP = "error";
@@ -482,7 +486,7 @@ int httpRequestSendWithCurl
   {
     if (metricsMgr.isOn())
       metricsMgr.add(tenant, servicePath0, METRIC_TRANS_OUT_ERRORS, 1);
-    LM_E(("Runtime Error (HTTP request to send is too large: %d bytes)", outgoingMsgSize));
+    KT_E("Runtime Error (HTTP request to send is too large: %d bytes)", outgoingMsgSize);
 
     curl_slist_free_all(headers);
 
@@ -561,7 +565,7 @@ int httpRequestSendWithCurl
   // This was previously an LM_T trace, but we have "promoted" it as it is needed
   // to check logs in a .test case (case 000 notification_different_sizes.test)
   //
-  LM_K(("Sending message %lu to HTTP server: sending message of %d bytes to HTTP server", sendReqNo, outgoingMsgSize));  // Sacred: used in functest notification_different_sizes.test
+  KT_I("Sending message %lu to HTTP server: sending message of %d bytes to HTTP server", sendReqNo, outgoingMsgSize);  // Sacred: used in functest notification_different_sizes.test
 
   res = curl_easy_perform(curl);
   if (res != CURLE_OK)
@@ -570,7 +574,7 @@ int httpRequestSendWithCurl
     // NOTE: This log line is used by the functional tests in cases/880_timeout_for_forward_and_notifications/
     //       So, this line should not be removed/altered, at least not without also modifying the functests.
     //
-    LM_E(("curl_easy_perform failed: %d", res));
+    KT_E("curl_easy_perform failed: %d", res);
     alarmMgr.notificationError(url, "(curl_easy_perform failed: " + std::string(curl_easy_strerror(res)) + ")");
     *outP = "notification failure";
 
@@ -584,7 +588,7 @@ int httpRequestSendWithCurl
     //
     int   payloadLen  = contentLenParse(httpResponse->memory);
 
-    LM_I(("Notification Successfully Sent to %s", url.c_str()));
+    KT_I("Notification Successfully Sent to %s", url.c_str());
     outP->assign(httpResponse->memory, httpResponse->size);
 
     if (metricsMgr.isOn())
@@ -668,7 +672,7 @@ int httpRequestSend
     }
 
     release_curl_context(&cc);
-    LM_E(("Runtime Error (could not init libcurl)"));
+    KT_E("Runtime Error (could not init libcurl)");
     lmTransactionEnd();
 
     *outP = "error";

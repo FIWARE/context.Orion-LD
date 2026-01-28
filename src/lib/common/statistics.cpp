@@ -22,10 +22,19 @@
 *
 * Author: Ken Zangelin
 */
+#include <string.h>
+
 #include "common/statistics.h"
 #include "common/tag.h"
+#include "common/sem.h"
 #include "ngsi/Request.h"
-#include "logMsg/logMsg.h"
+
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+
+#include "orionld/common/traceLevels.h"
 #include "common/JsonHelper.h"
 
 

@@ -25,8 +25,13 @@
 #include <string>
 #include <vector>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+
+#include "orionld/common/traceLevels.h"
+#include "orionld/common/orionldState.h"             // orionldState
 
 #include "common/globals.h"
 #include "alarmMgr/alarmMgr.h"
@@ -44,11 +49,11 @@
 */
 static std::string entityId(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("%s: %s", path.c_str(), value.c_str()));
+  KT_T(KtLegacy, "%s: %s", path.c_str(), value.c_str());
 
   reqDataP->ucas.entityIdP = new EntityId();
 
-  LM_T(LmtLegacy, ("New entityId at %p", reqDataP->ucas.entityIdP));
+  KT_T(KtLegacy, "New entityId at %p", reqDataP->ucas.entityIdP);
   reqDataP->ucas.entityIdP->id        = "";
   reqDataP->ucas.entityIdP->type      = "";
   reqDataP->ucas.entityIdP->isPattern = "false";
@@ -67,7 +72,7 @@ static std::string entityId(const std::string& path, const std::string& value, P
 static std::string entityIdId(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
   reqDataP->ucas.entityIdP->id = value;
-  LM_T(LmtLegacy, ("Set 'id' to '%s' for an entity", reqDataP->ucas.entityIdP->id.c_str()));
+  KT_T(KtLegacy, "Set 'id' to '%s' for an entity", reqDataP->ucas.entityIdP->id.c_str());
 
   return "OK";
 }
@@ -81,7 +86,7 @@ static std::string entityIdId(const std::string& path, const std::string& value,
 static std::string entityIdType(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
   reqDataP->ucas.entityIdP->type = value;
-  LM_T(LmtLegacy, ("Set 'type' to '%s' for an entity", reqDataP->ucas.entityIdP->type.c_str()));
+  KT_T(KtLegacy, "Set 'type' to '%s' for an entity", reqDataP->ucas.entityIdP->type.c_str());
 
   return "OK";
 }
@@ -94,7 +99,7 @@ static std::string entityIdType(const std::string& path, const std::string& valu
 */
 static std::string entityIdIsPattern(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Got an entityId:isPattern: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got an entityId:isPattern: '%s'", value.c_str());
 
   if (!isTrue(value) && !isFalse(value))
   {
@@ -118,7 +123,7 @@ static std::string entityIdIsPattern(const std::string& path, const std::string&
 */
 static std::string attribute(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Got an attribute: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got an attribute: '%s'", value.c_str());
 
   reqDataP->ucas.res.attributeList.push_back(value);
 
@@ -133,7 +138,7 @@ static std::string attribute(const std::string& path, const std::string& value, 
 */
 static std::string duration(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Got a duration: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got a duration: '%s'", value.c_str());
 
   reqDataP->ucas.res.duration.set(value);
 
@@ -148,7 +153,7 @@ static std::string duration(const std::string& path, const std::string& value, P
 */
 static std::string restriction(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Got a restriction"));
+  KT_T(KtLegacy, "Got a restriction");
 
   ++reqDataP->ucas.res.restrictions;
 
@@ -163,7 +168,7 @@ static std::string restriction(const std::string& path, const std::string& value
 */
 static std::string attributeExpression(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Got an attributeExpression: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got an attributeExpression: '%s'", value.c_str());
 
   reqDataP->ucas.res.restriction.attributeExpression.set(value);
 
@@ -178,7 +183,7 @@ static std::string attributeExpression(const std::string& path, const std::strin
 */
 static std::string scope(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Got a scope"));
+  KT_T(KtLegacy, "Got a scope");
 
   reqDataP->ucas.scopeP = new Scope();
   reqDataP->ucas.res.restriction.scopeVector.push_back(reqDataP->ucas.scopeP);
@@ -194,7 +199,7 @@ static std::string scope(const std::string& path, const std::string& value, Pars
 */
 static std::string scopeType(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Got a scope type: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got a scope type: '%s'", value.c_str());
 
   reqDataP->ucas.scopeP->type = value;
 
@@ -209,7 +214,7 @@ static std::string scopeType(const std::string& path, const std::string& value, 
 */
 static std::string scopeValue(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Got a scope value: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got a scope value: '%s'", value.c_str());
 
   reqDataP->ucas.scopeP->value = value;
 
@@ -224,7 +229,7 @@ static std::string scopeValue(const std::string& path, const std::string& value,
 */
 static std::string subscriptionId(const std::string& path, const std::string& value, ParseData* reqDataP)
 {
-  LM_T(LmtLegacy, ("Got a subscriptionId: '%s'", value.c_str()));
+  KT_T(KtLegacy, "Got a subscriptionId: '%s'", value.c_str());
   reqDataP->ucas.res.subscriptionId.set(value);
 
   return "OK";

@@ -23,12 +23,18 @@
 * Author: developer
 */
 #include <stdlib.h>                   /* atoi                                 */
+#include <string.h>                   /* strlen, strchr, strcmp, strcpy       */
+#include <errno.h>                    /* errno, strerror                      */
 #include <sys/types.h>                /* uid_t                                */
 #include <unistd.h>                   /* geteuid                              */
 #include <pwd.h>                      /* getpw                                */
 
 #include "parseArgs/baStd.h"          /* BA standard header file              */
-#include "logMsg/logMsg.h"            /* lmVerbose, lmDebug, ...              */
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+#include "orionld/common/traceLevels.h"
 
 #include "parseArgs/paPrivate.h"      /* PaTypeUnion, config variables, ...   */
 #include "parseArgs/paTraceLevels.h"  /* LmtPaEnvVal, ...                     */
@@ -90,7 +96,7 @@ static int dirFind(char* dir, int dirLen)
      4. generic directory
    */
 
-  LM_T(LmtPaRcFile, ("paRcFileName: '%s'", paRcFileName));
+  KT_T(KtPaRcFile, "paRcFileName: '%s'", paRcFileName);
 
   /* X. prescan argV to see if the home directory is set */
   /* X. if env var XX_HOME set: $XX_HOME/.progname       */
@@ -98,7 +104,7 @@ static int dirFind(char* dir, int dirLen)
   /* 1. paConfig */
   if (paRcFileDir != NULL)
   {
-    LM_T(LmtPaRcFile, ("checking dir '%s'", paRcFileDir));
+    KT_T(KtPaRcFile, "checking dir '%s'", paRcFileDir);
     snprintf(dir,  dirLen, "%s", paRcFileDir);
     snprintf(path, sizeof(path), "%s/%s", dir, paRcFileName);
 
@@ -111,7 +117,7 @@ static int dirFind(char* dir, int dirLen)
   /* 2. directory of execution */
   if (getcwd(dir, dirLen) != NULL)
   {
-    LM_T(LmtPaRcFile, ("checking dir '%s'", dir));
+    KT_T(KtPaRcFile, "checking dir '%s'", dir);
     snprintf(path, sizeof(path), "%s/%s", dir, paRcFileName);
 
     if (access(path, R_OK) == 0)
@@ -121,7 +127,7 @@ static int dirFind(char* dir, int dirLen)
   }
   else
   {
-    LM_W(("getcwd failed"));
+    KT_W("getcwd failed");
   }
 
   /* 3. users home directory */
@@ -132,7 +138,7 @@ static int dirFind(char* dir, int dirLen)
   euid = geteuid();
   if (getpwuid_r(euid, &pw, buf, sizeof(buf), &pwP) == 0)
   {
-    LM_T(LmtPaRcFile, ("checking home dir '%s'", pw.pw_dir));
+    KT_T(KtPaRcFile, "checking home dir '%s'", pw.pw_dir);
 
     snprintf(dir, dirLen, "%s", pw.pw_dir);
     snprintf(path, sizeof(path), "%s/%s", dir, paRcFileName);
@@ -144,13 +150,13 @@ static int dirFind(char* dir, int dirLen)
   }
   else
   {
-    LM_W(("geteuid or getpwuid_r failed"));
+    KT_W("geteuid or getpwuid_r failed");
   }
 
   /* 4. Generic RC file directory, if any ... */
   if (paGenericRcDir != NULL)
   {
-    LM_T(LmtPaRcFile, ("checking dir '%s'", paGenericRcDir));
+    KT_T(KtPaRcFile, "checking dir '%s'", paGenericRcDir);
     snprintf(dir, dirLen, "%s", paGenericRcDir);
     snprintf(path, sizeof(path), "%s/%s", dir, paRcFileName);
 
@@ -178,17 +184,15 @@ int paRcFileParse(void)
   FILE*  fP;
   char   w[512];
 
-  LM_ENTRY();
 
   if ((paRcFileName == NULL) || (paRcFileName[0] == 0))
   {
-    LM_EXIT();
     return 0;
   }
 
   if (dirFind(dir, sizeof(dir)) == 0)
   {
-    LM_T(LmtPaRcFile, ("RC file '%s' found in directory '%s'", paRcFileName, dir));
+    KT_T(KtPaRcFile, "RC file '%s' found in directory '%s'", paRcFileName, dir);
   }
   else
   {
@@ -198,10 +202,10 @@ int paRcFileParse(void)
   snprintf(path, sizeof(path), "%s/%s", dir, paRcFileName);
   if ((fP = fopen(path, "r")) == NULL)
   {
-    LM_RE(-1, ("error opening RC file '%s': %s", path, strerror(errno)));
+    KT_RE(-1, "error opening RC file '%s': %s", path, strerror(errno));
   }
 
-  LM_T(LmtPaRcFile, ("parsing RC file %s", path));
+  KT_T(KtPaRcFile, "parsing RC file %s", path);
 
   while (fgets(line, sizeof(line), fP) != NULL)
   {
@@ -213,19 +217,19 @@ int paRcFileParse(void)
     char          envVarName[128];
 
     ++lineNo;
-    LM_T(LmtPaRcFile, ("got line %d", lineNo));
+    KT_T(KtPaRcFile, "got line %d", lineNo);
     newlineStrip(line);
-    LM_T(LmtPaRcFile, ("got line %d", lineNo));
+    KT_T(KtPaRcFile, "got line %d", lineNo);
     commentStrip(line, '#');
-    LM_T(LmtPaRcFile, ("got line %d", lineNo));
+    KT_T(KtPaRcFile, "got line %d", lineNo);
     baWsStrip(line);
-    LM_T(LmtPaRcFile, ("got line %d", lineNo));
+    KT_T(KtPaRcFile, "got line %d", lineNo);
     if (line[0] == 0)
     {
       continue;
     }
 
-    LM_T(LmtPaRcFile, ("got line %d", lineNo));
+    KT_T(KtPaRcFile, "got line %d", lineNo);
     delim = strchr(line, '=');
     if (delim == NULL)
     {
@@ -245,13 +249,13 @@ int paRcFileParse(void)
     if (var[0] == 0)
     {
       fclose(fP);
-      LM_RE(-1, ("%s[%d]: no variable ...", path, lineNo));
+      KT_RE(-1, "%s[%d]: no variable ...", path, lineNo);
     }
 
     if (val[0] == 0)
     {
       fclose(fP);
-      LM_RE(-1, ("%s[%d]: no value for variable %s", path, lineNo, var));
+      KT_RE(-1, "%s[%d]: no value for variable %s", path, lineNo, var);
     }
 
     varFound = false;
@@ -264,7 +268,7 @@ int paRcFileParse(void)
       if (strcmp(var, envVarName) == 0)
       {
         aP->from = PafRcFile;
-        LM_T(LmtPaRcFileVal, ("got value '%s' for %s", val, envVarName));
+        KT_T(KtPaRcFileVal, "got value '%s' for %s", val, envVarName);
         varFound = true;
         break;
       }
@@ -305,7 +309,6 @@ int paRcFileParse(void)
 
     case PaSList:
     case PaIList:
-      LM_TODO(("lists ..."));
       break;
 
     case PaInt:

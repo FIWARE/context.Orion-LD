@@ -40,6 +40,11 @@
 #include "unittests/unittest.h"
 #include "unittests/testInit.h"
 
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+
 
 
 extern void setMongoConnectionForUnitTest(DBClientBase* _connection);
@@ -52,7 +57,7 @@ extern void setMongoConnectionForUnitTest(DBClientBase* _connection);
 */
 TEST(cache, SubscriptionCache)
 {
-  LM_M(("In SubscriptionCache test"));
+  KT_V("In SubscriptionCache test");
   utInit();
 
   std::vector<EntityInfo*>  entityIdInfos;

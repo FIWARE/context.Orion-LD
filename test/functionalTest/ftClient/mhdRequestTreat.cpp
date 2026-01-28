@@ -128,7 +128,7 @@ char* mhdRequestTreat(int* statusCodeP)
       char*   buf          = kaAlloc(&orionldState.kalloc, bufSize);
 
       bzero(buf, bufSize);
-      kjRender(orionldState.kjsonP, responseTree, buf, bufSize);
+      kjRender(orionldState.kjsonP, responseTree, buf);
       return buf;
     }
 

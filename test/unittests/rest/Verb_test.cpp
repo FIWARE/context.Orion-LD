@@ -23,7 +23,10 @@
 * Author: Ken Zangelin
 */
 #include "gtest/gtest.h"
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 #include "rest/Verb.h"
 
 

@@ -27,8 +27,11 @@
 #include <string>
 #include <vector>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+#include "orionld/common/traceLevels.h"
 
 #include "common/globals.h"
 #include "common/tag.h"
@@ -345,11 +348,11 @@ std::string ContextAttributeVector::render
       if (addedLookup(added, vec[ix]->name) == "")
       {
         added.push_back(vec[ix]->name);
-        LM_T(LmtLegacy, ("Keeping attribute '%s'", vec[ix]->name.c_str()));
+        KT_T(KtLegacy, "Keeping attribute '%s'", vec[ix]->name.c_str());
       }
       else
       {
-        LM_T(LmtLegacy, ("Removing attribute '%s'", vec[ix]->name.c_str()));
+        KT_T(KtLegacy, "Removing attribute '%s'", vec[ix]->name.c_str());
         vec[ix]->release();
         delete vec[ix];
         vec.erase(vec.begin() + ix);

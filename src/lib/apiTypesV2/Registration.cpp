@@ -26,8 +26,10 @@
 
 #include <string>
 
-#include "logMsg/logMsg.h"                                  // LM_*
-#include "logMsg/traceLevels.h"                             // Lmt*
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
 #include "apiTypesV2/Registration.h"
 #include "common/globals.h"

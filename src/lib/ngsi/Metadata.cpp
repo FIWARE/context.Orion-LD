@@ -25,8 +25,11 @@
 #include <stdio.h>
 #include <string>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+#include "orionld/common/traceLevels.h"
 
 #include "orionld/types/ApiVersion.h"                              // ApiVersion
 #include "orionld/common/orionldState.h"                           // orionldState
@@ -235,7 +238,7 @@ Metadata::Metadata(const char* _name, BSONObj* mdBsonP)
 
   default:
     valueType = orion::ValueTypeNotGiven;
-    LM_E(("Runtime Error (unknown metadata value type in DB: %d, using ValueTypeNotGiven)", getFieldF(mdBsonP, ENT_ATTRS_MD_VALUE).type()));
+    KT_E("Runtime Error (unknown metadata value type in DB: %d, using ValueTypeNotGiven)", getFieldF(mdBsonP, ENT_ATTRS_MD_VALUE).type());
     break;
   }
 }
@@ -549,12 +552,12 @@ std::string Metadata::toJson(bool isLastElement)
   }
   else if (valueType == orion::ValueTypeNotGiven)
   {
-    LM_E(("Runtime Error (value not given for metadata %s)", name.c_str()));
+    KT_E("Runtime Error (value not given for metadata %s)", name.c_str());
     out += JSON_VALUE("value", stringValue);
   }
   else
   {
-    LM_E(("Runtime Error (invalid value type for metadata %s)", name.c_str()));
+    KT_E("Runtime Error (invalid value type for metadata %s)", name.c_str());
     out += JSON_VALUE("value", stringValue);
   }
 

@@ -25,8 +25,10 @@
 #include <string>
 #include <vector>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
 #include "common/statistics.h"
 #include "common/clockFunctions.h"
@@ -100,7 +102,6 @@ std::string semStateTreat
   const char* subCacheState              = cacheSemGet();
   const char* transactionState           = transSemGet();
   const char* timeStatState              = timeStatSemGet();
-  const char* logMsgState                = lmSemGet();
   const char* alarmMgrState              = alarmMgr.semGet();
   const char* connectionContextState     = connectionContextSemGet();
   const char* connectionSubContextState  = connectionSubContextSemGet();
@@ -114,7 +115,6 @@ std::string semStateTreat
   out += semRender("subCache",             false, subCacheState)             + ",";
   out += semRender("transaction",          false, transactionState)          + ",";
   out += semRender("timeStat",             false, timeStatState)             + ",";
-  out += semRender("logMsg",               false, logMsgState)               + ",";
   out += semRender("alarmMgr",             false, alarmMgrState)             + ",";
   out += semRender("metricsMgr",           false, metricsMgrState)           + ",";
   out += semRender("connectionContext",    false, connectionContextState)    + ",";

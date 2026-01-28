@@ -30,23 +30,23 @@
 
 /* ****************************************************************************
 *
-* PaTraceLevels - 
+* PaTraceLevels -
 */
 enum PaTraceLevels
 {
-  LmtPaSetup          = 0,
-  LmtPaConfigAction,
-  LmtPaDefVal,
-  LmtPaEnvVal,
-  LmtPaRcFileVal,
-  LmtPaComLineVal,
-  LmtPaApVals,
-  LmtPaLimits,
-  LmtPaUsage,
-  LmtPaRcFile,
-  LmtPaSList,
-  LmtPaIList,
-  LmtHelp
+  KtPaSetup          = 0,
+  KtPaConfigAction,
+  KtPaDefVal,
+  KtPaEnvVal,
+  KtPaRcFileVal,
+  KtPaComLineVal,
+  KtPaApVals,
+  KtPaLimits,
+  KtPaUsage,
+  KtPaRcFile,
+  KtPaSList,
+  KtPaIList,
+  KtHelp
 };
 
 #endif  // SRC_LIB_PARSEARGS_PATRACELEVELS_H_

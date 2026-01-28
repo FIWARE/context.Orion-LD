@@ -172,14 +172,9 @@ typedef enum Ngsiv2Flavour
 /* ****************************************************************************
 *
 * useful macros
+*
+* NOTE: Use K_MIN/K_MAX from kbase/kMacros.h instead of MIN/MAX
 */
-#ifndef MIN
-#  define MIN(a, b)     ((a) < (b)? (a) : (b))
-#endif
-
-#ifndef MAX
-#  define MAX(a, b)     ((a) > (b)? (a) : (b))
-#endif
 
 
 
@@ -217,6 +212,10 @@ extern bool               disableCusNotif;
 
 extern bool               insecureNotif;
 extern bool               ngsiv1Autocast;
+
+// Thread-local transaction/correlator IDs (previously in logMsg)
+extern __thread char      transactionId[66];
+extern __thread char      correlatorId[64];
 
 
 

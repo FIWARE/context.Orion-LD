@@ -26,15 +26,13 @@ set -e
 echo
 echo -e "\e[1;32m Debian Builder: installing Paho MQTT C library \e[0m"
 
-yum remove -y okay-release || true 
-yum install -y graphviz doxygen
+yum remove -y okay-release || true
 
 rm -f /usr/local/lib/libpaho*                                                 # OK
 git clone https://github.com/eclipse/paho.mqtt.c.git ${ROOT_FOLDER}/paho.mqtt.c      # OK
 cd ${ROOT_FOLDER}/paho.mqtt.c                                                        # OK
 git fetch -a
 git checkout tags/v1.3.1                                                      # OK - git checkout develop ...
-make html                                                                     # OK
 
 echo -e "\e[1;32m Building Paho MQTT C Library \e[0m"
 make > /tmp/paho-build 2&>1 || /bin/true

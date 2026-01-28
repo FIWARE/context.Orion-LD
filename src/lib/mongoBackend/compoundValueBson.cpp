@@ -27,8 +27,10 @@
 
 #include "mongo/client/dbclient.h"
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"                                // trace messages - ktrace library
+}
 
 #include "parse/CompoundValueNode.h"
 #include "mongoBackend/compoundValueBson.h"
@@ -87,11 +89,11 @@ void compoundValueBson(const std::vector<orion::CompoundValueNode*>& children, B
     }
     else if (child->valueType == orion::ValueTypeNotGiven)
     {
-      LM_E(("Runtime Error (value not given in compound value)"));
+      KT_E("Runtime Error (value not given in compound value)");
     }
     else
     {
-      LM_E(("Runtime Error (Unknown type in compound value)"));
+      KT_E("Runtime Error (Unknown type in compound value)");
     }
   }
 }
@@ -145,11 +147,11 @@ void compoundValueBson(const std::vector<orion::CompoundValueNode*>& children, B
     }
     else if (child->valueType == orion::ValueTypeNotGiven)
     {
-      LM_E(("Runtime Error (value not given in compound value)"));
+      KT_E("Runtime Error (value not given in compound value)");
     }
     else
     {
-      LM_E(("Runtime Error (Unknown type in compound value)"));
+      KT_E("Runtime Error (Unknown type in compound value)");
     }
   }
 }

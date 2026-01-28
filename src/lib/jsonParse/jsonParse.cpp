@@ -42,8 +42,12 @@
 #include <string>
 #include <exception>
 
-#include "logMsg/logMsg.h"
-#include "logMsg/traceLevels.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+
+#include "orionld/common/traceLevels.h"
 
 #include "orionld/common/orionldState.h"                         // orionldState
 
@@ -267,7 +271,7 @@ void eatCompound
 
   if (containerP == NULL)
   {
-    LM_T(LmtLegacy, ("COMPOUND: '%s'", nodeName.c_str()));
+    KT_T(KtLegacy, "COMPOUND: '%s'", nodeName.c_str());
     containerP = new CompoundValueNode(ValueTypeObject);
     compoundInfo.compoundValueRoot = containerP;
   }
@@ -286,42 +290,38 @@ void eatCompound
       }
 
       containerP->add(orion::ValueTypeString, nodeName, nodeValue);
-      LM_T(LmtLegacy, ("Added string '%s' (value: '%s') under '%s'",
-                              nodeName.c_str(),
-                              nodeValue.c_str(),
-                              containerP->cpath()));
+      KT_T(KtLegacy, "Added string '%s' (value: '%s') under '%s'", nodeName.c_str(), nodeValue.c_str(), containerP->cpath());
     }
     else if ((nodeName == "") && (nodeValue == "") && (noOfChildren == 0))  // Unnamed String with EMPTY VALUE
     {
-      LM_T(LmtLegacy, ("'Bad' input - looks like a container but it is an EMPTY STRING - no name, no value"));
+      KT_T(KtLegacy, "'Bad' input - looks like a container but it is an EMPTY STRING - no name, no value");
       containerP->add(orion::ValueTypeString, "item", "");
     }
     else if ((nodeName != "") && (nodeValue == "") && (noOfChildren == 0))  // Named Empty string
     {
-      LM_T(LmtLegacy, ("Adding container '%s' under '%s'", nodeName.c_str(), containerP->cpath()));
+      KT_T(KtLegacy, "Adding container '%s' under '%s'", nodeName.c_str(), containerP->cpath());
       containerP = containerP->add(ValueTypeString, nodeName, "");
     }
     else if ((nodeName != "") && (nodeValue == ""))  // Named Container
     {
-      LM_T(LmtLegacy, ("Adding container '%s' under '%s'", nodeName.c_str(), containerP->cpath()));
+      KT_T(KtLegacy, "Adding container '%s' under '%s'", nodeName.c_str(), containerP->cpath());
       containerP = containerP->add(ValueTypeObject, nodeName, "");
     }
     else if ((nodeName == "") && (nodeValue == ""))  // Name-Less container
     {
-      LM_T(LmtLegacy, ("Adding name-less container under '%s' (parent may be a Vector!)", containerP->cpath()));
+      KT_T(KtLegacy, "Adding name-less container under '%s' (parent may be a Vector!)", containerP->cpath());
       containerP->valueType = ValueTypeVector;
       containerP = containerP->add(ValueTypeObject, "item", "");
     }
     else if ((nodeName == "") && (nodeValue != ""))  // Name-Less String + its container is a vector
     {
       containerP->valueType = ValueTypeVector;
-      LM_T(LmtLegacy, ("Set '%s' to be a vector", containerP->cpath()));
+      KT_T(KtLegacy, "Set '%s' to be a vector", containerP->cpath());
       containerP->add(orion::ValueTypeString, "item", nodeValue);
-      LM_T(LmtLegacy, ("Added a name-less string (value: '%s') under '%s'",
-                              nodeValue.c_str(), containerP->cpath()));
+      KT_T(KtLegacy, "Added a name-less string (value: '%s') under '%s'", nodeValue.c_str(), containerP->cpath());
     }
     else
-      LM_T(LmtLegacy, ("IMPOSSIBLE !!!"));
+      KT_T(KtLegacy, "IMPOSSIBLE !!!");
   }
 
   boost::property_tree::ptree subtree = (boost::property_tree::ptree) v.second;
@@ -381,7 +381,7 @@ static std::string jsonParse
   if ((isCompoundPath(path.c_str()) == true) && (nodeValue == "") && (noOfChildren != 0) && (treated == true))
   {
 
-    LM_T(LmtLegacy, ("Calling eatCompound for '%s'", path.c_str()));
+    KT_T(KtLegacy, "Calling eatCompound for '%s'", path.c_str());
     eatCompound(ciP, NULL, v, "");
     compoundValueEnd(ciP, parseDataP);
 

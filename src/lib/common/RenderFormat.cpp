@@ -26,8 +26,12 @@
 #include <string>
 #include <sstream>
 
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
+#include "orionld/common/traceLevels.h"
 #include "orionld/types/OrionldRenderFormat.h"
 #include "common/RenderFormat.h"
 

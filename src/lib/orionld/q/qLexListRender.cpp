@@ -132,7 +132,7 @@ char* qLexListRender(QNode* qListP, bool* validInV2P, bool* isMqP)
     int len   = strlen(bufP);
     if (outIx + len + extra >= outSize)
     {
-      char* newBuf = kaRealloc(&orionldState.kalloc, outP, outSize + 512);
+      char* newBuf = kaRealloc(&orionldState.kalloc, outP, outSize, outSize + 512);
 
       if (newBuf == NULL)
       {

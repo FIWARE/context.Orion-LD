@@ -24,8 +24,10 @@
 */
 #include <string>
 
-#include "logMsg/traceLevels.h"
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
 
 #include "common/string.h"
 #include "common/tag.h"
@@ -145,7 +147,7 @@ std::string QueryContextResponse::render(ApiVersion apiVersion, bool asJsonObjec
   //
   if ((errorCode.code == SccNone) && (contextElementResponseVector.size() == 0))
   {
-    LM_W(("Internal Error (Both error-code and response vector empty)"));
+    KT_W("Internal Error (Both error-code and response vector empty)");
     errorCode.fill(SccReceiverInternalError, "Both the error-code structure and the response vector were empty");
     out += errorCode.render(false);
   }

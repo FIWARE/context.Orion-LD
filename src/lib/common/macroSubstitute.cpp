@@ -24,7 +24,12 @@
 */
 #include <string>
 
-#include "logMsg/logMsg.h"
+extern "C"
+{
+#include "ktrace/kTrace.h"
+}
+
+#include "orionld/common/traceLevels.h"
 #include "ngsi/ContextElement.h"
 
 #include "common/string.h"
@@ -63,7 +68,7 @@ static void attributeValue(std::string* valueP, const std::vector<ContextAttribu
     }
     else if (vec[ix]->valueType == orion::ValueTypeNotGiven)
     {
-      LM_E(("Runtime Error (value not given for attribute)"));
+      KT_E("Runtime Error (value not given for attribute)");
       *valueP = "";
     }
     else if ((vec[ix]->valueType == orion::ValueTypeObject) || (vec[ix]->valueType == orion::ValueTypeVector))
@@ -80,19 +85,19 @@ static void attributeValue(std::string* valueP, const std::vector<ContextAttribu
         }
         else
         {
-          LM_E(("Runtime Error (attribute is of object type but its compound is of invalid type)"));
+          KT_E("Runtime Error (attribute is of object type but its compound is of invalid type)");
           *valueP = "";
         }
       }
       else
       {
-        LM_E(("Runtime Error (attribute is of object type but has no compound)"));
+        KT_E("Runtime Error (attribute is of object type but has no compound)");
         *valueP = "";
       }
     }
     else
     {
-      LM_E(("Runtime Error (unknown value type for attribute)"));
+      KT_E("Runtime Error (unknown value type for attribute)");
       *valueP = "";
     }
 
@@ -148,7 +153,7 @@ bool macroSubstitute(std::string* to, const std::string& from, const ContextElem
   //
   if (from.size() > MAX_DYN_MSG_SIZE)
   {
-    LM_W(("Runtime Error (too large initial string, before substitution)"));
+    KT_W("Runtime Error (too large initial string, before substitution)");
     *to = "";
     return false;
   }
@@ -163,7 +168,7 @@ bool macroSubstitute(std::string* to, const std::string& from, const ContextElem
 
     if (macroEnd == std::string::npos)
     {
-      LM_W(("Runtime Error (macro end not found, syntax error, aborting substitution)"));
+      KT_W("Runtime Error (macro end not found, syntax error, aborting substitution)");
       *to = "";
       return false;
     }
@@ -212,7 +217,7 @@ bool macroSubstitute(std::string* to, const std::string& from, const ContextElem
 
   if (from.length() + toAdd - toReduce > MAX_DYN_MSG_SIZE)
   {
-    LM_W(("Runtime Error (too large final string, after substitution)"));
+    KT_W("Runtime Error (too large final string, after substitution)");
     *to = "";
     return false;
   }
