@@ -31,25 +31,16 @@ jobs:
           file: docker/Dockerfile-ubi
           tags: localhost:5000/orion-ld:latest
 
-      - name: Save context file for later
-        run: cp test/functionalTest/contexts/schema_lab_fiware_org_ld_context.jsonld /tmp/context.jsonld
-
       - uses: actions/checkout@v2
         with:
           repository: fiware/mintaka
 
-      - name: Set up context server
+      - name: Patch dead context URL in Mintaka tests
         run: |
-          # Add hosts entry so schema.lab.fiware.org resolves to localhost
-          echo "127.0.0.1 schema.lab.fiware.org" | sudo tee -a /etc/hosts
-          # Serve the context file on port 80 at /ld/context
-          mkdir -p /tmp/context-root/ld
-          cp /tmp/context.jsonld /tmp/context-root/ld/context
-          cd /tmp/context-root && sudo python3 -m http.server 80 &
-          # Wait for server to be ready
-          sleep 2
-          # Verify it works
-          curl -s http://schema.lab.fiware.org/ld/context
+          # Replace dead schema.lab.fiware.org URL with raw GitHub URL from Orion-LD repo
+          find . -name "*.java" -exec sed -i 's|https://schema.lab.fiware.org/ld/context|https://raw.githubusercontent.com/FIWARE/context.Orion-LD/develop/test/functionalTest/contexts/schema_lab_fiware_org_ld_context.jsonld|g' {} +
+          # Verify the replacement
+          grep -r "schema_lab_fiware_org" --include="*.java" || echo "URL replaced successfully"
 
       - uses: actions/setup-java@v1
         with:
