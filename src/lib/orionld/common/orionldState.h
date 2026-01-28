@@ -71,7 +71,7 @@ extern "C"
 //
 // ORIONLD_VERSION -
 //
-#define ORIONLD_VERSION "post-v1.11.0"
+#define ORIONLD_VERSION "post-v1.12.0"
 
 
 
@@ -662,7 +662,8 @@ extern char                kTraceLevels[256];
 //
 // CLI params for DDS
 //
-extern bool              ddsSupport;               // Publish/Subscriba via DDS
+extern bool              ddsSupport;               // Publish/Subscribe via DDS
+extern bool              ddsPublishOnCreate;       // Publish new entities/attributes to DDS on creation
 extern char              ddsTopicType[512];
 
 

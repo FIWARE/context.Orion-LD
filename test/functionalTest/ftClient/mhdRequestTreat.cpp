@@ -50,6 +50,11 @@ extern "C"
 #include "ftClient/getDdsDump.h"                            // getDdsDump
 #include "ftClient/postDdsPub.h"                            // postDdsPub
 #include "ftClient/postDdsSub.h"                            // postDdsSub
+#include "ftClient/getDdsServiceRequests.h"                 // getDdsServiceRequests
+#include "ftClient/deleteDdsServiceRequests.h"              // deleteDdsServiceRequests
+#include "ftClient/postDdsServiceReply.h"                   // postDdsServiceReply
+#include "ftClient/postDdsType.h"                           // postDdsType
+#include "ftClient/postDdsService.h"                        // postDdsService
 
 
 extern __thread KjNode* uriParams;    // These two need to go inside orionldState ...
@@ -81,14 +86,19 @@ typedef struct FtService
 //
 FtService serviceV[] =
 {
-  { HTTP_GET,      "/dump",      getDump       },
-  { HTTP_DELETE,   "/dump",      deleteDump    },
-  { HTTP_GET,      "/die",       die           },
-  { HTTP_POST,     "/dds/sub",   postDdsSub    },
-  { HTTP_POST,     "/dds/pub",   postDdsPub    },
-  { HTTP_GET,      "/dds/dump",  getDdsDump    },
-  { HTTP_DELETE,   "/dds/dump",  deleteDdsDump },
-  { HTTP_NOVERB,   NULL,         NULL          }
+  { HTTP_GET,      "/dump",                  getDump                 },
+  { HTTP_DELETE,   "/dump",                  deleteDump              },
+  { HTTP_GET,      "/die",                   die                     },
+  { HTTP_POST,     "/dds/sub",               postDdsSub              },
+  { HTTP_POST,     "/dds/pub",               postDdsPub              },
+  { HTTP_GET,      "/dds/dump",              getDdsDump              },
+  { HTTP_DELETE,   "/dds/dump",              deleteDdsDump           },
+  { HTTP_GET,      "/dds/service/requests",  getDdsServiceRequests   },
+  { HTTP_DELETE,   "/dds/service/requests",  deleteDdsServiceRequests},
+  { HTTP_POST,     "/dds/service/reply",     postDdsServiceReply     },
+  { HTTP_POST,     "/dds/type",              postDdsType             },
+  { HTTP_POST,     "/dds/service",           postDdsService          },
+  { HTTP_NOVERB,   NULL,                     NULL                    }
 };
 
 

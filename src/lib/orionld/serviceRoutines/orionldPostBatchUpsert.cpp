@@ -61,6 +61,8 @@ extern "C"
 #include "orionld/legacyDriver/legacyPostBatchUpsert.h"        // legacyPostBatchUpsert
 #include "orionld/notifications/alteration.h"                  // alteration
 #include "orionld/notifications/previousValues.h"              // previousValues
+#include "orionld/common/eqForDot.h"                           // eqForDot
+#include "orionld/dds/ddsPublishAttribute.h"                   // ddsPublishAttribute
 #include "orionld/serviceRoutines/orionldPostBatchUpsert.h"    // Own interface
 
 
@@ -305,6 +307,38 @@ bool orionldPostBatchUpsert(void)
     KjNode* initialDbEntityP  = NULL;  // FIXME: initialDbEntity might not be NULL
 
     alteration(entityId, entityType, finalApiEntityP, inEntityP, initialDbEntityP);
+
+    if ((ddsSupport == true) && (orionldState.ddsSample == false))
+    {
+      KT_T(StDds, "Publishing entity '%s', type '%s' on DDS", entityId, entityType);
+
+      // For updates, we need to check which attributes already existed
+      KjNode* dbAttrsP = (originalDbEntityP != NULL) ? kjLookup(originalDbEntityP, "attrs") : NULL;
+
+      for (KjNode* attrP = finalApiEntityP->value.firstChildP; attrP != NULL; attrP = attrP->next)
+      {
+        if (strcmp(attrP->name, "id")   == 0) continue;
+        if (strcmp(attrP->name, "type") == 0) continue;
+
+        // Check if attribute existed before (attrP->name is in eq-format before eqForDot)
+        bool attrExisted = (dbAttrsP != NULL) && (kjLookup(dbAttrsP, attrP->name) != NULL);
+
+        eqForDot(attrP->name);
+
+        // Decide whether to publish:
+        // - Entity creation (originalDbEntityP == NULL): only if ddsPublishOnCreate
+        // - Entity update with existing attribute: always publish
+        // - Entity update with new attribute: only if ddsPublishOnCreate
+        bool shouldPublish;
+        if (originalDbEntityP == NULL)
+          shouldPublish = ddsPublishOnCreate;  // Entity creation
+        else
+          shouldPublish = attrExisted || ddsPublishOnCreate;  // Entity update
+
+        if (shouldPublish)
+          ddsPublishAttribute(entityId, attrP->name, attrP, false);
+      }
+    }
 
     inEntityP = next;
   }

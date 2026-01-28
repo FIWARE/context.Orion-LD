@@ -23,6 +23,7 @@
 * Author: Ken Zangelin, David Campo, Luis Arturo Frigolet
 */
 #include <unistd.h>                                         // sleep
+#include <string.h>                                         // memcpy
 #include <strings.h>                                        // bzero
 #include <stdlib.h>                                         // exit, malloc, calloc, free
 #include <stdarg.h>                                         // va_start, ...
@@ -50,6 +51,8 @@ extern "C"
 #include "common/traceLevels.h"                             // Trace levels for ktrace
 #include "dds/ddsCategoryToKlogSeverity.h"                  // ddsCategoryToKlogSeverity
 #include "ftClient/mhdInit.h"                               // mhdInit
+#include "ftClient/postDdsType.h"                           // ddsTypeLookup
+#include "ftClient/postDdsService.h"                        // ddsServiceInfoLookup
 
 
 
@@ -81,6 +84,7 @@ bool                 distributed;
 unsigned long long   inReqPayloadMaxSize  = 64 * 1024;
 char                 configFile[512];
 bool                 ddsSupport       = false;
+char*                ddsServiceName   = NULL;
 
 
 
@@ -100,6 +104,7 @@ KArg kargs[] =
   { "--fixme",            "-fix",   KaBool,    &fixme,                KaOpt, KFALSE,     KA_NL,    KA_NL,      "FIXME messages"                                    },
   { "--config",           "-cfg",   KaString,  &configFile,           KaOpt, NULL,       KA_NL,    KA_NL,      "Config File"                                       },
   { "--dds",              "-dds",   KaBool,    &ddsSupport,           KaOpt, KFALSE,     KA_NL,    KA_NL,      "DDS Support"                                       },
+  { "--ddsService",       "-ddss",  KaString,  &ddsServiceName,       KaOpt, NULL,       KA_NL,    KA_NL,      "DDS Service to announce as server"                 },
 
   //
   // Broker options
@@ -173,7 +178,11 @@ static void klibLogFunction
 
 
 
-extern KjNode* ddsDumpArray;
+extern KjNode*  ddsDumpArray;
+KjNode*         ddsServiceRequestsArray = NULL;  // Stores received DDS service requests
+
+
+
 // -----------------------------------------------------------------------------
 //
 // ddsNotification -
@@ -250,7 +259,23 @@ static bool ddsTypeRequest
   uint32_t&                               serializedTypeInternalSize
 )
 {
-  KT_T(StDds, "Got a type request callback ('%s', %d)", typeName, serializedTypeInternalSize);
+  KT_T(StDds, "Got a type request callback ('%s')", typeName);
+
+  DdsTypeData* typeData = ddsTypeLookup(typeName);
+  if (typeData == NULL)
+  {
+    KT_T(StDds, "Type '%s' not found in loaded types", typeName);
+    return false;
+  }
+
+  // Copy data into unique_ptr (DDS Enabler takes ownership)
+  unsigned char* dataCopy = new unsigned char[typeData->size];
+  memcpy(dataCopy, typeData->data, typeData->size);
+
+  serializedTypeInternal.reset(dataCopy);
+  serializedTypeInternalSize = typeData->size;
+
+  KT_T(StDds, "Returning type '%s' (%u bytes)", typeName, typeData->size);
   return true;
 }
 
@@ -290,7 +315,43 @@ static void ddsLog(const char* fileName, int lineNo, const char* funcName, int c
 //
 static void ddsServiceNotification(const char* serviceName, const eprosima::ddsenabler::participants::ServiceInfo& serviceInfo)
 {
-  KT_T(StDds, "Got a Service Notification (action: %s)", serviceName);
+  KT_T(StDds, "Got a Service Notification (service: %s)", serviceName);
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// ddsServiceQuery -
+//
+// This callback provides service type information when announcing a service.
+// It looks up the service info from the map populated by POST /dds/service.
+//
+static bool ddsServiceQuery(const char* serviceName, eprosima::ddsenabler::participants::ServiceInfo& serviceInfo)
+{
+  KT_T(StDds, "Got a Service Query for '%s'", serviceName);
+
+  DdsServiceInfo* info = ddsServiceInfoLookup(serviceName);
+  if (info != NULL)
+  {
+    serviceInfo.request.type_name = info->requestType;
+    serviceInfo.request.serialized_qos = info->requestQos;
+    serviceInfo.reply.type_name = info->replyType;
+    serviceInfo.reply.serialized_qos = info->replyQos;
+  }
+  else
+  {
+    // Fallback to placeholder if no info stored
+    serviceInfo.request.type_name = std::string(serviceName) + "_Request";
+    serviceInfo.request.serialized_qos = "";
+    serviceInfo.reply.type_name = std::string(serviceName) + "_Reply";
+    serviceInfo.reply.serialized_qos = "";
+  }
+
+  KT_T(StDds, "Returning service info for '%s': req='%s', reply='%s'",
+       serviceName, serviceInfo.request.type_name.c_str(), serviceInfo.reply.type_name.c_str());
+
+  return true;
 }
 
 
@@ -307,7 +368,31 @@ static void ddsServiceRequestNotification
   int64_t     publishTime
 )
 {
-  KT_T(StDds, "Got a Service Request Notification (action: '%s', req: %lld): '%s'", serviceName, requestId, json);
+  KT_T(StDds, "Got a Service Request Notification (service: '%s', reqId: %llu): '%s'", serviceName, requestId, json);
+
+  // Store the request for later retrieval via REST
+  orionldStateInit(NULL);
+
+  KjNode* request = kjObject(orionldState.kjsonP, NULL);
+  KjNode* serviceP = kjString(orionldState.kjsonP, "service", serviceName);
+  KjNode* reqIdP = kjInteger(orionldState.kjsonP, "requestId", requestId);
+  KjNode* timeP = kjInteger(orionldState.kjsonP, "publishTime", publishTime);
+  KjNode* bodyP = kjParse(orionldState.kjsonP, (char*) json);
+
+  kjChildAdd(request, serviceP);
+  kjChildAdd(request, reqIdP);
+  kjChildAdd(request, timeP);
+  if (bodyP != NULL)
+  {
+    bodyP->name = (char*) "body";
+    kjChildAdd(request, bodyP);
+  }
+
+  if (ddsServiceRequestsArray == NULL)
+    ddsServiceRequestsArray = kjArray(NULL, "ddsServiceRequests");
+
+  request = kjClone(NULL, request);
+  kjChildAdd(ddsServiceRequestsArray, request);
 }
 
 
@@ -522,7 +607,8 @@ int main(int argC, char* argV[])
     {
       ddsServiceNotification,
       ddsServiceRequestNotification,
-      ddsServiceReplyNotification
+      ddsServiceReplyNotification,
+      ddsServiceQuery
     };
     eprosima::ddsenabler::ActionCallbacks actionCallbacks =
     {
@@ -547,6 +633,16 @@ int main(int argC, char* argV[])
       KT_X(1, "Unable to create the DDS Enabler");
 
     KT_D("DDS Enabler created");
+
+    // Announce as DDS service server if service name is provided
+    if (ddsServiceName != NULL)
+    {
+      KT_D("Announcing DDS service '%s'", ddsServiceName);
+      if (ddsEnabler->announce_service(ddsServiceName) == false)
+        KT_E("Failed to announce DDS service '%s'", ddsServiceName);
+      else
+        KT_D("Successfully announced DDS service '%s'", ddsServiceName);
+    }
   }
 
   while (1)

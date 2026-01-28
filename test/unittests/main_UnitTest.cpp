@@ -118,7 +118,8 @@ bool                noArrayReduction = false;
 char                subordinateEndpoint[256];
 char                defaultUserContextUrl[256];
 
-bool                ddsSupport       = false;
+bool                ddsSupport          = false;
+bool                ddsPublishOnCreate  = false;
 char                ddsSubsTopics[512];
 char                ddsTopicType[512];
 char                configFile[512];

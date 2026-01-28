@@ -953,6 +953,7 @@ function ftClientStart()
   _traceLevels=""
   _logDir=""
   _dds=""
+  _ddsService=""
 
   while [ "$#" != 0 ]
   do
@@ -960,6 +961,7 @@ function ftClientStart()
     elif [ "$1" == "--logDir" ];          then _logDir="--logDir $2"; shift;
     elif [ "$1" == "--verbose" ];         then _verbose="-v";
     elif [ "$1" == "--dds" ];             then _dds="--dds";
+    elif [ "$1" == "--ddsService" ];      then _ddsService="--ddsService $2"; shift;
     elif [ "$1" == "-v" ];                then _verbose="-v";
     elif [ "$1" == "-t" ];                then _traceLevels="-t $2"; shift;
     else
@@ -988,14 +990,15 @@ function ftClientStart()
     fi
   fi
 
-  logMsg "Starting the FT Client on port $_port ($_verbose $_traceLevels)"
+  logMsg "Starting the FT Client on port $_port ($_verbose $_traceLevels $_ddsService)"
   which ftClient >> $LOG_FILE
-  ftClient --port $_port $_verbose $_traceLevels $_logDir $_dds &
+  ftClient --port $_port $_verbose $_traceLevels $_logDir $_dds $_ddsService &
 
   _port=0
   _verbose=""
   _traceLevels=""
   logDir=""
+  _ddsService=""
 }
 
 
@@ -2096,6 +2099,80 @@ function orionldMetrics
 
 
 
+# -----------------------------------------------------------------------------
+#
+# ros2ServiceStart - start a ROS2 service server in a Docker container
+#
+# Parameters:
+#   --service <name>   Service name (default: add_two_ints)
+#   --samples <n>      Number of samples to handle (default: 10)
+#   --domain <n>       ROS domain ID (default: 0)
+#
+function ros2ServiceStart
+{
+  _service="add_two_ints"
+  _samples=10
+  _domain=0
+
+  while [ "$#" != 0 ]
+  do
+    if   [ "$1" == "--service" ]; then _service=$2; shift;
+    elif [ "$1" == "--samples" ]; then _samples=$2; shift;
+    elif [ "$1" == "--domain" ];  then _domain=$2;  shift;
+    else
+      echo "Bad parameter for ros2ServiceStart: $1"
+      exit 1
+    fi
+    shift
+  done
+
+  # Stop any existing container
+  ros2ServiceStop
+
+  # Path to the ROS2 node scripts in the DDS Enabler repo
+  _scripts_dir="$HOME/git/DDS/FIWARE-DDS-Enabler/ddsenabler_test/compose/scripts"
+
+  if [ ! -d "$_scripts_dir" ]
+  then
+    echo "ROS2 scripts directory not found: $_scripts_dir"
+    echo "Please ensure the DDS Enabler repository is available at ~/git/DDS/FIWARE-DDS-Enabler"
+    return 1
+  fi
+
+  # Start the ROS2 container
+  docker run --rm -d \
+    --name ros2_service_server \
+    --network host \
+    -e ROS_DOMAIN_ID=$_domain \
+    -v "$_scripts_dir:/scripts:ro" \
+    eprosima/vulcanexus:jazzy-desktop \
+    python3 /scripts/ros2_nodes/node_main.py --samples $_samples > /dev/null 2>&1
+
+  # Wait for the service to start
+  sleep 1
+
+  return 0
+}
+
+
+
+# -----------------------------------------------------------------------------
+#
+# ros2ServiceStop - stop the ROS2 service server container
+#
+function ros2ServiceStop
+{
+  CID=$(docker ps | grep ros2_service_server | awk '{print $1}')
+
+  if [ "$CID" != "" ]
+  then
+    docker kill $CID > /dev/null 2>&1
+    sleep 1
+  fi
+}
+
+
+
 export -f dbInit
 export -f dbList
 export -f dbDrop
@@ -2141,3 +2218,5 @@ export -f urlencode
 export -f orionldMetrics
 export -f ftClientStart
 export -f ftClientStop
+export -f ros2ServiceStart
+export -f ros2ServiceStop
