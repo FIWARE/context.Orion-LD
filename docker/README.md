@@ -1,6 +1,10 @@
 
 # How to use Orion Context Broker with Docker
 
+## Requirements
+Orion-LD requires **MongoDB 4.2 or higher**. This is due to the MongoDB C driver (libmongoc) version used,
+which requires wire protocol version 8+ (MongoDB 4.2+). The examples below use `mongo:4.4`.
+
 You can run Orion Context Broker very easily using docker. There are several ways to accomplish this. These are (in order of complexity):
 
 - _"Have everything automatically done for me"_. See Section **1. The Fastest Way** (recommended).
