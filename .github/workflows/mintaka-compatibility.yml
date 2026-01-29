@@ -64,7 +64,7 @@ jobs:
 
       - name: Verify orion-ld image
         run: |
-          docker run --rm localhost:5000/orion-ld:latest -version
+          docker run --rm localhost:5000/orion-ld:latest -u
 
       - name: Run tests
         run: mvn clean test -B -ntp
