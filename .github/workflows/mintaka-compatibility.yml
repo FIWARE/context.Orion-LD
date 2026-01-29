@@ -1,3 +1,4 @@
+# Renamed from test-latest to mintaka-compatibility
 name: Mintaka compatibility
 
 on:
