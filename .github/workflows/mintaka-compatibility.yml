@@ -62,16 +62,9 @@ jobs:
           docker pull localhost:5000/orion-ld:latest
           docker images | grep orion
 
-      - name: Quick smoke test of orion-ld image
+      - name: Verify orion-ld image
         run: |
-          # Test that the image can at least start (without --rm so we can get logs)
-          docker run -d --name orion-smoke-test localhost:5000/orion-ld:latest -fg -localIp 127.0.0.1 -port 1026 -dbhost 127.0.0.1 || true
-          sleep 5
-          echo "=== Container status ==="
-          docker ps -a | grep orion || true
-          echo "=== Container logs ==="
-          docker logs orion-smoke-test 2>&1 || true
-          docker rm -f orion-smoke-test || true
+          docker run --rm localhost:5000/orion-ld:latest -version
 
       - name: Run tests
         run: mvn clean test -B -ntp
