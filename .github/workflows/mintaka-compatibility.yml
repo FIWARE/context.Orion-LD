@@ -47,14 +47,42 @@ jobs:
           java-version: '17'
           java-package: jdk
 
+      - name: Patch Mintaka docker-compose to use local image
+        run: |
+          # Find and patch docker-compose files to use our local image directly
+          # This avoids testcontainers variable substitution bugs
+          find . -name "docker-compose*.yml" -exec sed -i 's|\${ORION_IMAGE:-[^}]*}|localhost:5000/orion-ld:latest|g' {} +
+          find . -name "docker-compose*.yml" -exec cat {} \;
+
       - name: Configure testcontainers
         run: |
           # Create empty config to suppress "file not found" warning
           touch ~/.testcontainers.properties
           # Pre-pull the image so testcontainers doesn't need to parse the variable
           docker pull localhost:5000/orion-ld:latest
+          docker images | grep orion
+
+      - name: Quick smoke test of orion-ld image
+        run: |
+          # Test that the image can at least start
+          docker run --rm -d --name orion-smoke-test localhost:5000/orion-ld:latest -fg -localIp 127.0.0.1 -port 1026 -dbhost 127.0.0.1 || true
+          sleep 5
+          docker logs orion-smoke-test 2>&1 | tail -50 || true
+          docker stop orion-smoke-test || true
 
       - name: Run tests
         run: mvn clean test -B -ntp
         env:
           ORION_IMAGE: localhost:5000/orion-ld:latest
+          TESTCONTAINERS_RYUK_DISABLED: true
+
+      - name: Show container logs on failure
+        if: failure()
+        run: |
+          echo "=== Docker containers ==="
+          docker ps -a
+          echo "=== Recent container logs ==="
+          for c in $(docker ps -aq | head -5); do
+            echo "--- Container $c ---"
+            docker logs $c 2>&1 | tail -100 || true
+          done
