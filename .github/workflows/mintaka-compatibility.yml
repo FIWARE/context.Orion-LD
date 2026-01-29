@@ -47,11 +47,13 @@ jobs:
           java-version: '17'
           java-package: jdk
 
-      - name: Patch Mintaka docker-compose to use local image
+      - name: Patch Mintaka docker-compose
         run: |
-          # Find and patch docker-compose files to use our local image directly
-          # This avoids testcontainers variable substitution bugs
+          # Use our local image (avoids testcontainers variable substitution bugs)
           find . -name "docker-compose*.yml" -exec sed -i 's|\${ORION_IMAGE:-[^}]*}|localhost:5000/orion-ld:latest|g' {} +
+          # Upgrade MongoDB from 4.0 to 4.4 (Orion-LD requires MongoDB 4.2+)
+          find . -name "docker-compose*.yml" -exec sed -i 's|mongo:4\.0|mongo:4.4|g' {} +
+          echo "=== Patched docker-compose ==="
           find . -name "docker-compose*.yml" -exec cat {} \;
 
       - name: Configure testcontainers
