@@ -7,7 +7,12 @@ name: Deploy Baseimage
 on:
   pull_request:
     paths:
-      - docker/**
+      - docker/Dockerfile-ubi-base
+  push:
+    branches:
+      - develop
+    paths:
+      - docker/Dockerfile-ubi-base
   workflow_dispatch:
 
 env:
