@@ -89,9 +89,10 @@ jobs:
           file: docker/Dockerfile-ubi
           no-cache: true
 
-      - name: Deploy new global instance based on the new release
-        uses: fjogeleit/http-request-action@master
-        with:
-          url: ${{ secrets.CD_URL_TRIGGER }}
-          method: 'GET'
-          bearerToken: ${{ secrets.CD_TOKEN }}
+      # Disabled 2026-01-28: webhook endpoint no longer responds, purpose unknown
+      # - name: Deploy new global instance based on the new release
+      #   uses: fjogeleit/http-request-action@master
+      #   with:
+      #     url: ${{ secrets.CD_URL_TRIGGER }}
+      #     method: 'GET'
+      #     bearerToken: ${{ secrets.CD_TOKEN }}

@@ -1,10 +1,10 @@
-name: Test compatiblity to mintaka
+name: Mintaka compatibility
 
 on:
   pull_request:
 
 jobs:
-  test-latest:
+  mintaka-compatibility:
     runs-on: ubuntu-latest
 
     services:
@@ -29,18 +29,32 @@ jobs:
         with:
           push: true
           file: docker/Dockerfile-ubi
-          tags:  localhost:5000/orion-ld:latest
+          tags: localhost:5000/orion-ld:latest
 
       - uses: actions/checkout@v2
         with:
           repository: fiware/mintaka
+
+      - name: Patch dead context URL in Mintaka tests
+        run: |
+          # Replace dead schema.lab.fiware.org URL with raw GitHub URL from Orion-LD repo
+          find . -name "*.java" -exec sed -i 's|https://schema.lab.fiware.org/ld/context|https://raw.githubusercontent.com/FIWARE/context.Orion-LD/develop/test/functionalTest/contexts/schema_lab_fiware_org_ld_context.jsonld|g' {} +
+          # Verify the replacement
+          grep -r "schema_lab_fiware_org" --include="*.java" || echo "URL replaced successfully"
 
       - uses: actions/setup-java@v1
         with:
           java-version: '17'
           java-package: jdk
 
+      - name: Configure testcontainers
+        run: |
+          # Create empty config to suppress "file not found" warning
+          touch ~/.testcontainers.properties
+          # Pre-pull the image so testcontainers doesn't need to parse the variable
+          docker pull localhost:5000/orion-ld:latest
+
       - name: Run tests
-        run: mvn clean test
+        run: mvn clean test -B -ntp
         env:
           ORION_IMAGE: localhost:5000/orion-ld:latest
