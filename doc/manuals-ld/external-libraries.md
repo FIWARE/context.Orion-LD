@@ -1,7 +1,7 @@
 # External Libraries
 The LD part of Orion-LD depends on the following external libraries:
 * microhttpd
-* mongo client library (C++ Legacy driver)
+* libmongoc (MongoDB C driver) - requires **MongoDB 4.2+**
 * libcurl
 * libuuid
 * kbase
@@ -9,6 +9,10 @@ The LD part of Orion-LD depends on the following external libraries:
 * kalloc
 * khash
 * kjson
+
+## MongoDB Version Requirement
+Orion-LD uses libmongoc (the MongoDB C driver), which requires MongoDB wire protocol version 8 or higher.
+This means **MongoDB 4.2 or higher** is required. Earlier versions (4.0, 3.6, etc.) are not supported.
 
 The "heart" of the linked-data extension of orionld is the [kjson](https://gitlab.com/kzangeli/kjson) library.
 kjson takes care of the parsing of incoming JSON and transforms the textual input as a tree of KjNode structs.
