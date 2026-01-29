@@ -3,6 +3,12 @@ name: Mintaka compatibility
 
 on:
   pull_request:
+    paths:
+      - src/**
+      - docker/Dockerfile-ubi
+      - docker/Dockerfile-ubi-base
+      - docker/build-ubi/**
+  workflow_dispatch:
 
 jobs:
   mintaka-compatibility:
