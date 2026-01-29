@@ -31,6 +31,7 @@ extern "C"
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjArray, kljString, kjChildAdd, ...
 #include "kjson/kjStringValueLookupInArray.h"                    // kjStringValueLookupInArray
+#include "kprom/kprom.h"                                         // kpromCounterInc
 }
 
 #include "orionld/types/DistOp.h"                                // DistOp
@@ -126,4 +127,6 @@ void distOpFailure(KjNode* responseBody, DistOp* distOpP, const char* title, con
     kjChildAdd(error, attrV);
 
   kjChildAdd(failureV, error);
+
+  kpromCounterInc(promDistOpsFailed);
 }

@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_PROMETHEUS_PROMGAUGEADD_H_
-#define SRC_LIB_ORIONLD_PROMETHEUS_PROMGAUGEADD_H_
+#ifndef SRC_LIB_ORIONLD_SERVICEROUTINES_ORIONLDGETMETRICS_H_
+#define SRC_LIB_ORIONLD_SERVICEROUTINES_ORIONLDGETMETRICS_H_
 
 /*
 *
-* Copyright 2022 FIWARE Foundation e.V.
+* Copyright 2026 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,17 +25,13 @@
 *
 * Author: Ken Zangelin
 */
-extern "C"
-{
-#include "prometheus-client-c/prom/include/prom.h"          // Prometheus client lib
-}
 
 
 
-// -----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 //
-// promGaugeAdd -
+// orionldGetMetrics -
 //
-extern int promGaugeAdd(prom_gauge_t* gaugeP, int v, const char* label);
+extern bool orionldGetMetrics(void);
 
-#endif  // SRC_LIB_ORIONLD_PROMETHEUS_PROMGAUGEADD_H_
+#endif  // SRC_LIB_ORIONLD_SERVICEROUTINES_ORIONLDGETMETRICS_H_

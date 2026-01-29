@@ -286,8 +286,7 @@ SET (DYNAMIC_LIBS
     ddsenabler_participants
     ddsenabler_yaml
     tinyxml2
-    prom
-    promhttp
+    kprom
     curl
     ${GNUTLS_LIBRARIES}
     pthread
@@ -326,8 +325,6 @@ include_directories("/usr/include")
 include_directories("${LIBBSON_INCLUDE_DIRS}")
 include_directories("${LIBMONGOC_INCLUDE_DIRS}")
 include_directories("${PROJECT_SOURCE_DIR}/..")
-include_directories("${PROJECT_SOURCE_DIR}/../prometheus-client-c/prom/include")
-include_directories("${PROJECT_SOURCE_DIR}/../prometheus-client-c/promhttp/include")
 
 #
 # Library directories
@@ -346,8 +343,7 @@ link_directories("${PROJECT_SOURCE_DIR}/../kbase")
 link_directories("${PROJECT_SOURCE_DIR}/../khash")
 link_directories("${PROJECT_SOURCE_DIR}/../ktrace")
 link_directories("${PROJECT_SOURCE_DIR}/../kargs")
-link_directories("${PROJECT_SOURCE_DIR}/../prometheus-client-c/prom/build")
-link_directories("${PROJECT_SOURCE_DIR}/../prometheus-client-c/promhttp/build")
+link_directories("${PROJECT_SOURCE_DIR}/../kprom")
 link_directories("${LIBMONGOC_LIBRARY_DIRS}")
 link_directories("${GNUTLS_LIBRARY_DIRS}")
 

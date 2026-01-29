@@ -83,6 +83,7 @@
 #include "orionld/serviceRoutines/orionldPostTemporalAttributes.h"
 #include "orionld/serviceRoutines/orionldGetDdsTopics.h"
 #include "orionld/serviceRoutines/orionldGetRelationships.h"
+#include "orionld/serviceRoutines/orionldGetMetrics.h"
 
 #include "orionld/types/OrionLdRestService.h"      // OrionLdRestServiceSimplified
 #include "orionld/orionldRestServices.h"           // Own Interface
@@ -117,7 +118,8 @@ static OrionLdRestServiceSimplified getServiceV[] =
   { "/ngsi-ld/ex/v1/tenants",              orionldGetTenants          },
   { "/ngsi-ld/ex/v1/dbIndexes",            orionldGetDbIndexes        },
   { "/ngsi-ld/ex/v1/dds/topics",           orionldGetDdsTopics        },
-  { "/ngsi-ld/ex/v1/relationships",        orionldGetRelationships    }
+  { "/ngsi-ld/ex/v1/relationships",        orionldGetRelationships    },
+  { "/ngsi-ld/ex/v1/metrics",              orionldGetMetrics          }
 };
 static const int getServices = (sizeof(getServiceV) / sizeof(getServiceV[0]));
 

@@ -1,9 +1,6 @@
-#ifndef SRC_LIB_ORIONLD_PROMETHEUS_PROMCOUNTERINCREASE_H_
-#define SRC_LIB_ORIONLD_PROMETHEUS_PROMCOUNTERINCREASE_H_
-
 /*
 *
-* Copyright 2022 FIWARE Foundation e.V.
+* Copyright 2026 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,13 +22,25 @@
 *
 * Author: Ken Zangelin
 */
+extern "C"
+{
+#include "kjson/KjNode.h"                                        // KjNode
+#include "kprom/kprom.h"                                         // kpromMetrics
+}
+
+#include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/serviceRoutines/orionldGetMetrics.h"           // Own Interface
 
 
 
-// -----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 //
-// promCounterIncrease -
+// orionldGetMetrics -
 //
-extern int promCounterIncrease(prom_counter_t* counterP);
+bool orionldGetMetrics(void)
+{
+  orionldState.responseTree  = kpromMetrics(orionldState.kjsonP);
+  orionldState.noLinkHeader  = true;
 
-#endif  // SRC_LIB_ORIONLD_PROMETHEUS_PROMCOUNTERINCREASE_H_
+  return true;
+}

@@ -1420,6 +1420,24 @@ static MHD_Result connectionTreat
   }
 
   //
+  // /metrics - Prometheus metrics endpoint
+  // Remap to /ngsi-ld/ex/v1/metrics and use the same NGSI-LD handling
+  //
+  if (strcmp(url, "/metrics") == 0)
+  {
+    if (*con_cls == NULL)
+    {
+      *con_cls = &cls;
+      char metricsUrl[32];
+      strcpy(metricsUrl, "/ngsi-ld/ex/v1/metrics");
+      return mhdConnectionInit(connection, metricsUrl, method, version, con_cls);
+    }
+
+    *upload_data_size = 0;
+    return mhdConnectionTreat();
+  }
+
+  //
   //  NOT NGSI-LD
   //
 

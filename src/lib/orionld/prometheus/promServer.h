@@ -1,6 +1,9 @@
+#ifndef SRC_LIB_ORIONLD_PROMETHEUS_PROMSERVER_H_
+#define SRC_LIB_ORIONLD_PROMETHEUS_PROMSERVER_H_
+
 /*
 *
-* Copyright 2022 FIWARE Foundation e.V.
+* Copyright 2026 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -22,18 +25,21 @@
 *
 * Author: Ken Zangelin
 */
-extern "C"
-{
-#include "prometheus-client-c/prom/include/prom.h"          // Prometheus client lib
-}
 
 
 
 // -----------------------------------------------------------------------------
 //
-// promCounterIncrease -
+// promServerStart - start the Prometheus metrics server on the given port
 //
-int promCounterIncrease(prom_counter_t* counterP)
-{
-  return prom_counter_inc(counterP, NULL);
-}
+extern int promServerStart(unsigned short port);
+
+
+
+// -----------------------------------------------------------------------------
+//
+// promServerStop - stop the Prometheus metrics server
+//
+extern void promServerStop(void);
+
+#endif  // SRC_LIB_ORIONLD_PROMETHEUS_PROMSERVER_H_

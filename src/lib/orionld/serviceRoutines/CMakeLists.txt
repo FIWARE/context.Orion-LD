@@ -51,6 +51,7 @@ SET (SOURCES
     orionldGetContext.cpp
     orionldGetContexts.cpp
     orionldGetVersion.cpp
+    orionldGetMetrics.cpp
     orionldPostBatchCreate.cpp
     orionldPostBatchUpsert.cpp
     orionldPostBatchUpdate.cpp

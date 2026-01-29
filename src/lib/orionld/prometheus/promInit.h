@@ -30,7 +30,9 @@
 
 // -----------------------------------------------------------------------------
 //
-// promInit - initialize the Prometheus client library
+// promInit - initialize the Prometheus metrics and optionally start the metrics server
+//
+// If promPort is non-zero, a simple HTTP server is started on that port for /metrics
 //
 extern int promInit(unsigned short promPort);
 

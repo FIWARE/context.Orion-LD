@@ -37,6 +37,7 @@ extern "C"
 #include "kalloc/kaBufferReset.h"                    // kaBufferReset
 #include "kjson/kjFree.h"                            // kjFree
 #include "ktrace/kTrace.h"                           // KT_T, KT_E, KT_W
+#include "kprom/kprom.h"                             // kpromGaugeAdd, kpromGaugeSub
 }
 
 #include "orionld/common/traceLevels.h"              // KtSubCacheMatch, ...
@@ -829,6 +830,7 @@ void subCacheItemInsert(CachedSubscription* cSubP)
   cSubP->next = NULL;
 
   ++subCache.noOfInserts;
+  kpromGaugeAdd(promSubscriptionsCached, 1);
 
   // First insertion?
   if ((subCache.head == NULL) && (subCache.tail == NULL))
@@ -1206,6 +1208,7 @@ int subCacheItemRemove(CachedSubscription* cSubP)
       }
 
       ++subCache.noOfRemoves;
+      kpromGaugeSub(promSubscriptionsCached, 1);
 
       subCacheItemDestroy(cSubP);
       delete cSubP;

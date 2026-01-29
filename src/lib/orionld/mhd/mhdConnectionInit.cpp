@@ -33,6 +33,7 @@ extern "C"
 #include "kalloc/kaAlloc.h"                                      // kaAlloc
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/kjBuilder.h"                                     // kjString, kjChildAdd
+#include "kprom/kprom.h"                                         // kpromGaugeAdd
 }
 
 #include "common/limits.h"                                       // SERVICE_NAME_MAX_LEN
@@ -56,6 +57,7 @@ extern "C"
 #include "orionld/service/orionldServiceLookup.h"                // orionldServiceLookup
 #include "orionld/serviceRoutines/orionldBadVerb.h"              // orionldBadVerb
 #include "orionld/serviceRoutines/orionldDeleteEntity.h"         // orionldDeleteEntity
+#include "orionld/serviceRoutines/orionldGetMetrics.h"           // orionldGetMetrics
 #include "orionld/payloadCheck/pCheckUri.h"                      // pCheckUri
 #include "orionld/entityMaps/entityMapLookup.h"                  // entityMapLookup
 #include "orionld/mhd/mhdConnectionInit.h"                       // Own interface
@@ -1285,6 +1287,7 @@ MHD_Result mhdConnectionInit
 )
 {
   ++requestNo;
+  kpromGaugeAdd(promConnectionsActive, 1);
 
   // if ((requestNo % 100 == 0) || (requestNo == 1))
   KT_I("------------------------- Servicing NGSI-LD request %03d: %s %s --------------------------", requestNo, method, url);
