@@ -1,3 +1,4 @@
+# Renamed from test-latest to mintaka-compatibility
 name: Mintaka compatibility
 
 on:
@@ -47,14 +48,40 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Patch Mintaka docker-compose
+        run: |
+          # Use our local image (avoids testcontainers variable substitution bugs)
+          find . -name "docker-compose*.yml" -exec sed -i 's|\${ORION_IMAGE:-[^}]*}|localhost:5000/orion-ld:latest|g' {} +
+          # Upgrade MongoDB from 4.0 to 4.4 (Orion-LD requires MongoDB 4.2+)
+          find . -name "docker-compose*.yml" -exec sed -i 's|mongo:4\.0|mongo:4.4|g' {} +
+          echo "=== Patched docker-compose ==="
+          find . -name "docker-compose*.yml" -exec cat {} \;
+
       - name: Configure testcontainers
         run: |
           # Create empty config to suppress "file not found" warning
           touch ~/.testcontainers.properties
           # Pre-pull the image so testcontainers doesn't need to parse the variable
           docker pull localhost:5000/orion-ld:latest
+          docker images | grep orion
+
+      - name: Verify orion-ld image
+        run: |
+          docker run --rm localhost:5000/orion-ld:latest -u
 
       - name: Run tests
         run: mvn clean test -B -ntp
         env:
           ORION_IMAGE: localhost:5000/orion-ld:latest
+          TESTCONTAINERS_RYUK_DISABLED: true
+
+      - name: Show container logs on failure
+        if: failure()
+        run: |
+          echo "=== Docker containers ==="
+          docker ps -a
+          echo "=== Recent container logs ==="
+          for c in $(docker ps -aq | head -5); do
+            echo "--- Container $c ---"
+            docker logs $c 2>&1 | tail -100 || true
+          done
