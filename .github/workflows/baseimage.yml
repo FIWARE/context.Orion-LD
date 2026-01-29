@@ -8,11 +8,13 @@ on:
   pull_request:
     paths:
       - docker/Dockerfile-ubi-base
+      - docker/build-ubi/**
   push:
     branches:
       - develop
     paths:
       - docker/Dockerfile-ubi-base
+      - docker/build-ubi/**
   workflow_dispatch:
 
 env:
