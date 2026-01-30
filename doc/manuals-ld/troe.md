@@ -299,10 +299,10 @@ For maximum performance on large datasets, combine both strategies:
 
 This combination has been proven to handle 100M+ attribute records with fast query response times.
 
-### Example Script
+### Example SQL
 
-A complete example script demonstrating Citus + partitioning + indexes is available at:
-[`doc/manuals-ld/examples/citus-example.sh`](examples/citus-example.sh)
+A complete SQL example demonstrating Citus + partitioning + indexes is available at:
+[`doc/manuals-ld/examples/citus-example.sql`](examples/citus-example.sql)
 
 This script shows:
 - Partitioned attributes table by `observedAt`
