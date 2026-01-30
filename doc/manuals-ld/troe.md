@@ -244,4 +244,66 @@ WHERE entityId = 'urn:ngsi-ld:Entity:001'
 AND ts BETWEEN '2024-01-01' AND '2024-12-31';
 ```
 
-If you see "Seq Scan" on large tables, consider adding an index for that query pattern
+If you see "Seq Scan" on large tables, consider adding an index for that query pattern.
+
+## Advanced Optimization: Large-Scale Deployments
+
+For deployments with very large datasets (100M+ attribute records), additional optimization strategies beyond indexes may be required.
+
+### Citus for Horizontal Scaling
+
+[Citus](https://www.citusdata.com/) is a PostgreSQL extension that enables horizontal scaling through distributed tables. It has been tested successfully with TRoE datasets exceeding 100 million data points.
+
+```sql
+-- Distribute tables by entityId to co-locate entity data
+SELECT create_distributed_table('entities', 'id');
+SELECT create_distributed_table('attributes', 'entityId', colocate_with => 'entities');
+SELECT create_distributed_table('subAttributes', 'entityId', colocate_with => 'entities');
+```
+
+**Benefits:**
+- Parallel query execution across shards
+- Entity data co-located on same worker node (efficient JOINs)
+- Linear scalability by adding worker nodes
+
+### Table Partitioning
+
+PostgreSQL native partitioning by time range improves query performance through partition pruning:
+
+```sql
+-- Create partitioned attributes table
+CREATE TABLE attributes_partitioned (
+    LIKE attributes INCLUDING ALL
+) PARTITION BY RANGE (ts);
+
+-- Create monthly partitions
+CREATE TABLE attributes_2024_01 PARTITION OF attributes_partitioned
+    FOR VALUES FROM ('2024-01-01') TO ('2024-02-01');
+
+CREATE TABLE attributes_2024_02 PARTITION OF attributes_partitioned
+    FOR VALUES FROM ('2024-02-01') TO ('2024-03-01');
+```
+
+**Benefits:**
+- Automatic partition pruning (queries only scan relevant partitions)
+- Easier data retention (drop old partitions)
+- Smaller indexes per partition
+
+### Combined Approach
+
+For maximum performance on large datasets, combine both strategies:
+
+1. **Partition by time** - Monthly or weekly partitions based on `ts`
+2. **Distribute with Citus** - Shard by `entityId` across worker nodes
+3. **Strategic indexes** - Add indexes based on actual query patterns
+
+This combination has been proven to handle 100M+ attribute records with fast query response times.
+
+### When to Consider These Optimizations
+
+| Dataset Size | Recommendation |
+|--------------|----------------|
+| < 1M records | Default schema + recommended indexes |
+| 1M - 10M records | Add indexes, consider partitioning |
+| 10M - 100M records | Partitioning recommended |
+| > 100M records | Citus + Partitioning + Indexes |
