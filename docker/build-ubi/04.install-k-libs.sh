@@ -25,7 +25,7 @@ set -e
 
 echo
 echo -e "\e[1;32m Debian Builder: installing k libs \e[0m"
-for kproj in kbase klog kalloc kjson khash kargs ktrace
+for kproj in kbase klog kalloc kjson khash kargs ktrace kprom
 do
     git clone https://gitlab.com/kzangeli/${kproj}.git ${ROOT_FOLDER}/$kproj
 done
@@ -50,7 +50,7 @@ do
     cd ${ROOT_FOLDER}/$kproj
 
     branch=release/0.10
-    if [$proj = "kprom" ]
+    if [ $kproj = "kprom" ]
     then
         branch=release/0.1.0
     fi
