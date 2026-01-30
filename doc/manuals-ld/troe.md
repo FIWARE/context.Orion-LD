@@ -299,6 +299,17 @@ For maximum performance on large datasets, combine both strategies:
 
 This combination has been proven to handle 100M+ attribute records with fast query response times.
 
+### Example Script
+
+A complete example script demonstrating Citus + partitioning + indexes is available at:
+[`doc/manuals-ld/examples/citus-example.sh`](examples/citus-example.sh)
+
+This script shows:
+- Partitioned attributes table by `observedAt`
+- Distribution by `entityId` for Citus
+- Default partition for NULL/out-of-range values
+- Recommended index set for common query patterns
+
 ### When to Consider These Optimizations
 
 | Dataset Size | Recommendation |
