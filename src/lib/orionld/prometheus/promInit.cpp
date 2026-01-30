@@ -73,9 +73,9 @@ int promInit(unsigned short promPort)
   promSubscriptionsCached  = kpromGaugeCreate("subscriptionsCached",    "Subscriptions in cache");
 
   // Histograms - request duration in seconds
-  // Buckets: 1ms, 5ms, 10ms, 25ms, 50ms, 100ms, 250ms, 500ms, 1s, 5s, 10s
-  double durationBuckets[] = { 0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 5.0, 10.0 };
-  promRequestDuration      = kpromHistogramCreate("requestDurationSeconds", "Request duration in seconds", durationBuckets, 11);
+  // Buckets: 1ms, 2ms, 3ms, 4ms, 5ms, 10ms, 25ms, 50ms, 100ms, 250ms, 500ms, 1s, 5s, 10s
+  double durationBuckets[] = { 0.001, 0.002, 0.003, 0.004, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 5.0, 10.0 };
+  promRequestDuration      = kpromHistogramCreate("requestDurationSeconds", "Request duration in seconds", durationBuckets, 14);
 
   // Start the metrics server on the specified port
   if (promPort != 0)

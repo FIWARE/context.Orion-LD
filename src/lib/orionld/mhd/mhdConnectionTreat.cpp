@@ -82,6 +82,7 @@ extern "C"
 #include "orionld/serviceRoutines/orionldPostEntities.h"           // orionldPostEntities
 #include "orionld/serviceRoutines/orionldPostSubscriptions.h"      // orionldPostSubscriptions
 #include "orionld/serviceRoutines/orionldPatchSubscription.h"      // orionldPatchSubscription
+#include "orionld/serviceRoutines/orionldGetMetrics.h"             // orionldGetMetrics
 #include "orionld/mhd/mhdReply.h"                                  // mhdReply
 #include "orionld/mhd/mhdConnectionTreat.h"                        // Own Interface
 
@@ -1153,6 +1154,18 @@ MHD_Result mhdConnectionTreat(void)
   if (orionldState.httpStatusCode != 200)
     goto respond;
 
+  //
+  // Check if text/plain was requested but the service doesn't support it
+  //
+  if (orionldState.in.acceptTextPlain == true)
+  {
+    if ((orionldState.serviceP->options & ORIONLD_SERVICE_OPTION_ACCEPT_TEXT_PLAIN) == 0)
+    {
+      orionldError(OrionldBadRequestData, "Invalid Accept mime-type", "text/plain not supported for this endpoint", 406);
+      goto respond;
+    }
+  }
+
   if ((orionldState.in.contentLength > 0) && (orionldState.verb != HTTP_POST) && (orionldState.verb != HTTP_PATCH) && (orionldState.verb != HTTP_PUT))
   {
     orionldError(OrionldBadRequestData, "Unexpected payload body", verbToString(orionldState.verb), 400);
@@ -1379,6 +1392,9 @@ MHD_Result mhdConnectionTreat(void)
   if (orionldState.requestTree != NULL)
     KT_TREE(orionldState.requestTree, "Request Payload Body", KtRequest);
 
+  KT_T(55, "Calling service routine");
+  KT_T(55, "serviceP->serviceRoutine: %p", orionldState.serviceP->serviceRoutine);
+  KT_T(55, "orionldGetMetrics:        %p", orionldGetMetrics);
   serviceRoutineResult = orionldState.serviceP->serviceRoutine();
 
   PERFORMANCE(serviceRoutineEnd);

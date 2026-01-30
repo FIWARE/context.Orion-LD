@@ -69,3 +69,179 @@ all changesets at once. If the db is already updated to a certain version, only 
 | v2 | Added the datasetId to the combined primary key and optimizes its datatype. |
 | v3 | Add multipoint for attributes and subAttributes table. |
 | v4 | Change data types to support the 3rd dimension.  |
+
+## Database Schema
+
+TRoE uses a normalized 3-table schema to store temporal entity data in PostgreSQL.
+
+### Custom Types
+
+```sql
+CREATE TYPE ValueType AS ENUM(
+    'String',
+    'Number',
+    'Boolean',
+    'Relationship',
+    'Compound',
+    'DateTime',
+    'GeoPoint',
+    'GeoMultiPoint',
+    'GeoPolygon',
+    'GeoMultiPolygon',
+    'GeoLineString',
+    'GeoMultiLineString',
+    'LanguageMap');
+
+CREATE TYPE OperationMode AS ENUM(
+    'Create',
+    'Append',
+    'Update',
+    'Replace',
+    'Delete');
+```
+
+### Table: entities
+
+Stores entity-level records with temporal versioning.
+
+```sql
+CREATE TABLE IF NOT EXISTS entities (
+    instanceId TEXT NOT NULL,      -- Unique instance identifier (UUID)
+    ts TIMESTAMP NOT NULL,         -- Timestamp when record was created
+    opMode OperationMode,          -- Operation type (Create, Update, etc.)
+    id TEXT NOT NULL,              -- Entity ID (URI)
+    type TEXT NOT NULL,            -- Entity type (URI)
+    CONSTRAINT entities_pkey PRIMARY KEY (instanceId, ts)
+);
+```
+
+### Table: attributes
+
+Stores attribute instances with multi-value support via `datasetId`.
+
+```sql
+CREATE TABLE IF NOT EXISTS attributes (
+    instanceId TEXT NOT NULL,      -- Unique instance identifier for this attribute
+    id TEXT NOT NULL,              -- Attribute name (URI)
+    opMode OperationMode,          -- Operation type
+    entityId TEXT NOT NULL,        -- Parent entity ID (foreign key to entities.id)
+    observedAt TIMESTAMP,          -- When the value was observed (optional)
+    subProperties BOOL,            -- Has sub-attributes?
+    unitCode TEXT,                 -- Unit code (optional)
+    datasetId VARCHAR NOT NULL,    -- Dataset identifier for multi-valued attributes
+    valueType ValueType,           -- Type of value stored
+    text TEXT,                     -- String value
+    boolean BOOL,                  -- Boolean value
+    number FLOAT8,                 -- Numeric value
+    datetime TIMESTAMP,            -- DateTime value
+    compound JSONB,                -- Complex/nested value
+    geoPoint GEOGRAPHY(POINTZ, 4326),
+    geoMultiPoint GEOGRAPHY(MULTIPOINTZ, 4326),
+    geoPolygon GEOGRAPHY(POLYGONZ, 4326),
+    geoMultiPolygon GEOGRAPHY(MULTIPOLYGONZ, 4326),
+    geoLineString GEOGRAPHY(LINESTRINGZ, 4326),
+    geoMultiLineString GEOGRAPHY(MULTILINESTRINGZ, 4326),
+    ts TIMESTAMP NOT NULL,         -- Record timestamp
+    CONSTRAINT attributes_pkey PRIMARY KEY (instanceId, datasetId, ts)
+);
+```
+
+### Table: subAttributes
+
+Stores sub-attributes (nested properties and relationships within attributes).
+
+```sql
+CREATE TABLE IF NOT EXISTS subAttributes (
+    instanceId TEXT NOT NULL,      -- Unique instance identifier
+    id TEXT NOT NULL,              -- Sub-attribute name (URI)
+    entityId TEXT NOT NULL,        -- Parent entity ID
+    attrInstanceId TEXT NOT NULL,  -- Parent attribute instance ID
+    attrDatasetId VARCHAR NOT NULL,-- Parent attribute dataset ID
+    observedAt TIMESTAMP,          -- When the value was observed
+    unitCode TEXT,                 -- Unit code (optional)
+    valueType ValueType,           -- Type of value stored
+    text TEXT,
+    boolean BOOL,
+    number FLOAT8,
+    datetime TIMESTAMP,
+    compound JSONB,
+    geoPoint GEOGRAPHY(POINTZ, 4326),
+    geoMultiPoint GEOGRAPHY(MULTIPOINTZ, 4326),
+    geoPolygon GEOGRAPHY(POLYGONZ, 4326),
+    geoMultiPolygon GEOGRAPHY(MULTIPOLYGONZ, 4326),
+    geoLineString GEOGRAPHY(LINESTRINGZ, 4326),
+    geoMultiLineString GEOGRAPHY(MULTILINESTRINGZ, 4326),
+    ts TIMESTAMP NOT NULL,
+    CONSTRAINT subattributes_pkey PRIMARY KEY (instanceId, ts)
+);
+```
+
+### Default Index
+
+```sql
+CREATE INDEX subattributes_attributeid_index ON subAttributes (attrInstanceId, attrDatasetId);
+```
+
+## Performance Tuning
+
+The default schema includes minimal indexes to keep write performance high. Depending on your query patterns, you may want to add additional indexes.
+
+### Recommended Indexes
+
+Add indexes based on your most common query patterns:
+
+| Query Pattern | Recommended Index | SQL |
+|--------------|-------------------|-----|
+| Temporal history of one entity | attributes by entityId | `CREATE INDEX idx_attr_entityid_ts ON attributes(entityId, ts DESC);` |
+| All entities of a type | entities by type | `CREATE INDEX idx_entities_type_ts ON entities(type, ts DESC);` |
+| Query by attribute name | attributes by id | `CREATE INDEX idx_attr_id_ts ON attributes(id, ts DESC);` |
+| Entity lookup by ID | entities by id | `CREATE INDEX idx_entities_id_ts ON entities(id, ts DESC);` |
+| Filter by observedAt | attributes by observedAt | `CREATE INDEX idx_attr_observedat ON attributes(entityId, observedAt DESC);` |
+| Geo-queries | spatial index | `CREATE INDEX idx_attr_geopoint ON attributes USING GIST(geoPoint);` |
+
+### Example: Common Index Set
+
+For a typical deployment with mixed read/write workloads:
+
+```sql
+-- Essential for temporal entity reconstruction (JOIN performance)
+CREATE INDEX idx_attr_entityid_ts ON attributes(entityId, ts DESC);
+
+-- Common queries by entity type
+CREATE INDEX idx_entities_type_ts ON entities(type, ts DESC);
+
+-- Entity lookup
+CREATE INDEX idx_entities_id_ts ON entities(id, ts DESC);
+```
+
+### Trade-offs
+
+| More Indexes | Fewer Indexes |
+|--------------|---------------|
+| Faster reads | Faster writes |
+| More storage | Less storage |
+| Slower inserts | Better for high-frequency sensor data |
+| Better for analytics | Better for data ingestion |
+
+### Checking Current Indexes
+
+To see existing indexes in your TRoE database:
+
+```sql
+SELECT indexname, indexdef
+FROM pg_indexes
+WHERE tablename IN ('entities', 'attributes', 'subattributes');
+```
+
+### Analyzing Query Performance
+
+Use `EXPLAIN ANALYZE` to understand query performance:
+
+```sql
+EXPLAIN ANALYZE
+SELECT * FROM attributes
+WHERE entityId = 'urn:ngsi-ld:Entity:001'
+AND ts BETWEEN '2024-01-01' AND '2024-12-31';
+```
+
+If you see "Seq Scan" on large tables, consider adding an index for that query pattern

@@ -631,6 +631,9 @@ function orionldStart
     extraParams="$extraParams -kt $CB_KTRACELEVELS"
   fi
 
+  # Always using -ki (KTrace Information Messages) during functests
+  extraParams="$extraParams -ki"
+
   echo extraParams: $extraParams > /tmp/orionldStart
 
   if [ "$role" == "CB" ]

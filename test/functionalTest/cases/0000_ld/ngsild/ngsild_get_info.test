@@ -62,6 +62,7 @@ Date: REGEX(.*)
     "kalloc version": REGEX(.*),
     "khash version": REGEX(.*),
     "kjson version": "REGEX(.*)",
+    "kprom version": "REGEX(.*)",
     "microhttpd version": "1.0.2-0",
     "rapidjson version": REGEX(.*),
     "libcurl version": REGEX(.*),

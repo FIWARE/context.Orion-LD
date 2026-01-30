@@ -249,6 +249,8 @@ typedef struct OrionldStateIn
   char*     xForwardedFor;
   char*     via;
   char*     connection;
+  char*     accept;
+  bool      acceptTextPlain;
   char*     servicePath;
   char*     xAuthToken;
   char*     authorization;

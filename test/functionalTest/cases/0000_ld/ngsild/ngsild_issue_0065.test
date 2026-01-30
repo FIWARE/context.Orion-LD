@@ -86,8 +86,9 @@ Date: REGEX(.*)
     "kalloc version": "REGEX(.*)",
     "kbase version": "REGEX(.*)",
     "khash version": "REGEX(.*)",
-    "kjson version": "REGEX(.*)"
-    "ktrace version": "REGEX(.*)"
+    "kjson version": "REGEX(.*)",
+    "kprom version": "REGEX(.*)",
+    "ktrace version": "REGEX(.*)",
     "libcurl version": "REGEX(.*)",
     "libuuid version": "UNKNOWN",
     "microhttpd version": "1.0.2-0",

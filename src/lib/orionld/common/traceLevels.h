@@ -250,6 +250,7 @@ typedef enum OrionldTraceLevels
   KtPatchEntity             = 4010,
   KtPatchEntity2            = 4011,
   KtPerformance             = 4012,
+  KtPrometheus              = 4013,
 
   // FT Client
   StDump                    = 5001,

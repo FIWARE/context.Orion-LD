@@ -272,6 +272,7 @@ SET (COMMON_STATIC_LIBS
     kargs.a
     kalloc.a
     kbase.a
+    kprom.a
 )
 
 SET (DYNAMIC_LIBS
@@ -286,7 +287,6 @@ SET (DYNAMIC_LIBS
     ddsenabler_participants
     ddsenabler_yaml
     tinyxml2
-    kprom
     curl
     ${GNUTLS_LIBRARIES}
     pthread

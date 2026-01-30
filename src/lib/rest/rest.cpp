@@ -1425,15 +1425,26 @@ static MHD_Result connectionTreat
   //
   if (strcmp(url, "/metrics") == 0)
   {
+    static char metricsUrl[32] = "/ngsi-ld/ex/v1/metrics";
+
     if (*con_cls == NULL)
     {
       *con_cls = &cls;
-      char metricsUrl[32];
-      strcpy(metricsUrl, "/ngsi-ld/ex/v1/metrics");
+
+#ifdef REQUEST_PERFORMANCE
+      bzero(&performanceTimestamps, sizeof(performanceTimestamps));
+      kTimeGet(&performanceTimestamps.reqStart);
+#endif
+      // Reset the Compound stuff
+      compoundInfo.compoundValueRoot = NULL;
+      compoundInfo.compoundValueP    = NULL;
+      compoundInfo.inCompoundValue   = false;
+
       return mhdConnectionInit(connection, metricsUrl, method, version, con_cls);
     }
 
     *upload_data_size = 0;
+    KT_T(55, "Calling mhdConnectionTreat for ");
     return mhdConnectionTreat();
   }
 
