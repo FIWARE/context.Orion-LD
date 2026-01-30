@@ -67,7 +67,7 @@ echo
 
 echo "04. GET /metrics on port 8000 and verify counters are present"
 echo "=============================================================="
-orionCurl --url /metrics --port 8000  --noPayloadCheck # | grep -E "^(ngsild|notifications|distOps|connections|subscriptions|request)"
+orionCurl --url /metrics --port 8000  --noPayloadCheck
 echo
 echo
 
@@ -160,10 +160,10 @@ requestDurationSeconds_bucket{le="0.050"} REGEX(\d+)
 requestDurationSeconds_bucket{le="0.100"} REGEX(\d+)
 requestDurationSeconds_bucket{le="0.250"} REGEX(\d+)
 requestDurationSeconds_bucket{le="0.500"} REGEX(\d+)
-requestDurationSeconds_bucket{le="1"} REGEX(\d+)
-requestDurationSeconds_bucket{le="5"} REGEX(\d+)
-requestDurationSeconds_bucket{le="10"} REGEX(\d+)
-requestDurationSeconds_bucket{le="+Inf"} REGEX(\d+)
+requestDurationSeconds_bucket{le="1.000"} REGEX(\d+)
+requestDurationSeconds_bucket{le="5.000"} REGEX(\d+)
+requestDurationSeconds_bucket{le="10.000"} REGEX(\d+)
+requestDurationSeconds_bucket{le="REGEX(\+Inf)"} 3
 requestDurationSeconds_sum 0.00REGEX(\d)
 requestDurationSeconds_count 3
 
