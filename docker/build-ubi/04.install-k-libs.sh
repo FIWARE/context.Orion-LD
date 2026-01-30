@@ -45,12 +45,18 @@ function debug()
 #
 # kbase klog kalloc khash
 #
-for kproj in kbase ktrace klog kargs kalloc khash kjson 
+for kproj in kbase ktrace klog kargs kalloc khash kjson kprom
 do
     cd ${ROOT_FOLDER}/$kproj
-    debug $PWD
-    echo checking out release/0.10
-    git checkout release/0.10
+
+    branch=release/0.10
+    if [$proj = "kprom" ]
+    then
+        branch=release/0.1.0
+    fi
+    
+    echo checking out $branch
+    git checkout $branch
     make
     make install
     echo "-----------------------------------------------"
