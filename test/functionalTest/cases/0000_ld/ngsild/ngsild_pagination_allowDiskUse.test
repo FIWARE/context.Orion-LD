@@ -62,7 +62,7 @@ do
   }'
   orionCurl --url /ngsi-ld/v1/entities --payload "$payload" > /dev/null 2>&1
   eNo=$eNo+1
-done
+done | grep Location | wc -l
 
 --SHELL--
 
