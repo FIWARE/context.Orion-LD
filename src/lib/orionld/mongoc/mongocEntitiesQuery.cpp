@@ -759,6 +759,8 @@ KjNode* mongocEntitiesQuery
     if (offset != 0)
       bson_append_int32(&options, "skip", 4, offset);
 
+    bson_append_bool(&options, "allowDiskUse", 12, true);
+
 
     //
     // Projection (will be added to if attrList != NULL)
