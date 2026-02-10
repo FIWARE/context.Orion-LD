@@ -1455,7 +1455,7 @@ function mongoCmd2()
 
   db=$1
   cmd=$2
-  echo $cmd | mongo mongodb://$host:$port/$db | grep -v "Implicit session: session" | grep -v "WARNING: shell and server versions do not match" | sed 's/?gssapiServiceName=mongodb//'
+  echo $cmd | mongo mongodb://$host:$port/$db | grep -v "Implicit session: session" | grep -v "WARNING: shell and server versions do not match" | grep -v "superseded by" | grep -v "improved usability" | grep -v "has been deprecated" | grep -v "upcoming release" | grep -v "installation instructions" | grep -v "mongodb-shell/install" | grep -v "^========" | sed 's/?gssapiServiceName=mongodb//'
 }
 
 
