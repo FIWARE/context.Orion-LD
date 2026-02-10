@@ -127,8 +127,8 @@ def check_file_orionld(file):
 
 
 def ignore(root, file):
-    # Files in the BUILD_* or .git directories are not processed
-    if 'BUILD_' in root or '.git' in root:
+    # Files in the BUILD_*, .git, .venv or .claude directories are not processed
+    if 'BUILD_' in root or '.git' in root or '.venv' in root or '.claude' in root:
         return True
 
     if file.endswith('.yaml') or file.endswith('.hpp') or file.endswith('.cxx') or file.endswith('.ipp'):
