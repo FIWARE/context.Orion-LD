@@ -86,6 +86,10 @@ If so, please use the original [Orion](https://github.com/telefonicaid/fiware-or
 An Excel file detailing the current compatibility of the development version of the Orion-LD Context Broker against the features of the API specification can be downloaded [here](https://docs.google.com/spreadsheets/d/18tq0_PZFl5WCfYUElcdI6M3Vlin4hP-M).
 
 
+## Requirements
+Orion-LD requires **MongoDB 4.2 or higher**. This is due to the MongoDB C driver (libmongoc) version used,
+which requires wire protocol version 8+ (MongoDB 4.2+). Earlier MongoDB versions (4.0, 3.6, etc.) are not supported.
+
 ## Test and Deployment of Orion-LD
 If you want to start testing with Orion-LD, the most common option is to use Docker.
 There are a number of docker images to choose from.
