@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_PROMETHEUS_PROMCOUNTERINCREASE_H_
-#define SRC_LIB_ORIONLD_PROMETHEUS_PROMCOUNTERINCREASE_H_
+#ifndef SRC_LIB_ORIONLD_SERVICEROUTINES_ORIONLDGETMETRICS_H_
+#define SRC_LIB_ORIONLD_SERVICEROUTINES_ORIONLDGETMETRICS_H_
 
 /*
 *
-* Copyright 2022 FIWARE Foundation e.V.
+* Copyright 2026 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -28,10 +28,10 @@
 
 
 
-// -----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 //
-// promCounterIncrease -
+// orionldGetMetrics -
 //
-extern int promCounterIncrease(prom_counter_t* counterP);
+extern bool orionldGetMetrics(void);
 
-#endif  // SRC_LIB_ORIONLD_PROMETHEUS_PROMCOUNTERINCREASE_H_
+#endif  // SRC_LIB_ORIONLD_SERVICEROUTINES_ORIONLDGETMETRICS_H_

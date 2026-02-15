@@ -42,6 +42,7 @@ extern "C"
 #include "kjson/kjBuilder.h"                                       // kjString, ...
 #include "kjson/kjLookup.h"                                        // kjLookup
 #include "kjson/kjNodeDecouple.h"                                  // kjNodeDecouple
+#include "kprom/kprom.h"                                           // kpromCounterInc
 }
 
 #include "orionld/types/OrionldResponseErrorType.h"                // orionldResponseErrorType
@@ -62,7 +63,6 @@ extern "C"
 #include "orionld/common/performance.h"                            // PERFORMANCE
 #include "orionld/common/tenantList.h"                             // tenant0
 #include "orionld/http/httpHeaderLinkAdd.h"                        // httpHeaderLinkAdd
-#include "orionld/prometheus/promCounterIncrease.h"                // promCounterIncrease
 #include "orionld/mongoc/mongocTenantExists.h"                     // mongocTenantExists
 #include "orionld/mongoc/mongocGeoIndexCreate.h"                   // mongocGeoIndexCreate
 #include "orionld/mongoCppLegacy/mongoCppLegacyGeoIndexCreate.h"   // mongoCppLegacyGeoIndexCreate
@@ -82,6 +82,7 @@ extern "C"
 #include "orionld/serviceRoutines/orionldPostEntities.h"           // orionldPostEntities
 #include "orionld/serviceRoutines/orionldPostSubscriptions.h"      // orionldPostSubscriptions
 #include "orionld/serviceRoutines/orionldPatchSubscription.h"      // orionldPatchSubscription
+#include "orionld/serviceRoutines/orionldGetMetrics.h"             // orionldGetMetrics
 #include "orionld/mhd/mhdReply.h"                                  // mhdReply
 #include "orionld/mhd/mhdConnectionTreat.h"                        // Own Interface
 
@@ -1126,7 +1127,7 @@ MHD_Result mhdConnectionTreat(void)
   bool     contextToBeCashed    = false;
   bool     serviceRoutineResult = false;
 
-  promCounterIncrease(promNgsildRequests);
+  kpromCounterInc(promNgsildRequests);
 
   if (orionldState.serviceP == NULL)
     goto respond;
@@ -1152,6 +1153,18 @@ MHD_Result mhdConnectionTreat(void)
   //
   if (orionldState.httpStatusCode != 200)
     goto respond;
+
+  //
+  // Check if text/plain was requested but the service doesn't support it
+  //
+  if (orionldState.in.acceptTextPlain == true)
+  {
+    if ((orionldState.serviceP->options & ORIONLD_SERVICE_OPTION_ACCEPT_TEXT_PLAIN) == 0)
+    {
+      orionldError(OrionldBadRequestData, "Invalid Accept mime-type", "text/plain not supported for this endpoint", 406);
+      goto respond;
+    }
+  }
 
   if ((orionldState.in.contentLength > 0) && (orionldState.verb != HTTP_POST) && (orionldState.verb != HTTP_PATCH) && (orionldState.verb != HTTP_PUT))
   {
@@ -1379,6 +1392,9 @@ MHD_Result mhdConnectionTreat(void)
   if (orionldState.requestTree != NULL)
     KT_TREE(orionldState.requestTree, "Request Payload Body", KtRequest);
 
+  KT_T(55, "Calling service routine");
+  KT_T(55, "serviceP->serviceRoutine: %p", orionldState.serviceP->serviceRoutine);
+  KT_T(55, "orionldGetMetrics:        %p", orionldGetMetrics);
   serviceRoutineResult = orionldState.serviceP->serviceRoutine();
 
   PERFORMANCE(serviceRoutineEnd);
@@ -1419,7 +1435,7 @@ MHD_Result mhdConnectionTreat(void)
   //
   if (orionldState.httpStatusCode >= 400)
   {
-    promCounterIncrease(promNgsildRequestsFailed);
+    kpromCounterInc(promNgsildRequestsFailed);
     orionldState.noLinkHeader  = true;   // We don't want the Link header for erroneous requests
     serviceRoutineResult       = false;  // Just in case ...
     // MimeType handled in mhdReply()
@@ -1478,6 +1494,16 @@ MHD_Result mhdConnectionTreat(void)
   mhdReply(orionldState.responseTree);    // orionldState.responsePayload freed and NULLed by mhdReply()
 
   PERFORMANCE(requestPartEnd);
+
+  // Record request duration in seconds
+  struct timespec now;
+  kTimeGet(&now);
+  double duration = (now.tv_sec - orionldState.timestamp.tv_sec) +
+                    (now.tv_nsec - orionldState.timestamp.tv_nsec) / 1000000000.0;
+  kpromHistogramObserve(promRequestDuration, duration);
+
+  // Decrement active connections counter
+  kpromGaugeSub(promConnectionsActive, 1);
 
   return MHD_YES;
 }

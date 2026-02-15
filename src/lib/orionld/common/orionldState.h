@@ -37,9 +37,9 @@
 
 extern "C"
 {
-#include "prometheus-client-c/prom/include/prom.h"               // prom_counter_t
 #include "kjson/kjson.h"                                         // Kjson
 #include "kjson/KjNode.h"                                        // KjNode
+#include "kprom/kprom.h"                                         // KpromMetric
 }
 
 #include "orionld/types/ApiVersion.h"                            // ApiVersion
@@ -249,6 +249,8 @@ typedef struct OrionldStateIn
   char*     xForwardedFor;
   char*     via;
   char*     connection;
+  char*     accept;
+  bool      acceptTextPlain;
   char*     servicePath;
   char*     xAuthToken;
   char*     authorization;
@@ -672,10 +674,15 @@ extern char              ddsTopicType[512];
 //
 // Global variables for Prometheus
 //
-extern prom_counter_t*     promNgsildRequests;
-extern prom_counter_t*     promNgsildRequestsFailed;
-extern prom_counter_t*     promNotifications;
-extern prom_counter_t*     promNotificationsFailed;
+extern KpromMetric*        promNgsildRequests;
+extern KpromMetric*        promNgsildRequestsFailed;
+extern KpromMetric*        promNotifications;
+extern KpromMetric*        promNotificationsFailed;
+extern KpromMetric*        promDistOps;
+extern KpromMetric*        promDistOpsFailed;
+extern KpromMetric*        promConnectionsActive;
+extern KpromMetric*        promSubscriptionsCached;
+extern KpromMetric*        promRequestDuration;
 
 
 

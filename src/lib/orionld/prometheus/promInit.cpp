@@ -22,51 +22,64 @@
 *
 * Author: Ken Zangelin
 */
+#include <stddef.h>                                              // NULL
+
 extern "C"
 {
-#include "prometheus-client-c/prom/include/prom.h"          // Prometheus client lib
-#include "prometheus-client-c/promhttp/include/promhttp.h"  // Prometheus client lib
+#include "kprom/kprom.h"                                         // kprom API
 }
 
-
-
-// -----------------------------------------------------------------------------
-//
-// Prometheus counters, gauges and histograms
-//
-prom_counter_t*     promNgsildRequests;
-prom_counter_t*     promNgsildRequestsFailed;
-prom_counter_t*     promNotifications;
-prom_counter_t*     promNotificationsFailed;
-prom_gauge_t*       promTestGauge;
-prom_histogram_t*   promTestHistogram;
+#include "orionld/prometheus/promServer.h"                       // promServerStart
+#include "orionld/prometheus/promInit.h"                         // Own interface
 
 
 
 // -----------------------------------------------------------------------------
 //
-// promInit - initialize the Prometheus client library
+// Prometheus counters
+//
+KpromMetric* promNgsildRequests       = NULL;
+KpromMetric* promNgsildRequestsFailed = NULL;
+KpromMetric* promNotifications        = NULL;
+KpromMetric* promNotificationsFailed  = NULL;
+KpromMetric* promDistOps              = NULL;
+KpromMetric* promDistOpsFailed        = NULL;
+
+// Gauges
+KpromMetric* promConnectionsActive    = NULL;
+KpromMetric* promSubscriptionsCached  = NULL;
+
+// Histograms
+KpromMetric* promRequestDuration      = NULL;
+
+
+
+// -----------------------------------------------------------------------------
+//
+// promInit - initialize the Prometheus metrics and start the metrics server
 //
 int promInit(unsigned short promPort)
 {
-  prom_collector_registry_default_init();
+  // Counters
+  promNgsildRequests       = kpromCounterCreate("ngsildRequests",       "NGSILD Requests");
+  promNgsildRequestsFailed = kpromCounterCreate("ngsildRequestsFailed", "Failed NGSILD Requests");
+  promNotifications        = kpromCounterCreate("notifications",        "Notifications");
+  promNotificationsFailed  = kpromCounterCreate("notificationsFailed",  "Failed Notifications");
+  promDistOps              = kpromCounterCreate("distOps",              "Forwarded Distributed Operations");
+  promDistOpsFailed        = kpromCounterCreate("distOpsFailed",        "Failed Distributed Operations");
 
-  promNgsildRequests       = prom_collector_registry_must_register_metric(prom_counter_new("ngsildRequests",       "# NGSILD Requests",        0, NULL));
-  promNgsildRequestsFailed = prom_collector_registry_must_register_metric(prom_counter_new("ngsildRequestsFailed", "# Failed NGSILD Requests", 0, NULL));
-  promNotifications        = prom_collector_registry_must_register_metric(prom_counter_new("notifications",        "# Notifications",          0, NULL));
-  promNotificationsFailed  = prom_collector_registry_must_register_metric(prom_counter_new("notificationsFailed",  "# Failed Notifications",   0, NULL));
+  // Gauges
+  promConnectionsActive    = kpromGaugeCreate("connectionsActive",      "Active HTTP connections");
+  promSubscriptionsCached  = kpromGaugeCreate("subscriptionsCached",    "Subscriptions in cache");
 
-  promTestHistogram = prom_collector_registry_must_register_metric(prom_histogram_new(
-                                                                     "promTestHistogram",
-                                                                     "histogram under test",
-                                                                     prom_histogram_buckets_linear(5.0, 5.0, 2),
-                                                                     0,
-                                                                     NULL));
+  // Histograms - request duration in seconds
+  // Buckets: 1ms, 2ms, 3ms, 4ms, 5ms, 10ms, 25ms, 50ms, 100ms, 250ms, 500ms, 1s, 5s, 10s
+  double durationBuckets[] = { 0.001, 0.002, 0.003, 0.004, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 5.0, 10.0 };
+  promRequestDuration      = kpromHistogramCreate("requestDurationSeconds", "Request duration in seconds", durationBuckets, 14);
 
-  // Set the active registry for the HTTP handler
-  promhttp_set_active_collector_registry(NULL);
+  // Start the metrics server on the specified port
+  if (promPort != 0)
+    return promServerStart(promPort);
 
-  struct MHD_Daemon* daemon = promhttp_start_daemon(MHD_USE_SELECT_INTERNALLY, promPort, NULL, NULL);
-
-  return (daemon != NULL)? 0 : 1;
+  return 0;
 }

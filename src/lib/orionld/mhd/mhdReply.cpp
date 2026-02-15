@@ -80,7 +80,9 @@ void mhdReply(KjNode* body)
   //
   // Enqueue response
   //
-  int           responsePayloadLen = (body != NULL)? strlen(orionldState.responsePayload) : 0;
+  // responsePayload can be set either by rendering body, or directly by the service routine (e.g., for text/plain)
+  //
+  int           responsePayloadLen = (orionldState.responsePayload != NULL)? strlen(orionldState.responsePayload) : 0;
   MHD_Response* response           = MHD_create_response_from_buffer(responsePayloadLen, orionldState.responsePayload, MHD_RESPMEM_MUST_COPY);
 
   if (!response)
@@ -110,6 +112,7 @@ void mhdReply(KjNode* body)
 
     if      (responsePayloadLen <= 2)                    contentType = (char*) "application/json";
     else if (orionldState.httpStatusCode  >= 400)        contentType = (char*) "application/json";
+    else if (orionldState.out.contentType == MT_TEXT)    contentType = (char*) "text/plain; version=0.0.4";
     else if (orionldState.out.contentType == MT_JSONLD)  contentType = (char*) "application/ld+json";
     else if (orionldState.out.contentType == MT_GEOJSON) contentType = (char*) "application/geo+json";
 

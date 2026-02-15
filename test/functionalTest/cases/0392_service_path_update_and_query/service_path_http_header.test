@@ -25,7 +25,7 @@ ServicePath HTTP Headers
 
 --SHELL-INIT--
 dbInit CB
-orionldStart CB -ki
+orionldStart CB
 
 --SHELL--
 payload='{

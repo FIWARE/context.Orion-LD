@@ -244,7 +244,7 @@ bool            debugCurl    = false;
 uint32_t        cSubCounters;
 char            coreContextVersion[64];
 bool            triggerOperation = false;
-bool            noprom           = false;
+unsigned short  promPort         = 8000;
 bool            noArrayReduction = false;
 char            subordinateEndpoint[256];
 char            defaultUserContextUrl[256];
@@ -345,7 +345,7 @@ bool            kTraceInfo       = false;
 #define DEBUG_CURL_DESC        "turn on debugging of libcurl - to the broker's logfile"
 #define CSUBCOUNTERS_DESC      "number of subscription counter updates before flush from sub-cache to DB (0: never, 1: always)"
 #define CORE_CONTEXT_DESC      "core context version (v1.0|v1.3|v1.4|v1.5|v1.6|v1.7) - v1.6 is default"
-#define NO_PROM_DESC           "run without Prometheus metrics"
+#define PROM_PORT_DESC         "port for Prometheus /metrics endpoint (same as -port to use main server)"
 #define NO_ARR_REDUCT_DESC     "skip JSON-LD Array Reduction"
 #define CONFIG_FILE_DESC        "Path to configuration file"
 #define SUBORDINATE_ENDPOINT_DESC  "endpoint URL for reception of notificatiopns from subordinate subscriptions (distributed subscriptions)"
@@ -455,7 +455,7 @@ PaArgument paArgs[] =
   { "-noswap",                &noswap,                  "NOSWAP",                    PaBool,    PaHid,  false,            false,  true,             NOSWAP_DESC              },
   { "-lmtmp",                 &lmtmp,                   "TMP_TRACES",                PaBool,    PaHid,  true,             false,  true,             TMPTRACES_DESC           },
   { "-debugCurl",             &debugCurl,               "DEBUG_CURL",                PaBool,    PaHid,  false,            false,  true,             DEBUG_CURL_DESC          },
-  { "-noprom",                &noprom,                  "NO_PROM",                   PaBool,    PaHid,  false,            false,  true,             NO_PROM_DESC             },
+  { "-promPort",              &promPort,                "PROM_PORT",                 PaUShort,  PaOpt,  8000,             0,      65535,            PROM_PORT_DESC           },
   { "-noArrayReduction",      &noArrayReduction,        "NO_ARRAY_REDUCTION",        PaBool,    PaHid,  false,            false,  true,             NO_ARR_REDUCT_DESC       },
   { "-extras",                &extras,                  "EXTRAS",                    PaBool,    PaHid,  false,            false,  true,             EXTRAS_DESC              },
   { "-subordinateEndpoint",   &subordinateEndpoint,     "SUBORDINATE_ENDPOINT",      PaStr,     PaOpt,  _i "",             PaNL,  PaNL,             SUBORDINATE_ENDPOINT_DESC },
@@ -1175,9 +1175,13 @@ int main(int argC, char* argV[])
   if (fg == false)
     daemonize();
 
-  if (noprom == true)
-    KT_W("Running without Prometheus metrics");
-  else if (promInit(8000) != 0)
+  //
+  // Initialize Prometheus metrics
+  // If promPort != port, a separate server is started on promPort
+  // If promPort == port, /metrics is served through the main server
+  //
+  unsigned short promServerPort = (promPort != port) ? promPort : 0;
+  if (promInit(promServerPort) != 0)
     KT_W("Error initializing Prometheus Metrics library");
 
   IpVersion ipVersion = IPDUAL;

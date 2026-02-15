@@ -109,6 +109,7 @@ typedef struct OrionLdRestServiceSimplifiedVector
 #define ORIONLD_SERVICE_OPTION_ACCEPT_JSONLD_NULL                    (1 << 10)
 #define ORIONLD_SERVICE_OPTION_DATASET_SUPPORT                       (1 << 11)
 #define ORIONLD_SERVICE_OPTION_CORE_CONTEXT_IN_RESPONSE              (1 << 12)
+#define ORIONLD_SERVICE_OPTION_ACCEPT_TEXT_PLAIN                     (1 << 13)
 
 
 // -----------------------------------------------------------------------------

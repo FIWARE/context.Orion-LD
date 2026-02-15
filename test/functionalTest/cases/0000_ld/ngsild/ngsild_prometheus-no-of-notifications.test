@@ -95,7 +95,7 @@ echo
 
 echo "03. Get Metrics - see zero notifications but two OK NGSI-LD Requests"
 echo "===================================================================="
-orionldMetrics
+orionldMetrics | egrep 'ngsildRequests|notifications|notificationsFailed'
 echo
 echo
 
@@ -116,7 +116,7 @@ echo
 
 echo "05. Get Metrics - see TWO notifications, ONE of them failed"
 echo "==========================================================="
-orionldMetrics
+orionldMetrics | egrep 'ngsildRequests|notifications|notificationsFailed'
 echo
 echo
 
@@ -133,7 +133,7 @@ echo
 
 echo "07. Get Metrics - see FOUR notifications, TWO of them failed"
 echo "============================================================"
-orionldMetrics
+orionldMetrics | egrep 'ngsildRequests|notifications|notificationsFailed'
 echo
 echo
 
@@ -150,7 +150,7 @@ echo
 
 echo "09. Get Metrics - see FIVE notifications, TWO of them failed"
 echo "============================================================"
-orionldMetrics
+orionldMetrics | egrep 'ngsildRequests|notifications|notificationsFailed'
 echo
 echo
 
@@ -177,6 +177,9 @@ Location: /ngsi-ld/v1/subscriptions/urn:ngsi-ld:Subscription:S2
 03. Get Metrics - see zero notifications but two OK NGSI-LD Requests
 ====================================================================
 ngsildRequests 2
+ngsildRequestsFailed 0
+notifications 0
+notificationsFailed 0
 
 
 04. Create E1, with attributes A1, A2, A3, and A4
@@ -191,6 +194,7 @@ Location: /ngsi-ld/v1/entities/urn:E1
 05. Get Metrics - see TWO notifications, ONE of them failed
 ===========================================================
 ngsildRequests 3
+ngsildRequestsFailed 0
 notifications 2
 notificationsFailed 1
 
@@ -205,6 +209,7 @@ Date: REGEX(.*)
 07. Get Metrics - see FOUR notifications, TWO of them failed
 ============================================================
 ngsildRequests 4
+ngsildRequestsFailed 0
 notifications 4
 notificationsFailed 2
 
@@ -219,6 +224,7 @@ Date: REGEX(.*)
 09. Get Metrics - see FIVE notifications, TWO of them failed
 ============================================================
 ngsildRequests 5
+ngsildRequestsFailed 0
 notifications 5
 notificationsFailed 2
 

@@ -25,6 +25,7 @@
 extern "C"
 {
 #include "ktrace/kTrace.h"                                       // KT_*
+#include "kprom/kprom.h"                                         // kpromCounterInc
 }
 
 #include "orionld/types/DistOp.h"                                // DistOp
@@ -61,6 +62,7 @@ int distOpsSend(DistOp* distOpList, bool local)
       {
         distOpP->error = false;
         orionldState.distOp.requests += 1;
+        kpromCounterInc(promDistOps);
       }
       else
         distOpP->error = true;

@@ -27,13 +27,13 @@
 extern "C"
 {
 #include "ktrace/kTrace.h"                                          // KT_*
+#include "kprom/kprom.h"                                            // kpromCounterInc
 }
 
 #include "cache/CachedSubscription.h"                               // CachedSubscription
 
 #include "orionld/common/orionldState.h"                            // promNotifications, promNotificationsFailed
 #include "orionld/common/traceLevels.h"                             // KTrace levels
-#include "orionld/prometheus/promCounterIncrease.h"                 // promCounterIncrease
 #include "orionld/mongoc/mongocSubCountersUpdate.h"                 // mongocSubCountersUpdate
 #include "orionld/notifications/notificationFailure.h"              // Own interface
 
@@ -66,8 +66,8 @@ void notificationFailure(CachedSubscription* subP, const char* errorReason, doub
     forcedToPause  = true;
   }
 
-  promCounterIncrease(promNotifications);
-  promCounterIncrease(promNotificationsFailed);
+  kpromCounterInc(promNotifications);
+  kpromCounterInc(promNotificationsFailed);
 
   KT_T(KtNotificationStats, "%s: dirty: %d, cSubCounters: %d", subP->subscriptionId, subP->dirty, cSubCounters);
 
@@ -125,8 +125,8 @@ void notificationFailure(PernotSubscription* pSubP, const char* errorReason, dou
     forcedToPause   = true;
   }
 
-  promCounterIncrease(promNotifications);
-  promCounterIncrease(promNotificationsFailed);
+  kpromCounterInc(promNotifications);
+  kpromCounterInc(promNotificationsFailed);
 
   KT_T(KtNotificationStats, "%s: dirty: %d, cSubCounters: %d", pSubP->subscriptionId, pSubP->dirty, cSubCounters);
 

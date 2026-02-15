@@ -25,13 +25,13 @@
 extern "C"
 {
 #include "ktrace/kTrace.h"                                          // KT_*
+#include "kprom/kprom.h"                                            // kpromCounterInc
 }
 
 #include "cache/CachedSubscription.h"                               // CachedSubscription
 
 #include "orionld/common/orionldState.h"                            // promNotifications
 #include "orionld/common/traceLevels.h"                             // KTrace levels
-#include "orionld/prometheus/promCounterIncrease.h"                 // promCounterIncrease
 #include "orionld/mongoc/mongocSubCountersUpdate.h"                 // mongocSubCountersUpdate
 #include "orionld/notifications/notificationSuccess.h"              // Own interface
 
@@ -51,7 +51,7 @@ void notificationSuccess(CachedSubscription* subP, const double timestamp)
   subP->count                += 1;
   subP->dirty                += 1;
 
-  promCounterIncrease(promNotifications);
+  kpromCounterInc(promNotifications);
 
   //
   // Flush to DB?

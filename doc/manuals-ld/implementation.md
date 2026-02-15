@@ -14,8 +14,9 @@ This document describes the internal implementation of the Orion-LD Context Brok
 8. [Notification System](#notification-system)
 9. [Distributed Operations](#distributed-operations)
 10. [Memory Management](#memory-management)
-11. [Configuration Options](#configuration-options)
-12. [Source Code Structure](#source-code-structure)
+11. [Prometheus Metrics](#prometheus-metrics)
+12. [Configuration Options](#configuration-options)
+13. [Source Code Structure](#source-code-structure)
 
 ---
 
@@ -457,6 +458,57 @@ kaBufferReset(&orionldState.kalloc, KFALSE);
 
 ---
 
+## Prometheus Metrics
+
+Orion-LD exposes operational metrics in Prometheus format via the kprom library.
+
+### Available Metrics
+
+| Metric | Type | Description |
+|--------|------|-------------|
+| `ngsildRequests` | Counter | Total NGSI-LD requests received |
+| `ngsildRequestsFailed` | Counter | Failed NGSI-LD requests (HTTP >= 400) |
+| `notifications` | Counter | Total notifications sent |
+| `notificationsFailed` | Counter | Failed notifications |
+| `distOps` | Counter | Forwarded distributed operations |
+| `distOpsFailed` | Counter | Failed distributed operations |
+| `connectionsActive` | Gauge | Current active HTTP connections |
+| `subscriptionsCached` | Gauge | Subscriptions currently in cache |
+| `requestDurationSeconds` | Histogram | Request duration (buckets: 1ms, 5ms, 10ms, 25ms, 50ms, 100ms, 250ms, 500ms, 1s, 5s, 10s) |
+
+### Endpoints
+
+- **Dedicated metrics server:** `http://localhost:8000/metrics` (port configurable via `-promPort`)
+- **Main port:** `http://localhost:1026/metrics` (remaps to `/ngsi-ld/ex/v1/metrics`)
+
+### Accept Header Support (main port only)
+
+| Accept Header | Response Format |
+|---------------|-----------------|
+| `text/plain` | Prometheus text exposition format (version 0.0.4) |
+| `application/json` | JSON format |
+
+### Example Output (text/plain)
+
+```
+# HELP ngsildRequests NGSILD Requests
+# TYPE ngsildRequests counter
+ngsildRequests 42
+# HELP connectionsActive Active HTTP connections
+# TYPE connectionsActive gauge
+connectionsActive 5.000
+# HELP requestDurationSeconds Request duration in seconds
+# TYPE requestDurationSeconds histogram
+requestDurationSeconds_bucket{le="0.001"} 10
+requestDurationSeconds_bucket{le="0.005"} 35
+...
+requestDurationSeconds_bucket{le="+Inf"} 42
+requestDurationSeconds_sum 0.156
+requestDurationSeconds_count 42
+```
+
+---
+
 ## Configuration Options
 
 Key startup options in `src/app/orionld/orionld.cpp`:
@@ -471,6 +523,7 @@ Key startup options in `src/app/orionld/orionld.cpp`:
 | `-notificationMode` | transient | Notification mode (transient/threadpool) |
 | `-troe` | false | Enable Temporal Representation |
 | `-distributed` | false | Enable distributed operations |
+| `-promPort` | 8000 | Port for dedicated Prometheus metrics server |
 
 ---
 
@@ -537,6 +590,7 @@ src/
 | kjson | Fast JSON parsing |
 | kalloc | Memory allocation |
 | ktrace | Logging/tracing |
+| kprom | Prometheus metrics |
 | libpq | PostgreSQL client (for TRoE) |
 | libcurl | HTTP client (notifications, forwarding) |
 | Paho MQTT | MQTT client |

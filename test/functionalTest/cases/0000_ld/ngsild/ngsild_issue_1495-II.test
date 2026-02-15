@@ -184,6 +184,7 @@ Date: REGEX(.*)
     "kbase version": "REGEX(.*)",
     "khash version": "REGEX(.*)",
     "kjson version": "REGEX(.*)",
+    "kprom version": "REGEX(.*)",
     "ktrace version": REGEX(.*),
     "libcurl version": "REGEX(.*)",
     "libuuid version": "REGEX(.*)",

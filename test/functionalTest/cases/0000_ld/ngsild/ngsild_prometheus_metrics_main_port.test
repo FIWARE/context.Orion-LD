@@ -1,0 +1,310 @@
+# Copyright 2024 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Prometheus metrics on main port (1026)
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB
+
+--SHELL--
+
+#
+# 01. Create an entity to trigger ngsildRequests counter
+# 02. Query entities to trigger another request
+# 03. Query a non-existing entity to trigger ngsildRequestsFailed counter
+# 04. GET /metrics with Accept: text/plain and verify counters are present
+# 05. GET /metrics with Accept: application/json and verify JSON format
+#
+
+echo "01. Create an entity to trigger ngsildRequests counter"
+echo "======================================================"
+payload='{
+  "id": "urn:ngsi-ld:T:001",
+  "type": "T",
+  "P1": {
+    "type": "Property",
+    "value": 1
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities -X POST --payload "$payload"
+echo
+echo
+
+
+echo "02. Query entities to trigger another request"
+echo "=============================================="
+orionCurl --url /ngsi-ld/v1/entities?type=T
+echo
+echo
+
+
+echo "03. Query a non-existing entity to trigger ngsildRequestsFailed counter"
+echo "========================================================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:T:doesnotexist
+echo
+echo
+
+
+echo "04. GET /metrics with Accept: text/plain and verify counters are present"
+echo "========================================================================"
+orionCurl --url /metrics -H "Accept: text/plain" --noPayloadCheck # | grep -E "^(ngsild|notifications|distOps|connections|subscriptions|request)"
+echo
+echo
+
+
+echo "05. GET /metrics with Accept: application/json and verify JSON format"
+echo "======================================================================"
+orionCurl --url /metrics -H "Accept: application/json"
+echo
+echo
+
+
+--REGEXPECT--
+01. Create an entity to trigger ngsildRequests counter
+======================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:T:001
+
+
+
+02. Query entities to trigger another request
+==============================================
+HTTP/1.1 200 OK
+Content-Length: 74
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "P1": {
+            "type": "Property",
+            "value": 1
+        },
+        "id": "urn:ngsi-ld:T:001",
+        "type": "T"
+    }
+]
+
+
+03. Query a non-existing entity to trigger ngsildRequestsFailed counter
+========================================================================
+HTTP/1.1 404 Not Found
+Content-Length: 128
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "urn:ngsi-ld:T:doesnotexist",
+    "title": "Entity Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
+}
+
+
+04. GET /metrics with Accept: text/plain and verify counters are present
+========================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(\d+)
+Content-Type: text/plain; version=0.0.4
+Date: REGEX(.*)
+
+# HELP ngsildRequests NGSILD Requests
+# TYPE ngsildRequests counter
+ngsildRequests REGEX(\d+)
+# HELP ngsildRequestsFailed Failed NGSILD Requests
+# TYPE ngsildRequestsFailed counter
+ngsildRequestsFailed REGEX(\d+)
+# HELP notifications Notifications
+# TYPE notifications counter
+notifications REGEX(\d+)
+# HELP notificationsFailed Failed Notifications
+# TYPE notificationsFailed counter
+notificationsFailed REGEX(\d+)
+# HELP distOps Forwarded Distributed Operations
+# TYPE distOps counter
+distOps REGEX(\d+)
+# HELP distOpsFailed Failed Distributed Operations
+# TYPE distOpsFailed counter
+distOpsFailed REGEX(\d+)
+# HELP connectionsActive Active HTTP connections
+# TYPE connectionsActive gauge
+connectionsActive REGEX(\d+)
+# HELP subscriptionsCached Subscriptions in cache
+# TYPE subscriptionsCached gauge
+subscriptionsCached REGEX(\d+)
+# HELP requestDurationSeconds Request duration in seconds
+# TYPE requestDurationSeconds histogram
+requestDurationSeconds_bucket{le="0.001"} REGEX(\d+)
+requestDurationSeconds_bucket{le="0.002"} REGEX(\d+)
+requestDurationSeconds_bucket{le="0.003"} REGEX(\d+)
+requestDurationSeconds_bucket{le="0.004"} REGEX(\d+)
+requestDurationSeconds_bucket{le="0.005"} REGEX(\d+)
+requestDurationSeconds_bucket{le="0.010"} REGEX(\d+)
+requestDurationSeconds_bucket{le="0.025"} REGEX(\d+)
+requestDurationSeconds_bucket{le="0.050"} REGEX(\d+)
+requestDurationSeconds_bucket{le="0.100"} REGEX(\d+)
+requestDurationSeconds_bucket{le="0.250"} REGEX(\d+)
+requestDurationSeconds_bucket{le="0.500"} REGEX(\d+)
+requestDurationSeconds_bucket{le="1.000"} REGEX(\d+)
+requestDurationSeconds_bucket{le="5.000"} REGEX(\d+)
+requestDurationSeconds_bucket{le="10.000"} REGEX(\d+)
+REGEX(requestDurationSeconds_bucket\{le="\+Inf"\} \d+)
+requestDurationSeconds_sum REGEX(.*)
+requestDurationSeconds_count REGEX(\d+)
+
+
+
+05. GET /metrics with Accept: application/json and verify JSON format
+======================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+Date: REGEX(.*)
+
+[
+    {
+        "help": "NGSILD Requests",
+        "name": "ngsildRequests",
+        "type": "counter",
+        "value": REGEX(\d+)
+    },
+    {
+        "help": "Failed NGSILD Requests",
+        "name": "ngsildRequestsFailed",
+        "type": "counter",
+        "value": REGEX(\d+)
+    },
+    {
+        "help": "Notifications",
+        "name": "notifications",
+        "type": "counter",
+        "value": REGEX(\d+)
+    },
+    {
+        "help": "Failed Notifications",
+        "name": "notificationsFailed",
+        "type": "counter",
+        "value": REGEX(\d+)
+    },
+    {
+        "help": "Forwarded Distributed Operations",
+        "name": "distOps",
+        "type": "counter",
+        "value": REGEX(\d+)
+    },
+    {
+        "help": "Failed Distributed Operations",
+        "name": "distOpsFailed",
+        "type": "counter",
+        "value": REGEX(\d+)
+    },
+    {
+        "help": "Active HTTP connections",
+        "name": "connectionsActive",
+        "type": "gauge",
+        "value": REGEX(\d+)
+    },
+    {
+        "help": "Subscriptions in cache",
+        "name": "subscriptionsCached",
+        "type": "gauge",
+        "value": REGEX(\d+)
+    },
+    {
+        "buckets": [
+            {
+                "count": REGEX(\d+),
+                "le": 0.001
+            },
+            {
+                "count": REGEX(\d+),
+                "le": 0.002
+            },
+            {
+                "count": REGEX(\d+),
+                "le": 0.003
+            },
+            {
+                "count": REGEX(\d+),
+                "le": 0.004
+            },
+            {
+                "count": REGEX(\d+),
+                "le": 0.005
+            },
+            {
+                "count": REGEX(\d+),
+                "le": 0.01
+            },
+            {
+                "count": REGEX(\d+),
+                "le": 0.025
+            },
+            {
+                "count": REGEX(\d+),
+                "le": 0.05
+            },
+            {
+                "count": REGEX(\d+),
+                "le": 0.1
+            },
+            {
+                "count": REGEX(\d+),
+                "le": 0.25
+            },
+            {
+                "count": REGEX(\d+),
+                "le": 0.5
+            },
+            {
+                "count": REGEX(\d+),
+                "le": 1
+            },
+            {
+                "count": REGEX(\d+),
+                "le": 5
+            },
+            {
+                "count": REGEX(\d+),
+                "le": 10
+            },
+            {
+                "count": REGEX(\d+),
+                "le": "+Inf"
+            }
+        ],
+        "count": REGEX(\d+),
+        "help": "Request duration in seconds",
+        "name": "requestDurationSeconds",
+        "sum": REGEX(.*),
+        "type": "histogram"
+    }
+]
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
