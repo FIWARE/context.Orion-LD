@@ -83,6 +83,13 @@ jobs:
         run: |
           docker run --rm localhost:5000/orion-ld:latest -u
 
+      - name: Set Docker API version for Testcontainers
+        run: |
+          # Docker 29+ requires API v1.44+, tell docker-java to use it
+          mkdir -p src/test/resources
+          echo "api.version=1.44" > src/test/resources/docker-java.properties
+          cat src/test/resources/docker-java.properties
+
       - name: Run tests
         run: mvn clean test -B -ntp
         env:
