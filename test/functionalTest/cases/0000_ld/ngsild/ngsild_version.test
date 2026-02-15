@@ -72,7 +72,7 @@ Date: REGEX(.*)
   "ktrace version": "0.10.0",
   "kalloc version": "0.10.0",
   "khash version": "0.10.0",
-  "kjson version": "0.10.0",
+  "kjson version": "0.10.1",
   "kprom version": "0.1.0",
   "microhttpd version": "1.0.2-0",
   "rapidjson version": REGEX(.*),
