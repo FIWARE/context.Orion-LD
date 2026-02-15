@@ -54,6 +54,13 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Upgrade Testcontainers version
+        run: |
+          # Mintaka uses Testcontainers 1.15.1 (Docker API v1.30) which is too old
+          # for the runner's Docker engine (requires API v1.44+)
+          sed -i 's|<version.org.testcontainers>1.15.1</version.org.testcontainers>|<version.org.testcontainers>1.19.3</version.org.testcontainers>|' pom.xml
+          grep testcontainers pom.xml | head -2
+
       - name: Patch Mintaka docker-compose
         run: |
           # Use our local image (avoids testcontainers variable substitution bugs)
