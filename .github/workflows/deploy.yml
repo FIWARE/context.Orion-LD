@@ -140,7 +140,9 @@ jobs:
           # This avoids pulling from quay.io which has manifest propagation delays
           echo "=== Local images ==="
           buildah images
-          CONTAINER=$(buildah from ${{ steps.build-image.outputs.image }}:${{ env.IMAGE_TAG_PRE }})
+          # buildah-build stores tags lowercased and under localhost/ prefix
+          LOCAL_TAG=$(echo "${{ env.IMAGE_TAG_PRE }}" | tr '[:upper:]' '[:lower:]')
+          CONTAINER=$(buildah from --pull-never localhost/${{ steps.build-image.outputs.image }}:${LOCAL_TAG})
           buildah copy $CONTAINER ./docker/debug/gdbinit /gdbinit
           buildah run $CONTAINER yum -y install gdb
           buildah config --entrypoint '["gdb", "-x", "/gdbinit", "--args", "orionld", "-fg", "-multiservice", "-ngsiv1Autocast"]' $CONTAINER
