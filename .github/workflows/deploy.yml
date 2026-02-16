@@ -148,17 +148,18 @@ jobs:
           buildah config --entrypoint '["gdb", "-x", "/gdbinit", "--args", "orionld", "-fg", "-multiservice", "-ngsiv1Autocast"]' $CONTAINER
           buildah config --port 1026 $CONTAINER
           buildah config --label quay.expires-after=1w $CONTAINER
-          buildah commit --format oci $CONTAINER ${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_PRE }}-GDB
+          GDB_TAG="${LOCAL_TAG}-gdb"
+          buildah commit --format oci $CONTAINER ${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}:${GDB_TAG}
           buildah rm $CONTAINER
           echo "=== GDB image built ==="
-          buildah images | grep GDB
+          buildah images | grep -i gdb
 
       - name: Push GDB To quay.io
         id: push-gdb-to-quay
         uses: redhat-actions/push-to-registry@v2
         with:
           image: ${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}
-          tags: ${{ env.IMAGE_TAG_PRE }}-GDB
+          tags: ${{ env.IMAGE_TAG_PRE }}-gdb
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
