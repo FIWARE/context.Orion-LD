@@ -58,7 +58,6 @@ jobs:
         run: |
           # Mintaka uses Testcontainers 1.15.1 (Docker API v1.30) which is too old
           # for the runner's Docker engine (Docker 29+ requires API v1.44+)
-          # Testcontainers 1.21.3+ defaults to API v1.44
           sed -i 's|<version.org.testcontainers>[^<]*</version.org.testcontainers>|<version.org.testcontainers>1.21.3</version.org.testcontainers>|' pom.xml
           grep testcontainers pom.xml | head -2
 
@@ -83,21 +82,11 @@ jobs:
           echo "=== Patched docker-compose ==="
           find . -name "docker-compose*.yml" -exec cat {} \;
 
-      - name: Configure testcontainers
+      - name: Pre-pull images
         run: |
-          # Tell Testcontainers to use host's docker compose CLI (v2) instead of
-          # the containerized docker/compose:1.29.2 image which uses Docker API v1.32
-          # and is incompatible with Docker 29+ (requires API v1.44+)
-          printf '%s\n' \
-            'docker.client.strategy=org.testcontainers.dockerclient.UnixSocketClientProviderStrategy' \
-            'testcontainers.environmentprovider.local.enabled=true' \
-            > ~/.testcontainers.properties
-          # Also set TESTCONTAINERS_DOCKER_COMPOSE_LOCAL=true to force local compose
-          echo "TESTCONTAINERS_DOCKER_COMPOSE_LOCAL=true" >> $GITHUB_ENV
-          # Pre-pull the image so testcontainers doesn't need to parse the variable
+          # Pre-pull the orion-ld image so testcontainers doesn't timeout pulling it
           docker pull localhost:5000/orion-ld:latest
           docker images | grep orion
-          # Verify docker compose v2 is available
           docker compose version
 
       - name: Verify orion-ld image
@@ -110,26 +99,6 @@ jobs:
           mkdir -p src/test/resources
           echo "api.version=1.44" > src/test/resources/docker-java.properties
           cat src/test/resources/docker-java.properties
-
-      - name: Smoke-test docker-compose stack
-        run: |
-          # Run the compose stack independently to verify orion-ld starts
-          cd src/test/resources/docker-compose
-          docker compose -f docker-compose-it.yml up -d
-          echo "=== Waiting 30s for containers to start ==="
-          sleep 30
-          echo "=== Container status ==="
-          docker compose -f docker-compose-it.yml ps
-          echo "=== orion-ld logs ==="
-          docker compose -f docker-compose-it.yml logs orion-ld 2>&1 | tail -80
-          echo "=== mongo-db logs ==="
-          docker compose -f docker-compose-it.yml logs mongo-db 2>&1 | tail -30
-          echo "=== timescale logs ==="
-          docker compose -f docker-compose-it.yml logs timescale 2>&1 | tail -30
-          # Check if orion-ld is responding
-          docker compose -f docker-compose-it.yml exec -T orion-ld curl -s http://localhost:1026/version || echo "orion-ld not responding yet"
-          # Clean up
-          docker compose -f docker-compose-it.yml down -v
 
       - name: Run tests
         run: mvn clean test -B -ntp
@@ -147,3 +116,5 @@ jobs:
             echo "--- Container $c ($(docker inspect --format '{{.Name}} {{.Config.Image}}' $c)) ---"
             docker logs $c 2>&1 | tail -100 || true
           done
+          echo "=== Docker events (last 2 minutes) ==="
+          docker events --since 2m --until 0s 2>&1 | head -50 || true
