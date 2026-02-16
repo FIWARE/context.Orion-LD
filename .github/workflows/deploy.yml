@@ -147,6 +147,8 @@ jobs:
             ./docker/Dockerfile-gdb
           build-args: |
             BASE_IMAGE=${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_PRE }}
+          extra-args: |
+            --pull-never
 
       - name: Push To quay.io
         id: push-gdb-to-quay
