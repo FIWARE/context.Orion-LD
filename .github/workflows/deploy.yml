@@ -134,6 +134,23 @@ jobs:
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
 
+      - name: Prepare base image for GDB build
+        run: |
+          echo "=== Images in buildah local storage ==="
+          buildah images
+          echo "=== Pulling from quay.io with auth ==="
+          buildah login -u ${{ secrets.QUAY_USERNAME }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
+          for i in 1 2 3 4 5 6 7 8; do
+            if buildah pull quay.io/${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_PRE }}; then
+              echo "Pulled successfully on attempt $i"
+              exit 0
+            fi
+            echo "Attempt $i failed, waiting 15s..."
+            sleep 15
+          done
+          echo "Failed to pull after 8 attempts"
+          exit 1
+
       - name: Build with gdb
         id: build-image-gdb
         uses: redhat-actions/buildah-build@v2
@@ -146,7 +163,7 @@ jobs:
           dockerfiles: |
             ./docker/Dockerfile-gdb
           build-args: |
-            BASE_IMAGE=${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_PRE }}
+            BASE_IMAGE=quay.io/${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_PRE }}
           extra-args: |
             --pull-never
 
