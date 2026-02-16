@@ -134,6 +134,19 @@ jobs:
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
 
+      - name: Wait for quay.io manifest propagation
+        run: |
+          for i in 1 2 3 4 5 6; do
+            if podman pull quay.io/${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_PRE }} 2>/dev/null; then
+              echo "Image available after attempt $i"
+              exit 0
+            fi
+            echo "Attempt $i: manifest not yet available, waiting 15s..."
+            sleep 15
+          done
+          echo "Image still not available after 6 attempts (90s)"
+          exit 1
+
       - name: Build with gdb
         id: build-image-gdb
         uses: redhat-actions/buildah-build@v2
