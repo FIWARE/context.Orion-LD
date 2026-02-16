@@ -62,6 +62,18 @@ jobs:
           sed -i 's|<version.org.testcontainers>[^<]*</version.org.testcontainers>|<version.org.testcontainers>1.21.3</version.org.testcontainers>|' pom.xml
           grep testcontainers pom.xml | head -2
 
+      - name: Patch Mintaka startup timeout
+        run: |
+          # DockerComposeContainer.start() has a default 60s startup timeout which is
+          # too short for Orion-LD + MongoDB + TimescaleDB on GitHub Actions runners.
+          # Add withStartupTimeout to give containers 5 minutes to start.
+          # Add required imports for Duration and ChronoUnit
+          sed -i '1,/^import/{s/^import/import java.time.Duration;\nimport java.time.temporal.ChronoUnit;\nimport/}' src/test/java/org/fiware/mintaka/ComposeTest.java
+          # Add withStartupTimeout call
+          sed -i 's|.withExposedService("timescale", TIMESCALE_PORT);|.withExposedService("timescale", TIMESCALE_PORT)\n\t\t\t.withStartupTimeout(Duration.of(5, ChronoUnit.MINUTES));|' src/test/java/org/fiware/mintaka/ComposeTest.java
+          echo "=== Patched ComposeTest.java ==="
+          grep -A2 "withStartupTimeout\|withExposedService\|import java.time" src/test/java/org/fiware/mintaka/ComposeTest.java
+
       - name: Patch Mintaka docker-compose
         run: |
           # Use our local image (avoids testcontainers variable substitution bugs)
@@ -73,11 +85,20 @@ jobs:
 
       - name: Configure testcontainers
         run: |
-          # Create empty config to suppress "file not found" warning
-          touch ~/.testcontainers.properties
+          # Tell Testcontainers to use host's docker compose CLI (v2) instead of
+          # the containerized docker/compose:1.29.2 image which uses Docker API v1.32
+          # and is incompatible with Docker 29+ (requires API v1.44+)
+          printf '%s\n' \
+            'docker.client.strategy=org.testcontainers.dockerclient.UnixSocketClientProviderStrategy' \
+            'testcontainers.environmentprovider.local.enabled=true' \
+            > ~/.testcontainers.properties
+          # Also set TESTCONTAINERS_DOCKER_COMPOSE_LOCAL=true to force local compose
+          echo "TESTCONTAINERS_DOCKER_COMPOSE_LOCAL=true" >> $GITHUB_ENV
           # Pre-pull the image so testcontainers doesn't need to parse the variable
           docker pull localhost:5000/orion-ld:latest
           docker images | grep orion
+          # Verify docker compose v2 is available
+          docker compose version
 
       - name: Verify orion-ld image
         run: |
