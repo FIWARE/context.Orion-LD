@@ -146,7 +146,7 @@ jobs:
           dockerfiles: |
             ./docker/Dockerfile-gdb
           build-args: |
-            BASE_IMAGE=localhost/${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_PRE }}
+            BASE_IMAGE=${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_PRE }}
 
       - name: Push To quay.io
         id: push-gdb-to-quay
