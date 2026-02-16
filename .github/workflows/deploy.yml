@@ -134,45 +134,29 @@ jobs:
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
 
-      - name: Prepare base image for GDB build
+      - name: Build GDB image from local storage
         run: |
-          echo "=== Images in buildah local storage ==="
+          # Build GDB layer directly on the local image using buildah
+          # This avoids pulling from quay.io which has manifest propagation delays
+          echo "=== Local images ==="
           buildah images
-          echo "=== Pulling from quay.io with auth ==="
-          buildah login -u ${{ secrets.QUAY_USERNAME }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
-          for i in 1 2 3 4 5 6 7 8; do
-            if buildah pull quay.io/${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_PRE }}; then
-              echo "Pulled successfully on attempt $i"
-              exit 0
-            fi
-            echo "Attempt $i failed, waiting 15s..."
-            sleep 15
-          done
-          echo "Failed to pull after 8 attempts"
-          exit 1
+          CONTAINER=$(buildah from ${{ steps.build-image.outputs.image }}:${{ env.IMAGE_TAG_PRE }})
+          buildah copy $CONTAINER ./docker/debug/gdbinit /gdbinit
+          buildah run $CONTAINER yum -y install gdb
+          buildah config --entrypoint '["gdb", "-x", "/gdbinit", "--args", "orionld", "-fg", "-multiservice", "-ngsiv1Autocast"]' $CONTAINER
+          buildah config --port 1026 $CONTAINER
+          buildah config --label quay.expires-after=1w $CONTAINER
+          buildah commit --format oci $CONTAINER ${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_PRE }}-GDB
+          buildah rm $CONTAINER
+          echo "=== GDB image built ==="
+          buildah images | grep GDB
 
-      - name: Build with gdb
-        id: build-image-gdb
-        uses: redhat-actions/buildah-build@v2
-        with:
-          image: ${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}
-          tags: ${{ env.IMAGE_TAG_PRE }}-GDB
-          oci: true
-          labels: |
-            quay.expires-after=1w
-          dockerfiles: |
-            ./docker/Dockerfile-gdb
-          build-args: |
-            BASE_IMAGE=quay.io/${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_PRE }}
-          extra-args: |
-            --pull-never
-
-      - name: Push To quay.io
+      - name: Push GDB To quay.io
         id: push-gdb-to-quay
         uses: redhat-actions/push-to-registry@v2
         with:
-          image: ${{ steps.build-image-gdb.outputs.image }}
-          tags: ${{ steps.build-image-gdb.outputs.tags }}
+          image: ${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}
+          tags: ${{ env.IMAGE_TAG_PRE }}-GDB
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
