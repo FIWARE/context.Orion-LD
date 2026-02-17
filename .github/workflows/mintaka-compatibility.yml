@@ -54,6 +54,25 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Upgrade Testcontainers for Docker 29+ compatibility
+        run: |
+          # Mintaka uses Testcontainers 1.15.1 (Docker API v1.30) which is too old
+          # for the runner's Docker engine (Docker 29+ requires API v1.44+)
+          sed -i 's|<version.org.testcontainers>[^<]*</version.org.testcontainers>|<version.org.testcontainers>1.21.3</version.org.testcontainers>|' pom.xml
+          grep testcontainers pom.xml | head -2
+
+      - name: Patch Mintaka startup timeout
+        run: |
+          # DockerComposeContainer.start() has a default 60s startup timeout which is
+          # too short for Orion-LD + MongoDB + TimescaleDB on GitHub Actions runners.
+          # Add withStartupTimeout to give containers 5 minutes to start.
+          # Add required imports for Duration and ChronoUnit
+          sed -i '1,/^import/{s/^import/import java.time.Duration;\nimport java.time.temporal.ChronoUnit;\nimport/}' src/test/java/org/fiware/mintaka/ComposeTest.java
+          # Add withStartupTimeout call
+          sed -i 's|.withExposedService("timescale", TIMESCALE_PORT);|.withExposedService("timescale", TIMESCALE_PORT)\n\t\t\t.withStartupTimeout(Duration.of(5, ChronoUnit.MINUTES));|' src/test/java/org/fiware/mintaka/ComposeTest.java
+          echo "=== Patched ComposeTest.java ==="
+          grep -A2 "withStartupTimeout\|withExposedService\|import java.time" src/test/java/org/fiware/mintaka/ComposeTest.java
+
       - name: Patch Mintaka docker-compose
         run: |
           # Use our local image (avoids testcontainers variable substitution bugs)
@@ -63,17 +82,23 @@ jobs:
           echo "=== Patched docker-compose ==="
           find . -name "docker-compose*.yml" -exec cat {} \;
 
-      - name: Configure testcontainers
+      - name: Pre-pull images
         run: |
-          # Create empty config to suppress "file not found" warning
-          touch ~/.testcontainers.properties
-          # Pre-pull the image so testcontainers doesn't need to parse the variable
+          # Pre-pull the orion-ld image so testcontainers doesn't timeout pulling it
           docker pull localhost:5000/orion-ld:latest
           docker images | grep orion
+          docker compose version
 
       - name: Verify orion-ld image
         run: |
           docker run --rm localhost:5000/orion-ld:latest -u
+
+      - name: Set Docker API version for Testcontainers
+        run: |
+          # Docker 29+ requires API v1.44+, tell docker-java to use it
+          mkdir -p src/test/resources
+          echo "api.version=1.44" > src/test/resources/docker-java.properties
+          cat src/test/resources/docker-java.properties
 
       - name: Run tests
         run: mvn clean test -B -ntp
@@ -84,10 +109,12 @@ jobs:
       - name: Show container logs on failure
         if: failure()
         run: |
-          echo "=== Docker containers ==="
+          echo "=== Docker containers (all) ==="
           docker ps -a
           echo "=== Recent container logs ==="
-          for c in $(docker ps -aq | head -5); do
-            echo "--- Container $c ---"
+          for c in $(docker ps -aq | head -10); do
+            echo "--- Container $c ($(docker inspect --format '{{.Name}} {{.Config.Image}}' $c)) ---"
             docker logs $c 2>&1 | tail -100 || true
           done
+          echo "=== Docker events (last 2 minutes) ==="
+          docker events --since 2m --until 0s 2>&1 | head -50 || true

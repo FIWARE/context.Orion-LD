@@ -53,9 +53,12 @@ do
     if [ $kproj = "kprom" ]
     then
         branch=release/0.1.0
+    elif [ $kproj = "kjson" ]
+    then
+        branch=release/0.10.1
     fi
     
-    echo checking out $branch
+    echo checking out $kproj $branch
     git checkout $branch
     make
     make install
