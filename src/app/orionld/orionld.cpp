@@ -837,8 +837,8 @@ thread_local char libLogBuffer[1024 * 32];
 //
 static void libLogFunction
 (
-  int          severity,              // 1: Error, 2: Warning, 3: Info, 4: Verbose, 5: Trace
-  int          level,                 // Trace level || Error code || Info Code
+  int          severity,              // 1: Error, 2: Warning, 3: Info, 4: Verbose, 5: Trace, 7: Fatal
+  int          level,                 // Trace level || Error/Exit code
   const char*  fileName,
   int          lineNo,
   const char*  functionName,
@@ -848,14 +848,9 @@ static void libLogFunction
 {
   va_list  args;
 
-  /* "Parse" the variable arguments */
   va_start(args, format);
-
-  /* Print message to variable */
   vsnprintf(libLogBuffer, sizeof(libLogBuffer), format, args);
   va_end(args);
-
-  // KT_I("Got a lib log message, severity: %d: %s", severity, libLogBuffer);
 
   if (severity == 1)
     ktOut(fileName, lineNo, functionName, 'E', -1, "%s", libLogBuffer);
@@ -866,7 +861,9 @@ static void libLogFunction
   else if (severity == 4)
     ktOut(fileName, lineNo, functionName, 'V', -1, "%s", libLogBuffer);
   else if (severity == 5)
-    ktOut(fileName, lineNo, functionName, 'T', level + KtKjParse, "%s", libLogBuffer);
+    ktOut(fileName, lineNo, functionName, 'T', level, "%s", libLogBuffer);
+  else if (severity == 7)
+    ktOut(fileName, lineNo, functionName, 'X', level, "%s", libLogBuffer);
 }
 
 

@@ -35,6 +35,19 @@ This document describes the coding conventions used in Orion-LD and its supporti
 ## 2. Header Files
 
 ### Include Guards
+The guard name is `REPONAME_FILENAME_H_` — the repo/library name as prefix, then the filename (camelCase uppercased, no underscores inserted), then `_H_` with trailing underscore.
+
+For k-libs:
+```c
+#ifndef KJSON_KJPARSE_H_
+#define KJSON_KJPARSE_H_
+
+// content
+
+#endif  // KJSON_KJPARSE_H_
+```
+
+For Orion-LD (includes directory path from repo root):
 ```cpp
 #ifndef SRC_LIB_ORIONLD_CONTEXTCACHE_ORIONLDCONTEXTCACHE_H_
 #define SRC_LIB_ORIONLD_CONTEXTCACHE_ORIONLDCONTEXTCACHE_H_
@@ -43,9 +56,74 @@ This document describes the coding conventions used in Orion-LD and its supporti
 
 #endif  // SRC_LIB_ORIONLD_CONTEXTCACHE_ORIONLDCONTEXTCACHE_H_
 ```
-Format: `SRC_LIB_ORIONLD_[PATH]_[FILENAME]_H_`
 
-### Standard Structure
+The repo prefix avoids collisions between identically named headers across libraries (e.g., `KBASE_VERSION_H_`, `KJSON_VERSION_H_`, `KHASH_VERSION_H_`).
+
+### File Header (K-Libs)
+Every `.c` and `.h` file in a k-lib must have the Apache 2.0 file header. Blank comment lines use `// ` (with trailing space).
+
+For `.c` files, the header goes at the very top:
+```c
+//
+// FILE            kaAlloc.c
+//
+// AUTHOR          Ken Zangelin
+//
+// Copyright 2019 Ken Zangelin
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with theLicense.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+#include <stdlib.h>                    // calloc
+```
+
+For `.h` files, the include guard comes first, then the header:
+```c
+#ifndef KALLOC_KAALLOC_H_
+#define KALLOC_KAALLOC_H_
+
+//
+// FILE            kaAlloc.h
+//
+// AUTHOR          Ken Zangelin
+//
+// Copyright 2019 Ken Zangelin
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with theLicense.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+#include "kalloc/KAlloc.h"            // KAlloc
+
+
+
+// -----------------------------------------------------------------------------
+//
+// kaAlloc -
+//
+extern char* kaAlloc(KAlloc* kaP, unsigned long long size);
+
+#endif  // KALLOC_KAALLOC_H_
+```
+
+### Standard Structure (Orion-LD)
 ```cpp
 /*
 *
@@ -191,6 +269,55 @@ ReturnType functionName(ParamType paramP)
 - 2 spaces per level (no tabs)
 - Consistent throughout
 
+### Pointer Declarations
+The `*` belongs to the **type**, not the variable. The pointer is part of the type:
+```c
+// Correct — * pegged to the type
+KjNode*  nodeP   = NULL;
+char*    name    = "entity";
+int*     countsP = NULL;
+
+// Wrong — * pegged to the variable
+KjNode *nodeP;
+char *name;
+```
+
+### One Variable Per Line
+Never declare multiple variables on the same line. This eliminates the `int *a, b` ambiguity entirely:
+```c
+// Correct
+int   count = 0;
+int   total = 0;
+char* name  = NULL;
+
+// Wrong — multiple variables on one line
+int count, total;
+int *a, b;  // b is not a pointer — this is why
+```
+
+### Parentheses Spacing
+No space between a function name and `(`. Always a space between a keyword and `(`:
+```c
+// Functions — no space before (
+kaAlloc(&kaP, size);
+kjLookup(entityP, "id");
+strcmp(a, b);
+
+// Keywords — space before (
+if (condition)
+for (int ix = 0; ix < len; ix++)
+while (running)
+switch (type)
+```
+
+### Typecasts
+No space inside the parentheses, one space after:
+```c
+int*   xP  = (int*) vP;
+char*  buf = (char*) calloc(1, size);
+float  f   = (float) intValue;
+```
+
 ### Braces
 ```cpp
 // Opening brace on same line for functions
@@ -209,9 +336,23 @@ else
   // body
 }
 
-// Single statement: no braces, on next line
+// Single statement body: NEVER use braces
 if (condition)
   singleStatement();
+
+if (ptr == NULL)
+  return NULL;
+
+for (int ix = 0; ix < items; ix++)
+  process(ix);
+
+while (retries < 10)
+  retry();
+
+if (condition)
+  doThis();
+else
+  doThat();
 ```
 
 ### Alignment
@@ -237,6 +378,22 @@ KjNode*  typeP  = kjLookup(entityP, "type");   // Entity Type
 
 ## 6. Comments
 
+### C++ Style Only
+Use `//` comments exclusively. Never use `/* */` block comments — they're ugly and don't nest. `//` comments have been standard C since C99 (1999).
+
+### Inline Comment Spacing
+Always leave **at least 2 spaces** before a trailing `//` comment:
+```c
+char* buf = kaAlloc(&kaP, size);  // Allocate from request pool
+int   len = strlen(name);        // Cache length
+```
+
+Wrong:
+```c
+char* buf = kaAlloc(&kaP, size); // Too close
+char* buf = kaAlloc(&kaP, size);// No space at all
+```
+
 ### Section Separators
 ```cpp
 // -----------------------------------------------------------------------------
@@ -245,10 +402,36 @@ KjNode*  typeP  = kjLookup(entityP, "type");   // Entity Type
 //
 ```
 
-### Inline Comments
-```cpp
-char* buf = kaAlloc(&orionldState.kalloc, size);  // Allocate from request pool
+### Three Blank Lines Before Separators
+There must be **exactly 3 blank lines** before every `// -----` separator block. This applies everywhere: after the license header, after `#include` blocks, and between functions.
+
+```c
+#include "module/lastInclude.h"        // lastThing
+
+
+
+// -----------------------------------------------------------------------------
+//
+// firstFunction -
+//
+int firstFunction(void)
+{
+  return 0;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// secondFunction -
+//
+void secondFunction(void)
+{
+  // ...
+}
 ```
+
+This visual spacing makes it easy to distinguish function boundaries when scrolling through source code.
 
 ### Multi-line Comments
 ```cpp
@@ -444,12 +627,6 @@ if (strcmp(name, "modifiedAt")  == 0) continue;
 - No C++ features in k-lib code
 - Use `extern "C"` when including from C++
 
-### K-Libs Include Guard Style
-```c
-#ifndef KJSON_KJBUILDER_H_
-#define KJSON_KJBUILDER_H_
-```
-
 ### K-Libs Error Handling
 ```c
 // Return NULL on allocation failure
@@ -483,7 +660,12 @@ NAMING:
 
 FORMATTING:
   Indent:       2 spaces
-  Braces:       Same line for functions, new line for if/for/while
+  Braces:       New line for functions and multi-line if/for/while; no braces for single-statement bodies
+  Pointers:     KjNode* nodeP (star pegged to type, one variable per line)
+  Parens:       func() (no space), if () (space)
+  Casts:        (char*) ptr (no space inside, space after)
+  Comments:     // only (no /* */), at least 2 spaces before //
+  Blank lines:  3 blank lines before every // ----- separator
   Line length:  ~120 chars max
 
 MEMORY:
