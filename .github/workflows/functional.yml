@@ -37,12 +37,12 @@ jobs:
           echo "Changed files:"
           echo "$CHANGED"
 
-          # Check if any src/ or test/functionalTest/ files changed
-          if echo "$CHANGED" | grep -qE '^(src/|test/functionalTest/)'; then
-            echo "Source or functional test changes detected - running tests"
+          # Check if any src/, test/functionalTest/, workflow, or harness files changed
+          if echo "$CHANGED" | grep -qE '^(src/|test/functionalTest/|\.github/workflows/functional\.yml)'; then
+            echo "Source, functional test, or workflow changes detected - running tests"
             echo "should_run=true" >> $GITHUB_OUTPUT
           else
-            echo "::notice::Skipping functional tests - no changes in src/ or test/functionalTest/"
+            echo "::notice::Skipping functional tests - no changes in src/, test/functionalTest/, or workflow"
             echo "should_run=false" >> $GITHUB_OUTPUT
           fi
 
