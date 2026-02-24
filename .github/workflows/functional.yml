@@ -6,7 +6,7 @@ on:
 
 env:
   IMAGE_NAME: localhost:5000/orion-ld-test:latest
-  IGNORE_TEST: '0000_ipv6_support/ipv4_ipv6_both.test 0740_crash_with_json_object_for_attributes/json_object_format.test 0000_ngsild/ngsild_datasetId_entity_relationship_creation.test 0000_ngsild/ngsild_entities_get_by_type.test 0000_ngsild/ngsild_entity_creation_strange_chars_in_attr_names.test 0000_ngsild/ngsild_entity_creation_with_japanese_chars.test 0000_ngsild/ngsild_issue_0737.test 0000_ngsild/ngsild_query_entities_geo_error.test'
+  IGNORE_TEST: ''
 
 ## Cancel running tests, get faster test-results for the latest commit
 concurrency:
