@@ -152,9 +152,7 @@ KjNode* mongocRelationshipsGet(const char* entityName)
   // Connection
   mongocConnectionGet(orionldState.tenantP, DbEntities);
 
-  //
   // Run the query
-  //
   bson_error_t          mongoError;
   mongoc_read_prefs_t*  readPrefs    = mongoc_read_prefs_new(MONGOC_READ_NEAREST);
   mongoc_cursor_t*      mongoCursorP = mongoc_collection_aggregate(orionldState.mongoc.entitiesP, MONGOC_QUERY_NONE, pipeline, NULL, readPrefs);
@@ -205,7 +203,9 @@ KjNode* mongocRelationshipsGet(const char* entityName)
 
   // create 'referencedBy' array
   typeArray = kjObject(orionldState.kjsonP, "referencedBy");
-
+  if (typeArray == NULL)
+    KT_X(1, "Internal Error (creating 'referencedBy' array): kjObject: out of memory");
+  
   // fill 'referencedBy' array if we have relationships
   if (kjTypeArray != NULL)
     relExtractFromMongo(kjTypeArray, typeArray);

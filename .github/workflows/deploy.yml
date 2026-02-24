@@ -21,23 +21,23 @@ jobs:
     if: ${{ github.repository == 'FIWARE/context.Orion-LD' }}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v3
 
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push
         id: docker_build
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v5
         with:
           push: true
           tags: |
@@ -48,13 +48,13 @@ jobs:
 
       - name: Build and push with gdb
         id: docker_build_gdb
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v5
         with:
           push: true
           tags: |
             ${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_PRE }}-GDB
           build-args: |
-            BASE_VERSION=${{ env.IMAGE_TAG_PRE }}
+            BASE_IMAGE=${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_PRE }}
           file: docker/Dockerfile-gdb
           no-cache: true
 
@@ -69,7 +69,7 @@ jobs:
           args: --file=docker/Dockerfile-ubi
 
       - name: Upload result to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v1
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: snyk.sarif
 
@@ -79,23 +79,23 @@ jobs:
     if: ${{ github.repository == 'FIWARE/context.Orion-LD' }}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v3
 
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push
         id: docker_build
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v5
         with:
           push: true
           tags: ${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_PRE }}-${{ env.IMAGE_TAG_DEBUG }}
@@ -110,7 +110,7 @@ jobs:
     if: ${{ github.repository == 'FIWARE/context.Orion-LD' }}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Build Image
         id: build-image
@@ -134,26 +134,32 @@ jobs:
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
 
-      - name: Build with gdb
-        id: build-image-gdb
-        uses: redhat-actions/buildah-build@v2
-        with:
-          image: ${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}
-          tags: ${{ env.IMAGE_TAG_PRE }}-GDB
-          oci: true
-          labels: |
-            quay.expires-after=1w
-          dockerfiles: |
-            ./docker/Dockerfile-gdb
-          build-args: |
-            BASE_VERSION=${{ env.IMAGE_TAG_PRE }}
+      - name: Build GDB image from local storage
+        run: |
+          # Build GDB layer directly on the local image using buildah
+          # This avoids pulling from quay.io which has manifest propagation delays
+          echo "=== Local images ==="
+          buildah images
+          # buildah-build stores tags lowercased and under localhost/ prefix
+          LOCAL_TAG=$(echo "${{ env.IMAGE_TAG_PRE }}" | tr '[:upper:]' '[:lower:]')
+          CONTAINER=$(buildah from --pull-never localhost/${{ steps.build-image.outputs.image }}:${LOCAL_TAG})
+          buildah copy $CONTAINER ./docker/debug/gdbinit /gdbinit
+          buildah run $CONTAINER yum -y install gdb
+          buildah config --entrypoint '["gdb", "-x", "/gdbinit", "--args", "orionld", "-fg", "-multiservice", "-ngsiv1Autocast"]' $CONTAINER
+          buildah config --port 1026 $CONTAINER
+          buildah config --label quay.expires-after=1w $CONTAINER
+          GDB_TAG="${LOCAL_TAG}-gdb"
+          buildah commit --format oci $CONTAINER ${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}:${GDB_TAG}
+          buildah rm $CONTAINER
+          echo "=== GDB image built ==="
+          buildah images | grep -i gdb
 
-      - name: Push To quay.io
+      - name: Push GDB To quay.io
         id: push-gdb-to-quay
         uses: redhat-actions/push-to-registry@v2
         with:
-          image: ${{ steps.build-image-gdb.outputs.image }}
-          tags: ${{ steps.build-image-gdb.outputs.tags }}
+          image: ${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}
+          tags: ${{ env.IMAGE_TAG_PRE }}-gdb
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
@@ -165,7 +171,7 @@ jobs:
     if: ${{ github.repository == 'FIWARE/context.Orion-LD' }}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Build Image
         id: build-image

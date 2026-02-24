@@ -2,7 +2,13 @@
 
 Docker images for Ubuntu and CentOS are produced for each Pull Request merged into the `develop` branch.
 To create and run the Orion-LD Docker image, it is necessary to have [Docker](https://www.docker.com/).
-and [Docker Compose](https://docs.docker.com/compose) installed. A sample `docker-compose.yml` can be found below:
+and [Docker Compose](https://docs.docker.com/compose) installed.
+
+## Requirements
+Orion-LD requires **MongoDB 4.2 or higher**. This is due to the MongoDB C driver (libmongoc) version used,
+which requires wire protocol version 8+ (MongoDB 4.2+). The example below uses `mongo:4.4`.
+
+A sample `docker-compose.yml` can be found below:
 
 ```yaml
 version: "3.5"
@@ -24,7 +30,7 @@ services:
 
   # Databases
   mongo-db:
-    image: mongo:3.6
+    image: mongo:4.4
     hostname: mongo-db
     container_name: db-mongo
     expose:

@@ -102,10 +102,10 @@ static KjNode* kjDbAttrLookupInDbEntity(KjNode* dbEntityP, const char* longAttrN
 //
 static void* ddsPrePopulateDbInThread(void* vP)
 {
-  char* what       = (char*) vP;
-  char* concept    = what;
-  char* configPath = NULL;
-  bool  isService  = false;
+  char* what        = (char*) vP;
+  char* conceptName = what;
+  char* configPath  = NULL;
+  bool  isService   = false;
 
   if      (strcmp(what, "topics")   == 0) { configPath = (char*) "dds.ngsild.topics"; }
   else if (strcmp(what, "services") == 0) { configPath = (char*) "dds.ngsild.services"; isService = true; }
@@ -130,7 +130,7 @@ static void* ddsPrePopulateDbInThread(void* vP)
     return NULL;
   }
 
-  KT_TREE(topics, concept, StDdsPrePopulate);
+  KT_TREE(topics, conceptName, StDdsPrePopulate);
   KT_T(StDdsPrePopulate, "-------------------------------------------------------------");
 
   int         entities = kjChildCount(topics);
@@ -148,7 +148,7 @@ static void* ddsPrePopulateDbInThread(void* vP)
 
   for (KjNode* topic = topics->value.firstChildP; topic != NULL; topic = topic->next)
   {
-    KT_T(StDdsPrePopulate, "%s '%s'", concept, topic->name);
+    KT_T(StDdsPrePopulate, "%s '%s'", conceptName, topic->name);
     KjNode* entityTypeNode = kjLookup(topic, "entityType");
     KjNode* entityIdNode   = kjLookup(topic, "entityId");
     KjNode* attrNameNode   = kjLookup(topic, "attribute");
