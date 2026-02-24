@@ -621,6 +621,7 @@ do
   elif [ "$1" == "-tk" ];            then CB_DIFF_TOOL=tkdiff;
   elif [ "$1" == "-meld" ];          then CB_DIFF_TOOL=meld;
   elif [ "$1" == "-diff" ];          then CB_DIFF_TOOL=diff;
+  elif [ "$1" == "-kdiff" ];         then CB_DIFF_TOOL=$(cd "$(dirname "$0")/../.." && pwd)/../ktest/ktestGui.py;
   elif [ "$1" == "--loud" ];         then loud=on;
   elif [ "$1" == "--dryrun" ];       then dryrun=on;
   elif [ "$1" == "--keep" ];         then keep=on;
@@ -1277,9 +1278,9 @@ function partExecute()
         endDate=$(date)
         if [ $blockDiff == 'yes' ]
         then
-          $CB_DIFF_TOOL $dirname/$filename.out.sorted $dirname/$filename.regexpect.sorted
+          $CB_DIFF_TOOL $dirname/$filename.regexpect.sorted $dirname/$filename.out.sorted
         else
-          $CB_DIFF_TOOL $dirname/$filename.out $dirname/$filename.regexpect
+          $CB_DIFF_TOOL $dirname/$filename.regexpect $dirname/$filename.out
         fi
         logMsg "diff tool $CB_DIFF_TOOL finished"
       fi
