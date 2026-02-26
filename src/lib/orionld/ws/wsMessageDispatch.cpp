@@ -209,7 +209,7 @@ static void wsCreateSubscription(WsConnection* wsP, KjNode* bodyP)
       kjChildAdd(notifP, endpointP);
     }
 
-    uriP = kjString(orionldState.kjsonP, "uri", "http://ws-placeholder:0");
+    uriP = kjString(orionldState.kjsonP, "uri", "ws://ws-placeholder:0");
     kjChildAdd(endpointP, uriP);
   }
 
