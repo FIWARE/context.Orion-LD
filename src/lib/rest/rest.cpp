@@ -1431,10 +1431,7 @@ static MHD_Result connectionTreat
     if (*con_cls == NULL)
     {
       KT_T(StWs, "WebSocket URL path detected (first call): %s", url);
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdangling-pointer"
-      *con_cls = &cls;  // to "acknowledge" the first call
-#pragma GCC diagnostic pop
+      *con_cls = (void*) 1;  // non-NULL marker to "acknowledge" the first call
       return MHD_YES;
     }
 
