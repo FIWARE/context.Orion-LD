@@ -189,6 +189,7 @@ function usage()
   echo "$empty [-ld (only ngsild tests)]"
   echo "$empty [-troe (only ngsild TRoE (Temporal Representation of Entities) tests)]"
   echo "$empty [-dds (only DDS tests)]"
+  echo "$empty [-ws (only WebSocket tests)]"
   echo "$empty [-eb (external broker)]"
   echo "$empty [-tk (on error, show the diff using tkdiff)]"
   echo "$empty [-meld (on error, show the diff using meld)]"
@@ -630,6 +631,7 @@ do
   elif [ "$1" == "--dir" ];          then dir="$2"; dirGiven=yes; shift;
   elif [ "$1" == "-ld" ];            then dir=test/functionalTest/cases/0000_ld;dirGiven=yes;
   elif [ "$1" == "-dds" ];           then dir=test/functionalTest/cases/0000_ld/dds;dirGiven=yes;
+  elif [ "$1" == "-ws" ];            then dir=test/functionalTest/cases/0000_ld/ws;dirGiven=yes;
   elif [ "$1" == "-troe" ];          then dir=test/functionalTest/cases/0000_ld/troe;dirGiven=yes;
   elif [ "$1" == "-api" ];           then dir=test/functionalTest/cases/0000_ld/ngsild;dirGiven=yes;
   elif [ "$1" == "--fromIx" ];       then fromIx=$2; shift;
