@@ -997,6 +997,8 @@ function ftClientStart()
   which ftClient >> $LOG_FILE
   ftClient --port $_port $_verbose $_traceLevels $_logDir $_dds $_ddsService &
 
+  export FT_PORT=$_port
+
   _port=0
   _verbose=""
   _traceLevels=""
