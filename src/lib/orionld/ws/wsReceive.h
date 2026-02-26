@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_TYPES_PROTOCOL_H_
-#define SRC_LIB_ORIONLD_TYPES_PROTOCOL_H_
+#ifndef SRC_LIB_ORIONLD_WS_WSRECEIVE_H_
+#define SRC_LIB_ORIONLD_WS_WSRECEIVE_H_
 
 /*
 *
-* Copyright 2022 FIWARE Foundation e.V.
+* Copyright 2026 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -30,33 +30,10 @@
 
 // -----------------------------------------------------------------------------
 //
-// Protocol -
+// wsReceiveLoop - receive loop thread function for a WebSocket connection
 //
-typedef enum Protocol
-{
-  NO_PROTOCOL,
-  HTTP,
-  HTTPS,
-  MQTT,
-  MQTTS,
-  WS,
-  WSS
-} Protocol;
-
-
-
-// -----------------------------------------------------------------------------
+// arg is a WsConnection*
 //
-// protocolToString -
-//
-extern const char* protocolToString(Protocol protocol);
+extern void* wsReceiveLoop(void* arg);
 
-
-
-// -----------------------------------------------------------------------------
-//
-// protocolFromString -
-//
-extern Protocol protocolFromString(const char* protocolString);
-
-#endif  // SRC_LIB_ORIONLD_TYPES_PROTOCOL_H_
+#endif  // SRC_LIB_ORIONLD_WS_WSRECEIVE_H_

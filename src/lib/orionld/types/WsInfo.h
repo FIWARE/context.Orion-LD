@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_TYPES_PROTOCOL_H_
-#define SRC_LIB_ORIONLD_TYPES_PROTOCOL_H_
+#ifndef SRC_LIB_ORIONLD_TYPES_WSINFO_H_
+#define SRC_LIB_ORIONLD_TYPES_WSINFO_H_
 
 /*
 *
-* Copyright 2022 FIWARE Foundation e.V.
+* Copyright 2026 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -28,35 +28,17 @@
 
 
 
-// -----------------------------------------------------------------------------
-//
-// Protocol -
-//
-typedef enum Protocol
+/* ****************************************************************************
+*
+* WsInfo - WebSocket connection info (parallel to MqttInfo)
+*
+* Most info lives on the CachedSubscription.
+* wsConnectionP is the opaque pointer to the live WS stream/socket.
+*/
+typedef struct WsInfo
 {
-  NO_PROTOCOL,
-  HTTP,
-  HTTPS,
-  MQTT,
-  MQTTS,
-  WS,
-  WSS
-} Protocol;
+  void*   wsConnectionP;   // Opaque pointer to WsConnection
+  int     fd;              // Raw socket file descriptor for the WS connection
+} WsInfo;
 
-
-
-// -----------------------------------------------------------------------------
-//
-// protocolToString -
-//
-extern const char* protocolToString(Protocol protocol);
-
-
-
-// -----------------------------------------------------------------------------
-//
-// protocolFromString -
-//
-extern Protocol protocolFromString(const char* protocolString);
-
-#endif  // SRC_LIB_ORIONLD_TYPES_PROTOCOL_H_
+#endif  // SRC_LIB_ORIONLD_TYPES_WSINFO_H_

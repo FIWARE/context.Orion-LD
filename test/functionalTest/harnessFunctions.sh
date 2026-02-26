@@ -2176,6 +2176,161 @@ function ros2ServiceStop
 
 
 
+# ------------------------------------------------------------------------------
+#
+# wsConnect - connect to broker via WebSocket and create a subscription
+#
+# Parameters:
+#   The payload body is passed as the first parameter (JSON with metadata+body)
+#   --port <port>   ftClient port (default: $FT_PORT)
+#
+# Returns:
+#   The subscription ID (via WS-Subscription-Id response header)
+#   Sets $wsSubId with the subscription ID
+#
+function wsConnect()
+{
+  _port=${FT_PORT:-7701}
+  _payload=""
+
+  while [ "$#" != 0 ]
+  do
+    if   [ "$1" == "--port" ];    then _port=$2; shift;
+    elif [ "$1" == "--payload" ]; then _payload="$2"; shift;
+    else
+      echo "Bad parameter for wsConnect: $1"
+      exit 1
+    fi
+    shift
+  done
+
+  _brokerPort=${CB_PORT:-9999}
+  _response=$(curl -s -X POST -d "$_payload" "http://127.0.0.1:$_port/ws/connect?brokerPort=$_brokerPort" -H "Content-Type: application/json")
+  wsSubId=$(echo "$_response" | python3 -c "import sys,json; print(json.load(sys.stdin).get('subscriptionId',''))" 2>/dev/null)
+}
+
+
+
+# ------------------------------------------------------------------------------
+#
+# wsSend - send a JSON message over an existing WS connection
+#
+# Parameters:
+#   $1 - subscription ID
+#   --port <port>   ftClient port (default: $FT_PORT)
+#   --payload <json>  JSON payload to send
+#
+function wsSend()
+{
+  _port=${FT_PORT:-7701}
+  _subId=""
+  _payload=""
+
+  while [ "$#" != 0 ]
+  do
+    if   [ "$1" == "--port" ];    then _port=$2; shift;
+    elif [ "$1" == "--subId" ];   then _subId=$2; shift;
+    elif [ "$1" == "--payload" ]; then _payload="$2"; shift;
+    else
+      echo "Bad parameter for wsSend: $1"
+      exit 1
+    fi
+    shift
+  done
+
+  curl -s -X POST -d "$_payload" http://127.0.0.1:$_port/ws/$_subId/send -H "Content-Type: application/json"
+}
+
+
+
+# ------------------------------------------------------------------------------
+#
+# wsDump - return accumulated WS notifications for a subscription
+#
+# Parameters:
+#   --subId <subId>   subscription ID
+#   --port <port>     ftClient port (default: $FT_PORT)
+#
+function wsDump()
+{
+  _port=${FT_PORT:-7701}
+  _subId=""
+
+  while [ "$#" != 0 ]
+  do
+    if   [ "$1" == "--port" ];    then _port=$2; shift;
+    elif [ "$1" == "--subId" ];   then _subId=$2; shift;
+    else
+      echo "Bad parameter for wsDump: $1"
+      exit 1
+    fi
+    shift
+  done
+
+  sleep 0.2
+  orionCurl --url /ws/$_subId/dump --port $_port --noPayloadCheck
+}
+
+
+
+# ------------------------------------------------------------------------------
+#
+# wsClose - close a WS connection
+#
+# Parameters:
+#   --subId <subId>   subscription ID
+#   --port <port>     ftClient port (default: $FT_PORT)
+#
+function wsClose()
+{
+  _port=${FT_PORT:-7701}
+  _subId=""
+
+  while [ "$#" != 0 ]
+  do
+    if   [ "$1" == "--port" ];    then _port=$2; shift;
+    elif [ "$1" == "--subId" ];   then _subId=$2; shift;
+    else
+      echo "Bad parameter for wsClose: $1"
+      exit 1
+    fi
+    shift
+  done
+
+  curl -s -X POST http://127.0.0.1:$_port/ws/$_subId/close
+}
+
+
+
+# ------------------------------------------------------------------------------
+#
+# wsReset - clear accumulated notifications for a subscription
+#
+# Parameters:
+#   --subId <subId>   subscription ID
+#   --port <port>     ftClient port (default: $FT_PORT)
+#
+function wsReset()
+{
+  _port=${FT_PORT:-7701}
+  _subId=""
+
+  while [ "$#" != 0 ]
+  do
+    if   [ "$1" == "--port" ];    then _port=$2; shift;
+    elif [ "$1" == "--subId" ];   then _subId=$2; shift;
+    else
+      echo "Bad parameter for wsReset: $1"
+      exit 1
+    fi
+    shift
+  done
+
+  curl -s -X POST http://127.0.0.1:$_port/ws/$_subId/reset
+}
+
+
+
 export -f dbInit
 export -f dbList
 export -f dbDrop
@@ -2223,3 +2378,8 @@ export -f ftClientStart
 export -f ftClientStop
 export -f ros2ServiceStart
 export -f ros2ServiceStop
+export -f wsConnect
+export -f wsSend
+export -f wsDump
+export -f wsClose
+export -f wsReset

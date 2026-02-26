@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_TYPES_PROTOCOL_H_
-#define SRC_LIB_ORIONLD_TYPES_PROTOCOL_H_
+#ifndef SRC_LIB_ORIONLD_WS_WSUPGRADE_H_
+#define SRC_LIB_ORIONLD_WS_WSUPGRADE_H_
 
 /*
 *
-* Copyright 2022 FIWARE Foundation e.V.
+* Copyright 2026 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,38 +25,14 @@
 *
 * Author: Ken Zangelin
 */
+#include <microhttpd.h>                                // MHD_Connection, MHD_Result
 
 
 
 // -----------------------------------------------------------------------------
 //
-// Protocol -
+// wsUpgrade - handle WebSocket upgrade request, queue 101 response
 //
-typedef enum Protocol
-{
-  NO_PROTOCOL,
-  HTTP,
-  HTTPS,
-  MQTT,
-  MQTTS,
-  WS,
-  WSS
-} Protocol;
+extern MHD_Result wsUpgrade(MHD_Connection* connection, const char* wsKey);
 
-
-
-// -----------------------------------------------------------------------------
-//
-// protocolToString -
-//
-extern const char* protocolToString(Protocol protocol);
-
-
-
-// -----------------------------------------------------------------------------
-//
-// protocolFromString -
-//
-extern Protocol protocolFromString(const char* protocolString);
-
-#endif  // SRC_LIB_ORIONLD_TYPES_PROTOCOL_H_
+#endif  // SRC_LIB_ORIONLD_WS_WSUPGRADE_H_

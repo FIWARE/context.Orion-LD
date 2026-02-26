@@ -329,7 +329,7 @@ bool            kTraceInfo       = false;
 #define SOCKET_SERVICE_PORT_DESC  "port to receive new socket service connections"
 #define DISTRIBUTED_DESC       "turn on distributed operation"
 #define BROKER_ID_DESC         "identity of this broker instance for registrations - for the Via header"
-#define WIP_DESC               "Enable concepts that are 'Work In Progress' (e.g. -wip entityMaps,distSubs)"
+#define WIP_DESC               "Enable concepts that are 'Work In Progress' (e.g. -wip entityMaps,distSubs,ws)"
 #define FORWARDING_DESC        "turn on distributed operation (deprecated)"
 #define ID_INDEX_DESC          "automatic mongo index on _id.id"
 #define NOSWAP_DESC            "no swapping - for testing only!!!"
@@ -1072,8 +1072,8 @@ int main(int argC, char* argV[])
 
   if (wip[0] != 0)
   {
-    char* wipV[3];
-    int   wips = kStringSplit(wip, ',', wipV, 3);
+    char* wipV[4];
+    int   wips = kStringSplit(wip, ',', wipV, 4);
 
     for (int ix = 0; ix < wips; ix++)
     {
@@ -1083,8 +1083,10 @@ int main(int argC, char* argV[])
         distSubsEnabled = true;
       else if (strcmp(wipV[ix], "dds") == 0)
         ddsSupport = true;
+      else if (strcmp(wipV[ix], "ws") == 0)
+        wsSupport = true;
       else
-        KT_X(1, "Invalid value for -wip comma-separated list (allowed: 'entityMaps', 'distSubs')");
+        KT_X(1, "Invalid value for -wip comma-separated list (allowed: 'entityMaps', 'distSubs', 'ws')");
     }
   }
 

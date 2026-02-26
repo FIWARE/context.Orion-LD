@@ -31,6 +31,8 @@ extern "C"
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
 
+#include <string.h>                                              // strstr
+
 #include "orionld/types/OrionldTenant.h"                         // OrionldTenant
 #include "orionld/types/QNode.h"                                 // QNode
 #include "orionld/common/orionldState.h"                         // mongocPool
@@ -120,6 +122,27 @@ bool mongocSubCachePopulateByTenant(OrionldTenant* tenantP, bool refresh)
     if (dbSubP == NULL)
     {
       KT_E("Database Error (unable to create tree of subscriptions for tenant '%s')", tenantP->tenant);
+      continue;
+    }
+
+    //
+    // Stale WS subscriptions: on startup, no WS connections exist, so any subscription
+    // with a ws-placeholder endpoint is leftover from a previous crash.  Delete it from DB and skip.
+    //
+    KjNode* referenceP = kjLookup(dbSubP, "reference");
+    if ((referenceP != NULL) && (referenceP->type == KjString) && (strstr(referenceP->value.s, "ws-placeholder") != NULL))
+    {
+      KjNode* subIdP = kjLookup(dbSubP, "_id");
+      const char* subId = (subIdP != NULL) ? subIdP->value.s : "unknown";
+
+      KT_W("Removing stale WS subscription '%s' (ws-placeholder endpoint)", subId);
+
+      // Delete from DB using the collection we already have open
+      bson_t selector;
+      bson_init(&selector);
+      bson_append_utf8(&selector, "_id", 3, subId, -1);
+      mongoc_collection_delete_one(subscriptionsP, &selector, NULL, NULL, NULL);
+      bson_destroy(&selector);
       continue;
     }
 

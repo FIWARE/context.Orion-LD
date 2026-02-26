@@ -230,6 +230,8 @@ typedef enum OrionldTraceLevels
   // 3rd Party
   KtCurl                    = 3001,
   KtMqtt                    = 3010,
+  StWs                      = 3020,
+  KtWsTest                  = 3021,
 
   // Legacy (old mongo C++ driver code, old parsers, etc.)
   KtLegacy                  = 3100,

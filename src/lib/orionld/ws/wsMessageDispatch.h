@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_TYPES_PROTOCOL_H_
-#define SRC_LIB_ORIONLD_TYPES_PROTOCOL_H_
+#ifndef SRC_LIB_ORIONLD_WS_WSMESSAGEDISPATCH_H_
+#define SRC_LIB_ORIONLD_WS_WSMESSAGEDISPATCH_H_
 
 /*
 *
-* Copyright 2022 FIWARE Foundation e.V.
+* Copyright 2026 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,38 +25,14 @@
 *
 * Author: Ken Zangelin
 */
+#include "orionld/ws/WsConnection.h"                  // WsConnection
 
 
 
 // -----------------------------------------------------------------------------
 //
-// Protocol -
+// wsMessageDispatch - dispatch an incoming WS message (JSON envelope)
 //
-typedef enum Protocol
-{
-  NO_PROTOCOL,
-  HTTP,
-  HTTPS,
-  MQTT,
-  MQTTS,
-  WS,
-  WSS
-} Protocol;
+extern void wsMessageDispatch(WsConnection* wsP, const char* message, size_t messageLen);
 
-
-
-// -----------------------------------------------------------------------------
-//
-// protocolToString -
-//
-extern const char* protocolToString(Protocol protocol);
-
-
-
-// -----------------------------------------------------------------------------
-//
-// protocolFromString -
-//
-extern Protocol protocolFromString(const char* protocolString);
-
-#endif  // SRC_LIB_ORIONLD_TYPES_PROTOCOL_H_
+#endif  // SRC_LIB_ORIONLD_WS_WSMESSAGEDISPATCH_H_

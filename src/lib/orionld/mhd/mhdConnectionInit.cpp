@@ -619,6 +619,15 @@ static MHD_Result orionldHttpHeaderReceive(void* cbDataP, MHD_ValueKind kind, co
   else if (strcasecmp(key, "Connection")         == 0) orionldState.in.connection       = (char*) value;
   else if (strcasecmp(key, "X-Forwarded-For")    == 0) orionldState.in.xForwardedFor    = (char*) value;
   else if (strcasecmp(key, "Via")                == 0) orionldState.in.via              = (char*) value;
+  else if (strcasecmp(key, "Upgrade") == 0)
+  {
+    if (strcasecmp(value, "websocket") == 0)
+      orionldState.in.wsUpgrade = true;
+  }
+  else if (strcasecmp(key, "Sec-WebSocket-Key") == 0)
+    orionldState.in.wsKey = (char*) value;
+  else if (strcasecmp(key, "Sec-WebSocket-Version") == 0)
+    orionldState.in.wsVersion = (char*) value;
   else if (strcasecmp(key, "Content-Type")       == 0)
   {
     orionldState.in.contentType       = mimeTypeFromString(value, NULL, false, false, &orionldState.acceptMask);

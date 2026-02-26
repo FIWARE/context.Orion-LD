@@ -261,6 +261,11 @@ typedef struct OrionldStateIn
   bool      arrayConcat;     // Concatenate arrays in PATCH Entity2
   char*     wip;
 
+  // WebSocket upgrade
+  bool      wsUpgrade;
+  char*     wsKey;            // Sec-WebSocket-Key header value
+  char*     wsVersion;        // Sec-WebSocket-Version header value
+
   // Incoming payload
   char*     payload;
   int       payloadSize;
@@ -666,6 +671,7 @@ extern char                kTraceLevels[256];
 //
 extern bool              ddsSupport;               // Publish/Subscribe via DDS
 extern bool              ddsPublishOnCreate;       // Publish new entities/attributes to DDS on creation
+extern bool              wsSupport;                // WebSocket support for notifications
 extern char              ddsTopicType[512];
 
 

@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_TYPES_PROTOCOL_H_
-#define SRC_LIB_ORIONLD_TYPES_PROTOCOL_H_
+#ifndef TEST_FUNCTIONALTEST_FTCLIENT_WSCLIENT_H_
+#define TEST_FUNCTIONALTEST_FTCLIENT_WSCLIENT_H_
 
 /*
 *
-* Copyright 2022 FIWARE Foundation e.V.
+* Copyright 2026 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,38 +25,34 @@
 *
 * Author: Ken Zangelin
 */
-
-
-
-// -----------------------------------------------------------------------------
-//
-// Protocol -
-//
-typedef enum Protocol
+extern "C"
 {
-  NO_PROTOCOL,
-  HTTP,
-  HTTPS,
-  MQTT,
-  MQTTS,
-  WS,
-  WSS
-} Protocol;
+#include "kjson/KjNode.h"                                      // KjNode
+}
 
 
 
 // -----------------------------------------------------------------------------
 //
-// protocolToString -
+// postWsConnect - POST /ws/connect
+//   Connect to broker WS endpoint, send subscription creation message.
+//   Returns the subscription ID as an HTTP response header (WS-Subscription-Id).
 //
-extern const char* protocolToString(Protocol protocol);
+extern KjNode* postWsConnect(int* statusCodeP);
 
 
 
 // -----------------------------------------------------------------------------
 //
-// protocolFromString -
+// wsRouteDispatch - dispatch WS routes with dynamic subscription ID
+//   Handles:
+//     POST /ws/{subId}/send   - send a JSON message over an existing WS connection
+//     GET  /ws/{subId}/dump   - return accumulated WS notifications for this subscription
+//     POST /ws/{subId}/close  - close a specific WS connection
+//     POST /ws/{subId}/reset  - clear accumulated notifications
 //
-extern Protocol protocolFromString(const char* protocolString);
+//   Returns NULL if the URL doesn't match any WS route.
+//
+extern KjNode* wsRouteDispatch(int* statusCodeP);
 
-#endif  // SRC_LIB_ORIONLD_TYPES_PROTOCOL_H_
+#endif  // TEST_FUNCTIONALTEST_FTCLIENT_WSCLIENT_H_

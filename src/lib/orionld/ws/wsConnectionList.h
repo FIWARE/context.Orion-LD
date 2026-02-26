@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_TYPES_PROTOCOL_H_
-#define SRC_LIB_ORIONLD_TYPES_PROTOCOL_H_
+#ifndef SRC_LIB_ORIONLD_WS_WSCONNECTIONLIST_H_
+#define SRC_LIB_ORIONLD_WS_WSCONNECTIONLIST_H_
 
 /*
 *
-* Copyright 2022 FIWARE Foundation e.V.
+* Copyright 2026 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,38 +25,30 @@
 *
 * Author: Ken Zangelin
 */
+#include "orionld/ws/WsConnection.h"                  // WsConnection
 
 
 
 // -----------------------------------------------------------------------------
 //
-// Protocol -
+// wsConnectionAdd - add a WS connection to the global linked list
 //
-typedef enum Protocol
-{
-  NO_PROTOCOL,
-  HTTP,
-  HTTPS,
-  MQTT,
-  MQTTS,
-  WS,
-  WSS
-} Protocol;
+extern void wsConnectionAdd(WsConnection* wsP);
 
 
 
 // -----------------------------------------------------------------------------
 //
-// protocolToString -
+// wsConnectionRemove - remove a WS connection from the global linked list
 //
-extern const char* protocolToString(Protocol protocol);
+extern void wsConnectionRemove(WsConnection* wsP);
 
 
 
 // -----------------------------------------------------------------------------
 //
-// protocolFromString -
+// wsConnectionLookup - find a WS connection by subscription ID
 //
-extern Protocol protocolFromString(const char* protocolString);
+extern WsConnection* wsConnectionLookup(const char* subscriptionId);
 
-#endif  // SRC_LIB_ORIONLD_TYPES_PROTOCOL_H_
+#endif  // SRC_LIB_ORIONLD_WS_WSCONNECTIONLIST_H_
