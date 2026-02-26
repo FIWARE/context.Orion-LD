@@ -33,9 +33,10 @@ ftClientStart -v -t 200
 #
 # 01. Connect via WebSocket and subscribe for entity type T
 # 02. Create an entity of type T to trigger a notification
-# 03. Dump WS notifications - see the notification (timesSent=1)
-# 04. Close the WS connection
-# 05. GET subscription from broker REST API - verify it has been removed (404)
+# 03. GET subscription via REST API - verify timesSent==1 and lastSuccess
+# 04. Dump WS notifications - see the entity data in the notification
+# 05. Close the WS connection
+# 06. GET subscription from broker REST API - verify it has been removed (404)
 #
 
 echo "01. Connect via WebSocket and subscribe for entity type T"
@@ -74,15 +75,22 @@ echo
 echo
 
 
-echo "03. Dump WS notifications - see the notification (timesSent=1)"
-echo "=============================================================="
+echo "03. GET subscription via REST API - verify timesSent==1 and lastSuccess"
+echo "======================================================================="
 sleep 0.5
+orionCurl --url /ngsi-ld/v1/subscriptions/$wsSubId
+echo
+echo
+
+
+echo "04. Dump WS notifications - see the entity data in the notification"
+echo "===================================================================="
 wsDump --subId $wsSubId --port $FT_PORT
 echo
 echo
 
 
-echo "04. Close the WS connection"
+echo "05. Close the WS connection"
 echo "==========================="
 wsClose --subId $wsSubId --port $FT_PORT
 sleep 0.5
@@ -90,7 +98,7 @@ echo
 echo
 
 
-echo "05. GET subscription from broker REST API - verify it has been removed (404)"
+echo "06. GET subscription from broker REST API - verify it has been removed (404)"
 echo "============================================================================="
 orionCurl --url /ngsi-ld/v1/subscriptions/$wsSubId
 echo
@@ -112,8 +120,42 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:E01
 
 
 
-03. Dump WS notifications - see the notification (timesSent=1)
-==============================================================
+03. GET subscription via REST API - verify timesSent==1 and lastSuccess
+=======================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "entities": [
+        {
+            "type": "T"
+        }
+    ],
+    "id": "REGEX(urn:ngsi-ld:subscription:.*)",
+    "isActive": true,
+    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
+    "notification": {
+        "endpoint": {
+            "accept": "application/json",
+            "uri": "REGEX(.*)"
+        },
+        "format": "normalized",
+        "lastNotification": "REGEX(.*)",
+        "lastSuccess": "REGEX(.*)",
+        "status": "ok",
+        "timesSent": 1
+    },
+    "origin": "cache",
+    "status": "active",
+    "type": "Subscription"
+}
+
+
+04. Dump WS notifications - see the entity data in the notification
+====================================================================
 HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
 Date: REGEX(.*)
@@ -149,11 +191,11 @@ Date: REGEX(.*)
 
 
 
-04. Close the WS connection
+05. Close the WS connection
 ===========================
 
 
-05. GET subscription from broker REST API - verify it has been removed (404)
+06. GET subscription from broker REST API - verify it has been removed (404)
 =============================================================================
 HTTP/1.1 404 Not Found
 Content-Length: REGEX(.*)
