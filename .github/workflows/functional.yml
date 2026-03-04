@@ -81,7 +81,7 @@ jobs:
           - 1883:1883
           - 9001:9001
       postgres:
-        image: postgis/postgis:12-3.1-alpine
+        image: postgis/postgis:17-3.5-alpine
         env:
           POSTGRES_PASSWORD: postgres
           POSTGRES_HOST_AUTH_METHOD: trust
