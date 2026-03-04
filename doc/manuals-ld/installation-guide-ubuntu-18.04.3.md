@@ -472,16 +472,16 @@ wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-
 echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" | sudo tee  /etc/apt/sources.list.d/pgdg.list
 
 sudo apt update
-sudo apt -y install postgresql-12 postgresql-client-12
-sudo apt install -y postgis postgresql-12-postgis-3
-sudo apt-get install -y postgresql-12-postgis-3-scripts
+sudo apt -y install postgresql-17 postgresql-client-17
+sudo apt install -y postgis postgresql-17-postgis-3
+sudo apt-get install -y postgresql-17-postgis-3-scripts
 ```
 
 #### Add timescale db and postgis
 ```bash
 sudo add-apt-repository ppa:timescale/timescaledb-ppa
 sudo apt-get update
-sudo apt install -y timescaledb-postgresql-12
+sudo apt install -y timescaledb-postgresql-17
 ```
 
 #### Enable postgres
@@ -491,7 +491,7 @@ systemctl enable postgresql
 
 #### Edit postgresql.conf, enabling timescaledb
 ```bash
-sudo nano /etc/postgresql/12/main/postgresql.conf
+sudo nano /etc/postgresql/17/main/postgresql.conf
 ```
 Add this line at the end of the file and save it
 ```bash
