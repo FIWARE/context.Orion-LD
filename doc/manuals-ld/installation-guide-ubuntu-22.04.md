@@ -407,15 +407,15 @@ sudo systemctl enable mosquitto
 ### Postgres 12
 Postgres is used as database for the Temporal Evolution of entities
 
-#### Install Postgres 12
+#### Install Postgres 17
 ```bash
 curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc|sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
 echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" | sudo tee  /etc/apt/sources.list.d/pgdg.list
 
 sudo apt update
-sudo apt -y install postgresql-12 postgresql-client-12
-sudo apt install -y postgis postgresql-12-postgis-3
-sudo apt-get install -y postgresql-12-postgis-3-scripts
+sudo apt -y install postgresql-17 postgresql-client-17
+sudo apt install -y postgis postgresql-17-postgis-3
+sudo apt-get install -y postgresql-17-postgis-3-scripts
 ```
 
 
@@ -425,7 +425,7 @@ sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 55EE6BF76
 sudo tee /etc/apt/sources.list.d/timescale-ubuntu-timescaledb-ppa-jammy.list<<EOF
 deb https://ppa.launchpadcontent.net/timescale/timescaledb-ppa/ubuntu/ focal main
 EOF
-sudo apt install timescaledb-postgresql-12
+sudo apt install timescaledb-postgresql-17
 
 ```
 
@@ -436,7 +436,7 @@ systemctl enable postgresql
 
 #### Edit postgresql.conf, enabling timescaledb
 ```bash
-sudo nano /etc/postgresql/12/main/postgresql.conf
+sudo nano /etc/postgresql/17/main/postgresql.conf
 ```
 Add this line at the end of the file and save it
 ```bash
@@ -444,7 +444,7 @@ shared_preload_libraries = 'timescaledb'
 ```
 #### Restart Postgres
 ```bash
-sudo systemctl restart postgresql@12-main.service
+sudo systemctl restart postgresql@17-main.service
 ```
 
 #### Create the Postgres user for Orion-LD

@@ -351,7 +351,7 @@ function Ubuntu20.04()
   actionStart "Installing" "Libraries"
   sudo aptitude -y install libssl-dev gnutls-dev libcurl4-gnutls-dev libsasl2-dev \
                    libgcrypt-dev uuid-dev libboost1.67-dev libboost-regex1.67-dev libboost-thread1.67-dev \
-                   libboost-filesystem1.67-dev libz-dev libpq-dev timescaledb-postgresql-12 >> $logFile 2>> $errorFile
+                   libboost-filesystem1.67-dev libz-dev libpq-dev timescaledb-postgresql-17 >> $logFile 2>> $errorFile
   actionEnd
 
   actionStart "Installing" "Mongo C++ Legacy driver"
