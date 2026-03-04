@@ -5,6 +5,7 @@
   #XXXX - Fixed GCC 13 C++20 keyword conflict, trace level limits, and mongo shell warnings
   #XXXX - Fixed query of many large entities (cfreyfh)
   #XXXX - Fixed array initialization check in return array
+  #XXXX - wait for postgres instead of exiting after the first try - just like for mongo (1 try per second until 30 secs)
 
 ## New Features
   #1905 - New CLI option -troeSslMode (env: ORIONLD_TROE_SSL_MODE) for TRoE Postgres SSL connections (disable/allow/prefer/require/verify-ca/verify-full, default: prefer)
@@ -14,6 +15,7 @@
   - Added TRoE database schema and advanced optimization documentation
   - Added Carsten's TRoE optimization script to documentation
   - Documented MongoDB 4.2+ requirement
+  - Fixed all README.md for the k-libs
 
 ## DDS
 N/A
