@@ -295,7 +295,7 @@ install_postgres_client() {
         sudo dnf -y module disable postgresql >/dev/null 2>>$LOGFILE || true
     fi
 
-    sudo $PKG_MGR -y install postgresql13 postgresql13-contrib libpqxx-devel postgresql13-devel postgresql13-libs >/dev/null 2>>$LOGFILE || true
+    sudo $PKG_MGR -y install postgresql17 postgresql17-contrib libpqxx-devel postgresql17-devel postgresql17-libs >/dev/null 2>>$LOGFILE || true
     log_done
 }
 
