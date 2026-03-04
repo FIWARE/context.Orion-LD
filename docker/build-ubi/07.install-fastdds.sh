@@ -26,9 +26,10 @@ dnf config-manager --set-enabled powertools
 yum -y install tinyxml2-devel boost-devel yaml-cpp-devel yaml-cpp
 
 echo -e "\e[1;32m Builder: installing ASIO for DDS Libraries \e[0m"
-# yum -y --nogpgcheck install https://dl.fedoraproject.org/pub/fedora/linux/releases/39/Everything/x86_64/os/Packages/a/asio-devel-1.28.1-2.fc39.x86_64.rpm
-wget https://ftp.rpmfind.net/linux/opensuse/ports/i586/tumbleweed/repo/oss/i586/asio-devel-1.30.2-1.3.i586.rpm --no-check-certificate
-rpm -i asio-devel-1.30.2-1.3.i586.rpm
+wget https://github.com/chriskohlhoff/asio/archive/refs/tags/asio-1-30-2.tar.gz -O /tmp/asio-1-30-2.tar.gz
+tar xzf /tmp/asio-1-30-2.tar.gz -C /tmp
+cp -r /tmp/asio-asio-1-30-2/asio/include/* /usr/include/
+rm -rf /tmp/asio-1-30-2.tar.gz /tmp/asio-asio-1-30-2
 echo -e "\e[1;32m Builder: installed ASIO for DDS Libraries \e[0m"
 # Fast-DDS
 mkdir /opt/Fast-DDS
