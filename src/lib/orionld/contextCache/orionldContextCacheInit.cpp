@@ -242,7 +242,11 @@ void orionldContextCacheInit(void)
 
   // Still no core context? - try to load from local file
   if (orionldCoreContextP == NULL)
+  {
     orionldCoreContextP = coreContextFromFile();
+    if (orionldCoreContextP != NULL)
+      orionldContextCachePersist(orionldCoreContextP, false);
+  }
 
   // Still no core context? - try to download it
   if (orionldCoreContextP == NULL)
