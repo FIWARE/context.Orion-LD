@@ -1,0 +1,150 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Core context loaded from file via -coreContextDir
+
+--SHELL-INIT--
+dbInit orionld
+dbInit CB
+orionldStart CB -coreContext v1.3 -coreContextDir $REPO_HOME/ldcontexts -ctxTimeout 1 -ctxAttempts 1
+
+--SHELL--
+
+#
+# Start the broker with core context v1.3, loaded from a local file.
+# With -ctxTimeout 1 and -ctxAttempts 1, downloads will likely fail,
+# but the file-based loading should succeed.
+#
+# 01. GET /ngsi-ld/v1/jsonldContexts - see the v1.3 core context
+# 02. GET /ngsi-ld/v1/jsonldContexts?details=true - see origin is FileCached
+# 03. Create an entity without context
+# 04. GET the entity - verify the core context v1.3 URL in the Link header
+#
+
+
+echo "01. GET /ngsi-ld/v1/jsonldContexts - see the v1.3 core context"
+echo "=============================================================="
+orionCurl --url /ngsi-ld/v1/jsonldContexts
+echo
+echo
+
+
+echo "02. GET /ngsi-ld/v1/jsonldContexts?details=true - see origin is FileCached"
+echo "=========================================================================="
+orionCurl --url /ngsi-ld/v1/jsonldContexts?details=true
+echo
+echo
+
+
+echo "03. Create an entity without context"
+echo "===================================="
+payload='{
+  "id": "urn:E1",
+  "type": "T",
+  "P1": 1
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "04. GET the entity - verify the core context v1.3 URL in the Link header"
+echo "========================================================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:E1
+echo
+echo
+
+
+--REGEXPECT--
+01. GET /ngsi-ld/v1/jsonldContexts - see the v1.3 core context
+==============================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+
+[
+    "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.3.jsonld"
+]
+
+
+02. GET /ngsi-ld/v1/jsonldContexts?details=true - see origin is FileCached
+==========================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+
+[
+    {
+        "URL": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.3.jsonld",
+        "createdAt": "REGEX(.*)",
+        "extraInfo": {
+            "compactions": 0,
+            "expansions": REGEX(.*),
+            "hash-table": {
+                "EntityType": "https://uri.etsi.org/ngsi-ld/EntityType",
+                "MultiPoint": "https://purl.org/geojson/vocab#MultiPoint",
+                "instanceId": "https://uri.etsi.org/ngsi-ld/instanceId",
+                "notifiedAt": "https://uri.etsi.org/ngsi-ld/notifiedAt",
+                "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
+            },
+            "origin": "FileCached",
+            "type": "hash-table"
+        },
+        "kind": "Cached",
+        "localId": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.3.jsonld"
+    }
+]
+
+
+03. Create an entity without context
+====================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E1
+
+
+
+04. GET the entity - verify the core context v1.3 URL in the Link header
+========================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.3.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+{
+    "P1": {
+        "type": "Property",
+        "value": 1
+    },
+    "id": "urn:E1",
+    "type": "T"
+}
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
