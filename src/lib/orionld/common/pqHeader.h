@@ -30,15 +30,16 @@
 
 // -----------------------------------------------------------------------------
 //
-// RedHat UBI distro gets (for some reason I cannot understand) the postgres driver
-// installed directly under /usr.
-// Can't match that with other distros, not without passing the complete path to the include directory
-// to the preprocessor (/usr/pgsql-13/include/, or /usr/include/postgres)
+// On most distros, libpq-fe.h lives under <postgresql/libpq-fe.h>.
+// On RedHat UBI with the pgdg RPM, it's under /usr/pgsql-<ver>/include/.
+// Rather than hardcoding the version here, the CMakeLists.txt adds
+// -I/usr/pgsql-17/include for the RedHat_8 build, so both paths work
+// with a plain <libpq-fe.h> include.
 //
 #ifndef REDHAT_UBI
 #include <postgresql/libpq-fe.h>
 #else
-#include "/usr/pgsql-13/include/libpq-fe.h"
+#include <libpq-fe.h>
 #endif
 
 #endif  // SRC_LIB_ORIONLD_COMMON_PQHEADER_H_

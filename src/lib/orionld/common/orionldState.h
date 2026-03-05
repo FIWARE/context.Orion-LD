@@ -624,6 +624,7 @@ extern char              troeHost[256];            // From orionld.cpp
 extern unsigned short    troePort;                 // From orionld.cpp
 extern char              troeUser[256];            // From orionld.cpp
 extern char              troePwd[256];             // From orionld.cpp
+extern char              troeSslMode[64];          // From orionld.cpp
 extern int               troePoolSize;             // From orionld.cpp
 extern char              pgPortString[16];
 extern bool              distributed;              // From orionld.cpp

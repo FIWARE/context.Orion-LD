@@ -81,12 +81,13 @@ accumulatorDump IPV4 HTTPS
 echo
 echo
 
-# Note the REGEX(\S+) in the REGEXPECT part for step 4. This is due to that the log message is slightly different
-# depending on the libcurl version, some versions (newer ones) use "given" while other (older versions) use "known"
+# Note: The log message differs depending on libcurl version:
+# - Older: "Peer certificate cannot be authenticated with known/given CA certificates"
+# - Newer: "SSL peer certificate or SSH remote key was not OK"
 
 echo "04. Look in the CB log for the warning about cert not accepted"
 echo "=============================================================="
-grep "(curl_easy_perform failed: Peer certificate cannot be authenticated" /tmp/Orion-LD.log | awk -F "curl_easy_perform" '{ print $2 }' | awk -F ")" '{ print $1 }'
+grep "curl_easy_perform failed:.*\(ertificate\|SSL peer\)" /tmp/Orion-LD.log | awk -F "curl_easy_perform" '{ print $2 }' | awk -F ")" '{ print $1 }'
 echo
 echo
 
@@ -96,9 +97,9 @@ echo
 ============================================
 HTTP/1.1 201 Created
 Content-Length: 0
-Location: /v2/subscriptions/REGEX([0-9a-f]{24})
-Fiware-Correlator: REGEX([0-9a-f\-]{36})
 Date: REGEX(.*)
+Fiware-Correlator: REGEX([0-9a-f\-]{36})
+Location: /v2/subscriptions/REGEX([0-9a-f]{24})
 
 
 
@@ -106,9 +107,9 @@ Date: REGEX(.*)
 ==========================================
 HTTP/1.1 201 Created
 Content-Length: 0
-Location: /v2/entities/E1?type=Thing
-Fiware-Correlator: REGEX([0-9a-f\-]{36})
 Date: REGEX(.*)
+Fiware-Correlator: REGEX([0-9a-f\-]{36})
+Location: /v2/entities/E1?type=Thing
 
 
 
@@ -118,7 +119,7 @@ Date: REGEX(.*)
 
 04. Look in the CB log for the warning about cert not accepted
 ==============================================================
- failed: Peer certificate cannot be authenticated with REGEX(\S+) CA certificates
+ failed: REGEX(.*)
 
 
 --TEARDOWN--

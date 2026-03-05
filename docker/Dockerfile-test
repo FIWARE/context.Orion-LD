@@ -12,7 +12,8 @@ ENV LD_LIBRARY_PATH=/opt/paho.mqtt.c/build/output:/usr/local/lib64:/opt/promethe
 # RUN echo LD_LIBRARY_PATH: $LD_LIBRARY_PATH
 COPY docker/mongo.repo /etc/yum.repos.d/mongo.repo
 
-RUN  wget https://downloads.sourceforge.net/ltp/lcov-1.14.tar.gz && \
+RUN  dnf config-manager --disable pgdg13 || true && \
+     wget https://downloads.sourceforge.net/ltp/lcov-1.14.tar.gz && \
      tar -xf lcov-1.14.tar.gz  && \
      cd lcov-1.14 && \
      make install && \

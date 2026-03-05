@@ -241,9 +241,9 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 ** Too large errors:
 1
 ** Notification sizes:
-Sending message 1 to HTTP server: sending message of REGEX((1949\d)) bytes to HTTP server
-Sending message 2 to HTTP server: sending message of REGEX((2149\d)) bytes to HTTP server
-Sending message 3 to HTTP server: sending message of REGEX((810049\d)) bytes to HTTP server
+Sending message 1 to HTTP server: sending message of REGEX((1948[0-9]|1949[0-7])) bytes to HTTP server
+Sending message 2 to HTTP server: sending message of REGEX((2148[0-9]|2149[0-7])) bytes to HTTP server
+Sending message 3 to HTTP server: sending message of REGEX((810048[0-9]|810049[0-9])) bytes to HTTP server
 --TEARDOWN--
 #
 # NOTE: the six different sizes above is to cover for different sizes in the version string

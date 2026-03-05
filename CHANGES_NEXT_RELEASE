@@ -1,22 +1,47 @@
 ## Fixed Issues
-N/A
+  #1905 - TRoE: segfault (exit 139) connecting to TimescaleDB Cloud - added SSL support and fixed NULL pointer crash
+  #XXXX - TRoE: fixed use-after-free in pgConnectionGet when postgres connection status check fails
+  #XXXX - TRoE: fixed wsTrim bug (trimming trailing whitespace incremented instead of decremented)
+  #XXXX - Fixed GCC 13 C++20 keyword conflict, trace level limits, and mongo shell warnings
+  #XXXX - Fixed query of many large entities (cfreyfh)
+  #XXXX - Fixed array initialization check in return array
+  #XXXX - wait for postgres instead of exiting after the first try - just like for mongo (1 try per second until 30 secs)
 
 ## New Features
-- First draft of WebSocket support: WS upgrade, receive loop, message dispatch, and handlers for createSubscription, createEntity, putEntity, patchSubscription (stub)
-- Refactored wsMessageDispatch into separate modules with dispatch table (wsServiceLookup, wsErrorResponse, wsRequestCleanup, and one file per handler)
-- Default user @context served from local files, not only URLs
+  #1905 - New CLI option -troeSslMode (env: ORIONLD_TROE_SSL_MODE) for TRoE Postgres SSL connections (disable/allow/prefer/require/verify-ca/verify-full, default: prefer)
+  #XXXX - Replaced idiotic prometheus-client-c with kprom library for Prometheus metrics
+  - First draft of WebSocket support: WS upgrade, receive loop, message dispatch, and handlers for createSubscription, createEntity, putEntity, patchSubscription (stub)
+  - Refactored wsMessageDispatch into separate modules with dispatch table (wsServiceLookup, wsErrorResponse, wsRequestCleanup, and one file per handler)
+  - Default user @context served from local files, not only URLs
 
 ## Documentation
-N/A
+  - Added TRoE database schema and advanced optimization documentation
+  - Added Carsten's TRoE optimization script to documentation
+  - Documented MongoDB 4.2+ requirement
+  - Fixed all README.md for the k-libs
 
 ## DDS
 N/A
 
 ## Library version updates
-N/A
+  - Replaced prometheus-client-c with kprom
+  - New base image for kjson fix
+  - Bumped PostgreSQL client packages from v13 to v17 (CI base image)
+  - Bumped PostgreSQL in installation guides from v12 to v17
+  - Upgraded MongoDB from 4.0 to 4.4 in Mintaka tests
 
 ## Multi-Attributes (datasetId)
 N/A
 
 ## Notes
-N/A
+### CI / GitHub Actions
+  - Updated all GitHub Actions to latest versions
+  - Fixed GDB (debug) image build pipeline (buildah/quay.io fixes)
+  - Improved Mintaka compatibility workflow (Testcontainers 1.21.3, Docker 29+, local context serving)
+  - Skip unit tests / functional tests when no relevant code changes
+  - Enabled all previously disabled functional tests
+  - Trigger functional tests on workflow and harness changes
+  - Removed SonarCloud workflow
+  - Removed PR template
+  - Fixed deploy workflow for external contributors
+  - Postgres server is now v17 (bumped from v12)

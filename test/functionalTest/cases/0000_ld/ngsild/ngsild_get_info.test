@@ -74,7 +74,7 @@ Date: REGEX(.*)
     "boost version": REGEX(.*),
     "openssl version": REGEX(.*),
     "postgres libpq version": "REGEX(.*)",
-    "postgres server version": "12.REGEX(.*)",
+    "postgres server version": "17.REGEX(.*)",
     "branch": REGEX(.*),
     "cached subscriptions": 0,
     "Core Context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
