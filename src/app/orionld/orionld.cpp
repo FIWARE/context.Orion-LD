@@ -229,6 +229,7 @@ char            troeHost[256];
 unsigned short  troePort;
 char            troeUser[256];
 char            troePwd[256];
+char            troeSslMode[64];
 int             troePoolSize;
 bool            socketService;
 unsigned short  socketServicePort;
@@ -326,6 +327,7 @@ bool            kTraceInfo       = false;
 #define TROE_HOST_USER         "username for troe database db server"
 #define TROE_HOST_PWD          "password for troe database db server"
 #define TROE_POOL_DESC         "size of the connection pool for TRoE Postgres database connections"
+#define TROE_SSL_DESC          "disable/allow/prefer/require/verify-ca/verify-full"
 #define SOCKET_SERVICE_DESC    "enable the socket service - accept connections via a normal TCP socket"
 #define SOCKET_SERVICE_PORT_DESC  "port to receive new socket service connections"
 #define DISTRIBUTED_DESC       "turn on distributed operation"
@@ -440,6 +442,7 @@ PaArgument paArgs[] =
   { "-troePort",              &troePort,                "TROE_PORT",                 PaInt,     PaOpt,  5432,             PaNL,   PaNL,             TROE_PORT_DESC           },
   { "-troeUser",              troeUser,                 "TROE_USER",                 PaString,  PaOpt,  _i "postgres",    PaNL,   PaNL,             TROE_HOST_USER           },
   { "-troePwd",               troePwd,                  "TROE_PWD",                  PaString,  PaOpt,  _i "password",    PaNL,   PaNL,             TROE_HOST_PWD            },
+  { "-troeSslMode",           troeSslMode,              "TROE_SSL_MODE",             PaString,  PaOpt,  _i "prefer",      PaNL,   PaNL,             TROE_SSL_DESC            },
   { "-troePoolSize",          &troePoolSize,            "TROE_POOL_SIZE",            PaInt,     PaOpt,  10,               0,      1000,             TROE_POOL_DESC           },
   { "-noNotifyFalseUpdate",   &noNotifyFalseUpdate,     "NO_NOTIFY_FALSE_UPDATE",    PaBool,    PaOpt,  false,            false,  true,             NO_NOTIFY_FALSE_UPDATE_DESC  },
   { "-experimental",          &experimental,            "EXPERIMENTAL",              PaBool,    PaOpt,  false,            false,  true,             EXPERIMENTAL_DESC        },

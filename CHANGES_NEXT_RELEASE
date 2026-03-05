@@ -63,3 +63,4 @@ N/A
   - Removed SonarCloud workflow
   - Removed PR template
   - Fixed deploy workflow for external contributors
+  - Postgres server is now v17 (bumped from v12)

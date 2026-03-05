@@ -1,0 +1,132 @@
+# Copyright 2024 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+TRoE SSL mode - test -troeSslMode CLI option with local postgres
+
+--SHELL-INIT--
+export BROKER=orionld
+dbInit CB
+pgInit $CB_DB_NAME
+brokerStart CB 100 IPv4 -troe -troeSslMode disable
+
+--SHELL--
+
+#
+# 01. Create entity E1 with troeSslMode=disable
+# 02. See E1 in the temporal database
+# 03. Stop broker, restart with troeSslMode=prefer (the default)
+# 04. Create entity E2 with troeSslMode=prefer
+# 05. See E1 and E2 in the temporal database
+#
+
+echo "01. Create entity E1 with troeSslMode=disable"
+echo "=============================================="
+payload='{
+  "id": "urn:ngsi-ld:entities:E1",
+  "type": "T",
+  "P1": {
+    "type": "Property",
+    "value": "from-disable-mode"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "02. See E1 in the temporal database"
+echo "===================================="
+postgresCmd -sql "SELECT opMode,id,type FROM entities"
+echo
+echo
+
+
+echo "03. Stop broker, restart with troeSslMode=prefer (the default)"
+echo "=============================================================="
+brokerStop CB
+brokerStart CB 100 IPv4 -troe -troeSslMode prefer
+echo
+echo
+
+
+echo "04. Create entity E2 with troeSslMode=prefer"
+echo "============================================="
+payload='{
+  "id": "urn:ngsi-ld:entities:E2",
+  "type": "T",
+  "P1": {
+    "type": "Property",
+    "value": "from-prefer-mode"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "05. See E1 and E2 in the temporal database"
+echo "==========================================="
+postgresCmd -sql "SELECT opMode,id,type FROM entities"
+echo
+echo
+
+
+--REGEXPECT--
+01. Create entity E1 with troeSslMode=disable
+==============================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1
+
+
+
+02. See E1 in the temporal database
+====================================
+opmode,id,type
+Create,urn:ngsi-ld:entities:E1,https://uri.etsi.org/ngsi-ld/default-context/T
+
+
+03. Stop broker, restart with troeSslMode=prefer (the default)
+==============================================================
+
+
+04. Create entity E2 with troeSslMode=prefer
+=============================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E2
+
+
+
+05. See E1 and E2 in the temporal database
+===========================================
+opmode,id,type
+Create,urn:ngsi-ld:entities:E1,https://uri.etsi.org/ngsi-ld/default-context/T
+Create,urn:ngsi-ld:entities:E2,https://uri.etsi.org/ngsi-ld/default-context/T
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
