@@ -81,11 +81,13 @@ void* wsReceiveLoop(void* arg)
 
     if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL))
     {
-      KT_T(StWs, "WS poll error event (fd=%d, revents=0x%x) - closing", (int) wsP->fd, pfd.revents);
+      KT_E("WS poll error event (fd=%d, revents=0x%x) - closing", (int) wsP->fd, pfd.revents);
       break;
     }
 
     ssize_t bytesRead = recv((int) wsP->fd, buf, sizeof(buf), 0);
+
+    KT_T(StWs, "WS recv returned %zd bytes (fd=%d)", bytesRead, (int) wsP->fd);
 
     if (bytesRead < 0)
     {
@@ -104,6 +106,7 @@ void* wsReceiveLoop(void* arg)
 
     // Decode WebSocket frames
     size_t  bufOffset = 0;
+    int     frameCount = 0;
 
     while (bufOffset < (size_t) bytesRead)
     {
@@ -117,6 +120,9 @@ void* wsReceiveLoop(void* arg)
                                         &newOffset,
                                         &payload,
                                         &payloadLen);
+      frameCount++;
+      KT_T(StWs, "WS decode: status=%d, newOffset=%zu, payloadLen=%zu, bufOffset=%zu/%zd, frame#%d (fd=%d)",
+           status, newOffset, payloadLen, bufOffset, bytesRead, frameCount, (int) wsP->fd);
       bufOffset += newOffset;
 
       if (status == MHD_WEBSOCKET_STATUS_OK)

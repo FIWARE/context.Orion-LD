@@ -1,5 +1,5 @@
-#ifndef SRC_LIB_ORIONLD_WS_WSMESSAGEDISPATCH_H_
-#define SRC_LIB_ORIONLD_WS_WSMESSAGEDISPATCH_H_
+#ifndef SRC_LIB_ORIONLD_WS_WSSERVICELOOKUP_H_
+#define SRC_LIB_ORIONLD_WS_WSSERVICELOOKUP_H_
 
 /*
 *
@@ -25,14 +25,39 @@
 *
 * Author: Ken Zangelin
 */
-#include "orionld/ws/WsConnection.h"                  // WsConnection
+extern "C"
+{
+#include "kjson/KjNode.h"                              // KjNode
+}
+
+#include "orionld/ws/WsConnection.h"                   // WsConnection
 
 
 
 // -----------------------------------------------------------------------------
 //
-// wsMessageDispatch - dispatch an incoming WS message (JSON envelope)
+// WsServiceRoutine -
 //
-extern void wsMessageDispatch(WsConnection* wsP, char* message, size_t messageLen);
+typedef void (*WsServiceRoutine)(WsConnection* wsP, KjNode* metadataP, KjNode* bodyP);
 
-#endif  // SRC_LIB_ORIONLD_WS_WSMESSAGEDISPATCH_H_
+
+
+// -----------------------------------------------------------------------------
+//
+// WsService -
+//
+typedef struct WsService
+{
+  const char*       operation;
+  WsServiceRoutine  routine;
+} WsService;
+
+
+
+// -----------------------------------------------------------------------------
+//
+// wsServiceLookup - look up a WS service routine by operation name
+//
+extern WsServiceRoutine wsServiceLookup(const char* operation);
+
+#endif  // SRC_LIB_ORIONLD_WS_WSSERVICELOOKUP_H_

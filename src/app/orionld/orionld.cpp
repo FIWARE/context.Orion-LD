@@ -599,6 +599,13 @@ void exitFunc(void)
   // Or, is freeing up the global KAlloc instance sufficient ... ?
   //
 
+  // Free the default user context file buffer, if used
+  if (defaultUserContextBuffer != NULL)
+  {
+    free(defaultUserContextBuffer);
+    defaultUserContextBuffer = NULL;
+  }
+
   // Free up the context download list, if needed
   contextDownloadListRelease();
 

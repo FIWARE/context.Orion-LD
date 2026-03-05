@@ -1,5 +1,5 @@
-#ifndef SRC_LIB_ORIONLD_WS_WSMESSAGEDISPATCH_H_
-#define SRC_LIB_ORIONLD_WS_WSMESSAGEDISPATCH_H_
+#ifndef SRC_LIB_ORIONLD_WS_WSREQUESTCLEANUP_H_
+#define SRC_LIB_ORIONLD_WS_WSREQUESTCLEANUP_H_
 
 /*
 *
@@ -25,14 +25,13 @@
 *
 * Author: Ken Zangelin
 */
-#include "orionld/ws/WsConnection.h"                  // WsConnection
 
 
 
 // -----------------------------------------------------------------------------
 //
-// wsMessageDispatch - dispatch an incoming WS message (JSON envelope)
+// wsRequestCleanup - lightweight cleanup for WS message handlers
 //
-extern void wsMessageDispatch(WsConnection* wsP, char* message, size_t messageLen);
+extern void wsRequestCleanup(void);
 
-#endif  // SRC_LIB_ORIONLD_WS_WSMESSAGEDISPATCH_H_
+#endif  // SRC_LIB_ORIONLD_WS_WSREQUESTCLEANUP_H_

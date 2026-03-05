@@ -1,6 +1,3 @@
-#ifndef SRC_LIB_ORIONLD_WS_WSMESSAGEDISPATCH_H_
-#define SRC_LIB_ORIONLD_WS_WSMESSAGEDISPATCH_H_
-
 /*
 *
 * Copyright 2026 FIWARE Foundation e.V.
@@ -25,14 +22,26 @@
 *
 * Author: Ken Zangelin
 */
-#include "orionld/ws/WsConnection.h"                  // WsConnection
+#include <stdio.h>                                               // snprintf
+
+#include "orionld/ws/WsConnection.h"                             // WsConnection
+#include "orionld/ws/wsSend.h"                                   // wsSend
+#include "orionld/ws/wsErrorResponse.h"                          // Own interface
 
 
 
 // -----------------------------------------------------------------------------
 //
-// wsMessageDispatch - dispatch an incoming WS message (JSON envelope)
+// wsErrorResponse - send an error response back over the WS connection
 //
-extern void wsMessageDispatch(WsConnection* wsP, char* message, size_t messageLen);
+void wsErrorResponse(WsConnection* wsP, int statusCode, const char* title, const char* detail)
+{
+  char buf[1024];
 
-#endif  // SRC_LIB_ORIONLD_WS_WSMESSAGEDISPATCH_H_
+  snprintf(buf, sizeof(buf),
+           "{\"metadata\":{\"statusCode\":%d},\"body\":{\"type\":\"https://uri.etsi.org/ngsi-ld/errors/BadRequestData\","
+           "\"title\":\"%s\",\"detail\":\"%s\"}}",
+           statusCode, title, detail);
+
+  wsSend(wsP, buf);
+}

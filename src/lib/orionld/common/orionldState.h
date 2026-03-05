@@ -655,6 +655,7 @@ extern bool              noArrayReduction;         // Used by arrayReduce in pCh
 extern int               pageSize;                 // Pagination limit
 extern char              defaultUserContextUrl[256];
 extern OrionldContext*   defaultUserContextP;
+extern char*             defaultUserContextBuffer;
 extern DdsService*       ddsServices;
 
 extern char                localIpAndPort[135];    // Local address for X-Forwarded-For (from orionld.cpp)

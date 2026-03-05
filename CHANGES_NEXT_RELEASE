@@ -2,7 +2,9 @@
 N/A
 
 ## New Features
-N/A
+- First draft of WebSocket support: WS upgrade, receive loop, message dispatch, and handlers for createSubscription, createEntity, putEntity, patchSubscription (stub)
+- Refactored wsMessageDispatch into separate modules with dispatch table (wsServiceLookup, wsErrorResponse, wsRequestCleanup, and one file per handler)
+- Default user @context served from local files, not only URLs
 
 ## Documentation
 N/A

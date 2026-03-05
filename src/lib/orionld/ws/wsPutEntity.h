@@ -1,5 +1,5 @@
-#ifndef SRC_LIB_ORIONLD_WS_WSMESSAGEDISPATCH_H_
-#define SRC_LIB_ORIONLD_WS_WSMESSAGEDISPATCH_H_
+#ifndef SRC_LIB_ORIONLD_WS_WSPUTENTITY_H_
+#define SRC_LIB_ORIONLD_WS_WSPUTENTITY_H_
 
 /*
 *
@@ -25,14 +25,19 @@
 *
 * Author: Ken Zangelin
 */
-#include "orionld/ws/WsConnection.h"                  // WsConnection
+extern "C"
+{
+#include "kjson/KjNode.h"                              // KjNode
+}
+
+#include "orionld/ws/WsConnection.h"                   // WsConnection
 
 
 
 // -----------------------------------------------------------------------------
 //
-// wsMessageDispatch - dispatch an incoming WS message (JSON envelope)
+// wsPutEntity - replace an entity via the service routine over WebSocket
 //
-extern void wsMessageDispatch(WsConnection* wsP, char* message, size_t messageLen);
+extern void wsPutEntity(WsConnection* wsP, KjNode* metadataP, KjNode* bodyP);
 
-#endif  // SRC_LIB_ORIONLD_WS_WSMESSAGEDISPATCH_H_
+#endif  // SRC_LIB_ORIONLD_WS_WSPUTENTITY_H_

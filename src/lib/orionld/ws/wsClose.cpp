@@ -62,12 +62,12 @@ extern "C"
 //
 void wsClose(WsConnection* wsP)
 {
-  KT_T(KtWsTest, "WS connection closed (fd=%d, subId=%s)",
-       (int) wsP->fd,
-       wsP->subscriptionId ? wsP->subscriptionId : "none");
-  KT_T(StWs, "Closing WS connection (fd=%d, subId=%s)",
-       (int) wsP->fd,
-       wsP->subscriptionId ? wsP->subscriptionId : "none");
+  KT_I("------------------------- WebSocket close from fd=%d, subId: %s, tenant: %s -------------------------", (int) wsP->fd,
+       wsP->subscriptionId ? wsP->subscriptionId : "none",
+       wsP->tenantName ? wsP->tenantName : "default");
+
+  KT_T(KtWsTest, "WS connection closed (fd=%d, subId=%s)", (int) wsP->fd, wsP->subscriptionId ? wsP->subscriptionId : "none");
+  KT_T(StWs, "Closing WS connection (fd=%d, subId=%s)", (int) wsP->fd, wsP->subscriptionId ? wsP->subscriptionId : "none");
 
   //
   // DELETE the associated subscription (if any)

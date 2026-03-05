@@ -1,5 +1,5 @@
-#ifndef SRC_LIB_ORIONLD_WS_WSMESSAGEDISPATCH_H_
-#define SRC_LIB_ORIONLD_WS_WSMESSAGEDISPATCH_H_
+#ifndef SRC_LIB_ORIONLD_WS_WSERRORRESPONSE_H_
+#define SRC_LIB_ORIONLD_WS_WSERRORRESPONSE_H_
 
 /*
 *
@@ -31,8 +31,8 @@
 
 // -----------------------------------------------------------------------------
 //
-// wsMessageDispatch - dispatch an incoming WS message (JSON envelope)
+// wsErrorResponse - send an error response back over the WS connection
 //
-extern void wsMessageDispatch(WsConnection* wsP, char* message, size_t messageLen);
+extern void wsErrorResponse(WsConnection* wsP, int statusCode, const char* title, const char* detail);
 
-#endif  // SRC_LIB_ORIONLD_WS_WSMESSAGEDISPATCH_H_
+#endif  // SRC_LIB_ORIONLD_WS_WSERRORRESPONSE_H_

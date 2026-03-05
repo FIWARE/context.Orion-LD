@@ -24,6 +24,13 @@ SET (SOURCES
     wsUpgrade.cpp
     wsReceive.cpp
     wsMessageDispatch.cpp
+    wsServiceLookup.cpp
+    wsErrorResponse.cpp
+    wsRequestCleanup.cpp
+    wsCreateSubscription.cpp
+    wsCreateEntity.cpp
+    wsPutEntity.cpp
+    wsPatchSubscription.cpp
     wsSend.cpp
     wsNotify.cpp
     wsClose.cpp

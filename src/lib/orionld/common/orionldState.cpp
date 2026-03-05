@@ -112,8 +112,9 @@ EntityMap*        entityMaps        = NULL;    // Used by GET /entities in the d
 bool              entityMapsEnabled = false;
 bool              distSubsEnabled   = false;
 bool              wsSupport         = false;
-OrionldContext*   defaultUserContextP = NULL;
-int               pageSize            = 20;
+OrionldContext*   defaultUserContextP      = NULL;
+char*             defaultUserContextBuffer = NULL;
+int               pageSize                 = 20;
 char              userAgentHeaderValue[32];
 DdsService*       ddsServices         = NULL;
 

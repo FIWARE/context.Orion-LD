@@ -168,7 +168,7 @@ MHD_Result wsUpgrade(MHD_Connection* connection, const char* wsKey)
   MHD_Result ret = MHD_queue_response(connection, MHD_HTTP_SWITCHING_PROTOCOLS, response);
   MHD_destroy_response(response);
 
-  KT_I("------------------------- WebSocket upgrade from %s, tenant: %s -------------------------",
+  KT_I("------------------------- WebSocket upgrade from '%s', tenant: %s -------------------------",
         orionldState.clientIp, wsP->tenantName ? wsP->tenantName : "default");
   KT_T(StWs, "WebSocket upgrade response queued (ret=%d)", ret);
 

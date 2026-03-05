@@ -2247,6 +2247,43 @@ function wsSend()
 
 # ------------------------------------------------------------------------------
 #
+# wsSendBurst - send two JSON messages over an existing WS connection back to back
+#
+# Parameters:
+#   --subId <subId>     subscription ID (identifies the WS connection)
+#   --port <port>       ftClient port (default: $FT_PORT)
+#   --payload1 <json>   first JSON payload
+#   --payload2 <json>   second JSON payload
+#
+function wsSendBurst()
+{
+  _port=${FT_PORT:-7701}
+  _subId=""
+  _payload1=""
+  _payload2=""
+
+  while [ "$#" != 0 ]
+  do
+    if   [ "$1" == "--port" ];     then _port=$2; shift;
+    elif [ "$1" == "--subId" ];    then _subId=$2; shift;
+    elif [ "$1" == "--payload1" ]; then _payload1="$2"; shift;
+    elif [ "$1" == "--payload2" ]; then _payload2="$2"; shift;
+    else
+      echo "Bad parameter for wsSendBurst: $1"
+      exit 1
+    fi
+    shift
+  done
+
+  curl -s -X POST -d "$_payload1" http://127.0.0.1:$_port/ws/$_subId/send -H "Content-Type: application/json" &
+  curl -s -X POST -d "$_payload2" http://127.0.0.1:$_port/ws/$_subId/send -H "Content-Type: application/json" &
+  wait
+}
+
+
+
+# ------------------------------------------------------------------------------
+#
 # wsDump - return accumulated WS notifications for a subscription
 #
 # Parameters:
@@ -2382,6 +2419,7 @@ export -f ros2ServiceStart
 export -f ros2ServiceStop
 export -f wsConnect
 export -f wsSend
+export -f wsSendBurst
 export -f wsDump
 export -f wsClose
 export -f wsReset
