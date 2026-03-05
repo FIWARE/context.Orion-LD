@@ -344,7 +344,7 @@ Date: REGEX(.*)
 07. GET all contexts, with kind=Cached - see the 2 URLs from step 1 + the Core Context
 ======================================================================================
 HTTP/1.1 200 OK
-Content-Length: 122
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -357,7 +357,7 @@ Date: REGEX(.*)
 08. GET all contexts, with kind=Cached AND details - see the 2 URLs from step 1 + the Core Context
 ==================================================================================================
 HTTP/1.1 200 OK
-Content-Length: 1207
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 

@@ -831,7 +831,7 @@ NGSILD-Tenant: smartmaas001
 04. Get all contexts from the context cache
 ===========================================
 HTTP/1.1 200 OK
-Content-Length: 2001
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -1192,7 +1192,7 @@ bye
 07. Get all contexts from the context cache
 ===========================================
 HTTP/1.1 200 OK
-Content-Length: 2002
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 

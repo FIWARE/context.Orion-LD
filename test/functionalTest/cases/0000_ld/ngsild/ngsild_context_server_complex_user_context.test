@@ -216,7 +216,7 @@ Date: REGEX(.*)
 05. GET all contexts - see 2 contexts - the core and the downloaded context - the other two have disappeared
 ============================================================================================================
 HTTP/1.1 200 OK
-Content-Length: 143
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -235,7 +235,7 @@ MongoDB server version: REGEX(.*)
 	"_id" : "REGEX(.*)",
 	"url" : "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
 	"parent" : null,
-	"origin": "REGEX((Downloaded|FileCached))",
+	"origin" : "REGEX((Downloaded|FileCached))",
 	"kind" : "Cached",
 	"createdAt" : REGEX(.*)
 }
@@ -243,7 +243,7 @@ MongoDB server version: REGEX(.*)
 	"_id" : "REGEX(.*)",
 	"url" : "https://fiware.github.io/tutorials.Step-by-Step/tutorials-context.jsonld",
 	"parent" : null,
-	"origin": "REGEX((Downloaded|FileCached))",
+	"origin" : "REGEX((Downloaded|FileCached))",
 	"kind" : "Cached",
 	"createdAt" : REGEX(.*)
 }

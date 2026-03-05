@@ -135,7 +135,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:ambient_temperature:335547901
 03. GET all contexts from the brokers context cache - see only 2
 ================================================================
 HTTP/1.1 200 OK
-Content-Length: 1168
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 

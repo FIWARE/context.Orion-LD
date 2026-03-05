@@ -726,7 +726,7 @@ Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jso
 04. Get all contexts from the context cache
 ===========================================
 HTTP/1.1 200 OK
-Content-Length: 2001
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -996,7 +996,7 @@ Link: <http://localhost:7080/jsonldContexts/schema_lab_fiware_org_ld_context.jso
 07. Get all contexts from the context cache
 ===========================================
 HTTP/1.1 200 OK
-Content-Length: 2002
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 

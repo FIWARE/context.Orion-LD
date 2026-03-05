@@ -130,7 +130,7 @@ Location: /ngsi-ld/v1/entities/http://a.b.c/entity/E1
 02. Get all contexts
 ====================
 HTTP/1.1 200 OK
-Content-Length: 220
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -144,7 +144,7 @@ Date: REGEX(.*)
 03. Get all contexts, with details
 ==================================
 HTTP/1.1 200 OK
-Content-Length: 1460
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 

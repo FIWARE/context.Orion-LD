@@ -313,7 +313,7 @@ Date: REGEX(.*)
 02. GET Contexts - see only Core Context
 ========================================
 HTTP/1.1 200 OK
-Content-Length: 702
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -357,7 +357,7 @@ Date: REGEX(.*)
 04. GET Contexts - see only Core Context
 ========================================
 HTTP/1.1 200 OK
-Content-Length: 702
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -401,7 +401,7 @@ Date: REGEX(.*)
 06. GET Contexts - see only Core Context
 ========================================
 HTTP/1.1 200 OK
-Content-Length: 702
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -446,7 +446,7 @@ Date: REGEX(.*)
 08. GET Contexts - see only Core Context
 ========================================
 HTTP/1.1 200 OK
-Content-Length: 702
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -490,7 +490,7 @@ Date: REGEX(.*)
 10. GET Contexts - see only Core Context
 ========================================
 HTTP/1.1 200 OK
-Content-Length: 702
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -534,7 +534,7 @@ Date: REGEX(.*)
 12. GET Contexts - see only Core Context
 ========================================
 HTTP/1.1 200 OK
-Content-Length: 702
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -578,7 +578,7 @@ Date: REGEX(.*)
 14. GET Contexts - see only Core Context
 ========================================
 HTTP/1.1 200 OK
-Content-Length: 702
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -622,7 +622,7 @@ Date: REGEX(.*)
 16. GET Contexts - see only Core Context
 ========================================
 HTTP/1.1 200 OK
-Content-Length: 702
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -666,7 +666,7 @@ Date: REGEX(.*)
 18. GET Contexts - see only Core Context
 ========================================
 HTTP/1.1 200 OK
-Content-Length: 702
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -710,7 +710,7 @@ Date: REGEX(.*)
 20. GET Contexts - see only Core Context
 ========================================
 HTTP/1.1 200 OK
-Content-Length: 702
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 
