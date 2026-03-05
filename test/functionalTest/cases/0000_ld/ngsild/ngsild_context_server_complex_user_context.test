@@ -123,7 +123,7 @@ Date: REGEX(.*)
                 "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
-            "origin": "Downloaded",
+            "origin": "REGEX(Downloaded|FileCached)",
             "type": "hash-table"
         },
         "kind": "Cached",
@@ -142,7 +142,7 @@ Date: REGEX(.*)
                 "industrial": "https://uri.fiware.org/ns/data-models#industrial",
                 "stockCount": "https://fiware.github.io/tutorials.Step-by-Step/schema/stockCount"
             },
-            "origin": "Downloaded",
+            "origin": "REGEX(Downloaded|FileCached)",
             "type": "hash-table"
         },
         "kind": "Cached",
@@ -235,7 +235,7 @@ MongoDB server version: REGEX(.*)
 	"_id" : "REGEX(.*)",
 	"url" : "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
 	"parent" : null,
-	"origin" : "Downloaded",
+	"origin": "REGEX(Downloaded|FileCached)",
 	"kind" : "Cached",
 	"createdAt" : REGEX(.*)
 }
@@ -243,7 +243,7 @@ MongoDB server version: REGEX(.*)
 	"_id" : "REGEX(.*)",
 	"url" : "https://fiware.github.io/tutorials.Step-by-Step/tutorials-context.jsonld",
 	"parent" : null,
-	"origin" : "Downloaded",
+	"origin": "REGEX(Downloaded|FileCached)",
 	"kind" : "Cached",
 	"createdAt" : REGEX(.*)
 }

@@ -187,7 +187,7 @@ Date: REGEX(.*)
                 "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
-            "origin": "Downloaded",
+            "origin": "REGEX(Downloaded|FileCached)",
             "type": "hash-table"
         },
         "kind": "Cached",
@@ -206,7 +206,7 @@ Date: REGEX(.*)
                 "R1": "http://example.org/R1",
                 "T": "http://example.org/T"
             },
-            "origin": "Downloaded",
+            "origin": "REGEX(Downloaded|FileCached)",
             "type": "hash-table"
         },
         "kind": "Cached",
@@ -227,7 +227,7 @@ Date: REGEX(.*)
                 "copyMachineOrService": "https://uri.fiware.org/ns/data-models#copyMachineOrService",
                 "roadClosed": "https://uri.fiware.org/ns/data-models#roadClosed"
             },
-            "origin": "Downloaded",
+            "origin": "REGEX(Downloaded|FileCached)",
             "type": "hash-table"
         },
         "kind": "Cached",

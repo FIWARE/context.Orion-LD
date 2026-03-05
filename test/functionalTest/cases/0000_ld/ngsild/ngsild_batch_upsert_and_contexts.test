@@ -738,7 +738,7 @@ Date: REGEX(.*)
     "createdAt": "202REGEX(.*)",
     "extraInfo": {
       "type": "hash-table",
-      "origin": "Downloaded",
+      "origin": "REGEX(Downloaded|FileCached)",
       "compactions": 5,
       "expansions": 352,
       "hash-table": {
@@ -757,7 +757,7 @@ Date: REGEX(.*)
     "createdAt": "202REGEX(.*)",
     "extraInfo": {
       "type": "hash-table",
-      "origin": "Downloaded",
+      "origin": "REGEX(Downloaded|FileCached)",
       "compactions": 0,
       "expansions": 26,
       "hash-table": {
@@ -778,7 +778,7 @@ Date: REGEX(.*)
     "createdAt": "202REGEX(.*)",
     "extraInfo": {
       "type": "array",
-      "origin": "Downloaded",
+      "origin": "REGEX(Downloaded|FileCached)",
       "compactions": 25,
       "expansions": 27,
       "URLs": [
@@ -1008,7 +1008,7 @@ Date: REGEX(.*)
     "createdAt": "202REGEX(.*)",
     "extraInfo": {
       "type": "hash-table",
-      "origin": "Downloaded",
+      "origin": "REGEX(Downloaded|FileCached)",
       "compactions": 10,
       "expansions": 357,
       "hash-table": {
@@ -1027,7 +1027,7 @@ Date: REGEX(.*)
     "createdAt": "202REGEX(.*)",
     "extraInfo": {
       "type": "hash-table",
-      "origin": "Downloaded",
+      "origin": "REGEX(Downloaded|FileCached)",
       "compactions": 0,
       "expansions": 52,
       "hash-table": {
@@ -1048,7 +1048,7 @@ Date: REGEX(.*)
     "createdAt": "202REGEX(.*)",
     "extraInfo": {
       "type": "array",
-      "origin": "Downloaded",
+      "origin": "REGEX(Downloaded|FileCached)",
       "compactions": 50,
       "expansions": 54,
       "URLs": [

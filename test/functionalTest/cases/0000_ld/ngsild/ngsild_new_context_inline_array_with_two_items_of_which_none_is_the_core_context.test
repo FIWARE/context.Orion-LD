@@ -94,7 +94,7 @@ Date: REGEX(.*)
     "createdAt": "202REGEX(.*)",
     "extraInfo": {
       "type": "hash-table",
-      "origin": "Downloaded",
+      "origin": "REGEX(Downloaded|FileCached)",
       "compactions": 0,
       "expansions": 348,
       "hash-table": {
@@ -113,7 +113,7 @@ Date: REGEX(.*)
     "createdAt": "202REGEX(.*)",
     "extraInfo": {
       "type": "hash-table",
-      "origin": "Downloaded",
+      "origin": "REGEX(Downloaded|FileCached)",
       "compactions": 0,
       "expansions": 0,
       "hash-table": {
@@ -134,7 +134,7 @@ Date: REGEX(.*)
     "createdAt": "202REGEX(.*)",
     "extraInfo": {
       "type": "hash-table",
-      "origin": "Downloaded",
+      "origin": "REGEX(Downloaded|FileCached)",
       "compactions": 0,
       "expansions": 86,
       "hash-table": {
