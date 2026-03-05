@@ -28,7 +28,7 @@ extern "C"
 }
 
 #include "orionld/common/pqHeader.h"                           // Postgres header
-#include "orionld/common/orionldState.h"                       // troeHost, pgPortString, troeUser, troePwd
+#include "orionld/common/orionldState.h"                       // troeHost, pgPortString, troeUser, troePwd, troeSslMode
 #include "orionld/troe/pgConnect.h"                            // Own interface
 
 
@@ -42,13 +42,13 @@ PGconn* pgConnect(const char* db)
   PGconn*  connectionP;
   int      attemptNo   = 0;
   int      maxAttempts = 30;
-  char*    keywords[6] = { (char*) "host",   (char*) "port",       (char*) "user",   (char*) "password",  NULL, NULL };
-  char*    values[6]   = { troeHost,         pgPortString,         troeUser,         troePwd,             NULL, NULL };
+  char*    keywords[8] = { (char*) "host",   (char*) "port",       (char*) "user",   (char*) "password",  (char*) "sslmode",  NULL, NULL, NULL };
+  char*    values[8]   = { troeHost,         pgPortString,         troeUser,         troePwd,             troeSslMode,        NULL, NULL, NULL };
 
   if (db != NULL)
   {
-    keywords[4] = (char*) "dbname";
-    values[4]   = (char*) db;
+    keywords[5] = (char*) "dbname";
+    values[5]   = (char*) db;
   }
 
   while (attemptNo < maxAttempts)

@@ -48,10 +48,8 @@ static char* wsTrim(char* s)
 
   // trim trailing whitespace
   int last = strlen(s);
-  while ((s[last] == ' ') || (s[last] == '\t') || (s[last] == '\n'))
-  {
-    ++s;
-  }
+  while ((last > 0) && ((s[last - 1] == ' ') || (s[last - 1] == '\t') || (s[last - 1] == '\n')))
+    --last;
   s[last] = 0;
 
   return s;
@@ -187,9 +185,8 @@ PgConnection* pgConnectionGet(const char* db)
     cP->connectionP = pgConnect(_db);
     if (cP->connectionP == NULL)
     {
-      char* errMsg = PQerrorMessage(cP->connectionP);
       cP->busy = false;  // So the slot can be used again!
-      KT_RE(NULL, "Database Error (unable to connect to postgres(%s)): %s", _db, errMsg);
+      KT_RE(NULL, "Database Error (unable to connect to postgres(%s))", _db);
     }
     else
     {
@@ -197,6 +194,9 @@ PgConnection* pgConnectionGet(const char* db)
       ConnStatusType pgStatus = PQstatus(cP->connectionP);
       if (pgStatus != CONNECTION_OK)
       {
+        // get PG error message before freeing
+        char* errMsg = PQerrorMessage(cP->connectionP);
+
         sem_wait(&poolP->poolSem);
         sem_wait(&poolP->queueSem);
 
@@ -210,12 +210,11 @@ PgConnection* pgConnectionGet(const char* db)
             break;
           }
         }
+
         sem_post(&poolP->poolSem);
         sem_post(&poolP->queueSem);
 
-        // get PG error message for log file
-        char* errMsg = PQerrorMessage(cP->connectionP);
-        KT_RE(NULL, "Database Connection could not be established (%s): %s ", _db, errMsg);
+        KT_RE(NULL, "Database Connection could not be established (%s): %s", _db, errMsg);
       }
     }
   }

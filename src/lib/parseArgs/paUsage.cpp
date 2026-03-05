@@ -353,7 +353,6 @@ void paUsage(void)
 void paExtendedUsage(void)
 {
   char*         spacePad;
-  char          string[80];
   PaiArgument*  aP;
   int           optNameMaxLen = 0;
   int           varNameMaxLen = 0;
@@ -361,6 +360,28 @@ void paExtendedUsage(void)
   char          format[64];
   char          progNAME[128];
   bool          firstLine = true;
+
+  //
+  // Find the longest description, cap at 100 chars.
+  // The 'string' buffer for paFullName needs room for: option name + " <" + description + ">"
+  // We add 40 chars of margin for the option name part.
+  //
+  int descMaxLen = 0;
+  paIterateInit();
+  while ((aP = paIterateNext(paiList)) != NULL)
+  {
+    if (aP->description != NULL)
+    {
+      int dLen = strlen(aP->description);
+      if (dLen > descMaxLen)
+        descMaxLen = dLen;
+    }
+  }
+  if (descMaxLen > 100)
+    descMaxLen = 100;
+
+  int stringSize  = descMaxLen + 40;  // room for option name + wrapping
+  char* string    = (char*) alloca(stringSize);
 
   snprintf(progNAME, sizeof(progNAME), "Extended Usage: %s ", progName);
   spacePad = (char*) strdup(progNAME);
@@ -370,8 +391,8 @@ void paExtendedUsage(void)
   paIterateInit();
   while ((aP = paIterateNext(paiList)) != NULL)
   {
-    char  name[128];
-    char  vals[256];
+    char  name[256];
+    char  vals[512];
     char  defVal[20];
     char  minVal[20];
     char  maxVal[20];
@@ -384,11 +405,11 @@ void paExtendedUsage(void)
     memset(name, 0, sizeof(name));
     if (PA_IS_OPTION(aP) && (aP->sort == PaOpt))
     {
-      snprintf(name, sizeof(name), "[%s]", paFullName(aP, string, sizeof(string)));
+      snprintf(name, sizeof(name), "[%s]", paFullName(aP, string, stringSize));
     }
     else if (PA_IS_OPTION(aP) && (aP->sort == PaReq))
     {
-      snprintf(name, sizeof(name), "%s", paFullName(aP, string, sizeof(string)));
+      snprintf(name, sizeof(name), "%s", paFullName(aP, string, stringSize));
     }
     else if (PA_IS_PARAMETER(aP) && (aP->sort == PaOpt))
     {
@@ -454,7 +475,7 @@ void paExtendedUsage(void)
   paIterateInit();
   while ((aP = paIterateNext(paiList)) != NULL)
   {
-    char  optName[128];
+    char  optName[256];
     char  varName[128];
     char  vals[512];
     char  from[128];
@@ -469,11 +490,11 @@ void paExtendedUsage(void)
     /* 1. Option Name */
     if (PA_IS_OPTION(aP) && (aP->sort == PaOpt))
     {
-      snprintf(optName, sizeof(optName), "[%s]", paFullName(aP, string, sizeof(string)));
+      snprintf(optName, sizeof(optName), "[%s]", paFullName(aP, string, stringSize));
     }
     else if (PA_IS_OPTION(aP) && (aP->sort == PaReq))
     {
-      snprintf(optName, sizeof(optName), "%s", paFullName(aP, string, sizeof(string)));
+      snprintf(optName, sizeof(optName), "%s", paFullName(aP, string, stringSize));
     }
     else if (PA_IS_PARAMETER(aP) && (aP->sort == PaOpt))
     {
