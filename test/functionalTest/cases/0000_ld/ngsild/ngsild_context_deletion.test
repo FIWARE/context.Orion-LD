@@ -179,7 +179,7 @@ Date: REGEX(.*)
                 "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
-            "origin": "REGEX(Downloaded|FileCached)",
+            "origin": "REGEX((Downloaded|FileCached))",
             "type": "hash-table"
         },
         "kind": "Cached",
@@ -254,7 +254,7 @@ MongoDB server version: REGEX(.*)
 	"_id" : "REGEX(.*)",
 	"url" : "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
 	"parent" : null,
-	"origin": "REGEX(Downloaded|FileCached)",
+	"origin": "REGEX((Downloaded|FileCached))",
 	"kind" : "Cached",
 	"createdAt" : REGEX(.*)
 }
@@ -313,7 +313,7 @@ Date: REGEX(.*)
                 "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
-            "origin": "REGEX(Downloaded|FileCached)",
+            "origin": "REGEX((Downloaded|FileCached))",
             "type": "hash-table"
         },
         "kind": "Cached",
@@ -369,7 +369,7 @@ MongoDB server version: REGEX(.*)
 	"_id" : "REGEX(.*)",
 	"url" : "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
 	"parent" : null,
-	"origin": "REGEX(Downloaded|FileCached)",
+	"origin": "REGEX((Downloaded|FileCached))",
 	"kind" : "Cached",
 	"createdAt" : REGEX(.*)
 }

@@ -331,7 +331,7 @@ Date: REGEX(.*)
                 "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
-            "origin": "REGEX(Downloaded|FileCached)",
+            "origin": "REGEX((Downloaded|FileCached))",
             "type": "hash-table"
         },
         "kind": "Cached",
@@ -375,7 +375,7 @@ Date: REGEX(.*)
                 "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
-            "origin": "REGEX(Downloaded|FileCached)",
+            "origin": "REGEX((Downloaded|FileCached))",
             "type": "hash-table"
         },
         "kind": "Cached",
@@ -419,7 +419,7 @@ Date: REGEX(.*)
                 "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
-            "origin": "REGEX(Downloaded|FileCached)",
+            "origin": "REGEX((Downloaded|FileCached))",
             "type": "hash-table"
         },
         "kind": "Cached",
@@ -464,7 +464,7 @@ Date: REGEX(.*)
                 "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
-            "origin": "REGEX(Downloaded|FileCached)",
+            "origin": "REGEX((Downloaded|FileCached))",
             "type": "hash-table"
         },
         "kind": "Cached",
@@ -508,7 +508,7 @@ Date: REGEX(.*)
                 "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
-            "origin": "REGEX(Downloaded|FileCached)",
+            "origin": "REGEX((Downloaded|FileCached))",
             "type": "hash-table"
         },
         "kind": "Cached",
@@ -552,7 +552,7 @@ Date: REGEX(.*)
                 "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
-            "origin": "REGEX(Downloaded|FileCached)",
+            "origin": "REGEX((Downloaded|FileCached))",
             "type": "hash-table"
         },
         "kind": "Cached",
@@ -596,7 +596,7 @@ Date: REGEX(.*)
                 "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
-            "origin": "REGEX(Downloaded|FileCached)",
+            "origin": "REGEX((Downloaded|FileCached))",
             "type": "hash-table"
         },
         "kind": "Cached",
@@ -640,7 +640,7 @@ Date: REGEX(.*)
                 "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
-            "origin": "REGEX(Downloaded|FileCached)",
+            "origin": "REGEX((Downloaded|FileCached))",
             "type": "hash-table"
         },
         "kind": "Cached",
@@ -684,7 +684,7 @@ Date: REGEX(.*)
                 "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
-            "origin": "REGEX(Downloaded|FileCached)",
+            "origin": "REGEX((Downloaded|FileCached))",
             "type": "hash-table"
         },
         "kind": "Cached",
@@ -728,7 +728,7 @@ Date: REGEX(.*)
                 "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
-            "origin": "REGEX(Downloaded|FileCached)",
+            "origin": "REGEX((Downloaded|FileCached))",
             "type": "hash-table"
         },
         "kind": "Cached",

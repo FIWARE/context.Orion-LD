@@ -218,7 +218,7 @@ Date: REGEX(.*)
                 "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
-            "origin": "REGEX(Downloaded|FileCached)",
+            "origin": "REGEX((Downloaded|FileCached))",
             "type": "hash-table"
         },
         "kind": "Cached",
@@ -361,7 +361,7 @@ Date: REGEX(.*)
                 "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
-            "origin": "REGEX(Downloaded|FileCached)",
+            "origin": "REGEX((Downloaded|FileCached))",
             "type": "hash-table"
         },
         "kind": "Cached",
@@ -397,7 +397,7 @@ Date: REGEX(.*)
                 "A2": "urn:ngsi-ld:attributes:A2",
                 "A3": "urn:ngsi-ld:attributes:A3"
             },
-            "origin": "REGEX(Downloaded|FileCached)",
+            "origin": "REGEX((Downloaded|FileCached))",
             "type": "hash-table"
         },
         "kind": "Cached",
@@ -418,7 +418,7 @@ Date: REGEX(.*)
                 "industrial": "https://uri.fiware.org/ns/data-models#industrial",
                 "stockCount": "https://fiware.github.io/tutorials.Step-by-Step/schema/stockCount"
             },
-            "origin": "REGEX(Downloaded|FileCached)",
+            "origin": "REGEX((Downloaded|FileCached))",
             "type": "hash-table"
         },
         "kind": "Cached",
@@ -439,7 +439,7 @@ Date: REGEX(.*)
                 "copyMachineOrService": "https://uri.fiware.org/ns/data-models#copyMachineOrService",
                 "roadClosed": "https://uri.fiware.org/ns/data-models#roadClosed"
             },
-            "origin": "REGEX(Downloaded|FileCached)",
+            "origin": "REGEX((Downloaded|FileCached))",
             "type": "hash-table"
         },
         "kind": "Cached",
