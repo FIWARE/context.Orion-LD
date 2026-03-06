@@ -313,7 +313,7 @@ Date: REGEX(.*)
 02. GET Contexts - see only Core Context
 ========================================
 HTTP/1.1 200 OK
-Content-Length: 702
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -331,7 +331,7 @@ Date: REGEX(.*)
                 "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
-            "origin": "Downloaded",
+            "origin": "REGEX((Downloaded|FileCached))",
             "type": "hash-table"
         },
         "kind": "Cached",
@@ -357,7 +357,7 @@ Date: REGEX(.*)
 04. GET Contexts - see only Core Context
 ========================================
 HTTP/1.1 200 OK
-Content-Length: 702
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -375,7 +375,7 @@ Date: REGEX(.*)
                 "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
-            "origin": "Downloaded",
+            "origin": "REGEX((Downloaded|FileCached))",
             "type": "hash-table"
         },
         "kind": "Cached",
@@ -401,7 +401,7 @@ Date: REGEX(.*)
 06. GET Contexts - see only Core Context
 ========================================
 HTTP/1.1 200 OK
-Content-Length: 702
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -419,7 +419,7 @@ Date: REGEX(.*)
                 "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
-            "origin": "Downloaded",
+            "origin": "REGEX((Downloaded|FileCached))",
             "type": "hash-table"
         },
         "kind": "Cached",
@@ -446,7 +446,7 @@ Date: REGEX(.*)
 08. GET Contexts - see only Core Context
 ========================================
 HTTP/1.1 200 OK
-Content-Length: 702
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -464,7 +464,7 @@ Date: REGEX(.*)
                 "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
-            "origin": "Downloaded",
+            "origin": "REGEX((Downloaded|FileCached))",
             "type": "hash-table"
         },
         "kind": "Cached",
@@ -490,7 +490,7 @@ Date: REGEX(.*)
 10. GET Contexts - see only Core Context
 ========================================
 HTTP/1.1 200 OK
-Content-Length: 702
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -508,7 +508,7 @@ Date: REGEX(.*)
                 "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
-            "origin": "Downloaded",
+            "origin": "REGEX((Downloaded|FileCached))",
             "type": "hash-table"
         },
         "kind": "Cached",
@@ -534,7 +534,7 @@ Date: REGEX(.*)
 12. GET Contexts - see only Core Context
 ========================================
 HTTP/1.1 200 OK
-Content-Length: 702
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -552,7 +552,7 @@ Date: REGEX(.*)
                 "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
-            "origin": "Downloaded",
+            "origin": "REGEX((Downloaded|FileCached))",
             "type": "hash-table"
         },
         "kind": "Cached",
@@ -578,7 +578,7 @@ Date: REGEX(.*)
 14. GET Contexts - see only Core Context
 ========================================
 HTTP/1.1 200 OK
-Content-Length: 702
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -596,7 +596,7 @@ Date: REGEX(.*)
                 "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
-            "origin": "Downloaded",
+            "origin": "REGEX((Downloaded|FileCached))",
             "type": "hash-table"
         },
         "kind": "Cached",
@@ -622,7 +622,7 @@ Date: REGEX(.*)
 16. GET Contexts - see only Core Context
 ========================================
 HTTP/1.1 200 OK
-Content-Length: 702
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -640,7 +640,7 @@ Date: REGEX(.*)
                 "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
-            "origin": "Downloaded",
+            "origin": "REGEX((Downloaded|FileCached))",
             "type": "hash-table"
         },
         "kind": "Cached",
@@ -666,7 +666,7 @@ Date: REGEX(.*)
 18. GET Contexts - see only Core Context
 ========================================
 HTTP/1.1 200 OK
-Content-Length: 702
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -684,7 +684,7 @@ Date: REGEX(.*)
                 "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
-            "origin": "Downloaded",
+            "origin": "REGEX((Downloaded|FileCached))",
             "type": "hash-table"
         },
         "kind": "Cached",
@@ -710,7 +710,7 @@ Date: REGEX(.*)
 20. GET Contexts - see only Core Context
 ========================================
 HTTP/1.1 200 OK
-Content-Length: 702
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -728,7 +728,7 @@ Date: REGEX(.*)
                 "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList",
                 "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
             },
-            "origin": "Downloaded",
+            "origin": "REGEX((Downloaded|FileCached))",
             "type": "hash-table"
         },
         "kind": "Cached",

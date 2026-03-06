@@ -101,6 +101,7 @@ int               orionldHostNameLen       = -1;
 OrionldGeoIndex*  geoIndexList             = NULL;
 OrionldPhase      orionldPhase             = OrionldPhaseStartup;
 bool              orionldStartup           = true;
+char              coreContextDir[512];
 char              pgPortString[16];
 char              mongoServerVersion[32];
 char              userAgentHeaderNoLF[64];     // "User-Agent: orionld/" + ORIONLD_VERSION - initialized in orionldServiceInit()

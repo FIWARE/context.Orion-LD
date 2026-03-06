@@ -269,6 +269,7 @@ bool            kTraceInfo       = false;
 
 #define CTX_TMO_DESC           "Timeout in milliseconds for downloading of contexts"
 #define CTX_ATT_DESC           "Number of attempts for downloading of contexts"
+#define CTX_DIR_DESC           "Directory with pre-downloaded core context files"
 #define FG_DESC                "don't start as daemon"
 #define LOCALIP_DESC           "IP to receive new connections"
 #define PORT_DESC              "port to receive new connections"
@@ -434,6 +435,7 @@ PaArgument paArgs[] =
   { "-ngsiv1Autocast",        &ngsiv1Autocast,          "NGSIV1_AUTOCAST",           PaBool,    PaOpt,  false,            false,  true,             NGSIV1_AUTOCAST          },
   { "-ctxTimeout",            &contextDownloadTimeout,  "CONTEXT_DOWNLOAD_TIMEOUT",  PaInt,     PaOpt,  5000,             0,      20000,            CTX_TMO_DESC             },
   { "-ctxAttempts",           &contextDownloadAttempts, "CONTEXT_DOWNLOAD_ATTEMPTS", PaInt,     PaOpt,  3,                0,      100,              CTX_ATT_DESC             },
+  { "-coreContextDir",       coreContextDir,           "ORIONLD_CORE_CONTEXT_DIR",          PaString,  PaOpt,  _i "/opt/orion/ldcontexts",  PaNL, PaNL,        CTX_DIR_DESC             },
   { "-pernot",                &pernot,                  "PERNOT",                    PaBool,    PaOpt,  false,            false,  true,             PERNOT_DESC              },
   { "-troe",                  &troe,                    "TROE",                      PaBool,    PaOpt,  false,            false,  true,             TROE_DESC                },
   { "-troeHost",              troeHost,                 "TROE_HOST",                 PaString,  PaOpt,  _i "localhost",   PaNL,   PaNL,             TROE_HOST_DESC           },

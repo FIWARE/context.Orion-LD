@@ -22,6 +22,9 @@
 *
 * Author: Ken Zangelin
 */
+#include <stdio.h>                                               // fopen, fread, fclose, fseek, ftell
+#include <stdlib.h>                                              // malloc, free
+#include <string.h>                                              // strrchr, strlen
 #include <strings.h>                                             // bzero
 #include <string.h>                                              // strncmp, strncpy
 
@@ -132,6 +135,87 @@ void dbContextToCache(KjNode* dbContextP, KjNode* atContextP, bool keyValues, bo
 
 // -----------------------------------------------------------------------------
 //
+// coreContextFromFile -
+//
+// Context file format:
+//   Line 1: The URL of the context (e.g. https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.3.jsonld)
+//   Rest:   The JSON-LD content
+//
+// The filename is derived from the core context URL (last path component).
+//
+static OrionldContext* coreContextFromFile(void)
+{
+  if (coreContextDir[0] == 0)
+    return NULL;
+
+  const char* fileName = strrchr(coreContextUrl, '/');
+  if (fileName == NULL)
+    return NULL;
+
+  ++fileName;  // skip the '/'
+  char path[768];
+  snprintf(path, sizeof(path), "%s/%s", coreContextDir, fileName);
+
+  FILE* fp = fopen(path, "r");
+  if (fp == NULL)
+  {
+    KT_T(KtCoreContext, "Core context file '%s' not found - will try to download", path);
+    return NULL;
+  }
+
+  fseek(fp, 0, SEEK_END);
+  long fSize = ftell(fp);
+  fseek(fp, 0, SEEK_SET);
+
+  char* buf = (char*) malloc(fSize + 1);
+  if (buf == NULL)
+  {
+    fclose(fp);
+    return NULL;
+  }
+
+  OrionldContext* contextP = NULL;
+
+  if (fread(buf, 1, fSize, fp) == (size_t) fSize)
+  {
+    buf[fSize] = 0;
+
+    // First line is the URL - extract it and skip to the JSON
+    char* json = strchr(buf, '\n');
+    if (json != NULL)
+    {
+      *json = 0;  // null-terminate the URL line
+      char* url = buf;
+
+      // Trim trailing whitespace from URL (e.g. \r)
+      int urlLen = strlen(url);
+      while (urlLen > 0 && (url[urlLen - 1] == ' ' || url[urlLen - 1] == '\r' || url[urlLen - 1] == '\t'))
+        url[--urlLen] = 0;
+
+      ++json;  // skip past the newline to the JSON content
+
+      contextP = orionldContextFromBuffer(url, OrionldContextFileCached, url, json);
+      if (contextP != NULL)
+        KT_V("Core context loaded from file '%s' (URL: %s)", path, url);
+      else
+        KT_W("Unable to parse core context from file '%s' (%s: %s)", path, orionldState.pd.title, orionldState.pd.detail);
+    }
+    else
+      KT_W("Invalid core context file '%s' - expected URL on first line", path);
+  }
+  else
+    KT_W("Unable to read core context file '%s'", path);
+
+  free(buf);
+  fclose(fp);
+
+  return contextP;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // orionldContextCacheInit -
 //
 void orionldContextCacheInit(void)
@@ -194,6 +278,14 @@ void orionldContextCacheInit(void)
 
       contextNodeP = next;
     }
+  }
+
+  // Still no core context? - try to load from local file
+  if (orionldCoreContextP == NULL)
+  {
+    orionldCoreContextP = coreContextFromFile();
+    if (orionldCoreContextP != NULL)
+      orionldContextCachePersist(orionldCoreContextP, false);
   }
 
   // Still no core context? - try to download it
