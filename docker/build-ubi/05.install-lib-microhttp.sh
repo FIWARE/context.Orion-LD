@@ -30,5 +30,6 @@ cd ${ROOT_FOLDER}/libmicrohttpd-1.0.2
 ./configure --disable-postprocessor --disable-dauth --enable-https
 make
 make install
+cp src/include/microhttpd_ws.h /usr/local/include/
 cd ${ROOT_FOLDER} && rm -Rf libmicrohttpd-1.0.2
 ls -l /usr/local/lib/libmicrohttpd*
