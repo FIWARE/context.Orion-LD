@@ -776,6 +776,12 @@ function orionldStart
     fi
   fi
   rm -f $brokerStartErr
+
+  # If the broker uses DDS, wait for RTPS discovery to complete
+  if [[ "$extraParams" == *"dds"* ]] && [ -f "$HOME/.orionld" ]
+  then
+    sleep 5
+  fi
 }
 
 
@@ -926,7 +932,7 @@ function brokerStop
     curl localhost:${port}/exit/harakiri > /dev/null 2> /dev/null
     sleep .5
 
-    # If the broker was using DDS, wait extra for RTPS ports to be released
+    # If the broker was using DDS, wait for graceful DDS shutdown (done inside broker)
     if [ -f "$HOME/.orionld" ]
     then
       sleep 3
@@ -1007,11 +1013,7 @@ function ftClientStart()
 
   export FT_PORT=$_port
 
-  # If DDS is enabled, wait for RTPS discovery to complete
-  if [ "$_dds" != "" ]
-  then
-    sleep 5
-  fi
+  # DDS discovery sleep moved to orionldStart (both participants must be running)
 
   _port=0
   _verbose=""

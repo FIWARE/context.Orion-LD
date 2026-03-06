@@ -552,6 +552,14 @@ void sigHandler(int sigNo)
   case SIGTERM:
   case SIGHUP:
     KT_I("Orion context broker exiting due to receiving a signal");
+
+    // Graceful DDS shutdown before exit - reset triggers participant deregistration
+    if (ddsSupport == true && ddsEnabler != nullptr)
+    {
+      ddsEnabler.reset();
+      usleep(500000);  // 500ms for DDS async teardown to complete
+    }
+
     exit(0);
     break;
   }
@@ -654,6 +662,8 @@ void exitFunc(void)
   // Cleanup periodic notifications
   if (pernot == true)
     pernotRelease();
+
+  // DDS cleanup already done in sigHandler (if applicable)
 
   kaBufferReset(&kalloc, KFALSE);
 }
