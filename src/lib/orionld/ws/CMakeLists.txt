@@ -38,7 +38,6 @@ SET (SOURCES
 # Include directories
 # -----------------------------------------------------------------
 include_directories("${PROJECT_SOURCE_DIR}/src/lib")
-include_directories("/opt/libmicrohttpd/libmicrohttpd-1.0.2/src/include")
 
 
 # Library declaration
