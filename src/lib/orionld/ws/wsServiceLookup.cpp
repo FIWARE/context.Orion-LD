@@ -28,6 +28,7 @@
 #include "orionld/serviceRoutines/orionldPostEntities.h"         // orionldPostEntities
 #include "orionld/serviceRoutines/orionldPostSubscriptions.h"    // orionldPostSubscriptions
 #include "orionld/serviceRoutines/orionldPutEntity.h"            // orionldPutEntity
+#include "orionld/serviceRoutines/orionldPatchEntity2.h"         // orionldPatchEntity2
 #include "orionld/serviceRoutines/orionldPatchSubscription.h"    // orionldPatchSubscription
 #include "orionld/ws/wsSubscriptionPrepare.h"                    // wsSubscriptionPrepare
 #include "orionld/ws/wsSubscriptionWire.h"                       // wsSubscriptionWire
@@ -49,6 +50,7 @@ static WsService wsServiceV[] =
   { "createEntity",        orionldPostEntities,       HTTP_POST,   NULL,                      NULL                },
   { "createSubscription",  orionldPostSubscriptions,  HTTP_POST,   wsSubscriptionPrepare,     wsSubscriptionWire  },
   { "putEntity",           orionldPutEntity,          HTTP_PUT,    NULL,                      NULL                },
+  { "patchEntity",         orionldPatchEntity2,       HTTP_PATCH,  NULL,                      NULL                },
   { "patchSubscription",   orionldPatchSubscription,  HTTP_PATCH,  NULL,                      NULL                },
 };
 

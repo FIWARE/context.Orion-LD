@@ -143,7 +143,7 @@ void wsMessageDispatch(WsConnection* wsP, char* message, size_t messageLen)
   if (wsServiceP == NULL)
   {
     KT_W("WS unsupported operation: '%s'", operation);
-    wsErrorResponse(wsP, 400, "Unsupported Operation", "Supported operations: 'createEntity', 'createSubscription', 'putEntity', 'patchSubscription'");
+    wsErrorResponse(wsP, 400, "Unsupported Operation", "Supported operations: 'createEntity', 'createSubscription', 'putEntity', 'patchEntity', 'patchSubscription'");
     free(parseBuf);
     return;
   }

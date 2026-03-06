@@ -23,6 +23,7 @@ N/A
     - createEntity (POST /ngsi-ld/v1/entities)
     - createSubscription (POST /ngsi-ld/v1/subscriptions)
     - putEntity (PUT /ngsi-ld/v1/entities/{entityId})
+    - patchEntity (PATCH /ngsi-ld/v1/entities/{entityId})
     - patchSubscription (PATCH /ngsi-ld/v1/subscriptions/{subscriptionId})
   - Notifications are sent over the WS connection for subscriptions created via WS
   - Message envelope format (same as MQTT): {"metadata": {...}, "body": {...}}

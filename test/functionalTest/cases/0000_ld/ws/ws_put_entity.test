@@ -21,7 +21,7 @@
 # VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
 
 --NAME--
-PATCH subscription over WebSocket
+PUT entity over WebSocket
 
 --SHELL-INIT--
 dbInit CB
@@ -31,12 +31,32 @@ ftClientStart -v -t 200
 --SHELL--
 
 #
-# 01. Connect via WebSocket and subscribe for entity type T
-# 02. Send PATCH message over WS to add a description to the subscription
-# 03. GET subscription from broker, verify the description was applied
+# 01. Create entity urn:ngsi-ld:E1 via HTTP with P1 and P2
+# 02. Connect via WebSocket and subscribe for entity type T
+# 03. Send putEntity over WS to replace the entity (P1 replaced, P2 removed, P3 added)
+# 04. GET entity from broker, verify the PUT was applied
 #
 
-echo "01. Connect via WebSocket and subscribe for entity type T"
+echo "01. Create entity urn:ngsi-ld:E1 via HTTP with P1 and P2"
+echo "========================================================="
+payload='{
+  "id": "urn:ngsi-ld:E1",
+  "type": "T",
+  "P1": {
+    "type": "Property",
+    "value": "original"
+  },
+  "P2": {
+    "type": "Property",
+    "value": 42
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "02. Connect via WebSocket and subscribe for entity type T"
 echo "========================================================="
 payload='{
   "metadata": {
@@ -60,16 +80,25 @@ echo
 echo
 
 
-echo "02. Send PATCH message over WS to add a description to the subscription"
-echo "========================================================================"
+echo "03. Send putEntity over WS to replace the entity"
+echo "================================================="
 payload='{
   "metadata": {
     "Content-Type": "application/json",
-    "operation": "patchSubscription",
-    "subscriptionId": "'$wsSubId'"
+    "operation": "putEntity",
+    "entityId": "urn:ngsi-ld:E1"
   },
   "body": {
-    "description": "patched via websocket"
+    "id": "urn:ngsi-ld:E1",
+    "type": "T",
+    "P1": {
+      "type": "Property",
+      "value": "replaced via websocket"
+    },
+    "P3": {
+      "type": "Property",
+      "value": "new attribute"
+    }
   }
 }'
 wsSend --subId $wsSubId --port $FT_PORT --payload "$payload"
@@ -78,28 +107,37 @@ echo
 echo
 
 
-echo "03. GET subscription from broker, verify the description was applied"
-echo "===================================================================="
-orionCurl --url /ngsi-ld/v1/subscriptions/$wsSubId
+echo "04. GET entity from broker, verify the PUT was applied"
+echo "======================================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:E1?options=keyValues
 echo
 echo
 
 
 --REGEXPECT--
-01. Connect via WebSocket and subscribe for entity type T
+01. Create entity urn:ngsi-ld:E1 via HTTP with P1 and P2
+=========================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:E1
+
+
+
+02. Connect via WebSocket and subscribe for entity type T
 =========================================================
 WS Subscription Id: REGEX(urn:.*)
 
 
-02. Send PATCH message over WS to add a description to the subscription
-========================================================================
+03. Send putEntity over WS to replace the entity
+=================================================
 HTTP/1.1 204 No Content
 Date: REGEX(.*)
 
 
 
-03. GET subscription from broker, verify the description was applied
-====================================================================
+04. GET entity from broker, verify the PUT was applied
+======================================================
 HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
 Content-Type: application/json
@@ -107,26 +145,10 @@ Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
-    "description": "patched via websocket",
-    "entities": [
-        {
-            "type": "T"
-        }
-    ],
-    "id": "REGEX(urn:.*)",
-    "isActive": true,
-    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
-    "notification": {
-        "endpoint": {
-            "accept": "application/json",
-            "uri": "REGEX(.*)"
-        },
-        "format": "normalized",
-        "status": "ok"
-    },
-    "origin": "cache",
-    "status": "active",
-    "type": "Subscription"
+    "P1": "replaced via websocket",
+    "P3": "new attribute",
+    "id": "urn:ngsi-ld:E1",
+    "type": "T"
 }
 
 

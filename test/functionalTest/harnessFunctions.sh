@@ -2240,7 +2240,22 @@ function wsSend()
     shift
   done
 
-  curl -s -X POST -d "$_payload" http://127.0.0.1:$_port/ws/$_subId/send -H "Content-Type: application/json"
+  curl -s -S -X POST -d "$_payload" http://127.0.0.1:$_port/ws/$_subId/send -H "Content-Type: application/json" --dump-header /tmp/wsHeaders.out > /tmp/wsSend.response
+
+  if [ -f /tmp/wsHeaders.out ]
+  then
+    sed -i 's/\r//g' /tmp/wsHeaders.out
+    egrep ^HTTP/ /tmp/wsHeaders.out
+    cat /tmp/wsHeaders.out | egrep -v ^HTTP/ | grep -v '^$' | sort
+    echo
+    _wsBody=$(cat /tmp/wsSend.response)
+    if [ "$_wsBody" != "" ]
+    then
+      echo "$_wsBody" | python3 -mjson.tool
+    fi
+  fi
+
+  rm -f /tmp/wsHeaders.out /tmp/wsSend.response
 }
 
 
