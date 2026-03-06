@@ -47,6 +47,8 @@ extern "C"
 #include "orionld/dds/ddsServiceLookup.h"                        // ddsServiceLookup
 #include "orionld/dds/ddsServiceLookupByAttributeName.h"         // ddsServiceLookupByAttributeName
 #include "orionld/dds/ddsService.h"                              // ddsService
+#include "orionld/dds/ddsActionLookup.h"                         // ddsActionLookupByAttributeName
+#include "orionld/dds/ddsAction.h"                               // ddsActionGoalSend
 #include "orionld/dds/ddsPublishAttribute.h"                     // Own interface
 
 
@@ -192,7 +194,17 @@ void ddsPublishAttribute(const char* entityId, char* attrShortName, KjNode* attr
     KT_T(StDdsService, "attrP at %p", attrP);
 
     if (sP == NULL)
-      KT_T(StDds, "Nothing to be published (attribute '%s' not in config file)", attrShortName);
+    {
+      DdsAction* aP = ddsActionLookupByAttributeName(attrShortName);
+      if (aP == NULL)
+        KT_T(StDds, "Nothing to be published (attribute '%s' not in config file)", attrShortName);
+      else
+      {
+        KjNode* attributeValueP = kjLookup(attrP, "value");
+        KT_T(StDds, "attributeValueP at %p", attributeValueP);
+        ddsActionGoalSend(aP, attributeValueP);
+      }
+    }
     else
     {
       KjNode* attributeValueP = kjLookup(attrP, "value");

@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_DDS_DDSSERVICENOTIFICATION_H_
-#define SRC_LIB_ORIONLD_DDS_DDSSERVICENOTIFICATION_H_
+#ifndef SRC_LIB_ORIONLD_TYPES_DDSACTION_H_
+#define SRC_LIB_ORIONLD_TYPES_DDSACTION_H_
 
 /*
 *
-* Copyright 2025 FIWARE Foundation e.V.
+* Copyright 2026 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,22 +25,34 @@
 *
 * Author: Ken Zangelin
 */
-#include "ddsenabler/dds_enabler_runner.hpp"                // dds enabler
+#include <stdint.h>                                              // types: uint8_t, ...
 
 
 
 // -----------------------------------------------------------------------------
 //
-// ddsServiceNotification -
+// DdsActionGoal - tracks an in-flight action goal
 //
-extern void ddsServiceNotification(const char* serviceName, const eprosima::ddsenabler::participants::ServiceInfo& serviceInfo);
+typedef struct DdsActionGoal
+{
+  uint8_t                   goalId[16];  // UUID
+  struct DdsActionGoal*     next;
+} DdsActionGoal;
 
 
 
 // -----------------------------------------------------------------------------
 //
-// ddsEntityAttributeUpsert -
+// DdsAction -
 //
-extern void ddsEntityAttributeUpsert(const char* entityId, const char* entityType, const char* attributeName);
+typedef struct DdsAction
+{
+  char*             name;
+  char*             entityId;
+  char*             entityType;
+  char*             attributeName;
+  DdsActionGoal*    goals;
+  struct DdsAction* next;
+} DdsAction;
 
-#endif  // SRC_LIB_ORIONLD_DDS_DDSSERVICENOTIFICATION_H_
+#endif  // SRC_LIB_ORIONLD_TYPES_DDSACTION_H_

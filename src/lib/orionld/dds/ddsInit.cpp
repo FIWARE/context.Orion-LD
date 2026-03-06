@@ -47,6 +47,10 @@ extern "C"
 #include "orionld/dds/ddsTopicNotification.h"               // ddsTopicNotification
 #include "orionld/dds/ddsServiceNotification.h"             // ddsServiceNotification
 #include "orionld/dds/ddsServiceReplyNotification.h"        // ddsServiceReplyNotification
+#include "orionld/dds/ddsActionNotification.h"              // ddsActionNotificationFunc
+#include "orionld/dds/ddsActionResultNotification.h"        // ddsActionResultNotificationFunc
+#include "orionld/dds/ddsActionFeedbackNotification.h"      // ddsActionFeedbackNotificationFunc
+#include "orionld/dds/ddsActionStatusNotification.h"        // ddsActionStatusNotificationFunc
 #include "orionld/dds/ddsCategoryToKlogSeverity.h"          // ddsCategoryToKlogSeverity
 #include "orionld/dds/ddsInit.h"                            // Own interface
 
@@ -138,11 +142,11 @@ void ddsServiceRequestNotification
 
 // -----------------------------------------------------------------------------
 //
-// ddsActionNotification -
+// ddsActionNotification - wrapper that delegates to ddsActionNotificationFunc
 //
 void ddsActionNotification(const char* actionName, const eprosima::ddsenabler::participants::ActionInfo& actionInfo)
 {
-  KT_T(StDdsAction, "Got an Action Notification (action: %s)", actionName);
+  ddsActionNotificationFunc(actionName, actionInfo);
 }
 
 
@@ -177,7 +181,7 @@ void ddsActionFeedbackNotification
   int64_t     publishTime
 )
 {
-  KT_T(StDdsAction, "Got an Action Goal Request Notification (action: '%s'): '%s'", actionName, json);
+  ddsActionFeedbackNotificationFunc(actionName, json, goalId, publishTime);
 }
 
 
@@ -212,7 +216,7 @@ void ddsActionResultNotification
   int64_t     publishTime
 )
 {
-  KT_T(StDdsAction, "Got an Action Result Notification (action: '%s'): '%s'", actionName, json);
+  ddsActionResultNotificationFunc(actionName, json, goalId, publishTime);
 }
 
 
@@ -230,7 +234,7 @@ void ddsActionStatusNotification
   int64_t      publishTime
 )
 {
-  KT_T(StDdsAction, "Got an Action Status Notification (action: %s, status %d): %s", actionName, statusCode, statusMessage);
+  ddsActionStatusNotificationFunc(actionName, goalId, statusCode, statusMessage, publishTime);
 }
 
 
@@ -262,6 +266,7 @@ int ddsInit(Kjson* kjP)
 {
   ddsPrePopulateDb("topics");
   ddsPrePopulateDb("services");
+  ddsPrePopulateDb("actions");
 
   KT_T(StDds, "Calling create_dds_enabler('%s')", configFile);
 

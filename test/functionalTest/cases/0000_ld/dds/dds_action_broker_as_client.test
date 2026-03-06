@@ -1,0 +1,192 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Test of Orion-LD as DDS Action Client with ftClient as DDS Action Server
+
+--SHELL-INIT--
+# Create config files for broker and ftClient
+$REPO_HOME/scripts/configFile.sh --ddsAction "fibonacci,Robot,urn:ngsi-ld:robot:r1,fib" > $HOME/.orionld
+$REPO_HOME/scripts/configFile.sh --ddsAction "fibonacci,Robot,urn:ngsi-ld:robot:r1,fib" > $HOME/.ftClient
+
+# Start ftClient with DDS support
+ftClientStart --dds
+
+# Wait for ftClient to initialize DDS
+sleep 1
+
+dbInit CB
+orionldStart CB -mongocOnly -wip dds
+
+# Give DDS time for discovery
+sleep 0.5
+
+--SHELL--
+
+#
+# This test verifies that Orion-LD can act as a DDS Action client with ftClient as server:
+# 1. ftClient loads DDS type definitions from files in the repo
+# 2. ftClient announces itself as a server for the fibonacci action
+# 3. The broker discovers the action via DDS
+# 4. When the 'fib' attribute is updated, the broker sends an action goal
+#
+# Test steps:
+# 01. Load DDS types into ftClient from repo
+# 02. Announce ftClient as DDS action server for fibonacci
+# 03. GET urn:ngsi-ld:robot:r1 - entity should exist with 'fib' attribute (pre-populated)
+# 04. PATCH the fib attribute with {order: 10} to trigger a DDS action goal
+# 05. GET the entity again to verify the attribute value was updated
+#
+
+echo "01. Load DDS types into ftClient from repo"
+echo "==========================================="
+payload='{
+  "path": "'$REPO_HOME'/test/functionalTest/ddsTypes"
+}'
+orionCurl --url /dds/type --port $FT_PORT --payload "$payload"
+echo
+echo
+
+
+echo "02. Announce ftClient as DDS action server for fibonacci"
+echo "========================================================="
+payload='{
+  "name": "fibonacci"
+}'
+orionCurl --url /dds/action --port $FT_PORT --payload "$payload"
+echo
+echo
+
+
+echo "03. GET urn:ngsi-ld:robot:r1 - entity should exist with fib attribute"
+echo "======================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1
+echo
+echo
+
+
+echo "04. PATCH the fib attribute to trigger a DDS action goal"
+echo "========================================================="
+payload='{
+  "fib": {
+    "type": "Property",
+    "value": {
+      "order": 10
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1 -X PATCH --payload "$payload"
+echo
+echo
+
+
+echo "05. GET the entity again to verify the attribute value"
+echo "======================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1
+echo
+echo
+
+
+--REGEXPECT--
+01. Load DDS types into ftClient from repo
+===========================================
+HTTP/1.1 201 Created
+Content-Length: REGEX(.*)
+Date: REGEX(.*)
+
+{
+    "path": "REGEX(.*)/test/functionalTest/ddsTypes",
+    "typesLoaded": REGEX(\d+)
+}
+
+
+02. Announce ftClient as DDS action server for fibonacci
+=========================================================
+HTTP/1.1 REGEX(.*)
+Content-Length: REGEX(.*)
+Date: REGEX(.*)
+
+{
+    "action": "fibonacci",
+    "announced": REGEX((true|false))
+}
+
+
+03. GET urn:ngsi-ld:robot:r1 - entity should exist with fib attribute
+=======================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+    },
+    "fib": {
+        "type": "Property",
+        "value": "uninitialized"
+    },
+    "id": "urn:ngsi-ld:robot:r1",
+    "type": "Robot"
+}
+
+
+04. PATCH the fib attribute to trigger a DDS action goal
+=========================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+05. GET the entity again to verify the attribute value
+=======================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+    },
+    "fib": {
+        "type": "Property",
+        "value": {
+            "order": 10
+        }
+    },
+    "id": "urn:ngsi-ld:robot:r1",
+    "type": "Robot"
+}
+
+
+--TEARDOWN--
+ftClientStop
+brokerStop CB
+dbDrop CB
+rm -f $HOME/.orionld
+rm -f $HOME/.ftClient

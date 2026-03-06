@@ -118,6 +118,7 @@ char*             defaultUserContextBuffer = NULL;
 int               pageSize                 = 20;
 char              userAgentHeaderValue[32];
 DdsService*       ddsServices         = NULL;
+DdsAction*        ddsActions          = NULL;
 
 
 

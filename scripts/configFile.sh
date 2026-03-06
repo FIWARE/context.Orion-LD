@@ -28,6 +28,10 @@ declare -A ddsServiceV
 typeset -i ddsServiceIx
 ddsServiceIx=-1
 
+declare -A ddsActionV
+typeset -i ddsActionIx
+ddsActionIx=-1
+
 declare -A troeV
 typeset -i troeIx
 troeIx=-1
@@ -46,6 +50,7 @@ function usage()
   echo "$sfile [-u (usage)]"
   echo "$empty [--ddsTopic <topic>,<entity type>,<entity id>,<attribute name>]"
   echo "$empty [--ddsService <topic>,<entity type>,<entity id>,<attribute name>]"
+  echo "$empty [--ddsAction <action>,<entity type>,<entity id>,<attribute name>]"
   echo "$empty [--troe <id,idPattern,type1+type2+...typeN,attribute1+attribute2+...attributeN>]"
   echo
   exit $1
@@ -70,6 +75,12 @@ do
     then
         ddsServiceIx=$ddsServiceIx+1
         ddsServiceV[$ddsServiceIx]="$2"
+        shift
+        shift
+    elif [ "$1" == "--ddsAction" ]
+    then
+        ddsActionIx=$ddsActionIx+1
+        ddsActionV[$ddsActionIx]="$2"
         shift
         shift
     elif [ "$1" == "--troe" ]
@@ -178,6 +189,41 @@ then
         fi
 
         echo '        "'$service'": {'
+        echo '          "entityType": "'$eType'",'
+        echo '          "entityId": "'$eId'",'
+        echo '          "attribute": "'$attr'"'
+        echo '        }'$comma
+
+        ix=$ix+1
+    done
+fi
+
+echo '      },'
+echo '      "actions": {'
+
+#
+# DDS Actions
+#
+if [ $ddsActionIx -gt -1 ]
+then
+    ix=0
+    while [ $ix -le $ddsActionIx ]
+    do
+        items=${ddsActionV[$ix]}
+
+        action=$(echo $items | awk -F, '{ print $1 }')
+        eType=$(echo $items | awk -F, '{ print $2 }')
+        eId=$(echo   $items | awk -F, '{ print $3 }')
+        attr=$(echo  $items | awk -F, '{ print $4 }')
+
+        if [ $ix != $ddsActionIx ]
+        then
+            comma=','
+        else
+            comma=''
+        fi
+
+        echo '        "'$action'": {'
         echo '          "entityType": "'$eType'",'
         echo '          "entityId": "'$eId'",'
         echo '          "attribute": "'$attr'"'

@@ -56,6 +56,7 @@ extern "C"
 #include "ftClient/postDdsServiceReply.h"                   // postDdsServiceReply
 #include "ftClient/postDdsType.h"                           // postDdsType
 #include "ftClient/postDdsService.h"                        // postDdsService
+#include "ftClient/postDdsAction.h"                         // postDdsAction
 
 
 extern __thread KjNode* uriParams;    // These two need to go inside orionldState ...
@@ -99,6 +100,7 @@ FtService serviceV[] =
   { HTTP_POST,     "/dds/service/reply",     postDdsServiceReply     },
   { HTTP_POST,     "/dds/type",              postDdsType             },
   { HTTP_POST,     "/dds/service",           postDdsService          },
+  { HTTP_POST,     "/dds/action",            postDdsAction           },
   { HTTP_POST,     "/ws/connect",            postWsConnect           },
   { HTTP_NOVERB,   NULL,                     NULL                    }
 };

@@ -55,6 +55,8 @@ extern "C"
 #include "orionld/mongoc/mongocAttributesAdd.h"             // mongocAttributesAdd
 #include "orionld/dds/ddsServiceLookup.h"                   // ddsServiceLookup
 #include "orionld/dds/ddsServiceCreate.h"                   // ddsServiceCreate
+#include "orionld/dds/ddsActionLookup.h"                    // ddsActionLookup
+#include "orionld/dds/ddsActionCreate.h"                    // ddsActionCreate
 #include "orionld/kjTree/kjTreeLog.h"                       // KT_TREE
 
 
@@ -107,8 +109,11 @@ static void* ddsPrePopulateDbInThread(void* vP)
   char* configPath  = NULL;
   bool  isService   = false;
 
+  bool  isAction   = false;
+
   if      (strcmp(what, "topics")   == 0) { configPath = (char*) "dds.ngsild.topics"; }
   else if (strcmp(what, "services") == 0) { configPath = (char*) "dds.ngsild.services"; isService = true; }
+  else if (strcmp(what, "actions")  == 0) { configPath = (char*) "dds.ngsild.actions";  isAction  = true; }
   else
     KT_X(1, "Invalid input for ddsPrePopulateDb: '%s'", what);
 
@@ -172,6 +177,11 @@ static void* ddsPrePopulateDbInThread(void* vP)
     {
       if (ddsServiceLookup(topic->name) == NULL)
         ddsServiceCreate(topic->name, NULL, NULL, NULL, NULL, entityId, entityType, attrName);
+    }
+    else if (isAction == true)
+    {
+      if (ddsActionLookup(topic->name) == NULL)
+        ddsActionCreate(topic->name, entityId, entityType, attrName);
     }
   }
 

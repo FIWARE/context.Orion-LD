@@ -85,6 +85,7 @@ unsigned long long   inReqPayloadMaxSize  = 64 * 1024;
 char                 configFile[512];
 bool                 ddsSupport       = false;
 char*                ddsServiceName   = NULL;
+char*                ddsActionName    = NULL;
 
 
 
@@ -105,6 +106,7 @@ KArg kargs[] =
   { "--config",           "-cfg",   KaString,  &configFile,           KaOpt, NULL,       KA_NL,    KA_NL,      "Config File"                                       },
   { "--dds",              "-dds",   KaBool,    &ddsSupport,           KaOpt, KFALSE,     KA_NL,    KA_NL,      "DDS Support"                                       },
   { "--ddsService",       "-ddss",  KaString,  &ddsServiceName,       KaOpt, NULL,       KA_NL,    KA_NL,      "DDS Service to announce as server"                 },
+  { "--ddsAction",        "-ddsa",  KaString,  &ddsActionName,        KaOpt, NULL,       KA_NL,    KA_NL,      "DDS Action to announce as server"                  },
 
   //
   // Broker options
@@ -646,6 +648,16 @@ int main(int argC, char* argV[])
         KT_E("Failed to announce DDS service '%s'", ddsServiceName);
       else
         KT_D("Successfully announced DDS service '%s'", ddsServiceName);
+    }
+
+    // Announce as DDS action server if action name is provided
+    if (ddsActionName != NULL)
+    {
+      KT_D("Announcing DDS action '%s'", ddsActionName);
+      if (ddsEnabler->announce_action(ddsActionName) == false)
+        KT_E("Failed to announce DDS action '%s'", ddsActionName);
+      else
+        KT_D("Successfully announced DDS action '%s'", ddsActionName);
     }
   }
 

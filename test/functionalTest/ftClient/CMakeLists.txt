@@ -37,6 +37,7 @@ SET (SOURCES
     postDdsServiceReply.cpp
     postDdsType.cpp
     postDdsService.cpp
+    postDdsAction.cpp
     ddsPublish.cpp
     NgsildSampleTypeObjectSupport.cxx
     NgsildSamplePubSubTypes.cxx

@@ -925,6 +925,12 @@ function brokerStop
   then
     curl localhost:${port}/exit/harakiri > /dev/null 2> /dev/null
     sleep .5
+
+    # If the broker was using DDS, wait extra for RTPS ports to be released
+    if [ -f "$HOME/.orionld" ]
+    then
+      sleep 3
+    fi
     # In case that didn't work, let's try with killall - actually ... not such a good idea - we may have more than one broker running ...
     # killall orionld > /dev/null 2> /dev/null
   else
@@ -957,6 +963,7 @@ function ftClientStart()
   _logDir=""
   _dds=""
   _ddsService=""
+  _ddsAction=""
 
   while [ "$#" != 0 ]
   do
@@ -965,6 +972,7 @@ function ftClientStart()
     elif [ "$1" == "--verbose" ];         then _verbose="-v";
     elif [ "$1" == "--dds" ];             then _dds="--dds";
     elif [ "$1" == "--ddsService" ];      then _ddsService="--ddsService $2"; shift;
+    elif [ "$1" == "--ddsAction" ];       then _ddsAction="--ddsAction $2"; shift;
     elif [ "$1" == "-v" ];                then _verbose="-v";
     elif [ "$1" == "-t" ];                then _traceLevels="-t $2"; shift;
     else
@@ -993,17 +1001,24 @@ function ftClientStart()
     fi
   fi
 
-  logMsg "Starting the FT Client on port $_port ($_verbose $_traceLevels $_ddsService)"
+  logMsg "Starting the FT Client on port $_port ($_verbose $_traceLevels $_ddsService $_ddsAction)"
   which ftClient >> $LOG_FILE
-  ftClient --port $_port $_verbose $_traceLevels $_logDir $_dds $_ddsService &
+  ftClient --port $_port $_verbose $_traceLevels $_logDir $_dds $_ddsService $_ddsAction &
 
   export FT_PORT=$_port
+
+  # If DDS is enabled, wait for RTPS discovery to complete
+  if [ "$_dds" != "" ]
+  then
+    sleep 5
+  fi
 
   _port=0
   _verbose=""
   _traceLevels=""
   logDir=""
   _ddsService=""
+  _ddsAction=""
 }
 
 
