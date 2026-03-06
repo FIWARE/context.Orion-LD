@@ -1,5 +1,5 @@
-#ifndef SRC_LIB_ORIONLD_WS_WSPATCHSUBSCRIPTION_H_
-#define SRC_LIB_ORIONLD_WS_WSPATCHSUBSCRIPTION_H_
+#ifndef SRC_LIB_ORIONLD_WS_WSSUBSCRIPTIONWIRE_H_
+#define SRC_LIB_ORIONLD_WS_WSSUBSCRIPTIONWIRE_H_
 
 /*
 *
@@ -25,19 +25,14 @@
 *
 * Author: Ken Zangelin
 */
-extern "C"
-{
-#include "kjson/KjNode.h"                              // KjNode
-}
-
-#include "orionld/ws/WsConnection.h"                   // WsConnection
+#include "orionld/ws/WsConnection.h"                     // WsConnection
 
 
 
 // -----------------------------------------------------------------------------
 //
-// wsPatchSubscription - patch a subscription via the service routine over WebSocket
+// wsSubscriptionWire - wire a WS connection to the newly created subscription
 //
-extern void wsPatchSubscription(WsConnection* wsP, KjNode* metadataP, KjNode* bodyP);
+extern void wsSubscriptionWire(WsConnection* wsP);
 
-#endif  // SRC_LIB_ORIONLD_WS_WSPATCHSUBSCRIPTION_H_
+#endif  // SRC_LIB_ORIONLD_WS_WSSUBSCRIPTIONWIRE_H_

@@ -1,5 +1,5 @@
-#ifndef SRC_LIB_ORIONLD_WS_WSCREATESUBSCRIPTION_H_
-#define SRC_LIB_ORIONLD_WS_WSCREATESUBSCRIPTION_H_
+#ifndef SRC_LIB_ORIONLD_WS_WSSUBSCRIPTIONPREPARE_H_
+#define SRC_LIB_ORIONLD_WS_WSSUBSCRIPTIONPREPARE_H_
 
 /*
 *
@@ -25,19 +25,14 @@
 *
 * Author: Ken Zangelin
 */
-extern "C"
-{
-#include "kjson/KjNode.h"                              // KjNode
-}
-
-#include "orionld/ws/WsConnection.h"                   // WsConnection
+#include "orionld/ws/WsConnection.h"                     // WsConnection
 
 
 
 // -----------------------------------------------------------------------------
 //
-// wsCreateSubscription - create a subscription via the service routine
+// wsSubscriptionPrepare - ensure the subscription body has a notification.endpoint.uri
 //
-extern void wsCreateSubscription(WsConnection* wsP, KjNode* metadataP, KjNode* bodyP);
+extern void wsSubscriptionPrepare(WsConnection* wsP);
 
-#endif  // SRC_LIB_ORIONLD_WS_WSCREATESUBSCRIPTION_H_
+#endif  // SRC_LIB_ORIONLD_WS_WSSUBSCRIPTIONPREPARE_H_

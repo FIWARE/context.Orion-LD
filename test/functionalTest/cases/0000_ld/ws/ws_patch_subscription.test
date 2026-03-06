@@ -104,6 +104,7 @@ Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
+    "description": "patched via websocket",
     "entities": [
         {
             "type": "T"

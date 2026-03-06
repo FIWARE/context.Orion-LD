@@ -1420,6 +1420,7 @@ int main(int argC, char* argV[])
   KT_I("  Health Check:              %s", (socketService      == true)? "Enabled" : "Disabled");
   KT_I("  Entity Maps:               %s", (entityMapsEnabled  == true)? "Enabled" : "Disabled");
   KT_I("  Distributed Subscriptions: %s", (distSubsEnabled    == true)? "Enabled" : "Disabled");
+  KT_I("  WebSockets:                %s", (wsSupport          == true)? "Enabled" : "Disabled");
 
   if (troe)
   {

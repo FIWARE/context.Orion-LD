@@ -12,7 +12,7 @@
 * published by the Free Software Foundation, either version 3 of the
 * License, or (at your option) any later version.
 *
-* Orion-LD Context Broker is distributed in the hope that it will be useful,
+* Orion-LD context Broker is distributed in the hope that it will be useful,
 * but WITHOUT ANY WARRANTY; without even the implied warranty of
 * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
 * General Public License for more details.
@@ -25,20 +25,17 @@
 *
 * Author: Ken Zangelin
 */
-extern "C"
-{
-#include "kjson/KjNode.h"                              // KjNode
-}
-
-#include "orionld/ws/WsConnection.h"                   // WsConnection
+#include "orionld/types/OrionLdRestService.h"            // OrionldServiceRoutine
+#include "orionld/types/Verb.h"                          // Verb
+#include "orionld/ws/WsConnection.h"                     // WsConnection
 
 
 
 // -----------------------------------------------------------------------------
 //
-// WsServiceRoutine -
+// WsExtraRoutine - optional per-operation pre/post-processing
 //
-typedef void (*WsServiceRoutine)(WsConnection* wsP, KjNode* metadataP, KjNode* bodyP);
+typedef void (*WsExtraRoutine)(WsConnection* wsP);
 
 
 
@@ -48,16 +45,19 @@ typedef void (*WsServiceRoutine)(WsConnection* wsP, KjNode* metadataP, KjNode* b
 //
 typedef struct WsService
 {
-  const char*       operation;
-  WsServiceRoutine  routine;
+  const char*            operation;        // "createEntity", "createSubscription", etc.
+  OrionldServiceRoutine  serviceRoutine;   // The HTTP service routine to call
+  Verb                   verb;             // HTTP verb for serviceLookupByServiceRoutine
+  WsExtraRoutine         preRoutine;       // Optional pre-processing before the service routine (NULL if not needed)
+  WsExtraRoutine         postRoutine;      // Optional post-processing after the service routine (NULL if not needed)
 } WsService;
 
 
 
 // -----------------------------------------------------------------------------
 //
-// wsServiceLookup - look up a WS service routine by operation name
+// wsServiceLookup - look up a WS service by operation name
 //
-extern WsServiceRoutine wsServiceLookup(const char* operation);
+extern WsService* wsServiceLookup(const char* operation);
 
 #endif  // SRC_LIB_ORIONLD_WS_WSSERVICELOOKUP_H_

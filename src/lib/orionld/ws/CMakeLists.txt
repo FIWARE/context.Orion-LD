@@ -27,10 +27,8 @@ SET (SOURCES
     wsServiceLookup.cpp
     wsErrorResponse.cpp
     wsRequestCleanup.cpp
-    wsCreateSubscription.cpp
-    wsCreateEntity.cpp
-    wsPutEntity.cpp
-    wsPatchSubscription.cpp
+    wsSubscriptionPrepare.cpp
+    wsSubscriptionWire.cpp
     wsSend.cpp
     wsNotify.cpp
     wsClose.cpp

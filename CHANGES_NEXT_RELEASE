@@ -10,15 +10,22 @@
 ## New Features
   #1905 - New CLI option -troeSslMode (env: ORIONLD_TROE_SSL_MODE) for TRoE Postgres SSL connections (disable/allow/prefer/require/verify-ca/verify-full, default: prefer)
   #XXXX - Replaced idiotic prometheus-client-c with kprom library for Prometheus metrics
-  - First draft of WebSocket support: WS upgrade, receive loop, message dispatch, and handlers for createSubscription, createEntity, putEntity, patchSubscription (stub)
-  - Refactored wsMessageDispatch into separate modules with dispatch table (wsServiceLookup, wsErrorResponse, wsRequestCleanup, and one file per handler)
   - Default user @context served from local files, not only URLs
+  #XXXX - Experimental support for WebSockets (wip - Work In Progress)
 
-## Documentation
-  - Added TRoE database schema and advanced optimization documentation
-  - Added Carsten's TRoE optimization script to documentation
-  - Documented MongoDB 4.2+ requirement
-  - Fixed all README.md for the k-libs
+## Multi-Attributes (datasetId)
+N/A
+
+    ## WebSockets (WIP - ETSI TC DATA has not yet finalized the WebSocket API)
+  - WebSocket support is enabled via -wip ws
+  - WS upgrade on /ws endpoint, with per-connection receive loop
+  - Supported operations over WebSocket:
+    - createEntity (POST /ngsi-ld/v1/entities)
+    - createSubscription (POST /ngsi-ld/v1/subscriptions)
+    - putEntity (PUT /ngsi-ld/v1/entities/{entityId})
+    - patchSubscription (PATCH /ngsi-ld/v1/subscriptions/{subscriptionId})
+  - Notifications are sent over the WS connection for subscriptions created via WS
+  - Message envelope format (same as MQTT): {"metadata": {...}, "body": {...}}
 
 ## DDS
 N/A
@@ -30,8 +37,11 @@ N/A
   - Bumped PostgreSQL in installation guides from v12 to v17
   - Upgraded MongoDB from 4.0 to 4.4 in Mintaka tests
 
-## Multi-Attributes (datasetId)
-N/A
+## Documentation
+  - Added TRoE database schema and advanced optimization documentation
+  - Added Carsten's TRoE optimization script to documentation
+  - Documented MongoDB 4.2+ requirement
+  - Fixed all README.md for the k-libs
 
 ## Notes
 ### CI / GitHub Actions

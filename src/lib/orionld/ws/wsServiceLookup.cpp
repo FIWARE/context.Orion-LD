@@ -24,10 +24,13 @@
 */
 #include <string.h>                                              // strcmp
 
-#include "orionld/ws/wsCreateSubscription.h"                     // wsCreateSubscription
-#include "orionld/ws/wsCreateEntity.h"                           // wsCreateEntity
-#include "orionld/ws/wsPutEntity.h"                              // wsPutEntity
-#include "orionld/ws/wsPatchSubscription.h"                      // wsPatchSubscription
+#include "orionld/types/Verb.h"                                  // HTTP_POST, HTTP_PUT, HTTP_PATCH
+#include "orionld/serviceRoutines/orionldPostEntities.h"         // orionldPostEntities
+#include "orionld/serviceRoutines/orionldPostSubscriptions.h"    // orionldPostSubscriptions
+#include "orionld/serviceRoutines/orionldPutEntity.h"            // orionldPutEntity
+#include "orionld/serviceRoutines/orionldPatchSubscription.h"    // orionldPatchSubscription
+#include "orionld/ws/wsSubscriptionPrepare.h"                    // wsSubscriptionPrepare
+#include "orionld/ws/wsSubscriptionWire.h"                       // wsSubscriptionWire
 #include "orionld/ws/wsServiceLookup.h"                          // Own interface
 
 
@@ -36,26 +39,31 @@
 //
 // wsServiceV - dispatch table for WS operations
 //
+// Each entry maps a WS operation name to:
+//   - The HTTP service routine to call
+//   - The HTTP verb (for serviceLookupByServiceRoutine)
+//   - Optional pre/post-processing routines
+//
 static WsService wsServiceV[] =
 {
-  { "createSubscription",  wsCreateSubscription },
-  { "createEntity",        wsCreateEntity       },
-  { "putEntity",           wsPutEntity          },
-  { "patchSubscription",   wsPatchSubscription  },
+  { "createEntity",        orionldPostEntities,       HTTP_POST,   NULL,                      NULL                },
+  { "createSubscription",  orionldPostSubscriptions,  HTTP_POST,   wsSubscriptionPrepare,     wsSubscriptionWire  },
+  { "putEntity",           orionldPutEntity,          HTTP_PUT,    NULL,                      NULL                },
+  { "patchSubscription",   orionldPatchSubscription,  HTTP_PATCH,  NULL,                      NULL                },
 };
 
 
 
 // -----------------------------------------------------------------------------
 //
-// wsServiceLookup - look up a WS service routine by operation name
+// wsServiceLookup - look up a WS service by operation name
 //
-WsServiceRoutine wsServiceLookup(const char* operation)
+WsService* wsServiceLookup(const char* operation)
 {
   for (unsigned int ix = 0; ix < sizeof(wsServiceV) / sizeof(wsServiceV[0]); ix++)
   {
     if (strcmp(operation, wsServiceV[ix].operation) == 0)
-      return wsServiceV[ix].routine;
+      return &wsServiceV[ix];
   }
 
   return NULL;
