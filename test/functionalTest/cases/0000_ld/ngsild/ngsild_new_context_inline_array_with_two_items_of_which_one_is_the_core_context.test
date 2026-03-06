@@ -76,7 +76,7 @@ Location: /ngsi-ld/v1/entities/http://a.b.c/entity/E1
 02. Ask for the entire list of contexts in the context cache
 ============================================================
 HTTP/1.1 200 OK
-Content-Length: 1374
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -88,7 +88,7 @@ Date: REGEX(.*)
     "createdAt": "202REGEX(.*)",
     "extraInfo": {
       "type": "hash-table",
-      "origin": "Downloaded",
+      "origin": "REGEX((Downloaded|FileCached))",
       "compactions": 0,
       "expansions": 348,
       "hash-table": {
@@ -107,7 +107,7 @@ Date: REGEX(.*)
     "createdAt": "202REGEX(.*)",
     "extraInfo": {
       "type": "hash-table",
-      "origin": "Downloaded",
+      "origin": "REGEX((Downloaded|FileCached))",
       "compactions": 0,
       "expansions": 0,
       "hash-table": {

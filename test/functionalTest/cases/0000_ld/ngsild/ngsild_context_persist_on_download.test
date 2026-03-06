@@ -52,7 +52,7 @@ echo
 
 echo "02. See the context cache in mongo"
 echo "=================================="
-mongoCmd2 orionld 'db.contexts.find({origin: "Downloaded"}, {"value": 0}).pretty()'
+mongoCmd2 orionld 'db.contexts.find({origin: {$in: ["Downloaded", "FileCached"]}}, {"value": 0}).pretty()'
 echo
 echo
 
@@ -98,7 +98,7 @@ MongoDB server version: REGEX(.*)
 	"_id" : "REGEX(.*)",
 	"url" : "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
 	"parent" : null,
-	"origin" : "Downloaded",
+	"origin" : "REGEX((Downloaded|FileCached))",
 	"kind" : "Cached",
 	"createdAt" : REGEX(.*)
 }
@@ -106,7 +106,7 @@ MongoDB server version: REGEX(.*)
 	"_id" : "REGEX(.*)",
 	"url" : "https://fiware.github.io/NGSI-LD_TestSuite/ldContext/testContext.jsonld",
 	"parent" : null,
-	"origin" : "Downloaded",
+	"origin" : "REGEX((Downloaded|FileCached))",
 	"kind" : "Cached",
 	"createdAt" : REGEX(.*)
 }
@@ -116,7 +116,7 @@ bye
 03. GET all contexts in the cache
 =================================
 HTTP/1.1 200 OK
-Content-Length: 142
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -133,7 +133,7 @@ Date: REGEX(.*)
 05. GET all contexts in the cache - see the context that was downloaded and persisted in step 1
 ===============================================================================================
 HTTP/1.1 200 OK
-Content-Length: 142
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 

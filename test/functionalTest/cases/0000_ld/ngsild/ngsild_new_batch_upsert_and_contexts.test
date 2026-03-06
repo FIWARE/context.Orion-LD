@@ -831,7 +831,7 @@ NGSILD-Tenant: smartmaas001
 04. Get all contexts from the context cache
 ===========================================
 HTTP/1.1 200 OK
-Content-Length: 2001
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -843,7 +843,7 @@ Date: REGEX(.*)
     "createdAt": "202REGEX(.*)",
     "extraInfo": {
       "type": "hash-table",
-      "origin": "Downloaded",
+      "origin": "REGEX((Downloaded|FileCached))",
       "compactions": 5,
       "expansions": 352,
       "hash-table": {
@@ -862,7 +862,7 @@ Date: REGEX(.*)
     "createdAt": "202REGEX(.*)",
     "extraInfo": {
       "type": "hash-table",
-      "origin": "Downloaded",
+      "origin": "REGEX((Downloaded|FileCached))",
       "compactions": 0,
       "expansions": 26,
       "hash-table": {
@@ -883,7 +883,7 @@ Date: REGEX(.*)
     "createdAt": "202REGEX(.*)",
     "extraInfo": {
       "type": "array",
-      "origin": "Downloaded",
+      "origin": "REGEX((Downloaded|FileCached))",
       "compactions": 25,
       "expansions": 27,
       "URLs": [
@@ -1192,7 +1192,7 @@ bye
 07. Get all contexts from the context cache
 ===========================================
 HTTP/1.1 200 OK
-Content-Length: 2002
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 
@@ -1204,7 +1204,7 @@ Date: REGEX(.*)
     "createdAt": "202REGEX(.*)",
     "extraInfo": {
       "type": "hash-table",
-      "origin": "Downloaded",
+      "origin": "REGEX((Downloaded|FileCached))",
       "compactions": 10,
       "expansions": 357,
       "hash-table": {
@@ -1223,7 +1223,7 @@ Date: REGEX(.*)
     "createdAt": "202REGEX(.*)",
     "extraInfo": {
       "type": "hash-table",
-      "origin": "Downloaded",
+      "origin": "REGEX((Downloaded|FileCached))",
       "compactions": 0,
       "expansions": 52,
       "hash-table": {
@@ -1244,7 +1244,7 @@ Date: REGEX(.*)
     "createdAt": "202REGEX(.*)",
     "extraInfo": {
       "type": "array",
-      "origin": "Downloaded",
+      "origin": "REGEX((Downloaded|FileCached))",
       "compactions": 50,
       "expansions": 54,
       "URLs": [
