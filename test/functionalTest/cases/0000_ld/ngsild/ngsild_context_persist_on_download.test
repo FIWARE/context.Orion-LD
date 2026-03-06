@@ -52,7 +52,7 @@ echo
 
 echo "02. See the context cache in mongo"
 echo "=================================="
-mongoCmd2 orionld 'db.contexts.find({origin: "Downloaded"}, {"value": 0}).pretty()'
+mongoCmd2 orionld 'db.contexts.find({origin: {$in: ["Downloaded", "FileCached"]}}, {"value": 0}).pretty()'
 echo
 echo
 
