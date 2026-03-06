@@ -261,21 +261,25 @@ static bool ddsTypeRequest
 {
   KT_T(StDds, "Got a type request callback ('%s')", typeName);
 
-  DdsTypeData* typeData = ddsTypeLookup(typeName);
-  if (typeData == NULL)
+  //
+  // Load the type file using eProsima's safe filename convention (type_name with ':' -> '_').
+  // This avoids the ambiguity of reversing filenames back to type names
+  // (e.g. "dds_::X" and "dds::_X" both produce "dds___X" as filename).
+  //
+  unsigned char*  data = NULL;
+  uint32_t        size = 0;
+
+  if (ddsTypeLoadByName(typeName, &data, &size) == false)
   {
-    KT_T(StDds, "Type '%s' not found in loaded types", typeName);
+    KT_T(StDds, "Type '%s' not found via file lookup", typeName);
     return false;
   }
 
-  // Copy data into unique_ptr (DDS Enabler takes ownership)
-  unsigned char* dataCopy = new unsigned char[typeData->size];
-  memcpy(dataCopy, typeData->data, typeData->size);
+  // Transfer ownership to unique_ptr (DDS Enabler takes ownership)
+  serializedTypeInternal.reset(data);
+  serializedTypeInternalSize = size;
 
-  serializedTypeInternal.reset(dataCopy);
-  serializedTypeInternalSize = typeData->size;
-
-  KT_T(StDds, "Returning type '%s' (%u bytes)", typeName, typeData->size);
+  KT_T(StDds, "Returning type '%s' (%u bytes)", typeName, size);
   return true;
 }
 

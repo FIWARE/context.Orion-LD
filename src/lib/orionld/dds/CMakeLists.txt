@@ -37,6 +37,7 @@ SET (SOURCES
   ddsServiceCreate.cpp
   ddsServiceLookup.cpp
   ddsServiceLookupByAttributeName.cpp
+  ddsServiceReplyNotification.cpp
 )
 
 # Include directories

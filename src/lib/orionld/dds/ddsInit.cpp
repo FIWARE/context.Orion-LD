@@ -37,17 +37,16 @@ extern "C"
 }
 
 #include "orionld/types/DdsType.h"                          // DdsType
-#include "orionld/types/DdsService.h"                       // DdsService
 #include "orionld/common/traceLevels.h"                     // Trace levels for KTrace
 #include "orionld/common/orionldState.h"                    // configFile, configTree, ddsServices
 #include "orionld/config/configDdsTopicToAttribute.h"       // configDdsTopicToAttribute
 #include "orionld/dds/ddsPrePopulateDb.h"                   // ddsPrePopulateDb
 #include "orionld/dds/ddsServiceList.h"                     // ddsServiceList
-#include "orionld/dds/ddsServiceLookup.h"                   // ddsServiceLookup
 #include "orionld/dds/ddsTypes.h"                           // ddsTypeNotification, ddsTypeLookup
 #include "orionld/dds/ddsNotification.h"                    // ddsNotification
 #include "orionld/dds/ddsTopicNotification.h"               // ddsTopicNotification
 #include "orionld/dds/ddsServiceNotification.h"             // ddsServiceNotification
+#include "orionld/dds/ddsServiceReplyNotification.h"        // ddsServiceReplyNotification
 #include "orionld/dds/ddsCategoryToKlogSeverity.h"          // ddsCategoryToKlogSeverity
 #include "orionld/dds/ddsInit.h"                            // Own interface
 
@@ -134,45 +133,6 @@ void ddsServiceRequestNotification
 }
 
 
-
-// -----------------------------------------------------------------------------
-//
-// ddsServiceReplyNotification -
-//
-void ddsServiceReplyNotification
-(
-  const char* serviceName,
-  const char* json,
-  uint64_t    requestId,
-  int64_t     publishTime
-)
-{
-  KT_T(StDdsService, "Got a Service Reply Notification (service: '%s', req: %lld): '%s'", serviceName, requestId, json);
-
-  DdsService* serviceP = ddsServiceLookup(serviceName);
-  if (serviceP == NULL)
-    KT_W("Service '%s' not found", serviceName);
-
-  // Lookup the instance and remove it
-  DdsServiceInstance* prev = NULL;
-  for (DdsServiceInstance* dsiP = serviceP->instances; dsiP != NULL; dsiP = dsiP->next)
-  {
-    if (dsiP->requestId == requestId)
-    {
-      if (prev != NULL)
-        prev->next = dsiP->next;
-      else
-        serviceP->instances = dsiP->next;
-
-      free(dsiP);
-
-      KT_T(StDdsService, "Found the instance '%llu' of service '%s' and removed it", requestId, serviceName);
-      return;
-    }
-  }
-
-  KT_W("Instance '%llu' of service '%s' not found", requestId, serviceName);
-}
 
 
 

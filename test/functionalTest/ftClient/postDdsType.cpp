@@ -55,6 +55,14 @@ static std::map<std::string, DdsTypeData> ddsTypeMap;
 
 // -----------------------------------------------------------------------------
 //
+// ddsTypesDirectory - stored path to the types directory (set by postDdsType)
+//
+static std::string ddsTypesDirectory;
+
+
+
+// -----------------------------------------------------------------------------
+//
 // ddsTypeLookup - lookup a type by name
 //
 DdsTypeData* ddsTypeLookup(const char* typeName)
@@ -63,6 +71,72 @@ DdsTypeData* ddsTypeLookup(const char* typeName)
   if (it != ddsTypeMap.end())
     return &it->second;
   return NULL;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// ddsTypeLoadByName - load a type from the types directory using safe filename conversion
+//
+// Uses the same convention as eProsima's safe_file_name: replace ':' and '/' with '_'
+// This avoids the ambiguity of reversing the filename back to a type name.
+//
+bool ddsTypeLoadByName(const char* typeName, unsigned char** dataP, uint32_t* sizeP)
+{
+  if (ddsTypesDirectory.empty())
+  {
+    KT_E("Types directory not set (call POST /dds/type first)");
+    return false;
+  }
+
+  // Convert type name to safe filename (same as eProsima's safe_file_name: ':' -> '_')
+  std::string safeName(typeName);
+  for (char& c : safeName)
+  {
+    if (c == ':' || c == '/' || c == '\\')
+      c = '_';
+  }
+
+  std::string filePath = ddsTypesDirectory + "/" + safeName + ".bin";
+
+  FILE* fp = fopen(filePath.c_str(), "rb");
+  if (fp == NULL)
+  {
+    KT_E("Type file not found: '%s' (for type '%s')", filePath.c_str(), typeName);
+    return false;
+  }
+
+  fseek(fp, 0, SEEK_END);
+  long size = ftell(fp);
+  fseek(fp, 0, SEEK_SET);
+
+  if (size <= 0)
+  {
+    KT_E("Empty type file: '%s'", filePath.c_str());
+    fclose(fp);
+    return false;
+  }
+
+  unsigned char* data = (unsigned char*) malloc(size);
+  if (data == NULL)
+  {
+    fclose(fp);
+    return false;
+  }
+
+  size_t bytesRead = fread(data, 1, size, fp);
+  fclose(fp);
+
+  if (bytesRead != (size_t) size)
+  {
+    free(data);
+    return false;
+  }
+
+  *dataP = data;
+  *sizeP = (uint32_t) size;
+  return true;
 }
 
 
@@ -193,6 +267,9 @@ KjNode* postDdsType(int* statusCodeP)
 
   const char* path = pathNode->value.s;
   KT_V("Loading DDS types from path '%s'", path);
+
+  // Store the directory path for on-demand loading in ddsTypeLoadByName
+  ddsTypesDirectory = path;
 
   DIR* dir = opendir(path);
   if (dir == NULL)
