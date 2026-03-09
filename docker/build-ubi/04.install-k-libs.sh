@@ -55,7 +55,7 @@ do
         branch=release/0.1.0
     elif [ $kproj = "kjson" ]
     then
-        branch=release/0.10.1
+        branch=release/0.10.2
     fi
     
     echo checking out $kproj $branch
