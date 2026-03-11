@@ -127,6 +127,7 @@ static void* ddsPrePopulateDbInThread(void* vP)
   case DdsTopics:    conceptName = "topics";   break;
   case DdsServices:  conceptName = "services"; break;
   case DdsActions:   conceptName = "actions";  break;
+  default:           conceptName = "unknown";  break;
   }
 
   // Allocate kjson - local to avoid races between threads
