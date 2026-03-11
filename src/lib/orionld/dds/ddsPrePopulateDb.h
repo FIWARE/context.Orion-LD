@@ -25,6 +25,23 @@
 *
 * Author: Ken Zangelin
 */
+extern "C"
+{
+#include "kjson/KjNode.h"                                   // KjNode
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// DdsConceptType -
+//
+typedef enum DdsConceptType
+{
+  DdsTopics,
+  DdsServices,
+  DdsActions
+} DdsConceptType;
 
 
 
@@ -32,6 +49,6 @@
 //
 // ddsPrePopulateDb -
 //
-extern void ddsPrePopulateDb(const char* what);
+extern void ddsPrePopulateDb(DdsConceptType type, KjNode* configNode);
 
 #endif  // SRC_LIB_ORIONLD_DDS_DDSPREPOPULATEDB_H_

@@ -40,7 +40,8 @@ extern "C"
 #include "orionld/common/traceLevels.h"                     // Trace levels for KTrace
 #include "orionld/common/orionldState.h"                    // configFile, configTree, ddsServices
 #include "orionld/config/configDdsTopicToAttribute.h"       // configDdsTopicToAttribute
-#include "orionld/dds/ddsPrePopulateDb.h"                   // ddsPrePopulateDb
+#include "orionld/kjTree/kjTreeNavigate.h"                  // kjTreeNavigate
+#include "orionld/dds/ddsPrePopulateDb.h"                   // ddsPrePopulateDb, DdsConceptType
 #include "orionld/dds/ddsServiceList.h"                     // ddsServiceList
 #include "orionld/dds/ddsTypes.h"                           // ddsTypeNotification, ddsTypeLookup
 #include "orionld/dds/ddsNotification.h"                    // ddsNotification
@@ -264,9 +265,13 @@ bool ddsActionQuery
 //
 int ddsInit(Kjson* kjP)
 {
-  ddsPrePopulateDb("topics");
-  ddsPrePopulateDb("services");
-  ddsPrePopulateDb("actions");
+  KjNode* topicsNode   = kjTreeNavigate(configTree, "dds.ngsild.topics",   NULL);
+  KjNode* servicesNode = kjTreeNavigate(configTree, "dds.ngsild.services", NULL);
+  KjNode* actionsNode  = kjTreeNavigate(configTree, "dds.ngsild.actions",  NULL);
+
+  if (topicsNode   != NULL)  ddsPrePopulateDb(DdsTopics,   topicsNode);
+  if (servicesNode != NULL)  ddsPrePopulateDb(DdsServices, servicesNode);
+  if (actionsNode  != NULL)  ddsPrePopulateDb(DdsActions,  actionsNode);
 
   KT_T(StDds, "Calling create_dds_enabler('%s')", configFile);
 

@@ -90,9 +90,7 @@ echo
 
 echo "05. Dump/Reset the ftClient for DDS notifications - see the PATCH in DDS"
 echo "========================================================================"
-#sleep 2
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
-#sleep .1
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck -X DELETE
 echo
 echo
@@ -126,7 +124,6 @@ echo
 
 echo "08. Dump/Reset the ftClient for DDS notifications - see no PATCH in DDS"
 echo "======================================================================="
-#sleep 1
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
 echo
 echo
@@ -158,7 +155,6 @@ echo
 
 echo "11. Dump/Reset the ftClient for DDS notifications - see no PATCH in DDS"
 echo "======================================================================="
-#sleep 1
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
 echo
 echo
@@ -184,7 +180,6 @@ echo
 
 echo "13. Dump/Reset the ftClient for DDS notifications - see the update in DDS"
 echo "========================================================================="
-#sleep 1
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
 echo
 echo
