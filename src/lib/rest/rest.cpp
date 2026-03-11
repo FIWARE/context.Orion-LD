@@ -78,6 +78,7 @@ extern "C"
 #include "orionld/mhd/mhdConnectionInit.h"                       // mhdConnectionInit
 #include "orionld/mhd/mhdConnectionPayloadRead.h"                // mhdConnectionPayloadRead
 #include "orionld/mhd/mhdConnectionTreat.h"                      // mhdConnectionTreat
+#include "orionld/ws/wsUpgrade.h"                                // wsUpgrade
 #include "orionld/distOp/distOpListRelease.h"                    // distOpListRelease
 #include "orionld/service/orionldServiceNotFound.h"              // orionldServiceNotFound
 #include "orionld/payloadCheck/pCheckUri.h"                      // pCheckUri
@@ -1384,6 +1385,8 @@ static MHD_Result connectionTreat
    void**           con_cls
 )
 {
+  KT_T(StWs, "connectionTreat: %s %s (con_cls=%p)", method, url, *con_cls);
+
   //
   // NGSI-LD requests implement a different URL parsing algorithm, a different payload parse algorithm, etc.
   // A complete new set of functions are used for NGSI-LD, so ...
@@ -1417,6 +1420,38 @@ static MHD_Result connectionTreat
 
     // Then treat the request
     return mhdConnectionTreat();
+  }
+
+  //
+  // WebSocket upgrade - just needs the MHD connection and the Sec-WebSocket-Key header
+  // No payload, no service routing, no NGSI-LD request processing needed
+  //
+  if (strncmp(url, "/ws", 3) == 0)
+  {
+    if (*con_cls == NULL)
+    {
+      KT_T(StWs, "WebSocket URL path detected (first call): %s", url);
+      *con_cls = (void*) 1;  // non-NULL marker to "acknowledge" the first call
+      return MHD_YES;
+    }
+
+    KT_T(StWs, "WebSocket URL path detected (second call): %s", url);
+
+    const char* upgradeHeader = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Upgrade");
+    const char* wsKey         = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Sec-WebSocket-Key");
+
+    KT_T(StWs, "Upgrade header: '%s', Sec-WebSocket-Key: '%s'", upgradeHeader? upgradeHeader : "NULL", wsKey? wsKey : "NULL");
+
+    if ((upgradeHeader != NULL) && (strcasecmp(upgradeHeader, "websocket") == 0) && (wsKey != NULL))
+    {
+      KT_T(StWs, "Valid WebSocket upgrade request - calling wsUpgrade");
+      orionldStateInit(connection);
+      orionldState.apiVersion = API_VERSION_NGSILD_V1;
+      return wsUpgrade(connection, wsKey);
+    }
+
+    KT_W("Invalid WebSocket upgrade request (missing headers)");
+    return MHD_NO;
   }
 
   //
@@ -1760,6 +1795,10 @@ static int restStart(IpVersion ipVersion, const char* httpsKey = NULL, const cha
   // Adding logging for MHD
   //
   serverMode |= MHD_USE_ERROR_LOG | MHD_USE_DEBUG;
+
+  // Enable WebSocket upgrade support (only when WS is enabled via -wip ws)
+  if (wsSupport == true)
+    serverMode |= MHD_ALLOW_UPGRADE;
 
   if ((ipVersion == IPV4) || (ipVersion == IPDUAL))
   {

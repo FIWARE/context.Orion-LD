@@ -202,6 +202,7 @@ SET (ORION_LIBS
     orionld_troe
     orionld_kjTree
     orionld_mqtt
+    orionld_ws
     orionld_dds
     orionld_service
     orionld_http
@@ -245,6 +246,7 @@ SET (ORION_LIBS
     orionld_kjTree       # mongoBackend uses kjSort, that is temporarily in kjTree - to be moved to kjson
     orionld_payloadCheck
     orionld_mqtt
+    orionld_ws
     orionld_q
     orionld_mongoc       # subCache needs mongoc
     orionld_entityMaps
@@ -404,6 +406,7 @@ if (error EQUAL 0)
   ADD_SUBDIRECTORY(src/lib/orionld/mongoc)
   ADD_SUBDIRECTORY(src/lib/orionld/payloadCheck)
   ADD_SUBDIRECTORY(src/lib/orionld/mqtt)
+  ADD_SUBDIRECTORY(src/lib/orionld/ws)
   ADD_SUBDIRECTORY(src/lib/orionld/dds)
   ADD_SUBDIRECTORY(src/lib/orionld/http)
   ADD_SUBDIRECTORY(src/lib/orionld/prometheus)

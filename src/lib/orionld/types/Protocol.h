@@ -38,8 +38,18 @@ typedef enum Protocol
   HTTP,
   HTTPS,
   MQTT,
-  MQTTS
+  MQTTS,
+  WS,
+  WSS
 } Protocol;
+
+
+
+// -----------------------------------------------------------------------------
+//
+// protocolToString -
+//
+extern const char* protocolToString(Protocol protocol);
 
 
 

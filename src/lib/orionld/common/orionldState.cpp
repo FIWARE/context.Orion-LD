@@ -112,8 +112,10 @@ PernotSubCache    pernotSubCache;
 EntityMap*        entityMaps        = NULL;    // Used by GET /entities in the distributed case, for pagination
 bool              entityMapsEnabled = false;
 bool              distSubsEnabled   = false;
-OrionldContext*   defaultUserContextP = NULL;
-int               pageSize            = 20;
+bool              wsSupport         = false;
+OrionldContext*   defaultUserContextP      = NULL;
+char*             defaultUserContextBuffer = NULL;
+int               pageSize                 = 20;
 char              userAgentHeaderValue[32];
 DdsService*       ddsServices         = NULL;
 

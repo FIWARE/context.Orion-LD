@@ -205,6 +205,7 @@ TARGET_LINK_LIBRARIES(unitTest
   ${STATIC_LIBS}
   ${Boost_LIBRARIES}
   ${LIBMICROHTTPD_LIBRARIES}
+  -lmicrohttpd_ws
   ${DYNAMIC_LIBS}
 )
 

@@ -57,6 +57,7 @@ TARGET_LINK_LIBRARIES(orionld
   ${DYNAMIC_LIBS}
   -lmongoclient
   -lmicrohttpd
+  -lmicrohttpd_ws
   ${Boost_LIBRARIES}
 )
 

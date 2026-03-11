@@ -42,6 +42,7 @@ SET (SOURCES
     NgsildSamplePubSubTypes.cxx
     NgsildPublisher.cpp
     DdsNotificationSender.cpp
+    wsClient.cpp
 )
 
 SET (COMMON_STATIC_LIBS
@@ -61,6 +62,7 @@ SET (ORIONLD_LIBS
     orionld_troe
     orionld_kjTree
     orionld_mqtt
+    orionld_ws
     orionld_dds
     orionld_context
     orionld_contextCache
@@ -126,7 +128,7 @@ link_directories("/usr/lib/x86_64-linux-gnu")
 
 ADD_EXECUTABLE(ftClient ${SOURCES} ${HEADERS})
 
-TARGET_LINK_LIBRARIES(ftClient ${STATIC_LIBS} ${DYNAMIC_LIBS} -lmicrohttpd)
+TARGET_LINK_LIBRARIES(ftClient ${STATIC_LIBS} ${DYNAMIC_LIBS} -lmicrohttpd -lmicrohttpd_ws)
 
 IF (${DISTRO} MATCHES "Ubuntu.*")
   MESSAGE("ftClient: INSTALL Ubuntu DISTRO: '${DISTRO}'")

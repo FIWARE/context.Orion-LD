@@ -26,6 +26,7 @@
 #include <stdlib.h>                                              // malloc, free
 #include <string.h>                                              // strrchr, strlen
 #include <strings.h>                                             // bzero
+#include <string.h>                                              // strncmp, strncpy
 
 extern "C"
 {
@@ -33,6 +34,7 @@ extern "C"
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjChildRemove
+#include "kbase/kFileRead.h"                                     // kFileRead
 }
 
 #include "orionld/common/orionldState.h"                         // dbHost, coreContextUrl, builtinCoreContext
@@ -45,6 +47,44 @@ extern "C"
 #include "orionld/contextCache/orionldContextCache.h"            // orionldContextCacheArray, orionldContextCacheSem
 #include "orionld/contextCache/orionldContextCachePersist.h"     // orionldContextCachePersist
 #include "orionld/contextCache/orionldContextCacheInit.h"        // Own interface
+
+
+
+// -----------------------------------------------------------------------------
+//
+// defaultUserContextInit -
+//
+static void defaultUserContextInit(void)
+{
+  if ((strncmp(defaultUserContextUrl, "http://", 7) == 0) || (strncmp(defaultUserContextUrl, "https://", 8) == 0))
+  {
+    defaultUserContextP = orionldContextFromUrl(defaultUserContextUrl, NULL);
+    if (defaultUserContextP == NULL)
+      KT_X(1, "Unable to download the default user context '%s' (%s: %s)", defaultUserContextUrl, orionldState.pd.title, orionldState.pd.detail);
+  }
+  else
+  {
+    int bufferLen = 0;
+
+    if (kFileRead((char*) "", defaultUserContextUrl, &defaultUserContextBuffer, &bufferLen) != 0)
+      KT_X(1, "Unable to read default user context file '%s'", defaultUserContextUrl);
+
+    char hostedUrl[256];
+    snprintf(hostedUrl, sizeof(hostedUrl), "http://localhost:%d/ngsi-ld/v1/jsonldContexts/defaultUserContext.jsonld", portNo);
+
+    defaultUserContextP = orionldContextFromBuffer(hostedUrl, OrionldContextUserCreated, NULL, defaultUserContextBuffer);
+    if (defaultUserContextP == NULL)
+    {
+      free(defaultUserContextBuffer);
+      defaultUserContextBuffer = NULL;
+      KT_X(1, "Unable to parse default user context file '%s' (%s: %s)", defaultUserContextUrl, orionldState.pd.title, orionldState.pd.detail);
+    }
+    defaultUserContextP->kind = OrionldContextHosted;
+
+    strncpy(defaultUserContextUrl, hostedUrl, sizeof(defaultUserContextUrl) - 1);
+    defaultUserContextUrl[sizeof(defaultUserContextUrl) - 1] = 0;
+  }
+}
 
 
 
@@ -282,14 +322,10 @@ void orionldContextCacheInit(void)
   }
 
   //
-  // Default User Context
+  // Default User Context - can be a URL or a local file path
   //
   if (defaultUserContextUrl[0] != 0)
-  {
-    defaultUserContextP = orionldContextFromUrl(defaultUserContextUrl, NULL);
-    if (defaultUserContextP == NULL)
-      KT_W("Unable to download the default user context");
-  }
+    defaultUserContextInit();
 
   if (contextArray == NULL)
     return;

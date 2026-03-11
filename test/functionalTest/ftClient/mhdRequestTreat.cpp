@@ -41,6 +41,7 @@ extern "C"
 #include "kjTree/kjTreeLog.h"                               // KT_TREE
 
 #include "ftClient/mhdRequestTreat.h"                       // Own interface
+#include "ftClient/wsClient.h"                               // postWsConnect, wsRouteDispatch
 
 // Service Routines
 #include "ftClient/getDump.h"                               // getDump
@@ -98,6 +99,7 @@ FtService serviceV[] =
   { HTTP_POST,     "/dds/service/reply",     postDdsServiceReply     },
   { HTTP_POST,     "/dds/type",              postDdsType             },
   { HTTP_POST,     "/dds/service",           postDdsService          },
+  { HTTP_POST,     "/ws/connect",            postWsConnect           },
   { HTTP_NOVERB,   NULL,                     NULL                    }
 };
 
@@ -144,6 +146,25 @@ char* mhdRequestTreat(int* statusCodeP)
 
     ++ix;
   }
+  //
+  // Try WS dynamic routes (e.g. /ws/{subId}/dump, /ws/{subId}/send, etc.)
+  //
+  if (strncmp(orionldState.urlPath, "/ws/", 4) == 0)
+  {
+    KjNode* responseTree = wsRouteDispatch(statusCodeP);
+    if (responseTree != NULL)
+    {
+      int   bufSize = kjRenderSize(orionldState.kjsonP, responseTree) + 1024;
+      char* buf     = kaAlloc(&orionldState.kalloc, bufSize);
+      bzero(buf, bufSize);
+      kjRender(orionldState.kjsonP, responseTree, buf);
+      return buf;
+    }
+    // wsRouteDispatch returns NULL for 204 responses or unrecognized
+    if (*statusCodeP == 204)
+      return (char*) "";
+  }
+
   KT_T(StRequest, "No service routine found - accumulating");
 
   // Service not found - accumulate

@@ -1,16 +1,14 @@
 ## Fixed Issues
   #1905 - TRoE: segfault (exit 139) connecting to TimescaleDB Cloud - added SSL support and fixed NULL pointer crash
-  #XXXX - TRoE: fixed use-after-free in pgConnectionGet when postgres connection status check fails
-  #XXXX - TRoE: fixed wsTrim bug (trimming trailing whitespace incremented instead of decremented)
-  #XXXX - Fixed GCC 13 C++20 keyword conflict, trace level limits, and mongo shell warnings
-  #XXXX - Fixed query of many large entities (cfreyfh)
-  #XXXX - Fixed array initialization check in return array
+  #XXXX - Fixed query of many large entities (cfreyfh - Carsten Freyh at Fraunhofer IKTS)
   #XXXX - wait for postgres instead of exiting after the first try - just like for mongo (1 try per second until 30 secs)
 
 ## New Features
-  #1905 - New CLI option -troeSslMode (env: ORIONLD_TROE_SSL_MODE) for TRoE Postgres SSL connections (disable/allow/prefer/require/verify-ca/verify-full, default: prefer)
+  #1905 - New CLI option -troeSslMode (env: ORIONLD_TROE_SSL_MODE) for TRoE Postgres SSL connections
   #XXXX - New CLI option -coreContextDir (env: ORIONLD_CORE_CONTEXT_DIR, default: /opt/orion/ldcontexts)
-  #XXXX - Replaced idiotic prometheus-client-c with kprom library for Prometheus metrics
+  #XXXX - Replaced idiotic prometheus-client-c with KPROM library for Prometheus metrics
+  #XXXX - Default user @context served from local files, not only URLs
+  #XXXX - Experimental support for WebSockets (wip - Work In Progress)
 
 ### Pre-downloaded Core Context Files
   At startup the broker needs the NGSI-LD core context. Previously it was either found in
@@ -33,6 +31,18 @@
   This eliminates startup failures caused by network timeouts when downloading the core
   context, which was particularly problematic in CI environments and cloud deployments.
 
+## WebSockets (WIP - ETSI TC DATA has not yet finalized the WebSocket API)
+  - WebSocket support is enabled via -wip ws
+  - WS upgrade on /ws endpoint, with per-connection receive loop
+  - Supported operations over WebSocket:
+    - createEntity (POST /ngsi-ld/v1/entities)
+    - createSubscription (POST /ngsi-ld/v1/subscriptions)
+    - putEntity (PUT /ngsi-ld/v1/entities/{entityId})
+    - patchEntity (PATCH /ngsi-ld/v1/entities/{entityId})
+    - patchSubscription (PATCH /ngsi-ld/v1/subscriptions/{subscriptionId})
+  - Notifications are sent over the WS connection for subscriptions created via WS
+  - Message envelope format (same as MQTT): {"metadata": {...}, "body": {...}}
+
 ## Documentation
   - Added TRoE database schema and advanced optimization documentation
   - Added Carsten's TRoE optimization script to documentation
@@ -49,8 +59,11 @@ N/A
   - Bumped PostgreSQL in installation guides from v12 to v17
   - Upgraded MongoDB from 4.0 to 4.4 in Mintaka tests
 
-## Multi-Attributes (datasetId)
-N/A
+## Documentation
+  - Added TRoE database schema and advanced optimization documentation
+  - Added Carsten's TRoE optimization script to documentation
+  - Documented MongoDB 4.2+ requirement
+  - Fixed all README.md for the k-libs
 
 ## Notes
 ### CI / GitHub Actions

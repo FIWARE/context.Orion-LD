@@ -34,9 +34,23 @@ make install
 
 echo
 echo -e "\e[1;32m Builder: installing mongo c driver \e[0m"
-wget https://github.com/mongodb/mongo-c-driver/releases/download/2.2.0/mongo-c-driver-2.2.0.tar.gz
-tar xzf mongo-c-driver-2.2.0.tar.gz
-cd mongo-c-driver-2.2.0
+wget https://github.com/mongodb/mongo-c-driver/releases/download/2.2.2/mongo-c-driver-2.2.2.tar.gz
+tar xzf mongo-c-driver-2.2.2.tar.gz
+cd mongo-c-driver-2.2.2
+
+#
+# Patch: server monitor assertion crash (CDRIVER-5584 variant)
+# The server monitor thread can receive unexpected op_code from mongod 8.x,
+# causing a fatal BSON_ASSERT.  Replace with soft return so the monitor retries.
+#
+sed -i '/^mcd_rpc_op_msg_get_flag_bits/,/^}/ {
+  s/BSON_ASSERT(rpc->msg_header.op_code == MONGOC_OP_CODE_MSG);/if (rpc->msg_header.op_code != MONGOC_OP_CODE_MSG) { return 0u; }/
+}' src/libmongoc/src/mongoc/mcd-rpc.c
+
+sed -i '/^mcd_rpc_op_msg_get_sections_count/,/^}/ {
+  s/BSON_ASSERT(rpc->msg_header.op_code == MONGOC_OP_CODE_MSG);/if (rpc->msg_header.op_code != MONGOC_OP_CODE_MSG) { return 0u; }/
+}' src/libmongoc/src/mongoc/mcd-rpc.c
+
 mkdir cmake-build
 cd cmake-build
 cmake -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF ..

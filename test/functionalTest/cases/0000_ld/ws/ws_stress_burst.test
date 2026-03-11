@@ -1,0 +1,195 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+WebSocket stress burst - multiple rapid operations on same connection
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -mongocOnly -wip ws
+ftClientStart -v -t 200
+
+--SHELL--
+
+#
+# Hammer the broker with rapid WS operations while HTTP requests fly in parallel.
+#
+# 01. Connect via WebSocket and subscribe for entity type T
+# 02. Burst: 3 createEntity + 1 createSubscription simultaneously
+# 03. HTTP entity creation while WS is active
+# 04. Another burst: 2 createEntity + 2 putEntity simultaneously
+# 05. Verify broker is alive and entities exist
+#
+
+echo "01. Connect via WebSocket and subscribe for entity type T"
+echo "========================================================="
+payload='{
+  "metadata": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "type": "Subscription",
+    "entities": [
+      {
+        "type": "T"
+      }
+    ],
+    "notification": {
+      "format": "normalized"
+    }
+  }
+}'
+wsConnect --port $FT_PORT --payload "$payload"
+echo "WS Subscription Id: $wsSubId"
+echo
+echo
+
+
+echo "02. Burst: 3 createEntity + 1 createSubscription simultaneously"
+echo "================================================================"
+p1='{"metadata":{"operation":"createEntity"},"body":{"id":"urn:ngsi-ld:E01","type":"T","P1":{"type":"Property","value":1}}}'
+p2='{"metadata":{"operation":"createEntity"},"body":{"id":"urn:ngsi-ld:E02","type":"T","P2":{"type":"Property","value":"hello world"}}}'
+p3='{"metadata":{"operation":"createEntity"},"body":{"id":"urn:ngsi-ld:E03","type":"T","P3":{"type":"Property","value":3.14}}}'
+p4='{"metadata":{"operation":"createSubscription"},"body":{"type":"Subscription","entities":[{"type":"T2"}],"notification":{"format":"normalized"}}}'
+
+curl -s -X POST -d "$p1" http://127.0.0.1:$FT_PORT/ws/$wsSubId/send -H "Content-Type: application/json" 2>/dev/null &
+curl -s -X POST -d "$p2" http://127.0.0.1:$FT_PORT/ws/$wsSubId/send -H "Content-Type: application/json" 2>/dev/null &
+curl -s -X POST -d "$p3" http://127.0.0.1:$FT_PORT/ws/$wsSubId/send -H "Content-Type: application/json" 2>/dev/null &
+curl -s -X POST -d "$p4" http://127.0.0.1:$FT_PORT/ws/$wsSubId/send -H "Content-Type: application/json" 2>/dev/null &
+wait
+sleep 1
+echo "Burst done"
+echo
+echo
+
+
+echo "03. HTTP entity creation while WS is active"
+echo "============================================="
+payload='{
+  "id": "urn:ngsi-ld:E04",
+  "type": "T",
+  "P4": 4
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "04. Another burst: createEntity + putEntity simultaneously"
+echo "==========================================================="
+p5='{"metadata":{"operation":"createEntity"},"body":{"id":"urn:ngsi-ld:E05","type":"T","P5":{"type":"Property","value":5}}}'
+p6='{"metadata":{"operation":"putEntity"},"body":{"id":"urn:ngsi-ld:E01","type":"T","P1":{"type":"Property","value":100},"P1b":{"type":"Property","value":"updated"}}}'
+p7='{"metadata":{"operation":"createEntity"},"body":{"id":"urn:ngsi-ld:E06","type":"T","P6":{"type":"Property","value":6}}}'
+p8='{"metadata":{"operation":"putEntity"},"body":{"id":"urn:ngsi-ld:E02","type":"T","P2":{"type":"Property","value":"updated hello"}}}'
+
+curl -s -X POST -d "$p5" http://127.0.0.1:$FT_PORT/ws/$wsSubId/send -H "Content-Type: application/json" 2>/dev/null &
+curl -s -X POST -d "$p6" http://127.0.0.1:$FT_PORT/ws/$wsSubId/send -H "Content-Type: application/json" 2>/dev/null &
+curl -s -X POST -d "$p7" http://127.0.0.1:$FT_PORT/ws/$wsSubId/send -H "Content-Type: application/json" 2>/dev/null &
+curl -s -X POST -d "$p8" http://127.0.0.1:$FT_PORT/ws/$wsSubId/send -H "Content-Type: application/json" 2>/dev/null &
+wait
+sleep 1
+echo "Burst 2 done"
+echo
+echo
+
+
+echo "05. Verify broker is alive - list all entities"
+echo "==============================================="
+orionCurl --url '/ngsi-ld/v1/entities?type=T&options=keyValues'
+echo
+echo
+
+
+--REGEXPECT--
+01. Connect via WebSocket and subscribe for entity type T
+=========================================================
+WS Subscription Id: REGEX(urn:.*)
+
+
+02. Burst: 3 createEntity + 1 createSubscription simultaneously
+================================================================
+Burst done
+
+
+03. HTTP entity creation while WS is active
+=============================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:E04
+
+
+
+04. Another burst: createEntity + putEntity simultaneously
+===========================================================
+Burst 2 done
+
+
+05. Verify broker is alive - list all entities
+===============================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: REGEX(.*)
+
+[
+#SORT_START
+    {
+        "P1": 100,
+        "P1b": "updated",
+        "id": "urn:ngsi-ld:E01",
+        "type": "T"
+    },
+    {
+        "P2": "updated hello",
+        "id": "urn:ngsi-ld:E02",
+        "type": "T"
+    },
+    {
+        "P3": 3.14,
+        "id": "urn:ngsi-ld:E03",
+        "type": "T"
+    },
+    {
+        "P4": 4,
+        "id": "urn:ngsi-ld:E04",
+        "type": "T"
+    },
+    {
+        "P5": 5,
+        "id": "urn:ngsi-ld:E05",
+        "type": "T"
+    },
+    {
+        "P6": 6,
+        "id": "urn:ngsi-ld:E06",
+        "type": "T"
+    }
+#SORT_END
+]
+
+
+--TEARDOWN--
+brokerStop CB
+ftClientStop
+dbDrop CB
