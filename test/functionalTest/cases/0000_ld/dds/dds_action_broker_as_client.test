@@ -33,6 +33,7 @@ ftClientStart --dds
 
 # Wait for ftClient to initialize DDS
 sleep .1
+valgrindSleep 5
 
 dbInit CB
 orionldStart CB -mongocOnly -wip dds
@@ -41,6 +42,7 @@ orionldStart CB -mongocOnly -wip dds
 sleep 0.1
 
 --SHELL--
+valgrindSleep 5
 
 #
 # This test verifies that Orion-LD can act as a DDS Action client with ftClient as server:

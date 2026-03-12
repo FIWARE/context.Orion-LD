@@ -27,11 +27,12 @@ the test client publishes on DDS, the broker receives DDS notifications and crea
 $REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" --ddsTopic "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.orionld
 $REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" --ddsTopic "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.ftClient
 dbInit CB
-orionldStart CB -mongocOnly -wip dds
+orionldStart CB -mongocOnly -wip dds -kt 0-6300 -ki
 ftClientStop
 ftClientStart -t 0-5000 --dds
 
 --SHELL--
+valgrindSleep 10
 
 #
 # 01. Ask FT to publish an entity urn:ngsi-ld:camera:cam1 on topic 'P1'
@@ -88,6 +89,7 @@ echo
 echo "05. Dump the ftClient for DDS notifications - see the PATCH in DDS"
 echo "=================================================================="
 sleep .1
+valgrindSleep 10
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
 echo
 echo

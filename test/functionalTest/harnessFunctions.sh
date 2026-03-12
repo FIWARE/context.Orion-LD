@@ -233,15 +233,18 @@ function brokerStopAwait
     then
       logMsg The orion context broker on port $port has stopped
       sleep .5
+      valgrindSleep .5
       break;
     fi
 
     logMsg Awaiting orion context broker to fully stop '('$loopNo')' ...
     sleep .1
+    valgrindSleep .1
     loopNo=$loopNo+1
   done
 
   sleep .1
+  valgrindSleep .4
 
   # Make sure that is CB is NOT running
   curl -s localhost:${port}/version | grep version > /dev/null
@@ -303,6 +306,7 @@ function brokerStartAwait
 
     logMsg Awaiting orion context to fully start '(loop '$loopNo')' ...
     sleep .01
+    valgrindSleep .09
     loopNo=$loopNo+1
   done
 
@@ -312,6 +316,8 @@ function brokerStartAwait
     result=1
     return
   fi
+
+  valgrindSleep .5
 }
 
 
@@ -578,6 +584,7 @@ function localBrokerStop
 
     # Wait some time so the broker can finish properly
     sleep .1
+    valgrindSleep .4
     brokerPidLines=$(ps -fe | grep $BROKER | grep $port | wc -l)
 
     if [ $brokerPidLines != 0 ]
@@ -585,6 +592,7 @@ function localBrokerStop
       # If the broker refuses to stop politely, kill the process by brute force
       kill -9 $(ps -fe | grep $BROKER | grep $port | awk '{print $2}') 2> /dev/null
       sleep .1
+      valgrindSleep .4
       brokerPidLines=$(ps -fe | grep $BROKER | grep $port | wc -l)
       if [ $brokerPidLines != 0 ]
       then
@@ -929,6 +937,7 @@ function brokerStop
   then
     curl localhost:${port}/exit/harakiri > /dev/null 2> /dev/null
     sleep .1
+    valgrindSleep .4
 
     # If the broker was using DDS, wait for graceful DDS shutdown (done inside broker)
     if [ -f "$HOME/.orionld" ]

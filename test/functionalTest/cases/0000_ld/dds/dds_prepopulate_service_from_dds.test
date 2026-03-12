@@ -29,6 +29,7 @@ dbInit CB
 orionldStart CB -mongocOnly -wip dds,entityMaps
 
 --SHELL--
+valgrindSleep 5
 
 #
 # Before starting the broker (meaning, before running this test), prepare this way:

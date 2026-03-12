@@ -49,6 +49,7 @@ dbInit CB
 orionldStart CB -mongocOnly -wip dds
 
 --SHELL--
+valgrindSleep 5
 
 #
 # 01. GET all entities from the broker
@@ -56,6 +57,7 @@ orionldStart CB -mongocOnly -wip dds
 
 # Sleep to allow DDS topic notifications to be processed and add ddsTypeName
 sleep .1
+valgrindSleep 5
 
 echo "01. GET all entities from the broker"
 echo "===================================="

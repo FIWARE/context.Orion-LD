@@ -31,6 +31,7 @@ orionldStart CB -mongocOnly -wip dds
 ftClientStart -t 0-5000 --dds
 
 --SHELL--
+valgrindSleep 10
 
 #
 # 01. Ask FT to publish an entity urn:ngsi-ld:camera:cam1 on topic 'P1'
@@ -93,6 +94,7 @@ echo
 echo "05. Dump/Reset the ftClient for DDS notifications - see the PUT in DDS"
 echo "======================================================================"
 sleep .1
+valgrindSleep 10
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck -X DELETE
 echo
@@ -129,6 +131,7 @@ echo
 echo "08. Dump/Reset the ftClient for DDS notifications - see no PUT in DDS"
 echo "======================================================================"
 sleep .1
+valgrindSleep 10
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
 echo
 echo
@@ -162,6 +165,7 @@ echo
 echo "11. Dump/Reset the ftClient for DDS notifications - see no update in DDS"
 echo "========================================================================"
 sleep .1
+valgrindSleep 10
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
 echo
 echo
