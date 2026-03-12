@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_DDS_DDSSERVICENOTIFICATION_H_
-#define SRC_LIB_ORIONLD_DDS_DDSSERVICENOTIFICATION_H_
+#ifndef SRC_LIB_ORIONLD_DDS_DDSACTIONSTATUSNOTIFICATION_H_
+#define SRC_LIB_ORIONLD_DDS_DDSACTIONSTATUSNOTIFICATION_H_
 
 /*
 *
-* Copyright 2025 FIWARE Foundation e.V.
+* Copyright 2026 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,22 +25,22 @@
 *
 * Author: Ken Zangelin
 */
-#include "ddsenabler/dds_enabler_runner.hpp"                // dds enabler
+#include <stdint.h>                                              // int64_t
+#include "ddsenabler_participants/rpc/RpcTypes.hpp"              // UUID, StatusCode
 
 
 
 // -----------------------------------------------------------------------------
 //
-// ddsServiceNotification -
+// ddsActionStatusNotification -
 //
-extern void ddsServiceNotification(const char* serviceName, const eprosima::ddsenabler::participants::ServiceInfo& serviceInfo);
+extern void ddsActionStatusNotification
+(
+  const char*                                              actionName,
+  const eprosima::ddsenabler::participants::UUID&          goalId,
+  eprosima::ddsenabler::participants::StatusCode           statusCode,
+  const char*                                              statusMessage,
+  int64_t                                                  publishTime
+);
 
-
-
-// -----------------------------------------------------------------------------
-//
-// ddsEntityAttributeUpsert -
-//
-extern void ddsEntityAttributeUpsert(const char* entityId, const char* entityType, const char* attributeName);
-
-#endif  // SRC_LIB_ORIONLD_DDS_DDSSERVICENOTIFICATION_H_
+#endif  // SRC_LIB_ORIONLD_DDS_DDSACTIONSTATUSNOTIFICATION_H_

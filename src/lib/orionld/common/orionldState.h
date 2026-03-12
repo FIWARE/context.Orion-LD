@@ -62,6 +62,7 @@ extern "C"
 #include "orionld/types/QNode.h"                                 // QNode
 #include "orionld/types/EntityLink.h"                            // EntityLink
 #include "orionld/types/DdsService.h"                            // DdsService
+#include "orionld/types/DdsAction.h"                             // DdsAction
 #include "orionld/common/performance.h"                          // REQUEST_PERFORMANCE
 #include "orionld/kjTree/kjTreeLog.h"                            // Because it is so often used but then removed again ...
 
@@ -659,6 +660,7 @@ extern char              defaultUserContextUrl[256];
 extern OrionldContext*   defaultUserContextP;
 extern char*             defaultUserContextBuffer;
 extern DdsService*       ddsServices;
+extern DdsAction*        ddsActions;
 
 extern char                localIpAndPort[135];    // Local address for X-Forwarded-For (from orionld.cpp)
 extern unsigned long long  inReqPayloadMaxSize;

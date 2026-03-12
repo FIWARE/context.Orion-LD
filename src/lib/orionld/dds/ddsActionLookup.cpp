@@ -1,9 +1,6 @@
-#ifndef SRC_LIB_ORIONLD_DDS_DDSSERVICENOTIFICATION_H_
-#define SRC_LIB_ORIONLD_DDS_DDSSERVICENOTIFICATION_H_
-
 /*
 *
-* Copyright 2025 FIWARE Foundation e.V.
+* Copyright 2026 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,22 +22,42 @@
 *
 * Author: Ken Zangelin
 */
-#include "ddsenabler/dds_enabler_runner.hpp"                // dds enabler
+#include <string.h>                                              // strcmp
+
+#include "orionld/types/DdsAction.h"                             // DdsAction
+#include "orionld/common/orionldState.h"                         // ddsActions
+#include "orionld/dds/ddsActionLookup.h"                         // Own interface
 
 
 
 // -----------------------------------------------------------------------------
 //
-// ddsServiceNotification -
+// ddsActionLookup -
 //
-extern void ddsServiceNotification(const char* serviceName, const eprosima::ddsenabler::participants::ServiceInfo& serviceInfo);
+DdsAction* ddsActionLookup(const char* actionName)
+{
+  for (DdsAction* aP = ddsActions; aP != NULL; aP = aP->next)
+  {
+    if (strcmp(aP->name, actionName) == 0)
+      return aP;
+  }
+
+  return NULL;
+}
 
 
 
 // -----------------------------------------------------------------------------
 //
-// ddsEntityAttributeUpsert -
+// ddsActionLookupByAttributeName -
 //
-extern void ddsEntityAttributeUpsert(const char* entityId, const char* entityType, const char* attributeName);
+DdsAction* ddsActionLookupByAttributeName(const char* attributeName)
+{
+  for (DdsAction* aP = ddsActions; aP != NULL; aP = aP->next)
+  {
+    if ((aP->attributeName != NULL) && (strcmp(aP->attributeName, attributeName) == 0))
+      return aP;
+  }
 
-#endif  // SRC_LIB_ORIONLD_DDS_DDSSERVICENOTIFICATION_H_
+  return NULL;
+}

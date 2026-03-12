@@ -62,7 +62,7 @@ echo
 
 echo "02. Retrieve urn:ngsi-ld:camera:cam1 from the broker and see the update from ftClient via DDS"
 echo "============================================================================================="
-sleep .3
+sleep .1
 orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:camera:cam1
 echo
 echo
@@ -88,7 +88,7 @@ echo
 
 echo "03b. DDS-Dump the ftClient and see the PATCH from step 03"
 echo "========================================================="
-sleep 2
+sleep .1
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
 echo
 echo

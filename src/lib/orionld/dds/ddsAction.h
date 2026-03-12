@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_DDS_DDSSERVICENOTIFICATION_H_
-#define SRC_LIB_ORIONLD_DDS_DDSSERVICENOTIFICATION_H_
+#ifndef SRC_LIB_ORIONLD_DDS_DDSACTION_H_
+#define SRC_LIB_ORIONLD_DDS_DDSACTION_H_
 
 /*
 *
-* Copyright 2025 FIWARE Foundation e.V.
+* Copyright 2026 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,22 +25,22 @@
 *
 * Author: Ken Zangelin
 */
-#include "ddsenabler/dds_enabler_runner.hpp"                // dds enabler
+extern "C"
+{
+#include "kjson/KjNode.h"                                        // KjNode
+}
+
+#include "orionld/types/DdsAction.h"                             // DdsAction
 
 
 
 // -----------------------------------------------------------------------------
 //
-// ddsServiceNotification -
+// ddsActionGoalSend -
 //
-extern void ddsServiceNotification(const char* serviceName, const eprosima::ddsenabler::participants::ServiceInfo& serviceInfo);
-
-
-
-// -----------------------------------------------------------------------------
+// Sends an action goal via DDS.
+// Called when the mapped attribute is updated (same pattern as ddsService for services).
 //
-// ddsEntityAttributeUpsert -
-//
-extern void ddsEntityAttributeUpsert(const char* entityId, const char* entityType, const char* attributeName);
+extern void ddsActionGoalSend(DdsAction* actionP, KjNode* attributeValueP);
 
-#endif  // SRC_LIB_ORIONLD_DDS_DDSSERVICENOTIFICATION_H_
+#endif  // SRC_LIB_ORIONLD_DDS_DDSACTION_H_

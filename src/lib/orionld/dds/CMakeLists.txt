@@ -37,6 +37,15 @@ SET (SOURCES
   ddsServiceCreate.cpp
   ddsServiceLookup.cpp
   ddsServiceLookupByAttributeName.cpp
+  ddsServiceReplyNotification.cpp
+  ddsAction.cpp
+  ddsActionCreate.cpp
+  ddsActionLookup.cpp
+  ddsActionNotification.cpp
+  ddsActionResultNotification.cpp
+  ddsActionFeedbackNotification.cpp
+  ddsActionStatusNotification.cpp
+  ddsActionSubAttributeUpdate.cpp
 )
 
 # Include directories

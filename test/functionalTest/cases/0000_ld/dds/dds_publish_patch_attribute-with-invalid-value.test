@@ -79,7 +79,7 @@ echo
 
 echo "05. Dump the ftClient for DDS notifications - see no PATCH in DDS"
 echo "================================================================="
-sleep 1
+sleep .1
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
 echo
 echo

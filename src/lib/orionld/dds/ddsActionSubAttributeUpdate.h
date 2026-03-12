@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_DDS_DDSSERVICENOTIFICATION_H_
-#define SRC_LIB_ORIONLD_DDS_DDSSERVICENOTIFICATION_H_
+#ifndef SRC_LIB_ORIONLD_DDS_DDSACTIONSUBATTRIBUTEUPDATE_H_
+#define SRC_LIB_ORIONLD_DDS_DDSACTIONSUBATTRIBUTEUPDATE_H_
 
 /*
 *
-* Copyright 2025 FIWARE Foundation e.V.
+* Copyright 2026 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,22 +25,30 @@
 *
 * Author: Ken Zangelin
 */
-#include "ddsenabler/dds_enabler_runner.hpp"                // dds enabler
+#include <stdint.h>                                              // int64_t
+
+extern "C"
+{
+#include "kjson/KjNode.h"                                        // KjNode
+}
 
 
 
 // -----------------------------------------------------------------------------
 //
-// ddsServiceNotification -
+// ddsActionSubAttributeUpdate -
 //
-extern void ddsServiceNotification(const char* serviceName, const eprosima::ddsenabler::participants::ServiceInfo& serviceInfo);
-
-
-
-// -----------------------------------------------------------------------------
+// Merge-patches a sub-attribute onto an entity attribute.
+// Used for ddsActionResult, ddsActionFeedback, ddsActionStatus.
 //
-// ddsEntityAttributeUpsert -
-//
-extern void ddsEntityAttributeUpsert(const char* entityId, const char* entityType, const char* attributeName);
+extern void ddsActionSubAttributeUpdate
+(
+  const char* entityId,
+  const char* entityType,
+  const char* attributeName,
+  const char* subAttributeName,
+  KjNode*     valueTree,
+  int64_t     publishTime
+);
 
-#endif  // SRC_LIB_ORIONLD_DDS_DDSSERVICENOTIFICATION_H_
+#endif  // SRC_LIB_ORIONLD_DDS_DDSACTIONSUBATTRIBUTEUPDATE_H_

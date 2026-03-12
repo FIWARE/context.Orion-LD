@@ -42,7 +42,6 @@ extern "C"
 #include "orionld/common/traceLevels.h"                     // Trace levels for KTrace
 #include "orionld/common/tenantList.h"                      // tenant0
 #include "orionld/common/dotForEq.h"                        // dotForEq
-#include "orionld/config/configInit.h"                      // configTree
 #include "orionld/kjTree/kjTreeNavigate.h"                  // kjTreeNavigate
 #include "orionld/kjTree/kjEntityIdLookupInEntityArray.h"   // kjEntityIdLookupInEntityArray
 #include "orionld/context/orionldCoreContext.h"             // orionldCoreContextP
@@ -53,8 +52,11 @@ extern "C"
 #include "orionld/mongoc/mongocEntitiesQuery.h"             // mongocEntitiesQuery
 #include "orionld/mongoc/mongocEntitiesUpsert.h"            // mongocEntitiesUpsert
 #include "orionld/mongoc/mongocAttributesAdd.h"             // mongocAttributesAdd
+#include "orionld/dds/ddsPrePopulateDb.h"                   // DdsConceptType, DdsPrePopulateInput
 #include "orionld/dds/ddsServiceLookup.h"                   // ddsServiceLookup
 #include "orionld/dds/ddsServiceCreate.h"                   // ddsServiceCreate
+#include "orionld/dds/ddsActionLookup.h"                    // ddsActionLookup
+#include "orionld/dds/ddsActionCreate.h"                    // ddsActionCreate
 #include "orionld/kjTree/kjTreeLog.h"                       // KT_TREE
 
 
@@ -98,37 +100,47 @@ static KjNode* kjDbAttrLookupInDbEntity(KjNode* dbEntityP, const char* longAttrN
 
 // -----------------------------------------------------------------------------
 //
+// DdsPrePopulateInput -
+//
+typedef struct DdsPrePopulateInput
+{
+  DdsConceptType  type;
+  KjNode*         configNode;
+} DdsPrePopulateInput;
+
+
+
+// -----------------------------------------------------------------------------
+//
 // ddsPrePopulateDbInThread -
 //
 static void* ddsPrePopulateDbInThread(void* vP)
 {
-  char* what        = (char*) vP;
-  char* conceptName = what;
-  char* configPath  = NULL;
-  bool  isService   = false;
+  DdsPrePopulateInput*  inputP      = (DdsPrePopulateInput*) vP;
+  KjNode*               topics      = inputP->configNode;
+  bool                  isService   = (inputP->type == DdsServices);
+  bool                  isAction    = (inputP->type == DdsActions);
+  const char*           conceptName;
 
-  if      (strcmp(what, "topics")   == 0) { configPath = (char*) "dds.ngsild.topics"; }
-  else if (strcmp(what, "services") == 0) { configPath = (char*) "dds.ngsild.services"; isService = true; }
-  else
-    KT_X(1, "Invalid input for ddsPrePopulateDb: '%s'", what);
+  switch (inputP->type)
+  {
+  case DdsTopics:    conceptName = "topics";   break;
+  case DdsServices:  conceptName = "services"; break;
+  case DdsActions:   conceptName = "actions";  break;
+  default:           conceptName = "unknown";  break;
+  }
 
-  // Allocate kjson
-  char kallocBuffer[2048];
+  // Allocate kjson - local to avoid races between threads
+  char    kallocBuffer[2048];
+  KAlloc  kaLocal;
+  Kjson   kjLocal;
 
   orionldStateInit(NULL);
 
   bzero(kallocBuffer, sizeof(kallocBuffer));
-  kaBufferInit(&kalloc, kallocBuffer, sizeof(kallocBuffer), 8 * 1024, NULL, "ddsPrePopulateDb KAlloc buffer");
-  orionldState.kjsonP = kjBufferCreate(&kjson, &kalloc);
+  kaBufferInit(&kaLocal, kallocBuffer, sizeof(kallocBuffer), 8 * 1024, NULL, "ddsPrePopulateDb KAlloc buffer");
+  orionldState.kjsonP = kjBufferCreate(&kjLocal, &kaLocal);
   orionldState.tenantP = &tenant0;
-
-  KjNode* topics = kjTreeNavigate(configTree, configPath, NULL);
-
-  if (topics == NULL)
-  {
-    KT_W("No DDS Topics for NGSILD (%s) in the config file ...", configPath);
-    return NULL;
-  }
 
   KT_TREE(topics, conceptName, StDdsPrePopulate);
   KT_T(StDdsPrePopulate, "-------------------------------------------------------------");
@@ -172,6 +184,11 @@ static void* ddsPrePopulateDbInThread(void* vP)
     {
       if (ddsServiceLookup(topic->name) == NULL)
         ddsServiceCreate(topic->name, NULL, NULL, NULL, NULL, entityId, entityType, attrName);
+    }
+    else if (isAction == true)
+    {
+      if (ddsActionLookup(topic->name) == NULL)
+        ddsActionCreate(topic->name, entityId, entityType, attrName);
     }
   }
 
@@ -327,7 +344,8 @@ static void* ddsPrePopulateDbInThread(void* vP)
   }
 
   orionldStateRelease();
-  kaBufferReset(&orionldState.kalloc, true);
+  kaBufferReset(&kaLocal, true);
+  free(inputP);
   pthread_exit(0);
 
   return NULL;
@@ -339,8 +357,13 @@ static void* ddsPrePopulateDbInThread(void* vP)
 //
 // ddsPrePopulateDb -
 //
-void ddsPrePopulateDb(const char* what)
+void ddsPrePopulateDb(DdsConceptType type, KjNode* configNode)
 {
-  pthread_t   tid;
-  pthread_create(&tid, NULL, ddsPrePopulateDbInThread, (void*) what);
+  DdsPrePopulateInput* inputP = (DdsPrePopulateInput*) malloc(sizeof(DdsPrePopulateInput));
+
+  inputP->type       = type;
+  inputP->configNode = configNode;
+
+  pthread_t tid;
+  pthread_create(&tid, NULL, ddsPrePopulateDbInThread, (void*) inputP);
 }

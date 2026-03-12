@@ -232,16 +232,16 @@ function brokerStopAwait
     if [ "$r" != "0" ]
     then
       logMsg The orion context broker on port $port has stopped
-      sleep 1
+      sleep .5
       break;
     fi
 
     logMsg Awaiting orion context broker to fully stop '('$loopNo')' ...
-    sleep .2
+    sleep .1
     loopNo=$loopNo+1
   done
 
-  sleep .5
+  sleep .1
 
   # Make sure that is CB is NOT running
   curl -s localhost:${port}/version | grep version > /dev/null
@@ -302,7 +302,7 @@ function brokerStartAwait
     fi
 
     logMsg Awaiting orion context to fully start '(loop '$loopNo')' ...
-    sleep .1
+    sleep .01
     loopNo=$loopNo+1
   done
 
@@ -312,8 +312,6 @@ function brokerStartAwait
     result=1
     return
   fi
-
-  sleep .5
 }
 
 
@@ -479,7 +477,7 @@ function localBrokerStart()
         exit 1
       fi
 
-      sleep .05
+      sleep .01
       loopNo=$loopNo+1
     done
 
@@ -579,14 +577,14 @@ function localBrokerStop
     kill $(ps -fe | grep $BROKER | grep $port | awk '{print $2}') 2> /dev/null
 
     # Wait some time so the broker can finish properly
-    sleep .5
+    sleep .1
     brokerPidLines=$(ps -fe | grep $BROKER | grep $port | wc -l)
 
     if [ $brokerPidLines != 0 ]
     then
       # If the broker refuses to stop politely, kill the process by brute force
       kill -9 $(ps -fe | grep $BROKER | grep $port | awk '{print $2}') 2> /dev/null
-      sleep .5
+      sleep .1
       brokerPidLines=$(ps -fe | grep $BROKER | grep $port | wc -l)
       if [ $brokerPidLines != 0 ]
       then
@@ -751,7 +749,7 @@ function orionldStart
         exit 1
       fi
 
-      sleep .05
+      sleep .01
       loopNo=$loopNo+1
     done
 
@@ -776,6 +774,12 @@ function orionldStart
     fi
   fi
   rm -f $brokerStartErr
+
+  # If the broker uses DDS, wait for RTPS discovery to complete
+  if [[ "$extraParams" == *"dds"* ]] && [ -f "$HOME/.orionld" ]
+  then
+    sleep .001  # DDS Sleep
+  fi
 }
 
 
@@ -924,7 +928,13 @@ function brokerStop
   if [ "$VALGRIND" == "" ]
   then
     curl localhost:${port}/exit/harakiri > /dev/null 2> /dev/null
-    sleep .5
+    sleep .1
+
+    # If the broker was using DDS, wait for graceful DDS shutdown (done inside broker)
+    if [ -f "$HOME/.orionld" ]
+    then
+      sleep .001  # DDS Sleep
+    fi
     # In case that didn't work, let's try with killall - actually ... not such a good idea - we may have more than one broker running ...
     # killall orionld > /dev/null 2> /dev/null
   else
@@ -957,6 +967,7 @@ function ftClientStart()
   _logDir=""
   _dds=""
   _ddsService=""
+  _ddsAction=""
 
   while [ "$#" != 0 ]
   do
@@ -965,6 +976,7 @@ function ftClientStart()
     elif [ "$1" == "--verbose" ];         then _verbose="-v";
     elif [ "$1" == "--dds" ];             then _dds="--dds";
     elif [ "$1" == "--ddsService" ];      then _ddsService="--ddsService $2"; shift;
+    elif [ "$1" == "--ddsAction" ];       then _ddsAction="--ddsAction $2"; shift;
     elif [ "$1" == "-v" ];                then _verbose="-v";
     elif [ "$1" == "-t" ];                then _traceLevels="-t $2"; shift;
     else
@@ -993,17 +1005,20 @@ function ftClientStart()
     fi
   fi
 
-  logMsg "Starting the FT Client on port $_port ($_verbose $_traceLevels $_ddsService)"
+  logMsg "Starting the FT Client on port $_port ($_verbose $_traceLevels $_ddsService $_ddsAction)"
   which ftClient >> $LOG_FILE
-  ftClient --port $_port $_verbose $_traceLevels $_logDir $_dds $_ddsService &
+  ftClient --port $_port $_verbose $_traceLevels $_logDir $_dds $_ddsService $_ddsAction &
 
   export FT_PORT=$_port
+
+  # DDS discovery sleep moved to orionldStart (both participants must be running)
 
   _port=0
   _verbose=""
   _traceLevels=""
   logDir=""
   _ddsService=""
+  _ddsAction=""
 }
 
 
@@ -1052,9 +1067,9 @@ function accumulatorStop()
   if [ "$pid" != "" ]
   then
     kill -15 $pid 2> /dev/null
-    sleep .1
+    sleep .01
     kill -2 $pid 2> /dev/null
-    sleep .1
+    sleep .01
     kill -9 $pid 2> /dev/null
     rm -f /tmp/accumulator.$port.pid
   fi
@@ -1143,7 +1158,7 @@ function accumulatorStart()
       echo "Unable to start listening application after waiting ${MAXIMUM_WAIT}"
       exit 1
    fi 
-   sleep 1
+   sleep .1
 
    time=$time+1
    nc -zv $bindIp $port &>/dev/null </dev/null
@@ -1169,7 +1184,7 @@ function mqttTestClientStart()
   cd $REPO_HOME
   ./scripts/mqttTestClient.py $*   &
   cd - > /dev/null 2>&1
-  sleep 0.2
+  sleep 0.1
   logMsg Started MQTT notification client
 }
 
@@ -1195,7 +1210,7 @@ function mqttTestClientStop()
 #
 function mqttTestClientDump()
 {
-  sleep 0.2
+  sleep 0.1
   topic=$1
   cd $REPO_HOME
   ./scripts/mqttSend.py --topic "$topic" --payload dump
@@ -1211,7 +1226,7 @@ function mqttTestClientDump()
 #
 function mqttTestClientReset()
 {
-  sleep 0.2
+  sleep 0.1
   topic=$1
   cd $REPO_HOME
   ./scripts/mqttSend.py --topic "$topic" --payload reset
@@ -2098,7 +2113,7 @@ function urlencode
 #
 function orionldMetrics
 {
-  sleep 1
+  sleep .1
   curl localhost:8000/metrics --silent | egrep -v '^#' | egrep -v '^process_' | egrep -v '^$'
 }
 
@@ -2154,7 +2169,7 @@ function ros2ServiceStart
     python3 /scripts/ros2_nodes/node_main.py --samples $_samples > /dev/null 2>&1
 
   # Wait for the service to start
-  sleep 1
+  sleep .1
 
   return 0
 }
@@ -2172,7 +2187,7 @@ function ros2ServiceStop
   if [ "$CID" != "" ]
   then
     docker kill $CID > /dev/null 2>&1
-    sleep 1
+    sleep .1
   fi
 }
 
@@ -2321,7 +2336,7 @@ function wsDump()
     shift
   done
 
-  sleep 0.2
+  sleep 0.1
   orionCurl --url /ws/$_subId/dump --port $_port --noPayloadCheck
 }
 
