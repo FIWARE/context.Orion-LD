@@ -43,12 +43,12 @@ extern "C"
 
 // -----------------------------------------------------------------------------
 //
-// ddsActionNotificationFunc -
+// ddsActionNotification -
 //
 // Called by the DDS Enabler when an action server is discovered on the network.
 // Same pattern as ddsServiceNotification: lookup config, create entity/attribute.
 //
-void ddsActionNotificationFunc(const char* actionName, const eprosima::ddsenabler::participants::ActionInfo& actionInfo)
+void ddsActionNotification(const char* actionName, const eprosima::ddsenabler::participants::ActionInfo& actionInfo)
 {
   KT_T(StDdsAction, "Got an Action Notification (actionName: %s)", actionName);
 

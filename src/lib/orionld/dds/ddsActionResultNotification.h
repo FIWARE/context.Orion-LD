@@ -32,9 +32,9 @@
 
 // -----------------------------------------------------------------------------
 //
-// ddsActionResultNotificationFunc -
+// ddsActionResultNotification -
 //
-extern void ddsActionResultNotificationFunc
+extern void ddsActionResultNotification
 (
   const char*                                          actionName,
   const char*                                          json,

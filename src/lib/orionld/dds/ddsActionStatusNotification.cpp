@@ -67,9 +67,9 @@ static const char* statusCodeToString(eprosima::ddsenabler::participants::Status
 
 // -----------------------------------------------------------------------------
 //
-// ddsActionStatusNotificationFunc -
+// ddsActionStatusNotification -
 //
-void ddsActionStatusNotificationFunc
+void ddsActionStatusNotification
 (
   const char*                                              actionName,
   const eprosima::ddsenabler::participants::UUID&          goalId,

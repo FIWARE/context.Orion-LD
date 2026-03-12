@@ -44,12 +44,12 @@ extern "C"
 
 // -----------------------------------------------------------------------------
 //
-// ddsActionResultNotificationFunc -
+// ddsActionResultNotification -
 //
 // Called by the DDS Enabler when a result arrives for an action goal.
 // The result is stored as a "ddsActionResult" sub-attribute.
 //
-void ddsActionResultNotificationFunc
+void ddsActionResultNotification
 (
   const char*                                          actionName,
   const char*                                          json,

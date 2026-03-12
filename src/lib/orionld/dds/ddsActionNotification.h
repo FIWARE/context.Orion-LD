@@ -31,8 +31,8 @@
 
 // -----------------------------------------------------------------------------
 //
-// ddsActionNotificationFunc -
+// ddsActionNotification -
 //
-extern void ddsActionNotificationFunc(const char* actionName, const eprosima::ddsenabler::participants::ActionInfo& actionInfo);
+extern void ddsActionNotification(const char* actionName, const eprosima::ddsenabler::participants::ActionInfo& actionInfo);
 
 #endif  // SRC_LIB_ORIONLD_DDS_DDSACTIONNOTIFICATION_H_

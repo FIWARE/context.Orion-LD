@@ -32,9 +32,9 @@
 
 // -----------------------------------------------------------------------------
 //
-// ddsActionStatusNotificationFunc -
+// ddsActionStatusNotification -
 //
-extern void ddsActionStatusNotificationFunc
+extern void ddsActionStatusNotification
 (
   const char*                                              actionName,
   const eprosima::ddsenabler::participants::UUID&          goalId,

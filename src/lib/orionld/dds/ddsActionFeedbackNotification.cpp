@@ -42,9 +42,9 @@ extern "C"
 
 // -----------------------------------------------------------------------------
 //
-// ddsActionFeedbackNotificationFunc -
+// ddsActionFeedbackNotification -
 //
-void ddsActionFeedbackNotificationFunc
+void ddsActionFeedbackNotification
 (
   const char*                                          actionName,
   const char*                                          json,

@@ -48,10 +48,10 @@ extern "C"
 #include "orionld/dds/ddsTopicNotification.h"               // ddsTopicNotification
 #include "orionld/dds/ddsServiceNotification.h"             // ddsServiceNotification
 #include "orionld/dds/ddsServiceReplyNotification.h"        // ddsServiceReplyNotification
-#include "orionld/dds/ddsActionNotification.h"              // ddsActionNotificationFunc
-#include "orionld/dds/ddsActionResultNotification.h"        // ddsActionResultNotificationFunc
-#include "orionld/dds/ddsActionFeedbackNotification.h"      // ddsActionFeedbackNotificationFunc
-#include "orionld/dds/ddsActionStatusNotification.h"        // ddsActionStatusNotificationFunc
+#include "orionld/dds/ddsActionNotification.h"              // ddsActionNotification
+#include "orionld/dds/ddsActionResultNotification.h"        // ddsActionResultNotification
+#include "orionld/dds/ddsActionFeedbackNotification.h"      // ddsActionFeedbackNotification
+#include "orionld/dds/ddsActionStatusNotification.h"        // ddsActionStatusNotification
 #include "orionld/dds/ddsCategoryToKlogSeverity.h"          // ddsCategoryToKlogSeverity
 #include "orionld/dds/ddsInit.h"                            // Own interface
 
@@ -113,11 +113,7 @@ static void ddsLog(const char* fileName, int lineNo, const char* funcName, int c
   int   level    = 0;
   char  severity = ddsCategoryToKlogSeverity(category, &level);
 
-#if 1
   ktOut(filename, lineNo, funcname,  severity, level, msg);
-#else
-  lmOut((char*) msg, severity, filename, lineNo, funcname, level);
-#endif
 }
 
 
@@ -140,28 +136,16 @@ void ddsServiceRequestNotification
 
 
 
-
-// -----------------------------------------------------------------------------
-//
-// ddsActionNotification - wrapper that delegates to ddsActionNotificationFunc
-//
-void ddsActionNotification(const char* actionName, const eprosima::ddsenabler::participants::ActionInfo& actionInfo)
-{
-  ddsActionNotificationFunc(actionName, actionInfo);
-}
-
-
-
 // -----------------------------------------------------------------------------
 //
 // ddsActionGoalRequestNotification -
 //
 bool ddsActionGoalRequestNotification
 (
-  const char* actionName,
-  const char* json,
-  const eprosima::ddsenabler::participants::UUID& goalId,
-  int64_t     publishTime
+  const char*                                      actionName,
+  const char*                                      json,
+  const eprosima::ddsenabler::participants::UUID&  goalId,
+  int64_t                                          publishTime
 )
 {
   KT_T(StDdsAction, "Got an Action Goal Request Notification (action: '%s'): '%s'", actionName, json);
@@ -172,70 +156,18 @@ bool ddsActionGoalRequestNotification
 
 // -----------------------------------------------------------------------------
 //
-// ddsActionFeedbackNotification -
-//
-void ddsActionFeedbackNotification
-(
-  const char* actionName,
-  const char* json,
-  const eprosima::ddsenabler::participants::UUID& goalId,
-  int64_t     publishTime
-)
-{
-  ddsActionFeedbackNotificationFunc(actionName, json, goalId, publishTime);
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
 // ddsActionCancelRequestNotification -
 //
 void ddsActionCancelRequestNotification
 (
-  const char* actionName,
+  const char*                                     actionName,
   const eprosima::ddsenabler::participants::UUID& goalId,
-  int64_t     timestamp,
-  uint64_t    requestId,
-  int64_t     publishTime
+  int64_t                                         timestamp,
+  uint64_t                                        requestId,
+  int64_t                                         publishTime
 )
 {
   KT_T(StDdsAction, "Got an Action Cancel Request Notification (action: %s)", actionName);
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
-// ddsActionResultNotification -
-//
-void ddsActionResultNotification
-(
-  const char* actionName,
-  const char* json,
-  const eprosima::ddsenabler::participants::UUID& goalId,
-  int64_t     publishTime
-)
-{
-  ddsActionResultNotificationFunc(actionName, json, goalId, publishTime);
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
-// ddsActionStatusNotification -
-//
-void ddsActionStatusNotification
-(
-  const char*  actionName,
-  const eprosima::ddsenabler::participants::UUID&  goalId,
-  eprosima::ddsenabler::participants::StatusCode   statusCode,
-  const char*  statusMessage,
-  int64_t      publishTime
-)
-{
-  ddsActionStatusNotificationFunc(actionName, goalId, statusCode, statusMessage, publishTime);
 }
 
 
@@ -246,7 +178,7 @@ void ddsActionStatusNotification
 //
 bool ddsActionQuery
 (
-  const char* actionName,
+  const char*                                     actionName,
   eprosima::ddsenabler::participants::ActionInfo& actionInfo
 )
 {
