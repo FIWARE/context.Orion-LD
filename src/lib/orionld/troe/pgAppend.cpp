@@ -22,8 +22,13 @@
 *
 * Author: Ken Zangelin
 */
-#include <string.h>                                            // strlen, strncpy
-#include <stdlib.h>                                            // malloc
+#include <string.h>                                            // strlen, strncpy, memcpy
+#include <stdlib.h>                                            // malloc, realloc
+
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
 
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/types/PgAppendBuffer.h"                      // PgAppendBuffer
@@ -37,41 +42,85 @@
 //
 void pgAppend(PgAppendBuffer* pgBufP, const char* tail, int tailLen)
 {
+  if (tail == NULL)
+    return;
+
   if (tailLen <= 0)
     tailLen = strlen(tail);
 
-  // realloc necessary?
-  if (pgBufP->currentIx + tailLen >= pgBufP->bufSize)
+  // realloc necessary?  (+1 for null terminator)
+  if (pgBufP->currentIx + tailLen + 1 >= pgBufP->bufSize)
   {
     char* oldBuffer = pgBufP->buf;
 
-    pgBufP->bufSize += 4 * 1024;  // Add 4k every time
+    // Grow by at least the needed amount, using doubling strategy for large buffers
+    int needed = pgBufP->currentIx + tailLen + 1;
+
+    if (needed < 16 * 1024)
+    {
+      // For small buffers: round up to next 4KB boundary
+      pgBufP->bufSize = (needed + 4095) & ~4095;
+    }
+    else
+    {
+      // For large buffers: double the size or use needed + 25%, whichever is larger
+      int doubled     = pgBufP->bufSize * 2;
+      int withMargin  = needed + (needed / 4);
+
+      pgBufP->bufSize = (doubled > withMargin) ? doubled : withMargin;
+    }
 
     if (pgBufP->bufSize < 16 * 1024)  // Use kaAlloc for smaller buffers
     {
       pgBufP->buf = kaAlloc(&orionldState.kalloc, pgBufP->bufSize);
-      strncpy(pgBufP->buf, oldBuffer, pgBufP->currentIx + 1);
-      oldBuffer = NULL;  // Must not be freed
+      if (pgBufP->buf == NULL)
+      {
+        // kaAlloc failed, fall through to malloc
+        pgBufP->buf = (char*) malloc(pgBufP->bufSize);
+        if (pgBufP->buf == NULL)
+        {
+          KT_E("pgAppend: out of memory allocating %d bytes", pgBufP->bufSize);
+          pgBufP->buf = oldBuffer;  // Restore old buffer to avoid NULL dereference
+          return;
+        }
+        pgBufP->allocated = true;
+      }
+      memcpy(pgBufP->buf, oldBuffer, pgBufP->currentIx);
+      pgBufP->buf[pgBufP->currentIx] = 0;
     }
     else
     {
-      if (pgBufP->bufSize > 32 * 1024)
-        pgBufP->bufSize += 12 * 1024;  // Add an additional 12k if buffer > 32k (16k in total: 4+12)
+      char* newBuf;
 
-      // If already allocated, we can realloc. else, allocate and copy
       if (pgBufP->allocated == true)
-        pgBufP->buf = (char*) realloc(pgBufP->buf, pgBufP->bufSize);
+      {
+        newBuf = (char*) realloc(pgBufP->buf, pgBufP->bufSize);
+        if (newBuf == NULL)
+        {
+          KT_E("pgAppend: realloc failed for %d bytes", pgBufP->bufSize);
+          // Keep old buffer intact, skip this append
+          return;
+        }
+        pgBufP->buf = newBuf;
+      }
       else
       {
-        pgBufP->buf = (char*) malloc(pgBufP->bufSize);
-        strncpy(pgBufP->buf, oldBuffer, pgBufP->currentIx + 1);
+        newBuf = (char*) malloc(pgBufP->bufSize);
+        if (newBuf == NULL)
+        {
+          KT_E("pgAppend: malloc failed for %d bytes", pgBufP->bufSize);
+          return;
+        }
+        memcpy(newBuf, oldBuffer, pgBufP->currentIx);
+        newBuf[pgBufP->currentIx] = 0;
+        pgBufP->buf = newBuf;
       }
 
       pgBufP->allocated = true;
     }
   }
 
-  strncpy(&pgBufP->buf[pgBufP->currentIx], tail, tailLen);
+  memcpy(&pgBufP->buf[pgBufP->currentIx], tail, tailLen);
   pgBufP->currentIx += tailLen;
   pgBufP->buf[pgBufP->currentIx] = 0;
 }
