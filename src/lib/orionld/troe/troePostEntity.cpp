@@ -28,6 +28,7 @@ extern "C"
 {
 #include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
+#include "kjson/kjLookup.h"                                    // kjLookup
 #include "kjson/kjRender.h"                                    // kjRender
 }
 
