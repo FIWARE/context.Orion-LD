@@ -40,7 +40,6 @@ extern "C"
 #include "orionld/troe/pgAppendInit.h"                         // pgAppendInit
 #include "orionld/troe/pgAppend.h"                             // pgAppend
 #include "orionld/common/dotForEq.h"                           // dotForEq
-#include "orionld/common/eqForDot.h"                           // eqForDot
 #include "orionld/troe/pgAttributesBuild.h"                    // pgAttributesBuild
 #include "orionld/troe/pgAttributeBuild.h"                     // pgAttributeBuild
 #include "orionld/troe/pgAttributeAppend.h"                    // pgAttributeAppend
@@ -87,6 +86,10 @@ bool troePatchEntity(void)
   {
     for (KjNode* attrP = orionldState.requestTree->value.firstChildP; attrP != NULL; attrP = attrP->next)
     {
+      // Skip non-attribute fields
+      if (attrP->type != KjObject && attrP->type != KjArray)
+        continue;
+
       // Check if this attribute existed in the DB before the modification
       char eqName[512];
       strncpy(eqName, attrP->name, sizeof(eqName) - 1);
@@ -120,7 +123,7 @@ bool troePatchEntity(void)
       KjNode* pathNode = kjLookup(patchP, "PATH");
       KjNode* treeNode = kjLookup(patchP, "TREE");
 
-      if ((treeNode != NULL) && (treeNode->type == KjNull))
+      if ((pathNode != NULL) && (treeNode != NULL) && (treeNode->type == KjNull))
       {
         char* attrName = pathNode->value.s;
         char* dotP     = strchr(attrName, '.');
