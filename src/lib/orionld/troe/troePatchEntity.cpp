@@ -22,6 +22,8 @@
 *
 * Author: Ken Zangelin
 */
+#include <string.h>                                            // strncpy, strchr, strcmp
+
 extern "C"
 {
 #include "ktrace/kTrace.h"                                     // KT_*
@@ -37,7 +39,10 @@ extern "C"
 #include "orionld/common/uuidGenerate.h"                       // uuidGenerate
 #include "orionld/troe/pgAppendInit.h"                         // pgAppendInit
 #include "orionld/troe/pgAppend.h"                             // pgAppend
+#include "orionld/common/dotForEq.h"                           // dotForEq
+#include "orionld/common/eqForDot.h"                           // eqForDot
 #include "orionld/troe/pgAttributesBuild.h"                    // pgAttributesBuild
+#include "orionld/troe/pgAttributeBuild.h"                     // pgAttributeBuild
 #include "orionld/troe/pgAttributeAppend.h"                    // pgAttributeAppend
 #include "orionld/troe/pgSubAttributeAppend.h"                 // pgSubAttributeAppend
 #include "orionld/troe/pgCommands.h"                           // pgCommands
@@ -72,7 +77,41 @@ bool troePatchEntity(void)
   pgAppend(&attributesBuffer,    PG_ATTRIBUTE_INSERT_START,     0);
   pgAppend(&subAttributesBuffer, PG_SUB_ATTRIBUTE_INSERT_START, 0);
 
-  pgAttributesBuild(&attributesBuffer, orionldState.requestTree, entityId, "Replace", &subAttributesBuffer);
+  //
+  // If patchBase (the DB attributes before modification) is available, determine per-attribute opMode:
+  //   - Existing attributes: "Replace"
+  //   - New attributes:      "Append"
+  // If patchBase is not available, fall back to "Replace" for all attributes.
+  //
+  if (orionldState.patchBase != NULL)
+  {
+    for (KjNode* attrP = orionldState.requestTree->value.firstChildP; attrP != NULL; attrP = attrP->next)
+    {
+      // Check if this attribute existed in the DB before the modification
+      char eqName[512];
+      strncpy(eqName, attrP->name, sizeof(eqName) - 1);
+      eqName[sizeof(eqName) - 1] = 0;
+      dotForEq(eqName);
+
+      KjNode*     dbAttrP = kjLookup(orionldState.patchBase, eqName);
+      const char* opMode  = (dbAttrP != NULL) ? "Replace" : "Append";
+
+      if (attrP->type == KjArray)
+      {
+        for (KjNode* aiP = attrP->value.firstChildP; aiP != NULL; aiP = aiP->next)
+        {
+          aiP->name = attrP->name;
+          pgAttributeBuild(&attributesBuffer, opMode, entityId, aiP, &subAttributesBuffer);
+        }
+      }
+      else if (attrP->type == KjObject)
+        pgAttributeBuild(&attributesBuffer, opMode, entityId, attrP, &subAttributesBuffer);
+    }
+  }
+  else
+  {
+    pgAttributesBuild(&attributesBuffer, orionldState.requestTree, entityId, "Replace", &subAttributesBuffer);
+  }
 
   if (orionldState.patchTree != NULL)
   {

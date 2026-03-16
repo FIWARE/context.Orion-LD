@@ -367,7 +367,10 @@ bool orionldPostEntity(void)
     distOpListRelease(distOpList);
 
   if (troe)
+  {
     orionldState.requestTree = treeForTroe;
+    orionldState.patchBase   = dbAttrsP;
+  }
 
   // The orionldState.requestTree is OK for TRoE - as ignored attributes have been removed
   return true;
