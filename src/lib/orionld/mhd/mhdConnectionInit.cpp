@@ -33,6 +33,7 @@ extern "C"
 #include "kalloc/kaAlloc.h"                                      // kaAlloc
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/kjBuilder.h"                                     // kjString, kjChildAdd
+#include "kprom/kprom.h"                                         // kpromGaugeAdd
 }
 
 #include "common/limits.h"                                       // SERVICE_NAME_MAX_LEN
@@ -56,6 +57,7 @@ extern "C"
 #include "orionld/service/orionldServiceLookup.h"                // orionldServiceLookup
 #include "orionld/serviceRoutines/orionldBadVerb.h"              // orionldBadVerb
 #include "orionld/serviceRoutines/orionldDeleteEntity.h"         // orionldDeleteEntity
+#include "orionld/serviceRoutines/orionldGetMetrics.h"           // orionldGetMetrics
 #include "orionld/payloadCheck/pCheckUri.h"                      // pCheckUri
 #include "orionld/entityMaps/entityMapLookup.h"                  // entityMapLookup
 #include "orionld/mhd/mhdConnectionInit.h"                       // Own interface
@@ -577,14 +579,23 @@ static MHD_Result orionldHttpHeaderReceive(void* cbDataP, MHD_ValueKind kind, co
   }
   else if (strcasecmp(key, "Accept") == 0)
   {
-    orionldState.out.contentType = acceptHeaderParse((char*) value, false);
+    orionldState.in.acceptTextPlain = (strstr(value, "text/plain") != NULL);
+    orionldState.in.accept          = (char*) value;
+    orionldState.out.contentType    = acceptHeaderParse((char*) value, false);
 
+    //
+    // Allow text/plain through - certain endpoints (like /metrics) accept it
+    // The service routine will handle unsupported Accept types
+    //
     if ((orionldState.out.contentType == MT_NONE) || (orionldState.out.contentType == MT_NOTGIVEN))
     {
-      const char* details = "HTTP Header /Accept/ contains none of 'application/json', 'application/ld+json', or 'application/geo+json'";
+      if (orionldState.in.acceptTextPlain == false)
+      {
+        const char* details = "HTTP Header /Accept/ contains none of 'application/json', 'application/ld+json', or 'application/geo+json'";
 
-      KT_W("Bad Input (HTTP Header /Accept/ none of 'application/json', 'application/ld+json', or 'application/geo+json')");
-      orionldError(OrionldBadRequestData, "Invalid Accept mime-type", details, 406);
+        KT_W("Bad Input (HTTP Header /Accept/ none of 'application/json', 'application/ld+json', or 'application/geo+json')");
+        orionldError(OrionldBadRequestData, "Invalid Accept mime-type", details, 406);
+      }
     }
   }
   else if (strcasecmp(key, "Ngsiv2-AttrsFormat") == 0) orionldState.attrsFormat         = (char*) value;
@@ -608,6 +619,15 @@ static MHD_Result orionldHttpHeaderReceive(void* cbDataP, MHD_ValueKind kind, co
   else if (strcasecmp(key, "Connection")         == 0) orionldState.in.connection       = (char*) value;
   else if (strcasecmp(key, "X-Forwarded-For")    == 0) orionldState.in.xForwardedFor    = (char*) value;
   else if (strcasecmp(key, "Via")                == 0) orionldState.in.via              = (char*) value;
+  else if (strcasecmp(key, "Upgrade") == 0)
+  {
+    if (strcasecmp(value, "websocket") == 0)
+      orionldState.in.wsUpgrade = true;
+  }
+  else if (strcasecmp(key, "Sec-WebSocket-Key") == 0)
+    orionldState.in.wsKey = (char*) value;
+  else if (strcasecmp(key, "Sec-WebSocket-Version") == 0)
+    orionldState.in.wsVersion = (char*) value;
   else if (strcasecmp(key, "Content-Type")       == 0)
   {
     orionldState.in.contentType       = mimeTypeFromString(value, NULL, false, false, &orionldState.acceptMask);
@@ -1285,6 +1305,7 @@ MHD_Result mhdConnectionInit
 )
 {
   ++requestNo;
+  kpromGaugeAdd(promConnectionsActive, 1);
 
   // if ((requestNo % 100 == 0) || (requestNo == 1))
   KT_I("------------------------- Servicing NGSI-LD request %03d: %s %s --------------------------", requestNo, method, url);
@@ -1354,9 +1375,12 @@ MHD_Result mhdConnectionInit
 
   // 4. GET Service Pointer from VERB and URL-PATH
   orionldState.serviceP = serviceLookup();
+  KT_T(55, "Service at %p", orionldState.serviceP);
 
   if (orionldState.serviceP == NULL)  // 405 or 404 - no need to continue - prettyPrint not possible here
     return MHD_YES;
+
+  KT_T(55, "Service Routine at %p", orionldState.serviceP->serviceRoutine);
 
   if (orionldState.serviceP->mintaka == true)
     return MHD_YES;

@@ -594,7 +594,7 @@ void orionldAlterationsTreat(OrionldAlteration* altList)
     // For MQTT, the notificationSuccess/Failure is already taken care of by mqttNotify and nothing to read.
     // Should not be in this list.
     //
-    if ((fd != -1) && (matchHead->subP->protocol != MQTT))
+    if ((fd != -1) && (matchHead->subP->protocol != MQTT) && (matchHead->subP->protocol != WS))
     {
       NotificationPending* npP = (NotificationPending*) kaAlloc(&orionldState.kalloc, sizeof(NotificationPending));
 

@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_PROMETHEUS_PROMCOUNTERINCREASE_H_
-#define SRC_LIB_ORIONLD_PROMETHEUS_PROMCOUNTERINCREASE_H_
+#ifndef SRC_LIB_ORIONLD_DDS_DDSACTIONNOTIFICATION_H_
+#define SRC_LIB_ORIONLD_DDS_DDSACTIONNOTIFICATION_H_
 
 /*
 *
-* Copyright 2022 FIWARE Foundation e.V.
+* Copyright 2026 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,13 +25,14 @@
 *
 * Author: Ken Zangelin
 */
+#include "ddsenabler_participants/Callbacks.hpp"                 // ActionInfo
 
 
 
 // -----------------------------------------------------------------------------
 //
-// promCounterIncrease -
+// ddsActionNotification -
 //
-extern int promCounterIncrease(prom_counter_t* counterP);
+extern void ddsActionNotification(const char* actionName, const eprosima::ddsenabler::participants::ActionInfo& actionInfo);
 
-#endif  // SRC_LIB_ORIONLD_PROMETHEUS_PROMCOUNTERINCREASE_H_
+#endif  // SRC_LIB_ORIONLD_DDS_DDSACTIONNOTIFICATION_H_

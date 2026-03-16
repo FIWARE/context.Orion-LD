@@ -164,3 +164,18 @@ The list of available options is the following:
     to the `-k` or `--insecure` parameteres of the curl command.
 -   ** -ngsiv1Autocast**. Enables the NGSIv1 autocast mode for numbers, booleans and dates attributes. See
     [NGSIv1 autocast documentation](../user/ngsiv1autocast.md) for more information.
+-   **-kafka**. Enables the Kafka consumer subsystem for high-throughput time series ingestion.
+    When enabled, the broker subscribes to a Kafka topic and processes incoming entity updates
+    through the standard batch upsert pipeline (validation, MongoDB, TRoE, notifications).
+    Requires [librdkafka](https://github.com/confluentinc/librdkafka).
+    See [TRoE documentation](../../manuals-ld/troe.md) for details.
+-   **-kafkaBrokerList <broker_list>**. Kafka broker address(es) to connect to. Default: `localhost:9092`.
+    Supports multiple brokers separated by commas (e.g. `host1:9092,host2:9092`).
+-   **-kafkaTopic <topic>**. Kafka topic to consume from. Default: `orionld-entities`.
+-   **-kafkaGroupId <group_id>**. Kafka consumer group ID. Default: `orionld-consumer`.
+-   **-kafkaBatchSize <size>**. Maximum number of entities to accumulate in a micro-batch before flushing.
+    Default: 100.
+-   **-kafkaBatchLingerMs <ms>**. Maximum time in milliseconds to wait before flushing a non-full batch.
+    Default: 50.
+-   **-kafkaConsumerThreads <n>**. Number of Kafka consumer threads. Should match the number of topic
+    partitions for optimal throughput. Default: 2.

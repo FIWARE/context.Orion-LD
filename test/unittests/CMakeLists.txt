@@ -186,8 +186,7 @@ link_directories("${PROJECT_SOURCE_DIR}/../khash")
 link_directories("${PROJECT_SOURCE_DIR}/../klog")
 link_directories("${PROJECT_SOURCE_DIR}/../ktrace")
 link_directories("${PROJECT_SOURCE_DIR}/../kargs")
-link_directories("${PROJECT_SOURCE_DIR}/../prometheus-client-c/prom/build")
-link_directories("${PROJECT_SOURCE_DIR}/../prometheus-client-c/promhttp/build")
+link_directories("${PROJECT_SOURCE_DIR}/../kprom")
 link_directories("${LIBMICROHTTPD_LIBRARY_DIRS}")
 
 
@@ -206,6 +205,7 @@ TARGET_LINK_LIBRARIES(unitTest
   ${STATIC_LIBS}
   ${Boost_LIBRARIES}
   ${LIBMICROHTTPD_LIBRARIES}
+  -lmicrohttpd_ws
   ${DYNAMIC_LIBS}
 )
 

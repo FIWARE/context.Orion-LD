@@ -1,20 +1,79 @@
 ## Fixed Issues
-N/A
+  #1905 - TRoE: segfault (exit 139) connecting to TimescaleDB Cloud - added SSL support and fixed NULL pointer crash
+  #XXXX - Fixed query of many large entities (cfreyfh - Carsten Freyh at Fraunhofer IKTS)
+  #XXXX - wait for postgres instead of exiting after the first try - just like for mongo (1 try per second until 30 secs)
 
 ## New Features
-N/A
+  #1905 - New CLI option -troeSslMode (env: ORIONLD_TROE_SSL_MODE) for TRoE Postgres SSL connections
+  #XXXX - New CLI option -coreContextDir (env: ORIONLD_CORE_CONTEXT_DIR, default: /opt/orion/ldcontexts)
+  #XXXX - Replaced idiotic prometheus-client-c with KPROM library for Prometheus metrics
+  #XXXX - Default user @context served from local files, not only URLs
+  #XXXX - Experimental support for WebSockets (wip - Work In Progress)
+
+### Pre-downloaded Core Context Files
+  At startup the broker needs the NGSI-LD core context. Previously it was either found in
+  the MongoDB context cache (from a previous run) or downloaded from https://uri.etsi.org.
+  If both failed, a built-in hardcoded copy was used as last resort.
+
+  A new step has been added between the MongoDB lookup and the network download:
+  loading the core context from a local file on disk. The lookup order is now:
+
+    1. MongoDB context cache (persisted from a previous run)
+    2. Local file in -coreContextDir (new)
+    3. Download from https://uri.etsi.org
+    4. Built-in hardcoded copy (airgapped fallback)
+
+  Each context file has the context URL on the first line, followed by the JSON-LD content.
+  The filename is derived from the URL (e.g. ngsi-ld-core-context-v1.8.jsonld).
+  Pre-downloaded files for all core context versions (v1.0 through v1.9) are shipped in
+  the ldcontexts/ directory and copied to /opt/orion/ldcontexts/ in the Docker image.
+
+  This eliminates startup failures caused by network timeouts when downloading the core
+  context, which was particularly problematic in CI environments and cloud deployments.
+
+## WebSockets (WIP - ETSI TC DATA has not yet finalized the WebSocket API)
+  - WebSocket support is enabled via -wip ws
+  - WS upgrade on /ws endpoint, with per-connection receive loop
+  - Supported operations over WebSocket:
+    - createEntity (POST /ngsi-ld/v1/entities)
+    - createSubscription (POST /ngsi-ld/v1/subscriptions)
+    - putEntity (PUT /ngsi-ld/v1/entities/{entityId})
+    - patchEntity (PATCH /ngsi-ld/v1/entities/{entityId})
+    - patchSubscription (PATCH /ngsi-ld/v1/subscriptions/{subscriptionId})
+  - Notifications are sent over the WS connection for subscriptions created via WS
+  - Message envelope format (same as MQTT): {"metadata": {...}, "body": {...}}
 
 ## Documentation
-N/A
+  - Added TRoE database schema and advanced optimization documentation
+  - Added Carsten's TRoE optimization script to documentation
+  - Documented MongoDB 4.2+ requirement
+  - Fixed all README.md for the k-libs
 
 ## DDS
 N/A
 
 ## Library version updates
-N/A
+  - Replaced prometheus-client-c with kprom
+  - New base image for kjson fix
+  - Bumped PostgreSQL client packages from v13 to v17 (CI base image)
+  - Bumped PostgreSQL in installation guides from v12 to v17
+  - Upgraded MongoDB from 4.0 to 4.4 in Mintaka tests
 
-## Multi-Attributes (datasetId)
-N/A
+## Documentation
+  - Added TRoE database schema and advanced optimization documentation
+  - Added Carsten's TRoE optimization script to documentation
+  - Documented MongoDB 4.2+ requirement
+  - Fixed all README.md for the k-libs
 
 ## Notes
-N/A
+### CI / GitHub Actions
+  - Updated all GitHub Actions to latest versions
+  - Fixed GDB (debug) image build pipeline (buildah/quay.io fixes)
+  - Improved Mintaka compatibility workflow (Testcontainers 1.21.3, Docker 29+, local context serving)
+  - Skip unit tests / functional tests when no relevant code changes
+  - Enabled all previously disabled functional tests
+  - Trigger functional tests on workflow and harness changes
+  - Removed SonarCloud workflow
+  - Removed PR template
+  - Fixed deploy workflow for external contributors
+  - Postgres server is now v17 (bumped from v12)

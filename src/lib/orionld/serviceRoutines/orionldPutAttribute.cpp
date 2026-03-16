@@ -204,6 +204,9 @@ bool orionldPutAttribute(void)
   char*   entityTypeFromUriParam = orionldState.uriParams.type;       // Is it already expanded?
   char*   attrLongName           = orionldState.in.pathAttrExpanded;
 
+  // Set the attribute name on the request tree (it comes from the URL, not the body)
+  orionldState.requestTree->name = attrLongName;
+
   // Make sure the Entity ID (from URI variable) is a valid URI
   if (pCheckUri(entityId, "Entity ID from URL PATH", true) == false)
     return false;

@@ -85,6 +85,7 @@ unsigned long long   inReqPayloadMaxSize  = 64 * 1024;
 char                 configFile[512];
 bool                 ddsSupport       = false;
 char*                ddsServiceName   = NULL;
+char*                ddsActionName    = NULL;
 
 
 
@@ -105,6 +106,7 @@ KArg kargs[] =
   { "--config",           "-cfg",   KaString,  &configFile,           KaOpt, NULL,       KA_NL,    KA_NL,      "Config File"                                       },
   { "--dds",              "-dds",   KaBool,    &ddsSupport,           KaOpt, KFALSE,     KA_NL,    KA_NL,      "DDS Support"                                       },
   { "--ddsService",       "-ddss",  KaString,  &ddsServiceName,       KaOpt, NULL,       KA_NL,    KA_NL,      "DDS Service to announce as server"                 },
+  { "--ddsAction",        "-ddsa",  KaString,  &ddsActionName,        KaOpt, NULL,       KA_NL,    KA_NL,      "DDS Action to announce as server"                  },
 
   //
   // Broker options
@@ -261,21 +263,25 @@ static bool ddsTypeRequest
 {
   KT_T(StDds, "Got a type request callback ('%s')", typeName);
 
-  DdsTypeData* typeData = ddsTypeLookup(typeName);
-  if (typeData == NULL)
+  //
+  // Load the type file using eProsima's safe filename convention (type_name with ':' -> '_').
+  // This avoids the ambiguity of reversing filenames back to type names
+  // (e.g. "dds_::X" and "dds::_X" both produce "dds___X" as filename).
+  //
+  unsigned char*  data = NULL;
+  uint32_t        size = 0;
+
+  if (ddsTypeLoadByName(typeName, &data, &size) == false)
   {
-    KT_T(StDds, "Type '%s' not found in loaded types", typeName);
+    KT_T(StDds, "Type '%s' not found via file lookup", typeName);
     return false;
   }
 
-  // Copy data into unique_ptr (DDS Enabler takes ownership)
-  unsigned char* dataCopy = new unsigned char[typeData->size];
-  memcpy(dataCopy, typeData->data, typeData->size);
+  // Transfer ownership to unique_ptr (DDS Enabler takes ownership)
+  serializedTypeInternal.reset(data);
+  serializedTypeInternalSize = size;
 
-  serializedTypeInternal.reset(dataCopy);
-  serializedTypeInternalSize = typeData->size;
-
-  KT_T(StDds, "Returning type '%s' (%u bytes)", typeName, typeData->size);
+  KT_T(StDds, "Returning type '%s' (%u bytes)", typeName, size);
   return true;
 }
 
@@ -642,6 +648,16 @@ int main(int argC, char* argV[])
         KT_E("Failed to announce DDS service '%s'", ddsServiceName);
       else
         KT_D("Successfully announced DDS service '%s'", ddsServiceName);
+    }
+
+    // Announce as DDS action server if action name is provided
+    if (ddsActionName != NULL)
+    {
+      KT_D("Announcing DDS action '%s'", ddsActionName);
+      if (ddsEnabler->announce_action(ddsActionName) == false)
+        KT_E("Failed to announce DDS action '%s'", ddsActionName);
+      else
+        KT_D("Successfully announced DDS action '%s'", ddsActionName);
     }
   }
 

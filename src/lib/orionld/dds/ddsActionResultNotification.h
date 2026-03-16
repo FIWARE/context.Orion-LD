@@ -1,6 +1,9 @@
+#ifndef SRC_LIB_ORIONLD_DDS_DDSACTIONRESULTNOTIFICATION_H_
+#define SRC_LIB_ORIONLD_DDS_DDSACTIONRESULTNOTIFICATION_H_
+
 /*
 *
-* Copyright 2022 FIWARE Foundation e.V.
+* Copyright 2026 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -22,18 +25,21 @@
 *
 * Author: Ken Zangelin
 */
-extern "C"
-{
-#include "prometheus-client-c/prom/include/prom.h"          // Prometheus client lib
-}
+#include <stdint.h>                                              // int64_t
+#include "ddsenabler_participants/rpc/RpcTypes.hpp"              // UUID
 
 
 
 // -----------------------------------------------------------------------------
 //
-// promCounterIncrease -
+// ddsActionResultNotification -
 //
-int promCounterIncrease(prom_counter_t* counterP)
-{
-  return prom_counter_inc(counterP, NULL);
-}
+extern void ddsActionResultNotification
+(
+  const char*                                          actionName,
+  const char*                                          json,
+  const eprosima::ddsenabler::participants::UUID&      goalId,
+  int64_t                                              publishTime
+);
+
+#endif  // SRC_LIB_ORIONLD_DDS_DDSACTIONRESULTNOTIFICATION_H_

@@ -55,7 +55,7 @@ orionldStart CB -mongocOnly -wip dds
 #
 
 # Sleep to allow DDS topic notifications to be processed and add ddsTypeName
-sleep 1
+sleep .1
 
 echo "01. GET all entities from the broker"
 echo "===================================="

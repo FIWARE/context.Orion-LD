@@ -138,6 +138,8 @@ extern "C"
 #include "orionld/distOp/distOpInit.h"                        // distOpInit
 #include "orionld/dds/ddsInit.h"                              // ddsInit
 #include "orionld/dds/ddsServiceList.h"                       // ddsServiceList
+#include "orionld/kafka/kafkaInit.h"                          // kafkaInit
+#include "orionld/kafka/kafkaRelease.h"                       // kafkaRelease
 
 using namespace orion;
 
@@ -229,6 +231,7 @@ char            troeHost[256];
 unsigned short  troePort;
 char            troeUser[256];
 char            troePwd[256];
+char            troeSslMode[64];
 int             troePoolSize;
 bool            socketService;
 unsigned short  socketServicePort;
@@ -244,12 +247,19 @@ bool            debugCurl    = false;
 uint32_t        cSubCounters;
 char            coreContextVersion[64];
 bool            triggerOperation = false;
-bool            noprom           = false;
+unsigned short  promPort         = 8000;
 bool            noArrayReduction = false;
 char            subordinateEndpoint[256];
 char            defaultUserContextUrl[256];
 bool            ddsSupport          = false;
 bool            ddsPublishOnCreate  = false;
+bool            kafkaSupport        = false;
+char            kafkaBrokerList[512];
+char            kafkaTopic[256];
+char            kafkaGroupId[256];
+int             kafkaBatchSize       = 100;
+int             kafkaBatchLingerMs   = 50;
+int             kafkaConsumerThreads = 2;
 char            configFile[512];
 bool            extras;
 bool            kToScreen        = false;
@@ -268,6 +278,7 @@ bool            kTraceInfo       = false;
 
 #define CTX_TMO_DESC           "Timeout in milliseconds for downloading of contexts"
 #define CTX_ATT_DESC           "Number of attempts for downloading of contexts"
+#define CTX_DIR_DESC           "Directory with pre-downloaded core context files"
 #define FG_DESC                "don't start as daemon"
 #define LOCALIP_DESC           "IP to receive new connections"
 #define PORT_DESC              "port to receive new connections"
@@ -325,11 +336,12 @@ bool            kTraceInfo       = false;
 #define TROE_HOST_USER         "username for troe database db server"
 #define TROE_HOST_PWD          "password for troe database db server"
 #define TROE_POOL_DESC         "size of the connection pool for TRoE Postgres database connections"
+#define TROE_SSL_DESC          "disable/allow/prefer/require/verify-ca/verify-full"
 #define SOCKET_SERVICE_DESC    "enable the socket service - accept connections via a normal TCP socket"
 #define SOCKET_SERVICE_PORT_DESC  "port to receive new socket service connections"
 #define DISTRIBUTED_DESC       "turn on distributed operation"
 #define BROKER_ID_DESC         "identity of this broker instance for registrations - for the Via header"
-#define WIP_DESC               "Enable concepts that are 'Work In Progress' (e.g. -wip entityMaps,distSubs)"
+#define WIP_DESC               "Enable concepts that are 'Work In Progress' (e.g. -wip entityMaps,distSubs,ws)"
 #define FORWARDING_DESC        "turn on distributed operation (deprecated)"
 #define ID_INDEX_DESC          "automatic mongo index on _id.id"
 #define NOSWAP_DESC            "no swapping - for testing only!!!"
@@ -345,7 +357,7 @@ bool            kTraceInfo       = false;
 #define DEBUG_CURL_DESC        "turn on debugging of libcurl - to the broker's logfile"
 #define CSUBCOUNTERS_DESC      "number of subscription counter updates before flush from sub-cache to DB (0: never, 1: always)"
 #define CORE_CONTEXT_DESC      "core context version (v1.0|v1.3|v1.4|v1.5|v1.6|v1.7) - v1.6 is default"
-#define NO_PROM_DESC           "run without Prometheus metrics"
+#define PROM_PORT_DESC         "port for Prometheus /metrics endpoint (same as -port to use main server)"
 #define NO_ARR_REDUCT_DESC     "skip JSON-LD Array Reduction"
 #define CONFIG_FILE_DESC        "Path to configuration file"
 #define SUBORDINATE_ENDPOINT_DESC  "endpoint URL for reception of notificatiopns from subordinate subscriptions (distributed subscriptions)"
@@ -355,6 +367,13 @@ bool            kTraceInfo       = false;
 #define KTRACE_LEVELS_DESC     "K-Trace trace levels"
 #define KTRACE_INFO_DESC       "K-Trace INFO messages"
 #define KTOSCREEN_DESC         "K-Trace to stdout"
+#define KAFKA_DESC             "enable Kafka consumer for high-throughput time series ingestion"
+#define KAFKA_BROKER_DESC      "comma-separated list of Kafka broker addresses"
+#define KAFKA_TOPIC_DESC       "Kafka topic to consume NGSI-LD entities from"
+#define KAFKA_GROUP_DESC       "Kafka consumer group ID"
+#define KAFKA_BATCH_SIZE_DESC  "max entities per micro-batch before flush to database"
+#define KAFKA_LINGER_DESC      "max milliseconds to wait for a micro-batch to fill"
+#define KAFKA_THREADS_DESC     "number of Kafka consumer threads"
 
 
 
@@ -432,14 +451,23 @@ PaArgument paArgs[] =
   { "-ngsiv1Autocast",        &ngsiv1Autocast,          "NGSIV1_AUTOCAST",           PaBool,    PaOpt,  false,            false,  true,             NGSIV1_AUTOCAST          },
   { "-ctxTimeout",            &contextDownloadTimeout,  "CONTEXT_DOWNLOAD_TIMEOUT",  PaInt,     PaOpt,  5000,             0,      20000,            CTX_TMO_DESC             },
   { "-ctxAttempts",           &contextDownloadAttempts, "CONTEXT_DOWNLOAD_ATTEMPTS", PaInt,     PaOpt,  3,                0,      100,              CTX_ATT_DESC             },
+  { "-coreContextDir",       coreContextDir,           "ORIONLD_CORE_CONTEXT_DIR",          PaString,  PaOpt,  _i "/opt/orion/ldcontexts",  PaNL, PaNL,        CTX_DIR_DESC             },
   { "-pernot",                &pernot,                  "PERNOT",                    PaBool,    PaOpt,  false,            false,  true,             PERNOT_DESC              },
   { "-troe",                  &troe,                    "TROE",                      PaBool,    PaOpt,  false,            false,  true,             TROE_DESC                },
   { "-troeHost",              troeHost,                 "TROE_HOST",                 PaString,  PaOpt,  _i "localhost",   PaNL,   PaNL,             TROE_HOST_DESC           },
   { "-troePort",              &troePort,                "TROE_PORT",                 PaInt,     PaOpt,  5432,             PaNL,   PaNL,             TROE_PORT_DESC           },
   { "-troeUser",              troeUser,                 "TROE_USER",                 PaString,  PaOpt,  _i "postgres",    PaNL,   PaNL,             TROE_HOST_USER           },
   { "-troePwd",               troePwd,                  "TROE_PWD",                  PaString,  PaOpt,  _i "password",    PaNL,   PaNL,             TROE_HOST_PWD            },
+  { "-troeSslMode",           troeSslMode,              "TROE_SSL_MODE",             PaString,  PaOpt,  _i "prefer",      PaNL,   PaNL,             TROE_SSL_DESC            },
   { "-troePoolSize",          &troePoolSize,            "TROE_POOL_SIZE",            PaInt,     PaOpt,  10,               0,      1000,             TROE_POOL_DESC           },
   { "-noNotifyFalseUpdate",   &noNotifyFalseUpdate,     "NO_NOTIFY_FALSE_UPDATE",    PaBool,    PaOpt,  false,            false,  true,             NO_NOTIFY_FALSE_UPDATE_DESC  },
+  { "-kafka",                 &kafkaSupport,            "KAFKA",                     PaBool,    PaOpt,  false,            false,  true,             KAFKA_DESC                   },
+  { "-kafkaBrokerList",       kafkaBrokerList,          "KAFKA_BROKER_LIST",         PaString,  PaOpt,  _i "localhost:9092", PaNL, PaNL,            KAFKA_BROKER_DESC            },
+  { "-kafkaTopic",            kafkaTopic,               "KAFKA_TOPIC",               PaString,  PaOpt,  _i "orionld-entities", PaNL, PaNL,          KAFKA_TOPIC_DESC             },
+  { "-kafkaGroupId",          kafkaGroupId,             "KAFKA_GROUP_ID",            PaString,  PaOpt,  _i "orionld-consumer", PaNL, PaNL,           KAFKA_GROUP_DESC             },
+  { "-kafkaBatchSize",        &kafkaBatchSize,          "KAFKA_BATCH_SIZE",          PaInt,     PaOpt,  100,              1,      10000,            KAFKA_BATCH_SIZE_DESC        },
+  { "-kafkaBatchLingerMs",    &kafkaBatchLingerMs,      "KAFKA_BATCH_LINGER_MS",     PaInt,     PaOpt,  50,               1,      5000,             KAFKA_LINGER_DESC            },
+  { "-kafkaConsumerThreads",  &kafkaConsumerThreads,    "KAFKA_CONSUMER_THREADS",    PaInt,     PaOpt,  2,                1,      32,               KAFKA_THREADS_DESC           },
   { "-experimental",          &experimental,            "EXPERIMENTAL",              PaBool,    PaOpt,  false,            false,  true,             EXPERIMENTAL_DESC        },
   { "-mongocOnly",            &mongocOnly,              "MONGOCONLY",                PaBool,    PaOpt,  false,            false,  true,             MONGOCONLY_DESC          },
   { "-cSubCounters",          &cSubCounters,            "CSUB_COUNTERS",             PaInt,     PaOpt,  20,               0,      PaNL,             CSUBCOUNTERS_DESC        },
@@ -455,7 +483,7 @@ PaArgument paArgs[] =
   { "-noswap",                &noswap,                  "NOSWAP",                    PaBool,    PaHid,  false,            false,  true,             NOSWAP_DESC              },
   { "-lmtmp",                 &lmtmp,                   "TMP_TRACES",                PaBool,    PaHid,  true,             false,  true,             TMPTRACES_DESC           },
   { "-debugCurl",             &debugCurl,               "DEBUG_CURL",                PaBool,    PaHid,  false,            false,  true,             DEBUG_CURL_DESC          },
-  { "-noprom",                &noprom,                  "NO_PROM",                   PaBool,    PaHid,  false,            false,  true,             NO_PROM_DESC             },
+  { "-promPort",              &promPort,                "PROM_PORT",                 PaUShort,  PaOpt,  8000,             0,      65535,            PROM_PORT_DESC           },
   { "-noArrayReduction",      &noArrayReduction,        "NO_ARRAY_REDUCTION",        PaBool,    PaHid,  false,            false,  true,             NO_ARR_REDUCT_DESC       },
   { "-extras",                &extras,                  "EXTRAS",                    PaBool,    PaHid,  false,            false,  true,             EXTRAS_DESC              },
   { "-subordinateEndpoint",   &subordinateEndpoint,     "SUBORDINATE_ENDPOINT",      PaStr,     PaOpt,  _i "",             PaNL,  PaNL,             SUBORDINATE_ENDPOINT_DESC },
@@ -547,6 +575,18 @@ void sigHandler(int sigNo)
   case SIGTERM:
   case SIGHUP:
     KT_I("Orion context broker exiting due to receiving a signal");
+
+    // Graceful DDS shutdown before exit - reset triggers participant deregistration
+    if (ddsSupport == true && ddsEnabler != nullptr)
+    {
+      ddsEnabler.reset();
+      usleep(500000);  // 500ms for DDS async teardown to complete
+    }
+
+    // Graceful Kafka shutdown
+    if (kafkaSupport == true)
+      kafkaRelease();
+
     exit(0);
     break;
   }
@@ -599,6 +639,13 @@ void exitFunc(void)
   // Or, is freeing up the global KAlloc instance sufficient ... ?
   //
 
+  // Free the default user context file buffer, if used
+  if (defaultUserContextBuffer != NULL)
+  {
+    free(defaultUserContextBuffer);
+    defaultUserContextBuffer = NULL;
+  }
+
   // Free up the context download list, if needed
   contextDownloadListRelease();
 
@@ -626,6 +673,10 @@ void exitFunc(void)
   // Disconnect from all MQTT brokers and free the connections
   mqttRelease();
 
+  // Shutdown Kafka consumer threads and connections
+  if (kafkaSupport == true)
+    kafkaRelease();
+
   //
   // Freeing the postgres connection pools
   //
@@ -642,6 +693,8 @@ void exitFunc(void)
   // Cleanup periodic notifications
   if (pernot == true)
     pernotRelease();
+
+  // DDS cleanup already done in sigHandler (if applicable)
 
   kaBufferReset(&kalloc, KFALSE);
 }
@@ -837,8 +890,8 @@ thread_local char libLogBuffer[1024 * 32];
 //
 static void libLogFunction
 (
-  int          severity,              // 1: Error, 2: Warning, 3: Info, 4: Verbose, 5: Trace
-  int          level,                 // Trace level || Error code || Info Code
+  int          severity,              // 1: Error, 2: Warning, 3: Info, 4: Verbose, 5: Trace, 7: Fatal
+  int          level,                 // Trace level || Error/Exit code
   const char*  fileName,
   int          lineNo,
   const char*  functionName,
@@ -848,14 +901,9 @@ static void libLogFunction
 {
   va_list  args;
 
-  /* "Parse" the variable arguments */
   va_start(args, format);
-
-  /* Print message to variable */
   vsnprintf(libLogBuffer, sizeof(libLogBuffer), format, args);
   va_end(args);
-
-  // KT_I("Got a lib log message, severity: %d: %s", severity, libLogBuffer);
 
   if (severity == 1)
     ktOut(fileName, lineNo, functionName, 'E', -1, "%s", libLogBuffer);
@@ -866,7 +914,9 @@ static void libLogFunction
   else if (severity == 4)
     ktOut(fileName, lineNo, functionName, 'V', -1, "%s", libLogBuffer);
   else if (severity == 5)
-    ktOut(fileName, lineNo, functionName, 'T', level + KtKjParse, "%s", libLogBuffer);
+    ktOut(fileName, lineNo, functionName, 'T', level, "%s", libLogBuffer);
+  else if (severity == 7)
+    ktOut(fileName, lineNo, functionName, 'X', level, "%s", libLogBuffer);
 }
 
 
@@ -1075,8 +1125,8 @@ int main(int argC, char* argV[])
 
   if (wip[0] != 0)
   {
-    char* wipV[3];
-    int   wips = kStringSplit(wip, ',', wipV, 3);
+    char* wipV[4];
+    int   wips = kStringSplit(wip, ',', wipV, 4);
 
     for (int ix = 0; ix < wips; ix++)
     {
@@ -1086,8 +1136,10 @@ int main(int argC, char* argV[])
         distSubsEnabled = true;
       else if (strcmp(wipV[ix], "dds") == 0)
         ddsSupport = true;
+      else if (strcmp(wipV[ix], "ws") == 0)
+        wsSupport = true;
       else
-        KT_X(1, "Invalid value for -wip comma-separated list (allowed: 'entityMaps', 'distSubs')");
+        KT_X(1, "Invalid value for -wip comma-separated list (allowed: 'entityMaps', 'distSubs', 'ws')");
     }
   }
 
@@ -1175,9 +1227,13 @@ int main(int argC, char* argV[])
   if (fg == false)
     daemonize();
 
-  if (noprom == true)
-    KT_W("Running without Prometheus metrics");
-  else if (promInit(8000) != 0)
+  //
+  // Initialize Prometheus metrics
+  // If promPort != port, a separate server is started on promPort
+  // If promPort == port, /metrics is served through the main server
+  //
+  unsigned short promServerPort = (promPort != port) ? promPort : 0;
+  if (promInit(promServerPort) != 0)
     KT_W("Error initializing Prometheus Metrics library");
 
   IpVersion ipVersion = IPDUAL;
@@ -1407,6 +1463,7 @@ int main(int argC, char* argV[])
   KT_I("  Health Check:              %s", (socketService      == true)? "Enabled" : "Disabled");
   KT_I("  Entity Maps:               %s", (entityMapsEnabled  == true)? "Enabled" : "Disabled");
   KT_I("  Distributed Subscriptions: %s", (distSubsEnabled    == true)? "Enabled" : "Disabled");
+  KT_I("  WebSockets:                %s", (wsSupport          == true)? "Enabled" : "Disabled");
 
   if (troe)
   {
@@ -1448,6 +1505,13 @@ int main(int argC, char* argV[])
     ddsInit(kjsonP);
     // usleep(200000);
     // ddsServiceList(StDdsServiceList);
+  }
+
+  if (kafkaSupport == true)
+  {
+    if (kafkaInit() == false)
+      KT_X(1, "Can't initialize Kafka consumer");
+    KT_I("Kafka consumer initialized - consuming from topic '%s'", kafkaTopic);
   }
 
   if (socketService == true)

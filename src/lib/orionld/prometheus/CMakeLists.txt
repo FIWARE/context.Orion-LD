@@ -22,8 +22,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
 
 SET (SOURCES
     promInit.cpp
-    promCounterIncrease.cpp
-    promGaugeAdd.cpp
+    promServer.cpp
 )
 
 # Include directories

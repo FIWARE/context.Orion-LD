@@ -134,6 +134,8 @@ struct CachedSubscription
   double                      modifiedAt;
 
   SubordinateSubscription*    subordinateP;          // Linked list of subordinate subscriptions
+  void*                       wsConnectionP;         // Opaque pointer to live WS connection (NULL if not a WS subscription)
+  int                         wsFd;                  // Raw socket fd for the WS connection (-1 if not a WS subscription)
 
   struct CachedSubscription*  next;
   bool                        inDB;                  // Used by mongocSubCachePopulateByTenant to find subs that have been removed

@@ -32,13 +32,13 @@ $REPO_HOME/scripts/configFile.sh --ddsService "add_two_ints,Calculator,urn:ngsi-
 ftClientStart --dds
 
 # Wait for ftClient to initialize DDS
-sleep 1
+sleep .1
 
 dbInit CB
 orionldStart CB -mongocOnly -wip dds
 
 # Give DDS time for service discovery
-sleep 0.5
+sleep 0.1
 
 --SHELL--
 

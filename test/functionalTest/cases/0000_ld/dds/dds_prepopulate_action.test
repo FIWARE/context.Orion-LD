@@ -1,0 +1,276 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Test of pre-population of actions from config file
+
+--SHELL-INIT--
+$REPO_HOME/scripts/configFile.sh --ddsAction "fibonacci,Robot,urn:ngsi-ld:robot:r1,fib" --ddsAction "navigate,Robot,urn:ngsi-ld:robot:r1,nav" > $HOME/.orionld
+$REPO_HOME/scripts/configFile.sh --ddsAction "fibonacci,Robot,urn:ngsi-ld:robot:r1,fib" --ddsAction "navigate,Robot,urn:ngsi-ld:robot:r1,nav" > $HOME/.ftClient
+ftClientStop
+ftClientStart -t 0-5000 --dds
+dbInit CB
+orionldStart CB -mongocOnly -wip dds
+
+--SHELL--
+
+#
+# During startup, the broker looks in its DDS config file and creates entities that don't exist
+# In this test case it's about DDS Actions
+#
+# Checking the startup code worked:
+# 01. GET urn:ngsi-ld:robot:r1 - entity should exist with type 'Robot' and attrs 'fib' and 'nav' with uninitialized value
+#
+# Preparation for next test:
+# 02. Patch fib of urn:ngsi-ld:robot:r1
+# 03. Remove nav from urn:ngsi-ld:robot:r1
+# 04. GET the entity, make sure the changes in step 2-3 are there
+#
+# 05. Kill and restart the broker
+#
+# On startup, the broker must:
+# - leave fib as is (as both entity and attribute exist)
+# - add nav with uninitialized value (attribute was deleted)
+#
+# 06. GET urn:ngsi-ld:robot:r1 - fib should have the value from step 02, nav should be uninitialized
+#
+# 07. DELETE urn:ngsi-ld:robot:r1
+#
+# 08. Kill and restart the broker
+#
+# On startup, the broker must recreate the entity
+# 09. GET urn:ngsi-ld:robot:r1 - both fib and nav should be uninitialized
+#
+
+echo "01. GET urn:ngsi-ld:robot:r1 - entity should exist with type Robot and attrs fib and nav"
+echo "========================================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1
+echo
+echo
+
+
+echo "02. Patch fib of urn:ngsi-ld:robot:r1"
+echo "======================================"
+payload='{
+  "fib": {
+    "type": "Property",
+    "value": { "order": 10 }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1 -X PATCH --payload "$payload"
+echo
+echo
+
+
+echo "03. Remove nav from urn:ngsi-ld:robot:r1"
+echo "=========================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1/attrs/nav -X DELETE
+echo
+echo
+
+
+echo "04. GET the entity, make sure the changes in step 2-3 are there"
+echo "================================================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1
+echo
+echo
+
+
+echo "05. Kill and restart the broker"
+echo "==============================="
+brokerStop CB
+sleep .1
+orionldStart CB -mongocOnly -wip dds > /tmp/null
+echo
+echo
+
+
+echo "06. GET urn:ngsi-ld:robot:r1 - fib with value from step 02, nav uninitialized"
+echo "==============================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1
+echo
+echo
+
+
+echo "07. DELETE urn:ngsi-ld:robot:r1"
+echo "==============================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1 -X DELETE
+echo
+echo
+
+
+echo "08. Kill and restart the broker"
+echo "==============================="
+brokerStop CB
+sleep .1
+orionldStart CB -mongocOnly -wip dds > /tmp/null
+echo
+echo
+
+
+echo "09. GET urn:ngsi-ld:robot:r1 - both fib and nav should be uninitialized"
+echo "========================================================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1
+echo
+echo
+
+
+--REGEXPECT--
+01. GET urn:ngsi-ld:robot:r1 - entity should exist with type Robot and attrs fib and nav
+=========================================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+    },
+    "fib": {
+        "type": "Property",
+        "value": "uninitialized"
+    },
+    "id": "urn:ngsi-ld:robot:r1",
+    "nav": {
+        "type": "Property",
+        "value": "uninitialized"
+    },
+    "type": "Robot"
+}
+
+
+02. Patch fib of urn:ngsi-ld:robot:r1
+======================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+03. Remove nav from urn:ngsi-ld:robot:r1
+==========================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+04. GET the entity, make sure the changes in step 2-3 are there
+================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+    },
+    "fib": {
+        "type": "Property",
+        "value": {
+            "order": 10
+        }
+    },
+    "id": "urn:ngsi-ld:robot:r1",
+    "type": "Robot"
+}
+
+
+05. Kill and restart the broker
+===============================
+
+
+06. GET urn:ngsi-ld:robot:r1 - fib with value from step 02, nav uninitialized
+===============================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+    },
+    "fib": {
+        "type": "Property",
+        "value": {
+            "order": 10
+        }
+    },
+    "id": "urn:ngsi-ld:robot:r1",
+    "nav": {
+        "type": "Property",
+        "value": "uninitialized"
+    },
+    "type": "Robot"
+}
+
+
+07. DELETE urn:ngsi-ld:robot:r1
+===============================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+08. Kill and restart the broker
+===============================
+
+
+09. GET urn:ngsi-ld:robot:r1 - both fib and nav should be uninitialized
+========================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+    },
+    "fib": {
+        "type": "Property",
+        "value": "uninitialized"
+    },
+    "id": "urn:ngsi-ld:robot:r1",
+    "nav": {
+        "type": "Property",
+        "value": "uninitialized"
+    },
+    "type": "Robot"
+}
+
+
+--TEARDOWN--
+ftClientStop
+brokerStop
+dbDrop CB
+rm -f $HOME/.orionld
+rm -f $HOME/.ftClient

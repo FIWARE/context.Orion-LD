@@ -72,3 +72,4 @@ test/pluginTest
 src/lib/orionld/common/branchName.h
 ssClient
 !.github/
+futureIdeas/

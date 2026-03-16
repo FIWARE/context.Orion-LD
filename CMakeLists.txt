@@ -103,7 +103,7 @@ ELSEIF (${DISTRO} MATCHES "Ubuntu_18.*")
 ELSEIF (${DISTRO} MATCHES "Debian_9.*")
  set (CMAKE_CXX_FLAGS "-Wall -Wno-unknown-pragmas -D_LARGEFILE64_SOURCE -D_GNU_SOURCE -Werror -Wno-deprecated-declarations -fno-var-tracking-assignments")
 ELSEIF (${DISTRO} MATCHES "RedHat_8.*")
-  set (CMAKE_CXX_FLAGS "-Wall -Wno-unknown-pragmas -D_LARGEFILE64_SOURCE -DREDHAT_UBI=8.4 -D_GNU_SOURCE -Werror -Wno-deprecated-declarations -fno-var-tracking-assignments")
+  set (CMAKE_CXX_FLAGS "-Wall -Wno-unknown-pragmas -D_LARGEFILE64_SOURCE -DREDHAT_UBI=8.4 -D_GNU_SOURCE -Werror -Wno-deprecated-declarations -fno-var-tracking-assignments -I/usr/pgsql-17/include")
 ELSE()
   set (CMAKE_CXX_FLAGS "-Wall -Wno-unknown-pragmas -D_LARGEFILE64_SOURCE -D_GNU_SOURCE -Werror -Wno-deprecated-declarations -Wno-psabi -fno-var-tracking-assignments")
 ENDIF ()
@@ -202,7 +202,9 @@ SET (ORION_LIBS
     orionld_troe
     orionld_kjTree
     orionld_mqtt
+    orionld_ws
     orionld_dds
+    orionld_kafka
     orionld_service
     orionld_http
     orionld_context
@@ -245,6 +247,7 @@ SET (ORION_LIBS
     orionld_kjTree       # mongoBackend uses kjSort, that is temporarily in kjTree - to be moved to kjson
     orionld_payloadCheck
     orionld_mqtt
+    orionld_ws
     orionld_q
     orionld_mongoc       # subCache needs mongoc
     orionld_entityMaps
@@ -272,6 +275,7 @@ SET (COMMON_STATIC_LIBS
     kargs.a
     kalloc.a
     kbase.a
+    kprom.a
 )
 
 SET (DYNAMIC_LIBS
@@ -286,8 +290,6 @@ SET (DYNAMIC_LIBS
     ddsenabler_participants
     ddsenabler_yaml
     tinyxml2
-    prom
-    promhttp
     curl
     ${GNUTLS_LIBRARIES}
     pthread
@@ -302,6 +304,7 @@ SET (DYNAMIC_LIBS
     z
     resolv
     paho-mqtt3c
+    rdkafka        # for Kafka-based time series ingestion
     pq             # for TRoE & Postgres
     ${LIBMONGOC_LIBRARIES}
     ${LIBBSON_LIBRARIES}
@@ -326,8 +329,6 @@ include_directories("/usr/include")
 include_directories("${LIBBSON_INCLUDE_DIRS}")
 include_directories("${LIBMONGOC_INCLUDE_DIRS}")
 include_directories("${PROJECT_SOURCE_DIR}/..")
-include_directories("${PROJECT_SOURCE_DIR}/../prometheus-client-c/prom/include")
-include_directories("${PROJECT_SOURCE_DIR}/../prometheus-client-c/promhttp/include")
 
 #
 # Library directories
@@ -346,8 +347,7 @@ link_directories("${PROJECT_SOURCE_DIR}/../kbase")
 link_directories("${PROJECT_SOURCE_DIR}/../khash")
 link_directories("${PROJECT_SOURCE_DIR}/../ktrace")
 link_directories("${PROJECT_SOURCE_DIR}/../kargs")
-link_directories("${PROJECT_SOURCE_DIR}/../prometheus-client-c/prom/build")
-link_directories("${PROJECT_SOURCE_DIR}/../prometheus-client-c/promhttp/build")
+link_directories("${PROJECT_SOURCE_DIR}/../kprom")
 link_directories("${LIBMONGOC_LIBRARY_DIRS}")
 link_directories("${GNUTLS_LIBRARY_DIRS}")
 
@@ -408,7 +408,9 @@ if (error EQUAL 0)
   ADD_SUBDIRECTORY(src/lib/orionld/mongoc)
   ADD_SUBDIRECTORY(src/lib/orionld/payloadCheck)
   ADD_SUBDIRECTORY(src/lib/orionld/mqtt)
+  ADD_SUBDIRECTORY(src/lib/orionld/ws)
   ADD_SUBDIRECTORY(src/lib/orionld/dds)
+  ADD_SUBDIRECTORY(src/lib/orionld/kafka)
   ADD_SUBDIRECTORY(src/lib/orionld/http)
   ADD_SUBDIRECTORY(src/lib/orionld/prometheus)
   ADD_SUBDIRECTORY(src/lib/orionld/legacyDriver)

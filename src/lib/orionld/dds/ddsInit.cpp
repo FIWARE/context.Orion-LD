@@ -37,17 +37,21 @@ extern "C"
 }
 
 #include "orionld/types/DdsType.h"                          // DdsType
-#include "orionld/types/DdsService.h"                       // DdsService
 #include "orionld/common/traceLevels.h"                     // Trace levels for KTrace
 #include "orionld/common/orionldState.h"                    // configFile, configTree, ddsServices
 #include "orionld/config/configDdsTopicToAttribute.h"       // configDdsTopicToAttribute
-#include "orionld/dds/ddsPrePopulateDb.h"                   // ddsPrePopulateDb
+#include "orionld/kjTree/kjTreeNavigate.h"                  // kjTreeNavigate
+#include "orionld/dds/ddsPrePopulateDb.h"                   // ddsPrePopulateDb, DdsConceptType
 #include "orionld/dds/ddsServiceList.h"                     // ddsServiceList
-#include "orionld/dds/ddsServiceLookup.h"                   // ddsServiceLookup
 #include "orionld/dds/ddsTypes.h"                           // ddsTypeNotification, ddsTypeLookup
 #include "orionld/dds/ddsNotification.h"                    // ddsNotification
 #include "orionld/dds/ddsTopicNotification.h"               // ddsTopicNotification
 #include "orionld/dds/ddsServiceNotification.h"             // ddsServiceNotification
+#include "orionld/dds/ddsServiceReplyNotification.h"        // ddsServiceReplyNotification
+#include "orionld/dds/ddsActionNotification.h"              // ddsActionNotification
+#include "orionld/dds/ddsActionResultNotification.h"        // ddsActionResultNotification
+#include "orionld/dds/ddsActionFeedbackNotification.h"      // ddsActionFeedbackNotification
+#include "orionld/dds/ddsActionStatusNotification.h"        // ddsActionStatusNotification
 #include "orionld/dds/ddsCategoryToKlogSeverity.h"          // ddsCategoryToKlogSeverity
 #include "orionld/dds/ddsInit.h"                            // Own interface
 
@@ -109,11 +113,7 @@ static void ddsLog(const char* fileName, int lineNo, const char* funcName, int c
   int   level    = 0;
   char  severity = ddsCategoryToKlogSeverity(category, &level);
 
-#if 1
   ktOut(filename, lineNo, funcname,  severity, level, msg);
-#else
-  lmOut((char*) msg, severity, filename, lineNo, funcname, level);
-#endif
 }
 
 
@@ -135,57 +135,6 @@ void ddsServiceRequestNotification
 
 
 
-// -----------------------------------------------------------------------------
-//
-// ddsServiceReplyNotification -
-//
-void ddsServiceReplyNotification
-(
-  const char* serviceName,
-  const char* json,
-  uint64_t    requestId,
-  int64_t     publishTime
-)
-{
-  KT_T(StDdsService, "Got a Service Reply Notification (service: '%s', req: %lld): '%s'", serviceName, requestId, json);
-
-  DdsService* serviceP = ddsServiceLookup(serviceName);
-  if (serviceP == NULL)
-    KT_W("Service '%s' not found", serviceName);
-
-  // Lookup the instance and remove it
-  DdsServiceInstance* prev = NULL;
-  for (DdsServiceInstance* dsiP = serviceP->instances; dsiP != NULL; dsiP = dsiP->next)
-  {
-    if (dsiP->requestId == requestId)
-    {
-      if (prev != NULL)
-        prev->next = dsiP->next;
-      else
-        serviceP->instances = dsiP->next;
-
-      free(dsiP);
-
-      KT_T(StDdsService, "Found the instance '%llu' of service '%s' and removed it", requestId, serviceName);
-      return;
-    }
-  }
-
-  KT_W("Instance '%llu' of service '%s' not found", requestId, serviceName);
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
-// ddsActionNotification -
-//
-void ddsActionNotification(const char* actionName, const eprosima::ddsenabler::participants::ActionInfo& actionInfo)
-{
-  KT_T(StDdsAction, "Got an Action Notification (action: %s)", actionName);
-}
-
-
 
 // -----------------------------------------------------------------------------
 //
@@ -193,10 +142,10 @@ void ddsActionNotification(const char* actionName, const eprosima::ddsenabler::p
 //
 bool ddsActionGoalRequestNotification
 (
-  const char* actionName,
-  const char* json,
-  const eprosima::ddsenabler::participants::UUID& goalId,
-  int64_t     publishTime
+  const char*                                      actionName,
+  const char*                                      json,
+  const eprosima::ddsenabler::participants::UUID&  goalId,
+  int64_t                                          publishTime
 )
 {
   KT_T(StDdsAction, "Got an Action Goal Request Notification (action: '%s'): '%s'", actionName, json);
@@ -207,70 +156,18 @@ bool ddsActionGoalRequestNotification
 
 // -----------------------------------------------------------------------------
 //
-// ddsActionFeedbackNotification -
-//
-void ddsActionFeedbackNotification
-(
-  const char* actionName,
-  const char* json,
-  const eprosima::ddsenabler::participants::UUID& goalId,
-  int64_t     publishTime
-)
-{
-  KT_T(StDdsAction, "Got an Action Goal Request Notification (action: '%s'): '%s'", actionName, json);
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
 // ddsActionCancelRequestNotification -
 //
 void ddsActionCancelRequestNotification
 (
-  const char* actionName,
+  const char*                                     actionName,
   const eprosima::ddsenabler::participants::UUID& goalId,
-  int64_t     timestamp,
-  uint64_t    requestId,
-  int64_t     publishTime
+  int64_t                                         timestamp,
+  uint64_t                                        requestId,
+  int64_t                                         publishTime
 )
 {
   KT_T(StDdsAction, "Got an Action Cancel Request Notification (action: %s)", actionName);
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
-// ddsActionResultNotification -
-//
-void ddsActionResultNotification
-(
-  const char* actionName,
-  const char* json,
-  const eprosima::ddsenabler::participants::UUID& goalId,
-  int64_t     publishTime
-)
-{
-  KT_T(StDdsAction, "Got an Action Result Notification (action: '%s'): '%s'", actionName, json);
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
-// ddsActionStatusNotification -
-//
-void ddsActionStatusNotification
-(
-  const char*  actionName,
-  const eprosima::ddsenabler::participants::UUID&  goalId,
-  eprosima::ddsenabler::participants::StatusCode   statusCode,
-  const char*  statusMessage,
-  int64_t      publishTime
-)
-{
-  KT_T(StDdsAction, "Got an Action Status Notification (action: %s, status %d): %s", actionName, statusCode, statusMessage);
 }
 
 
@@ -281,7 +178,7 @@ void ddsActionStatusNotification
 //
 bool ddsActionQuery
 (
-  const char* actionName,
+  const char*                                     actionName,
   eprosima::ddsenabler::participants::ActionInfo& actionInfo
 )
 {
@@ -300,8 +197,13 @@ bool ddsActionQuery
 //
 int ddsInit(Kjson* kjP)
 {
-  ddsPrePopulateDb("topics");
-  ddsPrePopulateDb("services");
+  KjNode* topicsNode   = kjTreeNavigate(configTree, "dds.ngsild.topics",   NULL);
+  KjNode* servicesNode = kjTreeNavigate(configTree, "dds.ngsild.services", NULL);
+  KjNode* actionsNode  = kjTreeNavigate(configTree, "dds.ngsild.actions",  NULL);
+
+  if (topicsNode   != NULL)  ddsPrePopulateDb(DdsTopics,   topicsNode);
+  if (servicesNode != NULL)  ddsPrePopulateDb(DdsServices, servicesNode);
+  if (actionsNode  != NULL)  ddsPrePopulateDb(DdsActions,  actionsNode);
 
   KT_T(StDds, "Calling create_dds_enabler('%s')", configFile);
 

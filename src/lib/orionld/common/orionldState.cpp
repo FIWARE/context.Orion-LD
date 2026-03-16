@@ -101,6 +101,7 @@ int               orionldHostNameLen       = -1;
 OrionldGeoIndex*  geoIndexList             = NULL;
 OrionldPhase      orionldPhase             = OrionldPhaseStartup;
 bool              orionldStartup           = true;
+char              coreContextDir[512];
 char              pgPortString[16];
 char              mongoServerVersion[32];
 char              userAgentHeaderNoLF[64];     // "User-Agent: orionld/" + ORIONLD_VERSION - initialized in orionldServiceInit()
@@ -111,10 +112,13 @@ PernotSubCache    pernotSubCache;
 EntityMap*        entityMaps        = NULL;    // Used by GET /entities in the distributed case, for pagination
 bool              entityMapsEnabled = false;
 bool              distSubsEnabled   = false;
-OrionldContext*   defaultUserContextP = NULL;
-int               pageSize            = 20;
+bool              wsSupport         = false;
+OrionldContext*   defaultUserContextP      = NULL;
+char*             defaultUserContextBuffer = NULL;
+int               pageSize                 = 20;
 char              userAgentHeaderValue[32];
 DdsService*       ddsServices         = NULL;
+DdsAction*        ddsActions          = NULL;
 
 
 

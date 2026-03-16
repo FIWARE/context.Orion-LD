@@ -41,6 +41,7 @@ extern "C"
 #include "kalloc/version.h"                                    // kallocVersion
 #include "khash/version.h"                                     // khashVersion
 #include "kjson/version.h"                                     // kjsonVersion
+#include "kprom/version.h"                                     // kpromVersion
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjBuilder.h"                                   // kjObject, kjString, kjBoolean, ...
 }
@@ -110,6 +111,8 @@ bool orionldGetVersion(void)
   nodeP = kjString(orionldState.kjsonP, "khash version", khashVersion);
   kjChildAdd(orionldState.responseTree, nodeP);
   nodeP = kjString(orionldState.kjsonP, "kjson version", kjsonVersion);
+  kjChildAdd(orionldState.responseTree, nodeP);
+  nodeP = kjString(orionldState.kjsonP, "kprom version", kpromVersion);
   kjChildAdd(orionldState.responseTree, nodeP);
 
   // Direct libraries

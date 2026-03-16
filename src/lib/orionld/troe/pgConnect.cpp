@@ -28,7 +28,7 @@ extern "C"
 }
 
 #include "orionld/common/pqHeader.h"                           // Postgres header
-#include "orionld/common/orionldState.h"                       // troeHost, pgPortString, troeUser, troePwd
+#include "orionld/common/orionldState.h"                       // troeHost, pgPortString, troeUser, troePwd, troeSslMode
 #include "orionld/troe/pgConnect.h"                            // Own interface
 
 
@@ -41,31 +41,43 @@ PGconn* pgConnect(const char* db)
 {
   PGconn*  connectionP;
   int      attemptNo   = 0;
-  int      maxAttempts = 100;
-  char*    keywords[6] = { (char*) "host",   (char*) "port",       (char*) "user",   (char*) "password",  NULL, NULL };
-  char*    values[6]   = { troeHost,         pgPortString,         troeUser,         troePwd,             NULL, NULL };
+  int      maxAttempts = 30;
+  char*    keywords[8] = { (char*) "host",   (char*) "port",       (char*) "user",   (char*) "password",  (char*) "sslmode",  NULL, NULL, NULL };
+  char*    values[8]   = { troeHost,         pgPortString,         troeUser,         troePwd,             troeSslMode,        NULL, NULL, NULL };
 
   if (db != NULL)
   {
-    keywords[4] = (char*) "dbname";
-    values[4]   = (char*) db;
+    keywords[5] = (char*) "dbname";
+    values[5]   = (char*) db;
   }
 
   while (attemptNo < maxAttempts)
   {
-    connectionP  = PQconnectdbParams(keywords, values, 0);  // 0: no expansion of dbname - see https://www.postgresql.org/docs/12/libpq-connect.html
+    connectionP = PQconnectdbParams(keywords, values, 0);  // 0: no expansion of dbname - see https://www.postgresql.org/docs/12/libpq-connect.html
 
     ++attemptNo;
-    if (connectionP != NULL)
+
+    if (connectionP == NULL)  // Only on OOM
+    {
+      sleep(1);
+      continue;
+    }
+
+    if (PQstatus(connectionP) == CONNECTION_OK)
       break;
 
-    usleep(500);  // Sleep half a millisecond before we try again
-    KT_W("Unable to connect to postgres database '%s'", db);
+    // Connection failed - log once, clean up, and retry
+    if (attemptNo == 1)
+      KT_W("Waiting for postgres: %s", PQerrorMessage(connectionP));
+
+    PQfinish(connectionP);
+    connectionP = NULL;
+    sleep(1);
   }
 
   if (connectionP == NULL)
-    KT_RE(NULL, "Database Error (unable to connect to postgres(host:'%s', port:%s, user:'%s', pwd:'%s', db:'%s')",
-          troeHost, pgPortString, troeUser, troePwd, db);
+    KT_RE(NULL, "Database Error (unable to connect to postgres(host:'%s', port:%s, user:'%s', pwd:'%s', db:'%s') after %d attempts",
+          troeHost, pgPortString, troeUser, troePwd, db, maxAttempts);
 
   return connectionP;
 }

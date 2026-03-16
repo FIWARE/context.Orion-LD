@@ -232,16 +232,16 @@ function brokerStopAwait
     if [ "$r" != "0" ]
     then
       logMsg The orion context broker on port $port has stopped
-      sleep 1
+      sleep .5
       break;
     fi
 
     logMsg Awaiting orion context broker to fully stop '('$loopNo')' ...
-    sleep .2
+    sleep .1
     loopNo=$loopNo+1
   done
 
-  sleep .5
+  sleep .1
 
   # Make sure that is CB is NOT running
   curl -s localhost:${port}/version | grep version > /dev/null
@@ -302,7 +302,7 @@ function brokerStartAwait
     fi
 
     logMsg Awaiting orion context to fully start '(loop '$loopNo')' ...
-    sleep .1
+    sleep .01
     loopNo=$loopNo+1
   done
 
@@ -312,8 +312,6 @@ function brokerStartAwait
     result=1
     return
   fi
-
-  sleep .5
 }
 
 
@@ -479,7 +477,7 @@ function localBrokerStart()
         exit 1
       fi
 
-      sleep .05
+      sleep .01
       loopNo=$loopNo+1
     done
 
@@ -579,14 +577,14 @@ function localBrokerStop
     kill $(ps -fe | grep $BROKER | grep $port | awk '{print $2}') 2> /dev/null
 
     # Wait some time so the broker can finish properly
-    sleep .5
+    sleep .1
     brokerPidLines=$(ps -fe | grep $BROKER | grep $port | wc -l)
 
     if [ $brokerPidLines != 0 ]
     then
       # If the broker refuses to stop politely, kill the process by brute force
       kill -9 $(ps -fe | grep $BROKER | grep $port | awk '{print $2}') 2> /dev/null
-      sleep .5
+      sleep .1
       brokerPidLines=$(ps -fe | grep $BROKER | grep $port | wc -l)
       if [ $brokerPidLines != 0 ]
       then
@@ -630,6 +628,9 @@ function orionldStart
   then
     extraParams="$extraParams -kt $CB_KTRACELEVELS"
   fi
+
+  # Always using -ki (KTrace Information Messages) during functests
+  extraParams="$extraParams -ki"
 
   echo extraParams: $extraParams > /tmp/orionldStart
 
@@ -748,7 +749,7 @@ function orionldStart
         exit 1
       fi
 
-      sleep .05
+      sleep .01
       loopNo=$loopNo+1
     done
 
@@ -773,6 +774,12 @@ function orionldStart
     fi
   fi
   rm -f $brokerStartErr
+
+  # If the broker uses DDS, wait for RTPS discovery to complete
+  if [[ "$extraParams" == *"dds"* ]] && [ -f "$HOME/.orionld" ]
+  then
+    sleep .001  # DDS Sleep
+  fi
 }
 
 
@@ -921,7 +928,13 @@ function brokerStop
   if [ "$VALGRIND" == "" ]
   then
     curl localhost:${port}/exit/harakiri > /dev/null 2> /dev/null
-    sleep .5
+    sleep .1
+
+    # If the broker was using DDS, wait for graceful DDS shutdown (done inside broker)
+    if [ -f "$HOME/.orionld" ]
+    then
+      sleep .001  # DDS Sleep
+    fi
     # In case that didn't work, let's try with killall - actually ... not such a good idea - we may have more than one broker running ...
     # killall orionld > /dev/null 2> /dev/null
   else
@@ -954,6 +967,7 @@ function ftClientStart()
   _logDir=""
   _dds=""
   _ddsService=""
+  _ddsAction=""
 
   while [ "$#" != 0 ]
   do
@@ -962,6 +976,7 @@ function ftClientStart()
     elif [ "$1" == "--verbose" ];         then _verbose="-v";
     elif [ "$1" == "--dds" ];             then _dds="--dds";
     elif [ "$1" == "--ddsService" ];      then _ddsService="--ddsService $2"; shift;
+    elif [ "$1" == "--ddsAction" ];       then _ddsAction="--ddsAction $2"; shift;
     elif [ "$1" == "-v" ];                then _verbose="-v";
     elif [ "$1" == "-t" ];                then _traceLevels="-t $2"; shift;
     else
@@ -990,15 +1005,20 @@ function ftClientStart()
     fi
   fi
 
-  logMsg "Starting the FT Client on port $_port ($_verbose $_traceLevels $_ddsService)"
+  logMsg "Starting the FT Client on port $_port ($_verbose $_traceLevels $_ddsService $_ddsAction)"
   which ftClient >> $LOG_FILE
-  ftClient --port $_port $_verbose $_traceLevels $_logDir $_dds $_ddsService &
+  ftClient --port $_port $_verbose $_traceLevels $_logDir $_dds $_ddsService $_ddsAction &
+
+  export FT_PORT=$_port
+
+  # DDS discovery sleep moved to orionldStart (both participants must be running)
 
   _port=0
   _verbose=""
   _traceLevels=""
   logDir=""
   _ddsService=""
+  _ddsAction=""
 }
 
 
@@ -1047,9 +1067,9 @@ function accumulatorStop()
   if [ "$pid" != "" ]
   then
     kill -15 $pid 2> /dev/null
-    sleep .1
+    sleep .01
     kill -2 $pid 2> /dev/null
-    sleep .1
+    sleep .01
     kill -9 $pid 2> /dev/null
     rm -f /tmp/accumulator.$port.pid
   fi
@@ -1138,7 +1158,7 @@ function accumulatorStart()
       echo "Unable to start listening application after waiting ${MAXIMUM_WAIT}"
       exit 1
    fi 
-   sleep 1
+   sleep .1
 
    time=$time+1
    nc -zv $bindIp $port &>/dev/null </dev/null
@@ -1164,7 +1184,7 @@ function mqttTestClientStart()
   cd $REPO_HOME
   ./scripts/mqttTestClient.py $*   &
   cd - > /dev/null 2>&1
-  sleep 0.2
+  sleep 0.1
   logMsg Started MQTT notification client
 }
 
@@ -1190,7 +1210,7 @@ function mqttTestClientStop()
 #
 function mqttTestClientDump()
 {
-  sleep 0.2
+  sleep 0.1
   topic=$1
   cd $REPO_HOME
   ./scripts/mqttSend.py --topic "$topic" --payload dump
@@ -1206,7 +1226,7 @@ function mqttTestClientDump()
 #
 function mqttTestClientReset()
 {
-  sleep 0.2
+  sleep 0.1
   topic=$1
   cd $REPO_HOME
   ./scripts/mqttSend.py --topic "$topic" --payload reset
@@ -1452,7 +1472,7 @@ function mongoCmd2()
 
   db=$1
   cmd=$2
-  echo $cmd | mongo mongodb://$host:$port/$db | grep -v "Implicit session: session" | grep -v "WARNING: shell and server versions do not match" | sed 's/?gssapiServiceName=mongodb//'
+  echo $cmd | mongo mongodb://$host:$port/$db | grep -v "Implicit session: session" | grep -v "WARNING: shell and server versions do not match" | grep -v "superseded by" | grep -v "improved usability" | grep -v "has been deprecated" | grep -v "upcoming release" | grep -v "installation instructions" | grep -v "mongodb-shell/install" | grep -v "^========" | sed 's/?gssapiServiceName=mongodb//'
 }
 
 
@@ -2093,7 +2113,7 @@ function urlencode
 #
 function orionldMetrics
 {
-  sleep 1
+  sleep .1
   curl localhost:8000/metrics --silent | egrep -v '^#' | egrep -v '^process_' | egrep -v '^$'
 }
 
@@ -2149,7 +2169,7 @@ function ros2ServiceStart
     python3 /scripts/ros2_nodes/node_main.py --samples $_samples > /dev/null 2>&1
 
   # Wait for the service to start
-  sleep 1
+  sleep .1
 
   return 0
 }
@@ -2167,8 +2187,215 @@ function ros2ServiceStop
   if [ "$CID" != "" ]
   then
     docker kill $CID > /dev/null 2>&1
-    sleep 1
+    sleep .1
   fi
+}
+
+
+
+# ------------------------------------------------------------------------------
+#
+# wsConnect - connect to broker via WebSocket and create a subscription
+#
+# Parameters:
+#   The payload body is passed as the first parameter (JSON with metadata+body)
+#   --port <port>   ftClient port (default: $FT_PORT)
+#
+# Returns:
+#   The subscription ID (via WS-Subscription-Id response header)
+#   Sets $wsSubId with the subscription ID
+#
+function wsConnect()
+{
+  _port=${FT_PORT:-7701}
+  _payload=""
+
+  while [ "$#" != 0 ]
+  do
+    if   [ "$1" == "--port" ];    then _port=$2; shift;
+    elif [ "$1" == "--payload" ]; then _payload="$2"; shift;
+    else
+      echo "Bad parameter for wsConnect: $1"
+      exit 1
+    fi
+    shift
+  done
+
+  _brokerPort=${CB_PORT:-9999}
+  _response=$(curl -s -X POST -d "$_payload" "http://127.0.0.1:$_port/ws/connect?brokerPort=$_brokerPort" -H "Content-Type: application/json")
+  wsSubId=$(echo "$_response" | python3 -c "import sys,json; print(json.load(sys.stdin).get('subscriptionId',''))" 2>/dev/null)
+}
+
+
+
+# ------------------------------------------------------------------------------
+#
+# wsSend - send a JSON message over an existing WS connection
+#
+# Parameters:
+#   $1 - subscription ID
+#   --port <port>   ftClient port (default: $FT_PORT)
+#   --payload <json>  JSON payload to send
+#
+function wsSend()
+{
+  _port=${FT_PORT:-7701}
+  _subId=""
+  _payload=""
+
+  while [ "$#" != 0 ]
+  do
+    if   [ "$1" == "--port" ];    then _port=$2; shift;
+    elif [ "$1" == "--subId" ];   then _subId=$2; shift;
+    elif [ "$1" == "--payload" ]; then _payload="$2"; shift;
+    else
+      echo "Bad parameter for wsSend: $1"
+      exit 1
+    fi
+    shift
+  done
+
+  curl -s -S -X POST -d "$_payload" http://127.0.0.1:$_port/ws/$_subId/send -H "Content-Type: application/json" --dump-header /tmp/wsHeaders.out > /tmp/wsSend.response
+
+  if [ -f /tmp/wsHeaders.out ]
+  then
+    sed -i 's/\r//g' /tmp/wsHeaders.out
+    egrep ^HTTP/ /tmp/wsHeaders.out
+    cat /tmp/wsHeaders.out | egrep -v ^HTTP/ | grep -v '^$' | sort
+    echo
+    _wsBody=$(cat /tmp/wsSend.response)
+    if [ "$_wsBody" != "" ]
+    then
+      echo "$_wsBody" | python3 -mjson.tool
+    fi
+  fi
+
+  rm -f /tmp/wsHeaders.out /tmp/wsSend.response
+}
+
+
+
+# ------------------------------------------------------------------------------
+#
+# wsSendBurst - send two JSON messages over an existing WS connection back to back
+#
+# Parameters:
+#   --subId <subId>     subscription ID (identifies the WS connection)
+#   --port <port>       ftClient port (default: $FT_PORT)
+#   --payload1 <json>   first JSON payload
+#   --payload2 <json>   second JSON payload
+#
+function wsSendBurst()
+{
+  _port=${FT_PORT:-7701}
+  _subId=""
+  _payload1=""
+  _payload2=""
+
+  while [ "$#" != 0 ]
+  do
+    if   [ "$1" == "--port" ];     then _port=$2; shift;
+    elif [ "$1" == "--subId" ];    then _subId=$2; shift;
+    elif [ "$1" == "--payload1" ]; then _payload1="$2"; shift;
+    elif [ "$1" == "--payload2" ]; then _payload2="$2"; shift;
+    else
+      echo "Bad parameter for wsSendBurst: $1"
+      exit 1
+    fi
+    shift
+  done
+
+  curl -s -X POST -d "$_payload1" http://127.0.0.1:$_port/ws/$_subId/send -H "Content-Type: application/json" &
+  curl -s -X POST -d "$_payload2" http://127.0.0.1:$_port/ws/$_subId/send -H "Content-Type: application/json" &
+  wait
+}
+
+
+
+# ------------------------------------------------------------------------------
+#
+# wsDump - return accumulated WS notifications for a subscription
+#
+# Parameters:
+#   --subId <subId>   subscription ID
+#   --port <port>     ftClient port (default: $FT_PORT)
+#
+function wsDump()
+{
+  _port=${FT_PORT:-7701}
+  _subId=""
+
+  while [ "$#" != 0 ]
+  do
+    if   [ "$1" == "--port" ];    then _port=$2; shift;
+    elif [ "$1" == "--subId" ];   then _subId=$2; shift;
+    else
+      echo "Bad parameter for wsDump: $1"
+      exit 1
+    fi
+    shift
+  done
+
+  sleep 0.1
+  orionCurl --url /ws/$_subId/dump --port $_port --noPayloadCheck
+}
+
+
+
+# ------------------------------------------------------------------------------
+#
+# wsClose - close a WS connection
+#
+# Parameters:
+#   --subId <subId>   subscription ID
+#   --port <port>     ftClient port (default: $FT_PORT)
+#
+function wsClose()
+{
+  _port=${FT_PORT:-7701}
+  _subId=""
+
+  while [ "$#" != 0 ]
+  do
+    if   [ "$1" == "--port" ];    then _port=$2; shift;
+    elif [ "$1" == "--subId" ];   then _subId=$2; shift;
+    else
+      echo "Bad parameter for wsClose: $1"
+      exit 1
+    fi
+    shift
+  done
+
+  curl -s -X POST http://127.0.0.1:$_port/ws/$_subId/close
+}
+
+
+
+# ------------------------------------------------------------------------------
+#
+# wsReset - clear accumulated notifications for a subscription
+#
+# Parameters:
+#   --subId <subId>   subscription ID
+#   --port <port>     ftClient port (default: $FT_PORT)
+#
+function wsReset()
+{
+  _port=${FT_PORT:-7701}
+  _subId=""
+
+  while [ "$#" != 0 ]
+  do
+    if   [ "$1" == "--port" ];    then _port=$2; shift;
+    elif [ "$1" == "--subId" ];   then _subId=$2; shift;
+    else
+      echo "Bad parameter for wsReset: $1"
+      exit 1
+    fi
+    shift
+  done
+
+  curl -s -X POST http://127.0.0.1:$_port/ws/$_subId/reset
 }
 
 
@@ -2220,3 +2447,9 @@ export -f ftClientStart
 export -f ftClientStop
 export -f ros2ServiceStart
 export -f ros2ServiceStop
+export -f wsConnect
+export -f wsSend
+export -f wsSendBurst
+export -f wsDump
+export -f wsClose
+export -f wsReset

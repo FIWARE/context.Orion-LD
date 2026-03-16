@@ -78,6 +78,7 @@ extern "C"
 #include "orionld/serviceRoutines/orionldGetEntityAttributes.h"      // orionldGetEntityAttributes
 #include "orionld/serviceRoutines/orionldGetEntityAttribute.h"       // orionldGetEntityAttribute
 #include "orionld/serviceRoutines/orionldGetRelationships.h"         // orionldGetRelationships
+#include "orionld/serviceRoutines/orionldGetMetrics.h"               // orionldGetMetrics
 
 #include "orionld/serviceRoutines/orionldGetContexts.h"              // orionldGetContexts
 #include "orionld/serviceRoutines/orionldGetContext.h"               // orionldGetContext
@@ -559,6 +560,14 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
 
     serviceP->options |= ORIONLD_SERVICE_OPTION_DONT_ADD_CONTEXT_TO_RESPONSE_PAYLOAD;
     serviceP->options |= ORIONLD_SERVICE_OPTION_NO_CONTEXT_NEEDED;
+  }
+  else if (serviceP->serviceRoutine == orionldGetMetrics)
+  {
+    serviceP->options  = 0;  // Tenant is Ignored
+
+    serviceP->options |= ORIONLD_SERVICE_OPTION_DONT_ADD_CONTEXT_TO_RESPONSE_PAYLOAD;
+    serviceP->options |= ORIONLD_SERVICE_OPTION_NO_CONTEXT_NEEDED;
+    serviceP->options |= ORIONLD_SERVICE_OPTION_ACCEPT_TEXT_PLAIN;
   }
   else if (serviceP->serviceRoutine == orionldGetContexts)
   {

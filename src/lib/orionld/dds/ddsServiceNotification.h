@@ -35,4 +35,12 @@
 //
 extern void ddsServiceNotification(const char* serviceName, const eprosima::ddsenabler::participants::ServiceInfo& serviceInfo);
 
+
+
+// -----------------------------------------------------------------------------
+//
+// ddsEntityAttributeUpsert -
+//
+extern void ddsEntityAttributeUpsert(const char* entityId, const char* entityType, const char* attributeName);
+
 #endif  // SRC_LIB_ORIONLD_DDS_DDSSERVICENOTIFICATION_H_

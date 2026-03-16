@@ -39,6 +39,30 @@ Protocol protocolFromString(const char* protocolString)
   else if (strcmp(protocolString, "https") == 0)                  return HTTPS;
   else if (strcmp(protocolString, "mqtt")  == 0)                  return MQTT;
   else if (strcmp(protocolString, "mqtts") == 0)                  return MQTTS;
+  else if (strcmp(protocolString, "ws")    == 0)                  return WS;
+  else if (strcmp(protocolString, "wss")   == 0)                  return WSS;
 
   return NO_PROTOCOL;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// protocolToString -
+//
+const char* protocolToString(Protocol protocol)
+{
+  switch (protocol)
+  {
+  case HTTP:         return "http";
+  case HTTPS:        return "https";
+  case MQTT:         return "mqtt";
+  case MQTTS:        return "mqtts";
+  case WS:           return "ws";
+  case WSS:          return "wss";
+  case NO_PROTOCOL:  return "none";
+  }
+
+  return "unknown";
 }

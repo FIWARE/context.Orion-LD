@@ -189,6 +189,7 @@ function usage()
   echo "$empty [-ld (only ngsild tests)]"
   echo "$empty [-troe (only ngsild TRoE (Temporal Representation of Entities) tests)]"
   echo "$empty [-dds (only DDS tests)]"
+  echo "$empty [-ws (only WebSocket tests)]"
   echo "$empty [-eb (external broker)]"
   echo "$empty [-tk (on error, show the diff using tkdiff)]"
   echo "$empty [-meld (on error, show the diff using meld)]"
@@ -621,6 +622,7 @@ do
   elif [ "$1" == "-tk" ];            then CB_DIFF_TOOL=tkdiff;
   elif [ "$1" == "-meld" ];          then CB_DIFF_TOOL=meld;
   elif [ "$1" == "-diff" ];          then CB_DIFF_TOOL=diff;
+  elif [ "$1" == "-kdiff" ];         then CB_DIFF_TOOL=$(cd "$(dirname "$0")/../.." && pwd)/../ktest/ktestGui.py;
   elif [ "$1" == "--loud" ];         then loud=on;
   elif [ "$1" == "--dryrun" ];       then dryrun=on;
   elif [ "$1" == "--keep" ];         then keep=on;
@@ -630,6 +632,7 @@ do
   elif [ "$1" == "--dir" ];          then dir="$2"; dirGiven=yes; shift;
   elif [ "$1" == "-ld" ];            then dir=test/functionalTest/cases/0000_ld;dirGiven=yes;
   elif [ "$1" == "-dds" ];           then dir=test/functionalTest/cases/0000_ld/dds;dirGiven=yes;
+  elif [ "$1" == "-ws" ];            then dir=test/functionalTest/cases/0000_ld/ws;dirGiven=yes;
   elif [ "$1" == "-troe" ];          then dir=test/functionalTest/cases/0000_ld/troe;dirGiven=yes;
   elif [ "$1" == "-api" ];           then dir=test/functionalTest/cases/0000_ld/ngsild;dirGiven=yes;
   elif [ "$1" == "--fromIx" ];       then fromIx=$2; shift;
@@ -1277,9 +1280,9 @@ function partExecute()
         endDate=$(date)
         if [ $blockDiff == 'yes' ]
         then
-          $CB_DIFF_TOOL $dirname/$filename.out.sorted $dirname/$filename.regexpect.sorted
+          $CB_DIFF_TOOL $dirname/$filename.regexpect.sorted $dirname/$filename.out.sorted
         else
-          $CB_DIFF_TOOL $dirname/$filename.out $dirname/$filename.regexpect
+          $CB_DIFF_TOOL $dirname/$filename.regexpect $dirname/$filename.out
         fi
         logMsg "diff tool $CB_DIFF_TOOL finished"
       fi

@@ -27,7 +27,7 @@ Log Summary
 
 --SHELL-INIT--
 dbInit CB
-orionldStart CB -ki -logSummary 2
+orionldStart CB -logSummary 2
 
 --SHELL--
 

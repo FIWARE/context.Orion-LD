@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_PROMETHEUS_PROMGAUGEADD_H_
-#define SRC_LIB_ORIONLD_PROMETHEUS_PROMGAUGEADD_H_
+#ifndef SRC_LIB_ORIONLD_WS_WSUPGRADE_H_
+#define SRC_LIB_ORIONLD_WS_WSUPGRADE_H_
 
 /*
 *
-* Copyright 2022 FIWARE Foundation e.V.
+* Copyright 2026 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,17 +25,14 @@
 *
 * Author: Ken Zangelin
 */
-extern "C"
-{
-#include "prometheus-client-c/prom/include/prom.h"          // Prometheus client lib
-}
+#include <microhttpd.h>                                // MHD_Connection, MHD_Result
 
 
 
 // -----------------------------------------------------------------------------
 //
-// promGaugeAdd -
+// wsUpgrade - handle WebSocket upgrade request, queue 101 response
 //
-extern int promGaugeAdd(prom_gauge_t* gaugeP, int v, const char* label);
+extern MHD_Result wsUpgrade(MHD_Connection* connection, const char* wsKey);
 
-#endif  // SRC_LIB_ORIONLD_PROMETHEUS_PROMGAUGEADD_H_
+#endif  // SRC_LIB_ORIONLD_WS_WSUPGRADE_H_

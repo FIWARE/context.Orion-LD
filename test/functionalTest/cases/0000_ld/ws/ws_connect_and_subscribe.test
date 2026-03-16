@@ -1,0 +1,109 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+WebSocket connect and subscribe
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -mongocOnly -wip ws
+ftClientStart -v -t 200
+
+--SHELL--
+
+#
+# 01. Tell ftClient to connect via WebSocket and create a subscription for entity type T
+# 02. GET the subscription from the broker REST API, verify it exists
+#
+
+echo "01. Tell ftClient to connect via WebSocket and create a subscription for entity type T"
+echo "======================================================================================"
+payload='{
+  "metadata": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "type": "Subscription",
+    "entities": [
+      {
+        "type": "T"
+      }
+    ],
+    "notification": {
+      "format": "normalized"
+    }
+  }
+}'
+wsConnect --port $FT_PORT --payload "$payload"
+echo "WS Subscription Id: $wsSubId"
+echo
+echo
+
+
+echo "02. GET the subscription from the broker REST API, verify it exists"
+echo "==================================================================="
+orionCurl --url /ngsi-ld/v1/subscriptions/$wsSubId
+echo
+echo
+
+
+--REGEXPECT--
+01. Tell ftClient to connect via WebSocket and create a subscription for entity type T
+======================================================================================
+WS Subscription Id: REGEX(urn:.*)
+
+
+02. GET the subscription from the broker REST API, verify it exists
+===================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "entities": [
+        {
+            "type": "T"
+        }
+    ],
+    "id": "REGEX(urn:.*)",
+    "isActive": true,
+    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
+    "notification": {
+        "endpoint": {
+            "accept": "application/json",
+            "uri": "REGEX(.*)"
+        },
+        "format": "normalized",
+        "status": "ok"
+    },
+    "origin": "cache",
+    "status": "active",
+    "type": "Subscription"
+}
+
+
+--TEARDOWN--
+brokerStop CB
+ftClientStop
+dbDrop CB

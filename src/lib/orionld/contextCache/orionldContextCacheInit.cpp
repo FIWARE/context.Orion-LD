@@ -22,7 +22,11 @@
 *
 * Author: Ken Zangelin
 */
+#include <stdio.h>                                               // fopen, fread, fclose, fseek, ftell
+#include <stdlib.h>                                              // malloc, free
+#include <string.h>                                              // strrchr, strlen
 #include <strings.h>                                             // bzero
+#include <string.h>                                              // strncmp, strncpy
 
 extern "C"
 {
@@ -30,6 +34,7 @@ extern "C"
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjChildRemove
+#include "kbase/kFileRead.h"                                     // kFileRead
 }
 
 #include "orionld/common/orionldState.h"                         // dbHost, coreContextUrl, builtinCoreContext
@@ -42,6 +47,44 @@ extern "C"
 #include "orionld/contextCache/orionldContextCache.h"            // orionldContextCacheArray, orionldContextCacheSem
 #include "orionld/contextCache/orionldContextCachePersist.h"     // orionldContextCachePersist
 #include "orionld/contextCache/orionldContextCacheInit.h"        // Own interface
+
+
+
+// -----------------------------------------------------------------------------
+//
+// defaultUserContextInit -
+//
+static void defaultUserContextInit(void)
+{
+  if ((strncmp(defaultUserContextUrl, "http://", 7) == 0) || (strncmp(defaultUserContextUrl, "https://", 8) == 0))
+  {
+    defaultUserContextP = orionldContextFromUrl(defaultUserContextUrl, NULL);
+    if (defaultUserContextP == NULL)
+      KT_X(1, "Unable to download the default user context '%s' (%s: %s)", defaultUserContextUrl, orionldState.pd.title, orionldState.pd.detail);
+  }
+  else
+  {
+    int bufferLen = 0;
+
+    if (kFileRead((char*) "", defaultUserContextUrl, &defaultUserContextBuffer, &bufferLen) != 0)
+      KT_X(1, "Unable to read default user context file '%s'", defaultUserContextUrl);
+
+    char hostedUrl[256];
+    snprintf(hostedUrl, sizeof(hostedUrl), "http://localhost:%d/ngsi-ld/v1/jsonldContexts/defaultUserContext.jsonld", portNo);
+
+    defaultUserContextP = orionldContextFromBuffer(hostedUrl, OrionldContextUserCreated, NULL, defaultUserContextBuffer);
+    if (defaultUserContextP == NULL)
+    {
+      free(defaultUserContextBuffer);
+      defaultUserContextBuffer = NULL;
+      KT_X(1, "Unable to parse default user context file '%s' (%s: %s)", defaultUserContextUrl, orionldState.pd.title, orionldState.pd.detail);
+    }
+    defaultUserContextP->kind = OrionldContextHosted;
+
+    strncpy(defaultUserContextUrl, hostedUrl, sizeof(defaultUserContextUrl) - 1);
+    defaultUserContextUrl[sizeof(defaultUserContextUrl) - 1] = 0;
+  }
+}
 
 
 
@@ -86,6 +129,87 @@ void dbContextToCache(KjNode* dbContextP, KjNode* atContextP, bool keyValues, bo
 
   if (parentNodeP != NULL)
     contextP->parent = parentNodeP->value.s;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// coreContextFromFile -
+//
+// Context file format:
+//   Line 1: The URL of the context (e.g. https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.3.jsonld)
+//   Rest:   The JSON-LD content
+//
+// The filename is derived from the core context URL (last path component).
+//
+static OrionldContext* coreContextFromFile(void)
+{
+  if (coreContextDir[0] == 0)
+    return NULL;
+
+  const char* fileName = strrchr(coreContextUrl, '/');
+  if (fileName == NULL)
+    return NULL;
+
+  ++fileName;  // skip the '/'
+  char path[768];
+  snprintf(path, sizeof(path), "%s/%s", coreContextDir, fileName);
+
+  FILE* fp = fopen(path, "r");
+  if (fp == NULL)
+  {
+    KT_T(KtCoreContext, "Core context file '%s' not found - will try to download", path);
+    return NULL;
+  }
+
+  fseek(fp, 0, SEEK_END);
+  long fSize = ftell(fp);
+  fseek(fp, 0, SEEK_SET);
+
+  char* buf = (char*) malloc(fSize + 1);
+  if (buf == NULL)
+  {
+    fclose(fp);
+    return NULL;
+  }
+
+  OrionldContext* contextP = NULL;
+
+  if (fread(buf, 1, fSize, fp) == (size_t) fSize)
+  {
+    buf[fSize] = 0;
+
+    // First line is the URL - extract it and skip to the JSON
+    char* json = strchr(buf, '\n');
+    if (json != NULL)
+    {
+      *json = 0;  // null-terminate the URL line
+      char* url = buf;
+
+      // Trim trailing whitespace from URL (e.g. \r)
+      int urlLen = strlen(url);
+      while (urlLen > 0 && (url[urlLen - 1] == ' ' || url[urlLen - 1] == '\r' || url[urlLen - 1] == '\t'))
+        url[--urlLen] = 0;
+
+      ++json;  // skip past the newline to the JSON content
+
+      contextP = orionldContextFromBuffer(url, OrionldContextFileCached, url, json);
+      if (contextP != NULL)
+        KT_V("Core context loaded from file '%s' (URL: %s)", path, url);
+      else
+        KT_W("Unable to parse core context from file '%s' (%s: %s)", path, orionldState.pd.title, orionldState.pd.detail);
+    }
+    else
+      KT_W("Invalid core context file '%s' - expected URL on first line", path);
+  }
+  else
+    KT_W("Unable to read core context file '%s'", path);
+
+  free(buf);
+  fclose(fp);
+
+  return contextP;
 }
 
 
@@ -156,6 +280,14 @@ void orionldContextCacheInit(void)
     }
   }
 
+  // Still no core context? - try to load from local file
+  if (orionldCoreContextP == NULL)
+  {
+    orionldCoreContextP = coreContextFromFile();
+    if (orionldCoreContextP != NULL)
+      orionldContextCachePersist(orionldCoreContextP, false);
+  }
+
   // Still no core context? - try to download it
   if (orionldCoreContextP == NULL)
   {
@@ -190,14 +322,10 @@ void orionldContextCacheInit(void)
   }
 
   //
-  // Default User Context
+  // Default User Context - can be a URL or a local file path
   //
   if (defaultUserContextUrl[0] != 0)
-  {
-    defaultUserContextP = orionldContextFromUrl(defaultUserContextUrl, NULL);
-    if (defaultUserContextP == NULL)
-      KT_W("Unable to download the default user context");
-  }
+    defaultUserContextInit();
 
   if (contextArray == NULL)
     return;

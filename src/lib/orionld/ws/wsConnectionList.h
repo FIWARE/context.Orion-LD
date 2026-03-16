@@ -1,6 +1,9 @@
+#ifndef SRC_LIB_ORIONLD_WS_WSCONNECTIONLIST_H_
+#define SRC_LIB_ORIONLD_WS_WSCONNECTIONLIST_H_
+
 /*
 *
-* Copyright 2022 FIWARE Foundation e.V.
+* Copyright 2026 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -22,20 +25,30 @@
 *
 * Author: Ken Zangelin
 */
-extern "C"
-{
-#include "prometheus-client-c/prom/include/prom.h"          // Prometheus client lib
-}
+#include "orionld/ws/WsConnection.h"                  // WsConnection
 
 
 
 // -----------------------------------------------------------------------------
 //
-// promGaugeAdd -
+// wsConnectionAdd - add a WS connection to the global linked list
 //
-int promGaugeAdd(prom_gauge_t* gaugeP, int v, const char* label)
-{
-  const char* labelArray[1] = { label };
+extern void wsConnectionAdd(WsConnection* wsP);
 
-  return prom_gauge_add(gaugeP, v, labelArray);
-}
+
+
+// -----------------------------------------------------------------------------
+//
+// wsConnectionRemove - remove a WS connection from the global linked list
+//
+extern void wsConnectionRemove(WsConnection* wsP);
+
+
+
+// -----------------------------------------------------------------------------
+//
+// wsConnectionLookup - find a WS connection by subscription ID
+//
+extern WsConnection* wsConnectionLookup(const char* subscriptionId);
+
+#endif  // SRC_LIB_ORIONLD_WS_WSCONNECTIONLIST_H_

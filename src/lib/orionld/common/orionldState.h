@@ -37,9 +37,9 @@
 
 extern "C"
 {
-#include "prometheus-client-c/prom/include/prom.h"               // prom_counter_t
 #include "kjson/kjson.h"                                         // Kjson
 #include "kjson/KjNode.h"                                        // KjNode
+#include "kprom/kprom.h"                                         // KpromMetric
 }
 
 #include "orionld/types/ApiVersion.h"                            // ApiVersion
@@ -62,6 +62,7 @@ extern "C"
 #include "orionld/types/QNode.h"                                 // QNode
 #include "orionld/types/EntityLink.h"                            // EntityLink
 #include "orionld/types/DdsService.h"                            // DdsService
+#include "orionld/types/DdsAction.h"                             // DdsAction
 #include "orionld/common/performance.h"                          // REQUEST_PERFORMANCE
 #include "orionld/kjTree/kjTreeLog.h"                            // Because it is so often used but then removed again ...
 
@@ -249,6 +250,8 @@ typedef struct OrionldStateIn
   char*     xForwardedFor;
   char*     via;
   char*     connection;
+  char*     accept;
+  bool      acceptTextPlain;
   char*     servicePath;
   char*     xAuthToken;
   char*     authorization;
@@ -258,6 +261,11 @@ typedef struct OrionldStateIn
   bool      aerOS;           // Special treatment for aerOS specific features
   bool      arrayConcat;     // Concatenate arrays in PATCH Entity2
   char*     wip;
+
+  // WebSocket upgrade
+  bool      wsUpgrade;
+  char*     wsKey;            // Sec-WebSocket-Key header value
+  char*     wsVersion;        // Sec-WebSocket-Version header value
 
   // Incoming payload
   char*     payload;
@@ -617,7 +625,9 @@ extern char              troeHost[256];            // From orionld.cpp
 extern unsigned short    troePort;                 // From orionld.cpp
 extern char              troeUser[256];            // From orionld.cpp
 extern char              troePwd[256];             // From orionld.cpp
+extern char              troeSslMode[64];          // From orionld.cpp
 extern int               troePoolSize;             // From orionld.cpp
+extern char              coreContextDir[512];      // From orionldState.cpp
 extern char              pgPortString[16];
 extern bool              distributed;              // From orionld.cpp
 extern char              brokerId[136];            // From orionld.cpp
@@ -648,7 +658,9 @@ extern bool              noArrayReduction;         // Used by arrayReduce in pCh
 extern int               pageSize;                 // Pagination limit
 extern char              defaultUserContextUrl[256];
 extern OrionldContext*   defaultUserContextP;
+extern char*             defaultUserContextBuffer;
 extern DdsService*       ddsServices;
+extern DdsAction*        ddsActions;
 
 extern char                localIpAndPort[135];    // Local address for X-Forwarded-For (from orionld.cpp)
 extern unsigned long long  inReqPayloadMaxSize;
@@ -664,6 +676,7 @@ extern char                kTraceLevels[256];
 //
 extern bool              ddsSupport;               // Publish/Subscribe via DDS
 extern bool              ddsPublishOnCreate;       // Publish new entities/attributes to DDS on creation
+extern bool              wsSupport;                // WebSocket support for notifications
 extern char              ddsTopicType[512];
 
 
@@ -672,10 +685,15 @@ extern char              ddsTopicType[512];
 //
 // Global variables for Prometheus
 //
-extern prom_counter_t*     promNgsildRequests;
-extern prom_counter_t*     promNgsildRequestsFailed;
-extern prom_counter_t*     promNotifications;
-extern prom_counter_t*     promNotificationsFailed;
+extern KpromMetric*        promNgsildRequests;
+extern KpromMetric*        promNgsildRequestsFailed;
+extern KpromMetric*        promNotifications;
+extern KpromMetric*        promNotificationsFailed;
+extern KpromMetric*        promDistOps;
+extern KpromMetric*        promDistOpsFailed;
+extern KpromMetric*        promConnectionsActive;
+extern KpromMetric*        promSubscriptionsCached;
+extern KpromMetric*        promRequestDuration;
 
 
 

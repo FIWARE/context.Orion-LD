@@ -88,6 +88,8 @@ bool mhdStart
   // Server Mode
   //
   serverMode = (mhdPoolSize > 0)? MHD_USE_SELECT_INTERNALLY | MHD_USE_EPOLL : MHD_USE_THREAD_PER_CONNECTION | MHD_USE_INTERNAL_POLLING_THREAD;
+  if (wsSupport == true)
+    serverMode |= MHD_ALLOW_UPGRADE;
 
   // Logging - Might be the library must be compiled for debugging for this to take effect. Need to find out
   serverMode |= MHD_USE_ERROR_LOG | MHD_USE_DEBUG;

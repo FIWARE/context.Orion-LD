@@ -230,6 +230,8 @@ typedef enum OrionldTraceLevels
   // 3rd Party
   KtCurl                    = 3001,
   KtMqtt                    = 3010,
+  StWs                      = 3020,
+  KtWsTest                  = 3021,
 
   // Legacy (old mongo C++ driver code, old parsers, etc.)
   KtLegacy                  = 3100,
@@ -237,23 +239,28 @@ typedef enum OrionldTraceLevels
   KtLegacySubCacheRefresh   = 3102,
 
   // Misc
-  KtLeak                    = 4000,
-  KtToDo                    = 4001,
-  KtDateTime                = 4002,
-  KtUriEncode               = 4003,
-  KtSemaphore               = 4004,
-  KtKjParse                 = 4005,
-  KtTenants                 = 4006,
-  KtRegex                   = 4007,
-  KtMimeType                = 4008,
-  KtBug                     = 4009,
-  KtPatchEntity             = 4010,
-  KtPatchEntity2            = 4011,
-  KtPerformance             = 4012,
+  KtLeak                    = 3110,
+  KtToDo                    = 3111,
+  KtDateTime                = 3112,
+  KtUriEncode               = 3113,
+  KtSemaphore               = 3114,
+  KtKjParse                 = 3115,
+  KtTenants                 = 3116,
+  KtRegex                   = 3117,
+  KtMimeType                = 3118,
+  KtBug                     = 3119,
+  KtPatchEntity             = 3120,
+  KtPatchEntity2            = 3121,
+  KtPerformance             = 3122,
+  KtPrometheus              = 3123,
+
+  // Kafka
+  StKafka                   = 2100,
+  StKafkaDetail             = 2101,
 
   // FT Client
-  StDump                    = 5001,
-  StDdsDump                 = 5002
+  StDump                    = 3151,
+  StDdsDump                 = 3152
 } OrionldTraceLevels;
 
 #endif  // SRC_LIB_ORIONLD_COMMON_TRACELEVELS_H_

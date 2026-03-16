@@ -1,0 +1,141 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+WebSocket multiple operations on same connection - crash reproduction
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -mongocOnly -wip ws
+ftClientStart -v -t 200
+
+--SHELL--
+
+#
+# Reproduce crash: SIGSEGV in kjParseArray when processing WS messages.
+# The thread-local orionldState is reused between WS service calls.
+#
+# 01. Connect via WebSocket and subscribe for entity type T (first WS message)
+# 02. Create entity via REST while sending createEntity+createSubscription over WS simultaneously
+# 03. Verify broker is still alive by querying the entities via REST
+#
+
+echo "01. Connect via WebSocket and subscribe for entity type T"
+echo "========================================================="
+payload='{
+  "metadata": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "type": "Subscription",
+    "entities": [
+      {
+        "type": "T"
+      }
+    ],
+    "notification": {
+      "format": "normalized"
+    }
+  }
+}'
+wsConnect --port $FT_PORT --payload "$payload"
+echo "WS Subscription Id: $wsSubId"
+echo
+echo
+
+
+echo "02. Burst: createEntity + createSubscription over WS simultaneously"
+echo "===================================================================="
+payload1='{
+  "metadata": {
+    "operation": "createEntity"
+  },
+  "body": {
+    "id": "urn:ngsi-ld:E01",
+    "type": "T",
+    "P1": {
+      "type": "Property",
+      "value": 1
+    }
+  }
+}'
+payload2='{
+  "metadata": {
+    "operation": "createSubscription"
+  },
+  "body": {
+    "type": "Subscription",
+    "entities": [
+      {
+        "type": "T2"
+      }
+    ],
+    "notification": {
+      "format": "normalized"
+    }
+  }
+}'
+wsSendBurst --subId $wsSubId --port $FT_PORT --payload1 "$payload1" --payload2 "$payload2"
+sleep 1
+echo
+echo
+
+
+echo "03. Verify broker is still alive by querying E01 via REST"
+echo "========================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:E01
+echo
+echo
+
+
+--REGEXPECT--
+01. Connect via WebSocket and subscribe for entity type T
+=========================================================
+WS Subscription Id: REGEX(urn:.*)
+
+
+02. Burst: createEntity + createSubscription over WS simultaneously
+====================================================================
+REGEX(.*)
+
+03. Verify broker is still alive by querying E01 via REST
+=========================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: REGEX(.*)
+
+{
+    "P1": {
+        "type": "Property",
+        "value": 1
+    },
+    "id": "urn:ngsi-ld:E01",
+    "type": "T"
+}
+
+
+--TEARDOWN--
+brokerStop CB
+ftClientStop
+dbDrop CB

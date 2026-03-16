@@ -56,6 +56,17 @@ extern DdsTypeData* ddsTypeLookup(const char* typeName);
 
 // -----------------------------------------------------------------------------
 //
+// ddsTypeLoadByName - load a type from the types directory using safe filename conversion
+//
+// Converts type_name (e.g. "a::b::c_::D") to safe filename (replace ':' with '_')
+// and loads the .bin file from the stored types directory.
+//
+extern bool ddsTypeLoadByName(const char* typeName, unsigned char** dataP, uint32_t* sizeP);
+
+
+
+// -----------------------------------------------------------------------------
+//
 // postDdsType -
 //
 extern KjNode* postDdsType(int* statusCodeP);

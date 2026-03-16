@@ -57,6 +57,7 @@ extern "C"
 #include "orionld/context/orionldContextItemAliasLookup.h"       // orionldContextItemAliasLookup
 #include "orionld/context/orionldContextItemExpand.h"            // orionldContextItemExpand
 #include "orionld/mqtt/mqttNotify.h"                             // mqttNotify
+#include "orionld/ws/wsNotify.h"                                 // wsNotify
 #include "orionld/notifications/httpNotify.h"                    // httpNotify
 #include "orionld/notifications/httpsNotify.h"                   // httpsNotify
 #include "orionld/notifications/notificationDataToGeoJson.h"     // notificationDataToGeoJson
@@ -310,7 +311,10 @@ static void attributeFix(KjNode* attrP, CachedSubscription* subP)
         else if (subP->renderFormat == RF_CONCISE)
           attributeToConcise(saP, &asSimplified, subP->lang.c_str());  // asSimplified is not used down here
 
-        // Sub-sub-attrs
+        // Sub-sub-attrs (only if still an object after simplification/concise)
+        if (saP->type != KjObject)
+          continue;
+
         for (KjNode* ssaP = saP->value.firstChildP; ssaP != NULL; ssaP = ssaP->next)
         {
           if (strcmp(ssaP->name, "type")        == 0) continue;
@@ -964,6 +968,7 @@ int notificationSend(OrionldAlterationMatch* mAltP, double timestamp, CURL** cur
                       timestamp);
   else if (mAltP->subP->protocol == HTTPS)   return httpsNotify(mAltP->subP, ioVec, ioVecLen, timestamp, curlHandlePP);
   else if (mAltP->subP->protocol == MQTT)    return mqttNotify(mAltP->subP,  ioVec, ioVecLen, timestamp);
+  else if (mAltP->subP->protocol == WS)      return wsNotify(mAltP->subP,   ioVec, ioVecLen, timestamp);
 
   KT_W("%s: Unsupported protocol for notifications: '%s'", mAltP->subP->subscriptionId, mAltP->subP->protocol);
   return -1;
