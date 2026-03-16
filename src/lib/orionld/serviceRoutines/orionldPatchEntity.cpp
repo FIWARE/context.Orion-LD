@@ -451,6 +451,7 @@ bool orionldPatchEntity(void)
   // - Incoming Entity, normalized
   //
   orionldState.requestTree = incomingP;
+  orionldState.patchBase   = dbAttrsP;
 
  done:
   responseFix(responseBody, DoUpdateEntity, 204, entityId);

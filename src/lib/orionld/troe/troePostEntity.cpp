@@ -22,6 +22,8 @@
 *
 * Author: Ken Zangelin
 */
+#include <string.h>                                            // strncpy
+
 extern "C"
 {
 #include "ktrace/kTrace.h"                                     // KT_*
@@ -34,8 +36,10 @@ extern "C"
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/troe/pgAppendInit.h"                         // pgAppendInit
+#include "orionld/common/dotForEq.h"                           // dotForEq
 #include "orionld/troe/pgAppend.h"                             // pgAppend
 #include "orionld/troe/pgAttributesBuild.h"                    // pgAttributesBuild
+#include "orionld/troe/pgAttributeBuild.h"                     // pgAttributeBuild
 #include "orionld/troe/pgCommands.h"                           // pgCommands
 #include "orionld/troe/troeFilterMatch.h"                      // troeFilterMatch
 #include "orionld/troe/troePostEntity.h"                       // Own interface
@@ -60,7 +64,6 @@ bool troePostEntity(void)
     }
   }
 
-  const char*     opMode   = (orionldState.uriParamOptions.noOverwrite == true)? "Append" : "Replace";
   char*           entityId = orionldState.wildcard[0];
   PgAppendBuffer  attributesBuffer;
   PgAppendBuffer  subAttributesBuffer;
@@ -71,7 +74,50 @@ bool troePostEntity(void)
   pgAppend(&attributesBuffer,    PG_ATTRIBUTE_INSERT_START,     0);
   pgAppend(&subAttributesBuffer, PG_SUB_ATTRIBUTE_INSERT_START, 0);
 
-  pgAttributesBuild(&attributesBuffer, orionldState.requestTree, entityId, opMode, &subAttributesBuffer);
+  //
+  // Determine per-attribute opMode:
+  //   - With noOverwrite: all attributes that reach here are new -> "Append"
+  //   - Without noOverwrite and patchBase available: check each attribute
+  //     - Existing in DB: "Replace"
+  //     - New:            "Append"
+  //   - Without noOverwrite and no patchBase: fall back to "Replace"
+  //
+  if (orionldState.uriParamOptions.noOverwrite == true)
+  {
+    pgAttributesBuild(&attributesBuffer, orionldState.requestTree, entityId, "Append", &subAttributesBuffer);
+  }
+  else if (orionldState.patchBase != NULL)
+  {
+    for (KjNode* attrP = orionldState.requestTree->value.firstChildP; attrP != NULL; attrP = attrP->next)
+    {
+      // Skip non-attribute fields
+      if (attrP->type != KjObject && attrP->type != KjArray)
+        continue;
+
+      char eqName[512];
+      strncpy(eqName, attrP->name, sizeof(eqName) - 1);
+      eqName[sizeof(eqName) - 1] = 0;
+      dotForEq(eqName);
+
+      KjNode*     dbAttrP = kjLookup(orionldState.patchBase, eqName);
+      const char* opMode  = (dbAttrP != NULL) ? "Replace" : "Append";
+
+      if (attrP->type == KjArray)
+      {
+        for (KjNode* aiP = attrP->value.firstChildP; aiP != NULL; aiP = aiP->next)
+        {
+          aiP->name = attrP->name;
+          pgAttributeBuild(&attributesBuffer, opMode, entityId, aiP, &subAttributesBuffer);
+        }
+      }
+      else
+        pgAttributeBuild(&attributesBuffer, opMode, entityId, attrP, &subAttributesBuffer);
+    }
+  }
+  else
+  {
+    pgAttributesBuild(&attributesBuffer, orionldState.requestTree, entityId, "Replace", &subAttributesBuffer);
+  }
 
   char* sqlV[2];
   int   sqlIx = 0;
