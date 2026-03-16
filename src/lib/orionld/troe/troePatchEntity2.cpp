@@ -76,15 +76,21 @@ bool troePatchEntity2(void)
   int      existingAttrCount = 0;
   char*    existingAttrNames[100];  // Should be more than enough for a single PATCH request
 
-  for (KjNode* attrP = patchBase->value.firstChildP; attrP != NULL; attrP = attrP->next)
+  if (patchBase != NULL)
   {
-    if (existingAttrCount < 100)
-      existingAttrNames[existingAttrCount++] = attrP->name;
+    for (KjNode* attrP = patchBase->value.firstChildP; attrP != NULL; attrP = attrP->next)
+    {
+      if (existingAttrCount < 100)
+        existingAttrNames[existingAttrCount++] = attrP->name;
+    }
   }
 
-  for (KjNode* patchP = patchTree->value.firstChildP; patchP != NULL; patchP = patchP->next)
+  if (patchBase != NULL)
   {
-    orionldPatchApply(patchBase, patchP, false);
+    for (KjNode* patchP = patchTree->value.firstChildP; patchP != NULL; patchP = patchP->next)
+    {
+      orionldPatchApply(patchBase, patchP, false);
+    }
   }
 
   //
@@ -101,31 +107,34 @@ bool troePatchEntity2(void)
   pgAppend(&attributesBuffer,    PG_ATTRIBUTE_INSERT_START,     0);
   pgAppend(&subAttributesBuffer, PG_SUB_ATTRIBUTE_INSERT_START, 0);
 
-  for (KjNode* attrP = patchBase->value.firstChildP; attrP != NULL; attrP = attrP->next)
+  if (patchBase != NULL)
   {
-    // Determine opMode: check if this attribute existed before patching
-    bool existed = false;
-    for (int ix = 0; ix < existingAttrCount; ix++)
+    for (KjNode* attrP = patchBase->value.firstChildP; attrP != NULL; attrP = attrP->next)
     {
-      if (strcmp(attrP->name, existingAttrNames[ix]) == 0)
+      // Determine opMode: check if this attribute existed before patching
+      bool existed = false;
+      for (int ix = 0; ix < existingAttrCount; ix++)
       {
-        existed = true;
-        break;
+        if (strcmp(attrP->name, existingAttrNames[ix]) == 0)
+        {
+          existed = true;
+          break;
+        }
       }
-    }
 
-    const char* opMode = existed ? "Replace" : "Append";
+      const char* opMode = existed ? "Replace" : "Append";
 
-    if (attrP->type == KjArray)
-    {
-      for (KjNode* aiP = attrP->value.firstChildP; aiP != NULL; aiP = aiP->next)
+      if (attrP->type == KjArray)
       {
-        aiP->name = attrP->name;
-        pgAttributeBuild(&attributesBuffer, opMode, entityId, aiP, &subAttributesBuffer);
+        for (KjNode* aiP = attrP->value.firstChildP; aiP != NULL; aiP = aiP->next)
+        {
+          aiP->name = attrP->name;
+          pgAttributeBuild(&attributesBuffer, opMode, entityId, aiP, &subAttributesBuffer);
+        }
       }
+      else if (attrP->type == KjObject)
+        pgAttributeBuild(&attributesBuffer, opMode, entityId, attrP, &subAttributesBuffer);
     }
-    else if (attrP->type == KjObject)
-      pgAttributeBuild(&attributesBuffer, opMode, entityId, attrP, &subAttributesBuffer);
   }
 
   //
@@ -140,7 +149,7 @@ bool troePatchEntity2(void)
       KjNode* pathNode = kjLookup(patchP, "PATH");
       KjNode* treeNode = kjLookup(patchP, "TREE");
 
-      if ((treeNode != NULL) && (treeNode->type == KjNull))
+      if ((pathNode != NULL) && (treeNode != NULL) && (treeNode->type == KjNull))
       {
         char* attrName = pathNode->value.s;
         char* dotP     = strchr(attrName, '.');
