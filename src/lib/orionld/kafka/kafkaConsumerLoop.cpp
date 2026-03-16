@@ -30,6 +30,7 @@ extern "C"
 #include "kjson/kjBuilder.h"                                   // kjArray, kjChildAdd
 }
 
+#include "orionld/common/traceLevels.h"                        // StKafka
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/kafka/kafkaMessageParse.h"                   // kafkaMessageParse
 #include "orionld/kafka/kafkaBatchProcess.h"                   // kafkaBatchProcess

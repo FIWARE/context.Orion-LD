@@ -20,6 +20,7 @@
 * For those usages not covered by this license please contact with
 * orionld at fiware dot org
 */
+#include <cstdlib>                                             // malloc, free
 #include <string.h>                                            // strncpy
 
 extern "C"

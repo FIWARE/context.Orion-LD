@@ -20,6 +20,7 @@
 * For those usages not covered by this license please contact with
 * orionld at fiware dot org
 */
+#include <cstdlib>                                             // free
 #include <librdkafka/rdkafka.h>                                // rd_kafka_*
 
 extern "C"
