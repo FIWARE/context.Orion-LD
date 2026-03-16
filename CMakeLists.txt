@@ -204,6 +204,7 @@ SET (ORION_LIBS
     orionld_mqtt
     orionld_ws
     orionld_dds
+    orionld_kafka
     orionld_service
     orionld_http
     orionld_context
@@ -303,6 +304,7 @@ SET (DYNAMIC_LIBS
     z
     resolv
     paho-mqtt3c
+    rdkafka        # for Kafka-based time series ingestion
     pq             # for TRoE & Postgres
     ${LIBMONGOC_LIBRARIES}
     ${LIBBSON_LIBRARIES}
@@ -408,6 +410,7 @@ if (error EQUAL 0)
   ADD_SUBDIRECTORY(src/lib/orionld/mqtt)
   ADD_SUBDIRECTORY(src/lib/orionld/ws)
   ADD_SUBDIRECTORY(src/lib/orionld/dds)
+  ADD_SUBDIRECTORY(src/lib/orionld/kafka)
   ADD_SUBDIRECTORY(src/lib/orionld/http)
   ADD_SUBDIRECTORY(src/lib/orionld/prometheus)
   ADD_SUBDIRECTORY(src/lib/orionld/legacyDriver)

@@ -4,15 +4,151 @@ The feature is minimally tested and not production-ready, but more or less worki
 
 The sink used for TRoE is Postgres, with PostGIS and TimescaleDB extensions.
 
-While Orion-LD takes care of populating the TRoE databases, another component handles the queries of temporal data - [Mintaka](https://github.com/FIWARE/Mintaka).
+## Native Temporal Queries
 
-So, for queries of the temporal data, instead of sending the requests to Orion-LD, on (default) port 1026, the queries are sent to Mintaka, on (default) port 8080.
+Orion-LD now supports **native temporal entity queries** directly, without requiring Mintaka. You can retrieve the state of an entity at a specific point in time using the standard NGSI-LD temporal API:
 
-## Compatibility
+```
+GET /ngsi-ld/v1/temporal/entities/{entityId}?timerel=before&timeAt=2024-06-15T12:00:00Z
+```
 
-Compatibility with the latest release version of mintaka will always be assured. See the test results at the [mintaka-compatibility github action.](https://github.com/FIWARE/context.Orion-LD/actions/workflows/mintaka-compatibility.yml) 
+### Supported Parameters
+
+| Parameter | Values | Description |
+|-----------|--------|-------------|
+| `timerel` | `before`, `after`, `between` | **Required.** Temporal relation |
+| `timeAt` | ISO 8601 timestamp | **Required.** Reference timestamp |
+| `endTimeAt` | ISO 8601 timestamp | Required only for `timerel=between` |
+| `options` | `simplified`, `concise` | Output format (default: normalized) |
+
+### Examples
+
+**Point-in-time snapshot** (entity state at or before a given time):
+```bash
+curl 'localhost:1026/ngsi-ld/v1/temporal/entities/urn:ngsi-ld:Sensor:001?timerel=before&timeAt=2024-06-15T12:00:00Z'
+```
+
+**Changes since a timestamp:**
+```bash
+curl 'localhost:1026/ngsi-ld/v1/temporal/entities/urn:ngsi-ld:Sensor:001?timerel=after&timeAt=2024-06-01T00:00:00Z'
+```
+
+**Changes within a time window:**
+```bash
+curl 'localhost:1026/ngsi-ld/v1/temporal/entities/urn:ngsi-ld:Sensor:001?timerel=between&timeAt=2024-06-01T00:00:00Z&endTimeAt=2024-06-30T23:59:59Z'
+```
+
+### Requirements
+
+- TRoE must be enabled (`-troe` flag)
+- PostgreSQL/TRoE database must be running and connected
+- The entity must have temporal history in the TRoE database
+
+### How It Works
+
+The native temporal query reconstructs an entity's state from the three TRoE tables:
+
+1. **Entity type** — retrieved from the `entities` table at the given timestamp
+2. **Attribute values** — uses `DISTINCT ON (id, datasetId) ORDER BY ts DESC` on the `attributes` table to get the latest value for each attribute at or before the requested time
+3. **Sub-attributes** — retrieved from `subAttributes` for attributes that have sub-properties
+
+All value types are supported: String, Number, Boolean, Relationship, DateTime, Compound, GeoProperty (all geo types), and LanguageMap.
+
+## Mintaka Compatibility
+
+For more advanced temporal queries (aggregations, pagination of temporal values, etc.), [Mintaka](https://github.com/FIWARE/Mintaka) can still be used as an external temporal query handler on (default) port 8080.
+
+Compatibility with the latest release version of mintaka will always be assured. See the test results at the [mintaka-compatibility github action.](https://github.com/FIWARE/context.Orion-LD/actions/workflows/mintaka-compatibility.yml)
 
 More fine-grained information on compatibility can be found at the [compatibility-matrix](https://github.com/FIWARE/mintaka/blob/main/doc/compatibility/compatibility.md).
+
+## Kafka Consumer for High-Throughput Ingestion
+
+For use cases requiring high-throughput time series ingestion (1,000-10,000 msg/s), Orion-LD includes an optional Kafka consumer subsystem. This allows streaming entity updates via Apache Kafka, bypassing HTTP overhead while preserving full validation, MongoDB entity state updates, TRoE temporal writes, and notification dispatch.
+
+### Architecture
+
+```
+Kafka Topic ("orionld-entities")
+       |
+       v
+  Kafka Consumer Thread(s)  [librdkafka, N configurable threads]
+       |
+       |  rd_kafka_consumer_poll() + Micro-Batching
+       v
+  Batch Upsert Pipeline
+       |
+       +-- Validation (3 rounds)
+       +-- MongoDB entity state update
+       +-- TRoE temporal write (PostgreSQL)
+       +-- Notification dispatch
+       +-- Kafka offset commit (at-least-once semantics)
+```
+
+### Enabling Kafka
+
+Start the broker with the `-kafka` flag:
+
+```bash
+orionld -kafka -kafkaBrokerList localhost:9092 -kafkaTopic orionld-entities -troe
+```
+
+### Kafka CLI Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `-kafka` | false | Enable Kafka consumer subsystem |
+| `-kafkaBrokerList` | `localhost:9092` | Kafka broker address(es) |
+| `-kafkaTopic` | `orionld-entities` | Topic to consume from |
+| `-kafkaGroupId` | `orionld-consumer` | Consumer group ID |
+| `-kafkaBatchSize` | 100 | Max entities per micro-batch |
+| `-kafkaBatchLingerMs` | 50 | Max ms to wait before flushing a batch |
+| `-kafkaConsumerThreads` | 2 | Number of consumer threads |
+
+### Message Format
+
+Messages must be valid NGSI-LD normalized JSON — identical to `POST /entityOperations/upsert?options=update`:
+
+**Single entity:**
+```json
+{
+  "id": "urn:ngsi-ld:TemperatureSensor:001",
+  "type": "TemperatureSensor",
+  "temperature": {
+    "type": "Property",
+    "value": 23.5,
+    "observedAt": "2024-06-15T10:30:00Z"
+  }
+}
+```
+
+**Batch (array of entities):**
+```json
+[
+  { "id": "urn:ngsi-ld:Sensor:001", "type": "Sensor", "temperature": { "type": "Property", "value": 23.5 } },
+  { "id": "urn:ngsi-ld:Sensor:002", "type": "Sensor", "temperature": { "type": "Property", "value": 24.1 } }
+]
+```
+
+**Kafka Message Key:** Use the entity ID to guarantee ordering per entity within a partition.
+
+**Optional Kafka Headers:**
+- `NGSILD-Tenant` — for multi-tenancy support
+- `Link` — custom @context URL
+
+### Micro-Batching Strategy
+
+Each consumer thread accumulates messages into a local batch. Flush triggers (first one wins):
+
+1. Batch reaches `kafkaBatchSize` entities
+2. `kafkaBatchLingerMs` timer expires
+3. Empty poll result while batch is non-empty
+
+Backpressure is natural: if the batch upsert pipeline is slow (DB load), polling slows down automatically. Kafka offsets are committed only after successful processing (at-least-once semantics with idempotent upserts).
+
+### Dependencies
+
+The Kafka consumer requires [librdkafka](https://github.com/confluentinc/librdkafka) to be installed. See [External Libraries](external-libraries.md).
 
 ## Database setup
 To run Orion-LD with TroE enabled, a PostgreSQL with PostGIS and TimescaleDB is needed.

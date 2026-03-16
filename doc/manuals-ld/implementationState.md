@@ -61,6 +61,14 @@ Then I got users (a European project) using the feature and it was too late to r
 
 
 ## 4. Extra Stuff that Orion-LD supports but that may never enter the NGSI-LD API
+### Kafka Consumer for High-Throughput Ingestion
+  Orion-LD includes an optional Kafka consumer subsystem for high-throughput time series ingestion (1,000-10,000+ msg/s).
+  When enabled with the `-kafka` CLI flag, the broker subscribes to a Kafka topic and processes incoming NGSI-LD entity
+  updates through the standard batch upsert pipeline (validation, MongoDB, TRoE, notifications).
+  This provides the same data consistency as the REST API but with significantly reduced overhead for bulk data ingestion.
+  Requires [librdkafka](https://github.com/confluentinc/librdkafka).
+  See [TRoE documentation](troe.md) for configuration details.
+
 ### Cross Notifications
 ### POST /ngsi-ld/ex/v1/notify
   The ability to receive notifications from an NGSI-LD Broker and treat the notification as a BATCH Upsert.
@@ -335,7 +343,15 @@ This service is experimental and is only in place when Orion-LD is started with 
 ### DELETE /ngsi-ld/v1/jsonldContexts/*
 
 ### GET /ngsi-ld/v1/temporal/entities
+* Not yet implemented natively. Returns 501.
+
 ### GET /ngsi-ld/v1/temporal/entities/*
+* **Natively implemented** — queries TRoE (PostgreSQL) directly to reconstruct entity state at a point in time.
+* Supports `timerel=before`, `after`, `between` with `timeAt` and `endTimeAt` parameters.
+* Supports all output formats: normalized (default), simplified, concise.
+* Supports all value types: String, Number, Boolean, Relationship, DateTime, Compound, GeoProperty, LanguageMap.
+* Includes sub-attributes in the response.
+* Requires `-troe` flag to be enabled.
 
 ### POST   /ngsi-ld/v1/temporal/entityOperations/query
 ### POST   /ngsi-ld/v1/temporal/entities
