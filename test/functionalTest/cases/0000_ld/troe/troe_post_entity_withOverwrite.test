@@ -27,7 +27,7 @@ Attribute append with overwrite allowed
 export BROKER=orionld
 dbInit CB
 pgInit $CB_DB_NAME
-brokerStart CB 100 IPv4 -troe
+brokerStart CB 100 IPv4 -troe -experimental
 
 --SHELL--
 
@@ -242,3 +242,4 @@ https://uri.etsi.org/ngsi-ld/default-context/Sub-R3,Relationship,urn:ngsi-ld:ent
 --TEARDOWN--
 brokerStop CB
 dbDrop CB
+pgDrop $CB_DB_NAME
