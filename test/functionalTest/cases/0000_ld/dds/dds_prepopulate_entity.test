@@ -24,6 +24,7 @@
 Test of pre-population of entities from config file
 
 --SHELL-INIT--
+ddsClean
 $REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" --ddsTopic "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.orionld
 $REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" --ddsTopic "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.ftClient
 ftClientStop
@@ -32,7 +33,7 @@ dbInit CB
 orionldStart CB -mongocOnly -wip dds
 
 --SHELL--
-valgrindSleep 3
+valgrindSleep 5
 
 #
 # During startup, the broker looks in its DDS config file and creates entities that don't exist (urn:ngsi-ld:camera:cam1 and urn:ngsi-ld:camera:cam1)
@@ -110,7 +111,7 @@ echo "06. Kill and restart the broker"
 echo "==============================="
 brokerStop CB
 orionldStart CB -mongocOnly -wip dds > /tmp/null
-valgrindSleep 3
+valgrindSleep 5
 echo
 echo
 
@@ -140,7 +141,7 @@ echo "10. Kill and restart the broker"
 echo "==============================="
 brokerStop CB
 orionldStart CB -mongocOnly -wip dds > /tmp/null
-valgrindSleep 3
+valgrindSleep 5
 echo
 echo
 
@@ -354,6 +355,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 
 --TEARDOWN--
+ddsClean
 ftClientStop
 brokerStop
 dbDrop CB

@@ -24,6 +24,7 @@
 Test of pre-population of actions from config file
 
 --SHELL-INIT--
+ddsClean
 $REPO_HOME/scripts/configFile.sh --ddsAction "fibonacci,Robot,urn:ngsi-ld:robot:r1,fib" --ddsAction "navigate,Robot,urn:ngsi-ld:robot:r1,nav" > $HOME/.orionld
 $REPO_HOME/scripts/configFile.sh --ddsAction "fibonacci,Robot,urn:ngsi-ld:robot:r1,fib" --ddsAction "navigate,Robot,urn:ngsi-ld:robot:r1,nav" > $HOME/.ftClient
 ftClientStop
@@ -32,7 +33,7 @@ dbInit CB
 orionldStart CB -mongocOnly -wip dds
 
 --SHELL--
-valgrindSleep 3
+valgrindSleep 5
 
 #
 # During startup, the broker looks in its DDS config file and creates entities that don't exist
@@ -100,9 +101,9 @@ echo "05. Kill and restart the broker"
 echo "==============================="
 brokerStop CB
 sleep .1
-valgrindSleep 3
+valgrindSleep 5
 orionldStart CB -mongocOnly -wip dds > /tmp/null
-valgrindSleep 3
+valgrindSleep 5
 echo
 echo
 
@@ -125,9 +126,9 @@ echo "08. Kill and restart the broker"
 echo "==============================="
 brokerStop CB
 sleep .1
-valgrindSleep 3
+valgrindSleep 5
 orionldStart CB -mongocOnly -wip dds > /tmp/null
-valgrindSleep 3
+valgrindSleep 5
 echo
 echo
 
@@ -274,6 +275,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 
 --TEARDOWN--
+ddsClean
 ftClientStop
 brokerStop
 dbDrop CB

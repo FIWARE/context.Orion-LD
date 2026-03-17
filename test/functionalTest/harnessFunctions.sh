@@ -1418,6 +1418,17 @@ function accumulator2Reset()
 
 # ------------------------------------------------------------------------------
 #
+# ddsClean - remove stale DDS shared memory segments
+#
+function ddsClean()
+{
+  /bin/rm -f /dev/shm/fastdds* 2>/dev/null
+}
+
+
+
+# ------------------------------------------------------------------------------
+#
 # valgrindSleep
 #
 function valgrindSleep()
@@ -2433,6 +2444,7 @@ export -f orionCurl
 export -f dbInsertEntity
 export -f mongoCmd
 export -f mongoCmd2
+export -f ddsClean
 export -f valgrindSleep
 export -f brokerStartAwait
 export -f brokerStopAwait

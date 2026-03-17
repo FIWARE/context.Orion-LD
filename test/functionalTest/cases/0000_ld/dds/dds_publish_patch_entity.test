@@ -18,12 +18,13 @@
 # For those usages not covered by this license please contact with
 # orionld at fiware dot org
 
-# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+# NO VALGRIND - some of the DDS tests are not apt to be run under valgrind
 
 --NAME--
 The broker pushes to DDS via PATCH /entities/{entityId}/attrs
 
 --SHELL-INIT--
+ddsClean
 $REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" --ddsTopic "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.orionld
 $REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" --ddsTopic "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.ftClient
 dbInit CB
@@ -31,7 +32,7 @@ orionldStart CB -mongocOnly -wip dds
 ftClientStart -t 0-5000 --dds
 
 --SHELL--
-valgrindSleep 3
+valgrindSleep 10
 
 #
 # 01. Ask FT to publish an entity urn:ngsi-ld:camera:cam1 on topic 'P1'
@@ -449,6 +450,7 @@ Date: REGEX(.*)
 
 
 --TEARDOWN--
+ddsClean
 ftClientStop
 brokerStop
 dbDrop CB
