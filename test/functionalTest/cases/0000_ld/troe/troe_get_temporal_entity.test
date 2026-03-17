@@ -152,16 +152,19 @@ Date: REGEX(.*)
 Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1
 
 
+
 02. Update P1 to 20 and add P2=hello
 =====================================
 HTTP/1.1 204 No Content
 Date: REGEX(.*)
 
 
+
 03. Update P1 to 30 and B1 to false
 ====================================
 HTTP/1.1 204 No Content
 Date: REGEX(.*)
+
 
 
 04. See the attributes in the temporal database (should show 3 versions of P1)
