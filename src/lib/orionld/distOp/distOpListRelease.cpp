@@ -22,12 +22,16 @@
 *
 * Author: Ken Zangelin
 */
+#include <stdlib.h>                                              // free
 #include <curl/curl.h>                                           // curl
 
 extern "C"
 {
 #include "ktrace/kTrace.h"                                       // KT_*
+#include "kjson/kjFree.h"                                        // kjFree
 }
+
+#include "orionld/q/qRelease.h"                                  // qRelease
 
 #include "orionld/types/DistOp.h"                                // DistOp
 #include "orionld/common/orionldState.h"                         // orionldState
@@ -57,6 +61,20 @@ void distOpListRelease(DistOp* distOpList)
     {
       curl_slist_free_all(distOpP->curlHeaders);
       distOpP->curlHeaders = NULL;
+    }
+
+    // The local "@none" DistOp (regP == NULL) has strdup'd/cloned fields that need freeing
+    if (distOpP->regP == NULL)
+    {
+      free(distOpP->lang);
+      free(distOpP->geometryProperty);
+      free(distOpP->geoInfo.geoProperty);
+
+      if (distOpP->geoInfo.coordinates != NULL)
+        kjFree(distOpP->geoInfo.coordinates);
+
+      if (distOpP->qNode != NULL)
+        qRelease(distOpP->qNode);
     }
 
     distOpP = distOpP->next;

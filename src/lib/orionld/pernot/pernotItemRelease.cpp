@@ -55,5 +55,19 @@ bool pernotItemRelease(PernotSubscription* pSubP)
     kjFree(pSubP->kjSubP);
   }
 
+  // Free HTTP headers from receiverInfo
+  for (int ix = 0; ix < pSubP->headers.items; ix++)
+    free(pSubP->headers.array[ix]);
+  if (pSubP->headers.items > 0)
+    free(pSubP->headers.array);
+
+  // Free geoSelector and its cloned coordinates
+  if (pSubP->geoSelector != NULL)
+  {
+    if (pSubP->geoSelector->coordinates != NULL)
+      kjFree(pSubP->geoSelector->coordinates);
+    free(pSubP->geoSelector);
+  }
+
   return true;
 }

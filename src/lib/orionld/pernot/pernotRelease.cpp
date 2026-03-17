@@ -22,6 +22,8 @@
 *
 * Author: Ken Zangelin
 */
+#include <stdlib.h>                                            // free
+
 extern "C"
 {
 #include "ktrace/kTrace.h"                                     // KT_*
@@ -47,8 +49,10 @@ void pernotRelease(void)
   PernotSubscription* psP = pernotSubCache.head;
   while (psP != NULL)
   {
+    PernotSubscription* next = psP->next;
     KT_T(KtPernot, "Releasing pernot subscription %s (at %p)", psP->subscriptionId, psP);
     pernotItemRelease(psP);
-    psP = psP->next;
+    free(psP);
+    psP = next;
   }
 }
