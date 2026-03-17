@@ -32,6 +32,7 @@ extern "C"
 
 #include "orionld/types/PernotSubscription.h"                  // PernotSubscription
 #include "orionld/common/traceLevels.h"                        // KTrace levels
+#include "orionld/q/qRelease.h"                                // qRelease
 #include "orionld/pernot/pernotItemRelease.h"                  // Own interface
 
 
@@ -54,6 +55,10 @@ bool pernotItemRelease(PernotSubscription* pSubP)
     KT_T(KtLeak, "Releasing pernot kj-tree at %p", pSubP->kjSubP);
     kjFree(pSubP->kjSubP);
   }
+
+  // Free qSelector (Q-filter tree)
+  if (pSubP->qSelector != NULL)
+    qRelease(pSubP->qSelector);
 
   // Free HTTP headers from receiverInfo
   for (int ix = 0; ix < pSubP->headers.items; ix++)
