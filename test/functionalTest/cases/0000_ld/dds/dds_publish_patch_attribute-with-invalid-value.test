@@ -31,7 +31,7 @@ orionldStart CB -mongocOnly -wip dds
 ftClientStart -t 0-5000 --dds
 
 --SHELL--
-valgrindSleep 10
+# valgrindSleep 10
 
 #
 # 01. Ask FT to publish an entity urn:ngsi-ld:camera:cam1 on topic 'P1' (attribute 'shutterSpeed')
@@ -81,7 +81,7 @@ echo
 echo "05. Dump the ftClient for DDS notifications - see no PATCH in DDS"
 echo "================================================================="
 sleep .1
-valgrindSleep 10
+# valgrindSleep 10
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
 echo
 echo

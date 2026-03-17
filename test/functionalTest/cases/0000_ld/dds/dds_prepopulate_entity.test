@@ -32,7 +32,7 @@ dbInit CB
 orionldStart CB -mongocOnly -wip dds
 
 --SHELL--
-valgrindSleep 5
+# valgrindSleep 5
 
 #
 # During startup, the broker looks in its DDS config file and creates entities that don't exist (urn:ngsi-ld:camera:cam1 and urn:ngsi-ld:camera:cam1)
@@ -110,7 +110,7 @@ echo "06. Kill and restart the broker"
 echo "==============================="
 brokerStop CB
 orionldStart CB -mongocOnly -wip dds > /tmp/null
-valgrindSleep 5
+# valgrindSleep 5
 echo
 echo
 
@@ -140,7 +140,7 @@ echo "10. Kill and restart the broker"
 echo "==============================="
 brokerStop CB
 orionldStart CB -mongocOnly -wip dds > /tmp/null
-valgrindSleep 5
+# valgrindSleep 5
 echo
 echo
 

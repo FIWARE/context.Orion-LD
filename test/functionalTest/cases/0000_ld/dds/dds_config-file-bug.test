@@ -93,7 +93,7 @@ dbInit CB
 orionldStart CB -mongocOnly -wip dds
 
 --SHELL--
-valgrindSleep 5
+# valgrindSleep 5
 
 #
 # 01. Ask the broker for all its DDS topics
