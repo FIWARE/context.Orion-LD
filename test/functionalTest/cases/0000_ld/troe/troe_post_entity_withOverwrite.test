@@ -27,7 +27,7 @@ Attribute append with overwrite allowed
 export BROKER=orionld
 dbInit CB
 pgInit $CB_DB_NAME
-brokerStart CB 100 IPv4 -troe -experimental
+brokerStart CB 100 IPv4 -troe
 
 --SHELL--
 
@@ -191,8 +191,8 @@ Create,urn:ngsi-ld:entities:E1,https://uri.etsi.org/ngsi-ld/default-context/T,RE
 opmode,id,valuetype,entityid,subproperties,unitcode,datasetid,text,number,boolean,ts
 Create,https://uri.etsi.org/ngsi-ld/default-context/P1,String,urn:ngsi-ld:entities:E1,t,,None,P1,,,REGEX(202.*)
 Create,https://uri.etsi.org/ngsi-ld/default-context/R1,Relationship,urn:ngsi-ld:entities:E1,t,,None,urn:ngsi-ld:relationships:R1,,,REGEX(202.*)
-Append,https://uri.etsi.org/ngsi-ld/default-context/P2,String,urn:ngsi-ld:entities:E1,t,,None,P2,,,REGEX(202.*)
-Append,https://uri.etsi.org/ngsi-ld/default-context/R2,Relationship,urn:ngsi-ld:entities:E1,t,,None,urn:ngsi-ld:relationships:R2,,,REGEX(202.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P2,String,urn:ngsi-ld:entities:E1,t,,None,P2,,,REGEX(202.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/R2,Relationship,urn:ngsi-ld:entities:E1,t,,None,urn:ngsi-ld:relationships:R2,,,REGEX(202.*)
 
 
 05. See the sub-attributes in the temporal database
@@ -222,10 +222,10 @@ Create,urn:ngsi-ld:entities:E1,https://uri.etsi.org/ngsi-ld/default-context/T,RE
 opmode,id,valuetype,entityid,subproperties,unitcode,datasetid,text,number,boolean,ts
 Create,https://uri.etsi.org/ngsi-ld/default-context/P1,String,urn:ngsi-ld:entities:E1,t,,None,P1,,,REGEX(202.*)
 Create,https://uri.etsi.org/ngsi-ld/default-context/R1,Relationship,urn:ngsi-ld:entities:E1,t,,None,urn:ngsi-ld:relationships:R1,,,REGEX(202.*)
-Append,https://uri.etsi.org/ngsi-ld/default-context/P2,String,urn:ngsi-ld:entities:E1,t,,None,P2,,,REGEX(202.*)
-Append,https://uri.etsi.org/ngsi-ld/default-context/R2,Relationship,urn:ngsi-ld:entities:E1,t,,None,urn:ngsi-ld:relationships:R2,,,REGEX(202.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P2,String,urn:ngsi-ld:entities:E1,t,,None,P2,,,REGEX(202.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/R2,Relationship,urn:ngsi-ld:entities:E1,t,,None,urn:ngsi-ld:relationships:R2,,,REGEX(202.*)
 Replace,https://uri.etsi.org/ngsi-ld/default-context/P1,String,urn:ngsi-ld:entities:E1,t,,None,NEW P1,,,REGEX(202.*)
-Append,https://uri.etsi.org/ngsi-ld/default-context/R3,Relationship,urn:ngsi-ld:entities:E1,t,,None,urn:ngsi-ld:relationships:R3,,,REGEX(202.*)
+Replace,https://uri.etsi.org/ngsi-ld/default-context/R3,Relationship,urn:ngsi-ld:entities:E1,t,,None,urn:ngsi-ld:relationships:R3,,,REGEX(202.*)
 
 
 09. See the sub-attributes in the temporal database
