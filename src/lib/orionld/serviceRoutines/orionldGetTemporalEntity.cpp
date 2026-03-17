@@ -36,6 +36,7 @@ extern "C"
 #include "orionld/common/pqHeader.h"                             // PGresult, PQclear
 #include "orionld/payloadCheck/pCheckUri.h"                      // pCheckUri
 #include "orionld/kjTree/kjSysAttrsRemove.h"                     // kjSysAttrsRemove
+#include "orionld/context/orionldEntityCompact.h"                // orionldEntityCompact
 #include "orionld/apiModel/ntosEntity.h"                         // ntosEntity
 #include "orionld/apiModel/ntocEntity.h"                         // ntocEntity
 #include "orionld/apiModel/ntonEntity.h"                         // ntonEntity
@@ -133,6 +134,9 @@ bool orionldGetTemporalEntity(void)
     orionldError(OrionldInternalError, "Internal Error", "unable to build temporal entity response", 500);
     return false;
   }
+
+  // Compact attribute names using the request's @context
+  orionldEntityCompact(apiEntityP, orionldState.contextP);
 
   // Apply output format transformation
   bool   sysAttrs = orionldState.uriParamOptions.sysAttrs;
