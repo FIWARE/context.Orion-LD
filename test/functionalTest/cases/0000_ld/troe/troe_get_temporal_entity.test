@@ -152,19 +152,16 @@ Date: REGEX(.*)
 Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1
 
 
-
 02. Update P1 to 20 and add P2=hello
 =====================================
 HTTP/1.1 204 No Content
 Date: REGEX(.*)
 
 
-
 03. Update P1 to 30 and B1 to false
 ====================================
 HTTP/1.1 204 No Content
 Date: REGEX(.*)
-
 
 
 04. See the attributes in the temporal database (should show 3 versions of P1)
@@ -177,7 +174,6 @@ Replace,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:ngsi-ld:entit
 Replace,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:ngsi-ld:entities:E1,,30,,2024-01-01 12:00:00
 Append,https://uri.etsi.org/ngsi-ld/default-context/P2,String,urn:ngsi-ld:entities:E1,hello,,,2024-01-01 11:00:00
 Create,https://uri.etsi.org/ngsi-ld/default-context/R1,Relationship,urn:ngsi-ld:entities:E1,urn:ngsi-ld:entities:E2,,,2024-01-01 10:00:00
-
 
 
 05. GET /temporal/entities/E1?timerel=before&timeAt=<now> - should get all latest attrs
@@ -211,9 +207,8 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "type": "Relationship"
     },
     "id": "urn:ngsi-ld:entities:E1",
-    "type": "REGEX(.*)"
+    "type": "T"
 }
-
 
 
 06. GET /temporal/entities/E1?timerel=after&timeAt=2024-01-01 - all temporal data
@@ -234,7 +229,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "observedAt": "REGEX(.*)",
         "type": "Property",
         "unitCode": "CEL",
-        "value": REGEX(.*)
+        "value": REGEX(\d.*)
     },
     "P2": {
         "observedAt": "REGEX(.*)",
@@ -247,9 +242,8 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "type": "Relationship"
     },
     "id": "urn:ngsi-ld:entities:E1",
-    "type": "REGEX(.*)"
+    "type": "T"
 }
-
 
 
 07. GET /temporal/entities/E1?timerel=before&timeAt=<now>&options=simplified - simplified format
@@ -260,7 +254,14 @@ Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
-REGEX(.*)
+{
+    "B1": false,
+    "P1": REGEX(\d.*),
+    "P2": "hello",
+    "R1": "urn:ngsi-ld:entities:E2",
+    "id": "urn:ngsi-ld:entities:E1",
+    "type": "T"
+}
 
 
 --TEARDOWN--
