@@ -198,7 +198,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "observedAt": "REGEX(.*)",
         "type": "Property",
         "unitCode": "CEL",
-        "value": 30.0
+        "value": REGEX(\d.*)
     },
     "P2": {
         "observedAt": "REGEX(.*)",
