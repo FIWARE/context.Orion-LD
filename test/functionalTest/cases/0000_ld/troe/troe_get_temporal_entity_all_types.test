@@ -113,7 +113,6 @@ orionCurl --url '/ngsi-ld/v1/temporal/entities/urn:ngsi-ld:entities:E1?timerel=b
 echo
 echo
 
-
 --REGEXPECT--
 01. Create entity E1 with all attribute types
 ==============================================
@@ -135,13 +134,11 @@ Create,https://uri.etsi.org/ngsi-ld/default-context/Rel1,Relationship,urn:ngsi-l
 Create,https://uri.etsi.org/ngsi-ld/default-context/StringProp,String,urn:ngsi-ld:entities:E1,f,,None,hello world,,,,2024-06-15 10:00:00
 
 
-
 03. See the sub-attributes in the temporal database
 ====================================================
 id,valuetype,entityid,attrinstanceid,text,observedat
 https://uri.etsi.org/ngsi-ld/default-context/SubProp1,String,urn:ngsi-ld:entities:E1,urn:ngsi-ld:attribute:instance:REGEX(.*),sub-prop value,2024-06-15 10:01:00
 https://uri.etsi.org/ngsi-ld/default-context/SubRel1,Relationship,urn:ngsi-ld:entities:E1,urn:ngsi-ld:attribute:instance:REGEX(.*),urn:ngsi-ld:entities:SubTarget,2024-06-15 10:01:00
-
 
 
 04. GET temporal entity E1 with timerel=before - verify all types are returned correctly
@@ -200,7 +197,6 @@ REGEX(.*)
     "id": "urn:ngsi-ld:entities:E1",
     "type": "REGEX(.*)"
 }
-
 
 
 --TEARDOWN--
