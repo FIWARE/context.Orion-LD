@@ -606,11 +606,11 @@ Replace,https://uri.etsi.org/ngsi-ld/default-context/owner,Relationship,urn:ngsi
 Append,https://uri.etsi.org/ngsi-ld/default-context/batteryLevel,Number,urn:ngsi-ld:entity:E1,f,%,None,,47.6,,,202REGEX(.*)
 Append,https://uri.etsi.org/ngsi-ld/default-context/R1,Relationship,urn:ngsi-ld:entity:E3,f,,None,urn:ngsi-ld:R:1,,,,202REGEX(.*)
 Append,https://uri.etsi.org/ngsi-ld/status,String,urn:ngsi-ld:entity:E3,f,,None,OK,,,,202REGEX(.*)
-Replace,https://uri.fiware.org/ns/data-models#owner,Relationship,urn:ngsi-ld:entity:E3,f,,None,urn:ngsi-ld:owner:2,,,2021-03-07 08:33:00.123,202REGEX(.*)
+Append,https://uri.fiware.org/ns/data-models#owner,Relationship,urn:ngsi-ld:entity:E3,f,,None,urn:ngsi-ld:owner:2,,,2021-03-07 08:33:00.123,202REGEX(.*)
 Append,https://uri.fiware.org/ns/data-models#batteryLevel,Number,urn:ngsi-ld:entity:E3,f,%,None,,47.6,,,202REGEX(.*)
 Append,https://uri.etsi.org/ngsi-ld/default-context/R1,Relationship,urn:ngsi-ld:entity:E5,f,,None,urn:ngsi-ld:R:1,,,,202REGEX(.*)
 Append,https://uri.etsi.org/ngsi-ld/status,String,urn:ngsi-ld:entity:E5,f,,None,OK,,,,202REGEX(.*)
-Replace,https://uri.fiware.org/ns/data-models#owner,Relationship,urn:ngsi-ld:entity:E5,f,,None,urn:ngsi-ld:owner:2,,,2021-03-07 08:33:00.123,202REGEX(.*)
+Append,https://uri.fiware.org/ns/data-models#owner,Relationship,urn:ngsi-ld:entity:E5,f,,None,urn:ngsi-ld:owner:2,,,2021-03-07 08:33:00.123,202REGEX(.*)
 Append,https://uri.fiware.org/ns/data-models#batteryLevel,Number,urn:ngsi-ld:entity:E5,f,%,None,,47.6,,,202REGEX(.*)
 
 
@@ -651,11 +651,11 @@ Replace,https://uri.etsi.org/ngsi-ld/default-context/owner,Relationship,urn:ngsi
 Append,https://uri.etsi.org/ngsi-ld/default-context/batteryLevel,Number,urn:ngsi-ld:entity:E2,f,%,None,,47.6,,,202REGEX(.*)
 Append,https://uri.etsi.org/ngsi-ld/default-context/R1,Relationship,urn:ngsi-ld:entity:E4,f,,None,urn:ngsi-ld:R:1,,,,202REGEX(.*)
 Append,https://uri.etsi.org/ngsi-ld/status,String,urn:ngsi-ld:entity:E4,f,,None,OK,,,,202REGEX(.*)
-Replace,https://uri.fiware.org/ns/data-models#owner,Relationship,urn:ngsi-ld:entity:E4,f,,None,urn:ngsi-ld:owner:2,,,2021-03-07 08:33:00.123,202REGEX(.*)
+Append,https://uri.fiware.org/ns/data-models#owner,Relationship,urn:ngsi-ld:entity:E4,f,,None,urn:ngsi-ld:owner:2,,,2021-03-07 08:33:00.123,202REGEX(.*)
 Append,https://uri.fiware.org/ns/data-models#batteryLevel,Number,urn:ngsi-ld:entity:E4,f,%,None,,47.6,,,202REGEX(.*)
 Append,https://uri.etsi.org/ngsi-ld/default-context/R1,Relationship,urn:ngsi-ld:entity:E6,f,,None,urn:ngsi-ld:R:1,,,,202REGEX(.*)
 Append,https://uri.etsi.org/ngsi-ld/status,String,urn:ngsi-ld:entity:E6,f,,None,OK,,,,202REGEX(.*)
-Replace,https://uri.fiware.org/ns/data-models#owner,Relationship,urn:ngsi-ld:entity:E6,f,,None,urn:ngsi-ld:owner:2,,,2021-03-07 08:33:00.123,202REGEX(.*)
+Append,https://uri.fiware.org/ns/data-models#owner,Relationship,urn:ngsi-ld:entity:E6,f,,None,urn:ngsi-ld:owner:2,,,2021-03-07 08:33:00.123,202REGEX(.*)
 Append,https://uri.fiware.org/ns/data-models#batteryLevel,Number,urn:ngsi-ld:entity:E6,f,%,None,,47.6,,,202REGEX(.*)
 
 
