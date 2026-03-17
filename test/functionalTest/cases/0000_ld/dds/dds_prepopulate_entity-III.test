@@ -32,7 +32,7 @@ dbInit CB
 orionldStart CB -mongocOnly -wip dds -kt 0-5000
 
 --SHELL--
-# valgrindSleep 10
+valgrindSleep 3
 #
 # PRE:
 #   At startup, the broker pre-populates all entities/attributes found in the config file, field dds.ngsild.topics
@@ -64,7 +64,7 @@ echo
 echo "02. Retrieve urn:ngsi-ld:camera:cam1 from the broker and see the update from ftClient via DDS"
 echo "============================================================================================="
 sleep .1
-# valgrindSleep 10
+valgrindSleep 3
 orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:camera:cam1
 echo
 echo
@@ -91,7 +91,7 @@ echo
 echo "03b. DDS-Dump the ftClient and see the PATCH from step 03"
 echo "========================================================="
 sleep .1
-# valgrindSleep 10
+valgrindSleep 3
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
 echo
 echo

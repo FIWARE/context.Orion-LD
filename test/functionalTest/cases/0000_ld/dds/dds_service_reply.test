@@ -33,7 +33,7 @@ ftClientStart --dds
 
 # Wait for ftClient to initialize DDS
 sleep .1
-# valgrindSleep 5
+valgrindSleep 3
 
 dbInit CB
 orionldStart CB -mongocOnly -wip dds
@@ -42,7 +42,7 @@ orionldStart CB -mongocOnly -wip dds
 sleep 0.1
 
 --SHELL--
-# valgrindSleep 5
+valgrindSleep 3
 
 #
 # 01. Load DDS types into ftClient
@@ -125,7 +125,7 @@ echo
 echo "07. GET entity - verify attribute value (ddsServiceResponse depends on DDS discovery)"
 echo "====================================================================================="
 sleep .1
-# valgrindSleep 5
+valgrindSleep 3
 orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:calc:1
 echo
 echo
