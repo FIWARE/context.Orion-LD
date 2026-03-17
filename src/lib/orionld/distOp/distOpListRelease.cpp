@@ -67,14 +67,21 @@ void distOpListRelease(DistOp* distOpList)
     if (distOpP->regP == NULL)
     {
       free(distOpP->lang);
+      distOpP->lang = NULL;
+
       free(distOpP->geometryProperty);
+      distOpP->geometryProperty = NULL;
+
       free(distOpP->geoInfo.geoProperty);
+      distOpP->geoInfo.geoProperty = NULL;
 
       if (distOpP->geoInfo.coordinates != NULL)
+      {
         kjFree(distOpP->geoInfo.coordinates);
+        distOpP->geoInfo.coordinates = NULL;
+      }
 
-      if (distOpP->qNode != NULL)
-        qRelease(distOpP->qNode);
+      // NOTE: distOpP->qNode points into the request's kalloc pool, not malloc'd - do not free
     }
 
     distOpP = distOpP->next;
