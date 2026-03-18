@@ -53,13 +53,35 @@ brokerStart CB 100 IPv4 -troe -experimental -kafka -kafkaBrokerList localhost:90
 --SHELL--
 
 #
+# Helper: poll GET until entity exists (HTTP 200) or timeout after 30s
+#
+waitForEntity()
+{
+  local entityId=$1
+  local maxWait=${2:-30}
+  local elapsed=0
+
+  while [ $elapsed -lt $maxWait ]
+  do
+    httpCode=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:$CB_PORT/ngsi-ld/v1/entities/$entityId)
+    if [ "$httpCode" = "200" ]; then
+      return 0
+    fi
+    sleep 1
+    elapsed=$((elapsed + 1))
+  done
+  echo "WARNING: entity $entityId not found after ${maxWait}s"
+  return 1
+}
+
+#
 # 01. Produce a single entity message to Kafka topic
-# 02. Wait for the consumer to process the batch
+# 02. Wait for the consumer to process the entity
 # 03. GET the entity from the REST API - verify it exists in MongoDB
 # 04. See the entity in the temporal database (TRoE)
 # 05. See the attributes in the temporal database
 # 06. Produce a batch of 3 entities to Kafka topic
-# 07. Wait for processing
+# 07. Wait for the last entity of the batch to appear
 # 08. GET all entities of type Sensor - should see K1..K4
 # 09. See all entities in the temporal database
 #
@@ -72,9 +94,9 @@ echo
 echo
 
 
-echo "02. Wait for the consumer to process the batch"
-echo "================================================"
-sleep 2
+echo "02. Wait for the consumer to process the entity"
+echo "================================================="
+waitForEntity urn:ngsi-ld:Sensor:K1
 echo "Done waiting"
 echo
 echo
@@ -111,15 +133,15 @@ echo
 
 echo "07. Wait for processing"
 echo "========================"
-sleep 2
+waitForEntity urn:ngsi-ld:Sensor:K4
 echo "Done waiting"
 echo
 echo
 
 
-echo "08. GET all entities of type Sensor - should see K1..K4"
-echo "========================================================"
-orionCurl --url '/ngsi-ld/v1/entities?type=Sensor'
+echo "08. GET all entities of type Sensor - should see K1..K4 (count ids)"
+echo "==================================================================="
+orionCurl --url '/ngsi-ld/v1/entities?type=Sensor' | grep '"id"' | wc -l
 echo
 echo
 
@@ -137,8 +159,8 @@ echo
 Message produced
 
 
-02. Wait for the consumer to process the batch
-================================================
+02. Wait for the consumer to process the entity
+=================================================
 Done waiting
 
 
@@ -187,15 +209,9 @@ Batch produced
 Done waiting
 
 
-08. GET all entities of type Sensor - should see K1..K4
-========================================================
-HTTP/1.1 200 OK
-Content-Length: REGEX(.*)
-Content-Type: application/json
-Date: REGEX(.*)
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
-
-REGEX(.*)
+08. GET all entities of type Sensor - should see K1..K4 (count ids)
+===================================================================
+4
 
 
 09. See all entities in the temporal database
