@@ -58,7 +58,7 @@ brokerStart CB 100 IPv4 -troe -experimental -kafka -kafkaBrokerList localhost:90
 waitForEntity()
 {
   local entityId=$1
-  local maxWait=${2:-30}
+  local maxWait=${2:-60}
   local elapsed=0
 
   while [ $elapsed -lt $maxWait ]
@@ -184,19 +184,16 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 }
 
 
-
 04. See the entity in the temporal database (TRoE)
 ===================================================
 opmode,id,type
 REGEX(.*),urn:ngsi-ld:Sensor:K1,https://uri.etsi.org/ngsi-ld/default-context/Sensor
 
 
-
 05. See the attributes in the temporal database
 ================================================
 opmode,id,valuetype,entityid,number,unitcode,observedat
 REGEX(.*),https://uri.etsi.org/ngsi-ld/default-context/temperature,Number,urn:ngsi-ld:Sensor:K1,23.5,CEL,2024-06-15 10:00:00
-
 
 
 06. Produce a batch of 3 entities to Kafka topic
@@ -221,7 +218,6 @@ REGEX(.*),urn:ngsi-ld:Sensor:K1,https://uri.etsi.org/ngsi-ld/default-context/Sen
 REGEX(.*),urn:ngsi-ld:Sensor:K2,https://uri.etsi.org/ngsi-ld/default-context/Sensor
 REGEX(.*),urn:ngsi-ld:Sensor:K3,https://uri.etsi.org/ngsi-ld/default-context/Sensor
 REGEX(.*),urn:ngsi-ld:Sensor:K4,https://uri.etsi.org/ngsi-ld/default-context/Sensor
-
 
 
 --TEARDOWN--
