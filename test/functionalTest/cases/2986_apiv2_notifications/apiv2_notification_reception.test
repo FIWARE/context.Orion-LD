@@ -85,7 +85,7 @@ echo
 echo
 
 
-valgrindSleep 3
+# valgrindSleep 3
 
 
 echo "03. Query CP1, see 'CheckInCP1'"
@@ -118,7 +118,7 @@ echo
 echo
 
 
-valgrindSleep 3
+# valgrindSleep 3
 
 
 echo "05. Query CP2, see 'CheckInCP1'"
@@ -146,7 +146,7 @@ echo
 echo
 
 
-valgrindSleep 3
+# valgrindSleep 3
 
 
 echo "07. Query CP1, see 2 entities"

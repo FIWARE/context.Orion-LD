@@ -158,6 +158,7 @@ std::string parseEntityObject
         eP->attributeVector.push_back(caP);
       else
       {
+        caP->release();
         delete caP;
         return r;
       }

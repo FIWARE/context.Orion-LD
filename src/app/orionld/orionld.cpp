@@ -83,6 +83,7 @@ extern "C"
 #include "kalloc/kaBufferReset.h"                           // kaBufferReset
 #include "kjson/kjBufferCreate.h"                           // kjBufferCreate
 #include "kjson/kjFree.h"                                   // kjFree
+#include "kjson/kjClone.h"                                  // kjClone
 #include "kjson/kjBuilder.h"                                // kjChildAdd
 #include "kjson/kjLookup.h"                                 // kjLookup
 }
@@ -664,6 +665,13 @@ void exitFunc(void)
     pernotRelease();
 
   // DDS cleanup already done in sigHandler (if applicable)
+
+  // Free the cloned configTree (cloned to malloc memory before startup kalloc reset)
+  if (configTree != NULL)
+  {
+    kjFree(configTree);
+    configTree = NULL;
+  }
 
   kaBufferReset(&kalloc, KFALSE);
 }
@@ -1461,6 +1469,19 @@ int main(int argC, char* argV[])
   else
     KT_I("  Mongo Driver:              Legacy C++ Driver (deprecated by mongodb)");
 
+  // ddsInit must run before kaBufferReset as it navigates configTree (allocated from kalloc)
+  // and kjTreeNavigate uses kaStrdup internally
+  if (ddsSupport == true)
+  {
+    ddsInit(kjsonP);
+    // usleep(200000);
+    // ddsServiceList(StDdsServiceList);
+  }
+
+  // configTree was parsed from the kalloc buffer - clone it to malloc memory before the reset
+  if (configTree != NULL)
+    configTree = kjClone(NULL, configTree);
+
   // Startup is done - we can free up the allocated kalloc buffers - assuming socketService doesn't use kalloc ...
   kaBufferReset(&orionldState.kalloc, KFALSE);
 
@@ -1468,13 +1489,6 @@ int main(int argC, char* argV[])
   // Start the thread for periodic notifications
   if (pernot == true)
     pernotLoopStart();
-
-  if (ddsSupport == true)
-  {
-    ddsInit(kjsonP);
-    // usleep(200000);
-    // ddsServiceList(StDdsServiceList);
-  }
 
   if (socketService == true)
   {

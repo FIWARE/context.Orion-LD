@@ -24,6 +24,7 @@
 Test of Orion-LD as DDS Service Client with ftClient as DDS Service Server
 
 --SHELL-INIT--
+ddsClean
 # Create config files for broker and ftClient
 $REPO_HOME/scripts/configFile.sh --ddsService "add_two_ints,Calculator,urn:ngsi-ld:calc:1,operation" > $HOME/.orionld
 $REPO_HOME/scripts/configFile.sh --ddsService "add_two_ints,Calculator,urn:ngsi-ld:calc:1,operation" > $HOME/.ftClient
@@ -33,6 +34,7 @@ ftClientStart --dds
 
 # Wait for ftClient to initialize DDS
 sleep .1
+valgrindSleep 5
 
 dbInit CB
 orionldStart CB -mongocOnly -wip dds
@@ -41,6 +43,7 @@ orionldStart CB -mongocOnly -wip dds
 sleep 0.1
 
 --SHELL--
+valgrindSleep 5
 
 #
 # This test verifies that Orion-LD can communicate with ftClient acting as a DDS service server:
@@ -208,6 +211,7 @@ Date: REGEX(.*)
 
 
 --TEARDOWN--
+ddsClean
 ftClientStop
 brokerStop CB
 dbDrop CB

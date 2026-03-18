@@ -573,6 +573,7 @@ void ensureIdIndex(OrionldTenant* tenantP)
 {
   std::string err;
   collectionCreateIndex(tenantP->entities, BSON("_id.id" << 1), false, &err);
+  collectionCreateIndex(tenantP->entities, BSON("_id.type" << 1 << "creDate" << 1 << "_id.id" << 1), false, &err);
 }
 
 
