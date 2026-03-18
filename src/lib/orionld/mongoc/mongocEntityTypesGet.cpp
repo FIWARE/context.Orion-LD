@@ -136,7 +136,7 @@ KjNode* mongocEntityTypesGet(bool details, const char* entityType)
   // We use a projection for getting all types from mongoDB together with the attributes
   // if details == true we will return also the attributes for each type
   //
-  bson_t*       pipeline = bson_new();
+  bson_t*       pipeline = NULL;
   bson_error_t  error;
 
   // Pipeline-Array in JSON-Format

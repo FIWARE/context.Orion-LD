@@ -84,7 +84,7 @@ echo
 # Sleep > 3 seconds to get a cache refresh
 # But also, we need 10 seconds to give httpRequestSendWithCurl time to flag failure
 sleep 15
-valgrindSleep 1
+# valgrindSleep 1
 
 
 echo "03. GET subscription, see error stats in notification field"

@@ -24,6 +24,7 @@
 Test of config file parsing
 
 --SHELL-INIT--
+ddsClean
 echo '{
   "dds": {
     "ddsmodule": {
@@ -93,6 +94,7 @@ dbInit CB
 orionldStart CB -mongocOnly -wip dds
 
 --SHELL--
+valgrindSleep 5
 
 #
 # 01. Ask the broker for all its DDS topics
@@ -214,6 +216,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 
 --TEARDOWN--
+ddsClean
 ftClientStop
 brokerStop
 dbDrop CB

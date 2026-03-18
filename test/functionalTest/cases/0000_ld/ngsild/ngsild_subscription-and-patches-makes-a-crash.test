@@ -114,7 +114,7 @@ echo
 echo "06. Dump accumulator, see 100 notifications"
 echo "==========================================="
 sleep 1
-valgrindSleep 1
+# valgrindSleep 1
 accumulatorDump | grep '"notifiedAt":' | wc -l
 accumulatorReset
 echo

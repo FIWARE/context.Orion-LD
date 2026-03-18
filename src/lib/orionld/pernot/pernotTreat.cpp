@@ -112,8 +112,8 @@ static void* pernotTreat(void* vP)
 
   orionldStateInit(NULL);
   bzero(kallocBuffer, sizeof(kallocBuffer));
-  kaBufferInit(&kalloc, kallocBuffer, sizeof(kallocBuffer), 8 * 1024, NULL, "Pernot KAlloc buffer");
-  orionldState.kjsonP = kjBufferCreate(&kjson, &kalloc);
+  kaBufferInit(&orionldState.kalloc, kallocBuffer, sizeof(kallocBuffer), 8 * 1024, NULL, "Pernot KAlloc buffer");
+  orionldState.kjsonP = kjBufferCreate(&orionldState.kjson, &orionldState.kalloc);
   
   KT_T(KtPernot, "Creating the query for pernot-subscription %s", subP->subscriptionId);
   int64_t          count      = 0;

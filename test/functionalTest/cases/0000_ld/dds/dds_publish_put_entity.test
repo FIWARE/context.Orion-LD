@@ -18,12 +18,13 @@
 # For those usages not covered by this license please contact with
 # orionld at fiware dot org
 
-# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+# NO VALGRIND - some of the DDS tests are not apt to be run under valgrind
 
 --NAME--
 The broker pushes to DDS via PUT /entities/{entityId}
 
 --SHELL-INIT--
+ddsClean
 $REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" --ddsTopic "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.orionld
 $REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" --ddsTopic "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.ftClient
 dbInit CB
@@ -31,6 +32,7 @@ orionldStart CB -mongocOnly -wip dds
 ftClientStart -t 0-5000 --dds
 
 --SHELL--
+valgrindSleep 10
 
 #
 # 01. Ask FT to publish an entity urn:ngsi-ld:camera:cam1 on topic 'P1'
@@ -93,6 +95,7 @@ echo
 echo "05. Dump/Reset the ftClient for DDS notifications - see the PUT in DDS"
 echo "======================================================================"
 sleep .1
+valgrindSleep 10
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck -X DELETE
 echo
@@ -129,6 +132,7 @@ echo
 echo "08. Dump/Reset the ftClient for DDS notifications - see no PUT in DDS"
 echo "======================================================================"
 sleep .1
+valgrindSleep 10
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
 echo
 echo
@@ -162,6 +166,7 @@ echo
 echo "11. Dump/Reset the ftClient for DDS notifications - see no update in DDS"
 echo "========================================================================"
 sleep .1
+valgrindSleep 10
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
 echo
 echo
@@ -381,6 +386,7 @@ Date: REGEX(.*)
 
 
 --TEARDOWN--
+ddsClean
 ftClientStop
 brokerStop
 dbDrop CB

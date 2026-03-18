@@ -493,6 +493,11 @@ bool distOpSend(DistOp* distOpP, const char* dateHeader, const char* xForwardedF
   // URL
   //
   KjNode*         endpointP = kjLookup(distOpP->regP->regTree, "endpoint");
+  if (endpointP == NULL)
+  {
+    KT_E("No endpoint in registration '%s'", distOpP->regP->regId);
+    return false;
+  }
   ForwardUrlParts urlParts  = { distOpP, NULL, NULL };
 
   //
