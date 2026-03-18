@@ -19,6 +19,8 @@
 *
 * For those usages not covered by this license please contact with
 * orionld at fiware dot org
+*
+* Author: Carsten Frey
 */
 #include <sys/time.h>                                          // gettimeofday
 #include <librdkafka/rdkafka.h>                                // rd_kafka_*
@@ -34,7 +36,15 @@ extern "C"
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/kafka/kafkaMessageParse.h"                   // kafkaMessageParse
 #include "orionld/kafka/kafkaBatchProcess.h"                   // kafkaBatchProcess
+#include "rest/mhd.h"                                          // MHD_Connection, MHD_RequestTerminationCode
 #include "orionld/kafka/kafkaConsumerLoop.h"                   // Own interface
+
+
+// -----------------------------------------------------------------------------
+//
+// requestCompleted - defined in rest/rest.cpp, used for thread-local state cleanup
+//
+extern void requestCompleted(void* cls, MHD_Connection* connection, void** con_cls, MHD_RequestTerminationCode toe);
 
 
 
@@ -181,8 +191,7 @@ void* kafkaConsumerLoop(void* vP)
     //
     // Cleanup thread-local state (frees kalloc arena, etc.)
     //
-    void* con_cls;
-    extern void requestCompleted(void* cls, MHD_Connection* connection, void** con_cls, MHD_RequestTerminationCode toe);
+    void* con_cls = NULL;
     requestCompleted(NULL, NULL, &con_cls, MHD_REQUEST_TERMINATED_COMPLETED_OK);
   }
 
