@@ -19,17 +19,25 @@
 # orionld at fiware dot org
 
 # DISABLED: This test requires a running Kafka broker (localhost:9092).
-# To enable: remove .DISABLED suffix and ensure Kafka + topic "orionld-test" exist.
+# To enable: remove .DISABLED suffix and ensure Kafka is running.
 #
-# Start Kafka for testing:
+# Start Kafka in KRaft mode (no Zookeeper needed):
+#
+#   CLUSTER_ID=$(docker run --rm confluentinc/cp-kafka:7.6.0 kafka-storage random-uuid)
+#
 #   docker run -d --name kafka -p 9092:9092 \
-#     -e KAFKA_BROKER_ID=1 \
-#     -e KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181 \
+#     -e KAFKA_NODE_ID=1 \
+#     -e KAFKA_PROCESS_ROLES=broker,controller \
+#     -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093 \
 #     -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092 \
-#     confluentinc/cp-kafka:latest
+#     -e KAFKA_CONTROLLER_QUORUM_VOTERS=1@localhost:9093 \
+#     -e KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER \
+#     -e KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1 \
+#     -e CLUSTER_ID=$CLUSTER_ID \
+#     confluentinc/cp-kafka:7.6.0
 #
-# Create topic:
-#   kafka-topics --create --topic orionld-test --bootstrap-server localhost:9092 --partitions 2
+# Create topic (runs inside the Kafka container):
+#   docker exec kafka kafka-topics --create --topic orionld-test --bootstrap-server localhost:9092 --partitions 2
 
 # VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
 
@@ -52,13 +60,13 @@ brokerStart CB 100 IPv4 -troe -experimental -kafka -kafkaBrokerList localhost:90
 # 05. See the attributes in the temporal database
 # 06. Produce a batch of 3 entities to Kafka topic
 # 07. Wait for processing
-# 08. GET all entities of type Sensor - should see 3
+# 08. GET all entities of type Sensor - should see K1..K4
 # 09. See all entities in the temporal database
 #
 
 echo "01. Produce a single entity message to Kafka topic"
 echo "==================================================="
-echo '{"id":"urn:ngsi-ld:Sensor:K1","type":"Sensor","temperature":{"type":"Property","value":23.5,"observedAt":"2024-06-15T10:00:00Z","unitCode":"CEL"}}' | kcat -P -b localhost:9092 -t orionld-test -k urn:ngsi-ld:Sensor:K1
+echo '{"id":"urn:ngsi-ld:Sensor:K1","type":"Sensor","temperature":{"type":"Property","value":23.5,"observedAt":"2024-06-15T10:00:00Z","unitCode":"CEL"}}' | docker exec -i kafka kafka-console-producer --broker-list localhost:9092 --topic orionld-test
 echo "Message produced"
 echo
 echo
@@ -95,7 +103,7 @@ echo
 
 echo "06. Produce a batch of 3 entities to Kafka topic"
 echo "================================================="
-echo '[{"id":"urn:ngsi-ld:Sensor:K2","type":"Sensor","temperature":{"type":"Property","value":24.1}},{"id":"urn:ngsi-ld:Sensor:K3","type":"Sensor","temperature":{"type":"Property","value":25.7}},{"id":"urn:ngsi-ld:Sensor:K4","type":"Sensor","temperature":{"type":"Property","value":22.3}}]' | kcat -P -b localhost:9092 -t orionld-test -k batch
+echo '[{"id":"urn:ngsi-ld:Sensor:K2","type":"Sensor","temperature":{"type":"Property","value":24.1}},{"id":"urn:ngsi-ld:Sensor:K3","type":"Sensor","temperature":{"type":"Property","value":25.7}},{"id":"urn:ngsi-ld:Sensor:K4","type":"Sensor","temperature":{"type":"Property","value":22.3}}]' | docker exec -i kafka kafka-console-producer --broker-list localhost:9092 --topic orionld-test
 echo "Batch produced"
 echo
 echo
