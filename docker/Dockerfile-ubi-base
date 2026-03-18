@@ -21,4 +21,5 @@ RUN /tmp/build/08.install-mongoc-driver.sh
 RUN /tmp/build/09.install-postgres-client.sh
 RUN /tmp/build/10.install-rapid-json.sh
 RUN /tmp/build/11.install-prometheus-client.sh
+RUN /tmp/build/12.install-librdkafka.sh
 RUN yum clean all
