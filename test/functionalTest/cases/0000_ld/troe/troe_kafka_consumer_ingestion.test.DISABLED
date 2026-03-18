@@ -139,9 +139,9 @@ echo
 echo
 
 
-echo "08. GET all entities of type Sensor - should see K1..K4"
-echo "========================================================"
-orionCurl --url '/ngsi-ld/v1/entities?type=Sensor'
+echo "08. GET all entities of type Sensor - should see K1..K4 (count ids)"
+echo "==================================================================="
+orionCurl --url '/ngsi-ld/v1/entities?type=Sensor' | grep '"id"' | wc -l
 echo
 echo
 
@@ -209,15 +209,9 @@ Batch produced
 Done waiting
 
 
-08. GET all entities of type Sensor - should see K1..K4
-========================================================
-HTTP/1.1 200 OK
-Content-Length: REGEX(.*)
-Content-Type: application/json
-Date: REGEX(.*)
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
-
-REGEX(.*)
+08. GET all entities of type Sensor - should see K1..K4 (count ids)
+===================================================================
+4
 
 
 09. See all entities in the temporal database
