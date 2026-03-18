@@ -18,8 +18,12 @@
 # For those usages not covered by this license please contact with
 # orionld at fiware dot org
 
-# DISABLED: This test requires a running Kafka broker (localhost:9092).
-# To enable: remove .DISABLED suffix and ensure Kafka is running.
+# DISABLED: This test requires a running Kafka broker (localhost:9092) and kcat.
+# To enable: remove .DISABLED suffix and ensure Kafka is running and kcat is installed.
+#
+# Install kcat:
+#   Ubuntu/Debian: sudo apt-get install kcat
+#   macOS:         brew install kcat
 #
 # Start Kafka in KRaft mode (no Zookeeper needed):
 #
@@ -66,7 +70,7 @@ brokerStart CB 100 IPv4 -troe -experimental -kafka -kafkaBrokerList localhost:90
 
 echo "01. Produce a single entity message to Kafka topic"
 echo "==================================================="
-echo '{"id":"urn:ngsi-ld:Sensor:K1","type":"Sensor","temperature":{"type":"Property","value":23.5,"observedAt":"2024-06-15T10:00:00Z","unitCode":"CEL"}}' | docker exec -i kafka kafka-console-producer --broker-list localhost:9092 --topic orionld-test
+echo '{"id":"urn:ngsi-ld:Sensor:K1","type":"Sensor","temperature":{"type":"Property","value":23.5,"observedAt":"2024-06-15T10:00:00Z","unitCode":"CEL"}}' | kcat -P -b localhost:9092 -t orionld-test -k urn:ngsi-ld:Sensor:K1
 echo "Message produced"
 echo
 echo
@@ -103,7 +107,7 @@ echo
 
 echo "06. Produce a batch of 3 entities to Kafka topic"
 echo "================================================="
-echo '[{"id":"urn:ngsi-ld:Sensor:K2","type":"Sensor","temperature":{"type":"Property","value":24.1}},{"id":"urn:ngsi-ld:Sensor:K3","type":"Sensor","temperature":{"type":"Property","value":25.7}},{"id":"urn:ngsi-ld:Sensor:K4","type":"Sensor","temperature":{"type":"Property","value":22.3}}]' | docker exec -i kafka kafka-console-producer --broker-list localhost:9092 --topic orionld-test
+echo '[{"id":"urn:ngsi-ld:Sensor:K2","type":"Sensor","temperature":{"type":"Property","value":24.1}},{"id":"urn:ngsi-ld:Sensor:K3","type":"Sensor","temperature":{"type":"Property","value":25.7}},{"id":"urn:ngsi-ld:Sensor:K4","type":"Sensor","temperature":{"type":"Property","value":22.3}}]' | kcat -P -b localhost:9092 -t orionld-test -k batch
 echo "Batch produced"
 echo
 echo
