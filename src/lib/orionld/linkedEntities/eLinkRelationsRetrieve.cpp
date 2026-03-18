@@ -65,7 +65,7 @@ static KjNode* eLinkEntityRetrieve(KjNode* entityV, const char* entityId, const 
 
   // We have to change the URL PATH as well, as it is used during distops
   int   entityIdLen = strlen(entityId);
-  int   prefixLen   = 25;  // strlen("/ngsi-ld/v1/entities/")
+  int   prefixLen   = 21;  // strlen("/ngsi-ld/v1/entities/")
   char* urlPath     = kaAlloc(&orionldState.kalloc, prefixLen + entityIdLen + 1);
   memcpy(urlPath, "/ngsi-ld/v1/entities/", prefixLen);
   memcpy(&urlPath[prefixLen], entityId, entityIdLen + 1);
