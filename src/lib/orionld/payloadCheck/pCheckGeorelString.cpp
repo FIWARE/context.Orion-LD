@@ -130,48 +130,61 @@ bool pCheckGeorelString(const char* georel, OrionldGeoInfo* geoInfoP)
       geoInfoP->georel = GeorelNear;
 
       //
-      // Must be: (max|min)Distance==NUMBER
+      // Parse one or two distance modifiers: (max|min)Distance==NUMBER[;(max|min)Distance==NUMBER]
       //
-      char* distance = strstr(extra, "==");
-
-      if (distance == NULL)
+      while (extra != NULL)
       {
-        orionldError(OrionldBadRequestData,  "Invalid Geo-Spatial filter", "no distance for georel 'near' for Point", 400);
-        return false;
-      }
-      *distance = 0;
-      distance = &distance[2];
-
-      bool max = false;
-      if (strcmp(extra, "maxDistance") == 0)
-        max = true;
-      else if (strcmp(extra, "minDistance") == 0)
-        max = false;
-      else
-      {
-        orionldError(OrionldBadRequestData,  "Invalid Geo-Spatial filter", "no distance for georel 'near' for Point", 400);
-        return false;
-      }
-
-      //
-      // 'distance' must be an INTEGER
-      //
-      char* distanceStart = distance;
-      while (*distance != 0)
-      {
-        if ((*distance < '0') || (*distance > '9'))
+        // Split off the next modifier (if any)
+        char* nextSemicolon = strchr(extra, ';');
+        if (nextSemicolon != NULL)
         {
-          orionldError(OrionldBadRequestData,  "Invalid Geo-Spatial filter", "invalid number for distance for georel 'near' for Point", 400);
+          *nextSemicolon = 0;
+          nextSemicolon = &nextSemicolon[1];
+        }
+
+        char* distance = strstr(extra, "==");
+
+        if (distance == NULL)
+        {
+          orionldError(OrionldBadRequestData,  "Invalid Geo-Spatial filter", "no distance for georel 'near' for Point", 400);
           return false;
         }
-        ++distance;
-      }
-      int dist = atoi(distanceStart);
+        *distance = 0;
+        distance = &distance[2];
 
-      if (max)
-        geoInfoP->maxDistance = dist;
-      else
-        geoInfoP->minDistance = dist;
+        bool max = false;
+        if (strcmp(extra, "maxDistance") == 0)
+          max = true;
+        else if (strcmp(extra, "minDistance") == 0)
+          max = false;
+        else
+        {
+          orionldError(OrionldBadRequestData,  "Invalid Geo-Spatial filter", "no distance for georel 'near' for Point", 400);
+          return false;
+        }
+
+        //
+        // 'distance' must be an INTEGER
+        //
+        char* distanceStart = distance;
+        while (*distance != 0)
+        {
+          if ((*distance < '0') || (*distance > '9'))
+          {
+            orionldError(OrionldBadRequestData,  "Invalid Geo-Spatial filter", "invalid number for distance for georel 'near' for Point", 400);
+            return false;
+          }
+          ++distance;
+        }
+        int dist = atoi(distanceStart);
+
+        if (max)
+          geoInfoP->maxDistance = dist;
+        else
+          geoInfoP->minDistance = dist;
+
+        extra = nextSemicolon;
+      }
     }
   }
 

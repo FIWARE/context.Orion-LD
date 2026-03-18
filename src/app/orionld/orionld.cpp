@@ -124,6 +124,7 @@ extern "C"
 #include "orionld/pernot/pernotSubCacheInit.h"                // pernotSubCacheInit
 #include "orionld/pernot/pernotLoop.h"                        // pernotLoopStart
 #include "orionld/pernot/pernotRelease.h"                     // pernotRelease
+#include "orionld/common/geosInit.h"                          // geosInit, geosRelease
 
 #include "orionld/version.h"
 #include "orionld/orionRestServices.h"
@@ -672,6 +673,8 @@ void exitFunc(void)
     kjFree(configTree);
     configTree = NULL;
   }
+
+  geosRelease();
 
   kaBufferReset(&kalloc, KFALSE);
 }
@@ -1309,6 +1312,9 @@ int main(int argC, char* argV[])
     // Initialize Mongo Legacy C++ driver
     mongoInit(dbHost, rplSet, dbName, dbUser, dbPwd, multitenancy, dbTimeout, writeConcern, dbPoolSize, statSemWait);
   }
+
+  // Initialize GEOS for geofencing in subscription matching
+  geosInit();
 
   // Initialize libs
   alarmMgr.init(relogAlarms);

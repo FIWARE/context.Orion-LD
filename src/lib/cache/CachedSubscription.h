@@ -33,7 +33,10 @@
 #include "apiTypesV2/HttpInfo.h"                             // HttpInfo
 #include "apiTypesV2/SubscriptionExpression.h"
 
+#include <geos_c.h>                                          // GEOSGeometry, GEOSPreparedGeometry
+
 #include "orionld/types/QNode.h"                             // QNode
+#include "orionld/types/OrionldGeoInfo.h"                    // OrionldGeoInfo
 #include "orionld/types/Protocol.h"                          // Protocol
 #include "orionld/types/OrionldAlteration.h"                 // OrionldAlterationTypes
 #include "orionld/types/OrionldTenant.h"                     // OrionldTenant
@@ -113,6 +116,9 @@ struct CachedSubscription
   QNode*                      qP;
   char*                       qText;  // Note that NGSIv2/mongoBackend q/mq are inside SubscriptionExpression
   KjNode*                     geoCoordinatesP;
+  OrionldGeoInfo*             geoInfo;
+  GEOSGeometry*               geosGeometry;
+  const GEOSPreparedGeometry* geosPrepared;
   bool                        showChanges;
   bool                        sysAttrs;
 

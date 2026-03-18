@@ -35,6 +35,7 @@ SET (SOURCES
     previousValuePopulate.cpp
     previousValueAdd.cpp
     sysAttrsStrip.cpp
+    geoMatch.cpp
 )
 
 # Include directories
