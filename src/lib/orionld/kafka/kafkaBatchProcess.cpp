@@ -96,7 +96,7 @@ bool kafkaBatchProcess(KjNode* entityArray)
 
   if (noOfEntities == 0)
   {
-    KT_T(StKafka, "kafkaBatchProcess: no valid entities after 1st check round");
+    KT_T(KtKafka, "kafkaBatchProcess: no valid entities after 1st check round");
     return true;  // Not an error - just nothing to process
   }
 
@@ -118,7 +118,7 @@ bool kafkaBatchProcess(KjNode* entityArray)
 
   if (noOfEntities == 0)
   {
-    KT_T(StKafka, "kafkaBatchProcess: no valid entities after 2nd check round");
+    KT_T(KtKafka, "kafkaBatchProcess: no valid entities after 2nd check round");
     return true;
   }
 
@@ -142,7 +142,7 @@ bool kafkaBatchProcess(KjNode* entityArray)
 
   if (noOfEntities == 0)
   {
-    KT_T(StKafka, "kafkaBatchProcess: no valid entities after 3rd check round");
+    KT_T(KtKafka, "kafkaBatchProcess: no valid entities after 3rd check round");
     return true;
   }
 
@@ -234,7 +234,7 @@ bool kafkaBatchProcess(KjNode* entityArray)
     }
   }
 
-  KT_T(StKafka, "kafkaBatchProcess: batch of %d entities processed successfully", noOfEntities);
+  KT_T(KtKafka, "kafkaBatchProcess: batch of %d entities processed successfully", noOfEntities);
 
   //
   // TRoE writes and notifications are handled by requestCompleted() in the caller,
