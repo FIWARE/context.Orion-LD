@@ -28,7 +28,6 @@
 extern "C"
 {
 #include "ktrace/kTrace.h"                                       // KTrace library
-#include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjNavigate.h"                                    // kjNavigate2
 }
@@ -80,9 +79,8 @@ KjNode* kjTreeNavigate(KjNode* treeP, const char* pathIn, bool* isTimestampP)
 
   char* compV[20];
 
-  // pathComponentsSplit destroys the path, I need to work on a copy
-  char* pathCopy = kaStrdup(&orionldState.kalloc, path);
-  components     = pathComponentsSplit(pathCopy, compV);
+  // pathComponentsSplit destroys the path, but 'path' is already a local copy
+  components = pathComponentsSplit(path, compV);
 
   //
   // - the first component is always the longName of the ATTRIBUTE

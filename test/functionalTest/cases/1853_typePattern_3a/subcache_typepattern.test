@@ -72,7 +72,7 @@ echo
 echo
 id1=$(echo "$_responseHeaders" | grep Location | awk -F/ '{ print $4 }' | tr -d "\r\n")
 
-valgrindSleep 1
+# valgrindSleep 1
 
 echo '02. Create entity (triggers notification)'
 echo "========================================="
@@ -124,7 +124,7 @@ echo
 
 
 sleep $WAIT_TIME
-valgrindSleep 2
+# valgrindSleep 2
 
 
 echo "09. Accumulator dump"

@@ -41,46 +41,70 @@ extern "C"
 
 // -----------------------------------------------------------------------------
 //
+// mongocIndexCreate - create an index on the entities collection
+//
+static bool mongocIndexCreate(mongoc_database_t* dbP, bson_t* keyP, const char* indexName)
+{
+  char*   collectionName    = (char*) "entities";
+  bson_t* createIndexCommand = BCON_NEW("createIndexes",
+                                        BCON_UTF8(collectionName),
+                                        "indexes",
+                                        "[",
+                                        "{",
+                                        "key",
+                                        BCON_DOCUMENT(keyP),
+                                        "name",
+                                        BCON_UTF8(indexName),
+                                        "}",
+                                        "]");
+
+  bson_error_t  mcError;
+  bson_t        reply;
+  bool          ok = true;
+
+  if (mongoc_database_write_command_with_opts(dbP, createIndexCommand, NULL, &reply, &mcError) == false)
+  {
+    KT_E("Database Error (creating index '%s': %s)", indexName, mcError.message);
+    ok = false;
+  }
+
+  bson_destroy(createIndexCommand);
+  bson_destroy(&reply);
+
+  return ok;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // mongocIdIndexCreate -
 //
 bool mongocIdIndexCreate(OrionldTenant* tenantP)
 {
-  char*  collectionName = (char*) "entities";
-  bson_t key;
-
-  bson_init(&key);
-  BSON_APPEND_INT32(&key, "_id.id", 1);
-
   mongocConnectionGet(NULL, DbNone);
 
-  mongoc_database_t*  dbP                = mongoc_client_get_database(orionldState.mongoc.client, tenantP->mongoDbName);
-  char*               indexName          = mongoc_collection_keys_to_index_string(&key);
-  bson_t*             createIndexCommand = BCON_NEW("createIndexes",
-                                                    BCON_UTF8(collectionName),
-                                                    "indexes",
-                                                    "[",
-                                                    "{",
-                                                    "key",
-                                                    BCON_DOCUMENT(&key),
-                                                    "name",
-                                                    BCON_UTF8(indexName),
-                                                    "}",
-                                                    "]");
+  mongoc_database_t* dbP = mongoc_client_get_database(orionldState.mongoc.client, tenantP->mongoDbName);
+  bool               ok  = true;
+  bson_t             key;
 
-  bson_error_t  mcError;
-  bson_t        reply;
-
-  if (mongoc_database_write_command_with_opts(dbP, createIndexCommand, NULL, &reply, &mcError) == false)
-  {
-    KT_E("Database Error (error creating index for _id.id for db '%s': %s)", tenantP->mongoDbName, mcError.message);
-    return false;
-  }
-
+  // Index on _id.id (for entity lookups by ID)
+  bson_init(&key);
+  BSON_APPEND_INT32(&key, "_id.id", 1);
+  if (mongocIndexCreate(dbP, &key, "_id.id_1") == false)
+    ok = false;
   bson_destroy(&key);
-  bson_free(indexName);
-  bson_destroy(createIndexCommand);
-  mongoc_database_destroy(dbP);
-  bson_destroy(&reply);
 
-  return true;
+  // Compound index on _id.type + creDate + _id.id (for entity queries sorted by creation date)
+  bson_init(&key);
+  BSON_APPEND_INT32(&key, "_id.type", 1);
+  BSON_APPEND_INT32(&key, "creDate",  1);
+  BSON_APPEND_INT32(&key, "_id.id",   1);
+  if (mongocIndexCreate(dbP, &key, "_id.type_1_creDate_1__id.id_1") == false)
+    ok = false;
+  bson_destroy(&key);
+
+  mongoc_database_destroy(dbP);
+
+  return ok;
 }

@@ -283,6 +283,7 @@ bool orionldDeleteAttribute(void)
   KjNode* attrDatasetV  = NULL;
   KjNode* attrDatasetP  = NULL;
   DistOp* distOpList    = NULL;
+  bool    retVal        = false;
 
   //
   // 1. GET the entity type => first get the entity from the DB·
@@ -364,29 +365,32 @@ bool orionldDeleteAttribute(void)
     KT_T(KtSR, "noOf204s: %d", noOf204s);
     KT_T(KtSR, "others:   %d", others);
 
+    bool retVal = false;
+
     if (others != 0)  // "Weird responses. let's just give it back to the end user
     {
       orionldState.responseTree   = bodyOther;
       orionldState.httpStatusCode = codeOther;
-
-      return false;
     }
     else if (noOf204s > 0)
     {
       orionldState.responseTree   = NULL;
       orionldState.httpStatusCode = 204;
-      return true;
+      retVal = true;
     }
     else if (noOf404s > 0)
     {
       orionldState.responseTree   = body404;
       orionldState.httpStatusCode = 404;
-
-      return false;
+    }
+    else
+    {
+      orionldState.httpStatusCode = 204;
+      retVal = true;
     }
 
-    orionldState.httpStatusCode = 204;
-    return true;
+    distOpListRelease(distOpList);
+    return retVal;
   }
 
   //
@@ -473,17 +477,22 @@ bool orionldDeleteAttribute(void)
 
   KT_T(KtSR, "defaultAttrP: %p", defaultAttrP);
 
+  bool deleteDefault  = false;
+  bool deleteAll      = false;
+  bool deleteDataset  = false;
+
   if ((orionldState.uriParams.datasetId != NULL) || (orionldState.uriParams.deleteAll == true))
   {
     if (entityP == NULL)
     {
       orionldError(OrionldResourceNotFound, "Entity Not Found", entityId, 404);
-      return false;
+      retVal = false;
+      goto cleanup;
     }
     else if ((attrDatasetV == NULL) && (distOpList == NULL))
     {
       orionldError(OrionldResourceNotFound, "Attribute Not Found", attrName, 404);
-      return false;
+      return false;  // distOpList is NULL here
     }
   }
 
@@ -496,10 +505,6 @@ bool orionldDeleteAttribute(void)
   //
   // Local actual deletion of the attribute
   //
-  bool deleteDefault  = false;
-  bool deleteAll      = false;
-  bool deleteDataset  = false;
-
   if (orionldState.uriParams.datasetId == NULL)
   {
     deleteDefault = true;
@@ -525,7 +530,7 @@ bool orionldDeleteAttribute(void)
       if (r == false)
       {
         orionldError(OrionldInternalError, "Database Error", "mongocAttributeDelete failed", 500);
-        return false;
+        goto cleanup;
       }
     }
     else
@@ -547,7 +552,7 @@ bool orionldDeleteAttribute(void)
   if ((attrDatasetP == NULL) && (defaultAttrP == NULL) && (distOp404 == true) && (attrDatasetV == NULL))
   {
     orionldError(OrionldResourceNotFound, "Attribute Not Found", attrName, 404);
-    return false;
+    goto cleanup;
   }
 
   if (deleteDataset == true)
@@ -582,7 +587,7 @@ bool orionldDeleteAttribute(void)
         {
           KT_E("mongocEntityFieldReplace failed for '%s' / '%s': %s", entityId, datasetPath, detail);
           orionldError(OrionldInternalError, "DB Error (unable to replace a dataset field in an entity)", datasetPath, 500);
-          return false;
+          goto cleanup;
         }
       }
     }
@@ -595,7 +600,7 @@ bool orionldDeleteAttribute(void)
         else
           orionldError(OrionldResourceNotFound, "Attribute Not Found", attrName, 404);
 
-        return false;
+        return false;  // distOpList is NULL here
       }
     }
   }
@@ -608,10 +613,16 @@ bool orionldDeleteAttribute(void)
     {
       KT_E("mongocEntityFieldDelete failed for '%s' / '%s': %s", entityId, datasetPath, detail);
       orionldError(OrionldInternalError, "DB Error (unable to remove a dataset field in an entity)", datasetPath, 500);
-      return false;
+      goto cleanup;
     }
   }
 
   orionldState.httpStatusCode = 204;
-  return true;
+  retVal = true;
+
+cleanup:
+  if (distOpList != NULL)
+    distOpListRelease(distOpList);
+
+  return retVal;
 }

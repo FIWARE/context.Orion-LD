@@ -307,10 +307,12 @@ bool orionldPutAttribute(void)
       orionldState.pd.registrationId = otherP->regP->regId;
       orionldState.pd.attribute      = attrLongName;
 
+      distOpListRelease(distOpList);
       return false;
     }
 
     // Nothing done in local => no TRoE, no Notifications
+    distOpListRelease(distOpList);
     return true;
   }
 
@@ -497,6 +499,9 @@ bool orionldPutAttribute(void)
     OrionldAlteration* alterationP = alteration(entityId, entityType, finalApiEntity, apiAttributeAsEntityP, dbEntityP);
     alterationP->finalApiEntityWithSysAttrsP = finalApiEntityWithSysAttrs;
   }
+
+  if (distOpList != NULL)
+    distOpListRelease(distOpList);
 
   return true;
 }

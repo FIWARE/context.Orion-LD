@@ -18,18 +18,21 @@
 # For those usages not covered by this license please contact with
 # orionld at fiware dot org
 
-# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+# NO VALGRIND - some of the DDS tests are not apt to be run under valgrind
 
 --NAME--
 Test of pre-population of entities from config file
 
 --SHELL-INIT--
+ddsClean
 $REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" --ddsTopic "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.orionld
 $REPO_HOME/scripts/configFile.sh --ddsTopic "P1,Camera,urn:ngsi-ld:camera:cam1,shutterSpeed" --ddsTopic "P2,Arm,urn:ngsi-ld:arm:arm1,armReach" > $HOME/.ftClient
 ftClientStop
 ftClientStart -t 0-5000 -v --dds
 dbInit CB
+valgrindSleep 1
 orionldStart CB -mongocOnly -wip dds -kt 0-5000
+valgrindSleep 20
 
 --SHELL--
 #
@@ -63,6 +66,7 @@ echo
 echo "02. Retrieve urn:ngsi-ld:camera:cam1 from the broker and see the update from ftClient via DDS"
 echo "============================================================================================="
 sleep .1
+valgrindSleep 30
 orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:camera:cam1
 echo
 echo
@@ -89,6 +93,7 @@ echo
 echo "03b. DDS-Dump the ftClient and see the PATCH from step 03"
 echo "========================================================="
 sleep .1
+valgrindSleep 20
 orionCurl --url /dds/dump --port $FT_PORT --noPayloadCheck
 echo
 echo
@@ -242,6 +247,7 @@ Date: REGEX(.*)
 
 
 --TEARDOWN--
+ddsClean
 ftClientStop
 brokerStop
 dbDrop CB

@@ -163,3 +163,15 @@
    fun:_server_monitor_setup_connection
    fun:_server_monitor_check_server
 }
+{
+   <openssl RAND init via mongoc session>
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect
+   fun:malloc
+   fun:CRYPTO_zalloc
+   fun:EVP_RAND_CTX_new
+   ...
+   fun:RAND_get0_public
+   fun:RAND_bytes_ex
+   fun:_mongoc_server_session_uuid
+}

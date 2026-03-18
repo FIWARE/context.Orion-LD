@@ -117,7 +117,11 @@ OrionldContext* orionldContextFromTree(char* url, OrionldContextOrigin origin, c
         if (contextP->context.array.vector[ix] != NULL)
           contextP->context.array.vector[ix]->parent = contextP->id;
         else
+        {
+          if (contextP->url != NULL)
+            kjFree(contextP->tree);
           KT_RE(NULL, "unable to download context '%s'", url);
+        }
       }
       else
         contextP->context.array.vector[ix] = cachedContextP;
