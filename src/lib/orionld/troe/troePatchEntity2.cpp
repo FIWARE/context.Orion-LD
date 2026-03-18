@@ -73,14 +73,15 @@ bool troePatchEntity2(void)
   //   - Existing attributes: "Replace"
   //   - New attributes:      "Append"
   //
+  #define MAX_EXISTING_ATTRS 100
   int      existingAttrCount = 0;
-  char*    existingAttrNames[100];  // Should be more than enough for a single PATCH request
+  char*    existingAttrNames[MAX_EXISTING_ATTRS];
 
   if (patchBase != NULL)
   {
     for (KjNode* attrP = patchBase->value.firstChildP; attrP != NULL; attrP = attrP->next)
     {
-      if (existingAttrCount < 100)
+      if (existingAttrCount < MAX_EXISTING_ATTRS)
         existingAttrNames[existingAttrCount++] = attrP->name;
     }
   }
