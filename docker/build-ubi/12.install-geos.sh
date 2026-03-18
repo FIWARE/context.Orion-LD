@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2026 FIWARE Foundation e.V.
+# Copyright 2026 Telefonica Investigacion y Desarrollo, S.A.U
 #
 # This file is part of Orion-LD Context Broker.
 #
@@ -18,7 +18,7 @@
 # along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
 #
 # For those usages not covered by this license please contact with
-# orionld at fiware dot org
+# iot_support at tid dot es
 
 set -e
 
