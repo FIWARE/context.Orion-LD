@@ -44,7 +44,7 @@ sudo aptitude install -y build-essential scons curl cmake
 ```bash
 sudo aptitude install -y libssl-dev gnutls-dev libcurl4-gnutls-dev libsasl2-dev \
                          libgcrypt-dev uuid-dev libboost1.67-dev libboost-regex1.67-dev libboost-thread1.67-dev \
-                         libboost-filesystem1.67-dev libz-dev libmongoclient-dev
+                         libboost-filesystem1.67-dev libz-dev libmongoclient-dev libgeos-dev
 ```
 
 ## Download and build dependency libraries from source code

@@ -1,0 +1,361 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Subscription PATCH updates geoQ - old GEOS geometry replaced with new one
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -mongocOnly
+$REPO_HOME/scripts/configFile.sh > ~/.ftClient
+chmod 777 ~/.ftClient
+ftClientStart -v -t 200
+
+--SHELL--
+
+#
+# Start with a subscription filtering "within" a polygon covering Iberian Peninsula.
+# Then PATCH it to "within" a polygon covering France/Germany instead.
+# Verify that after the PATCH, only entities in the new polygon trigger notifications.
+#
+# Polygon 1 (Iberian Peninsula): [[-10, 36], [4, 36], [4, 44], [-10, 44], [-10, 36]]
+# Polygon 2 (France/Germany):    [[-2, 43], [15, 43], [15, 55], [-2, 55], [-2, 43]]
+#
+# 01. Create subscription S1 with geoQ within Polygon (Iberian Peninsula)
+# 02. Create entity E1 at Madrid (inside Iberia) - notification expected
+# 03. Create entity E2 at Paris (outside Iberia) - no notification
+# 04. Dump ftClient - see 1 notification: E1
+# 05. Reset ftClient (DELETE /dump)
+# 06. PATCH subscription S1 - change geoQ to within Polygon (France/Germany)
+# 07. Create entity E3 at Berlin (inside France/Germany) - notification expected
+# 08. Create entity E4 at Lisbon (outside France/Germany) - no notification
+# 09. Dump ftClient - see 1 notification: E3
+#
+
+
+echo "01. Create subscription S1 with geoQ within Polygon (Iberian Peninsula)"
+echo "========================================================================"
+payload='{
+  "id": "urn:ngsi-ld:Subscription:S1",
+  "type": "Subscription",
+  "entities": [
+    {
+      "type": "City"
+    }
+  ],
+  "geoQ": {
+    "georel": "within",
+    "geometry": "Polygon",
+    "coordinates": [[[-10, 36], [4, 36], [4, 44], [-10, 44], [-10, 36]]],
+    "geoproperty": "location"
+  },
+  "notification": {
+    "endpoint": {
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
+      "accept": "application/json"
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload"
+echo
+echo
+
+
+echo "02. Create entity E1 at Madrid (inside Iberia) - notification expected"
+echo "======================================================================"
+payload='{
+  "id": "urn:ngsi-ld:City:E1",
+  "type": "City",
+  "name": {
+    "type": "Property",
+    "value": "Madrid"
+  },
+  "location": {
+    "type": "GeoProperty",
+    "value": {
+      "type": "Point",
+      "coordinates": [-3.691944, 40.418889]
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "03. Create entity E2 at Paris (outside Iberia) - no notification"
+echo "================================================================"
+payload='{
+  "id": "urn:ngsi-ld:City:E2",
+  "type": "City",
+  "name": {
+    "type": "Property",
+    "value": "Paris"
+  },
+  "location": {
+    "type": "GeoProperty",
+    "value": {
+      "type": "Point",
+      "coordinates": [2.352222, 48.856614]
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+sleep .1
+echo "04. Dump ftClient - see 1 notification: E1"
+echo "==========================================="
+orionCurl --url /dump --port $FT_PORT --noPayloadCheck
+echo
+echo
+
+
+echo "05. Reset ftClient (DELETE /dump)"
+echo "================================="
+orionCurl --url /dump --port $FT_PORT -X DELETE --noPayloadCheck
+echo
+echo
+
+
+echo "06. PATCH subscription S1 - change geoQ to within Polygon (France/Germany)"
+echo "==========================================================================="
+payload='{
+  "geoQ": {
+    "georel": "within",
+    "geometry": "Polygon",
+    "coordinates": [[[-2, 43], [15, 43], [15, 55], [-2, 55], [-2, 43]]],
+    "geoproperty": "location"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions/urn:ngsi-ld:Subscription:S1 --payload "$payload" -X PATCH
+echo
+echo
+
+
+echo "07. Create entity E3 at Berlin (inside France/Germany) - notification expected"
+echo "=============================================================================="
+payload='{
+  "id": "urn:ngsi-ld:City:E3",
+  "type": "City",
+  "name": {
+    "type": "Property",
+    "value": "Berlin"
+  },
+  "location": {
+    "type": "GeoProperty",
+    "value": {
+      "type": "Point",
+      "coordinates": [13.404954, 52.520008]
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "08. Create entity E4 at Lisbon (outside France/Germany) - no notification"
+echo "========================================================================="
+payload='{
+  "id": "urn:ngsi-ld:City:E4",
+  "type": "City",
+  "name": {
+    "type": "Property",
+    "value": "Lisbon"
+  },
+  "location": {
+    "type": "GeoProperty",
+    "value": {
+      "type": "Point",
+      "coordinates": [-9.139337, 38.722252]
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+sleep .1
+echo "09. Dump ftClient - see 1 notification: E3"
+echo "==========================================="
+orionCurl --url /dump --port $FT_PORT --noPayloadCheck
+echo
+echo
+
+
+--REGEXPECT--
+01. Create subscription S1 with geoQ within Polygon (Iberian Peninsula)
+========================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/subscriptions/urn:ngsi-ld:Subscription:S1
+
+
+
+02. Create entity E1 at Madrid (inside Iberia) - notification expected
+======================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:City:E1
+
+
+
+03. Create entity E2 at Paris (outside Iberia) - no notification
+================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:City:E2
+
+
+
+04. Dump ftClient - see 1 notification: E1
+===========================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Date: REGEX(.*)
+
+POST /notify?subscriptionId=urn:ngsi-ld:Subscription:S1
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+User-Agent: orionld/REGEX(.*)
+Host: REGEX(.*)
+Accept: application/json
+Ngsild-Attribute-Format: Normalized
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+  "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+  "type": "Notification",
+  "subscriptionId": "urn:ngsi-ld:Subscription:S1",
+  "notifiedAt": "REGEX(.*)",
+  "data": [
+    {
+      "id": "urn:ngsi-ld:City:E1",
+      "type": "City",
+      "name": {
+        "type": "Property",
+        "value": "Madrid"
+      },
+      "location": {
+        "type": "GeoProperty",
+        "value": {
+          "type": "Point",
+          "coordinates": [
+            -3.691944,
+            40.418889
+          ]
+        }
+      }
+    }
+  ]
+}
+
+
+
+05. Reset ftClient (DELETE /dump)
+=================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+
+06. PATCH subscription S1 - change geoQ to within Polygon (France/Germany)
+===========================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+07. Create entity E3 at Berlin (inside France/Germany) - notification expected
+==============================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:City:E3
+
+
+
+08. Create entity E4 at Lisbon (outside France/Germany) - no notification
+=========================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:City:E4
+
+
+
+09. Dump ftClient - see 1 notification: E3
+===========================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Date: REGEX(.*)
+
+POST /notify?subscriptionId=urn:ngsi-ld:Subscription:S1
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+User-Agent: orionld/REGEX(.*)
+Host: REGEX(.*)
+Accept: application/json
+Ngsild-Attribute-Format: Normalized
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+  "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+  "type": "Notification",
+  "subscriptionId": "urn:ngsi-ld:Subscription:S1",
+  "notifiedAt": "REGEX(.*)",
+  "data": [
+    {
+      "id": "urn:ngsi-ld:City:E3",
+      "type": "City",
+      "name": {
+        "type": "Property",
+        "value": "Berlin"
+      },
+      "location": {
+        "type": "GeoProperty",
+        "value": {
+          "type": "Point",
+          "coordinates": [
+            13.404954,
+            52.520008
+          ]
+        }
+      }
+    }
+  ]
+}
+
+
+
+--TEARDOWN--
+brokerStop CB
+ftClientStop
+dbDrop CB

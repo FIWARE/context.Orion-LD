@@ -1184,7 +1184,119 @@ Temporal Representation in FIWARE is taken care of by other GEs, such as Cygnus,
 Apart from forbidden characters, all security concerns are taken care of by other GEs, such as PEP, KeyRock, etc. and will not be implemented in Orion-LD.
 
 ## Geolocation
-TBD.
+
+Orion-LD supports geo-spatial filtering for both queries and subscriptions, as defined by the NGSI-LD specification.
+
+### GeoProperty
+Entities can have one or more GeoProperty attributes, each containing a GeoJSON value:
+
+```json
+{
+  "id": "urn:ngsi-ld:City:Madrid",
+  "type": "City",
+  "location": {
+    "type": "GeoProperty",
+    "value": {
+      "type": "Point",
+      "coordinates": [-3.691944, 40.418889]
+    }
+  }
+}
+```
+
+Supported GeoJSON geometry types: `Point`, `MultiPoint`, `LineString`, `MultiLineString`, `Polygon`, `MultiPolygon`.
+
+### Geo-Spatial Queries
+The `geoQ` parameter (for GET queries) or object (for subscriptions) specifies a geo-spatial filter with the following fields:
+
+| Field | Description |
+|-------|-------------|
+| `georel` | The spatial relationship to evaluate (see below) |
+| `geometry` | The GeoJSON geometry type of the reference geometry |
+| `coordinates` | The coordinates of the reference geometry |
+| `geoproperty` | The entity attribute to use for matching (default: `location`) |
+
+### Supported Geo-Relations (`georel`)
+
+| georel | Description | Supported subscription geometry |
+|--------|-------------|--------------------------------|
+| `near;maxDistance==N` | Entity is within N meters of the reference point | Point |
+| `near;minDistance==N` | Entity is at least N meters from the reference point | Point |
+| `near;maxDistance==N;minDistance==M` | Entity is between M and N meters (donut) | Point |
+| `within` | Entity geometry is entirely within the reference polygon | Polygon, MultiPolygon |
+| `contains` | Entity geometry contains the reference geometry | Any |
+| `intersects` | Entity geometry intersects the reference geometry | Any |
+| `equals` | Entity geometry is identical to the reference geometry | Any |
+| `disjoint` | Entity geometry does not touch/overlap the reference geometry | Any |
+| `overlaps` | Entity geometry partially overlaps (same dimension, not contained) | Any |
+
+### Subscription Geo-Fencing (In-Memory with GEOS)
+
+When Orion-LD runs in experimental/mongocOnly mode, geo-spatial subscription matching is performed entirely in-memory using the [GEOS](https://libgeos.org/) library. This avoids a database round-trip for every entity change, significantly improving notification latency.
+
+The `near` georel uses the haversine formula (great-circle distance on the Earth's surface) rather than GEOS, since it operates on Point-to-Point distance in meters.
+
+All other georel types (`within`, `contains`, `intersects`, `equals`, `disjoint`, `overlaps`) use GEOS topological predicates with prepared geometries for maximum performance.
+
+#### Example: Subscription with Geo-Fencing
+
+A subscription that triggers notifications only for entities located within the Iberian Peninsula:
+
+```json
+{
+  "id": "urn:ngsi-ld:Subscription:IberianCities",
+  "type": "Subscription",
+  "entities": [{"type": "City"}],
+  "geoQ": {
+    "georel": "within",
+    "geometry": "Polygon",
+    "coordinates": [[[-10, 36], [4, 36], [4, 44], [-10, 44], [-10, 36]]],
+    "geoproperty": "location"
+  },
+  "notification": {
+    "endpoint": {
+      "uri": "http://my-server:8080/notify",
+      "accept": "application/json"
+    }
+  }
+}
+```
+
+#### Example: Donut Geo-Fence (min + max distance)
+
+A subscription that triggers only for entities between 50km and 100km from Madrid:
+
+```json
+{
+  "geoQ": {
+    "georel": "near;maxDistance==100000;minDistance==50000",
+    "geometry": "Point",
+    "coordinates": [-3.691944, 40.418889],
+    "geoproperty": "location"
+  }
+}
+```
+
+#### Custom GeoProperty
+
+By default, the `location` attribute is used for geo-matching. To use a different GeoProperty attribute, set `geoproperty` in the `geoQ`:
+
+```json
+{
+  "geoQ": {
+    "georel": "near;maxDistance==100000",
+    "geometry": "Point",
+    "coordinates": [-3.691944, 40.418889],
+    "geoproperty": "observationPoint"
+  }
+}
+```
+
+#### Lifecycle
+
+- **Creation**: The GEOS geometry is built when the subscription is created and stored in the subscription cache.
+- **Restart**: On broker restart, subscriptions are reloaded from MongoDB and the GEOS geometries are rebuilt.
+- **PATCH**: When a subscription's `geoQ` is updated via PATCH, the old GEOS geometry is freed and a new one is built from the updated filter.
 
 ## Query Filter
 TBD.
