@@ -24,6 +24,7 @@
 */
 #include <string>                                              // std::string
 #include <vector>                                              // std::vector
+#include <geos_c.h>                                            // GEOSGeoJSONReader, GEOSPrepare
 
 extern "C"
 {
@@ -57,6 +58,9 @@ extern "C"
 #include "orionld/mongoc/mongocSubscriptionLookup.h"           // mongocSubscriptionLookup
 #include "orionld/mongoc/mongocSubscriptionReplace.h"          // mongocSubscriptionReplace
 #include "orionld/dbModel/dbModelFromApiSubscription.h"        // dbModelFromApiSubscription
+#include "orionld/common/eqForDot.h"                           // eqForDot
+#include "orionld/common/geosInit.h"                           // geosHandle
+#include "orionld/payloadCheck/pcheckGeoQ.h"                   // pcheckGeoQ
 #include "orionld/mqtt/mqttConnectionEstablish.h"              // mqttConnectionEstablish
 #include "orionld/mqtt/mqttDisconnect.h"                       // mqttDisconnect
 #include "orionld/mqtt/mqttParse.h"                            // mqttParse
@@ -400,7 +404,56 @@ static bool subCacheItemUpdateGeoQ(CachedSubscription* cSubP, KjNode* itemP)
     char* coords     = kaAlloc(&orionldState.kalloc, coordsSize);
 
     kjFastRender(coordinatesP, coords);
-    cSubP->expression.coords = coords;  // Not sure this is 100% correct format, but is it used? DB is used for Geo ...
+    cSubP->expression.coords = coords;
+  }
+
+  //
+  // Rebuild GEOS in-memory geometry
+  //
+
+  // Free old GEOS objects
+  if (cSubP->geosPrepared != NULL)
+  {
+    GEOSPreparedGeom_destroy_r(geosHandle, cSubP->geosPrepared);
+    cSubP->geosPrepared = NULL;
+  }
+
+  if (cSubP->geosGeometry != NULL)
+  {
+    GEOSGeom_destroy_r(geosHandle, cSubP->geosGeometry);
+    cSubP->geosGeometry = NULL;
+  }
+
+  if (cSubP->geoInfo != NULL)
+  {
+    free(cSubP->geoInfo->geoProperty);
+    free(cSubP->geoInfo);
+    cSubP->geoInfo = NULL;
+  }
+
+  // Build new geoInfo from the geoQ tree
+  cSubP->geoInfo = pcheckGeoQ(NULL, itemP, true);
+
+  if (cSubP->geoInfo != NULL && cSubP->geoInfo->geoProperty != NULL)
+    eqForDot(cSubP->geoInfo->geoProperty);
+
+  if (cSubP->geoInfo != NULL && coordinatesP != NULL && geosHandle != NULL)
+  {
+    char geoJson[2048];
+    char coordsBuf[1536];
+    kjFastRender(coordinatesP, coordsBuf);
+    int len = snprintf(geoJson, sizeof(geoJson), "{\"type\":\"%s\",\"coordinates\":%s}",
+                       geometryP->value.s, coordsBuf);
+
+    if (len > 0 && len < (int) sizeof(geoJson))
+    {
+      GEOSGeoJSONReader* reader = GEOSGeoJSONReader_create_r(geosHandle);
+      cSubP->geosGeometry = GEOSGeoJSONReader_readGeometry_r(geosHandle, reader, geoJson);
+      GEOSGeoJSONReader_destroy_r(geosHandle, reader);
+
+      if (cSubP->geosGeometry != NULL && cSubP->geoInfo->georel != GeorelNear)
+        cSubP->geosPrepared = GEOSPrepare_r(geosHandle, cSubP->geosGeometry);
+    }
   }
 
   return true;

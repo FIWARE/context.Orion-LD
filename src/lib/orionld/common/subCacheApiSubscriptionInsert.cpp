@@ -23,6 +23,7 @@
 * Author: Ken Zangelin
 */
 #include <string.h>                                              // strdup
+#include <geos_c.h>                                              // GEOSGeoJSONReader, GEOSPrepare
 
 #include <string>                                                // std::string, due to cSubP->expression.stringFilter.parse()
 
@@ -46,10 +47,13 @@ extern "C"
 #include "orionld/types/OrionldMimeType.h"                       // mimeTypeFromString
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/traceLevels.h"                          // KTrace levels
+#include "orionld/common/eqForDot.h"                             // eqForDot
 #include "orionld/common/urlParse.h"                             // urlParse
 #include "orionld/common/dateTime.h"                             // dateTimeFromString
 #include "orionld/common/subCacheApiSubscriptionInsert.h"        // Own interface
+#include "orionld/common/geosInit.h"                             // geosHandle
 #include "orionld/dbModel/dbModelToApiCoordinates.h"             // dbModelToApiCoordinates
+#include "orionld/payloadCheck/pcheckGeoQ.h"                     // pcheckGeoQ
 #include "orionld/mqtt/mqttParse.h"                              // mqttParse
 
 
@@ -224,6 +228,36 @@ static void subCacheItemFill
       char coords[1024];
       kjFastRender(geoCoordinatesP, coords);
       cSubP->expression.coords = coords;  // Not sure this is 100% correct format, but is it used? DB is used for Geo ...
+    }
+
+    // Build GEOS geometry for in-memory geo-matching
+    cSubP->geoInfo = pcheckGeoQ(NULL, geoqP, true);
+
+    // pcheckGeoQ may return geoProperty with '=' instead of '.' (due to dotForEq from prior payload check call).
+    // The geoInfo->geoProperty is a strdup'd copy, safe to fix in place.
+    if (cSubP->geoInfo != NULL && cSubP->geoInfo->geoProperty != NULL)
+      eqForDot(cSubP->geoInfo->geoProperty);
+
+    KT_T(KtSubCacheMatch, "geoInfo=%p, geoCoordinatesP=%p, geosHandle=%p", cSubP->geoInfo, geoCoordinatesP, geosHandle);
+
+    if (cSubP->geoInfo != NULL && geoCoordinatesP != NULL && geosHandle != NULL)
+    {
+      // Build a GeoJSON string: {"type":"<geometry>","coordinates":<coords>}
+      char geoJson[2048];
+      char coordsBuf[1536];
+      kjFastRender(geoCoordinatesP, coordsBuf);
+      int len = snprintf(geoJson, sizeof(geoJson), "{\"type\":\"%s\",\"coordinates\":%s}",
+                         geometryP->value.s, coordsBuf);
+
+      if (len > 0 && len < (int) sizeof(geoJson))
+      {
+        GEOSGeoJSONReader* reader = GEOSGeoJSONReader_create_r(geosHandle);
+        cSubP->geosGeometry = GEOSGeoJSONReader_readGeometry_r(geosHandle, reader, geoJson);
+        GEOSGeoJSONReader_destroy_r(geosHandle, reader);
+
+        if (cSubP->geosGeometry != NULL && cSubP->geoInfo->georel != GeorelNear)
+          cSubP->geosPrepared = GEOSPrepare_r(geosHandle, cSubP->geosGeometry);
+      }
     }
   }
 
@@ -411,6 +445,19 @@ static void subCacheItemFill
 
   if (geoCoordinatesP != NULL)
     cSubP->geoCoordinatesP = kjClone(NULL, geoCoordinatesP);
+
+  //
+  // Fix up geoInfo pointers: pcheckGeoQ stores pointers into the request-scoped KjNode tree,
+  // which is freed after the request.  Point to persistent copies instead.
+  //
+  // geoProperty is already strdup'd in pcheckGeoQ (expanded, without dotForEq) - persistent.
+  // coordinates needs to point to the cloned copy.
+  //
+  if (cSubP->geoInfo != NULL)
+  {
+    if (cSubP->geoCoordinatesP != NULL)
+      cSubP->geoInfo->coordinates = cSubP->geoCoordinatesP;
+  }
 }
 
 

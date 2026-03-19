@@ -80,6 +80,7 @@ Date: REGEX(.*)
     "boost version": "REGEX(.*)",
     "branch": "REGEX(.*)",
     "bson version": "REGEX(.*)",
+    "geos version": "REGEX(.*)",
     "cached subscriptions": 0,
     "kalloc version": "REGEX(.*)",
     "kbase version": "REGEX(.*)",

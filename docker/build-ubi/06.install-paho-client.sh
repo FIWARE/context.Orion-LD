@@ -47,3 +47,13 @@ echo -e "\e[1;32m Paho Installed ... \e[0m"
 echo "============== PAHO INSTALLATION TRACES START ============================="
 cat /tmp/paho-install
 echo "============== PAHO INSTALLATION TRACES END ==============================="
+
+echo -e "\e[1;32m Verifying Paho MQTT SSL library (paho-mqtt3cs) \e[0m"
+if [ ! -f /usr/local/lib/libpaho-mqtt3cs.so.1 ]; then
+  echo -e "\e[1;31m ERROR: libpaho-mqtt3cs.so.1 not found - MQTTS support will not work \e[0m"
+  echo "Installed paho libraries:"
+  ls -la /usr/local/lib/libpaho* 2>/dev/null || echo "  (none)"
+  exit 1
+fi
+echo "Installed paho libraries:"
+ls -la /usr/local/lib/libpaho*
