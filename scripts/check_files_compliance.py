@@ -69,7 +69,6 @@ header2.append(r'\s*For those usages not covered by this license please contact 
 header2.append(r'\s*orionld at fiware dot org$')
 
 verbose = True
-is_orionld = False
 
 
 # check_file returns an error string in the case of error or empty string if everything goes ok
@@ -291,28 +290,9 @@ for root, dirs, files in os.walk(dir):
         if os.path.islink(filename):
             continue
 
-        if 'src/app/orionld/' in filename:
-            is_orionld = True
-        elif 'src/lib/orionld/' in filename:
-            is_orionld = True
-        elif 'src/app/ssClient/' in filename:
-            is_orionld = True
-        elif 'test/functionalTest/ftClient/' in filename:
-            is_orionld = True
-        elif 'test/functionalTest/cases/0000_ld' in filename:
-            is_orionld = True
-        elif 'test/unittests/orionld' in filename:
-            is_orionld = True
-        elif 'test/stress' in filename:
-            is_orionld = True
-        elif 'archive/orionld' in filename:
-            is_orionld = True
-        else:
-            is_orionld = False
-
-        if is_orionld:
-            error = check_file_orionld(filename)
-        else:
+        # Accept either license header (FIWARE/Orion-LD or Telefonica/Orion) for any file
+        error = check_file_orionld(filename)
+        if len(error) > 0:
             error = check_file(filename)
 
         if len(error) > 0:
@@ -321,8 +301,6 @@ for root, dirs, files in os.walk(dir):
         else:
             good += 1
 
-# src/lib/orionld/
-# src/app/orionld
 print('--------------')
 print('Summary:')
 print('   good:    {good}'.format(good=str(good)))
