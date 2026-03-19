@@ -105,7 +105,7 @@ def check_file_orionld(file):
     # that line
 
     searching_first_line = True
-    with open(file) as f:
+    with open(file,'r',encoding='latin-1') as f:
         for line in f:
             line = line.rstrip()
             if searching_first_line:
@@ -261,6 +261,8 @@ def supported_extension(root, file):
     print('not supported extension: {filename}'.format(filename=filename))
     return False
 
+import subprocess
+
 if len(argv) > 1:
     dir = argv[1]
 else:
@@ -270,36 +272,46 @@ else:
 good = 0
 bad = 0
 
-for root, dirs, files in os.walk(dir):
-    for file in [f for f in files]:
-        # DEBUG
-        # print(os.path.join(root, file))
+# Use git ls-files to only check tracked files (avoids false positives from build artifacts, venvs, etc.)
+try:
+    result = subprocess.run(['git', 'ls-files', dir], capture_output=True, text=True, check=True)
+    tracked_files = [f for f in result.stdout.strip().split('\n') if f]
+except (subprocess.CalledProcessError, FileNotFoundError):
+    # Fallback to os.walk if git is not available
+    tracked_files = []
+    for root, dirs, files in os.walk(dir):
+        for file in files:
+            tracked_files.append(os.path.join(root, file))
 
-        # Only process files that match a given pattern
-        if ignore(root, file):
-            continue
+for filename in tracked_files:
+    if not os.path.isfile(filename):
+        continue
 
-        # Check that the extension is supported
-        if not supported_extension(root, file):
-            bad += 1
-            continue
+    root = os.path.dirname(filename)
+    file = os.path.basename(filename)
 
-        error = ''
-        filename = os.path.join(root, file)
+    # Only process files that match a given pattern
+    if ignore(root, file):
+        continue
 
-        if os.path.islink(filename):
-            continue
+    # Check that the extension is supported
+    if not supported_extension(root, file):
+        bad += 1
+        continue
 
-        # Accept either license header (FIWARE/Orion-LD or Telefonica/Orion) for any file
-        error = check_file_orionld(filename)
-        if len(error) > 0:
-            error = check_file(filename)
+    if os.path.islink(filename):
+        continue
 
-        if len(error) > 0:
-            print(filename + ': ' + error)
-            bad += 1
-        else:
-            good += 1
+    # Accept either license header (FIWARE/Orion-LD or Telefonica/Orion) for any file
+    error = check_file_orionld(filename)
+    if len(error) > 0:
+        error = check_file(filename)
+
+    if len(error) > 0:
+        print(filename + ': ' + error)
+        bad += 1
+    else:
+        good += 1
 
 print('--------------')
 print('Summary:')
