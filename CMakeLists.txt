@@ -303,7 +303,7 @@ SET (DYNAMIC_LIBS
     icudata
     z
     resolv
-    paho-mqtt3c
+    paho-mqtt3cs
     geos_c         # for GEOS geofencing in subscription matching
     pq             # for TRoE & Postgres
     ${LIBMONGOC_LIBRARIES}

@@ -353,7 +353,7 @@ static void subCacheItemFill
         cSubP->rest           = (cSubP->rest != NULL)? strdup(cSubP->rest) : NULL;
       }
 
-      if (cSubP->protocol == MQTT)
+      if (cSubP->protocol == MQTT || cSubP->protocol == MQTTS)
       {
         char            url[512];
         bool            mqtts         = false;

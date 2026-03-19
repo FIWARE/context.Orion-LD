@@ -968,6 +968,7 @@ int notificationSend(OrionldAlterationMatch* mAltP, double timestamp, CURL** cur
                       timestamp);
   else if (mAltP->subP->protocol == HTTPS)   return httpsNotify(mAltP->subP, ioVec, ioVecLen, timestamp, curlHandlePP);
   else if (mAltP->subP->protocol == MQTT)    return mqttNotify(mAltP->subP,  ioVec, ioVecLen, timestamp);
+  else if (mAltP->subP->protocol == MQTTS)   return mqttNotify(mAltP->subP,  ioVec, ioVecLen, timestamp);
   else if (mAltP->subP->protocol == WS)      return wsNotify(mAltP->subP,   ioVec, ioVecLen, timestamp);
 
   KT_W("%s: Unsupported protocol for notifications: '%s'", mAltP->subP->subscriptionId, mAltP->subP->protocol);

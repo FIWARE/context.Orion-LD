@@ -40,7 +40,7 @@ extern "C"
 //
 bool mqttConnectionEstablish(bool mqtts, const char* username, const char* password, const char* host, unsigned short port, const char* version)
 {
-  MqttConnection* mqP = mqttConnectionLookup(host, port, username, password, version);
+  MqttConnection* mqP = mqttConnectionLookup(mqtts, host, port, username, password, version);
 
   if (mqP != NULL)
   {

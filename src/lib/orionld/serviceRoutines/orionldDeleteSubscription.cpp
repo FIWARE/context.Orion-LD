@@ -79,10 +79,10 @@ bool orionldDeleteSubscription(void)
   else
   {
     // If MQTT subscription - disconnect from mqtt broker
-    if (cSubP->protocol == MQTT)
+    if (cSubP->protocol == MQTT || cSubP->protocol == MQTTS)
     {
       MqttInfo* mqttP = &cSubP->httpInfo.mqtt;
-      mqttDisconnect(mqttP->host, mqttP->port, mqttP->username, mqttP->password, mqttP->version);
+      mqttDisconnect(mqttP->mqtts, mqttP->host, mqttP->port, mqttP->username, mqttP->password, mqttP->version);
     }
 
     // Any subordinate subscriptions?
