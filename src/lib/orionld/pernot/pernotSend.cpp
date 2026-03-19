@@ -228,6 +228,7 @@ bool pernotSend(PernotSubscription* subP, KjNode* entityArray)
 #if 0
   else if (subP->protocol == HTTPS)   return httpsNotify(subP, ioVec, ioVecLen, now, curlHandlePP);
   else if (subP->protocol == MQTT)    return mqttNotify(subP,  ioVec, ioVecLen, now);
+  else if (subP->protocol == MQTTS)   return mqttNotify(subP,  ioVec, ioVecLen, now);
 #endif
 
   KT_W("%s: Unsupported protocol for notifications: '%s'", subP->subscriptionId, subP->protocol);

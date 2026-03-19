@@ -8,6 +8,7 @@
   #XXXX - New CLI option -coreContextDir (env: ORIONLD_CORE_CONTEXT_DIR, default: /opt/orion/ldcontexts)
   #XXXX - Replaced idiotic prometheus-client-c with KPROM library for Prometheus metrics
   #XXXX - Default user @context served from local files, not only URLs
+  #XXXX - MQTTS support - MQTT notifications over TLS (mqtts:// endpoint URIs)
   #XXXX - Experimental support for WebSockets (wip - Work In Progress)
 
 ### Pre-downloaded Core Context Files

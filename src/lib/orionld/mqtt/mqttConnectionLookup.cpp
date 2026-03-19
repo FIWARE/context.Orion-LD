@@ -40,13 +40,13 @@ extern "C"
 //
 // mqttConnectionLookup -
 //
-MqttConnection* mqttConnectionLookup(const char* host, unsigned short port, const char* username, const char* password, const char* version)
+MqttConnection* mqttConnectionLookup(bool mqtts, const char* host, unsigned short port, const char* username, const char* password, const char* version)
 {
   KT_T(KtMqtt, "mqttConnectionListIx == %d", mqttConnectionListIx);
 
   if (host == NULL) return NULL;
 
-  KT_T(KtMqtt, "Looking up an MQTT connection for %s:%d (user: '%s', pwd: '%s', ver: '%s')", host, port, username, password, version);
+  KT_T(KtMqtt, "Looking up an MQTT%s connection for %s:%d (user: '%s', pwd: '%s', ver: '%s')", mqtts ? "S" : "", host, port, username, password, version);
 
   for (int ix = 0; ix < mqttConnectionListIx; ix++)
   {
@@ -54,6 +54,7 @@ MqttConnection* mqttConnectionLookup(const char* host, unsigned short port, cons
 
     if (mqP->host == NULL)                                                  continue;  // Free slot - no match
 
+    if (mqP->mqtts != mqtts)                                                continue;
     if (mqP->port != port)                                                  continue;
     if (strcmp(host, mqP->host) != 0)                                       continue;  // Host is mandatory, cannot be empty
 

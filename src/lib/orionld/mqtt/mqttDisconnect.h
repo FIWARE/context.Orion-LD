@@ -32,6 +32,6 @@
 //
 // mqttConnect -
 //
-extern void mqttDisconnect(const char* host, unsigned short port, const char* username, const char* password, const char* version);
+extern void mqttDisconnect(bool mqtts, const char* host, unsigned short port, const char* username, const char* password, const char* version);
 
 #endif  // SRC_LIB_ORIONLD_MQTT_MQTTDISCONNECT_H_

@@ -302,7 +302,7 @@ SET (DYNAMIC_LIBS
     icudata
     z
     resolv
-    paho-mqtt3c
+    paho-mqtt3cs
     pq             # for TRoE & Postgres
     ${LIBMONGOC_LIBRARIES}
     ${LIBBSON_LIBRARIES}

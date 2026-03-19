@@ -782,7 +782,7 @@ static bool mqttConnectFromInfo(MqttInfo* miP)
 //
 static void mqttDisconnectFromInfo(MqttInfo* miP)
 {
-  mqttDisconnect(miP->host, miP->port, miP->username, miP->password, miP->version);
+  mqttDisconnect(miP->mqtts, miP->host, miP->port, miP->username, miP->password, miP->version);
 }
 
 
