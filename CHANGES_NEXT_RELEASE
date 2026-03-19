@@ -1,12 +1,8 @@
 ## Fixed Issues
   #1905 - TRoE: segfault (exit 139) connecting to TimescaleDB Cloud - added SSL support and fixed NULL pointer crash
   #XXXX - Fixed query of many large entities (cfreyfh - Carsten Freyh at Fraunhofer IKTS)
-  #XXXX - Wait for postgres instead of exiting after the first try - just like for mongo (1 try per second until 30 secs)
+  #XXXX - Wait for postgres instead of exiting after the first try - just like for mongo (1 try per second during 30 secs)
   #XXXX - Fixed crash in relationship endpoint when no relations found (cfreyfh)
-  #XXXX - Fixed use-after-scope in urlPath and NULL-check endpoint in distributed operations
-  #XXXX - Fixed double-free in distributed operation list release
-  #XXXX - Fixed memory leaks in pernot subscriptions
-  #XXXX - Fixed memory leaks in NGSIv2 batch update and PUT attribute
 
 ## New Features
   #1905 - New CLI option -troeSslMode (env: ORIONLD_TROE_SSL_MODE) for TRoE Postgres SSL connections
@@ -16,8 +12,6 @@
   #XXXX - MQTTS support - MQTT notifications over TLS (mqtts:// endpoint URIs)
   #XXXX - Experimental support for WebSockets (wip - Work In Progress)
   #XXXX - In-memory geo-fencing for subscriptions using GEOS (no DB round-trip for geo-matching)
-  #XXXX - Subscription geo-fencing supports all 7 georel types: near, within, contains, intersects, equals, disjoint, overlaps
-  #XXXX - Support for "donut" geo-fence (near;maxDistance==N;minDistance==M)
 
 ### Pre-downloaded Core Context Files
   At startup the broker needs the NGSI-LD core context. Previously it was either found in
