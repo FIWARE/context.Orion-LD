@@ -300,6 +300,10 @@ bool pCheckSubscription
     else if (strcmp(subItemP->name, "status")              == 0) { kjChildRemove(subP, subItemP); }  // Silently REMOVED
     else if (strcmp(subItemP->name, "createdAt")           == 0) { kjChildRemove(subP, subItemP); }  // Silently REMOVED
     else if (strcmp(subItemP->name, "modifiedAt")          == 0) { kjChildRemove(subP, subItemP); }  // Silently REMOVED
+    else if (strcmp(subItemP->name, "jsonldContext") == 0)
+    {
+      PCHECK_STRING(subItemP, 0, NULL, "Subscription::jsonldContext", 400);
+    }
     else if (strcmp(subItemP->name, "notificationTrigger") == 0)
     {
       orionldError(OrionldOperationNotSupported, "Not Implemented", subItemP->name, 501);

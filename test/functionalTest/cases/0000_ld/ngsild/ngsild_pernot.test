@@ -35,7 +35,7 @@ orionldStart CB -pernot -experimental -subCacheFlushIval 3
 # 03. Attempt to create a subscription with timeInterval as a String - see 400
 # 04. Attempt to create a subscription with duplicated timeInterval - see 400
 # 05. Create a subscription urn:S1 with timeInterval
-# 06. Attempt to PATCH a pernot subscription
+# 06. PATCH a pernot subscription - update description
 # 07. See urn:S1 in the database
 # 08. GET urn:S1 from cache
 # 09. GET urn:S1 from database
@@ -142,7 +142,7 @@ echo "=================================================="
 payload='{
   "id": "urn:S1",
   "type": "Subscription",
-  "description": "Test Subscription No 1",
+  "description": "Test Subscription No 2",
   "subscriptionName": "S1",
   "entities": [
     {
@@ -168,8 +168,8 @@ echo
 echo
 
 
-echo "06. Attempt to PATCH a pernot subscription"
-echo "=========================================="
+echo "06. PATCH a pernot subscription - update description"
+echo "===================================================="
 payload='{
   "description": "Test Subscription No 2"
 }'
@@ -301,18 +301,11 @@ Location: /ngsi-ld/v1/subscriptions/urn:S1
 
 
 
-06. Attempt to PATCH a pernot subscription
-==========================================
-HTTP/1.1 501 Not Implemented
-Content-Length: 153
-Content-Type: application/json
+06. PATCH a pernot subscription - update description
+====================================================
+HTTP/1.1 204 No Content
 Date: REGEX(.*)
 
-{
-    "detail": "Patching of periodic notification subscriptions",
-    "title": "Not Implemented",
-    "type": "https://uri.etsi.org/ngsi-ld/errors/OperationNotSupported"
-}
 
 
 07. See urn:S1 in the database
@@ -322,7 +315,7 @@ connecting to: REGEX(.*)
 MongoDB server version: REGEX(.*)
 {
 	"_id" : "urn:S1",
-	"description" : "Test Subscription No 1",
+	"description" : "Test Subscription No 2",
 	"name" : "S1",
 	"entities" : [
 		{
@@ -377,7 +370,7 @@ Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
-    "description": "Test Subscription No 1",
+    "description": "Test Subscription No 2",
     "entities": [
         {
             "id": "urn:E1",
@@ -424,7 +417,7 @@ Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
-    "description": "Test Subscription No 1",
+    "description": "Test Subscription No 2",
     "entities": [
         {
             "id": "urn:E1",
@@ -473,7 +466,7 @@ connecting to: REGEX(.*)
 MongoDB server version: REGEX(.*)
 {
 	"_id" : "urn:S1",
-	"description" : "Test Subscription No 1",
+	"description" : "Test Subscription No 2",
 	"name" : "S1",
 	"entities" : [
 		{
@@ -536,7 +529,7 @@ Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
-    "description": "Test Subscription No 1",
+    "description": "Test Subscription No 2",
     "entities": [
         {
             "id": "urn:E1",
@@ -583,7 +576,7 @@ Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
-    "description": "Test Subscription No 1",
+    "description": "Test Subscription No 2",
     "entities": [
         {
             "id": "urn:E1",

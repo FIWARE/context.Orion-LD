@@ -148,9 +148,9 @@ bool pernotSend(PernotSubscription* subP, KjNode* entityArray)
   //
   headers += subP->headers.items;
 
-  char   hostHeader[512];
-  size_t hostHeaderLen = snprintf(hostHeader, sizeof(hostHeader) - 1, "Host: %s:%d\r\n", subP->ip, subP->port);
-
+  char          hostHeader[512];
+  static char   linkHeader[512];
+  size_t        hostHeaderLen = snprintf(hostHeader, sizeof(hostHeader) - 1, "Host: %s:%d\r\n", subP->ip, subP->port);
   int           ioVecLen   = headers + 3;  // Request line + X headers + empty line + payload body
   struct iovec  ioVec[53]  = {
     { requestHeader,                 requestHeaderLen },
@@ -159,8 +159,25 @@ bool pernotSend(PernotSubscription* subP, KjNode* entityArray)
     { (void*) userAgentHeader,       userAgentHeaderLen },
     { (void*) hostHeader,            hostHeaderLen },
     { (void*) acceptHeader,          26 },
-    { (void*) normalizedHeader,      37 }   // Index 6
+    { NULL,                           0  }   // Index 6: Ngsild-Attribute-Format - set below
   };
+  // Set Ngsild-Attribute-Format header based on renderFormat
+  if (subP->renderFormat == RF_CONCISE)
+  {
+    ioVec[6].iov_base = (void*) conciseHeader;
+    ioVec[6].iov_len  = strlen(conciseHeader);
+  }
+  else if ((subP->renderFormat == RF_SIMPLIFIED) || (subP->renderFormat == RF_KEYVALUES))
+  {
+    ioVec[6].iov_base = (void*) simplifiedHeader;
+    ioVec[6].iov_len  = strlen(simplifiedHeader);
+  }
+  else
+  {
+    ioVec[6].iov_base = (void*) normalizedHeader;
+    ioVec[6].iov_len  = strlen(normalizedHeader);
+  }
+
   int  headerIx      = 7;
   bool addLinkHeader = true;
 
@@ -173,12 +190,12 @@ bool pernotSend(PernotSubscription* subP, KjNode* entityArray)
 
   if ((addLinkHeader == true) && (subP->ngsiv2 == false))  // Add Link header - but not if NGSIv2 Cross Notification
   {
-    char         linkHeader[512];
     const char*  link = (subP->context == NULL)? ORIONLD_CORE_CONTEXT_URL_V1_0 : subP->context;
 
     snprintf(linkHeader, sizeof(linkHeader), "Link: <%s>; rel=\"http://www.w3.org/ns/json-ld#context\"; type=\"application/ld+json\"\r\n", link);
+    linkHeader[sizeof(linkHeader) - 1] = 0;
 
-    ioVec[headerIx].iov_base = linkHeader;
+    ioVec[headerIx].iov_base = (void*) linkHeader;
     ioVec[headerIx].iov_len  = strlen(linkHeader);
     ++headerIx;
   }

@@ -43,6 +43,7 @@ extern "C"
 
 #include "cache/subCache.h"                                    // CachedSubscription, subCacheItemLookup
 
+#include "orionld/types/PernotSubscription.h"                   // PernotSubscription
 #include "orionld/types/OrionldMimeType.h"                     // mimeTypeFromString
 #include "orionld/types/KeyValue.h"                            // KeyValue, keyValueLookup, keyValueAdd
 #include "orionld/types/MqttInfo.h"                            // MqttInfo
@@ -54,6 +55,7 @@ extern "C"
 #include "orionld/context/orionldAttributeExpand.h"            // orionldAttributeExpand
 #include "orionld/payloadCheck/PCHECK.h"                       // PCHECK_URI
 #include "orionld/payloadCheck/pCheckSubscription.h"           // pCheckSubscription
+#include "orionld/q/qBuild.h"                                  // qBuild
 #include "orionld/q/qRelease.h"                                // qRelease
 #include "orionld/mongoc/mongocSubscriptionLookup.h"           // mongocSubscriptionLookup
 #include "orionld/mongoc/mongocSubscriptionReplace.h"          // mongocSubscriptionReplace
@@ -64,6 +66,8 @@ extern "C"
 #include "orionld/mqtt/mqttConnectionEstablish.h"              // mqttConnectionEstablish
 #include "orionld/mqtt/mqttDisconnect.h"                       // mqttDisconnect
 #include "orionld/mqtt/mqttParse.h"                            // mqttParse
+#include "orionld/pernot/pernotSubCacheLookup.h"               // pernotSubCacheLookup
+#include "orionld/pernot/pernotSubCacheUpdate.h"               // pernotSubCacheUpdate
 #include "orionld/serviceRoutines/orionldPatchSubscription.h"  // Own Interface
 
 
@@ -120,7 +124,8 @@ static bool ngsildSubscriptionPatch(KjNode* dbSubscriptionP, CachedSubscription*
   KjNode* fragmentP = patchTree->value.firstChildP;
   KjNode* next;
 
-  cSubP->modifiedAt = orionldState.requestTime;
+  if (cSubP != NULL)
+    cSubP->modifiedAt = orionldState.requestTime;
 
   while (fragmentP != NULL)
   {
@@ -148,7 +153,7 @@ static bool ngsildSubscriptionPatch(KjNode* dbSubscriptionP, CachedSubscription*
       if ((fragmentP != qP) && (fragmentP != expressionP))
         kjChildAddOrReplace(dbSubscriptionP, fragmentP->name, fragmentP);
 
-      if (strcmp(fragmentP->name, "status") == 0)
+      if ((cSubP != NULL) && (strcmp(fragmentP->name, "status") == 0))
       {
         if (strcmp(fragmentP->value.s, "active") == 0)
         {
@@ -945,26 +950,45 @@ bool orionldPatchSubscription(void)
       return false;
     }
   }
-  else  // If the subscription used to be "pernot", watchedAttributes+throtttling cannot be set
+  else  // If the subscription used to be "pernot", watchedAttributes+throttling cannot be set
   {
-#if 0
-    //
-    // These checks really belong to pCheckSubscription() - just need to pass it the dbTimeInterval value
-    //
+    if (timeInterval == 0)
+    {
+      // timeInterval was explicitly set to zero by pCheckSubscription - that means the PATCH body
+      // did NOT contain timeInterval (setting to 0 is rejected by pCheckSubscription).
+      // That's fine - we keep the existing timeInterval from DB.
+      // However, we need to set timeInterval from the DB for the cache update later.
+      timeInterval = dbTimeInterval;
+    }
+
     KjNode* watchedAttributesP = kjLookup(subTree, "watchedAttributes");
     KjNode* throttlingP        = kjLookup(subTree, "throttling");
 
     if (watchedAttributesP != NULL)
-      orionldError(OrionldBadRequestData, "Invalid modification (pernot subscription cannot have watchedAttributes", subscriptionId, 400);
-    if (throttlingP != NULL)
-      orionldError(OrionldBadRequestData, "Invalid modification (pernot subscription cannot have throttlingP", subscriptionId, 400);
-
-    if ((watchedAttributesP != NULL) || (throttlingP != NULL))
+    {
+      if (qNodeP != NULL)
+        qRelease(qNodeP);
+      orionldError(OrionldBadRequestData, "Invalid modification", "pernot subscription cannot have watchedAttributes", 400);
       return false;
-#else
-    orionldError(OrionldOperationNotSupported, "Not Implemented", "Patching of periodic notification subscriptions", 501);
-    return false;
-#endif
+    }
+    if (throttlingP != NULL)
+    {
+      if (qNodeP != NULL)
+        qRelease(qNodeP);
+      orionldError(OrionldBadRequestData, "Invalid modification", "pernot subscription cannot have throttling", 400);
+      return false;
+    }
+
+    //
+    // pCheckSubscription builds the QNode tree with pernot=false when timeInterval is not in the PATCH body.
+    // For pernot subscriptions the QNode tree must be built with pernot=true so that attribute names
+    // are in DB format (dotForEq, .value appended) for mongocEntitiesQuery2.
+    //
+    if (qNodeP != NULL)
+    {
+      qRelease(qNodeP);
+      qNodeP = qBuild(qP->value.s, &qRenderedForDb, &qValidForV2, &qIsMq, true, true);
+    }
   }
 
 
@@ -1016,9 +1040,10 @@ bool orionldPatchSubscription(void)
   // modified.
   // ngsildSubscriptionPatch() performs that modification.
   //
-  CachedSubscription* cSubP = NULL;
+  CachedSubscription*  cSubP = NULL;
+  PernotSubscription*  pSubP = NULL;
 
-  if (timeInterval == 0)
+  if (subWasPernot == false)
   {
     cSubP = subCacheItemLookup(orionldState.tenantP->tenant, subscriptionId);
     if (cSubP == NULL)
@@ -1028,7 +1053,14 @@ bool orionldPatchSubscription(void)
     }
   }
   else
-    KT_X(131, "Can't reach this point, right? ;-)");
+  {
+    pSubP = pernotSubCacheLookup(orionldState.tenantP->tenant, subscriptionId);
+    if (pSubP == NULL)
+    {
+      orionldError(OrionldResourceNotFound, "Subscription not found", subscriptionId, 404);
+      return false;
+    }
+  }
 
   if (ngsildSubscriptionPatch(dbSubscriptionP, cSubP, orionldState.requestTree, qP, geoqP, qRenderedForDb) == false)
   {
@@ -1077,6 +1109,19 @@ bool orionldPatchSubscription(void)
   }
 
   //
+  // If jsonldContext was explicitly patched, update the ldContext in the DB subscription
+  // (dbModelFromApiSubscription sets ldContext from orionldState.contextP which is the @context
+  // of the PATCH request, not the jsonldContext field in the subscription body)
+  //
+  KjNode* patchedJsonldContextP = kjLookup(patchBody, "jsonldContext");
+  if (patchedJsonldContextP != NULL)
+  {
+    KjNode* dbLdContextP = kjLookup(dbSubscriptionP, "ldContext");
+    if (dbLdContextP != NULL)
+      dbLdContextP->value.s = patchedJsonldContextP->value.s;
+  }
+
+  //
   // Overwrite the current Subscription in the database
   //
   if (mongocSubscriptionReplace(subscriptionId, dbSubscriptionP) == false)
@@ -1088,15 +1133,15 @@ bool orionldPatchSubscription(void)
   }
 
   // Modify the subscription in the subscription cache
-  if (timeInterval == 0)
+  if (subWasPernot == false)
   {
     if (subCacheItemUpdate(orionldState.tenantP, subscriptionId, patchBody, geoCoordinatesP, qNodeP, qRenderedForDb, showChangesP) == false)
       KT_E("Internal Error (unable to update the cached subscription '%s' after a PATCH)", subscriptionId);
   }
   else
   {
-    // Update the subscription in the pernot-cache
-    KT_X(1, "Implement PATCH for pernot subscriptions!");
+    if (pernotSubCacheUpdate(pSubP, patchBody, qNodeP, geoCoordinatesP, timeInterval) == false)
+      KT_E("Internal Error (unable to update the cached pernot subscription '%s' after a PATCH)", subscriptionId);
   }
 
   // All OK? 204 No Content

@@ -14,8 +14,13 @@
   #XXXX - Fixed default MQTT port not set when URI has no explicit port (now defaults to 1883/8883)
   #XXXX - Fixed "scope" not skipped in distOpResponses success attribute list
   #XXXX - Fixed Location header for POST /jsonldContexts to use relative path (per ETSI API spec)
+  #XXXX - Fixed crash in pernot notification with simplified format (NULL serviceP dereference)
+  #XXXX - Fixed Ngsild-Attribute-Format header in pernot notifications (was hardcoded to Normalized)
+  #XXXX - Fixed Link header scoping bug in pernot notifications (linkHeader buffer out of scope)
+  #XXXX - Fixed pernot GET rendering to use actual isActive/status instead of hardcoded true/active
 
 ## New Features
+  #XXXX - Implemented PATCH for periodic notification (pernot) subscriptions
   #1905 - New CLI option -troeSslMode (env: ORIONLD_TROE_SSL_MODE) for TRoE Postgres SSL connections
   #XXXX - New CLI option -coreContextDir (env: ORIONLD_CORE_CONTEXT_DIR, default: /opt/orion/ldcontexts)
   #XXXX - Replaced prometheus-client-c with KPROM library for Prometheus metrics
