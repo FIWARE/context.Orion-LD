@@ -85,7 +85,7 @@ bool orionldPostContexts(void)
   contextP->usedAt    = orionldState.requestTime;
   contextP->kind      = OrionldContextHosted;
 
-  httpHeaderLocationAdd(contextP->url, NULL, NULL);
+  httpHeaderLocationAdd("/ngsi-ld/v1/jsonldContexts/", contextP->id, NULL);
 
   orionldContextCachePersist(contextP, false);
   orionldState.httpStatusCode = 201;

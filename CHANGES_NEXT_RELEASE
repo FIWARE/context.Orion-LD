@@ -13,6 +13,7 @@
   #XXXX - Fixed duplicate key error log for context cache persistence (ignore already-persisted contexts)
   #XXXX - Fixed default MQTT port not set when URI has no explicit port (now defaults to 1883/8883)
   #XXXX - Fixed "scope" not skipped in distOpResponses success attribute list
+  #XXXX - Fixed Location header for POST /jsonldContexts to use relative path (per ETSI API spec)
 
 ## New Features
   #1905 - New CLI option -troeSslMode (env: ORIONLD_TROE_SSL_MODE) for TRoE Postgres SSL connections
