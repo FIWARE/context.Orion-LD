@@ -111,6 +111,10 @@ void typeAndAttrsExtractFromMongo(KjNode* inputArray, KjNode* typeArray)
 
       for (KjNode* attrItemP = attrP->value.firstChildP; attrItemP != NULL; attrItemP = attrItemP->next)
       {
+        // The aggregation pipeline produces null entries for entities with empty attrNames - skip them
+        if (attrItemP->type == KjNull || attrItemP->value.s == NULL)
+          continue;
+
         // lookup alias for attribute name in context
         KjNode* arrNodeP  = kjString(orionldState.kjsonP, NULL, orionldContextItemAliasLookup(orionldState.contextP, attrItemP->value.s, NULL, NULL));
         KJSON_ALLOC_CHECK_VOID(arrNodeP);

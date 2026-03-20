@@ -79,7 +79,11 @@ void mongocContextCachePersist(KjNode* contextObject, bool reload)
   sem_post(&mongocContextsSem);
 
   if (r == false)
-    KT_E("Database Error (persisting context: %s)", error.message);
+  {
+    // Duplicate key (error code 11000) just means the context is already persisted - not an error
+    if (error.code != 11000)
+      KT_E("Database Error (persisting context: %s)", error.message);
+  }
 
   bson_destroy(&bson);
 

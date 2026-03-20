@@ -109,8 +109,9 @@ void entityResponseAccumulate(DistOp* distOpP, KjNode* responseBody, KjNode* suc
     // All the attributes were updated - add them all to "successV"
     for (KjNode* attrP = distOpP->requestBody->value.firstChildP; attrP != NULL; attrP = attrP->next)
     {
-      if (strcmp(attrP->name, "id")   == 0) continue;
-      if (strcmp(attrP->name, "type") == 0) continue;
+      if (strcmp(attrP->name, "id")    == 0) continue;
+      if (strcmp(attrP->name, "type")  == 0) continue;
+      if (strcmp(attrP->name, "scope") == 0) continue;
 
       char* shortName = orionldContextItemAliasLookup(orionldState.contextP, attrP->name, NULL, NULL);
 

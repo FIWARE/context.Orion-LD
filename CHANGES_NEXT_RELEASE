@@ -3,6 +3,16 @@
   #XXXX - Fixed query of many large entities (cfreyfh - Carsten Freyh at Fraunhofer IKTS)
   #XXXX - Wait for postgres instead of exiting after the first try - just like for mongo (1 try per second during 30 secs)
   #XXXX - Fixed crash in relationship endpoint when no relations found (cfreyfh)
+  #XXXX - Fixed crash in GET /types when entity has empty attrNames (NULL attr name from MongoDB aggregation)
+  #XXXX - Fixed crash in POST /entityOperations/query when entities array contains non-object items
+  #XXXX - Fixed crash in batch update when entity payload contains "scope" field
+  #XXXX - Fixed crash in PATCH entity when entity doesn't exist locally but distOps are active
+  #XXXX - Fixed crash in TRoE for POST /entities with distOps returning 207 (requestTree was NULL)
+  #XXXX - Fixed TRoE crash on POST /temporal/entities with NULL requestTree
+  #XXXX - Fixed hang on POST /temporal/entities when using -mongocOnly (legacy mongoEntityExists blocked on semaphore)
+  #XXXX - Fixed duplicate key error log for context cache persistence (ignore already-persisted contexts)
+  #XXXX - Fixed default MQTT port not set when URI has no explicit port (now defaults to 1883/8883)
+  #XXXX - Fixed "scope" not skipped in distOpResponses success attribute list
 
 ## New Features
   #1905 - New CLI option -troeSslMode (env: ORIONLD_TROE_SSL_MODE) for TRoE Postgres SSL connections
@@ -10,6 +20,7 @@
   #XXXX - Replaced idiotic prometheus-client-c with KPROM library for Prometheus metrics
   #XXXX - Default user @context served from local files, not only URLs
   #XXXX - MQTTS support - MQTT notifications over TLS (mqtts:// endpoint URIs)
+  #XXXX - New CLI option -distOpTimeout (env: DIST_OP_TIMEOUT, default: 5000ms) for distributed operation timeout
   #XXXX - Experimental support for WebSockets (wip - Work In Progress)
   #XXXX - In-memory geo-fencing for subscriptions using GEOS (no DB round-trip for geo-matching)
 
