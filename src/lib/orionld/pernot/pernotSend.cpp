@@ -165,17 +165,17 @@ bool pernotSend(PernotSubscription* subP, KjNode* entityArray)
   if (subP->renderFormat == RF_CONCISE)
   {
     ioVec[6].iov_base = (void*) conciseHeader;
-    ioVec[6].iov_len  = 34;
+    ioVec[6].iov_len  = strlen(conciseHeader);
   }
   else if ((subP->renderFormat == RF_SIMPLIFIED) || (subP->renderFormat == RF_KEYVALUES))
   {
     ioVec[6].iov_base = (void*) simplifiedHeader;
-    ioVec[6].iov_len  = 38;
+    ioVec[6].iov_len  = strlen(simplifiedHeader);
   }
   else
   {
     ioVec[6].iov_base = (void*) normalizedHeader;
-    ioVec[6].iov_len  = 37;
+    ioVec[6].iov_len  = strlen(normalizedHeader);
   }
 
   int  headerIx      = 7;

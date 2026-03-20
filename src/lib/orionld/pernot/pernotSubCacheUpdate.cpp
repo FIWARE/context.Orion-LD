@@ -1,6 +1,6 @@
 /*
 *
-* Copyright 2024 FIWARE Foundation e.V.
+* Copyright 2026 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -305,6 +305,15 @@ bool pernotSubCacheUpdate
 
   KjNode* langP = kjLookup(pSubP->kjSubP, "lang");
   pSubP->lang = (langP != NULL) ? langP->value.s : NULL;
+
+  //
+  // Update the @context for notifications - only if jsonldContext was explicitly present in the PATCH body.
+  // The jsonldContext node in kjSubP is already updated by the merge loop above.
+  // Here we just update the cached pSubP->context pointer (used for the Link header in notifications).
+  //
+  KjNode* jsonldContextInKjSubP = kjLookup(pSubP->kjSubP, "jsonldContext");
+  if (jsonldContextInKjSubP != NULL)
+    pSubP->context = jsonldContextInKjSubP->value.s;
 
   // Restore state (or new state if isActive was patched)
   pSubP->state = savedState;

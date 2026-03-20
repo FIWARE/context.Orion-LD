@@ -1109,6 +1109,19 @@ bool orionldPatchSubscription(void)
   }
 
   //
+  // If jsonldContext was explicitly patched, update the ldContext in the DB subscription
+  // (dbModelFromApiSubscription sets ldContext from orionldState.contextP which is the @context
+  // of the PATCH request, not the jsonldContext field in the subscription body)
+  //
+  KjNode* patchedJsonldContextP = kjLookup(patchBody, "jsonldContext");
+  if (patchedJsonldContextP != NULL)
+  {
+    KjNode* dbLdContextP = kjLookup(dbSubscriptionP, "ldContext");
+    if (dbLdContextP != NULL)
+      dbLdContextP->value.s = patchedJsonldContextP->value.s;
+  }
+
+  //
   // Overwrite the current Subscription in the database
   //
   if (mongocSubscriptionReplace(subscriptionId, dbSubscriptionP) == false)
