@@ -1,0 +1,362 @@
+# Copyright 2024 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+PATCH Pernot Subscription - various fields
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -pernot -experimental -subCacheFlushIval 3
+
+--SHELL--
+
+#
+# 01. Create a pernot subscription urn:S1
+# 02. GET urn:S1 from cache - see original values
+# 03. PATCH urn:S1 - update description, timeInterval, isActive, notification endpoint
+# 04. GET urn:S1 from cache - see updated values
+# 05. GET urn:S1 from database - see updated values
+# 06. PATCH urn:S1 - reactivate subscription
+# 07. GET urn:S1 from cache - see active status
+# 08. Attempt to PATCH urn:S1 with watchedAttributes - see 400
+# 09. Attempt to PATCH urn:S1 with throttling - see 400
+#
+
+echo "01. Create a pernot subscription urn:S1"
+echo "======================================="
+payload='{
+  "id": "urn:S1",
+  "type": "Subscription",
+  "description": "Original Description",
+  "subscriptionName": "S1",
+  "entities": [
+    {
+      "type": "T"
+    }
+  ],
+  "timeInterval": 5,
+  "notification": {
+    "attributes": [ "P1" ],
+    "endpoint": {
+      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "accept": "application/json"
+    },
+    "format": "normalized"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload"
+echo
+echo
+
+
+echo "02. GET urn:S1 from cache - see original values"
+echo "================================================"
+orionCurl --url /ngsi-ld/v1/subscriptions/urn:S1
+echo
+echo
+
+
+echo "03. PATCH urn:S1 - update description, timeInterval, isActive, notification endpoint"
+echo "====================================================================================="
+payload='{
+  "description": "Updated Description",
+  "timeInterval": 10,
+  "isActive": false,
+  "notification": {
+    "endpoint": {
+      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify2",
+      "accept": "application/ld+json"
+    },
+    "format": "simplified"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions/urn:S1 --payload "$payload" -X PATCH
+echo
+echo
+
+
+echo "04. GET urn:S1 from cache - see updated values"
+echo "==============================================="
+orionCurl --url /ngsi-ld/v1/subscriptions/urn:S1
+echo
+echo
+
+
+echo "05. GET urn:S1 from database - see updated values"
+echo "=================================================="
+orionCurl --url '/ngsi-ld/v1/subscriptions/urn:S1?options=fromDb'
+echo
+echo
+
+
+echo "06. PATCH urn:S1 - reactivate subscription"
+echo "==========================================="
+payload='{
+  "isActive": true
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions/urn:S1 --payload "$payload" -X PATCH
+echo
+echo
+
+
+echo "07. GET urn:S1 from cache - see active status"
+echo "=============================================="
+orionCurl --url /ngsi-ld/v1/subscriptions/urn:S1
+echo
+echo
+
+
+echo "08. Attempt to PATCH urn:S1 with watchedAttributes - see 400"
+echo "============================================================="
+payload='{
+  "watchedAttributes": [ "P1" ]
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions/urn:S1 --payload "$payload" -X PATCH
+echo
+echo
+
+
+echo "09. Attempt to PATCH urn:S1 with throttling - see 400"
+echo "======================================================"
+payload='{
+  "throttling": 5
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions/urn:S1 --payload "$payload" -X PATCH
+echo
+echo
+
+
+--REGEXPECT--
+01. Create a pernot subscription urn:S1
+=======================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/subscriptions/urn:S1
+
+
+
+02. GET urn:S1 from cache - see original values
+================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "description": "Original Description",
+    "entities": [
+        {
+            "type": "T"
+        }
+    ],
+    "id": "urn:S1",
+    "isActive": true,
+    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
+    "notification": {
+        "attributes": [
+            "P1"
+        ],
+        "endpoint": {
+            "accept": "application/json",
+            "uri": "http://REGEX(.*)/notify"
+        },
+        "format": "normalized",
+        "lastNotification": "REGEX(.*)",
+        "noMatch": REGEX(\d+),
+        "status": "ok",
+        "timesSent": REGEX(\d+)
+    },
+    "origin": "cache",
+    "status": "active",
+    "subscriptionName": "S1",
+    "timeInterval": 5,
+    "type": "Subscription"
+}
+
+
+03. PATCH urn:S1 - update description, timeInterval, isActive, notification endpoint
+=====================================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+04. GET urn:S1 from cache - see updated values
+===============================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "description": "Updated Description",
+    "entities": [
+        {
+            "type": "T"
+        }
+    ],
+    "id": "urn:S1",
+    "isActive": false,
+    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
+    "notification": {
+        "attributes": [
+            "P1"
+        ],
+        "endpoint": {
+            "accept": "application/ld+json",
+            "uri": "http://REGEX(.*)/notify2"
+        },
+        "format": "simplified",
+        "lastNotification": "REGEX(.*)",
+        "noMatch": REGEX(\d+),
+        "status": "ok",
+        "timesSent": REGEX(\d+)
+    },
+    "origin": "cache",
+    "status": "paused",
+    "subscriptionName": "S1",
+    "timeInterval": 10,
+    "type": "Subscription"
+}
+
+
+05. GET urn:S1 from database - see updated values
+==================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "description": "Updated Description",
+    "entities": [
+        {
+            "type": "T"
+        }
+    ],
+    "id": "urn:S1",
+    "isActive": false,
+    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
+    "notification": {
+        "attributes": [
+            "P1"
+        ],
+        "endpoint": {
+            "accept": "application/ld+json",
+            "uri": "http://REGEX(.*)/notify2"
+        },
+        "format": "simplified",
+        "lastNotification": "REGEX(.*)",
+        "noMatch": REGEX(\d+),
+        "status": "ok",
+        "timesSent": REGEX(\d+)
+    },
+    "origin": "database",
+    "status": "paused",
+    "subscriptionName": "S1",
+    "timeInterval": 10,
+    "type": "Subscription"
+}
+
+
+06. PATCH urn:S1 - reactivate subscription
+===========================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+07. GET urn:S1 from cache - see active status
+==============================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "description": "Updated Description",
+    "entities": [
+        {
+            "type": "T"
+        }
+    ],
+    "id": "urn:S1",
+    "isActive": true,
+    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
+    "notification": {
+        "attributes": [
+            "P1"
+        ],
+        "endpoint": {
+            "accept": "application/ld+json",
+            "uri": "http://REGEX(.*)/notify2"
+        },
+        "format": "simplified",
+        "lastNotification": "REGEX(.*)",
+        "noMatch": REGEX(\d+),
+        "status": "ok",
+        "timesSent": REGEX(\d+)
+    },
+    "origin": "cache",
+    "status": "active",
+    "subscriptionName": "S1",
+    "timeInterval": 10,
+    "type": "Subscription"
+}
+
+
+08. Attempt to PATCH urn:S1 with watchedAttributes - see 400
+=============================================================
+HTTP/1.1 400 Bad Request
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "pernot subscription cannot have watchedAttributes",
+    "title": "Invalid modification",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/BadRequestData"
+}
+
+
+09. Attempt to PATCH urn:S1 with throttling - see 400
+======================================================
+HTTP/1.1 400 Bad Request
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "pernot subscription cannot have throttling",
+    "title": "Invalid modification",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/BadRequestData"
+}
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
