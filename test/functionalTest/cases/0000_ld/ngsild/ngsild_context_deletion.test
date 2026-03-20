@@ -53,7 +53,7 @@ payload='{
   }
 }'
 orionCurl --url /ngsi-ld/v1/jsonldContexts --payload "$payload"
-urlA="/"$(echo "$_responseHeaders" | grep Location: | awk -F:9999/ '{ print $2 }' | tr -d "\r\n")
+urlA=$(echo "$_responseHeaders" | grep Location: | awk -F'Location: ' '{ print $2 }' | tr -d "\r\n")
 echo URL of context A: $urlA
 echo
 echo
@@ -69,7 +69,7 @@ payload='{
   }
 }'
 orionCurl --url /ngsi-ld/v1/jsonldContexts --payload "$payload"
-urlB="/"$(echo "$_responseHeaders" | grep Location: | awk -F:9999/ '{ print $2 }' | tr -d "\r\n")
+urlB=$(echo "$_responseHeaders" | grep Location: | awk -F'Location: ' '{ print $2 }' | tr -d "\r\n")
 echo URL of context B: $urlB
 echo
 echo
@@ -85,7 +85,7 @@ payload='{
   }
 }'
 orionCurl --url /ngsi-ld/v1/jsonldContexts --payload "$payload"
-urlC="/"$(echo "$_responseHeaders" | grep Location: | awk -F:9999/ '{ print $2 }' | tr -d "\r\n")
+urlC=$(echo "$_responseHeaders" | grep Location: | awk -F'Location: ' '{ print $2 }' | tr -d "\r\n")
 echo URL of context C: $urlC
 echo
 echo
@@ -133,7 +133,7 @@ echo
 HTTP/1.1 201 Created
 Content-Length: 0
 Date: REGEX(.*)
-Location: http://REGEX(.*)
+Location: /ngsi-ld/v1/jsonldContexts/REGEX(.*)
 
 URL of context A: REGEX(.*)
 
@@ -143,7 +143,7 @@ URL of context A: REGEX(.*)
 HTTP/1.1 201 Created
 Content-Length: 0
 Date: REGEX(.*)
-Location: http://REGEX(.*)
+Location: /ngsi-ld/v1/jsonldContexts/REGEX(.*)
 
 URL of context B: REGEX(.*)
 
@@ -153,7 +153,7 @@ URL of context B: REGEX(.*)
 HTTP/1.1 201 Created
 Content-Length: 0
 Date: REGEX(.*)
-Location: http://REGEX(.*)
+Location: /ngsi-ld/v1/jsonldContexts/REGEX(.*)
 
 URL of context C: REGEX(.*)
 
