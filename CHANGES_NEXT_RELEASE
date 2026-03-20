@@ -17,7 +17,7 @@
 ## New Features
   #1905 - New CLI option -troeSslMode (env: ORIONLD_TROE_SSL_MODE) for TRoE Postgres SSL connections
   #XXXX - New CLI option -coreContextDir (env: ORIONLD_CORE_CONTEXT_DIR, default: /opt/orion/ldcontexts)
-  #XXXX - Replaced idiotic prometheus-client-c with KPROM library for Prometheus metrics
+  #XXXX - Replaced prometheus-client-c with KPROM library for Prometheus metrics
   #XXXX - Default user @context served from local files, not only URLs
   #XXXX - MQTTS support - MQTT notifications over TLS (mqtts:// endpoint URIs)
   #XXXX - New CLI option -distOpTimeout (env: DIST_OP_TIMEOUT, default: 5000ms) for distributed operation timeout
