@@ -825,7 +825,7 @@ bool distOpSend(DistOp* distOpP, const char* dateHeader, const char* xForwardedF
   // CURL Options
   //
   curl_easy_setopt(distOpP->curlHandle, CURLOPT_CUSTOMREQUEST, orionldState.verbString);
-  curl_easy_setopt(distOpP->curlHandle, CURLOPT_TIMEOUT_MS, 5000);                     // Timeout - hard-coded to 5 seconds for now ...
+  curl_easy_setopt(distOpP->curlHandle, CURLOPT_TIMEOUT_MS, distOpTimeout);
   // curl_easy_setopt(distOpP->curlHandle, CURLOPT_FAILONERROR, true);                 // Fail On Error - to detect 404 etc.
   curl_easy_setopt(distOpP->curlHandle, CURLOPT_FOLLOWLOCATION, 1L);                   // Follow redirections
 

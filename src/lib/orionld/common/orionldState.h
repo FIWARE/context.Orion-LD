@@ -480,7 +480,8 @@ typedef struct OrionldConnectionState
   // TRoE
   //
   bool                    noDbUpdate;            // If nothing changed in DB - troe is not invoked
-  bool                    troeError;
+  bool                    troeError;              // Unused - TODO: remove
+  bool                    noTroe;                 // Skip TRoE for this request (e.g. local insert failed in a 207 distOp)
   KjNode*                 duplicateArray;
   KjNode*                 troeIgnoreV[20];
   unsigned int            troeIgnoreIx;
@@ -618,6 +619,7 @@ extern char              dbURI[];                  // From orionld.cpp
 extern bool              multitenancy;             // From orionld.cpp
 extern int               contextDownloadAttempts;  // From orionld.cpp
 extern int               contextDownloadTimeout;   // From orionld.cpp
+extern int               distOpTimeout;            // From orionld.cpp
 extern int               subCacheInterval;         // From orionld.cpp
 extern int               subCacheFlushInterval;    // From orionld.cpp
 extern bool              troe;                     // From orionld.cpp

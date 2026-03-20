@@ -219,6 +219,7 @@ bool            disableCusNotif;
 bool            logForHumans;
 bool            disableMetrics;
 int             reqTimeout;
+int             distOpTimeout;
 bool            insecureNotif;
 bool            ngsiv1Autocast;
 int             contextDownloadAttempts;
@@ -318,6 +319,7 @@ bool            kTraceInfo       = false;
 #define LOG_FOR_HUMANS_DESC    "human readible log to screen"
 #define METRICS_DESC           "turn off the 'metrics' feature"
 #define REQ_TMO_DESC           "connection timeout for REST requests (in seconds)"
+#define DIST_OP_TMO_DESC       "timeout in milliseconds for distributed/forwarded requests"
 #define INSECURE_NOTIF         "allow HTTPS notifications to peers which certificate cannot be authenticated with known CA certificates"
 #define NGSIV1_AUTOCAST        "automatic cast for number, booleans and dates in NGSIv1 update/create attribute operations"
 #define TROE_DESC              "enable TRoE - temporal representation of entities"
@@ -408,6 +410,7 @@ PaArgument paArgs[] =
   { "-multiservice",          &multitenancy,            "MULTI_SERVICE",             PaBool,    PaOpt,  false,            false,  true,             MULTISERVICE_DESC        },
   { "-httpTimeout",           &httpTimeout,             "HTTP_TIMEOUT",              PaLong,    PaOpt,  -1,               -1,     MAX_L,            HTTP_TMO_DESC            },
   { "-reqTimeout",            &reqTimeout,              "REQ_TIMEOUT",               PaLong,    PaOpt,   0,               0,      PaNL,             REQ_TMO_DESC             },
+  { "-distOpTimeout",         &distOpTimeout,           "DIST_OP_TIMEOUT",           PaInt,     PaOpt,   5000,            0,      60000,            DIST_OP_TMO_DESC         },
   { "-reqMutexPolicy",        reqMutexPolicy,           "MUTEX_POLICY",              PaString,  PaOpt,  _i "none",        PaNL,   PaNL,             MUTEX_POLICY_DESC        },
   { "-corsOrigin",            allowedOrigin,            "CORS_ALLOWED_ORIGIN",       PaString,  PaOpt,  _i "",            PaNL,   PaNL,             ALLOWED_ORIGIN_DESC      },
   { "-corsMaxAge",            &maxAge,                  "CORS_MAX_AGE",              PaInt,     PaOpt,  86400,            -1,     86400,            CORS_MAX_AGE_DESC        },
@@ -1440,7 +1443,6 @@ int main(int argC, char* argV[])
   }
 
   KT_I("Initialization is Done");
-  KT_I("  Accepting REST requests on port %d (experimental API endpoints are %sabled)", port, (experimental == true)? "en" : "dis");
   KT_I("  TRoE:                      %s", (troe               == true)? "Enabled" : "Disabled");
   KT_I("  Distributed Operation:     %s", (distributed        == true)? "Enabled" : "Disabled");
   KT_I("  Health Check:              %s", (socketService      == true)? "Enabled" : "Disabled");
@@ -1495,6 +1497,8 @@ int main(int argC, char* argV[])
   // Start the thread for periodic notifications
   if (pernot == true)
     pernotLoopStart();
+
+  KT_I("  Accepting REST requests on port %d (experimental API endpoints are %sabled)", port, (experimental == true)? "en" : "dis");
 
   if (socketService == true)
   {

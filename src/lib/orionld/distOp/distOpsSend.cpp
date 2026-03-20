@@ -162,7 +162,7 @@ int distOpsSend2(DistOpListItem* distOpList)
 
       if (stillRunning != 0)
       {
-        cm = curl_multi_wait(orionldState.curlDoMultiP, NULL, 0, 5000, NULL);
+        cm = curl_multi_wait(orionldState.curlDoMultiP, NULL, 0, distOpTimeout, NULL);
         if (cm != CURLM_OK)
         {
           KT_E("Internal Error (curl_multi_wait: error %d", cm);

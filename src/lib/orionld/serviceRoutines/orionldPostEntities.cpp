@@ -228,7 +228,10 @@ bool orionldPostEntities(void)
     if (distOpList == NULL)  // Purely local request
       return false;
     else
+    {
+      orionldState.noTroe = true;  // Local DB model conversion failed - don't invoke TRoE
       goto awaitDoResponses;
+    }
   }
 
   dbEntityP = orionldState.requestTree;  // More adequate to talk about DB-Entity after the call to dbModelFromApiEntity
@@ -245,6 +248,7 @@ bool orionldPostEntities(void)
       return false;
     else
     {
+      orionldState.noTroe = true;  // Local insert failed - don't invoke TRoE
       distOpFailure(responseBody, NULL, "Database Error", "mongocEntityInsert failed", 500, NULL);
       goto awaitDoResponses;
     }
@@ -309,6 +313,9 @@ bool orionldPostEntities(void)
   }
 
  awaitDoResponses:
+  if (cloneForTroeP != NULL)
+    orionldState.requestTree = cloneForTroeP;
+
   if (distOpList != NULL)
     distOpResponses(distOpList, responseBody);
 

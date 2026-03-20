@@ -69,7 +69,7 @@ bool orionldDeleteSubscription(void)
   if (cSubP == NULL)
   {
     if (noCache == false)
-      KT_W("The subscription '%s' was successfully removed from DB but does not exist in sub-cache ... (sub-cache is enabled)");
+      KT_W("The subscription '%s' was successfully removed from DB but does not exist in sub-cache ... (sub-cache is enabled)", orionldState.wildcard[0]);
 
     //
     // FIXME: If mqtt, we need to disconnect from MQTT broker
