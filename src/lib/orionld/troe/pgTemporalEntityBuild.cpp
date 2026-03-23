@@ -42,6 +42,28 @@ extern "C"
 
 // -----------------------------------------------------------------------------
 //
+// pgTimestampToIso8601 - convert PostgreSQL timestamp "2024-06-15 10:00:00" to ISO 8601 "2024-06-15T10:00:00Z"
+//
+static void pgTimestampToIso8601(const char* pgTs, char* iso, int isoSize)
+{
+  snprintf(iso, isoSize, "%s", pgTs);
+
+  char* space = strchr(iso, ' ');
+  if (space != NULL)
+    *space = 'T';
+
+  int len = strlen(iso);
+  if (len > 0 && iso[len - 1] != 'Z')
+  {
+    iso[len]     = 'Z';
+    iso[len + 1] = 0;
+  }
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // Column indices for the attributes query result
 //
 #define ATTR_COL_ID                 0
@@ -269,12 +291,16 @@ KjNode* pgTemporalEntityBuild
     if (valueNodeP != NULL)
       kjChildAdd(instanceP, valueNodeP);
 
-    // Add observedAt if present
+    // Add observedAt if present (convert PG timestamp to ISO 8601)
     if (!PQgetisnull(attrRes, row, ATTR_COL_OBSERVEDAT))
     {
       const char* observedAt = PQgetvalue(attrRes, row, ATTR_COL_OBSERVEDAT);
       if (observedAt[0] != 0)
-        kjChildAdd(instanceP, kjString(orionldState.kjsonP, "observedAt", observedAt));
+      {
+        char isoTime[64];
+        pgTimestampToIso8601(observedAt, isoTime, sizeof(isoTime));
+        kjChildAdd(instanceP, kjString(orionldState.kjsonP, "observedAt", isoTime));
+      }
     }
 
     // Add instanceId if present
@@ -328,12 +354,16 @@ KjNode* pgTemporalEntityBuild
           if (subValueP != NULL)
             kjChildAdd(subAttrNodeP, subValueP);
 
-          // Sub-attribute observedAt
+          // Sub-attribute observedAt (convert PG timestamp to ISO 8601)
           if (!PQgetisnull(subAttrRes, sRow, SUBATTR_COL_OBSERVEDAT))
           {
             const char* subObservedAt = PQgetvalue(subAttrRes, sRow, SUBATTR_COL_OBSERVEDAT);
             if (subObservedAt[0] != 0)
-              kjChildAdd(subAttrNodeP, kjString(orionldState.kjsonP, "observedAt", subObservedAt));
+            {
+              char isoTime[64];
+              pgTimestampToIso8601(subObservedAt, isoTime, sizeof(isoTime));
+              kjChildAdd(subAttrNodeP, kjString(orionldState.kjsonP, "observedAt", isoTime));
+            }
           }
 
           // Sub-attribute unitCode
