@@ -183,11 +183,9 @@ bool pgTemporalEntityQuery
   int  nParams;
 
   const char* opmodeFilter = createdAtFilter ? " AND opmode = 'Create'" : " AND opmode != 'Delete'";
-  const char* tsOrder;
 
   if (strcmp(timerel, "before") == 0)
   {
-    tsOrder = "DESC";
     nParams = 2;
 
     snprintf(entityQuery, sizeof(entityQuery),
@@ -221,7 +219,6 @@ bool pgTemporalEntityQuery
   }
   else if (strcmp(timerel, "after") == 0)
   {
-    tsOrder = "ASC";
     nParams = 2;
 
     snprintf(entityQuery, sizeof(entityQuery),
@@ -255,7 +252,6 @@ bool pgTemporalEntityQuery
   }
   else if (strcmp(timerel, "between") == 0)
   {
-    tsOrder = "DESC";
     nParams = 3;
 
     snprintf(entityQuery, sizeof(entityQuery),
