@@ -179,7 +179,7 @@ Append,https://uri.etsi.org/ngsi-ld/default-context/P2,String,urn:ngsi-ld:entiti
 Create,https://uri.etsi.org/ngsi-ld/default-context/R1,Relationship,urn:ngsi-ld:entities:E1,urn:ngsi-ld:entities:E2,,,2024-01-01 10:00:00
 
 
-05. GET /temporal/entities/E1?timerel=before&timeAt=<now> - should get all latest attrs
+05. GET /temporal/entities/E1?timerel=before&timeAt=<now> - should get all instances as arrays
 =======================================================================================
 HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
@@ -188,27 +188,59 @@ Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
-    "B1": {
-        "observedAt": "REGEX(.*)",
-        "type": "Property",
-        "value": false
-    },
-    "P1": {
-        "observedAt": "REGEX(.*)",
-        "type": "Property",
-        "unitCode": "CEL",
-        "value": REGEX(\d.*)
-    },
-    "P2": {
-        "observedAt": "REGEX(.*)",
-        "type": "Property",
-        "value": "hello"
-    },
-    "R1": {
-        "object": "urn:ngsi-ld:entities:E2",
-        "observedAt": "REGEX(.*)",
-        "type": "Relationship"
-    },
+    "B1": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T12:00:00Z",
+            "type": "Property",
+            "value": false
+        },
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T10:00:00Z",
+            "type": "Property",
+            "value": true
+        }
+    ],
+    "P1": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T12:00:00Z",
+            "type": "Property",
+            "unitCode": "CEL",
+            "value": 30
+        },
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T11:00:00Z",
+            "type": "Property",
+            "unitCode": "CEL",
+            "value": 20
+        },
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T10:00:00Z",
+            "type": "Property",
+            "unitCode": "CEL",
+            "value": 10
+        }
+    ],
+    "P2": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T11:00:00Z",
+            "type": "Property",
+            "value": "hello"
+        }
+    ],
+    "R1": [
+        {
+            "instanceId": "REGEX(.*)",
+            "object": "urn:ngsi-ld:entities:E2",
+            "observedAt": "2024-01-01T10:00:00Z",
+            "type": "Relationship"
+        }
+    ],
     "id": "urn:ngsi-ld:entities:E1",
     "type": "T"
 }
@@ -223,27 +255,59 @@ Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
-    "B1": {
-        "observedAt": "REGEX(.*)",
-        "type": "Property",
-        "value": REGEX(.*)
-    },
-    "P1": {
-        "observedAt": "REGEX(.*)",
-        "type": "Property",
-        "unitCode": "CEL",
-        "value": REGEX(\d.*)
-    },
-    "P2": {
-        "observedAt": "REGEX(.*)",
-        "type": "Property",
-        "value": "hello"
-    },
-    "R1": {
-        "object": "urn:ngsi-ld:entities:E2",
-        "observedAt": "REGEX(.*)",
-        "type": "Relationship"
-    },
+    "B1": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T10:00:00Z",
+            "type": "Property",
+            "value": true
+        },
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T12:00:00Z",
+            "type": "Property",
+            "value": false
+        }
+    ],
+    "P1": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T10:00:00Z",
+            "type": "Property",
+            "unitCode": "CEL",
+            "value": 10
+        },
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T11:00:00Z",
+            "type": "Property",
+            "unitCode": "CEL",
+            "value": 20
+        },
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T12:00:00Z",
+            "type": "Property",
+            "unitCode": "CEL",
+            "value": 30
+        }
+    ],
+    "P2": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T11:00:00Z",
+            "type": "Property",
+            "value": "hello"
+        }
+    ],
+    "R1": [
+        {
+            "instanceId": "REGEX(.*)",
+            "object": "urn:ngsi-ld:entities:E2",
+            "observedAt": "2024-01-01T10:00:00Z",
+            "type": "Relationship"
+        }
+    ],
     "id": "urn:ngsi-ld:entities:E1",
     "type": "T"
 }
@@ -258,10 +322,21 @@ Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
-    "B1": false,
-    "P1": REGEX(\d.*),
-    "P2": "hello",
-    "R1": "urn:ngsi-ld:entities:E2",
+    "B1": [
+        false,
+        true
+    ],
+    "P1": [
+        30,
+        20,
+        10
+    ],
+    "P2": [
+        "hello"
+    ],
+    "R1": [
+        "urn:ngsi-ld:entities:E2"
+    ],
     "id": "urn:ngsi-ld:entities:E1",
     "type": "T"
 }

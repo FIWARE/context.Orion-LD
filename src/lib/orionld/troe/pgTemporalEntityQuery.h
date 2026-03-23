@@ -37,6 +37,7 @@ extern bool pgTemporalEntityQuery
   const char*  timerel,
   const char*  timeAt,
   const char*  endTimeAt,
+  const char*  timeproperty,
   PGresult**   entityResP,
   PGresult**   attrResP,
   PGresult**   subAttrResP

@@ -2,12 +2,12 @@
 
 ## Overview
 
-Orion-LD implements Temporal Representation of Entities (TRoE) using a dual-database architecture:
+Orion-LD implements Temporal Representation of Entities (TRoE) as a PostgreSQL-based temporal history subsystem:
 
-- **MongoDB** — stores the current state of entities (latest attribute values)
-- **PostgreSQL** (with PostGIS) — stores the full temporal history of all entity changes
+- **TRoE (PostgreSQL with PostGIS)** — stores the full temporal history of all entity changes
+- **MongoDB** — a separate subsystem that stores the current state of entities (latest attribute values). MongoDB is not part of TRoE.
 
-Every entity creation, update, or deletion is recorded in both databases. MongoDB reflects the "now" state, while PostgreSQL keeps the complete timeline.
+Every entity creation, update, or deletion is recorded in both databases. MongoDB reflects the "now" state, while TRoE (PostgreSQL) keeps the complete timeline.
 
 ## Data Flow
 
@@ -38,17 +38,17 @@ HTTP Request / Kafka Message
 GET /ngsi-ld/v1/temporal/entities/{entityId}?timerel=before&timeAt=<ts>
        |
        v
-  Parameter Validation (timerel, timeAt, endTimeAt)
+  Parameter Validation (timerel, timeAt, endTimeAt, timeproperty)
        |
        v
   PostgreSQL Queries (3 queries):
        |
        +-- 1. Entity type at timestamp (entities table)
-       +-- 2. Latest attribute values (DISTINCT ON + ORDER BY ts DESC)
-       +-- 3. Sub-attributes for matching attributes
+       +-- 2. All attribute instances in time window (ORDER BY id, datasetId, ts)
+       +-- 3. Sub-attributes for matching attribute instances
        |
        v
-  Response Building (PGresult → KjNode NGSI-LD entity tree)
+  Response Building (PGresult → KjNode arrays of attribute instances)
        |
        v
   Format Transformation (normalized / simplified / concise)
@@ -86,23 +86,22 @@ Kafka Topic
 
 The Kafka path reuses the exact same validation and database pipeline as the REST API, ensuring data consistency. See [TRoE documentation](../manuals-ld/troe.md) for Kafka configuration details.
 
-## Point-in-Time Entity Reconstruction
+## Temporal Entity Retrieval
 
-The key SQL pattern for reconstructing an entity at a specific point in time:
+The key SQL pattern retrieves all attribute instances within the requested time window:
 
 ```sql
--- Get the latest value for each attribute at or before timestamp
-SELECT DISTINCT ON (id, "datasetId")
-  id, "valueType"::text, text, boolean, number, datetime, compound,
-  "observedAt", "unitCode", "datasetId", "subProperties",
+-- Get all attribute instances within the time window
+SELECT id, "valueType"::text, text, boolean, number, datetime, compound,
+  "observedAt", "unitCode", "datasetId", "subProperties", "instanceId",
   ST_AsGeoJSON("geoPoint") as "geoPoint",
   ...
 FROM attributes
-WHERE "entityId" = $1 AND ts <= $2 AND "opMode" != 'Delete'
+WHERE "entityId" = $1 AND "observedAt" <= $2 AND "opMode" != 'Delete'
 ORDER BY id, "datasetId", ts DESC;
 ```
 
-`DISTINCT ON` combined with `ORDER BY ts DESC` selects the most recent row for each unique `(id, datasetId)` combination, effectively giving the "snapshot" of all attribute values at the requested time.
+The result is grouped by attribute name and returned as arrays of attribute instances per the NGSI-LD temporal representation (ETSI GS CIM 009, Clause 4.5.6). The `timeproperty` URL parameter controls which time column is used for filtering (`observedAt`, `modifiedAt`, or `createdAt`).
 
 ## Supported Value Types
 

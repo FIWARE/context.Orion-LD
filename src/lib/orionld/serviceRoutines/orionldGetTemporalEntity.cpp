@@ -69,9 +69,10 @@ bool orionldGetTemporalEntity(void)
     return false;
 
   // Validate temporal query parameters
-  const char* timerel   = orionldState.uriParams.timerel;
-  const char* timeAt    = orionldState.uriParams.timeAt;
-  const char* endTimeAt = orionldState.uriParams.endTimeAt;
+  const char* timerel      = orionldState.uriParams.timerel;
+  const char* timeAt       = orionldState.uriParams.timeAt;
+  const char* endTimeAt    = orionldState.uriParams.endTimeAt;
+  const char* timeproperty = orionldState.uriParams.timeproperty;  // NULL means default (observedAt)
 
   if (timerel == NULL)
   {
@@ -104,7 +105,7 @@ bool orionldGetTemporalEntity(void)
   PGresult* attrRes    = NULL;
   PGresult* subAttrRes = NULL;
 
-  if (pgTemporalEntityQuery(entityId, timerel, timeAt, endTimeAt, &entityRes, &attrRes, &subAttrRes) == false)
+  if (pgTemporalEntityQuery(entityId, timerel, timeAt, endTimeAt, timeproperty, &entityRes, &attrRes, &subAttrRes) == false)
   {
     orionldError(OrionldInternalError, "Database Error", "temporal query against TRoE failed", 500);
     return false;

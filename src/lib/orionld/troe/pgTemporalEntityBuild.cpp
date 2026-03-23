@@ -61,6 +61,7 @@ extern "C"
 #define ATTR_COL_GEOMULTIPOLYGON    14
 #define ATTR_COL_GEOLINESTRING      15
 #define ATTR_COL_GEOMULTILINESTRING 16
+#define ATTR_COL_INSTANCEID         17
 
 // Column indices for the sub-attributes query result
 #define SUBATTR_COL_ID              0
@@ -209,6 +210,10 @@ static const char* pgAttrTypeString(const char* valueType)
 //
 // pgTemporalEntityBuild -
 //
+// Builds a Temporal Representation of an Entity per ETSI GS CIM 009 (Clause 4.5.6).
+// Each attribute is an array of instances, where each instance has its own
+// type, value, observedAt, instanceId, unitCode, datasetId, and sub-attributes.
+//
 KjNode* pgTemporalEntityBuild
 (
   PGresult*  entityRes,
@@ -227,17 +232,34 @@ KjNode* pgTemporalEntityBuild
   kjChildAdd(entityP, kjString(orionldState.kjsonP, "id", entityId));
   kjChildAdd(entityP, kjString(orionldState.kjsonP, "type", entityType));
 
-  // Add attributes
-  int attrRows = PQntuples(attrRes);
+  //
+  // Build attribute arrays.
+  // Rows are ordered by (id, datasetid, ts), so we group consecutive rows
+  // with the same attribute name into a single array.
+  //
+  int          attrRows        = PQntuples(attrRes);
+  const char*  currentAttrName = NULL;
+  KjNode*      currentArray    = NULL;
+
   for (int row = 0; row < attrRows; row++)
   {
     const char* attrId    = PQgetvalue(attrRes, row, ATTR_COL_ID);
     const char* valueType = PQgetvalue(attrRes, row, ATTR_COL_VALUETYPE);
     const char* datasetId = PQgetvalue(attrRes, row, ATTR_COL_DATASETID);
 
-    // Build the attribute object
-    KjNode* attrNodeP = kjObject(orionldState.kjsonP, attrId);
-    kjChildAdd(attrNodeP, kjString(orionldState.kjsonP, "type", pgAttrTypeString(valueType)));
+    // New attribute name? Start a new array
+    if (currentAttrName == NULL || strcmp(attrId, currentAttrName) != 0)
+    {
+      if (currentArray != NULL)
+        kjChildAdd(entityP, currentArray);
+
+      currentArray    = kjArray(orionldState.kjsonP, attrId);
+      currentAttrName = attrId;
+    }
+
+    // Build instance object
+    KjNode* instanceP = kjObject(orionldState.kjsonP, NULL);
+    kjChildAdd(instanceP, kjString(orionldState.kjsonP, "type", pgAttrTypeString(valueType)));
 
     // Add value
     KjNode* valueNodeP = pgValueNodeBuild(attrRes, row, ATTR_COL_VALUETYPE,
@@ -245,14 +267,22 @@ KjNode* pgTemporalEntityBuild
                                            ATTR_COL_NUMBER, ATTR_COL_DATETIME,
                                            ATTR_COL_COMPOUND, ATTR_COL_GEOPOINT);
     if (valueNodeP != NULL)
-      kjChildAdd(attrNodeP, valueNodeP);
+      kjChildAdd(instanceP, valueNodeP);
 
     // Add observedAt if present
     if (!PQgetisnull(attrRes, row, ATTR_COL_OBSERVEDAT))
     {
       const char* observedAt = PQgetvalue(attrRes, row, ATTR_COL_OBSERVEDAT);
       if (observedAt[0] != 0)
-        kjChildAdd(attrNodeP, kjString(orionldState.kjsonP, "observedAt", observedAt));
+        kjChildAdd(instanceP, kjString(orionldState.kjsonP, "observedAt", observedAt));
+    }
+
+    // Add instanceId if present
+    if (!PQgetisnull(attrRes, row, ATTR_COL_INSTANCEID))
+    {
+      const char* instanceId = PQgetvalue(attrRes, row, ATTR_COL_INSTANCEID);
+      if (instanceId[0] != 0)
+        kjChildAdd(instanceP, kjString(orionldState.kjsonP, "instanceId", instanceId));
     }
 
     // Add unitCode if present
@@ -260,26 +290,29 @@ KjNode* pgTemporalEntityBuild
     {
       const char* unitCode = PQgetvalue(attrRes, row, ATTR_COL_UNITCODE);
       if (unitCode[0] != 0)
-        kjChildAdd(attrNodeP, kjString(orionldState.kjsonP, "unitCode", unitCode));
+        kjChildAdd(instanceP, kjString(orionldState.kjsonP, "unitCode", unitCode));
     }
 
     // Add datasetId if non-empty and not the default value
     if (datasetId[0] != 0 && strcmp(datasetId, "@none") != 0 && strcmp(datasetId, "None") != 0)
-      kjChildAdd(attrNodeP, kjString(orionldState.kjsonP, "datasetId", datasetId));
+      kjChildAdd(instanceP, kjString(orionldState.kjsonP, "datasetId", datasetId));
 
-    // Add sub-attributes for this attribute
+    // Add sub-attributes for this attribute instance
     if (!PQgetisnull(attrRes, row, ATTR_COL_SUBPROPERTIES))
     {
       const char* subProps = PQgetvalue(attrRes, row, ATTR_COL_SUBPROPERTIES);
       if (subProps[0] == 't')  // boolean true in postgres text format
       {
+        // Get the instanceId of the current attribute to match sub-attributes
+        const char* attrInstanceId = PQgetisnull(attrRes, row, ATTR_COL_INSTANCEID) ? "" : PQgetvalue(attrRes, row, ATTR_COL_INSTANCEID);
+
         int subAttrRows = PQntuples(subAttrRes);
         for (int sRow = 0; sRow < subAttrRows; sRow++)
         {
-          const char* subAttrDatasetId = PQgetvalue(subAttrRes, sRow, SUBATTR_COL_ATTRDATASETID);
+          const char* subAttrAttrInstanceId = PQgetvalue(subAttrRes, sRow, SUBATTR_COL_ATTRINSTANCEID);
 
-          // Match sub-attribute to this attribute by datasetId
-          if (strcmp(subAttrDatasetId, datasetId) != 0)
+          // Match sub-attribute to this attribute instance by attrInstanceId
+          if (strcmp(subAttrAttrInstanceId, attrInstanceId) != 0)
             continue;
 
           const char* subAttrId        = PQgetvalue(subAttrRes, sRow, SUBATTR_COL_ID);
@@ -311,13 +344,17 @@ KjNode* pgTemporalEntityBuild
               kjChildAdd(subAttrNodeP, kjString(orionldState.kjsonP, "unitCode", subUnitCode));
           }
 
-          kjChildAdd(attrNodeP, subAttrNodeP);
+          kjChildAdd(instanceP, subAttrNodeP);
         }
       }
     }
 
-    kjChildAdd(entityP, attrNodeP);
+    kjChildAdd(currentArray, instanceP);
   }
+
+  // Attach the last attribute array
+  if (currentArray != NULL)
+    kjChildAdd(entityP, currentArray);
 
   return entityP;
 }
