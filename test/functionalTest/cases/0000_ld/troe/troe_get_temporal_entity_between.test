@@ -146,13 +146,28 @@ Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
-    "P1": {
-        "observedAt": "REGEX(.*)",
-        "type": "Property",
-        "value": REGEX(.*)
-    },
+    "P1": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-06-15T12:00:00Z",
+            "type": "Property",
+            "value": 300
+        },
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-03-15T12:00:00Z",
+            "type": "Property",
+            "value": 200
+        },
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-15T12:00:00Z",
+            "type": "Property",
+            "value": 100
+        }
+    ],
     "id": "urn:ngsi-ld:entities:E1",
-    "type": "REGEX(.*)"
+    "type": "T"
 }
 
 --TEARDOWN--
