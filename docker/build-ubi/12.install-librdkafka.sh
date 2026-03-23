@@ -33,5 +33,4 @@ cd librdkafka-${RDKAFKA_VERSION}
 ./configure --prefix=/usr
 make -j$(nproc)
 make install
-ldconfig
 cd /tmp && rm -rf librdkafka-${RDKAFKA_VERSION}
