@@ -36,8 +36,7 @@ brokerStart CB 100 IPv4 -troe -experimental
 # 02. Update P1=200 with observedAt in March
 # 03. Update P1=300 with observedAt in June
 # 04. See all attributes in temporal database
-# 05. GET temporal entity with timerel=between January-April - should find entity with P1 from March
-# 06. GET temporal entity with timerel=between July-December - should get 404 (no data in that range)
+# 05. GET temporal entity with timerel=between covering all entries
 #
 
 echo "01. Create entity E1 with P1=100 and observedAt in January"

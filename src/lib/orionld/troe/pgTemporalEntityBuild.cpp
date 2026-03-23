@@ -53,7 +53,7 @@ static void pgTimestampToIso8601(const char* pgTs, char* iso, int isoSize)
     *space = 'T';
 
   int len = strlen(iso);
-  if (len > 0 && iso[len - 1] != 'Z')
+  if (len > 0 && len + 1 < isoSize && iso[len - 1] != 'Z')
   {
     iso[len]     = 'Z';
     iso[len + 1] = 0;

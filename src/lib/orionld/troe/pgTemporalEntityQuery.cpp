@@ -173,9 +173,9 @@ bool pgTemporalEntityQuery
   //
   // For lastN we use a window function approach:
   //   SELECT * FROM (
-  //     SELECT ..., ROW_NUMBER() OVER (PARTITION BY id, datasetid ORDER BY ts DESC) as rn
+  //     SELECT ..., ROW_NUMBER() OVER (PARTITION BY id, datasetid ORDER BY <timeCol> DESC) as rn
   //     FROM attributes WHERE ...
-  //   ) sub WHERE rn <= lastN ORDER BY id, datasetid, ts DESC
+  //   ) sub WHERE rn <= lastN ORDER BY id, datasetid, <timeCol> DESC
   //
   char entityQuery[512];
   char attrQuery[4096];
@@ -200,17 +200,17 @@ bool pgTemporalEntityQuery
                "ST_AsGeoJSON(geopoint) as geopoint, ST_AsGeoJSON(geopolygon) as geopolygon, "
                "ST_AsGeoJSON(geomultipoint) as geomultipoint, ST_AsGeoJSON(geomultipolygon) as geomultipolygon, "
                "ST_AsGeoJSON(geolinestring) as geolinestring, ST_AsGeoJSON(geomultilinestring) as geomultilinestring, "
-               "instanceid, ts, ROW_NUMBER() OVER (PARTITION BY id, datasetid ORDER BY ts DESC) as rn "
+               "instanceid, ts, ROW_NUMBER() OVER (PARTITION BY id, datasetid ORDER BY %s DESC) as rn "
                "FROM attributes "
                "WHERE entityid = $1 AND %s <= $2%s%s"
-               ") sub WHERE rn <= %d ORDER BY id, datasetid, ts DESC",
-               timeCol, opmodeFilter, attrFilter, lastN);
+               ") sub WHERE rn <= %d ORDER BY id, datasetid, %s DESC",
+               timeCol, timeCol, opmodeFilter, attrFilter, lastN, timeCol);
     }
     else
     {
       snprintf(attrQuery, sizeof(attrQuery),
-               "%sWHERE entityid = $1 AND %s <= $2%s%s ORDER BY id, datasetid, ts DESC",
-               attrSelect, timeCol, opmodeFilter, attrFilter);
+               "%sWHERE entityid = $1 AND %s <= $2%s%s ORDER BY id, datasetid, %s DESC",
+               attrSelect, timeCol, opmodeFilter, attrFilter, timeCol);
     }
 
     snprintf(subAttrQuery, sizeof(subAttrQuery),
@@ -233,17 +233,17 @@ bool pgTemporalEntityQuery
                "ST_AsGeoJSON(geopoint) as geopoint, ST_AsGeoJSON(geopolygon) as geopolygon, "
                "ST_AsGeoJSON(geomultipoint) as geomultipoint, ST_AsGeoJSON(geomultipolygon) as geomultipolygon, "
                "ST_AsGeoJSON(geolinestring) as geolinestring, ST_AsGeoJSON(geomultilinestring) as geomultilinestring, "
-               "instanceid, ts, ROW_NUMBER() OVER (PARTITION BY id, datasetid ORDER BY ts DESC) as rn "
+               "instanceid, ts, ROW_NUMBER() OVER (PARTITION BY id, datasetid ORDER BY %s DESC) as rn "
                "FROM attributes "
                "WHERE entityid = $1 AND %s >= $2%s%s"
-               ") sub WHERE rn <= %d ORDER BY id, datasetid, ts DESC",
-               timeCol, opmodeFilter, attrFilter, lastN);
+               ") sub WHERE rn <= %d ORDER BY id, datasetid, %s DESC",
+               timeCol, timeCol, opmodeFilter, attrFilter, lastN, timeCol);
     }
     else
     {
       snprintf(attrQuery, sizeof(attrQuery),
-               "%sWHERE entityid = $1 AND %s >= $2%s%s ORDER BY id, datasetid, ts ASC",
-               attrSelect, timeCol, opmodeFilter, attrFilter);
+               "%sWHERE entityid = $1 AND %s >= $2%s%s ORDER BY id, datasetid, %s ASC",
+               attrSelect, timeCol, opmodeFilter, attrFilter, timeCol);
     }
 
     snprintf(subAttrQuery, sizeof(subAttrQuery),
@@ -266,17 +266,17 @@ bool pgTemporalEntityQuery
                "ST_AsGeoJSON(geopoint) as geopoint, ST_AsGeoJSON(geopolygon) as geopolygon, "
                "ST_AsGeoJSON(geomultipoint) as geomultipoint, ST_AsGeoJSON(geomultipolygon) as geomultipolygon, "
                "ST_AsGeoJSON(geolinestring) as geolinestring, ST_AsGeoJSON(geomultilinestring) as geomultilinestring, "
-               "instanceid, ts, ROW_NUMBER() OVER (PARTITION BY id, datasetid ORDER BY ts DESC) as rn "
+               "instanceid, ts, ROW_NUMBER() OVER (PARTITION BY id, datasetid ORDER BY %s DESC) as rn "
                "FROM attributes "
                "WHERE entityid = $1 AND %s >= $2 AND %s <= $3%s%s"
-               ") sub WHERE rn <= %d ORDER BY id, datasetid, ts DESC",
-               timeCol, timeCol, opmodeFilter, attrFilter, lastN);
+               ") sub WHERE rn <= %d ORDER BY id, datasetid, %s DESC",
+               timeCol, timeCol, timeCol, opmodeFilter, attrFilter, lastN, timeCol);
     }
     else
     {
       snprintf(attrQuery, sizeof(attrQuery),
-               "%sWHERE entityid = $1 AND %s >= $2 AND %s <= $3%s%s ORDER BY id, datasetid, ts DESC",
-               attrSelect, timeCol, timeCol, opmodeFilter, attrFilter);
+               "%sWHERE entityid = $1 AND %s >= $2 AND %s <= $3%s%s ORDER BY id, datasetid, %s DESC",
+               attrSelect, timeCol, timeCol, opmodeFilter, attrFilter, timeCol);
     }
 
     snprintf(subAttrQuery, sizeof(subAttrQuery),
