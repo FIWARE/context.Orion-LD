@@ -122,6 +122,7 @@ static const char* uriParamName(uint64_t bit)
   case ORIONLD_URIPARAM_SPACES:              return "spaces";
   case ORIONLD_URIPARAM_SUBSCRIPTION_ID:     return "subscriptionId";
   case ORIONLD_URIPARAM_LOCATION:            return "location";
+  case ORIONLD_URIPARAM_LASTN:              return "lastN";
   case ORIONLD_URIPARAM_URL:                 return "url";
   case ORIONLD_URIPARAM_RELOAD:              return "reload";
   case ORIONLD_URIPARAM_NOTEXISTS:           return "notExists";

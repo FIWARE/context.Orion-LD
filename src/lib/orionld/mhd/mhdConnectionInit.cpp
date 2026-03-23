@@ -971,6 +971,7 @@ MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
   else if (strcmp(key, "lastN") == 0)
   {
     orionldState.uriParams.lastN = atoi(value);
+    orionldState.uriParams.mask |= ORIONLD_URIPARAM_LASTN;
   }
   else if (strcmp(key, "details") == 0)
   {
