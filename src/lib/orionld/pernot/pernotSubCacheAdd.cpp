@@ -31,6 +31,7 @@ extern "C"
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjLookup.h"                                    // kjLookup
 #include "kjson/kjClone.h"                                     // kjClone
+#include "kjson/kjFree.h"                                      // kjFree
 #include "kjson/kjBuilder.h"                                   // kjString, kjChildAdd
 #include "kjson/kjChildCount.h"                                // kjChildCount
 }
@@ -289,11 +290,17 @@ PernotSubscription* pernotSubCacheAdd
 
   KjNode* qP = kjLookup(pSubP->kjSubP, "q");
   if (qP != NULL)
+  {
     kjChildRemove(pSubP->kjSubP, qP);
+    kjFree(qP);
+  }
 
   KjNode* mqP = kjLookup(pSubP->kjSubP, "mq");
   if (mqP != NULL)
+  {
     kjChildRemove(pSubP->kjSubP, mqP);
+    kjFree(mqP);
+  }
 
   qP = kjLookup(pSubP->kjSubP, "ldQ");
   if (qP != NULL)

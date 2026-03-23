@@ -19,6 +19,8 @@
 *
 * For those usages not covered by this license please contact with
 * orionld at fiware dot org
+*
+* Author: Carsten Frey
 */
 #include <sys/time.h>                                          // gettimeofday
 #include <librdkafka/rdkafka.h>                                // rd_kafka_*
@@ -30,10 +32,19 @@ extern "C"
 #include "kjson/kjBuilder.h"                                   // kjArray, kjChildAdd
 }
 
+#include "orionld/common/traceLevels.h"                        // StKafka
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/kafka/kafkaMessageParse.h"                   // kafkaMessageParse
 #include "orionld/kafka/kafkaBatchProcess.h"                   // kafkaBatchProcess
+#include "rest/mhd.h"                                          // MHD_Connection, MHD_RequestTerminationCode
 #include "orionld/kafka/kafkaConsumerLoop.h"                   // Own interface
+
+
+// -----------------------------------------------------------------------------
+//
+// requestCompleted - defined in rest/rest.cpp, used for thread-local state cleanup
+//
+extern void requestCompleted(void* cls, MHD_Connection* connection, void** con_cls, MHD_RequestTerminationCode toe);
 
 
 
@@ -99,6 +110,10 @@ void* kafkaConsumerLoop(void* vP)
       {
         if (msg->err == RD_KAFKA_RESP_ERR_NO_ERROR)
         {
+          KT_T(KtKafka, "Received Kafka message (%d bytes) from partition %d, offset %ld",
+               (int) msg->len, msg->partition, (long) msg->offset);
+          KT_T(KtKafkaDetail, "Kafka message payload: %.*s", (int) msg->len, (const char*) msg->payload);
+
           KjNode* parsed = kafkaMessageParse(orionldState.kjsonP,
                                              (const char*) msg->payload,
                                              (int) msg->len);
@@ -108,19 +123,23 @@ void* kafkaConsumerLoop(void* vP)
             {
               // Batch message: move all children into our entityArray
               KjNode* next;
+              int arrayCount = 0;
               for (KjNode* entityP = parsed->value.firstChildP; entityP != NULL; entityP = next)
               {
                 next = entityP->next;
                 entityP->next = NULL;
                 kjChildAdd(entityArray, entityP);
                 entityCount++;
+                arrayCount++;
               }
+              KT_T(KtKafka, "Parsed %d entities from Kafka batch message", arrayCount);
             }
             else
             {
               // Single entity
               kjChildAdd(entityArray, parsed);
               entityCount++;
+              KT_T(KtKafka, "Parsed 1 entity from Kafka message");
             }
 
             if (!batchStarted)
@@ -129,7 +148,11 @@ void* kafkaConsumerLoop(void* vP)
               batchStarted   = true;
             }
           }
-          // If parsed == NULL, message was invalid and was logged in kafkaMessageParse
+          else
+          {
+            KT_W("Kafka message discarded (parse failed), %d bytes from partition %d, offset %ld",
+                 (int) msg->len, msg->partition, (long) msg->offset);
+          }
         }
         else if (msg->err != RD_KAFKA_RESP_ERR__PARTITION_EOF)
         {
@@ -160,16 +183,20 @@ void* kafkaConsumerLoop(void* vP)
     //
     if (entityCount > 0)
     {
-      KT_T(StKafka, "Processing Kafka batch of %d entities", entityCount);
+      KT_T(KtKafka, "Processing Kafka batch of %d entities", entityCount);
 
       bool ok = kafkaBatchProcess(entityArray);
 
       if (ok)
       {
+        KT_T(KtKafka, "Kafka batch of %d entities written to MongoDB successfully", entityCount);
+
         // Commit offsets after successful processing
         rd_kafka_resp_err_t err = rd_kafka_commit(kafkaConsumerHandle, NULL, 0);
         if (err != RD_KAFKA_RESP_ERR_NO_ERROR)
           KT_W("Kafka offset commit failed: %s", rd_kafka_err2str(err));
+        else
+          KT_T(KtKafka, "Kafka offsets committed");
       }
       else
       {
@@ -180,8 +207,7 @@ void* kafkaConsumerLoop(void* vP)
     //
     // Cleanup thread-local state (frees kalloc arena, etc.)
     //
-    void* con_cls;
-    extern void requestCompleted(void* cls, MHD_Connection* connection, void** con_cls, MHD_RequestTerminationCode toe);
+    void* con_cls = NULL;
     requestCompleted(NULL, NULL, &con_cls, MHD_REQUEST_TERMINATED_COMPLETED_OK);
   }
 

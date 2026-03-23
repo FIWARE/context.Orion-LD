@@ -1382,13 +1382,6 @@ MHD_Result mhdConnectionInit
 
   KT_T(55, "Service Routine at %p", orionldState.serviceP->serviceRoutine);
 
-  if (orionldState.serviceP->mintaka == true)
-    return MHD_YES;
-
-  if (orionldState.serviceP->notImplemented == true)
-    return MHD_YES;
-
-
   //
   // 5. GET URI params
   //
@@ -1397,10 +1390,16 @@ MHD_Result mhdConnectionInit
   //
   // As "format" has precedence over options=concise/simplified/etc, the call to optionsParse must wait until after
   // all calls to orionldUriArgumentGet are done.
-  // Because, optionsParse n eeds to know whether "format" has been used.
+  // Because, optionsParse needs to know whether "format" has been used.
   //
   if (orionldState.uriParams.options != NULL)
     optionsParse(orionldState.uriParams.options);
+
+  if (orionldState.serviceP->mintaka == true)
+    return MHD_YES;
+
+  if (orionldState.serviceP->notImplemented == true)
+    return MHD_YES;
 
   //
   // Format of response payload

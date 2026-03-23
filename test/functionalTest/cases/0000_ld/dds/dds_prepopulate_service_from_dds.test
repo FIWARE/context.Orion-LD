@@ -24,11 +24,13 @@
 Test of pre-population of services from DDS
 
 --SHELL-INIT--
+ddsClean
 $REPO_HOME/scripts/configFile.sh --ddsService "add_two_ints,Service,urn:ngsi-ld:two-ints,dds_add_two_ints" > $HOME/.orionld
 dbInit CB
 orionldStart CB -mongocOnly -wip dds,entityMaps
 
 --SHELL--
+valgrindSleep 5
 
 #
 # Before starting the broker (meaning, before running this test), prepare this way:
@@ -101,6 +103,7 @@ Date: REGEX(.*)
 
 
 --TEARDOWN--
+ddsClean
 brokerStop
 dbDrop CB
 #rm -f $HOME/.orionld

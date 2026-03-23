@@ -343,6 +343,8 @@ static void* ddsPrePopulateDbInThread(void* vP)
     mongocEntitiesUpsert(dbCreateV, NULL);
   }
 
+  free(entityIds.array);
+  free(pickList.array);
   orionldStateRelease();
   kaBufferReset(&kaLocal, true);
   free(inputP);

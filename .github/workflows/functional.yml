@@ -121,6 +121,32 @@ jobs:
         run: |
           docker load --input /tmp/test-image.tar
 
+      - name: Start MQTTS broker
+        run: |
+          sudo apt-get install -y mosquitto openssl
+          mkdir -p /tmp/mosquitto-mqtts
+          # Generate self-signed certs for MQTTS testing
+          openssl req -new -x509 -days 30 -nodes \
+            -keyout /tmp/mosquitto-mqtts/ca.key -out /tmp/mosquitto-mqtts/ca.crt \
+            -subj "/CN=MQTT Test CA" 2>/dev/null
+          openssl genrsa -out /tmp/mosquitto-mqtts/server.key 2048 2>/dev/null
+          openssl req -new -key /tmp/mosquitto-mqtts/server.key \
+            -out /tmp/mosquitto-mqtts/server.csr -subj "/CN=localhost" 2>/dev/null
+          openssl x509 -req -days 30 \
+            -in /tmp/mosquitto-mqtts/server.csr \
+            -CA /tmp/mosquitto-mqtts/ca.crt -CAkey /tmp/mosquitto-mqtts/ca.key \
+            -CAcreateserial -out /tmp/mosquitto-mqtts/server.crt 2>/dev/null
+          chmod 644 /tmp/mosquitto-mqtts/*
+          cat > /tmp/mosquitto-mqtts.conf << EOF
+          listener 8883
+          cafile /tmp/mosquitto-mqtts/ca.crt
+          certfile /tmp/mosquitto-mqtts/server.crt
+          keyfile /tmp/mosquitto-mqtts/server.key
+          allow_anonymous true
+          EOF
+          mosquitto -c /tmp/mosquitto-mqtts.conf -d
+          sleep 0.5
+
       - name: Run functional test
         run: |
-          docker run --rm --network host -v $(pwd):/opt/orion -e CB_FT_VERBOSE=true -e CB_SKIP_FUNC_TESTS='${{ env.IGNORE_TEST}}' -e ORIONLD_CORE_CONTEXT_DIR=/opt/orion/ldcontexts -e CB_FT_VERBOSE=ON ${{ env.IMAGE_NAME }} -s ${{ matrix.test }} -dqt
+          docker run --rm --network host -v $(pwd):/opt/orion -v /tmp/mosquitto-mqtts:/tmp/mosquitto-mqtts -e CB_FT_VERBOSE=true -e CB_SKIP_FUNC_TESTS='${{ env.IGNORE_TEST}}' -e ORIONLD_CORE_CONTEXT_DIR=/opt/orion/ldcontexts -e CB_FT_VERBOSE=ON ${{ env.IMAGE_NAME }} -s ${{ matrix.test }} -dqt

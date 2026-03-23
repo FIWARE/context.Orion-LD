@@ -73,7 +73,7 @@ orionCurl --url /v2/entities --payload "$payload" --servicePath /SP
 echo
 echo
 
-valgrindSleep 1
+# valgrindSleep 1
 
 echo "03. Ask for metrics, see 1 outgoing transaction"
 echo "==============================================="

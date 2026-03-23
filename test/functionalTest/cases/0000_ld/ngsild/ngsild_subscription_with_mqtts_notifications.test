@@ -1,0 +1,313 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Notifications via MQTTS (MQTT over TLS)
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -mongocOnly
+ftClientStart -t 0-5000
+
+--SHELL--
+
+#
+# 01. Tell ftClient to subscribe to the MQTTS broker on topic 'mqttsTest'
+# 02. Create an MQTTS subscription in Orion-LD using mqtts:// endpoint
+# 03. GET the subscription and see mqtts:// URI
+# 04. Create an entity matching the subscription
+# 05. Ask ftClient for the accumulated MQTT notifications - see one
+# 06. Reset the MQTT dump
+# 07. Create a second entity matching the subscription
+# 08. Ask ftClient for notifications - see the second entity
+# 09. Delete the subscription
+#
+
+echo "01. Tell ftClient to subscribe to the MQTTS broker on topic 'mqttsTest'"
+echo "========================================================================"
+payload='{
+  "host": "'$MQTT_BROKER_HOST'",
+  "port": '$MQTTS_BROKER_PORT',
+  "topic": "mqttsTest",
+  "mqtts": true,
+  "caFile": "/tmp/mosquitto-mqtts/ca.crt"
+}'
+orionCurl --url /mqtt/sub --port $FT_PORT --payload "$payload"
+echo
+echo
+
+
+echo "02. Create an MQTTS subscription in Orion-LD using mqtts:// endpoint"
+echo "===================================================================="
+payload='{
+  "id": "urn:ngsi-ld:Subscription:mqttsSub01",
+  "type": "Subscription",
+  "entities": [
+    {
+      "type": "Vehicle"
+    }
+  ],
+  "notification": {
+    "format": "normalized",
+    "endpoint": {
+      "uri": "mqtts://'$MQTT_BROKER_HOST':'$MQTTS_BROKER_PORT'/mqttsTest",
+      "accept": "application/json"
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload"
+echo
+echo
+
+
+echo "03. GET the subscription and see mqtts:// URI"
+echo "=============================================="
+orionCurl --url /ngsi-ld/v1/subscriptions/urn:ngsi-ld:Subscription:mqttsSub01
+echo
+echo
+
+
+echo "04. Create an entity matching the subscription"
+echo "==============================================="
+payload='{
+  "id": "urn:ngsi-ld:Vehicle:V001",
+  "type": "Vehicle",
+  "speed": {
+    "type": "Property",
+    "value": 120
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+sleep 0.5
+echo "05. Ask ftClient for the accumulated MQTT notifications - see one"
+echo "================================================================="
+orionCurl --url /mqtt/mqttsTest/dump --port $FT_PORT --noPayloadCheck
+echo
+echo
+
+
+echo "06. Reset the MQTT dump"
+echo "======================="
+orionCurl --url /mqtt/mqttsTest/dump --port $FT_PORT -X DELETE --noPayloadCheck
+echo
+echo
+
+
+echo "07. Create a second entity matching the subscription"
+echo "====================================================="
+payload='{
+  "id": "urn:ngsi-ld:Vehicle:V002",
+  "type": "Vehicle",
+  "speed": {
+    "type": "Property",
+    "value": 80
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+sleep 0.5
+echo "08. Ask ftClient for notifications - see the second entity"
+echo "==========================================================="
+orionCurl --url /mqtt/mqttsTest/dump --port $FT_PORT --noPayloadCheck
+echo
+echo
+
+
+echo "09. Delete the subscription"
+echo "==========================="
+orionCurl --url /ngsi-ld/v1/subscriptions/urn:ngsi-ld:Subscription:mqttsSub01 -X DELETE
+echo
+echo
+
+
+--REGEXPECT--
+01. Tell ftClient to subscribe to the MQTTS broker on topic 'mqttsTest'
+========================================================================
+HTTP/1.1 201 Created
+Content-Length: REGEX(.*)
+Date: REGEX(.*)
+
+{
+    "broker": "ssl://localhost:8883",
+    "mqtts": true,
+    "topic": "mqttsTest"
+}
+
+
+02. Create an MQTTS subscription in Orion-LD using mqtts:// endpoint
+====================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/subscriptions/urn:ngsi-ld:Subscription:mqttsSub01
+
+
+
+03. GET the subscription and see mqtts:// URI
+==============================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: REGEX(.*)
+
+{
+    "entities": [
+        {
+            "type": "Vehicle"
+        }
+    ],
+    "id": "urn:ngsi-ld:Subscription:mqttsSub01",
+    "isActive": true,
+    "jsonldContext": "REGEX(.*)",
+    "notification": {
+        "endpoint": {
+            "accept": "application/json",
+            "uri": "mqtts://localhost:8883/mqttsTest"
+        },
+        "format": "normalized",
+        "status": "ok"
+    },
+    "origin": "cache",
+    "status": "active",
+    "type": "Subscription"
+}
+
+
+04. Create an entity matching the subscription
+===============================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:Vehicle:V001
+
+
+
+05. Ask ftClient for the accumulated MQTT notifications - see one
+=================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Date: REGEX(.*)
+
+[
+  {
+    "metadata": {
+      "Content-Type": "application/json",
+      "User-Agent": REGEX(.*)
+      "Host": "localhost:8883",
+      "Accept": "application/json",
+      "Ngsild-Attribute-Format": "Normalized",
+      "Link": "REGEX(.*)"
+    },
+    "body": {
+      "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+      "type": "Notification",
+      "subscriptionId": "urn:ngsi-ld:Subscription:mqttsSub01",
+      "notifiedAt": "REGEX(.*)",
+      "data": [
+        {
+          "id": "urn:ngsi-ld:Vehicle:V001",
+          "type": "Vehicle",
+          "speed": {
+            "type": "Property",
+            "value": 120
+          }
+        }
+      ]
+    }
+  }
+]
+
+
+
+06. Reset the MQTT dump
+=======================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+
+07. Create a second entity matching the subscription
+=====================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:Vehicle:V002
+
+
+
+08. Ask ftClient for notifications - see the second entity
+===========================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Date: REGEX(.*)
+
+[
+  {
+    "metadata": {
+      "Content-Type": "application/json",
+      "User-Agent": REGEX(.*)
+      "Host": "localhost:8883",
+      "Accept": "application/json",
+      "Ngsild-Attribute-Format": "Normalized",
+      "Link": "REGEX(.*)"
+    },
+    "body": {
+      "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+      "type": "Notification",
+      "subscriptionId": "urn:ngsi-ld:Subscription:mqttsSub01",
+      "notifiedAt": "REGEX(.*)",
+      "data": [
+        {
+          "id": "urn:ngsi-ld:Vehicle:V002",
+          "type": "Vehicle",
+          "speed": {
+            "type": "Property",
+            "value": 80
+          }
+        }
+      ]
+    }
+  }
+]
+
+
+
+09. Delete the subscription
+===========================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+--TEARDOWN--
+brokerStop CB
+ftClientStop
+dbDrop CB

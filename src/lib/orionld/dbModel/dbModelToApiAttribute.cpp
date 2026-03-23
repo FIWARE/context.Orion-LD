@@ -478,7 +478,7 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
 
       KT_TREE(dbAttrP, "BEFORE", KtSR);
 
-      if (orionldState.serviceP->serviceRoutine != orionldGetAttribute)
+      if ((orionldState.serviceP == NULL) || (orionldState.serviceP->serviceRoutine != orionldGetAttribute))
       {
         // "Steal" the value node and rename it to have the attribute's name instead - that's all that's needed for SIMPLIFIED FORMAT
         attrP = valueP;  // In the DB, all attributes have the "value" name.

@@ -95,7 +95,7 @@ echo
 
 echo "03. Statistics - just for fun"
 echo "============================="
-valgrindSleep 1
+# valgrindSleep 1
 orionCurl --url /cache/statistics
 echo
 echo

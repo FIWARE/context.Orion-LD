@@ -24,6 +24,7 @@
 DDS Service: broker sends request, ftClient replies, reply stored as ddsServiceResponse
 
 --SHELL-INIT--
+ddsClean
 # Create config files for broker and ftClient
 $REPO_HOME/scripts/configFile.sh --ddsService "add_two_ints,Calculator,urn:ngsi-ld:calc:1,operation" > $HOME/.orionld
 $REPO_HOME/scripts/configFile.sh --ddsService "add_two_ints,Calculator,urn:ngsi-ld:calc:1,operation" > $HOME/.ftClient
@@ -33,6 +34,7 @@ ftClientStart --dds
 
 # Wait for ftClient to initialize DDS
 sleep .1
+valgrindSleep 5
 
 dbInit CB
 orionldStart CB -mongocOnly -wip dds
@@ -41,6 +43,7 @@ orionldStart CB -mongocOnly -wip dds
 sleep 0.1
 
 --SHELL--
+valgrindSleep 5
 
 #
 # 01. Load DDS types into ftClient
@@ -123,6 +126,7 @@ echo
 echo "07. GET entity - verify attribute value (ddsServiceResponse depends on DDS discovery)"
 echo "====================================================================================="
 sleep .1
+valgrindSleep 5
 orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:calc:1
 echo
 echo
@@ -225,6 +229,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 
 --TEARDOWN--
+ddsClean
 ftClientStop
 brokerStop CB
 dbDrop CB

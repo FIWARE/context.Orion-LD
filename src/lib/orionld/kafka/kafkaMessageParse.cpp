@@ -19,8 +19,10 @@
 *
 * For those usages not covered by this license please contact with
 * orionld at fiware dot org
+*
+* Author: Carsten Frey
 */
-#include <string.h>                                            // strncpy
+#include <string.h>                                            // memcpy
 
 extern "C"
 {
@@ -29,8 +31,10 @@ extern "C"
 #include "kjson/kjson.h"                                       // Kjson
 #include "kjson/kjParse.h"                                     // kjParse
 #include "kjson/kjLookup.h"                                    // kjLookup
+#include "kalloc/kaAlloc.h"                                    // kaAlloc
 }
 
+#include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/kafka/kafkaMessageParse.h"                   // Own interface
 
 
@@ -45,7 +49,8 @@ extern "C"
 KjNode* kafkaMessageParse(Kjson* kjsonP, const char* payload, int payloadLen)
 {
   // Make a mutable copy for kjParse (it modifies the input buffer)
-  char* buf = (char*) malloc(payloadLen + 1);
+  // Using kaAlloc so the buffer is auto-freed with the request-scoped kalloc arena
+  char* buf = kaAlloc(&orionldState.kalloc, payloadLen + 1);
   if (buf == NULL)
   {
     KT_E("kafkaMessageParse: out of memory allocating %d bytes", payloadLen + 1);
@@ -59,7 +64,6 @@ KjNode* kafkaMessageParse(Kjson* kjsonP, const char* payload, int payloadLen)
   if (tree == NULL)
   {
     KT_W("kafkaMessageParse: error parsing JSON payload");
-    free(buf);
     return NULL;
   }
 
@@ -67,7 +71,6 @@ KjNode* kafkaMessageParse(Kjson* kjsonP, const char* payload, int payloadLen)
   if (tree->type != KjObject && tree->type != KjArray)
   {
     KT_W("kafkaMessageParse: payload must be a JSON Object or Array, got type %d", tree->type);
-    free(buf);
     return NULL;
   }
 
@@ -77,18 +80,15 @@ KjNode* kafkaMessageParse(Kjson* kjsonP, const char* payload, int payloadLen)
     if (kjLookup(tree, "id") == NULL)
     {
       KT_W("kafkaMessageParse: entity missing 'id' field");
-      free(buf);
       return NULL;
     }
     if (kjLookup(tree, "type") == NULL)
     {
       KT_W("kafkaMessageParse: entity missing 'type' field");
-      free(buf);
       return NULL;
     }
   }
 
-  // Note: the caller is responsible for freeing 'buf' via orionldState cleanup
-  // The KjNode tree points into buf, so buf must stay alive until processing is done
+  // buf is allocated via kaAlloc — auto-freed when the kalloc arena is released
   return tree;
 }

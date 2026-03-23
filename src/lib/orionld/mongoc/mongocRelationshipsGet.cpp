@@ -99,7 +99,7 @@ KjNode* mongocRelationshipsGet(const char* entityName)
   //
   // We use a projection for getting all relationships of the given entity Name
   //
-  bson_t*       pipeline = bson_new();
+  bson_t*       pipeline = NULL;
   bson_error_t  error;
   char          pipeline_json[1024];
 

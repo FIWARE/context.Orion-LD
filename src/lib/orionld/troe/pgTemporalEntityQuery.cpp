@@ -19,6 +19,8 @@
 *
 * For those usages not covered by this license please contact with
 * orionld at fiware dot org
+*
+* Author: Carsten Frey
 */
 #include <string.h>                                            // strcmp
 
@@ -62,79 +64,79 @@ static const char* entityQueryBetween =
 // Attribute query: get latest attribute values at a given point in time
 //
 static const char* attrQueryBefore =
-  "SELECT DISTINCT ON (id, \"datasetId\") "
-  "id, \"valueType\"::text, text, boolean, number, datetime, compound, "
-  "\"observedAt\", \"unitCode\", \"datasetId\", \"subProperties\", "
-  "ST_AsGeoJSON(\"geoPoint\") as \"geoPoint\", "
-  "ST_AsGeoJSON(\"geoPolygon\") as \"geoPolygon\", "
-  "ST_AsGeoJSON(\"geoMultiPoint\") as \"geoMultiPoint\", "
-  "ST_AsGeoJSON(\"geoMultiPolygon\") as \"geoMultiPolygon\", "
-  "ST_AsGeoJSON(\"geoLineString\") as \"geoLineString\", "
-  "ST_AsGeoJSON(\"geoMultiLineString\") as \"geoMultiLineString\" "
+  "SELECT DISTINCT ON (id, datasetid) "
+  "id, valuetype::text, text, boolean, number, datetime, compound, "
+  "observedat, unitcode, datasetid, subproperties, "
+  "ST_AsGeoJSON(geopoint) as geopoint, "
+  "ST_AsGeoJSON(geopolygon) as geopolygon, "
+  "ST_AsGeoJSON(geomultipoint) as geomultipoint, "
+  "ST_AsGeoJSON(geomultipolygon) as geomultipolygon, "
+  "ST_AsGeoJSON(geolinestring) as geolinestring, "
+  "ST_AsGeoJSON(geomultilinestring) as geomultilinestring "
   "FROM attributes "
-  "WHERE \"entityId\" = $1 AND ts <= $2 AND \"opMode\" != 'Delete' "
-  "ORDER BY id, \"datasetId\", ts DESC";
+  "WHERE entityid = $1 AND ts <= $2 AND opmode != 'Delete' "
+  "ORDER BY id, datasetid, ts DESC";
 
 static const char* attrQueryAfter =
-  "SELECT DISTINCT ON (id, \"datasetId\") "
-  "id, \"valueType\"::text, text, boolean, number, datetime, compound, "
-  "\"observedAt\", \"unitCode\", \"datasetId\", \"subProperties\", "
-  "ST_AsGeoJSON(\"geoPoint\") as \"geoPoint\", "
-  "ST_AsGeoJSON(\"geoPolygon\") as \"geoPolygon\", "
-  "ST_AsGeoJSON(\"geoMultiPoint\") as \"geoMultiPoint\", "
-  "ST_AsGeoJSON(\"geoMultiPolygon\") as \"geoMultiPolygon\", "
-  "ST_AsGeoJSON(\"geoLineString\") as \"geoLineString\", "
-  "ST_AsGeoJSON(\"geoMultiLineString\") as \"geoMultiLineString\" "
+  "SELECT DISTINCT ON (id, datasetid) "
+  "id, valuetype::text, text, boolean, number, datetime, compound, "
+  "observedat, unitcode, datasetid, subproperties, "
+  "ST_AsGeoJSON(geopoint) as geopoint, "
+  "ST_AsGeoJSON(geopolygon) as geopolygon, "
+  "ST_AsGeoJSON(geomultipoint) as geomultipoint, "
+  "ST_AsGeoJSON(geomultipolygon) as geomultipolygon, "
+  "ST_AsGeoJSON(geolinestring) as geolinestring, "
+  "ST_AsGeoJSON(geomultilinestring) as geomultilinestring "
   "FROM attributes "
-  "WHERE \"entityId\" = $1 AND ts >= $2 AND \"opMode\" != 'Delete' "
-  "ORDER BY id, \"datasetId\", ts ASC";
+  "WHERE entityid = $1 AND ts >= $2 AND opmode != 'Delete' "
+  "ORDER BY id, datasetid, ts ASC";
 
 static const char* attrQueryBetween =
-  "SELECT DISTINCT ON (id, \"datasetId\") "
-  "id, \"valueType\"::text, text, boolean, number, datetime, compound, "
-  "\"observedAt\", \"unitCode\", \"datasetId\", \"subProperties\", "
-  "ST_AsGeoJSON(\"geoPoint\") as \"geoPoint\", "
-  "ST_AsGeoJSON(\"geoPolygon\") as \"geoPolygon\", "
-  "ST_AsGeoJSON(\"geoMultiPoint\") as \"geoMultiPoint\", "
-  "ST_AsGeoJSON(\"geoMultiPolygon\") as \"geoMultiPolygon\", "
-  "ST_AsGeoJSON(\"geoLineString\") as \"geoLineString\", "
-  "ST_AsGeoJSON(\"geoMultiLineString\") as \"geoMultiLineString\" "
+  "SELECT DISTINCT ON (id, datasetid) "
+  "id, valuetype::text, text, boolean, number, datetime, compound, "
+  "observedat, unitcode, datasetid, subproperties, "
+  "ST_AsGeoJSON(geopoint) as geopoint, "
+  "ST_AsGeoJSON(geopolygon) as geopolygon, "
+  "ST_AsGeoJSON(geomultipoint) as geomultipoint, "
+  "ST_AsGeoJSON(geomultipolygon) as geomultipolygon, "
+  "ST_AsGeoJSON(geolinestring) as geolinestring, "
+  "ST_AsGeoJSON(geomultilinestring) as geomultilinestring "
   "FROM attributes "
-  "WHERE \"entityId\" = $1 AND ts >= $2 AND ts <= $3 AND \"opMode\" != 'Delete' "
-  "ORDER BY id, \"datasetId\", ts DESC";
+  "WHERE entityid = $1 AND ts >= $2 AND ts <= $3 AND opmode != 'Delete' "
+  "ORDER BY id, datasetid, ts DESC";
 
 //
 // Sub-attribute query
 //
 static const char* subAttrQueryBefore =
-  "SELECT DISTINCT ON (id, \"attrInstanceId\", \"attrDatasetId\") "
-  "id, \"attrInstanceId\", \"attrDatasetId\", \"valueType\"::text, "
+  "SELECT DISTINCT ON (id, attrinstanceid, attrdatasetid) "
+  "id, attrinstanceid, attrdatasetid, valuetype::text, "
   "text, boolean, number, datetime, compound, "
-  "\"observedAt\", \"unitCode\", "
-  "ST_AsGeoJSON(\"geoPoint\") as \"geoPoint\" "
-  "FROM \"subAttributes\" "
-  "WHERE \"entityId\" = $1 AND ts <= $2 "
-  "ORDER BY id, \"attrInstanceId\", \"attrDatasetId\", ts DESC";
+  "observedat, unitcode, "
+  "ST_AsGeoJSON(geopoint) as geopoint "
+  "FROM subattributes "
+  "WHERE entityid = $1 AND ts <= $2 "
+  "ORDER BY id, attrinstanceid, attrdatasetid, ts DESC";
 
 static const char* subAttrQueryAfter =
-  "SELECT DISTINCT ON (id, \"attrInstanceId\", \"attrDatasetId\") "
-  "id, \"attrInstanceId\", \"attrDatasetId\", \"valueType\"::text, "
+  "SELECT DISTINCT ON (id, attrinstanceid, attrdatasetid) "
+  "id, attrinstanceid, attrdatasetid, valuetype::text, "
   "text, boolean, number, datetime, compound, "
-  "\"observedAt\", \"unitCode\", "
-  "ST_AsGeoJSON(\"geoPoint\") as \"geoPoint\" "
-  "FROM \"subAttributes\" "
-  "WHERE \"entityId\" = $1 AND ts >= $2 "
-  "ORDER BY id, \"attrInstanceId\", \"attrDatasetId\", ts ASC";
+  "observedat, unitcode, "
+  "ST_AsGeoJSON(geopoint) as geopoint "
+  "FROM subattributes "
+  "WHERE entityid = $1 AND ts >= $2 "
+  "ORDER BY id, attrinstanceid, attrdatasetid, ts ASC";
 
 static const char* subAttrQueryBetween =
-  "SELECT DISTINCT ON (id, \"attrInstanceId\", \"attrDatasetId\") "
-  "id, \"attrInstanceId\", \"attrDatasetId\", \"valueType\"::text, "
+  "SELECT DISTINCT ON (id, attrinstanceid, attrdatasetid) "
+  "id, attrinstanceid, attrdatasetid, valuetype::text, "
   "text, boolean, number, datetime, compound, "
-  "\"observedAt\", \"unitCode\", "
-  "ST_AsGeoJSON(\"geoPoint\") as \"geoPoint\" "
-  "FROM \"subAttributes\" "
-  "WHERE \"entityId\" = $1 AND ts >= $2 AND ts <= $3 "
-  "ORDER BY id, \"attrInstanceId\", \"attrDatasetId\", ts DESC";
+  "observedat, unitcode, "
+  "ST_AsGeoJSON(geopoint) as geopoint "
+  "FROM subattributes "
+  "WHERE entityid = $1 AND ts >= $2 AND ts <= $3 "
+  "ORDER BY id, attrinstanceid, attrdatasetid, ts DESC";
 
 
 

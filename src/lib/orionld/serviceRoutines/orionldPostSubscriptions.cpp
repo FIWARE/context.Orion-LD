@@ -514,7 +514,7 @@ bool orionldPostSubscriptions(void)
     // orionldError is done by mongocSubscriptionInsert
     KT_E("mongocSubscriptionInsert failed");
     if (mqttSubscription == true)
-      mqttDisconnect(mqttHost, mqttPort, mqttUser, mqttPassword, mqttVersion);
+      mqttDisconnect(mqtts, mqttHost, mqttPort, mqttUser, mqttPassword, mqttVersion);
 
     if (cSubP != NULL)
       subCacheItemRemove(cSubP);

@@ -149,6 +149,12 @@ static bool pCheckEntities(KjNode* entitiesP)
 
   for (KjNode* entityP = entitiesP->value.firstChildP; entityP != NULL; entityP = entityP->next)
   {
+    if (entityP->type != KjObject)
+    {
+      orionldError(OrionldBadRequestData, "Invalid JSON type", "entities array item must be a JSON object", 400);
+      return false;
+    }
+
     TreeNode treeNodeV[3] =
     {
       { "id",        "entities:id",        NULL, 1 << KjString,  IS_URI    },

@@ -1,14 +1,34 @@
 ## Fixed Issues
   #1905 - TRoE: segfault (exit 139) connecting to TimescaleDB Cloud - added SSL support and fixed NULL pointer crash
   #XXXX - Fixed query of many large entities (cfreyfh - Carsten Freyh at Fraunhofer IKTS)
-  #XXXX - wait for postgres instead of exiting after the first try - just like for mongo (1 try per second until 30 secs)
+  #XXXX - Wait for postgres instead of exiting after the first try - just like for mongo (1 try per second during 30 secs)
+  #XXXX - Fixed crash in relationship endpoint when no relations found (cfreyfh)
+  #XXXX - Fixed crash in GET /types when entity has empty attrNames (NULL attr name from MongoDB aggregation)
+  #XXXX - Fixed crash in POST /entityOperations/query when entities array contains non-object items
+  #XXXX - Fixed crash in batch update when entity payload contains "scope" field
+  #XXXX - Fixed crash in PATCH entity when entity doesn't exist locally but distOps are active
+  #XXXX - Fixed crash in TRoE for POST /entities with distOps returning 207 (requestTree was NULL)
+  #XXXX - Fixed TRoE crash on POST /temporal/entities with NULL requestTree
+  #XXXX - Fixed hang on POST /temporal/entities when using -mongocOnly (legacy mongoEntityExists blocked on semaphore)
+  #XXXX - Fixed duplicate key error log for context cache persistence (ignore already-persisted contexts)
+  #XXXX - Fixed default MQTT port not set when URI has no explicit port (now defaults to 1883/8883)
+  #XXXX - Fixed "scope" not skipped in distOpResponses success attribute list
+  #XXXX - Fixed Location header for POST /jsonldContexts to use relative path (per ETSI API spec)
+  #XXXX - Fixed crash in pernot notification with simplified format (NULL serviceP dereference)
+  #XXXX - Fixed Ngsild-Attribute-Format header in pernot notifications (was hardcoded to Normalized)
+  #XXXX - Fixed Link header scoping bug in pernot notifications (linkHeader buffer out of scope)
+  #XXXX - Fixed pernot GET rendering to use actual isActive/status instead of hardcoded true/active
 
 ## New Features
+  #XXXX - Implemented PATCH for periodic notification (pernot) subscriptions
   #1905 - New CLI option -troeSslMode (env: ORIONLD_TROE_SSL_MODE) for TRoE Postgres SSL connections
   #XXXX - New CLI option -coreContextDir (env: ORIONLD_CORE_CONTEXT_DIR, default: /opt/orion/ldcontexts)
-  #XXXX - Replaced idiotic prometheus-client-c with KPROM library for Prometheus metrics
+  #XXXX - Replaced prometheus-client-c with KPROM library for Prometheus metrics
   #XXXX - Default user @context served from local files, not only URLs
+  #XXXX - MQTTS support - MQTT notifications over TLS (mqtts:// endpoint URIs)
+  #XXXX - New CLI option -distOpTimeout (env: DIST_OP_TIMEOUT, default: 5000ms) for distributed operation timeout
   #XXXX - Experimental support for WebSockets (wip - Work In Progress)
+  #XXXX - In-memory geo-fencing for subscriptions using GEOS (no DB round-trip for geo-matching)
 
 ### Pre-downloaded Core Context Files
   At startup the broker needs the NGSI-LD core context. Previously it was either found in
@@ -43,27 +63,25 @@
   - Notifications are sent over the WS connection for subscriptions created via WS
   - Message envelope format (same as MQTT): {"metadata": {...}, "body": {...}}
 
+## DDS
+  - Broker can now act as a client in DDS Actions
+  - DDS Service Reply: ddsServiceReplyNotification support
+  - DDS publish for already existing attributes in BATCH Update operations
+  - Graceful DDS shutdown
+
 ## Documentation
   - Added TRoE database schema and advanced optimization documentation
   - Added Carsten's TRoE optimization script to documentation
   - Documented MongoDB 4.2+ requirement
   - Fixed all README.md for the k-libs
-
-## DDS
-N/A
+  - Documented geo-fencing for subscriptions (georel types, geometry combinations, custom geoproperty, lifecycle)
+  - Added GEOS to external-libraries.md and installation guide dependency list
 
 ## Library version updates
   - Replaced prometheus-client-c with kprom
-  - New base image for kjson fix
-  - Bumped PostgreSQL client packages from v13 to v17 (CI base image)
+  - Bumped PostgreSQL client packages from v13 to v17
   - Bumped PostgreSQL in installation guides from v12 to v17
-  - Upgraded MongoDB from 4.0 to 4.4 in Mintaka tests
-
-## Documentation
-  - Added TRoE database schema and advanced optimization documentation
-  - Added Carsten's TRoE optimization script to documentation
-  - Documented MongoDB 4.2+ requirement
-  - Fixed all README.md for the k-libs
+  - Added GEOS 3.10.2 (Geometry Engine - Open Source) for in-memory geo-spatial matching
 
 ## Notes
 ### CI / GitHub Actions

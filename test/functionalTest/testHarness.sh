@@ -192,6 +192,7 @@ function usage()
   echo "$empty [-ws (only WebSocket tests)]"
   echo "$empty [-eb (external broker)]"
   echo "$empty [-tk (on error, show the diff using tkdiff)]"
+  echo "$empty [-kd (on error, show the diff using kdiff)]"
   echo "$empty [-meld (on error, show the diff using meld)]"
   echo "$empty [-meld (on error, show the diff using diff)]"
   echo "$empty [--filter <test filter>]"
@@ -619,10 +620,11 @@ do
   elif [ "$1" == "-t" ];             then export CB_TRACELEVELS="$2"; shift;
   elif [ "$1" == "-kt" ];            then export CB_KTRACELEVELS="$2"; shift;
   elif [ "$1" == "-eb" ];            then externalBroker=ON;
-  elif [ "$1" == "-tk" ];            then CB_DIFF_TOOL=tkdiff;
-  elif [ "$1" == "-meld" ];          then CB_DIFF_TOOL=meld;
   elif [ "$1" == "-diff" ];          then CB_DIFF_TOOL=diff;
-  elif [ "$1" == "-kdiff" ];         then CB_DIFF_TOOL=$(cd "$(dirname "$0")/../.." && pwd)/../ktest/ktestGui.py;
+  elif [ "$1" == "-meld" ];          then CB_DIFF_TOOL=meld;
+  elif [ "$1" == "-tk" ];            then CB_DIFF_TOOL=tkdiff;
+  elif [ "$1" == "-kd" ];            then CB_DIFF_TOOL=kdiff;
+  elif [ "$1" == "-kdiff" ];         then CB_DIFF_TOOL=kdiff;
   elif [ "$1" == "--loud" ];         then loud=on;
   elif [ "$1" == "--dryrun" ];       then dryrun=on;
   elif [ "$1" == "--keep" ];         then keep=on;

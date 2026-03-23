@@ -19,6 +19,8 @@
 *
 * For those usages not covered by this license please contact with
 * orionld at fiware dot org
+*
+* Author: Carsten Frey
 */
 #include <string.h>                                            // strcmp, strlen
 #include <stdlib.h>                                            // atof, strtol
@@ -261,8 +263,8 @@ KjNode* pgTemporalEntityBuild
         kjChildAdd(attrNodeP, kjString(orionldState.kjsonP, "unitCode", unitCode));
     }
 
-    // Add datasetId if non-empty (default datasetId is empty string "@none")
-    if (datasetId[0] != 0 && strcmp(datasetId, "@none") != 0)
+    // Add datasetId if non-empty and not the default value
+    if (datasetId[0] != 0 && strcmp(datasetId, "@none") != 0 && strcmp(datasetId, "None") != 0)
       kjChildAdd(attrNodeP, kjString(orionldState.kjsonP, "datasetId", datasetId));
 
     // Add sub-attributes for this attribute

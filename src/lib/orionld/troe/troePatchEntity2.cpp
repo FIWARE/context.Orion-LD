@@ -22,6 +22,8 @@
 *
 * Author: Ken Zangelin
 */
+#include <string.h>                                              // strcmp, strchr
+
 extern "C"
 {
 #include "kbase/kMacros.h"                                       // K_VEC_SIZE
@@ -32,10 +34,18 @@ extern "C"
 #include "kjson/kjBuilder.h"                                     // kjChildRemove
 }
 
+#include "orionld/types/PgTableDefinitions.h"                    // PG_ATTRIBUTE_INSERT_START, PG_SUB_ATTRIBUTE_INSERT_START
+#include "orionld/types/PgAppendBuffer.h"                        // PgAppendBuffer
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/orionldPatchApply.h"                    // orionldPatchApply
-#include "orionld/troe/troePatchEntity.h"                        // troePatchEntity - to reuse the "push to TRoE" of troePatchEntity
+#include "orionld/common/uuidGenerate.h"                         // uuidGenerate
+#include "orionld/troe/pgAppendInit.h"                           // pgAppendInit
+#include "orionld/troe/pgAppend.h"                               // pgAppend
+#include "orionld/troe/pgAttributeBuild.h"                       // pgAttributeBuild
+#include "orionld/troe/pgAttributeAppend.h"                      // pgAttributeAppend
+#include "orionld/troe/pgSubAttributeAppend.h"                   // pgSubAttributeAppend
+#include "orionld/troe/pgCommands.h"                             // pgCommands
 #include "orionld/troe/troeFilterMatch.h"                        // troeFilterMatch
 #include "orionld/troe/troePatchEntity2.h"                       // Own interface
 
@@ -56,19 +66,131 @@ bool troePatchEntity2(void)
     return true;
   }
 
-  for (KjNode* patchP = patchTree->value.firstChildP; patchP != NULL; patchP = patchP->next)
+  //
+  // Save the names of existing attributes (those already in the DB) before patching.
+  // After orionldPatchApply, new attributes will be added to patchBase, so we need
+  // to know which ones were there before to assign the correct opMode:
+  //   - Existing attributes: "Replace"
+  //   - New attributes:      "Append"
+  //
+  #define MAX_EXISTING_ATTRS 100
+  int      existingAttrCount = 0;
+  char*    existingAttrNames[MAX_EXISTING_ATTRS];
+
+  if (patchBase != NULL)
   {
-    orionldPatchApply(patchBase, patchP, false);
+    for (KjNode* attrP = patchBase->value.firstChildP; attrP != NULL; attrP = attrP->next)
+    {
+      if (existingAttrCount < MAX_EXISTING_ATTRS)
+        existingAttrNames[existingAttrCount++] = attrP->name;
+    }
+  }
+
+  if (patchBase != NULL)
+  {
+    for (KjNode* patchP = patchTree->value.firstChildP; patchP != NULL; patchP = patchP->next)
+    {
+      orionldPatchApply(patchBase, patchP, false);
+    }
   }
 
   //
-  // No need to reimplement what troePatchEntity already implement - push to the TRoE DB
-  // We just need to "pretend" that the patched result (orionldState.patchBase) was what came in
+  // Now build TRoE entries from the patched patchBase, using per-attribute opMode
   //
-  orionldState.requestTree = patchBase;
-  orionldState.patchTree   = patchTree;
+  char* entityId = orionldState.wildcard[0];
 
-  troePatchEntity();
+  PgAppendBuffer attributesBuffer;
+  PgAppendBuffer subAttributesBuffer;
+
+  pgAppendInit(&attributesBuffer, 2*1024);
+  pgAppendInit(&subAttributesBuffer, 2*1024);
+
+  pgAppend(&attributesBuffer,    PG_ATTRIBUTE_INSERT_START,     0);
+  pgAppend(&subAttributesBuffer, PG_SUB_ATTRIBUTE_INSERT_START, 0);
+
+  if (patchBase != NULL)
+  {
+    for (KjNode* attrP = patchBase->value.firstChildP; attrP != NULL; attrP = attrP->next)
+    {
+      // Determine opMode: check if this attribute existed before patching
+      bool existed = false;
+      for (int ix = 0; ix < existingAttrCount; ix++)
+      {
+        if (strcmp(attrP->name, existingAttrNames[ix]) == 0)
+        {
+          existed = true;
+          break;
+        }
+      }
+
+      const char* opMode = existed ? "Replace" : "Append";
+
+      if (attrP->type == KjArray)
+      {
+        for (KjNode* aiP = attrP->value.firstChildP; aiP != NULL; aiP = aiP->next)
+        {
+          aiP->name = attrP->name;
+          pgAttributeBuild(&attributesBuffer, opMode, entityId, aiP, &subAttributesBuffer);
+        }
+      }
+      else if (attrP->type == KjObject)
+        pgAttributeBuild(&attributesBuffer, opMode, entityId, attrP, &subAttributesBuffer);
+    }
+  }
+
+  //
+  // Handle deletions from patchTree
+  //
+  orionldState.patchTree = patchTree;
+
+  if (orionldState.patchTree != NULL)
+  {
+    for (KjNode* patchP = orionldState.patchTree->value.firstChildP; patchP != NULL; patchP = patchP->next)
+    {
+      KjNode* pathNode = kjLookup(patchP, "PATH");
+      KjNode* treeNode = kjLookup(patchP, "TREE");
+
+      if ((pathNode != NULL) && (treeNode != NULL) && (treeNode->type == KjNull))
+      {
+        char* attrName = pathNode->value.s;
+        char* dotP     = strchr(attrName, '.');
+
+        if (dotP == NULL)
+        {
+          char instanceId[80];
+          uuidGenerate(instanceId, sizeof(instanceId), "urn:ngsi-ld:attribute:instance:");
+          pgAttributeAppend(&attributesBuffer, instanceId, attrName, "Delete", entityId, NULL, NULL, true, NULL, NULL, NULL);
+        }
+        else
+        {
+          char* subAttrName = &dotP[1];
+
+          *dotP = 0;
+          dotP  = strchr(subAttrName, '.');
+
+          if (dotP == NULL)
+          {
+            if ((strcmp(subAttrName, "value")      != 0) &&
+                (strcmp(subAttrName, "unitCode")   != 0) &&
+                (strcmp(subAttrName, "observedAt") != 0) &&
+                (strcmp(subAttrName, "datasetId")  != 0))
+            {
+              pgSubAttributeAppend(&subAttributesBuffer, "urn:delete", subAttrName, entityId, "urn:attr-instance:unknown", NULL, "String", NULL, NULL, NULL, NULL);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  char* sqlV[2];
+  int   sqlIx = 0;
+
+  if (attributesBuffer.values    > 0) sqlV[sqlIx++] = attributesBuffer.buf;
+  if (subAttributesBuffer.values > 0) sqlV[sqlIx++] = subAttributesBuffer.buf;
+
+  if (sqlIx > 0)
+    pgCommands(sqlV, sqlIx);
 
   return true;
 }

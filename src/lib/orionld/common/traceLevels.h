@@ -256,7 +256,9 @@ typedef enum OrionldTraceLevels
 
   // Kafka
   StKafka                   = 2100,
+  KtKafka                   = 2100,
   StKafkaDetail             = 2101,
+  KtKafkaDetail             = 2101,
 
   // FT Client
   StDump                    = 3151,

@@ -114,7 +114,6 @@ Date: REGEX(.*)
 }
 
 
-
 02. GET temporal entity with timerel but without timeAt - expect 400
 ====================================================================
 HTTP/1.1 400 Bad Request
@@ -127,7 +126,6 @@ Date: REGEX(.*)
     "title": "Missing required URI parameter",
     "type": "https://uri.etsi.org/ngsi-ld/errors/BadRequestData"
 }
-
 
 
 03. GET temporal entity with invalid timerel value - expect 400
@@ -144,7 +142,6 @@ Date: REGEX(.*)
 }
 
 
-
 04. GET temporal entity with timerel=between but no endTimeAt - expect 400
 ==========================================================================
 HTTP/1.1 400 Bad Request
@@ -159,7 +156,6 @@ Date: REGEX(.*)
 }
 
 
-
 05. GET temporal entity for non-existing entity - expect 404
 ============================================================
 HTTP/1.1 404 Not Found
@@ -172,7 +168,6 @@ Date: REGEX(.*)
     "title": "Entity Not Found",
     "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
-
 
 
 06. Create entity E1 with attribute P1
@@ -196,13 +191,11 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "P1": {
         "observedAt": "REGEX(.*)",
         "type": "Property",
-        "unitCode": REGEX(.*)
-        "value": 42.0
+        "value": REGEX(.*)
     },
     "id": "urn:ngsi-ld:entities:E1",
     "type": "REGEX(.*)"
 }
-
 
 
 --TEARDOWN--

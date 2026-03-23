@@ -407,6 +407,8 @@ void requestCompleted
       //
       if (orionldState.troeError == true)
         KT_E("Internal Error (something went wrong during TRoE processing)");
+      else if (orionldState.noTroe == true)
+        KT_T(KtTroe, "TRoE skipped for this request");
       else
       {
         //

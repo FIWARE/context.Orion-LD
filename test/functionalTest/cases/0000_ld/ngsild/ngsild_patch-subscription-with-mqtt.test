@@ -148,7 +148,7 @@ echo
 
 echo "07. Dump the MQTT test client and see one notification"
 echo "======================================================"
-valgrindSleep 5
+# valgrindSleep 5
 mqttTestClientDump entities2
 echo
 echo

@@ -40,6 +40,7 @@ typedef struct MqttConnection
   char*           username;
   char*           password;
   char*           version;
+  bool            mqtts;
   MQTTClient      client;
   int             connections;  // When down at 0 - the connection is closed
 } MqttConnection;

@@ -31,6 +31,7 @@ extern "C"
 }
 
 #include "orionld/types/MqttConnection.h"                      // MqttConnection
+#include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/mqtt/mqttConnectionList.h"                   // Mqtt Connection List
 #include "orionld/mqtt/mqttConnect.h"                          // Own interface
 
@@ -46,7 +47,13 @@ bool mqttConnect(MqttConnection* mqP, bool mqtts, const char* username, const ch
   char                       address[64];
   int                        status;
 
-  snprintf(address, sizeof(address), "%s:%d", host, port);
+  MQTTClient_SSLOptions  sslOptions = MQTTClient_SSLOptions_initializer;
+
+  if (mqtts)
+    snprintf(address, sizeof(address), "ssl://%s:%d", host, port);
+  else
+    snprintf(address, sizeof(address), "%s:%d", host, port);
+
   MQTTClient_create(&mqP->client, address, "Orion-LD", MQTTCLIENT_PERSISTENCE_NONE, NULL);
 
   connectOptions.keepAliveInterval = 0;
@@ -67,7 +74,12 @@ bool mqttConnect(MqttConnection* mqP, bool mqtts, const char* username, const ch
   else                                          connectOptions.MQTTVersion = MQTTVERSION_DEFAULT;
 
   if (mqtts)
-    KT_W("WARNING - MQTT/SSL is not implemented yet - using unsecure MQTT for now. Sorry ... ");
+  {
+    // TODO: Add CLI option for CA trust store to enable server cert verification
+    sslOptions.enableServerCertAuth = 0;
+    connectOptions.ssl = &sslOptions;
+    KT_T(KtMqtt, "Using MQTT over TLS for %s:%d", host, port);
+  }
 
 
   //

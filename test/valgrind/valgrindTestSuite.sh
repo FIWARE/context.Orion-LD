@@ -76,7 +76,9 @@ function usage()
   echo "$empty [-leakTest (test a memory leak)]"
   echo "$empty [-filter <test filter>]"
   echo "$empty [-ld (only ngsild tests)]"
-  echo "$empty [-troe (only ngsild TRoE (Temporal Representation of Entities) tests)]"  
+  echo "$empty [-troe (only ngsild TRoE (Temporal Representation of Entities) tests)]"
+  echo "$empty [-dds (only dds tests)]"
+  echo "$empty [-ws (only web sockets tests)]"
   echo "$empty [-dryrun (don't execute any tests)]"
   echo "$empty [-dryLeaks (simulate leaks and functest errors)]"
   echo "$empty [-fromIx <index of test where to start>]"
@@ -223,6 +225,8 @@ do
   elif [ "$1" == "-filter" ];   then TEST_FILTER=$2; shift;
   elif [ "$1" == "-ld" ];       then TEST_FILTER="ngsild_*.test";
   elif [ "$1" == "-troe" ];     then TEST_FILTER="troe_*.test";
+  elif [ "$1" == "-dds" ];      then TEST_FILTER="dds_*.test";
+  elif [ "$1" == "-ws" ];       then TEST_FILTER="ws_*.test";
   elif [ "$1" == "-dryrun" ];   then dryrun=on;
   elif [ "$1" == "-dryLeaks" ]; then dryLeaks=on;
   elif [ "$1" == "-fromIx" ];   then  shift; fromIx=$1;

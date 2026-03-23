@@ -33,6 +33,7 @@
 #include <rapidjson/rapidjson.h>                               // RAPIDJSON_VERSION_STRING
 #include <mongoc/mongoc.h>                                     // MONGOC_VERSION_S
 #include <bson/bson.h>                                         // BSON_VERSION_S
+#include <geos_c.h>                                            // GEOS_CAPI_VERSION
 
 extern "C"
 {
@@ -147,6 +148,10 @@ bool orionldGetVersion(void)
 
   // bson
   nodeP = kjString(orionldState.kjsonP, "bson version", BSON_VERSION_S);
+  kjChildAdd(orionldState.responseTree, nodeP);
+
+  // geos
+  nodeP = kjString(orionldState.kjsonP, "geos version", GEOS_CAPI_VERSION);
   kjChildAdd(orionldState.responseTree, nodeP);
 
 
