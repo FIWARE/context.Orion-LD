@@ -322,6 +322,13 @@ bool orionldPatchEntity(void)
     goto done;
   }
 
+  // Entity doesn't exist locally - can't patch
+  if (dbEntityP == NULL)
+  {
+    orionldState.requestTree = NULL;
+    goto done;
+  }
+
   dbEntityCopy = kjClone(orionldState.kjsonP, dbEntityP);  // dbModelToApiEntity2 is DESTRUCTIVE
 
   //

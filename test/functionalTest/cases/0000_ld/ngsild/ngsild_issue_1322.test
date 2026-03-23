@@ -27,7 +27,7 @@ Issue #1322
 ${SCRIPT_HOME}/httpsPrepare.sh --keyFileName /tmp/harnessTest.key --certFileName /tmp/harnessTest.pem
 dbInit CB
 dbInit CB captn
-orionldStart CB -experimental -mongocOnly -multiservice
+orionldStart CB -mongocOnly -multiservice
 accumulatorStart --pretty-print --url /yvonne 127.0.0.1 $LISTENER_PORT
 accumulatorStart --pretty-print --https --key /tmp/harnessTest.key --cert /tmp/harnessTest.pem --url /yvonne 127.0.0.1 $LISTENER2_PORT
 

@@ -44,6 +44,7 @@ SET (SOURCES
     NgsildPublisher.cpp
     DdsNotificationSender.cpp
     wsClient.cpp
+    mqttClient.cpp
 )
 
 SET (COMMON_STATIC_LIBS
@@ -129,7 +130,7 @@ link_directories("/usr/lib/x86_64-linux-gnu")
 
 ADD_EXECUTABLE(ftClient ${SOURCES} ${HEADERS})
 
-TARGET_LINK_LIBRARIES(ftClient ${STATIC_LIBS} ${DYNAMIC_LIBS} -lmicrohttpd -lmicrohttpd_ws)
+TARGET_LINK_LIBRARIES(ftClient ${STATIC_LIBS} ${DYNAMIC_LIBS} -lmicrohttpd -lmicrohttpd_ws -lpaho-mqtt3cs)
 
 IF (${DISTRO} MATCHES "Ubuntu.*")
   MESSAGE("ftClient: INSTALL Ubuntu DISTRO: '${DISTRO}'")

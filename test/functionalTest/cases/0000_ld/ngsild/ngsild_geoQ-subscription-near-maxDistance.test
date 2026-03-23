@@ -1,0 +1,293 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Subscription with geoQ near;maxDistance - in-memory geo-matching with GEOS
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -mongocOnly
+$REPO_HOME/scripts/configFile.sh > ~/.ftClient
+chmod 777 ~/.ftClient
+ftClientStart -v -t 200
+
+--SHELL--
+
+#
+# Subscription centered at Madrid (lon=-3.691944, lat=40.418889) with maxDistance 100km.
+#
+# Points inside (< 100km from Madrid):
+#   Toledo:       lon=-4.035825, lat=39.867459  (~69km)
+#   Guadalajara:  lon=-3.166392, lat=40.634273  (~52km)
+#
+# Points outside (> 100km from Madrid):
+#   Barcelona:    lon=2.154006,  lat=41.366656  (~506km)
+#   Valencia:     lon=-0.364853, lat=39.461008  (~303km)
+#
+# 01. Create subscription S1 with geoQ near;maxDistance==100000 centered at Madrid
+# 02. Create entity E1 at Toledo (inside) - notification expected
+# 03. Create entity E2 at Barcelona (outside) - no notification
+# 04. Update entity E2 location to Guadalajara (inside) - notification expected
+# 05. Update entity E1 location to Valencia (outside) - no notification
+# 06. Dump ftClient - see 2 notifications: E1 (Toledo) and E2 (Guadalajara)
+#
+
+
+echo "01. Create subscription S1 with geoQ near;maxDistance==100000 centered at Madrid"
+echo "================================================================================"
+payload='{
+  "id": "urn:ngsi-ld:Subscription:S1",
+  "type": "Subscription",
+  "entities": [
+    {
+      "type": "City"
+    }
+  ],
+  "geoQ": {
+    "georel": "near;maxDistance==100000",
+    "geometry": "Point",
+    "coordinates": [-3.691944, 40.418889],
+    "geoproperty": "location"
+  },
+  "notification": {
+    "endpoint": {
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
+      "accept": "application/json"
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload"
+echo
+echo
+
+
+echo "02. Create entity E1 at Toledo (inside) - notification expected"
+echo "==============================================================="
+payload='{
+  "id": "urn:ngsi-ld:City:E1",
+  "type": "City",
+  "name": {
+    "type": "Property",
+    "value": "Toledo"
+  },
+  "location": {
+    "type": "GeoProperty",
+    "value": {
+      "type": "Point",
+      "coordinates": [-4.035825, 39.867459]
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "03. Create entity E2 at Barcelona (outside) - no notification"
+echo "============================================================="
+payload='{
+  "id": "urn:ngsi-ld:City:E2",
+  "type": "City",
+  "name": {
+    "type": "Property",
+    "value": "Barcelona"
+  },
+  "location": {
+    "type": "GeoProperty",
+    "value": {
+      "type": "Point",
+      "coordinates": [2.154006, 41.366656]
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "04. Update entity E2 location to Guadalajara (inside) - notification expected"
+echo "============================================================================="
+payload='{
+  "location": {
+    "type": "GeoProperty",
+    "value": {
+      "type": "Point",
+      "coordinates": [-3.166392, 40.634273]
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:City:E2/attrs --payload "$payload"
+echo
+echo
+
+
+echo "05. Update entity E1 location to Valencia (outside) - no notification"
+echo "====================================================================="
+payload='{
+  "location": {
+    "type": "GeoProperty",
+    "value": {
+      "type": "Point",
+      "coordinates": [-0.364853, 39.461008]
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:City:E1/attrs --payload "$payload"
+echo
+echo
+
+
+sleep .1
+echo "06. Dump ftClient - see 2 notifications: E1 (Toledo) and E2 (Guadalajara)"
+echo "========================================================================="
+orionCurl --url /dump --port $FT_PORT --noPayloadCheck
+echo
+echo
+
+
+--REGEXPECT--
+01. Create subscription S1 with geoQ near;maxDistance==100000 centered at Madrid
+================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/subscriptions/urn:ngsi-ld:Subscription:S1
+
+
+
+02. Create entity E1 at Toledo (inside) - notification expected
+===============================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:City:E1
+
+
+
+03. Create entity E2 at Barcelona (outside) - no notification
+=============================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:City:E2
+
+
+
+04. Update entity E2 location to Guadalajara (inside) - notification expected
+=============================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+05. Update entity E1 location to Valencia (outside) - no notification
+=====================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+06. Dump ftClient - see 2 notifications: E1 (Toledo) and E2 (Guadalajara)
+=========================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Date: REGEX(.*)
+
+POST /notify?subscriptionId=urn:ngsi-ld:Subscription:S1
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+User-Agent: orionld/REGEX(.*)
+Host: REGEX(.*)
+Accept: application/json
+Ngsild-Attribute-Format: Normalized
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+  "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+  "type": "Notification",
+  "subscriptionId": "urn:ngsi-ld:Subscription:S1",
+  "notifiedAt": "REGEX(.*)",
+  "data": [
+    {
+      "id": "urn:ngsi-ld:City:E1",
+      "type": "City",
+      "name": {
+        "type": "Property",
+        "value": "Toledo"
+      },
+      "location": {
+        "type": "GeoProperty",
+        "value": {
+          "type": "Point",
+          "coordinates": [
+            -4.035825,
+            39.867459
+          ]
+        }
+      }
+    }
+  ]
+}
+================================================================================
+
+POST /notify?subscriptionId=urn:ngsi-ld:Subscription:S1
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+User-Agent: orionld/REGEX(.*)
+Host: REGEX(.*)
+Accept: application/json
+Ngsild-Attribute-Format: Normalized
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+  "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+  "type": "Notification",
+  "subscriptionId": "urn:ngsi-ld:Subscription:S1",
+  "notifiedAt": "REGEX(.*)",
+  "data": [
+    {
+      "id": "urn:ngsi-ld:City:E2",
+      "type": "City",
+      "name": {
+        "type": "Property",
+        "value": "Barcelona"
+      },
+      "location": {
+        "type": "GeoProperty",
+        "value": {
+          "type": "Point",
+          "coordinates": [
+            -3.166392,
+            40.634273
+          ]
+        }
+      }
+    }
+  ]
+}
+
+
+
+--TEARDOWN--
+brokerStop CB
+ftClientStop
+dbDrop CB

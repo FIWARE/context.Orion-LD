@@ -150,15 +150,9 @@ KjNode* kjTreeFromPernotSubscription(PernotSubscription* pSubP, bool sysAttrs, b
   }
 
   // 3. Add the "volatile" fields, but, first decide the states
-  bool  isActive           = true;
-  char* status             = (char*) "active";
+  bool  isActive           = pSubP->isActive;
+  char* status             = (pSubP->state == SubActive) ? (char*) "active" : (char*) "paused";
   char* notificationStatus = (char*) "ok";
-  //
-  // Lookup and compare with:
-  // * expiresAt
-  // * any error
-  // * paused, ...
-  //
   KjNode* isActiveP = kjBoolean(orionldState.kjsonP, "isActive", isActive);
   kjChildAdd(sP, isActiveP);
   KjNode* statusP = kjString(orionldState.kjsonP, "status", status);

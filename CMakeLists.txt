@@ -30,6 +30,7 @@ pkg_check_modules(LIBMONGOC REQUIRED mongoc2)
 pkg_check_modules(LIBBSON REQUIRED bson2)
 pkg_check_modules(LIBMICROHTTPD REQUIRED libmicrohttpd)
 pkg_check_modules(GNUTLS REQUIRED gnutls)
+pkg_check_modules(GEOS REQUIRED geos)
 
 #
 # DEBUG or RELEASE build ?
@@ -303,7 +304,8 @@ SET (DYNAMIC_LIBS
     icudata
     z
     resolv
-    paho-mqtt3c
+    paho-mqtt3cs
+    geos_c         # for GEOS geofencing in subscription matching
     rdkafka        # for Kafka-based time series ingestion
     pq             # for TRoE & Postgres
     ${LIBMONGOC_LIBRARIES}

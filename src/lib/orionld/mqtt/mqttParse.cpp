@@ -127,6 +127,10 @@ bool mqttParse(char* url, bool* mqttsP, char** usernameP, char** passwordP, char
 
     *portP = atoi(portString);
   }
+  else
+  {
+    *portP = (*mqttsP == true) ? 8883 : 1883;
+  }
   *hostP = url;
 
   return true;

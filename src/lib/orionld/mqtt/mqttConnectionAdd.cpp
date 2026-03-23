@@ -86,6 +86,7 @@ MqttConnection* mqttConnectionAdd
   mqP->username = (username != NULL)? strdup(username) : NULL;
   mqP->password = (password != NULL)? strdup(password) : NULL;
   mqP->version  = (version  != NULL)? strdup(version)  : NULL;
+  mqP->mqtts    = mqtts;
 
   if (mqttConnect(mqP, mqtts, username, password, host, port, version) == false)
   {

@@ -814,7 +814,7 @@ void orionldAlterationsTreat(OrionldAlteration* altList)
     if (npP->used == true)
       continue;
 
-    if (npP->subP->protocol == MQTT)
+    if (npP->subP->protocol == MQTT || npP->subP->protocol == MQTTS)
       continue;
 
     notificationFailure(npP->subP, "Notification never reached its destination", notificationTime);

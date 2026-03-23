@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+#
+set -e
+
+RDKAFKA_VERSION=2.3.0
+
+echo
+echo -e "\e[1;32m Builder: installing librdkafka library\e[0m"
+
+cd /opt
+curl -L https://github.com/confluentinc/librdkafka/archive/refs/tags/v${RDKAFKA_VERSION}.tar.gz | tar xz
+cd librdkafka-${RDKAFKA_VERSION}
+
+./configure --prefix=/usr
+make -j$(nproc)
+make install
+ldconfig
+cd /opt && rm -rf librdkafka-${RDKAFKA_VERSION}

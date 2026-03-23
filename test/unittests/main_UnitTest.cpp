@@ -87,6 +87,7 @@ char            dbName[64];
 char            user[64];
 char            pwd[64];
 int64_t         dbTimeout;
+int             distOpTimeout;
 int             dbPoolSize;
 int             writeConcern;
 char            gtest_filter[1024];

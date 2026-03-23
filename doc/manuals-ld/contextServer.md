@@ -64,14 +64,14 @@ POST /ngsi-ld/v1/jsonldContexts
 }
 ```
 
-The 'id' of the created context is returned in the Location header, e.g.:
+The 'id' of the created context is returned in the Location header as a relative path, e.g.:
 ```
 HTTP/1.1 201 Created
 Content-Length: 0
-Location: http://host:port/ngsi-ld/v1/jsonldContexts/XXXXX
-Date: REGEX(.*)
+Location: /ngsi-ld/v1/jsonldContexts/XXXXX
+Date: ...
 ```
-XXXXX would be the 'id' of the context, while the value of the Location header is the URL to be used to use (include in other requests), retrieve (GET) the context or to DELETE it from the broker.
+XXXXX would be the 'id' of the context. The Location header contains the relative path that can be used to retrieve (GET) the context or to DELETE it from the broker.
 
 ## Retrieve the list of all the served contexts
 To obtain a list of all the contexts in the brokers context cache, use the following request:

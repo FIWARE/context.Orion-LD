@@ -42,6 +42,7 @@ extern "C"
 
 #include "ftClient/mhdRequestTreat.h"                       // Own interface
 #include "ftClient/wsClient.h"                               // postWsConnect, wsRouteDispatch
+#include "ftClient/mqttClient.h"                             // postMqttSub, mqttRouteDispatch
 
 // Service Routines
 #include "ftClient/getDump.h"                               // getDump
@@ -102,6 +103,7 @@ FtService serviceV[] =
   { HTTP_POST,     "/dds/service",           postDdsService          },
   { HTTP_POST,     "/dds/action",            postDdsAction           },
   { HTTP_POST,     "/ws/connect",            postWsConnect           },
+  { HTTP_POST,     "/mqtt/sub",              postMqttSub             },
   { HTTP_NOVERB,   NULL,                     NULL                    }
 };
 
@@ -148,6 +150,24 @@ char* mhdRequestTreat(int* statusCodeP)
 
     ++ix;
   }
+  //
+  // Try MQTT dynamic routes (e.g. /mqtt/{topic}/dump, /mqtt/{topic}/unsub, etc.)
+  //
+  if (strncmp(orionldState.urlPath, "/mqtt/", 6) == 0)
+  {
+    KjNode* responseTree = mqttRouteDispatch(statusCodeP);
+    if (responseTree != NULL)
+    {
+      int   bufSize = kjRenderSize(orionldState.kjsonP, responseTree) + 1024;
+      char* buf     = kaAlloc(&orionldState.kalloc, bufSize);
+      bzero(buf, bufSize);
+      kjRender(orionldState.kjsonP, responseTree, buf);
+      return buf;
+    }
+    if (*statusCodeP == 204)
+      return (char*) "";
+  }
+
   //
   // Try WS dynamic routes (e.g. /ws/{subId}/dump, /ws/{subId}/send, etc.)
   //

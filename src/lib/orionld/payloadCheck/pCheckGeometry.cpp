@@ -54,11 +54,5 @@ bool pCheckGeometry(char* geometryString, OrionldGeometry* geometryP, bool isSub
     return false;
   }
 
-  if ((isSubscription == true) && (*geometryP != GeoPoint))
-  {
-    orionldError(OrionldOperationNotSupported, "Not Implemented", "Subscriptions only support Point for geometry (right now)", 501);
-    return false;
-  }
-
   return true;
 }

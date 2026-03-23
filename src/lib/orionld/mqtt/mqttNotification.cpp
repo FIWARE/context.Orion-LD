@@ -143,7 +143,13 @@ int mqttNotification
 
   snprintf(totalBuf, totalLen, "{\"metadata\": %s,\"body\": %s}", metadataBuf, body);
 
-  MqttConnection*           mqttP   = mqttConnectionLookup(host, port, username, password, mqttVersion);
+  //
+  // Legacy function - try both MQTT and MQTTS when looking up the connection
+  //
+  MqttConnection*           mqttP   = mqttConnectionLookup(false, host, port, username, password, mqttVersion);
+  if (mqttP == NULL)
+    mqttP = mqttConnectionLookup(true, host, port, username, password, mqttVersion);
+
   MQTTClient_message        mqttMsg = MQTTClient_message_initializer;
   MQTTClient_deliveryToken  mqttToken;
 

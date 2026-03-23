@@ -52,7 +52,7 @@ payload='{
   }
 }'
 orionCurl --url /ngsi-ld/v1/jsonldContexts --payload "$payload"
-enContext="/"$(echo "$_responseHeaders" | grep Location: | awk -F:9999/ '{ print $2 }' | tr -d "\r\n")
+enContext=$(echo "$_responseHeaders" | grep Location: | awk -F'Location: ' '{ print $2 }' | tr -d "\r\n")
 echo
 echo
 
@@ -66,7 +66,7 @@ payload='{
   }
 }'
 orionCurl --url /ngsi-ld/v1/jsonldContexts --payload "$payload"
-esContext="/"$(echo "$_responseHeaders" | grep Location: | awk -F:9999/ '{ print $2 }' | tr -d "\r\n")
+esContext=$(echo "$_responseHeaders" | grep Location: | awk -F'Location: ' '{ print $2 }' | tr -d "\r\n")
 echo
 echo
 
@@ -80,7 +80,7 @@ payload='{
   }
 }'
 orionCurl --url /ngsi-ld/v1/jsonldContexts --payload "$payload"
-swContext="/"$(echo "$_responseHeaders" | grep Location: | awk -F:9999/ '{ print $2 }' | tr -d "\r\n")
+swContext=$(echo "$_responseHeaders" | grep Location: | awk -F'Location: ' '{ print $2 }' | tr -d "\r\n")
 echo
 echo
 

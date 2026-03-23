@@ -104,15 +104,6 @@ bool kjTreeToSubscriptionExpression(KjNode* kNodeP, SubscriptionExpression* subE
     return false;
   }
 
-  //
-  // Subscriptions only support "Point"
-  //
-  if (strcmp(geometryP, "Point") != 0)
-  {
-    orionldError(OrionldOperationNotSupported, "Not Implemented", "Subscriptions only support Point for geometry (right now)", 501);
-    return false;
-  }
-
   char  coords[512];  // 512 should be enough for most cases - if not, kaAlloc
   char* coordsP = NULL;
 
