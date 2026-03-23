@@ -136,7 +136,6 @@ Replace,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:ngsi-ld:entit
 Replace,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:ngsi-ld:entities:E1,300,2024-06-15 12:00:00,REGEX(202.*)
 
 
-
 05. GET temporal entity with timerel=between covering all entries
 =================================================================
 HTTP/1.1 200 OK
@@ -169,6 +168,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "id": "urn:ngsi-ld:entities:E1",
     "type": "T"
 }
+
 
 --TEARDOWN--
 brokerStop CB
