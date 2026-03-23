@@ -22,14 +22,17 @@
 *
 * Author: Carsten Frey
 */
-#include <string.h>                                            // strcmp
+#include <stdio.h>                                            // snprintf
+#include <string.h>                                            // strcmp, strlen
 
 extern "C"
 {
 #include "ktrace/kTrace.h"                                     // KT_*
+#include "kalloc/kaAlloc.h"                                    // kaAlloc
 }
 
 #include "orionld/types/PgConnection.h"                        // PgConnection
+#include "orionld/types/StringArray.h"                         // StringArray
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/common/pqHeader.h"                           // PGresult, PQexecParams, etc.
@@ -41,30 +44,72 @@ extern "C"
 
 // -----------------------------------------------------------------------------
 //
-// SQL query templates
+// timeColumnForTimeproperty - determine the SQL time column from the timeproperty URI param
 //
-// Entity query: get the entity type at a given point in time
+// Per ETSI GS CIM 009 (Clause 4.5.6):
+//   - observedAt (default): filter on the observedat column
+//   - modifiedAt: filter on ts (the record timestamp)
+//   - createdAt:  filter on ts with additional opmode='Create' constraint
 //
-static const char* entityQueryBefore =
-  "SELECT id, type FROM entities "
-  "WHERE id = $1 AND ts <= $2 "
-  "ORDER BY ts DESC LIMIT 1";
+static const char* timeColumnForTimeproperty(const char* timeproperty)
+{
+  if (timeproperty == NULL)
+    return "observedat";
 
-static const char* entityQueryAfter =
-  "SELECT id, type FROM entities "
-  "WHERE id = $1 AND ts >= $2 "
-  "ORDER BY ts ASC LIMIT 1";
+  if (strcmp(timeproperty, "modifiedAt") == 0)
+    return "ts";
 
-static const char* entityQueryBetween =
-  "SELECT id, type FROM entities "
-  "WHERE id = $1 AND ts >= $2 AND ts <= $3 "
-  "ORDER BY ts DESC LIMIT 1";
+  if (strcmp(timeproperty, "createdAt") == 0)
+    return "ts";
 
+  return "observedat";
+}
+
+
+
+// -----------------------------------------------------------------------------
 //
-// Attribute query: get latest attribute values at a given point in time
+// attrsFilter - build an SQL IN clause for attribute name filtering
 //
-static const char* attrQueryBefore =
-  "SELECT DISTINCT ON (id, datasetid) "
+// Returns "" if no attrs filter, or " AND id IN ('attr1','attr2',...)" if attrs are specified.
+// The returned buffer is allocated via kaAlloc.
+//
+static const char* attrsFilter(StringArray* attrList)
+{
+  if (attrList->items == 0)
+    return "";
+
+  // Calculate needed size: " AND id IN (" + quoted attrs + ")"
+  int needed = 16;  // " AND id IN (" + ")"
+  for (int i = 0; i < attrList->items; i++)
+    needed += strlen(attrList->array[i]) + 3;  // 'x',
+
+  char* buf = kaAlloc(&orionldState.kalloc, needed);
+  int   pos = 0;
+
+  pos += snprintf(buf + pos, needed - pos, " AND id IN (");
+  for (int i = 0; i < attrList->items; i++)
+  {
+    if (i > 0) buf[pos++] = ',';
+    pos += snprintf(buf + pos, needed - pos, "'%s'", attrList->array[i]);
+  }
+  buf[pos++] = ')';
+  buf[pos]   = 0;
+
+  return buf;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// SQL query SELECT/FROM/ORDER parts (shared between all timerel variants)
+//
+static const char* entitySelect =
+  "SELECT id, type FROM entities ";
+
+static const char* attrSelect =
+  "SELECT "
   "id, valuetype::text, text, boolean, number, datetime, compound, "
   "observedat, unitcode, datasetid, subproperties, "
   "ST_AsGeoJSON(geopoint) as geopoint, "
@@ -72,71 +117,17 @@ static const char* attrQueryBefore =
   "ST_AsGeoJSON(geomultipoint) as geomultipoint, "
   "ST_AsGeoJSON(geomultipolygon) as geomultipolygon, "
   "ST_AsGeoJSON(geolinestring) as geolinestring, "
-  "ST_AsGeoJSON(geomultilinestring) as geomultilinestring "
-  "FROM attributes "
-  "WHERE entityid = $1 AND ts <= $2 AND opmode != 'Delete' "
-  "ORDER BY id, datasetid, ts DESC";
+  "ST_AsGeoJSON(geomultilinestring) as geomultilinestring, "
+  "instanceid "
+  "FROM attributes ";
 
-static const char* attrQueryAfter =
-  "SELECT DISTINCT ON (id, datasetid) "
-  "id, valuetype::text, text, boolean, number, datetime, compound, "
-  "observedat, unitcode, datasetid, subproperties, "
-  "ST_AsGeoJSON(geopoint) as geopoint, "
-  "ST_AsGeoJSON(geopolygon) as geopolygon, "
-  "ST_AsGeoJSON(geomultipoint) as geomultipoint, "
-  "ST_AsGeoJSON(geomultipolygon) as geomultipolygon, "
-  "ST_AsGeoJSON(geolinestring) as geolinestring, "
-  "ST_AsGeoJSON(geomultilinestring) as geomultilinestring "
-  "FROM attributes "
-  "WHERE entityid = $1 AND ts >= $2 AND opmode != 'Delete' "
-  "ORDER BY id, datasetid, ts ASC";
-
-static const char* attrQueryBetween =
-  "SELECT DISTINCT ON (id, datasetid) "
-  "id, valuetype::text, text, boolean, number, datetime, compound, "
-  "observedat, unitcode, datasetid, subproperties, "
-  "ST_AsGeoJSON(geopoint) as geopoint, "
-  "ST_AsGeoJSON(geopolygon) as geopolygon, "
-  "ST_AsGeoJSON(geomultipoint) as geomultipoint, "
-  "ST_AsGeoJSON(geomultipolygon) as geomultipolygon, "
-  "ST_AsGeoJSON(geolinestring) as geolinestring, "
-  "ST_AsGeoJSON(geomultilinestring) as geomultilinestring "
-  "FROM attributes "
-  "WHERE entityid = $1 AND ts >= $2 AND ts <= $3 AND opmode != 'Delete' "
-  "ORDER BY id, datasetid, ts DESC";
-
-//
-// Sub-attribute query
-//
-static const char* subAttrQueryBefore =
-  "SELECT DISTINCT ON (id, attrinstanceid, attrdatasetid) "
+static const char* subAttrSelect =
+  "SELECT "
   "id, attrinstanceid, attrdatasetid, valuetype::text, "
   "text, boolean, number, datetime, compound, "
   "observedat, unitcode, "
   "ST_AsGeoJSON(geopoint) as geopoint "
-  "FROM subattributes "
-  "WHERE entityid = $1 AND ts <= $2 "
-  "ORDER BY id, attrinstanceid, attrdatasetid, ts DESC";
-
-static const char* subAttrQueryAfter =
-  "SELECT DISTINCT ON (id, attrinstanceid, attrdatasetid) "
-  "id, attrinstanceid, attrdatasetid, valuetype::text, "
-  "text, boolean, number, datetime, compound, "
-  "observedat, unitcode, "
-  "ST_AsGeoJSON(geopoint) as geopoint "
-  "FROM subattributes "
-  "WHERE entityid = $1 AND ts >= $2 "
-  "ORDER BY id, attrinstanceid, attrdatasetid, ts ASC";
-
-static const char* subAttrQueryBetween =
-  "SELECT DISTINCT ON (id, attrinstanceid, attrdatasetid) "
-  "id, attrinstanceid, attrdatasetid, valuetype::text, "
-  "text, boolean, number, datetime, compound, "
-  "observedat, unitcode, "
-  "ST_AsGeoJSON(geopoint) as geopoint "
-  "FROM subattributes "
-  "WHERE entityid = $1 AND ts >= $2 AND ts <= $3 "
-  "ORDER BY id, attrinstanceid, attrdatasetid, ts DESC";
+  "FROM subattributes ";
 
 
 
@@ -146,13 +137,16 @@ static const char* subAttrQueryBetween =
 //
 bool pgTemporalEntityQuery
 (
-  const char*  entityId,
-  const char*  timerel,
-  const char*  timeAt,
-  const char*  endTimeAt,
-  PGresult**   entityResP,
-  PGresult**   attrResP,
-  PGresult**   subAttrResP
+  const char*   entityId,
+  const char*   timerel,
+  const char*   timeAt,
+  const char*   endTimeAt,
+  const char*   timeproperty,
+  StringArray*  attrList,
+  int           lastN,
+  PGresult**    entityResP,
+  PGresult**    attrResP,
+  PGresult**    subAttrResP
 )
 {
   *entityResP  = NULL;
@@ -166,32 +160,132 @@ bool pgTemporalEntityQuery
     return false;
   }
 
-  // Select query variants based on timerel
-  const char*  entityQuery;
-  const char*  attrQuery;
-  const char*  subAttrQuery;
-  int          nParams;
+  const char* timeCol  = timeColumnForTimeproperty(timeproperty);
+  bool createdAtFilter = (timeproperty != NULL && strcmp(timeproperty, "createdAt") == 0);
+
+  //
+  // Build attribute name filter (empty string if no attrs specified)
+  //
+  const char* attrFilter = attrsFilter(attrList);
+
+  //
+  // Build query strings dynamically based on timerel, timeproperty, attrs, and lastN
+  //
+  // For lastN we use a window function approach:
+  //   SELECT * FROM (
+  //     SELECT ..., ROW_NUMBER() OVER (PARTITION BY id, datasetid ORDER BY ts DESC) as rn
+  //     FROM attributes WHERE ...
+  //   ) sub WHERE rn <= lastN ORDER BY id, datasetid, ts DESC
+  //
+  char entityQuery[512];
+  char attrQuery[4096];
+  char subAttrQuery[1024];
+  int  nParams;
+
+  const char* opmodeFilter = createdAtFilter ? " AND opmode = 'Create'" : " AND opmode != 'Delete'";
+  const char* tsOrder;
 
   if (strcmp(timerel, "before") == 0)
   {
-    entityQuery  = entityQueryBefore;
-    attrQuery    = attrQueryBefore;
-    subAttrQuery = subAttrQueryBefore;
-    nParams      = 2;
+    tsOrder = "DESC";
+    nParams = 2;
+
+    snprintf(entityQuery, sizeof(entityQuery),
+             "%sWHERE id = $1 AND ts <= $2 ORDER BY ts DESC LIMIT 1", entitySelect);
+
+    if (lastN > 0)
+    {
+      snprintf(attrQuery, sizeof(attrQuery),
+               "SELECT * FROM ("
+               "SELECT id, valuetype::text, text, boolean, number, datetime, compound, "
+               "observedat, unitcode, datasetid, subproperties, "
+               "ST_AsGeoJSON(geopoint) as geopoint, ST_AsGeoJSON(geopolygon) as geopolygon, "
+               "ST_AsGeoJSON(geomultipoint) as geomultipoint, ST_AsGeoJSON(geomultipolygon) as geomultipolygon, "
+               "ST_AsGeoJSON(geolinestring) as geolinestring, ST_AsGeoJSON(geomultilinestring) as geomultilinestring, "
+               "instanceid, ROW_NUMBER() OVER (PARTITION BY id, datasetid ORDER BY ts DESC) as rn "
+               "FROM attributes "
+               "WHERE entityid = $1 AND %s <= $2%s%s"
+               ") sub WHERE rn <= %d ORDER BY id, datasetid, ts DESC",
+               timeCol, opmodeFilter, attrFilter, lastN);
+    }
+    else
+    {
+      snprintf(attrQuery, sizeof(attrQuery),
+               "%sWHERE entityid = $1 AND %s <= $2%s%s ORDER BY id, datasetid, ts DESC",
+               attrSelect, timeCol, opmodeFilter, attrFilter);
+    }
+
+    snprintf(subAttrQuery, sizeof(subAttrQuery),
+             "%sWHERE entityid = $1 AND ts <= $2 ORDER BY id, attrinstanceid, attrdatasetid, ts DESC",
+             subAttrSelect);
   }
   else if (strcmp(timerel, "after") == 0)
   {
-    entityQuery  = entityQueryAfter;
-    attrQuery    = attrQueryAfter;
-    subAttrQuery = subAttrQueryAfter;
-    nParams      = 2;
+    tsOrder = "ASC";
+    nParams = 2;
+
+    snprintf(entityQuery, sizeof(entityQuery),
+             "%sWHERE id = $1 AND ts >= $2 ORDER BY ts ASC LIMIT 1", entitySelect);
+
+    if (lastN > 0)
+    {
+      snprintf(attrQuery, sizeof(attrQuery),
+               "SELECT * FROM ("
+               "SELECT id, valuetype::text, text, boolean, number, datetime, compound, "
+               "observedat, unitcode, datasetid, subproperties, "
+               "ST_AsGeoJSON(geopoint) as geopoint, ST_AsGeoJSON(geopolygon) as geopolygon, "
+               "ST_AsGeoJSON(geomultipoint) as geomultipoint, ST_AsGeoJSON(geomultipolygon) as geomultipolygon, "
+               "ST_AsGeoJSON(geolinestring) as geolinestring, ST_AsGeoJSON(geomultilinestring) as geomultilinestring, "
+               "instanceid, ROW_NUMBER() OVER (PARTITION BY id, datasetid ORDER BY ts DESC) as rn "
+               "FROM attributes "
+               "WHERE entityid = $1 AND %s >= $2%s%s"
+               ") sub WHERE rn <= %d ORDER BY id, datasetid, ts DESC",
+               timeCol, opmodeFilter, attrFilter, lastN);
+    }
+    else
+    {
+      snprintf(attrQuery, sizeof(attrQuery),
+               "%sWHERE entityid = $1 AND %s >= $2%s%s ORDER BY id, datasetid, ts ASC",
+               attrSelect, timeCol, opmodeFilter, attrFilter);
+    }
+
+    snprintf(subAttrQuery, sizeof(subAttrQuery),
+             "%sWHERE entityid = $1 AND ts >= $2 ORDER BY id, attrinstanceid, attrdatasetid, ts ASC",
+             subAttrSelect);
   }
   else if (strcmp(timerel, "between") == 0)
   {
-    entityQuery  = entityQueryBetween;
-    attrQuery    = attrQueryBetween;
-    subAttrQuery = subAttrQueryBetween;
-    nParams      = 3;
+    tsOrder = "DESC";
+    nParams = 3;
+
+    snprintf(entityQuery, sizeof(entityQuery),
+             "%sWHERE id = $1 AND ts >= $2 AND ts <= $3 ORDER BY ts DESC LIMIT 1", entitySelect);
+
+    if (lastN > 0)
+    {
+      snprintf(attrQuery, sizeof(attrQuery),
+               "SELECT * FROM ("
+               "SELECT id, valuetype::text, text, boolean, number, datetime, compound, "
+               "observedat, unitcode, datasetid, subproperties, "
+               "ST_AsGeoJSON(geopoint) as geopoint, ST_AsGeoJSON(geopolygon) as geopolygon, "
+               "ST_AsGeoJSON(geomultipoint) as geomultipoint, ST_AsGeoJSON(geomultipolygon) as geomultipolygon, "
+               "ST_AsGeoJSON(geolinestring) as geolinestring, ST_AsGeoJSON(geomultilinestring) as geomultilinestring, "
+               "instanceid, ROW_NUMBER() OVER (PARTITION BY id, datasetid ORDER BY ts DESC) as rn "
+               "FROM attributes "
+               "WHERE entityid = $1 AND %s >= $2 AND %s <= $3%s%s"
+               ") sub WHERE rn <= %d ORDER BY id, datasetid, ts DESC",
+               timeCol, timeCol, opmodeFilter, attrFilter, lastN);
+    }
+    else
+    {
+      snprintf(attrQuery, sizeof(attrQuery),
+               "%sWHERE entityid = $1 AND %s >= $2 AND %s <= $3%s%s ORDER BY id, datasetid, ts DESC",
+               attrSelect, timeCol, timeCol, opmodeFilter, attrFilter);
+    }
+
+    snprintf(subAttrQuery, sizeof(subAttrQuery),
+             "%sWHERE entityid = $1 AND ts >= $2 AND ts <= $3 ORDER BY id, attrinstanceid, attrdatasetid, ts DESC",
+             subAttrSelect);
   }
   else
   {
@@ -228,7 +322,7 @@ bool pgTemporalEntityQuery
   }
 
   //
-  // Query 2: Attributes
+  // Query 2: Attributes (all instances in the time window, filtered by attrs and limited by lastN)
   //
   KT_T(KtSql, "SQL[attrs]: %s", attrQuery);
   *attrResP = PQexecParams(connectionP->connectionP, attrQuery, nParams, NULL, paramValues, NULL, NULL, 0);

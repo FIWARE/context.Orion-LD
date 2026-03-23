@@ -150,52 +150,68 @@ Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
-    "BoolProp": {
-        "observedAt": "REGEX(.*)",
-        "type": "Property",
-        "value": true
-    },
-    "CompoundProp": {
-        "observedAt": "REGEX(.*)",
-        "type": "Property",
-        "value": {
-REGEX(.*)
-REGEX(.*)
+    "BoolProp": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-06-15T10:00:00Z",
+            "type": "Property",
+            "value": true
         }
-    },
-    "NumberProp": {
-        "observedAt": "REGEX(.*)",
-        "type": "Property",
-        "unitCode": "m/s",
-        "value": REGEX(.*)
-    },
-    "PropWithSub": {
-REGEX(.*SubProp1.*)
-REGEX(.*)
-REGEX(.*)
-REGEX(.*)
-REGEX(.*)
-REGEX(.*SubRel1.*)
-REGEX(.*)
-REGEX(.*)
-REGEX(.*)
-REGEX(.*)
-        "observedAt": "REGEX(.*)",
-        "type": "Property",
-        "value": "parent value"
-    },
-    "Rel1": {
-        "object": "urn:ngsi-ld:entities:Target1",
-        "observedAt": "REGEX(.*)",
-        "type": "Relationship"
-    },
-    "StringProp": {
-        "observedAt": "REGEX(.*)",
-        "type": "Property",
-        "value": "hello world"
-    },
+    ],
+    "CompoundProp": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-06-15T10:00:00Z",
+            "type": "Property",
+            "value": {
+                "number": 42,
+                "street": "Main St"
+            }
+        }
+    ],
+    "NumberProp": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-06-15T10:00:00Z",
+            "type": "Property",
+            "unitCode": "m/s",
+            "value": REGEX(3\.14159.*)
+        }
+    ],
+    "PropWithSub": [
+        {
+            "SubProp1": {
+                "type": "Property",
+                "value": "sub-prop value"
+            },
+            "SubRel1": {
+                "object": "urn:ngsi-ld:entities:SubTarget",
+                "type": "Relationship"
+            },
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-06-15T10:00:00Z",
+            "type": "Property",
+            "value": "parent value"
+        }
+    ],
+    "Rel1": [
+        {
+            "instanceId": "REGEX(.*)",
+            "object": "urn:ngsi-ld:entities:Target1",
+            "observedAt": "2024-06-15T10:00:00Z",
+            "type": "Relationship"
+        }
+    ],
+    "StringProp": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-06-15T10:00:00Z",
+            "type": "Property",
+            "value": "hello world"
+        }
+    ],
     "id": "urn:ngsi-ld:entities:E1",
-    "type": "REGEX(.*)"
+    "type": "T"
 }
 
 
