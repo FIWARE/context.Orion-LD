@@ -200,7 +200,7 @@ bool pgTemporalEntityQuery
                "ST_AsGeoJSON(geopoint) as geopoint, ST_AsGeoJSON(geopolygon) as geopolygon, "
                "ST_AsGeoJSON(geomultipoint) as geomultipoint, ST_AsGeoJSON(geomultipolygon) as geomultipolygon, "
                "ST_AsGeoJSON(geolinestring) as geolinestring, ST_AsGeoJSON(geomultilinestring) as geomultilinestring, "
-               "instanceid, ROW_NUMBER() OVER (PARTITION BY id, datasetid ORDER BY ts DESC) as rn "
+               "instanceid, ts, ROW_NUMBER() OVER (PARTITION BY id, datasetid ORDER BY ts DESC) as rn "
                "FROM attributes "
                "WHERE entityid = $1 AND %s <= $2%s%s"
                ") sub WHERE rn <= %d ORDER BY id, datasetid, ts DESC",
@@ -233,7 +233,7 @@ bool pgTemporalEntityQuery
                "ST_AsGeoJSON(geopoint) as geopoint, ST_AsGeoJSON(geopolygon) as geopolygon, "
                "ST_AsGeoJSON(geomultipoint) as geomultipoint, ST_AsGeoJSON(geomultipolygon) as geomultipolygon, "
                "ST_AsGeoJSON(geolinestring) as geolinestring, ST_AsGeoJSON(geomultilinestring) as geomultilinestring, "
-               "instanceid, ROW_NUMBER() OVER (PARTITION BY id, datasetid ORDER BY ts DESC) as rn "
+               "instanceid, ts, ROW_NUMBER() OVER (PARTITION BY id, datasetid ORDER BY ts DESC) as rn "
                "FROM attributes "
                "WHERE entityid = $1 AND %s >= $2%s%s"
                ") sub WHERE rn <= %d ORDER BY id, datasetid, ts DESC",
@@ -266,7 +266,7 @@ bool pgTemporalEntityQuery
                "ST_AsGeoJSON(geopoint) as geopoint, ST_AsGeoJSON(geopolygon) as geopolygon, "
                "ST_AsGeoJSON(geomultipoint) as geomultipoint, ST_AsGeoJSON(geomultipolygon) as geomultipolygon, "
                "ST_AsGeoJSON(geolinestring) as geolinestring, ST_AsGeoJSON(geomultilinestring) as geomultilinestring, "
-               "instanceid, ROW_NUMBER() OVER (PARTITION BY id, datasetid ORDER BY ts DESC) as rn "
+               "instanceid, ts, ROW_NUMBER() OVER (PARTITION BY id, datasetid ORDER BY ts DESC) as rn "
                "FROM attributes "
                "WHERE entityid = $1 AND %s >= $2 AND %s <= $3%s%s"
                ") sub WHERE rn <= %d ORDER BY id, datasetid, ts DESC",
