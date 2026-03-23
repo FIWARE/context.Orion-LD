@@ -22,4 +22,5 @@ RUN /tmp/build/09.install-postgres-client.sh
 RUN /tmp/build/10.install-rapid-json.sh
 RUN /tmp/build/11.install-prometheus-client.sh
 RUN /tmp/build/12.install-geos.sh
+RUN /tmp/build/13.install-kafka.sh
 RUN yum clean all
