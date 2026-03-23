@@ -23,6 +23,7 @@
 * For those usages not covered by this license please contact with
 * orionld at fiware dot org
 */
+#include "orionld/types/StringArray.h"                         // StringArray
 #include "orionld/common/pqHeader.h"                           // PGresult
 
 
@@ -33,14 +34,16 @@
 //
 extern bool pgTemporalEntityQuery
 (
-  const char*  entityId,
-  const char*  timerel,
-  const char*  timeAt,
-  const char*  endTimeAt,
-  const char*  timeproperty,
-  PGresult**   entityResP,
-  PGresult**   attrResP,
-  PGresult**   subAttrResP
+  const char*   entityId,
+  const char*   timerel,
+  const char*   timeAt,
+  const char*   endTimeAt,
+  const char*   timeproperty,
+  StringArray*  attrList,
+  int           lastN,
+  PGresult**    entityResP,
+  PGresult**    attrResP,
+  PGresult**    subAttrResP
 );
 
 #endif  // SRC_LIB_ORIONLD_TROE_PGTEMPORALENTITYQUERY_H_
