@@ -1134,6 +1134,12 @@ MHD_Result mhdConnectionTreat(void)
 
   if (orionldState.serviceP->mintaka == true)
   {
+    // Set up tenant for mintaka routes - needed for TRoE database access
+    if (orionldState.tenantName != NULL)
+      orionldState.tenantP = orionldTenantGet(orionldState.tenantName);
+    else
+      orionldState.tenantP = &tenant0;
+
     serviceRoutineResult = orionldState.serviceP->serviceRoutine();
     goto respond;
   }

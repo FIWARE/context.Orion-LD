@@ -64,6 +64,8 @@ SET (SOURCES
     pgQuotedString.cpp
     pgCommands.cpp
     pgEntityAppend.cpp
+    pgTemporalEntityQuery.cpp
+    pgTemporalEntityBuild.cpp
     pgConnect.cpp
     pgConnectionPools.cpp
     pgConnectionPoolsPresent.cpp
@@ -114,6 +116,8 @@ SET (HEADERS
     pgQuotedString.h
     pgCommands.h
     pgEntityAppend.h
+    pgTemporalEntityQuery.h
+    pgTemporalEntityBuild.h
     pgAttributeAppend.h
     pgConnect.h
     pgConnectionPools.h

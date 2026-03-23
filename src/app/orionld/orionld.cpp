@@ -140,6 +140,8 @@ extern "C"
 #include "orionld/distOp/distOpInit.h"                        // distOpInit
 #include "orionld/dds/ddsInit.h"                              // ddsInit
 #include "orionld/dds/ddsServiceList.h"                       // ddsServiceList
+#include "orionld/kafka/kafkaInit.h"                          // kafkaInit
+#include "orionld/kafka/kafkaRelease.h"                       // kafkaRelease
 
 using namespace orion;
 
@@ -254,6 +256,13 @@ char            subordinateEndpoint[256];
 char            defaultUserContextUrl[256];
 bool            ddsSupport          = false;
 bool            ddsPublishOnCreate  = false;
+bool            kafkaSupport        = false;
+char            kafkaBrokerList[512];
+char            kafkaTopic[256];
+char            kafkaGroupId[256];
+int             kafkaBatchSize       = 100;
+int             kafkaBatchLingerMs   = 50;
+int             kafkaConsumerThreads = 2;
 char            configFile[512];
 bool            extras;
 bool            kToScreen        = false;
@@ -362,6 +371,13 @@ bool            kTraceInfo       = false;
 #define KTRACE_LEVELS_DESC     "K-Trace trace levels"
 #define KTRACE_INFO_DESC       "K-Trace INFO messages"
 #define KTOSCREEN_DESC         "K-Trace to stdout"
+#define KAFKA_DESC             "enable Kafka consumer for high-throughput time series ingestion"
+#define KAFKA_BROKER_DESC      "comma-separated list of Kafka broker addresses"
+#define KAFKA_TOPIC_DESC       "Kafka topic to consume NGSI-LD entities from"
+#define KAFKA_GROUP_DESC       "Kafka consumer group ID"
+#define KAFKA_BATCH_SIZE_DESC  "max entities per micro-batch before flush to database"
+#define KAFKA_LINGER_DESC      "max milliseconds to wait for a micro-batch to fill"
+#define KAFKA_THREADS_DESC     "number of Kafka consumer threads"
 
 
 
@@ -450,6 +466,13 @@ PaArgument paArgs[] =
   { "-troeSslMode",           troeSslMode,              "TROE_SSL_MODE",             PaString,  PaOpt,  _i "prefer",      PaNL,   PaNL,             TROE_SSL_DESC            },
   { "-troePoolSize",          &troePoolSize,            "TROE_POOL_SIZE",            PaInt,     PaOpt,  10,               0,      1000,             TROE_POOL_DESC           },
   { "-noNotifyFalseUpdate",   &noNotifyFalseUpdate,     "NO_NOTIFY_FALSE_UPDATE",    PaBool,    PaOpt,  false,            false,  true,             NO_NOTIFY_FALSE_UPDATE_DESC  },
+  { "-kafka",                 &kafkaSupport,            "KAFKA",                     PaBool,    PaOpt,  false,            false,  true,             KAFKA_DESC                   },
+  { "-kafkaBrokerList",       kafkaBrokerList,          "KAFKA_BROKER_LIST",         PaString,  PaOpt,  _i "localhost:9092", PaNL, PaNL,            KAFKA_BROKER_DESC            },
+  { "-kafkaTopic",            kafkaTopic,               "KAFKA_TOPIC",               PaString,  PaOpt,  _i "orionld-entities", PaNL, PaNL,          KAFKA_TOPIC_DESC             },
+  { "-kafkaGroupId",          kafkaGroupId,             "KAFKA_GROUP_ID",            PaString,  PaOpt,  _i "orionld-consumer", PaNL, PaNL,           KAFKA_GROUP_DESC             },
+  { "-kafkaBatchSize",        &kafkaBatchSize,          "KAFKA_BATCH_SIZE",          PaInt,     PaOpt,  100,              1,      10000,            KAFKA_BATCH_SIZE_DESC        },
+  { "-kafkaBatchLingerMs",    &kafkaBatchLingerMs,      "KAFKA_BATCH_LINGER_MS",     PaInt,     PaOpt,  50,               1,      5000,             KAFKA_LINGER_DESC            },
+  { "-kafkaConsumerThreads",  &kafkaConsumerThreads,    "KAFKA_CONSUMER_THREADS",    PaInt,     PaOpt,  2,                1,      32,               KAFKA_THREADS_DESC           },
   { "-experimental",          &experimental,            "EXPERIMENTAL",              PaBool,    PaOpt,  false,            false,  true,             EXPERIMENTAL_DESC        },
   { "-mongocOnly",            &mongocOnly,              "MONGOCONLY",                PaBool,    PaOpt,  false,            false,  true,             MONGOCONLY_DESC          },
   { "-cSubCounters",          &cSubCounters,            "CSUB_COUNTERS",             PaInt,     PaOpt,  20,               0,      PaNL,             CSUBCOUNTERS_DESC        },
@@ -565,6 +588,10 @@ void sigHandler(int sigNo)
       usleep(500000);  // 500ms for DDS async teardown to complete
     }
 
+    // Graceful Kafka shutdown
+    if (kafkaSupport == true)
+      kafkaRelease();
+
     exit(0);
     break;
   }
@@ -650,6 +677,10 @@ void exitFunc(void)
 
   // Disconnect from all MQTT brokers and free the connections
   mqttRelease();
+
+  // Shutdown Kafka consumer threads and connections
+  if (kafkaSupport == true)
+    kafkaRelease();
 
   //
   // Freeing the postgres connection pools
@@ -1499,6 +1530,19 @@ int main(int argC, char* argV[])
     pernotLoopStart();
 
   KT_I("  Accepting REST requests on port %d (experimental API endpoints are %sabled)", port, (experimental == true)? "en" : "dis");
+  if (ddsSupport == true)
+  {
+    ddsInit(kjsonP);
+    // usleep(200000);
+    // ddsServiceList(StDdsServiceList);
+  }
+
+  if (kafkaSupport == true)
+  {
+    if (kafkaInit() == false)
+      KT_X(1, "Can't initialize Kafka consumer");
+    KT_I("Kafka consumer initialized - consuming from topic '%s'", kafkaTopic);
+  }
 
   if (socketService == true)
   {
