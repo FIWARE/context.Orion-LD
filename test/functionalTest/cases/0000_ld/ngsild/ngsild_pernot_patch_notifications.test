@@ -1,0 +1,340 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+PATCH Pernot Subscription - verify notifications change after PATCH
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -pernot -experimental
+accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+
+--SHELL--
+
+#
+# 01. Create a pernot sub: type T, attrs [P1], q "P3==1", format normalized, timeInterval 2
+# 02. Create entity urn:E1 type T with P1=1, P2=2, P3=1 (matches q)
+# 03. Create entity urn:E2 type T with P1=10, P2=20, P3=99 (does NOT match q)
+# 04. Sleep 2 secs - let the pernot loop fire
+# 05. Dump/Reset accumulator - see one notification with urn:E1 only (P1 attr, normalized)
+# 06. PATCH the sub: change q to "P3==99", attrs to [P1, P2], format to simplified
+# 07. Sleep 2 secs - let the pernot loop fire with updated sub
+# 08. Dump/Reset accumulator - see one notification with urn:E2 only (P1+P2, simplified)
+# 09. PATCH the sub: change entities to type T2
+# 10. Create entity urn:E3 type T2 with P1=100, P2=200, P3=99
+# 11. Sleep 2 secs
+# 12. Dump/Reset accumulator - see one notification with urn:E3 only (P1+P2, simplified)
+#
+
+echo "01. Create a pernot sub: type T, attrs [P1], q P3==1, format normalized, timeInterval 2"
+echo "========================================================================================"
+payload='{
+  "id": "urn:S1",
+  "type": "Subscription",
+  "entities": [
+    {
+      "type": "T"
+    }
+  ],
+  "q": "P3==1",
+  "timeInterval": 2,
+  "notification": {
+    "attributes": [ "P1" ],
+    "endpoint": {
+      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+    },
+    "format": "normalized"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload"
+echo
+echo
+
+
+echo "02. Create entity urn:E1 type T with P1=1, P2=2, P3=1 (matches q)"
+echo "=================================================================="
+payload='{
+  "id": "urn:E1",
+  "type": "T",
+  "P1": 1,
+  "P2": 2,
+  "P3": 1
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "03. Create entity urn:E2 type T with P1=10, P2=20, P3=99 (does NOT match q)"
+echo "============================================================================"
+payload='{
+  "id": "urn:E2",
+  "type": "T",
+  "P1": 10,
+  "P2": 20,
+  "P3": 99
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "04. Sleep 2 secs - let the pernot loop fire"
+echo "============================================"
+sleep 2
+echo
+echo
+
+
+echo "05. Dump/Reset accumulator - see one notification with urn:E1 only (P1 attr, normalized)"
+echo "========================================================================================"
+accumulatorDump
+accumulatorReset
+echo
+echo
+
+
+echo "06. PATCH the sub: change q to P3==99, attrs to [P1, P2], format to simplified"
+echo "==============================================================================="
+payload='{
+  "q": "P3==99",
+  "notification": {
+    "attributes": [ "P1", "P2" ],
+    "format": "simplified"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions/urn:S1 --payload "$payload" -X PATCH
+echo
+echo
+
+
+echo "07. Sleep 2 secs - let the pernot loop fire with updated sub"
+echo "============================================================"
+sleep 2
+echo
+echo
+
+
+echo "08. Dump/Reset accumulator - see one notification with urn:E2 only (P1+P2, simplified)"
+echo "======================================================================================"
+accumulatorDump
+accumulatorReset
+echo
+echo
+
+
+echo "09. PATCH the sub: change entities to type T2"
+echo "=============================================="
+payload='{
+  "entities": [
+    {
+      "type": "T2"
+    }
+  ]
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions/urn:S1 --payload "$payload" -X PATCH
+echo
+echo
+
+
+echo "10. Create entity urn:E3 type T2 with P1=100, P2=200, P3=99"
+echo "============================================================"
+payload='{
+  "id": "urn:E3",
+  "type": "T2",
+  "P1": 100,
+  "P2": 200,
+  "P3": 99
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "11. Sleep 2 secs"
+echo "================"
+sleep 2
+echo
+echo
+
+
+echo "12. Dump/Reset accumulator - see one notification with urn:E3 only (P1+P2, simplified)"
+echo "======================================================================================"
+accumulatorDump
+accumulatorReset
+echo
+echo
+
+
+--REGEXPECT--
+01. Create a pernot sub: type T, attrs [P1], q P3==1, format normalized, timeInterval 2
+========================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/subscriptions/urn:S1
+
+
+
+02. Create entity urn:E1 type T with P1=1, P2=2, P3=1 (matches q)
+==================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E1
+
+
+
+03. Create entity urn:E2 type T with P1=10, P2=20, P3=99 (does NOT match q)
+============================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E2
+
+
+
+04. Sleep 2 secs - let the pernot loop fire
+============================================
+
+
+05. Dump/Reset accumulator - see one notification with urn:E1 only (P1 attr, normalized)
+========================================================================================
+POST http://REGEX(.*)/notify?subscriptionId=urn:S1
+Content-Length: REGEX(\d+)
+User-Agent: orionld/REGEX(.*)
+Host: REGEX(.*)
+Accept: application/json
+Content-Type: application/json
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+Ngsild-Attribute-Format: Normalized
+
+{
+    "data": [
+        {
+            "P1": {
+                "type": "Property",
+                "value": 1
+            },
+            "id": "urn:E1",
+            "type": "T"
+        }
+    ],
+    "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+    "notifiedAt": "REGEX(.*)",
+    "subscriptionId": "urn:S1",
+    "type": "Notification"
+}
+=======================================
+
+
+06. PATCH the sub: change q to P3==99, attrs to [P1, P2], format to simplified
+===============================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+07. Sleep 2 secs - let the pernot loop fire with updated sub
+============================================================
+
+
+08. Dump/Reset accumulator - see one notification with urn:E2 only (P1+P2, simplified)
+======================================================================================
+POST http://REGEX(.*)/notify?subscriptionId=urn:S1
+Content-Length: REGEX(\d+)
+User-Agent: orionld/REGEX(.*)
+Host: REGEX(.*)
+Accept: application/json
+Content-Type: application/json
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+Ngsild-Attribute-Format: Simplified
+
+{
+    "data": [
+        {
+            "P1": 10,
+            "P2": 20,
+            "id": "urn:E2",
+            "type": "T"
+        }
+    ],
+    "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+    "notifiedAt": "REGEX(.*)",
+    "subscriptionId": "urn:S1",
+    "type": "Notification"
+}
+=======================================
+
+
+09. PATCH the sub: change entities to type T2
+==============================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+10. Create entity urn:E3 type T2 with P1=100, P2=200, P3=99
+============================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E3
+
+
+
+11. Sleep 2 secs
+================
+
+
+12. Dump/Reset accumulator - see one notification with urn:E3 only (P1+P2, simplified)
+======================================================================================
+POST http://REGEX(.*)/notify?subscriptionId=urn:S1
+Content-Length: REGEX(\d+)
+User-Agent: orionld/REGEX(.*)
+Host: REGEX(.*)
+Accept: application/json
+Content-Type: application/json
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+Ngsild-Attribute-Format: Simplified
+
+{
+    "data": [
+        {
+            "P1": 100,
+            "P2": 200,
+            "id": "urn:E3",
+            "type": "T2"
+        }
+    ],
+    "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+    "notifiedAt": "REGEX(.*)",
+    "subscriptionId": "urn:S1",
+    "type": "Notification"
+}
+=======================================
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
+accumulatorStop

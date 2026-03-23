@@ -64,6 +64,8 @@ OrionldGeoInfo* pcheckGeoQ(KAlloc* kallocP, KjNode* geoqNodeP, bool isSubscripti
     return NULL;
   }
 
+  memset(geoInfoP, 0, sizeof(OrionldGeoInfo));
+
   for (KjNode* itemP = geoqNodeP->value.firstChildP; itemP != NULL; itemP = itemP->next)
   {
     if (strcmp(itemP->name, "geometry") == 0)
@@ -150,19 +152,13 @@ OrionldGeoInfo* pcheckGeoQ(KAlloc* kallocP, KjNode* geoqNodeP, bool isSubscripti
 
     if (strcmp(pName, "location") != 0)
     {
-      geopropertyP->value.s = orionldAttributeExpand(orionldState.contextP, pName, true, NULL);
-
-      //
-      // FIXME: No need, as the attr name is in the "value", not the "key".
-      //        However, I  DO  need this for geo queries as the attr name in "attrs" in BD contains = and not .
-      //        I could fix this, to only do dotForEq for queries.
-      //        For now, let's just leave it as is.
-      //        Safer, also for DB compatibilities with older versions of Orion-LD
-      //
-      dotForEq(geopropertyP->value.s);
+      char* expanded = orionldAttributeExpand(orionldState.contextP, pName, true, NULL);
+      geoInfoP->geoProperty = strdup(expanded);  // Expanded name with dots intact (for in-memory geo-matching)
+      geopropertyP->value.s = strdup(expanded);  // Must copy - expanded points into context cache and MUST NOT be altered
+      dotForEq(geopropertyP->value.s);            // Dots replaced by '=' for DB attr name lookups
     }
-
-    geoInfoP->geoProperty = geopropertyP->value.s;
+    else
+      geoInfoP->geoProperty = strdup(pName);
   }
 
   return geoInfoP;

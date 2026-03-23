@@ -63,6 +63,7 @@ extern "C"
 #include "orionld/context/orionldContextFromUrl.h"          // orionldContextFromUrl
 
 #include "cache/subCache.h"
+#include "orionld/common/geosInit.h"                             // geosHandle
 
 using std::map;
 
@@ -657,6 +658,27 @@ void subCacheItemStrip(CachedSubscription* cSubP)
   {
     kjFree(cSubP->geoCoordinatesP);
     cSubP->geoCoordinatesP = NULL;
+  }
+
+  if (cSubP->geosPrepared != NULL)
+  {
+    GEOSPreparedGeom_destroy_r(geosHandle, cSubP->geosPrepared);
+    cSubP->geosPrepared = NULL;
+  }
+
+  if (cSubP->geosGeometry != NULL)
+  {
+    GEOSGeom_destroy_r(geosHandle, cSubP->geosGeometry);
+    cSubP->geosGeometry = NULL;
+  }
+
+  if (cSubP->geoInfo != NULL)
+  {
+    if (cSubP->geoInfo->geoProperty != NULL)
+      free(cSubP->geoInfo->geoProperty);
+
+    free(cSubP->geoInfo);
+    cSubP->geoInfo = NULL;
   }
 
   for (int ix = 0; ix < (int) cSubP->httpInfo.notifierInfo.size(); ++ix)

@@ -57,10 +57,7 @@ bool pcheckEndpoint(KjNode* endpointP, bool patch, KjNode** uriPP, KjNode** noti
       if (strncmp(uriP->value.s, "mqtt://", 7) == 0)
         *mqttChangeP = true;
       else if (strncmp(uriP->value.s, "mqtts://", 8) == 0)
-      {
-        orionldError(OrionldOperationNotSupported, "Not Implemented", "MQTT notifications witn mqtts is not implemented", 501);
-        return false;
-      }
+        *mqttChangeP = true;
     }
     else if (strcmp(epItemP->name, "accept") == 0)
     {

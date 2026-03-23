@@ -69,7 +69,6 @@ header2.append(r'\s*For those usages not covered by this license please contact 
 header2.append(r'\s*orionld at fiware dot org$')
 
 verbose = True
-is_orionld = False
 
 
 # check_file returns an error string in the case of error or empty string if everything goes ok
@@ -106,7 +105,7 @@ def check_file_orionld(file):
     # that line
 
     searching_first_line = True
-    with open(file) as f:
+    with open(file,'r',encoding='latin-1') as f:
         for line in f:
             line = line.rstrip()
             if searching_first_line:
@@ -262,6 +261,8 @@ def supported_extension(root, file):
     print('not supported extension: {filename}'.format(filename=filename))
     return False
 
+import subprocess
+
 if len(argv) > 1:
     dir = argv[1]
 else:
@@ -271,58 +272,47 @@ else:
 good = 0
 bad = 0
 
-for root, dirs, files in os.walk(dir):
-    for file in [f for f in files]:
-        # DEBUG
-        # print(os.path.join(root, file))
+# Use git ls-files to only check tracked files (avoids false positives from build artifacts, venvs, etc.)
+try:
+    result = subprocess.run(['git', 'ls-files', dir], capture_output=True, text=True, check=True)
+    tracked_files = [f for f in result.stdout.strip().split('\n') if f]
+except (subprocess.CalledProcessError, FileNotFoundError):
+    # Fallback to os.walk if git is not available
+    tracked_files = []
+    for root, dirs, files in os.walk(dir):
+        for file in files:
+            tracked_files.append(os.path.join(root, file))
 
-        # Only process files that match a given pattern
-        if ignore(root, file):
-            continue
+for filename in tracked_files:
+    if not os.path.isfile(filename):
+        continue
 
-        # Check that the extension is supported
-        if not supported_extension(root, file):
-            bad += 1
-            continue
+    root = os.path.dirname(filename)
+    file = os.path.basename(filename)
 
-        error = ''
-        filename = os.path.join(root, file)
+    # Only process files that match a given pattern
+    if ignore(root, file):
+        continue
 
-        if os.path.islink(filename):
-            continue
+    # Check that the extension is supported
+    if not supported_extension(root, file):
+        bad += 1
+        continue
 
-        if 'src/app/orionld/' in filename:
-            is_orionld = True
-        elif 'src/lib/orionld/' in filename:
-            is_orionld = True
-        elif 'src/app/ssClient/' in filename:
-            is_orionld = True
-        elif 'test/functionalTest/ftClient/' in filename:
-            is_orionld = True
-        elif 'test/functionalTest/cases/0000_ld' in filename:
-            is_orionld = True
-        elif 'test/unittests/orionld' in filename:
-            is_orionld = True
-        elif 'test/stress' in filename:
-            is_orionld = True
-        elif 'archive/orionld' in filename:
-            is_orionld = True
-        else:
-            is_orionld = False
+    if os.path.islink(filename):
+        continue
 
-        if is_orionld:
-            error = check_file_orionld(filename)
-        else:
-            error = check_file(filename)
+    # Accept either license header (FIWARE/Orion-LD or Telefonica/Orion) for any file
+    error = check_file_orionld(filename)
+    if len(error) > 0:
+        error = check_file(filename)
 
-        if len(error) > 0:
-            print(filename + ': ' + error)
-            bad += 1
-        else:
-            good += 1
+    if len(error) > 0:
+        print(filename + ': ' + error)
+        bad += 1
+    else:
+        good += 1
 
-# src/lib/orionld/
-# src/app/orionld
 print('--------------')
 print('Summary:')
 print('   good:    {good}'.format(good=str(good)))

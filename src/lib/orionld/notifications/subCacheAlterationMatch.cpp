@@ -44,6 +44,7 @@ extern "C"
 #include "orionld/q/qBuild.h"                                  // qBuild
 #include "orionld/q/qPresent.h"                                // qPresent
 #include "orionld/q/qMatch.h"                                  // qMatch
+#include "orionld/notifications/geoMatch.h"                    // geoMatch
 #include "orionld/notifications/subCacheAlterationMatch.h"     // Own interface
 
 
@@ -521,14 +522,14 @@ OrionldAlterationMatch* subCacheAlterationMatch(OrionldAlteration* alterationLis
       }
 
       //
-      // attributeMatch is too complex ...
-      // I'd need simply a list of the attribute names that have been modified
+      // Geo-match using GEOS (in-process, no DB query needed)
       //
-      // Also, I'd prefer to check for attributes before I check for 'q'
-      //
-      // 'geoQ' MUST come last as it requires a database query
-      // (OR: somehow use GEOS library and fix it that way ...)
-      //
+      if (geoMatch(subP, altP->finalApiEntityP) == false)
+      {
+        KT_T(KtSubCacheMatch, "Sub '%s' - no match due to geoQ", subP->subscriptionId);
+        continue;
+      }
+
       matchList = attributeMatch(matchList, subP, altP, &matches);  // Each call adds to matchList AND matches
     }
   }

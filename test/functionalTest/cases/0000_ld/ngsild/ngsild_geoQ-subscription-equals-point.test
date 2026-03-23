@@ -1,0 +1,270 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Subscription with geoQ equals Point - in-memory geo-matching with GEOS
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -mongocOnly
+$REPO_HOME/scripts/configFile.sh > ~/.ftClient
+chmod 777 ~/.ftClient
+ftClientStart -v -t 200
+
+--SHELL--
+
+#
+# Subscription with georel "equals" and geometry "Point" at Madrid [-3.691944, 40.418889].
+# Only entities whose location is the EXACT same point should match.
+#
+# 01. Create subscription S1 with geoQ equals Point at Madrid coordinates
+# 02. Create entity E1 at exact Madrid coordinates - notification expected
+# 03. Create entity E2 at Toledo [-4.035825, 39.867459] - no notification (different point)
+# 04. Create entity E3 at exact Madrid coordinates again - notification expected
+# 05. Dump ftClient - see 2 notifications: E1 and E3
+#
+
+
+echo "01. Create subscription S1 with geoQ equals Point at Madrid coordinates"
+echo "======================================================================="
+payload='{
+  "id": "urn:ngsi-ld:Subscription:S1",
+  "type": "Subscription",
+  "entities": [
+    {
+      "type": "City"
+    }
+  ],
+  "geoQ": {
+    "georel": "equals",
+    "geometry": "Point",
+    "coordinates": [-3.691944, 40.418889],
+    "geoproperty": "location"
+  },
+  "notification": {
+    "endpoint": {
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
+      "accept": "application/json"
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload"
+echo
+echo
+
+
+echo "02. Create entity E1 at exact Madrid coordinates - notification expected"
+echo "========================================================================"
+payload='{
+  "id": "urn:ngsi-ld:City:E1",
+  "type": "City",
+  "name": {
+    "type": "Property",
+    "value": "Madrid-1"
+  },
+  "location": {
+    "type": "GeoProperty",
+    "value": {
+      "type": "Point",
+      "coordinates": [-3.691944, 40.418889]
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "03. Create entity E2 at Toledo - no notification (different point)"
+echo "=================================================================="
+payload='{
+  "id": "urn:ngsi-ld:City:E2",
+  "type": "City",
+  "name": {
+    "type": "Property",
+    "value": "Toledo"
+  },
+  "location": {
+    "type": "GeoProperty",
+    "value": {
+      "type": "Point",
+      "coordinates": [-4.035825, 39.867459]
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "04. Create entity E3 at exact Madrid coordinates again - notification expected"
+echo "==============================================================================="
+payload='{
+  "id": "urn:ngsi-ld:City:E3",
+  "type": "City",
+  "name": {
+    "type": "Property",
+    "value": "Madrid-2"
+  },
+  "location": {
+    "type": "GeoProperty",
+    "value": {
+      "type": "Point",
+      "coordinates": [-3.691944, 40.418889]
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+sleep .1
+echo "05. Dump ftClient - see 2 notifications: E1 and E3"
+echo "==================================================="
+orionCurl --url /dump --port $FT_PORT --noPayloadCheck
+echo
+echo
+
+
+--REGEXPECT--
+01. Create subscription S1 with geoQ equals Point at Madrid coordinates
+=======================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/subscriptions/urn:ngsi-ld:Subscription:S1
+
+
+
+02. Create entity E1 at exact Madrid coordinates - notification expected
+========================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:City:E1
+
+
+
+03. Create entity E2 at Toledo - no notification (different point)
+==================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:City:E2
+
+
+
+04. Create entity E3 at exact Madrid coordinates again - notification expected
+===============================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:City:E3
+
+
+
+05. Dump ftClient - see 2 notifications: E1 and E3
+===================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Date: REGEX(.*)
+
+POST /notify?subscriptionId=urn:ngsi-ld:Subscription:S1
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+User-Agent: orionld/REGEX(.*)
+Host: REGEX(.*)
+Accept: application/json
+Ngsild-Attribute-Format: Normalized
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+  "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+  "type": "Notification",
+  "subscriptionId": "urn:ngsi-ld:Subscription:S1",
+  "notifiedAt": "REGEX(.*)",
+  "data": [
+    {
+      "id": "urn:ngsi-ld:City:E1",
+      "type": "City",
+      "name": {
+        "type": "Property",
+        "value": "Madrid-1"
+      },
+      "location": {
+        "type": "GeoProperty",
+        "value": {
+          "type": "Point",
+          "coordinates": [
+            -3.691944,
+            40.418889
+          ]
+        }
+      }
+    }
+  ]
+}
+================================================================================
+
+POST /notify?subscriptionId=urn:ngsi-ld:Subscription:S1
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+User-Agent: orionld/REGEX(.*)
+Host: REGEX(.*)
+Accept: application/json
+Ngsild-Attribute-Format: Normalized
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+  "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+  "type": "Notification",
+  "subscriptionId": "urn:ngsi-ld:Subscription:S1",
+  "notifiedAt": "REGEX(.*)",
+  "data": [
+    {
+      "id": "urn:ngsi-ld:City:E3",
+      "type": "City",
+      "name": {
+        "type": "Property",
+        "value": "Madrid-2"
+      },
+      "location": {
+        "type": "GeoProperty",
+        "value": {
+          "type": "Point",
+          "coordinates": [
+            -3.691944,
+            40.418889
+          ]
+        }
+      }
+    }
+  ]
+}
+
+
+
+--TEARDOWN--
+brokerStop CB
+ftClientStop
+dbDrop CB

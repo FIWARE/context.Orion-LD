@@ -35,7 +35,7 @@ extern "C"
 #include "orionld/payloadCheck/pCheckEntityId.h"                    // pCheckEntityId
 #include "orionld/payloadCheck/pCheckEntityType.h"                  // pCheckEntityType
 #include "orionld/payloadCheck/pCheckAttribute.h"                   // pCheckAttribute
-#include "orionld/mongoBackend/mongoEntityExists.h"                 // mongoEntityExists
+#include "orionld/mongoc/mongocEntityLookup.h"                      // mongocEntityLookup
 #include "orionld/troe/troePostEntities.h"                          // troePostEntities
 #include "orionld/serviceRoutines/orionldPostTemporalEntities.h"    // Own Interface
 
@@ -138,12 +138,10 @@ bool orionldPostTemporalEntities(void)
   // Does the entity already exist?
   // If so, it's a 204, not a 201
   //
-  // FIXME: This check should really be made in the TRoE database but, seems valid enough to do the
-  //        search in mongo instead
-  //
   int httpStatusCode = 201;
+  char* detail = NULL;
 
-  if (mongoEntityExists(entityId, orionldState.tenantP) == true)
+  if (mongocEntityLookup(entityId, NULL, NULL, NULL, &detail) != NULL)
     httpStatusCode = 204;
 
   //

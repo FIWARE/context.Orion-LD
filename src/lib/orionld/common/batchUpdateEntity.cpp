@@ -87,8 +87,9 @@ KjNode* batchUpdateEntity(KjNode* inEntityP, KjNode* originalDbEntityP, bool ign
   {
     next = apiAttrP->next;
 
-    if (strcmp(apiAttrP->name, "id")   == 0) { apiAttrP = next; continue; }
-    if (strcmp(apiAttrP->name, "type") == 0) { apiAttrP = next; continue; }
+    if (strcmp(apiAttrP->name, "id")    == 0) { apiAttrP = next; continue; }
+    if (strcmp(apiAttrP->name, "type")  == 0) { apiAttrP = next; continue; }
+    if (strcmp(apiAttrP->name, "scope") == 0) { apiAttrP = next; continue; }
 
     char eqAttrName[512];
     strncpy(eqAttrName, apiAttrP->name, sizeof(eqAttrName) - 1);

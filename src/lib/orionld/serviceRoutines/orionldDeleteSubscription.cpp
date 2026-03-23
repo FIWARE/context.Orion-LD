@@ -69,7 +69,7 @@ bool orionldDeleteSubscription(void)
   if (cSubP == NULL)
   {
     if (noCache == false)
-      KT_W("The subscription '%s' was successfully removed from DB but does not exist in sub-cache ... (sub-cache is enabled)");
+      KT_W("The subscription '%s' was successfully removed from DB but does not exist in sub-cache ... (sub-cache is enabled)", orionldState.wildcard[0]);
 
     //
     // FIXME: If mqtt, we need to disconnect from MQTT broker
@@ -79,10 +79,10 @@ bool orionldDeleteSubscription(void)
   else
   {
     // If MQTT subscription - disconnect from mqtt broker
-    if (cSubP->protocol == MQTT)
+    if (cSubP->protocol == MQTT || cSubP->protocol == MQTTS)
     {
       MqttInfo* mqttP = &cSubP->httpInfo.mqtt;
-      mqttDisconnect(mqttP->host, mqttP->port, mqttP->username, mqttP->password, mqttP->version);
+      mqttDisconnect(mqttP->mqtts, mqttP->host, mqttP->port, mqttP->username, mqttP->password, mqttP->version);
     }
 
     // Any subordinate subscriptions?

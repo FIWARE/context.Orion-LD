@@ -42,13 +42,13 @@ extern "C"
 //
 // mqttDisconnect -
 //
-void mqttDisconnect(const char* host, unsigned short port, const char* username, const char* password, const char* version)
+void mqttDisconnect(bool mqtts, const char* host, unsigned short port, const char* username, const char* password, const char* version)
 {
   //
   // What if the connection is used by more than one subscription?
   // In such case I can't disconnect!  (just decrease by 1 and return)
   //
-  MqttConnection* mcP = mqttConnectionLookup(host, port, username, password, version);
+  MqttConnection* mcP = mqttConnectionLookup(mqtts, host, port, username, password, version);
   if (mcP == NULL)
     return;
 

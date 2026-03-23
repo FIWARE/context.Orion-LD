@@ -26,6 +26,7 @@ SET (SOURCES
     pernotItemRelease.cpp
     pernotRelease.cpp
     pernotSubCacheLookup.cpp
+    pernotSubCacheUpdate.cpp
     pernotLoop.cpp
     pernotTreat.cpp
     pernotSend.cpp

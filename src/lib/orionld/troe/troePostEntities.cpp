@@ -53,6 +53,9 @@ bool troePostEntities(void)
   char*    entityType  = (orionldState.payloadTypeNode != NULL)? orionldState.payloadTypeNode->value.s : NULL;
   KjNode*  entityP     = orionldState.requestTree;
 
+  if (entityP == NULL)
+    KT_RE(false, "requestTree is NULL - TRoE not possible for this request");
+
   if (entityId == NULL)
   {
     entityId = orionldState.wildcard[0];  // troePutEntity passes the Entity ID via wildcards

@@ -131,7 +131,7 @@ echo
 HTTP/1.1 201 Created
 Content-Length: 0
 Date: REGEX(.*)
-Location: http://REGEX(.*)
+Location: /ngsi-ld/v1/jsonldContexts/REGEX(.*)
 
 
 
@@ -140,7 +140,7 @@ Location: http://REGEX(.*)
 HTTP/1.1 201 Created
 Content-Length: 0
 Date: REGEX(.*)
-Location: http://REGEX(.*)
+Location: /ngsi-ld/v1/jsonldContexts/REGEX(.*)
 
 
 
@@ -149,7 +149,7 @@ Location: http://REGEX(.*)
 HTTP/1.1 201 Created
 Content-Length: 0
 Date: REGEX(.*)
-Location: http://REGEX(.*)
+Location: /ngsi-ld/v1/jsonldContexts/REGEX(.*)
 
 
 

@@ -131,6 +131,7 @@ echo
 echo
 
 
+sleep .2
 echo "07. Get Metrics - see FOUR notifications, TWO of them failed"
 echo "============================================================"
 orionldMetrics | egrep 'ngsildRequests|notifications|notificationsFailed'

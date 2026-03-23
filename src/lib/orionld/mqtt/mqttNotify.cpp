@@ -165,13 +165,13 @@ int mqttNotify(CachedSubscription* cSubP, struct iovec* ioVec, int ioVecSize, do
   totalLen = dataStart + bodyLen;
 
   MqttInfo*                 mqttP             = &cSubP->httpInfo.mqtt;
-  MqttConnection*           mqttConnectionP   = mqttConnectionLookup(mqttP->host, mqttP->port, mqttP->username, mqttP->password, mqttP->version);
+  MqttConnection*           mqttConnectionP   = mqttConnectionLookup(mqttP->mqtts, mqttP->host, mqttP->port, mqttP->username, mqttP->password, mqttP->version);
   MQTTClient_message        mqttMsg           = MQTTClient_message_initializer;
   MQTTClient_deliveryToken  mqttToken;
 
   if (mqttConnectionP == NULL)
   {
-    mqttConnectionP = mqttConnectionAdd(false, mqttP->username, mqttP->password, mqttP->host, mqttP->port, mqttP->version);
+    mqttConnectionP = mqttConnectionAdd(mqttP->mqtts, mqttP->username, mqttP->password, mqttP->host, mqttP->port, mqttP->version);
     if (mqttConnectionP == NULL)
     {
       orionldError(OrionldInternalError, "MQTT Broker Problem", "unable to connect to the MQTT broker", 500);
