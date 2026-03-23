@@ -178,7 +178,7 @@ void pgSubAttributeAppend
       buf = pgBufAllocSub(bufSize, &bufNeedsFree);
       if (buf == NULL) return;
 
-      snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, 'GeoPoint', null, null, null, null, null, ST_GeomFromText('POINT(%f %f %f)'), null, null, null, null, null, '%s')",
+      snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, 'GeoPoint', null, null, null, null, null, ST_GeomFromText('POINT(%f %f %f)', 4326), null, null, null, null, null, '%s')",
                comma, instanceId, subAttributeName, entityId, attrInstanceId, attrDatasetId, observedAt, unitCode, longitude, latitude, altitude, orionldState.requestTimeString);
     }
     else
@@ -258,7 +258,7 @@ void pgSubAttributeAppend
       }
       else if (strcmp(geoType, "Polygon") == 0)
       {
-        snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, '%s', null, null, null, null, null, null, null, ST_GeomFromText('%s(%s)'), null, null, null, '%s')",
+        snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, '%s', null, null, null, null, null, null, null, ST_GeomFromText('%s(%s)', 4326), null, null, null, '%s')",
                  comma, instanceId, subAttributeName, entityId, attrInstanceId, attrDatasetId, observedAt, unitCode, geoTypeName, stPrefix, coordsString, orionldState.requestTimeString);
       }
       else if (strcmp(geoType, "MultiPolygon") == 0)
