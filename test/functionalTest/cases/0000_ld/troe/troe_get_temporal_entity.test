@@ -211,7 +211,7 @@ Append,https://uri.etsi.org/ngsi-ld/default-context/P2,String,urn:ngsi-ld:entiti
 Create,https://uri.etsi.org/ngsi-ld/default-context/R1,Relationship,urn:ngsi-ld:entities:E1,urn:ngsi-ld:entities:E2,,,2024-01-01 10:00:00
 
 
-05. GET /temporal/entities/E1?timerel=before&timeAt=<now> - should get all instances as arrays
+05. GET /temporal/entities/E1?timerel=before&timeAt=<now> - should get all latest attrs
 =======================================================================================
 HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
