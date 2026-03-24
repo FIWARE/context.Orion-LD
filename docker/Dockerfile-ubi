@@ -1,4 +1,4 @@
-FROM orion-ld-base AS build-stage
+FROM fiware/orion-ld-base AS build-stage
 
 ARG PATH_TO_SRC='/opt/orion/'
 
@@ -27,6 +27,7 @@ RUN true
 COPY --from=build-stage /usr/bin/orionld /usr/bin
 COPY --from=build-stage /usr/local/lib/* /usr/lib64/
 COPY --from=build-stage /usr/local/lib64/* /usr/lib64/
+COPY --from=build-stage /usr/lib/librdkafka* /usr/lib64/
 COPY --from=build-stage /opt/orion/ldcontexts/ /opt/orion/ldcontexts/
 COPY --from=build-stage /usr/lib/librdkafka* /usr/lib64/
 
@@ -42,8 +43,8 @@ RUN cd /etc/pki/rpm-gpg && \
     yum -y --nogpgcheck install epel-release && \
     dnf config-manager --set-enabled powertools && \
     yum install -y libicu libpq5 boost tinyxml2 yaml-cpp && \
-    yum clean all&& \
-    ldconfig   
+    yum clean all && \
+    ldconfig
 
 ENTRYPOINT ["orionld", "-fg", "-multiservice", "-ngsiv1Autocast"]
 

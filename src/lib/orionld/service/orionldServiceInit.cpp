@@ -525,7 +525,19 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
   else if (serviceP->serviceRoutine == orionldGetTemporalEntities)
     serviceP->mintaka = true;
   else if (serviceP->serviceRoutine == orionldGetTemporalEntity)
-    serviceP->mintaka = true;
+  {
+    serviceP->options   |= ORIONLD_SERVICE_OPTION_CORE_CONTEXT_IN_RESPONSE;
+
+    serviceP->uriParams |= ORIONLD_URIPARAM_OPTIONS;
+    serviceP->uriParams |= ORIONLD_URIPARAM_FORMAT;
+    serviceP->uriParams |= ORIONLD_URIPARAM_ATTRS;
+    serviceP->uriParams |= ORIONLD_URIPARAM_COUNT;
+    serviceP->uriParams |= ORIONLD_URIPARAM_LASTN;
+    serviceP->uriParams |= ORIONLD_URIPARAM_TIMEREL;
+    serviceP->uriParams |= ORIONLD_URIPARAM_TIMEAT;
+    serviceP->uriParams |= ORIONLD_URIPARAM_ENDTIMEAT;
+    serviceP->uriParams |= ORIONLD_URIPARAM_TIMEPROPERTY;
+  }
   else if (serviceP->serviceRoutine == orionldPostTemporalQuery)
     serviceP->mintaka = true;
   else if (serviceP->serviceRoutine == orionldDeleteTemporalAttribute)

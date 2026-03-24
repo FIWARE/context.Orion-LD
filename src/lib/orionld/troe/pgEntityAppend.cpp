@@ -24,7 +24,6 @@
 */
 #include <stdio.h>                                             // snprintf
 #include <string.h>                                            // strlen
-#include <stdlib.h>                                            // malloc, free
 
 extern "C"
 {
@@ -57,25 +56,14 @@ void pgEntityAppend(PgAppendBuffer* entitiesBufferP, const char* opMode, const c
   int neededSize = strlen(instanceId) + strlen(orionldState.requestTimeString)
                  + strlen(opMode) + strlen(entityId) + strlen(entityType) + 64;
 
-  // Use stack buffer for common case, heap for long entity IDs/types
+  // Use stack buffer for common case, kaAlloc for long entity IDs/types
   char  localBuf[1024];
   char* buf     = localBuf;
   int   bufSize = sizeof(localBuf);
-  bool  needsFree = false;
 
   if (neededSize > bufSize)
   {
-    buf = kaAlloc(&orionldState.kalloc, neededSize);
-    if (buf == NULL)
-    {
-      buf = (char*) malloc(neededSize);
-      if (buf == NULL)
-      {
-        KT_E("pgEntityAppend: out of memory allocating %d bytes", neededSize);
-        return;
-      }
-      needsFree = true;
-    }
+    buf     = kaAlloc(&orionldState.kalloc, neededSize);
     bufSize = neededSize;
   }
 
@@ -83,7 +71,4 @@ void pgEntityAppend(PgAppendBuffer* entitiesBufferP, const char* opMode, const c
 
   pgAppend(entitiesBufferP, buf, 0);
   entitiesBufferP->values += 1;
-
-  if (needsFree)
-    free(buf);
 }
