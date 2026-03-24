@@ -51,6 +51,24 @@ extern "C"
 
 // -----------------------------------------------------------------------------
 //
+// pgBufAllocSub - allocate a buffer via kaAlloc
+//
+// Returns NULL on failure (caller must handle)
+//
+static char* pgBufAllocSub(int size)
+{
+  char* buf = kaAlloc(&orionldState.kalloc, size);
+
+  if (buf == NULL)
+    KT_E("pgBufAllocSub: out of memory allocating %d bytes", size);
+
+  return buf;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // pgSubAttributeAppend -
 //
 // INSERT INTO subAttributes(instanceId,
@@ -111,7 +129,7 @@ void pgSubAttributeAppend
   if (type == NULL)
   {
     bufSize = fixedLen + (object != NULL ? strlen(object) : 0);
-    buf = kaAlloc(&orionldState.kalloc, bufSize);
+    buf = pgBufAllocSub(bufSize);
     if (buf == NULL) return;
 
     snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, 'UnchangedType', '%s', null, null, null, null, null, null, null, null, null, null, '%s')",
@@ -120,7 +138,7 @@ void pgSubAttributeAppend
   else if (strcmp(type, "Relationship") == 0)
   {
     bufSize = fixedLen + (object != NULL ? strlen(object) : 0);
-    buf = kaAlloc(&orionldState.kalloc, bufSize);
+    buf = pgBufAllocSub(bufSize);
     if (buf == NULL) return;
 
     snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, 'Relationship', '%s', null, null, null, null, null, null, null, null, null, null, '%s')",
@@ -148,17 +166,19 @@ void pgSubAttributeAppend
       kjGeoPointExtract(coordinatesNodeP, &longitude, &latitude, &altitude);
 
       bufSize = fixedLen + 256;
-      buf = kaAlloc(&orionldState.kalloc, bufSize);
+      buf = pgBufAllocSub(bufSize);
       if (buf == NULL) return;
 
-      snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, 'GeoPoint', null, null, null, null, null, ST_GeomFromText('POINT(%f %f %f)'), null, null, null, null, null, '%s')",
+      snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, 'GeoPoint', null, null, null, null, null, ST_GeomFromText('POINT(%f %f %f)', 4326), null, null, null, null, null, '%s')",
                comma, instanceId, subAttributeName, entityId, attrInstanceId, attrDatasetId, observedAt, unitCode, longitude, latitude, altitude, orionldState.requestTimeString);
     }
     else
     {
       // For all non-point geo types, allocate 64KB for coords
       int   coordsLen = 64 * 1024;
-      char* coordsString = kaAlloc(&orionldState.kalloc, coordsLen);
+      char* coordsString = pgBufAllocSub(coordsLen);
+
+      if (coordsString == NULL) return;
       coordsString[0] = 0;
 
       bool extractOk = false;
@@ -203,7 +223,7 @@ void pgSubAttributeAppend
       }
 
       bufSize = fixedLen + strlen(coordsString) + strlen(stPrefix) + 256;
-      buf = kaAlloc(&orionldState.kalloc, bufSize);
+      buf = pgBufAllocSub(bufSize);
       if (buf == NULL) return;
 
       //
@@ -227,7 +247,7 @@ void pgSubAttributeAppend
       }
       else if (strcmp(geoType, "Polygon") == 0)
       {
-        snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, '%s', null, null, null, null, null, null, null, ST_GeomFromText('%s(%s)'), null, null, null, '%s')",
+        snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, '%s', null, null, null, null, null, null, null, ST_GeomFromText('%s(%s)', 4326), null, null, null, '%s')",
                  comma, instanceId, subAttributeName, entityId, attrInstanceId, attrDatasetId, observedAt, unitCode, geoTypeName, stPrefix, coordsString, orionldState.requestTimeString);
       }
       else if (strcmp(geoType, "MultiPolygon") == 0)
@@ -243,7 +263,7 @@ void pgSubAttributeAppend
     if (valueNodeP->type == KjString)
     {
       bufSize = fixedLen + strlen(valueNodeP->value.s);
-      buf = kaAlloc(&orionldState.kalloc, bufSize);
+      buf = pgBufAllocSub(bufSize);
       if (buf == NULL) return;
 
       snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, 'String', '%s', null, null, null, null, null, null, null, null, null, null, '%s')",
@@ -254,7 +274,7 @@ void pgSubAttributeAppend
       const char* value = (valueNodeP->value.b == true)? "true" : "false";
 
       bufSize = fixedLen;
-      buf = kaAlloc(&orionldState.kalloc, bufSize);
+      buf = pgBufAllocSub(bufSize);
       if (buf == NULL) return;
 
       snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, 'Boolean', null, %s, null, null, null, null, null, null, null, null, null, '%s')",
@@ -263,7 +283,7 @@ void pgSubAttributeAppend
     else if (valueNodeP->type == KjInt)
     {
       bufSize = fixedLen + 32;
-      buf = kaAlloc(&orionldState.kalloc, bufSize);
+      buf = pgBufAllocSub(bufSize);
       if (buf == NULL) return;
 
       snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, 'Number', null, null, %lld, null, null, null, null, null, null, null, null, '%s')",
@@ -272,7 +292,7 @@ void pgSubAttributeAppend
     else if (valueNodeP->type == KjFloat)
     {
       bufSize = fixedLen + 32;
-      buf = kaAlloc(&orionldState.kalloc, bufSize);
+      buf = pgBufAllocSub(bufSize);
       if (buf == NULL) return;
 
       snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, 'Number', null, null, %f, null, null, null, null, null, null, null, null, '%s')",
@@ -280,13 +300,21 @@ void pgSubAttributeAppend
     }
     else if ((valueNodeP->type == KjArray) || (valueNodeP->type == KjObject))
     {
+      // WARNING: If a sub-attribute is HUGE, it may not have room enough in a buffer allocated by kaAlloc (there's a max-size)
       int   renderedValueSize = kjFastRenderSize(valueNodeP);
       char* renderedValue     = kaAlloc(&orionldState.kalloc, renderedValueSize);
+
+      // if kaAlloc returns null-pointer, the sub-attribute is too big -> report error and return
+      if (renderedValue == NULL)
+      {
+        KT_E("error allocating %d bytes for sub-attribute value", renderedValueSize);
+        return;
+      }
 
       kjFastRender(valueNodeP, renderedValue);
 
       bufSize = fixedLen + renderedValueSize;
-      buf = kaAlloc(&orionldState.kalloc, bufSize);
+      buf = pgBufAllocSub(bufSize);
       if (buf == NULL) return;
 
       snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, 'Compound', null, null, null, null, '%s', null, null, null, null, null, null, '%s')",
