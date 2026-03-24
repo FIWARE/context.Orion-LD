@@ -140,15 +140,15 @@ Date: REGEX(.*)
 
 03. Get 501 for GET /ngsi-ld/v1/temporal/entities/<EID>
 =======================================================
-HTTP/1.1 501 Not Implemented
-Content-Length: REGEX(\d+)
+HTTP/1.1 400 Bad Request
+Content-Length: 113
 Content-Type: application/json
 Date: REGEX(.*)
 
 {
-    "detail": "/ngsi-ld/v1/temporal/entities/*",
-    "title": "TRoE is not enabled - temporal operations require -troe flag",
-    "type": "https://uri.etsi.org/ngsi-ld/errors/OperationNotSupported"
+    "detail": "badParam",
+    "title": "Unknown URI parameter",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/BadRequestData"
 }
 
 
