@@ -414,7 +414,7 @@ Date: REGEX(.*)
 21. OPTIONS request for /temporal/entities/{entityId}
 =====================================================
 HTTP/1.1 200 OK
-Allow: OPTIONS
+Allow: GET,OPTIONS
 Content-Length: 0
 Date: REGEX(.*)
 

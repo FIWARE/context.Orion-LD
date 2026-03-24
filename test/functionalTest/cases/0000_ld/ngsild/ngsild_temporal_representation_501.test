@@ -141,13 +141,13 @@ Date: REGEX(.*)
 03. Get 501 for GET /ngsi-ld/v1/temporal/entities/<EID>
 =======================================================
 HTTP/1.1 501 Not Implemented
-Content-Length: 188
+Content-Length: REGEX(\d+)
 Content-Type: application/json
 Date: REGEX(.*)
 
 {
     "detail": "/ngsi-ld/v1/temporal/entities/*",
-    "title": "Not Implemented in Orion-LD, please use Mintaka for this operation",
+    "title": "TRoE is not enabled - temporal operations require -troe flag",
     "type": "https://uri.etsi.org/ngsi-ld/errors/OperationNotSupported"
 }
 

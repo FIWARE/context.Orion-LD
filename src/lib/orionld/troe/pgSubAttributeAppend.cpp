@@ -22,7 +22,6 @@
 *
 * Author: Ken Zangelin
 */
-#include <stdlib.h>                                             // malloc, free
 #include <string.h>                                             // strlen, strcmp
 
 extern "C"
@@ -52,25 +51,18 @@ extern "C"
 
 // -----------------------------------------------------------------------------
 //
-// pgBufAllocSub - allocate a buffer, trying kaAlloc first, then malloc
+// pgBufAllocSub - allocate a buffer via kaAlloc
 //
-static char* pgBufAllocSub(int size, bool* needsFree)
+// Returns NULL on failure (caller must handle)
+//
+static char* pgBufAllocSub(int size)
 {
-  *needsFree = false;
-
   char* buf = kaAlloc(&orionldState.kalloc, size);
-  if (buf != NULL)
-    return buf;
 
-  buf = (char*) malloc(size);
-  if (buf != NULL)
-  {
-    *needsFree = true;
-    return buf;
-  }
+  if (buf == NULL)
+    KT_E("pgBufAllocSub: out of memory allocating %d bytes", size);
 
-  KT_E("pgBufAllocSub: out of memory allocating %d bytes", size);
-  return NULL;
+  return buf;
 }
 
 
@@ -121,7 +113,6 @@ void pgSubAttributeAppend
   const char* comma   = (subAttributesBufferP->values != 0)? "," : "";
   char*       buf     = NULL;
   int         bufSize = 0;
-  bool        bufNeedsFree = false;
 
   eqForDot(subAttributeName);
 
@@ -138,7 +129,7 @@ void pgSubAttributeAppend
   if (type == NULL)
   {
     bufSize = fixedLen + (object != NULL ? strlen(object) : 0);
-    buf = pgBufAllocSub(bufSize, &bufNeedsFree);
+    buf = pgBufAllocSub(bufSize);
     if (buf == NULL) return;
 
     snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, 'UnchangedType', '%s', null, null, null, null, null, null, null, null, null, null, '%s')",
@@ -147,7 +138,7 @@ void pgSubAttributeAppend
   else if (strcmp(type, "Relationship") == 0)
   {
     bufSize = fixedLen + (object != NULL ? strlen(object) : 0);
-    buf = pgBufAllocSub(bufSize, &bufNeedsFree);
+    buf = pgBufAllocSub(bufSize);
     if (buf == NULL) return;
 
     snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, 'Relationship', '%s', null, null, null, null, null, null, null, null, null, null, '%s')",
@@ -175,18 +166,17 @@ void pgSubAttributeAppend
       kjGeoPointExtract(coordinatesNodeP, &longitude, &latitude, &altitude);
 
       bufSize = fixedLen + 256;
-      buf = pgBufAllocSub(bufSize, &bufNeedsFree);
+      buf = pgBufAllocSub(bufSize);
       if (buf == NULL) return;
 
-      snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, 'GeoPoint', null, null, null, null, null, ST_GeomFromText('POINT(%f %f %f)'), null, null, null, null, null, '%s')",
+      snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, 'GeoPoint', null, null, null, null, null, ST_GeomFromText('POINT(%f %f %f)', 4326), null, null, null, null, null, '%s')",
                comma, instanceId, subAttributeName, entityId, attrInstanceId, attrDatasetId, observedAt, unitCode, longitude, latitude, altitude, orionldState.requestTimeString);
     }
     else
     {
       // For all non-point geo types, allocate 64KB for coords
       int   coordsLen = 64 * 1024;
-      bool  coordsNeedsFree = false;
-      char* coordsString = pgBufAllocSub(coordsLen, &coordsNeedsFree);
+      char* coordsString = pgBufAllocSub(coordsLen);
 
       if (coordsString == NULL) return;
       coordsString[0] = 0;
@@ -229,13 +219,12 @@ void pgSubAttributeAppend
       if (!extractOk || geoTypeName == NULL)
       {
         KT_E("pgSubAttributeAppend: geo extraction failed for type '%s'", geoType);
-        if (coordsNeedsFree) free(coordsString);
         return;
       }
 
       bufSize = fixedLen + strlen(coordsString) + strlen(stPrefix) + 256;
-      buf = pgBufAllocSub(bufSize, &bufNeedsFree);
-      if (buf == NULL) { if (coordsNeedsFree) free(coordsString); return; }
+      buf = pgBufAllocSub(bufSize);
+      if (buf == NULL) return;
 
       //
       // Build the SQL with the correct geo column position
@@ -258,7 +247,7 @@ void pgSubAttributeAppend
       }
       else if (strcmp(geoType, "Polygon") == 0)
       {
-        snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, '%s', null, null, null, null, null, null, null, ST_GeomFromText('%s(%s)'), null, null, null, '%s')",
+        snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, '%s', null, null, null, null, null, null, null, ST_GeomFromText('%s(%s)', 4326), null, null, null, '%s')",
                  comma, instanceId, subAttributeName, entityId, attrInstanceId, attrDatasetId, observedAt, unitCode, geoTypeName, stPrefix, coordsString, orionldState.requestTimeString);
       }
       else if (strcmp(geoType, "MultiPolygon") == 0)
@@ -267,7 +256,6 @@ void pgSubAttributeAppend
                  comma, instanceId, subAttributeName, entityId, attrInstanceId, attrDatasetId, observedAt, unitCode, geoTypeName, stPrefix, coordsString, orionldState.requestTimeString);
       }
 
-      if (coordsNeedsFree) free(coordsString);
     }
   }
   else  // Property
@@ -275,7 +263,7 @@ void pgSubAttributeAppend
     if (valueNodeP->type == KjString)
     {
       bufSize = fixedLen + strlen(valueNodeP->value.s);
-      buf = pgBufAllocSub(bufSize, &bufNeedsFree);
+      buf = pgBufAllocSub(bufSize);
       if (buf == NULL) return;
 
       snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, 'String', '%s', null, null, null, null, null, null, null, null, null, null, '%s')",
@@ -286,7 +274,7 @@ void pgSubAttributeAppend
       const char* value = (valueNodeP->value.b == true)? "true" : "false";
 
       bufSize = fixedLen;
-      buf = pgBufAllocSub(bufSize, &bufNeedsFree);
+      buf = pgBufAllocSub(bufSize);
       if (buf == NULL) return;
 
       snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, 'Boolean', null, %s, null, null, null, null, null, null, null, null, null, '%s')",
@@ -295,7 +283,7 @@ void pgSubAttributeAppend
     else if (valueNodeP->type == KjInt)
     {
       bufSize = fixedLen + 32;
-      buf = pgBufAllocSub(bufSize, &bufNeedsFree);
+      buf = pgBufAllocSub(bufSize);
       if (buf == NULL) return;
 
       snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, 'Number', null, null, %lld, null, null, null, null, null, null, null, null, '%s')",
@@ -304,7 +292,7 @@ void pgSubAttributeAppend
     else if (valueNodeP->type == KjFloat)
     {
       bufSize = fixedLen + 32;
-      buf = pgBufAllocSub(bufSize, &bufNeedsFree);
+      buf = pgBufAllocSub(bufSize);
       if (buf == NULL) return;
 
       snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, 'Number', null, null, %f, null, null, null, null, null, null, null, null, '%s')",
@@ -312,24 +300,21 @@ void pgSubAttributeAppend
     }
     else if ((valueNodeP->type == KjArray) || (valueNodeP->type == KjObject))
     {
+      // WARNING: If a sub-attribute is HUGE, it may not have room enough in a buffer allocated by kaAlloc (there's a max-size)
       int   renderedValueSize = kjFastRenderSize(valueNodeP);
       char* renderedValue     = kaAlloc(&orionldState.kalloc, renderedValueSize);
 
+      // if kaAlloc returns null-pointer, the sub-attribute is too big -> report error and return
       if (renderedValue == NULL)
       {
-        renderedValue = (char*) malloc(renderedValueSize);
-        if (renderedValue == NULL)
-        {
-          KT_E("pgSubAttributeAppend: out of memory rendering compound value (%d bytes)", renderedValueSize);
-          return;
-        }
-        orionldStateDelayedFreeEnqueue(renderedValue);
+        KT_E("error allocating %d bytes for sub-attribute value", renderedValueSize);
+        return;
       }
 
       kjFastRender(valueNodeP, renderedValue);
 
       bufSize = fixedLen + renderedValueSize;
-      buf = pgBufAllocSub(bufSize, &bufNeedsFree);
+      buf = pgBufAllocSub(bufSize);
       if (buf == NULL) return;
 
       snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', %s, %s, %s, 'Compound', null, null, null, null, '%s', null, null, null, null, null, null, '%s')",
@@ -340,13 +325,9 @@ void pgSubAttributeAppend
   if (buf == NULL || buf[0] == 0)
   {
     KT_W("TROE: sub-attribute not written to history DB (allocation failure or empty)");
-    if (bufNeedsFree && buf != NULL) free(buf);
     return;
   }
 
   pgAppend(subAttributesBufferP, buf, 0);
   subAttributesBufferP->values += 1;
-
-  if (bufNeedsFree)
-    free(buf);
 }
