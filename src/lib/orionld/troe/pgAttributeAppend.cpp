@@ -202,15 +202,16 @@ void pgAttributeAppend
 
     if (point == false)
     {
-      // Allocate generously for coordinates - 64KB should handle most cases,
-      // and the geo extract functions check bounds and return false if exceeded
+      // Use malloc for large geo coord buffers - kaAlloc pool blocks (64KB) can't serve 64KB requests
+      // due to block header overhead. malloc + delayedFreeEnqueue ensures proper cleanup.
       coordsStringLen = 64 * 1024;
-      coordsString = pgBufAlloc(coordsStringLen);
+      coordsString = (char*) malloc(coordsStringLen);
       if (coordsString == NULL)
       {
         KT_E("pgAttributeAppend: out of memory for geo coords (%d bytes)", coordsStringLen);
         return;
       }
+      orionldStateDelayedFreeEnqueue(coordsString);
       coordsString[0] = 0;
     }
 

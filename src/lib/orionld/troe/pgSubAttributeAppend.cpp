@@ -174,11 +174,16 @@ void pgSubAttributeAppend
     }
     else
     {
-      // For all non-point geo types, allocate 64KB for coords
+      // Use malloc for large geo coord buffers - kaAlloc pool blocks (64KB) can't serve 64KB requests
       int   coordsLen = 64 * 1024;
-      char* coordsString = pgBufAllocSub(coordsLen);
+      char* coordsString = (char*) malloc(coordsLen);
 
-      if (coordsString == NULL) return;
+      if (coordsString == NULL)
+      {
+        KT_E("pgSubAttributeAppend: out of memory for geo coords (%d bytes)", coordsLen);
+        return;
+      }
+      orionldStateDelayedFreeEnqueue(coordsString);
       coordsString[0] = 0;
 
       bool extractOk = false;
