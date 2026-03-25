@@ -28,12 +28,14 @@ extern "C"
 {
 #include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
+#include "kjson/kjBuilder.h"                                     // kjArray, kjString, kjFloat
 }
 
 #include "orionld/types/OrionLdRestService.h"                    // OrionLdRestService
+#include "orionld/types/OrionldHeader.h"                         // orionldHeaderAdd, HttpResultsCount
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
-#include "orionld/common/pqHeader.h"                             // PGresult, PQclear
+#include "orionld/common/pqHeader.h"                             // PGresult, PQclear, PQntuples
 #include "orionld/payloadCheck/pCheckUri.h"                      // pCheckUri
 #include "orionld/kjTree/kjSysAttrsRemove.h"                     // kjSysAttrsRemove
 #include "orionld/context/orionldEntityCompact.h"                // orionldEntityCompact
@@ -46,6 +48,101 @@ extern "C"
 
 
 extern bool troe;
+
+
+
+// -----------------------------------------------------------------------------
+//
+// temporalValuesTransform -
+//
+// Transform the temporal entity from normalized array format to temporalValues format.
+// Each attribute array of instances becomes an array of [value, observedAt] tuples.
+//
+// Input:  "P1": [ {"type":"Property", "value":30, "observedAt":"..."}, ... ]
+// Output: "P1": { "type":"Property", "values": [[30, "..."], [20, "..."], ...] }
+//
+static void temporalValuesTransform(KjNode* entityP)
+{
+  for (KjNode* attrP = entityP->value.firstChildP; attrP != NULL; attrP = attrP->next)
+  {
+    // Skip id, type, scope, and system attributes
+    if (attrP->type != KjArray)
+      continue;
+
+    // Build the temporalValues object
+    KjNode*     valuesArray = kjArray(orionldState.kjsonP, "values");
+    const char* attrType    = NULL;
+
+    for (KjNode* instanceP = attrP->value.firstChildP; instanceP != NULL; instanceP = instanceP->next)
+    {
+      if (instanceP->type != KjObject)
+        continue;
+
+      // Extract type (from first instance)
+      if (attrType == NULL)
+      {
+        KjNode* typeP = NULL;
+        for (KjNode* fieldP = instanceP->value.firstChildP; fieldP != NULL; fieldP = fieldP->next)
+        {
+          if (strcmp(fieldP->name, "type") == 0)
+          {
+            typeP = fieldP;
+            break;
+          }
+        }
+        if (typeP != NULL)
+          attrType = typeP->value.s;
+      }
+
+      // Find value (or object for Relationship) and observedAt
+      KjNode* valueP      = NULL;
+      KjNode* observedAtP = NULL;
+
+      for (KjNode* fieldP = instanceP->value.firstChildP; fieldP != NULL; fieldP = fieldP->next)
+      {
+        if (strcmp(fieldP->name, "value") == 0 || strcmp(fieldP->name, "object") == 0 || strcmp(fieldP->name, "languageMap") == 0)
+          valueP = fieldP;
+        else if (strcmp(fieldP->name, "observedAt") == 0)
+          observedAtP = fieldP;
+      }
+
+      // Build tuple [value, observedAt]
+      KjNode* tuple = kjArray(orionldState.kjsonP, NULL);
+
+      if (valueP != NULL)
+      {
+        // Clone the value node without a name
+        KjNode* valClone = NULL;
+        switch (valueP->type)
+        {
+        case KjString:  valClone = kjString(orionldState.kjsonP, NULL, valueP->value.s); break;
+        case KjInt:     valClone = kjInteger(orionldState.kjsonP, NULL, valueP->value.i); break;
+        case KjFloat:   valClone = kjFloat(orionldState.kjsonP, NULL, valueP->value.f); break;
+        case KjBoolean: valClone = kjBoolean(orionldState.kjsonP, NULL, valueP->value.b); break;
+        default:        valClone = kjString(orionldState.kjsonP, NULL, ""); break;
+        }
+        if (valClone != NULL)
+          kjChildAdd(tuple, valClone);
+      }
+
+      if (observedAtP != NULL)
+        kjChildAdd(tuple, kjString(orionldState.kjsonP, NULL, observedAtP->value.s));
+
+      kjChildAdd(valuesArray, tuple);
+    }
+
+    // Replace the array of instances with a temporalValues object
+    KjNode* tvObj = kjObject(orionldState.kjsonP, attrP->name);
+    if (attrType != NULL)
+      kjChildAdd(tvObj, kjString(orionldState.kjsonP, "type", attrType));
+    kjChildAdd(tvObj, valuesArray);
+
+    // Replace in-place: change attrP to be the object
+    attrP->type  = tvObj->type;
+    attrP->value = tvObj->value;
+  }
+}
+
 
 
 // ----------------------------------------------------------------------------
@@ -69,9 +166,11 @@ bool orionldGetTemporalEntity(void)
     return false;
 
   // Validate temporal query parameters
-  const char* timerel   = orionldState.uriParams.timerel;
-  const char* timeAt    = orionldState.uriParams.timeAt;
-  const char* endTimeAt = orionldState.uriParams.endTimeAt;
+  const char* timerel      = orionldState.uriParams.timerel;
+  const char* timeAt       = orionldState.uriParams.timeAt;
+  const char* endTimeAt    = orionldState.uriParams.endTimeAt;
+  const char* timeproperty = orionldState.uriParams.timeproperty;
+  int         lastN        = orionldState.uriParams.lastN;
 
   if (timerel == NULL)
   {
@@ -99,12 +198,21 @@ bool orionldGetTemporalEntity(void)
     return false;
   }
 
+  // Validate lastN
+  if (lastN < 0)
+  {
+    orionldError(OrionldBadRequestData, "Invalid value for URI parameter 'lastN'", "must be a positive integer", 400);
+    return false;
+  }
+
   // Execute the temporal queries against TRoE
   PGresult* entityRes  = NULL;
   PGresult* attrRes    = NULL;
   PGresult* subAttrRes = NULL;
 
-  if (pgTemporalEntityQuery(entityId, timerel, timeAt, endTimeAt, &entityRes, &attrRes, &subAttrRes) == false)
+  if (pgTemporalEntityQuery(entityId, timerel, timeAt, endTimeAt, timeproperty,
+                             &orionldState.in.attrList, lastN,
+                             &entityRes, &attrRes, &subAttrRes) == false)
   {
     orionldError(OrionldInternalError, "Database Error", "temporal query against TRoE failed", 500);
     return false;
@@ -120,6 +228,10 @@ bool orionldGetTemporalEntity(void)
     orionldError(OrionldResourceNotFound, "Entity Not Found", entityId, 404);
     return false;
   }
+
+  // Add NGSILD-Results-Count header if count=true (total attribute instance rows)
+  if (orionldState.uriParams.count == true && attrRes != NULL)
+    orionldHeaderAdd(&orionldState.out.headers, HttpResultsCount, NULL, PQntuples(attrRes));
 
   // Build the NGSI-LD entity from the query results
   KjNode* apiEntityP = pgTemporalEntityBuild(entityRes, attrRes, subAttrRes);
@@ -145,6 +257,10 @@ bool orionldGetTemporalEntity(void)
   if      (orionldState.out.format == RF_SIMPLIFIED) ntosEntity(apiEntityP, lang);
   else if (orionldState.out.format == RF_CONCISE)    ntocEntity(apiEntityP, lang, sysAttrs);
   else                                               ntonEntity(apiEntityP, lang, sysAttrs);
+
+  // Apply temporalValues transformation if requested
+  if (orionldState.uriParams.format != NULL && strcmp(orionldState.uriParams.format, "temporalValues") == 0)
+    temporalValuesTransform(apiEntityP);
 
   if (sysAttrs == false)
     kjSysAttrsRemove(apiEntityP, 2);
