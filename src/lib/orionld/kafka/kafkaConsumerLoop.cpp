@@ -191,12 +191,16 @@ void* kafkaConsumerLoop(void* vP)
       {
         KT_T(KtKafka, "Kafka batch of %d entities written to MongoDB successfully", entityCount);
 
-        // Commit offsets after successful processing
+        // Commit offsets after successful processing.
+        // RD_KAFKA_RESP_ERR__NO_OFFSET is benign: another consumer thread already committed
+        // the stored offsets via the shared kafkaConsumerHandle.
         rd_kafka_resp_err_t err = rd_kafka_commit(kafkaConsumerHandle, NULL, 0);
-        if (err != RD_KAFKA_RESP_ERR_NO_ERROR)
-          KT_W("Kafka offset commit failed: %s", rd_kafka_err2str(err));
-        else
+        if (err == RD_KAFKA_RESP_ERR_NO_ERROR)
           KT_T(KtKafka, "Kafka offsets committed");
+        else if (err == RD_KAFKA_RESP_ERR__NO_OFFSET)
+          KT_T(KtKafka, "Kafka offset commit skipped (already committed by another thread)");
+        else
+          KT_W("Kafka offset commit failed: %s", rd_kafka_err2str(err));
       }
       else
       {
