@@ -22,6 +22,7 @@
 *
 * Author: Carsten Frey
 */
+#include <stdlib.h>                                            // malloc
 #include <string.h>                                            // memcpy
 
 extern "C"
@@ -31,7 +32,6 @@ extern "C"
 #include "kjson/kjson.h"                                       // Kjson
 #include "kjson/kjParse.h"                                     // kjParse
 #include "kjson/kjLookup.h"                                    // kjLookup
-#include "kalloc/kaAlloc.h"                                    // kaAlloc
 }
 
 #include "orionld/common/orionldState.h"                       // orionldState
@@ -49,13 +49,14 @@ extern "C"
 KjNode* kafkaMessageParse(Kjson* kjsonP, const char* payload, int payloadLen)
 {
   // Make a mutable copy for kjParse (it modifies the input buffer)
-  // Using kaAlloc so the buffer is auto-freed with the request-scoped kalloc arena
-  char* buf = kaAlloc(&orionldState.kalloc, payloadLen + 1);
+  // Using malloc instead of kaAlloc because Kafka payloads can exceed the kalloc arena's 64KB block size
+  char* buf = (char*) malloc(payloadLen + 1);
   if (buf == NULL)
   {
     KT_E("kafkaMessageParse: out of memory allocating %d bytes", payloadLen + 1);
     return NULL;
   }
+  orionldStateDelayedFreeEnqueue(buf);
 
   memcpy(buf, payload, payloadLen);
   buf[payloadLen] = 0;
@@ -89,6 +90,6 @@ KjNode* kafkaMessageParse(Kjson* kjsonP, const char* payload, int payloadLen)
     }
   }
 
-  // buf is allocated via kaAlloc — auto-freed when the kalloc arena is released
+  // buf is freed via orionldStateDelayedFreeEnqueue when the request/batch cycle ends
   return tree;
 }
