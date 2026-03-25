@@ -77,6 +77,9 @@
   - Documented geo-fencing for subscriptions (georel types, geometry combinations, custom geoproperty, lifecycle)
   - Added GEOS to external-libraries.md and installation guide dependency list
 
+## NGSIv1
+  - Removed the support for NGSIv1 endpoints (Telefonica did this easily a year ago)
+
 ## Library version updates
   - Replaced prometheus-client-c with kprom
   - Bumped PostgreSQL client packages from v13 to v17
