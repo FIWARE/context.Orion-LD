@@ -225,8 +225,8 @@ SET (ORION_LIBS
     orionld_dbModel
     orionld_apiModel
     orionld_pernot
-    serviceRoutines
     serviceRoutinesV2
+    serviceRoutines
     ngsiNotify
     orionld_kjTree
     jsonParse
