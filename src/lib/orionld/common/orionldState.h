@@ -149,6 +149,7 @@ typedef struct OrionldUriParams
   char*     timerel;
   char*     timeAt;
   char*     endTimeAt;
+  int       lastN;
   bool      details;
   bool      prettyPrint;
   int       spaces;

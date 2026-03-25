@@ -588,11 +588,7 @@ void sigHandler(int sigNo)
       usleep(500000);  // 500ms for DDS async teardown to complete
     }
 
-    // Graceful Kafka shutdown
-    if (kafkaSupport == true)
-      kafkaRelease();
-
-    exit(0);
+    exit(0);  // triggers exitFunc() via atexit, which handles kafkaRelease()
     break;
   }
 }

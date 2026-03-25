@@ -840,10 +840,11 @@ MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
   {
     orionldState.uriParams.format = (char*) value;
 
-    if      (strcmp(value, "normalized") == 0)  orionldState.out.format = RF_NORMALIZED;
-    else if (strcmp(value, "concise")    == 0)  orionldState.out.format = RF_CONCISE;
-    else if (strcmp(value, "simplified") == 0)  orionldState.out.format = RF_SIMPLIFIED;
-    else if (strcmp(value, "keyValues")  == 0)  orionldState.out.format = RF_SIMPLIFIED;
+    if      (strcmp(value, "normalized")     == 0)  orionldState.out.format = RF_NORMALIZED;
+    else if (strcmp(value, "concise")        == 0)  orionldState.out.format = RF_CONCISE;
+    else if (strcmp(value, "simplified")     == 0)  orionldState.out.format = RF_SIMPLIFIED;
+    else if (strcmp(value, "keyValues")      == 0)  orionldState.out.format = RF_SIMPLIFIED;
+    else if (strcmp(value, "temporalValues") == 0)  orionldState.out.format = RF_NORMALIZED;  // transformed later by temporal service routine
     else
     {
       orionldError(OrionldBadRequestData, "Bad value for URI parameter /format/", value, 400);
@@ -966,6 +967,11 @@ MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
     // FIXME: Check the value
     orionldState.uriParams.endTimeAt = (char*) value;
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_ENDTIMEAT;
+  }
+  else if (strcmp(key, "lastN") == 0)
+  {
+    orionldState.uriParams.lastN = atoi(value);
+    orionldState.uriParams.mask |= ORIONLD_URIPARAM_LASTN;
   }
   else if (strcmp(key, "details") == 0)
   {
