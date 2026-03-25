@@ -781,6 +781,11 @@ MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
     orionldState.uriParams.pick  = (char*) value;
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_PICK;
   }
+  else if (strcmp(key, "omit") == 0)
+  {
+    orionldState.uriParams.omit  = (char*) value;
+    orionldState.uriParams.mask |= ORIONLD_URIPARAM_OMIT;
+  }
   else if (strcmp(key, "offset") == 0)
   {
     if (value[0] == '-')

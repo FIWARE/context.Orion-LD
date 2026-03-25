@@ -537,6 +537,11 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
     serviceP->uriParams |= ORIONLD_URIPARAM_TIMEAT;
     serviceP->uriParams |= ORIONLD_URIPARAM_ENDTIMEAT;
     serviceP->uriParams |= ORIONLD_URIPARAM_TIMEPROPERTY;
+    serviceP->uriParams |= ORIONLD_URIPARAM_PICK;
+    serviceP->uriParams |= ORIONLD_URIPARAM_OMIT;
+    serviceP->uriParams |= ORIONLD_URIPARAM_DATASETID;
+    serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
+    serviceP->uriParams |= ORIONLD_URIPARAM_LANG;
   }
   else if (serviceP->serviceRoutine == orionldPostTemporalQuery)
     serviceP->mintaka = true;

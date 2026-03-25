@@ -42,6 +42,9 @@ extern "C"
 #include "orionld/apiModel/ntosEntity.h"                         // ntosEntity
 #include "orionld/apiModel/ntocEntity.h"                         // ntocEntity
 #include "orionld/apiModel/ntonEntity.h"                         // ntonEntity
+#include "orionld/common/pick.h"                                 // pickForEntity
+#include "orionld/common/omit.h"                                 // omitForEntity
+#include "orionld/common/datasetTemporalEntityFix.h"             // datasetTemporalEntityFix
 #include "orionld/troe/pgTemporalEntityQuery.h"                  // pgTemporalEntityQuery
 #include "orionld/troe/pgTemporalEntityBuild.h"                  // pgTemporalEntityBuild
 #include "orionld/serviceRoutines/orionldGetTemporalEntity.h"    // Own Interface
@@ -172,27 +175,29 @@ bool orionldGetTemporalEntity(void)
   const char* timeproperty = orionldState.uriParams.timeproperty;
   int         lastN        = orionldState.uriParams.lastN;
 
-  if (timerel == NULL)
+  // Per ETSI GS CIM 009 clause 6.19.3.1, timerel and timeAt are optional (cardinality 0..1)
+  // If both are omitted, all attribute instances are returned without time filtering
+  if (timerel != NULL && timeAt == NULL)
   {
-    orionldError(OrionldBadRequestData, "Missing required URI parameter", "timerel", 400);
+    orionldError(OrionldBadRequestData, "Missing required URI parameter 'timeAt' when 'timerel' is present", "timeAt", 400);
     return false;
   }
 
-  if (timeAt == NULL)
+  if (timerel == NULL && timeAt != NULL)
   {
-    orionldError(OrionldBadRequestData, "Missing required URI parameter", "timeAt", 400);
+    orionldError(OrionldBadRequestData, "Missing required URI parameter 'timerel' when 'timeAt' is present", "timerel", 400);
     return false;
   }
 
-  // Validate timerel value
-  if (strcmp(timerel, "before") != 0 && strcmp(timerel, "after") != 0 && strcmp(timerel, "between") != 0)
+  // Validate timerel value (if provided)
+  if (timerel != NULL && strcmp(timerel, "before") != 0 && strcmp(timerel, "after") != 0 && strcmp(timerel, "between") != 0)
   {
     orionldError(OrionldBadRequestData, "Invalid value for URI parameter 'timerel'", timerel, 400);
     return false;
   }
 
   // For "between", endTimeAt is required
-  if (strcmp(timerel, "between") == 0 && endTimeAt == NULL)
+  if (timerel != NULL && strcmp(timerel, "between") == 0 && endTimeAt == NULL)
   {
     orionldError(OrionldBadRequestData, "Missing required URI parameter 'endTimeAt' for timerel=between", "endTimeAt", 400);
     return false;
@@ -202,6 +207,13 @@ bool orionldGetTemporalEntity(void)
   if (lastN < 0)
   {
     orionldError(OrionldBadRequestData, "Invalid value for URI parameter 'lastN'", "must be a positive integer", 400);
+    return false;
+  }
+
+  // pick and omit are mutually exclusive
+  if (orionldState.uriParams.pick != NULL && orionldState.uriParams.omit != NULL)
+  {
+    orionldError(OrionldBadRequestData, "Incompatible URI parameters", "pick and omit cannot be used together", 400);
     return false;
   }
 
@@ -250,6 +262,10 @@ bool orionldGetTemporalEntity(void)
   // Compact attribute names using the request's @context
   orionldEntityCompact(apiEntityP, orionldState.contextP);
 
+  // Apply datasetId filter (before format transformations, as it removes instances)
+  if (orionldState.uriParams.datasetId != NULL)
+    datasetTemporalEntityFix(apiEntityP);
+
   // Apply output format transformation
   bool   sysAttrs = orionldState.uriParamOptions.sysAttrs;
   char*  lang     = orionldState.uriParams.lang;
@@ -264,6 +280,13 @@ bool orionldGetTemporalEntity(void)
 
   if (sysAttrs == false)
     kjSysAttrsRemove(apiEntityP, 2);
+
+  // Apply pick/omit post-processing filters (after compaction and sysAttrs removal)
+  if (orionldState.in.pickList.items > 0)
+    pickForEntity(apiEntityP);
+
+  if (orionldState.in.omitList.items > 0)
+    omitForEntity(apiEntityP);
 
   orionldState.responseTree   = apiEntityP;
   orionldState.httpStatusCode = 200;

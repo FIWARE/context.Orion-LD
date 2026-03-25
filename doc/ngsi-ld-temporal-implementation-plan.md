@@ -16,7 +16,7 @@
 |---|---------|------|--------|------------|
 | 1 | POST | `/temporal/entities` | **Implementiert** (kleine Luecken) | `orionldPostTemporalEntities.cpp` |
 | 2 | GET | `/temporal/entities` | **Nicht implementiert** (Mintaka-Stub) | `orionldGetTemporalEntities.cpp` |
-| 3 | GET | `/temporal/entities/{entityId}` | **Weitgehend implementiert** | `orionldGetTemporalEntity.cpp` |
+| 3 | GET | `/temporal/entities/{entityId}` | **Implementiert** (Aggregation fehlt) | `orionldGetTemporalEntity.cpp` |
 | 4 | DELETE | `/temporal/entities/{entityId}` | **Nicht implementiert** (501-Stub) | `orionldDeleteTemporalEntity.cpp` |
 | 5 | POST | `/temporal/entities/{entityId}/attrs` | **Nicht implementiert** (501-Stub) | `orionldPostTemporalAttributes.cpp` |
 | 6 | DELETE | `.../attrs/{attrId}` | **Nicht implementiert** (501-Stub) | `orionldDeleteTemporalAttribute.cpp` |
@@ -127,21 +127,31 @@ Alle URL-Parameter muessen implementiert werden:
 - `sysAttrs`-Option und `lang`-Parameter
 - 404 wenn Entity nicht gefunden, 501 wenn TRoE nicht aktiviert
 - Sortierung nach dynamischem `timeCol` statt hardcoded `ts`
-- URI-Parameter in ServiceInit registriert (Zeilen 527-540): `OPTIONS`, `FORMAT`, `ATTRS`, `COUNT`, `LASTN`, `TIMEREL`, `TIMEAT`, `ENDTIMEAT`, `TIMEPROPERTY`
+- URI-Parameter in ServiceInit registriert: `OPTIONS`, `FORMAT`, `ATTRS`, `COUNT`, `LASTN`, `TIMEREL`, `TIMEAT`, `ENDTIMEAT`, `TIMEPROPERTY`, `PICK`, `OMIT`, `DATASETID`, `LOCAL`, `LANG`
+- `pick`-Parameter: Post-Processing via `pickForEntity()` - filtert Attribute nach Namen
+- `omit`-Parameter: Post-Processing via `omitForEntity()` - entfernt benannte Attribute
+- `pick`/`omit` Mutual Exclusivity: 400-Fehler bei gleichzeitiger Verwendung
+- `datasetId`-Filterung: `datasetTemporalEntityFix()` entfernt nicht-passende Instanzen (Arrays bleiben erhalten)
+- `timerel`/`timeAt` optional: ohne diese Parameter werden alle Attribut-Instanzen zurueckgegeben
 
-**Was fehlt:**
+**Kuerzlich implementiert:**
+
+| Parameter | Status | Details |
+|-----------|--------|---------|
+| `pick` | **Erledigt** | Post-Processing via `pickForEntity()` nach Kompaktierung |
+| `omit` | **Erledigt** | Neues `omit`-Infrastruktur (Flag, Parsing, `omitForEntity()`) |
+| `datasetId` | **Erledigt** | `datasetTemporalEntityFix()` - temporale Variante ohne Array-Flattening |
+| Optional `timerel`/`timeAt` | **Erledigt** | Beide optional per Spec Clause 6.19.3.1 - ohne = alle Instanzen |
+| `pick`/`omit` Mutual Exclusivity | **Erledigt** | 400-Fehler wenn beide gleichzeitig angegeben |
+
+**Was noch fehlt:**
 
 | Parameter | Prioritaet | Aktueller Stand |
 |-----------|-----------|-----------------|
-| `pick` | Mittel | Nicht implementiert (nur `attrs` via SQL-Filter, `pick` ist das Spec-konforme Aequivalent) |
-| `omit` | Mittel | Nicht implementiert |
-| `datasetId` | Mittel | Wird in `pgTemporalEntityBuild` zwar ausgegeben, aber kein Filtering per URL-Parameter |
 | `aggrMethods` | Mittel | Nicht implementiert - keine Aggregationslogik |
 | `aggrPeriodDuration` | Mittel | Nicht implementiert |
 | `options` (aggregatedValues) | Mittel | Nicht implementiert (nur `temporalValues` und `sysAttrs`) |
-| `local` | Niedrig | Nicht implementiert |
-
-**Hinweis:** `timerel` und `timeAt` sind laut Spec fuer diesen Endpunkt optional (anders als bei GET collection). Aktuell werden sie als Pflicht validiert (Zeilen 175-185), was nicht vollstaendig Spec-konform ist. Ohne diese Parameter sollten alle Attribut-Instanzen zurueckgegeben werden.
+| `local` | Niedrig | URI-Param registriert, aber keine Logik dahinter |
 
 ---
 

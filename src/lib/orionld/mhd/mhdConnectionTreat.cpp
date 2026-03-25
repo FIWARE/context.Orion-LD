@@ -776,6 +776,48 @@ static bool pCheckPickParam(void)
 
 // -----------------------------------------------------------------------------
 //
+// pCheckOmitParam -
+//
+static bool pCheckOmitParam(void)
+{
+  if (orionldState.uriParams.omit == NULL)
+    return true;
+
+  int   items     = commaCount(orionldState.uriParams.omit) + 1;
+  char* arraysDup = kaStrdup(&orionldState.kalloc, orionldState.uriParams.omit);  // Keep original value of 'omit'
+
+  orionldState.in.omitList.items = items;
+  orionldState.in.omitList.array = (char**) kaAlloc(&orionldState.kalloc, sizeof(char*) * items);
+
+  if (orionldState.in.omitList.array == NULL)
+  {
+    KT_E("Out of memory (allocating an /omit/ array of %d char pointers)", items);
+    orionldError(OrionldInternalError, "Out of memory", "allocating the array for /omit/ URI param", 500);
+    return false;
+  }
+
+  int splitItems = kStringSplit(arraysDup, ',', orionldState.in.omitList.array, items);
+
+  if (splitItems != items)
+  {
+    KT_E("kStringSplit didn't find exactly %d items (it found %d)", items, splitItems);
+    orionldError(OrionldInternalError, "Internal Error", "kStringSplit does not agree with commaCount", 500);
+    return false;
+  }
+
+  //
+  // NOTE:
+  //   omit items are NOT EXPANDED as they're applied at the very end - when attribute names are compacted.
+  //   Same reasoning as for pick items.
+  //
+
+  return true;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // pCheckEntityIdParam -
 //
 // NOTE
@@ -1037,6 +1079,7 @@ static bool uriParamExpansion(void)
   if (pCheckEntityTypeParam()          == false) return false;
   if (pCheckAttrsParam()               == false) return false;
   if (pCheckPickParam()                == false) return false;
+  if (pCheckOmitParam()                == false) return false;
   if (pCheckUriParamGeoProperty()      == false) return false;
   if (pCheckUriParamGeometryProperty() == false) return false;
   if (pCheckPayloadEntityType()        == false) return false;

@@ -184,7 +184,41 @@ bool pgTemporalEntityQuery
 
   const char* opmodeFilter = createdAtFilter ? " AND opmode = 'Create'" : " AND opmode != 'Delete'";
 
-  if (strcmp(timerel, "before") == 0)
+  if (timerel == NULL)
+  {
+    // No time filter - return all attribute instances
+    nParams = 1;
+
+    snprintf(entityQuery, sizeof(entityQuery),
+             "%sWHERE id = $1 ORDER BY ts DESC LIMIT 1", entitySelect);
+
+    if (lastN > 0)
+    {
+      snprintf(attrQuery, sizeof(attrQuery),
+               "SELECT * FROM ("
+               "SELECT id, valuetype::text, text, boolean, number, datetime, compound, "
+               "observedat, unitcode, datasetid, subproperties, "
+               "ST_AsGeoJSON(geopoint) as geopoint, ST_AsGeoJSON(geopolygon) as geopolygon, "
+               "ST_AsGeoJSON(geomultipoint) as geomultipoint, ST_AsGeoJSON(geomultipolygon) as geomultipolygon, "
+               "ST_AsGeoJSON(geolinestring) as geolinestring, ST_AsGeoJSON(geomultilinestring) as geomultilinestring, "
+               "instanceid, ts, ROW_NUMBER() OVER (PARTITION BY id, datasetid ORDER BY %s DESC) as rn "
+               "FROM attributes "
+               "WHERE entityid = $1%s%s"
+               ") sub WHERE rn <= %d ORDER BY id, datasetid, %s DESC",
+               timeCol, opmodeFilter, attrFilter, lastN, timeCol);
+    }
+    else
+    {
+      snprintf(attrQuery, sizeof(attrQuery),
+               "%sWHERE entityid = $1%s%s ORDER BY id, datasetid, %s DESC",
+               attrSelect, opmodeFilter, attrFilter, timeCol);
+    }
+
+    snprintf(subAttrQuery, sizeof(subAttrQuery),
+             "%sWHERE entityid = $1 ORDER BY id, attrinstanceid, attrdatasetid, ts DESC",
+             subAttrSelect);
+  }
+  else if (strcmp(timerel, "before") == 0)
   {
     nParams = 2;
 
@@ -291,9 +325,10 @@ bool pgTemporalEntityQuery
   }
 
   // Build parameter arrays
+  const char* params1[] = { entityId };
   const char* params2[] = { entityId, timeAt };
   const char* params3[] = { entityId, timeAt, endTimeAt };
-  const char** paramValues = (nParams == 3) ? params3 : params2;
+  const char** paramValues = (nParams == 3) ? params3 : (nParams == 2) ? params2 : params1;
 
   //
   // Query 1: Entity type
