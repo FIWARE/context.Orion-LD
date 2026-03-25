@@ -83,6 +83,10 @@ function generateCerts()
 #
 function startMqtts()
 {
+  if ! command -v mosquitto &>/dev/null; then
+    return 0
+  fi
+
   # Stop any existing instance
   stopMqtts
 
