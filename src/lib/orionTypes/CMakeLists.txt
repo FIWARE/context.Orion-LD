@@ -26,9 +26,6 @@ SET (SOURCES
     EntityTypeVector.cpp
     EntityTypeVectorResponse.cpp
     EntityTypeResponse.cpp
-    QueryContextRequestVector.cpp
-    QueryContextResponseVector.cpp
-    UpdateContextRequestVector.cpp
     OrionValueType.cpp
     UpdateActionType.cpp
 )
@@ -39,9 +36,6 @@ SET (HEADERS
     EntityTypeVector.h
     EntityTypeVectorResponse.h
     EntityTypeResponse.h
-    QueryContextRequestVector.h
-    QueryContextResponseVector.h
-    UpdateContextRequestVector.h
     OrionValueType.h
     UpdateActionType.h
 )

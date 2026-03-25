@@ -23,7 +23,6 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
 SET (SOURCES
     MongoGlobal.cpp
     MongoCommonUpdate.cpp
-    MongoCommonRegister.cpp
     MongoCommonSubscription.cpp
     mongoUpdateContext.cpp
     mongoQueryContext.cpp
@@ -52,7 +51,6 @@ SET (HEADERS
     dbConstants.h
     MongoGlobal.h
     MongoCommonUpdate.h
-    MongoCommonRegister.h
     MongoCommonSubscription.h
     mongoUpdateContext.h
     mongoQueryContext.h
