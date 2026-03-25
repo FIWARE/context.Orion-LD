@@ -104,9 +104,13 @@ Alle URL-Parameter muessen implementiert werden:
 
 ### 2.3 GET /temporal/entities/{entityId} (orionldGetTemporalEntity.cpp)
 
-**Status:** Grundfunktionalitaet implementiert
+**Status:** Weitgehend implementiert (auf Branch `claude/review-temporal-api-feedback-i4bC1`)
 
-**Was funktioniert:**
+> **Hinweis:** Der aktuelle `develop`-Branch enthaelt eine aeltere Version. Der Branch
+> `claude/review-temporal-api-feedback-i4bC1` (Commit `1ea41bb` ff.) hat wesentliche Erweiterungen
+> die noch nicht gemerged wurden.
+
+**Was funktioniert (develop):**
 - Entity-ID aus URL extrahiert und validiert
 - `timerel` (before/after/between), `timeAt`, `endTimeAt` werden validiert
 - PostgreSQL-Query via `pgTemporalEntityQuery()` mit 3 Resultsets (entity, attrs, subAttrs)
@@ -115,18 +119,25 @@ Alle URL-Parameter muessen implementiert werden:
 - `sysAttrs`-Option und `lang`-Parameter
 - 404 wenn Entity nicht gefunden
 
-**Was fehlt:**
+**Zusaetzlich implementiert (Branch `claude/review-temporal-api-feedback-i4bC1`):**
+- `timeproperty` - `timeColumnForTimeproperty()` mappt auf SQL-Spalten (`observedat` fuer observedAt/default, `ts` fuer modifiedAt/createdAt)
+- `attrs`-Filterung - `attrsFilter()` baut `AND id IN (...)` SQL-Clause
+- `lastN` - Window-Function `ROW_NUMBER() OVER (PARTITION BY id, datasetid ORDER BY <timeCol>)` mit `WHERE rn <= lastN`
+- `instanceId` in der SELECT-Liste
+- `temporalValues` als gueltige Format-Option
+- Sortierung nach `timeCol` statt hardcoded `ts`
+- Test: `troe_get_temporal_entity_sort_timeproperty.test`
+
+**Was fehlt (auch auf dem Review-Branch):**
 
 | Parameter | Prioritaet | Aktueller Stand |
 |-----------|-----------|-----------------|
-| `attrs` / `pick` | Hoch | Nicht implementiert - alle Attribute werden zurueckgegeben |
-| `omit` | Hoch | Nicht implementiert |
-| `timeproperty` | Hoch | Variable existiert in `orionldState` (Zeile 148) aber wird in der Query-Funktion nicht verwendet. Default `observedAt` ist hardcoded im SQL. |
-| `lastN` | Mittel | Nicht implementiert - kein SQL LIMIT pro Attribut |
+| `pick` | Mittel | Nicht implementiert (nur `attrs` via SQL-Filter) |
+| `omit` | Mittel | Nicht implementiert |
 | `aggrMethods` | Mittel | Nicht implementiert - keine Aggregationslogik |
 | `aggrPeriodDuration` | Mittel | Nicht implementiert |
 | `datasetId` | Mittel | Nicht implementiert - kein Dataset-Filtering |
-| `options` (aggregatedValues/temporalValues) | Mittel | Nicht implementiert |
+| `options` (aggregatedValues) | Mittel | Nicht implementiert |
 | `local` | Niedrig | Nicht implementiert |
 
 **Hinweis zur Implementierung:** `timerel` und `timeAt` sind laut Spec fuer diesen Endpunkt optional (anders als bei GET collection). Aktuell werden sie als Pflicht validiert (Zeilen 76-86), was nicht Spec-konform ist.
@@ -255,15 +266,19 @@ Vervollstaendigung der bereits funktionierenden Endpunkte.
 
 #### 1.1 GET /temporal/entities/{entityId} - Fehlende Parameter
 
+> **Voraussetzung:** Branch `claude/review-temporal-api-feedback-i4bC1` muss zuerst in `develop` gemerged werden.
+> Dieser Branch liefert bereits: `timeproperty`, `attrs`-Filter, `lastN` (Window-Function), `instanceId`, `temporalValues`-Format.
+
 | Schritt | Beschreibung | Aufwand |
 |---------|--------------|---------|
-| 1.1.1 | `timeproperty`-Support in `pgTemporalEntityQuery()` einbauen (SQL dynamisch anpassen) | Mittel |
-| 1.1.2 | `attrs`/`pick`/`omit`-Filterung nach Entity-Build anwenden | Mittel |
-| 1.1.3 | `lastN` via SQL `LIMIT` pro Attribut oder Post-Processing | Mittel |
-| 1.1.4 | `datasetId`-Filterung in SQL einbauen | Mittel |
-| 1.1.5 | `timerel`/`timeAt` optional machen (laut Spec nicht Pflicht fuer diesen Endpunkt) | Niedrig |
-| 1.1.6 | `aggrMethods`/`aggrPeriodDuration` - Aggregationslogik | Hoch |
-| 1.1.7 | `local`-Parameter | Niedrig |
+| 1.1.1 | ~~`timeproperty`-Support~~ **Bereits implementiert** (Review-Branch) | Erledigt |
+| 1.1.2 | ~~`attrs`-Filterung~~ **Bereits implementiert** (Review-Branch, SQL `AND id IN (...)`) | Erledigt |
+| 1.1.3 | ~~`lastN`~~ **Bereits implementiert** (Review-Branch, Window-Function `ROW_NUMBER()`) | Erledigt |
+| 1.1.4 | `pick`/`omit`-Projektion nach Entity-Build anwenden | Mittel |
+| 1.1.5 | `datasetId`-Filterung in SQL einbauen | Mittel |
+| 1.1.6 | `timerel`/`timeAt` optional machen (laut Spec nicht Pflicht fuer diesen Endpunkt) | Niedrig |
+| 1.1.7 | `aggrMethods`/`aggrPeriodDuration` - Aggregationslogik | Hoch |
+| 1.1.8 | `local`-Parameter | Niedrig |
 
 **Kritische Dateien:**
 - `src/lib/orionld/serviceRoutines/orionldGetTemporalEntity.cpp`
