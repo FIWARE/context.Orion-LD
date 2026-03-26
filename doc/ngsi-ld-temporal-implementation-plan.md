@@ -15,14 +15,14 @@
 | # | Methode | Pfad | Status | Quelldatei |
 |---|---------|------|--------|------------|
 | 1 | POST | `/temporal/entities` | **Implementiert** (kleine Luecken) | `orionldPostTemporalEntities.cpp` |
-| 2 | GET | `/temporal/entities` | **Implementiert** (Geo, Aggregation fehlt) | `orionldGetTemporalEntities.cpp` |
+| 2 | GET | `/temporal/entities` | **Implementiert** (Aggregation fehlt) | `orionldGetTemporalEntities.cpp` |
 | 3 | GET | `/temporal/entities/{entityId}` | **Implementiert** (Aggregation fehlt) | `orionldGetTemporalEntity.cpp` |
 | 4 | DELETE | `/temporal/entities/{entityId}` | **Nicht implementiert** (501-Stub) | `orionldDeleteTemporalEntity.cpp` |
 | 5 | POST | `/temporal/entities/{entityId}/attrs` | **Nicht implementiert** (501-Stub) | `orionldPostTemporalAttributes.cpp` |
 | 6 | DELETE | `.../attrs/{attrId}` | **Nicht implementiert** (501-Stub) | `orionldDeleteTemporalAttribute.cpp` |
 | 7 | PATCH | `.../attrs/{attrId}/{instanceId}` | **Nicht implementiert** (501-Stub) | `orionldPatchTemporalAttributeInstance.cpp` |
 | 8 | DELETE | `.../attrs/{attrId}/{instanceId}` | **Nicht implementiert** (501-Stub) | `orionldDeleteTemporalAttributeInstance.cpp` |
-| 9 | POST | `/temporal/entityOperations/query` | **Implementiert** (Geo, Aggregation fehlt) | `orionldPostTemporalQuery.cpp` |
+| 9 | POST | `/temporal/entityOperations/query` | **Implementiert** (Aggregation fehlt) | `orionldPostTemporalQuery.cpp` |
 
 **Legende:**
 - **Weitgehend implementiert** = Kernfunktionalitaet und die meisten Parameter vorhanden, einzelne Parameter fehlen noch

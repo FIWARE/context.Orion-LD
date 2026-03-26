@@ -52,6 +52,8 @@ extern "C"
 #include "orionld/common/datasetTemporalEntityFix.h"             // datasetTemporalEntityFix
 #include "orionld/common/temporalValuesTransform.h"              // temporalValuesTransform
 #include "orionld/troe/qTreeToSql.h"                             // troeQStringToSql
+#include "orionld/troe/geoFilterToSql.h"                         // geoFilterToSql
+#include "orionld/payloadCheck/pcheckGeoQ.h"                     // pcheckGeoQ
 #include "orionld/troe/pgTemporalEntitiesQuery.h"                // pgTemporalEntitiesQuery
 #include "orionld/troe/pgTemporalEntityQuery.h"                  // pgTemporalEntityQuery
 #include "orionld/troe/pgTemporalEntityBuild.h"                  // pgTemporalEntityBuild
@@ -313,6 +315,7 @@ bool orionldPostTemporalQuery(void)
   KjNode*     attrsP       = NULL;
   KjNode*     temporalQP   = NULL;
   KjNode*     qNodeP       = NULL;
+  KjNode*     geoQNodeP    = NULL;
 
   for (KjNode* nodeP = requestTree->value.firstChildP; nodeP != NULL; nodeP = nodeP->next)
   {
@@ -381,7 +384,21 @@ bool orionldPostTemporalQuery(void)
       }
       qNodeP = nodeP;
     }
-    else if (strcmp(nodeP->name, "geoQ") == 0 || strcmp(nodeP->name, "scopeQ") == 0)
+    else if (strcmp(nodeP->name, "geoQ") == 0)
+    {
+      if (nodeP->type != KjObject)
+      {
+        orionldError(OrionldBadRequestData, "Invalid JSON type", "geoQ must be a JSON Object", 400);
+        return false;
+      }
+      if (nodeP->value.firstChildP == NULL)
+      {
+        orionldError(OrionldBadRequestData, "Empty Object", "geoQ", 400);
+        return false;
+      }
+      geoQNodeP = nodeP;
+    }
+    else if (strcmp(nodeP->name, "scopeQ") == 0)
     {
       orionldError(OrionldOperationNotSupported, "Not Implemented", nodeP->name, 501);
       return false;
@@ -486,6 +503,19 @@ bool orionldPostTemporalQuery(void)
   }
 
   //
+  // Parse geoQ if present (from POST body)
+  //
+  const char* geoFilter = NULL;
+  if (geoQNodeP != NULL)
+  {
+    OrionldGeoInfo* geoInfoP = (OrionldGeoInfo*) pcheckGeoQ(&orionldState.kalloc, geoQNodeP, false);
+    if (geoInfoP == NULL)
+      return false;  // pcheckGeoQ already set the error
+
+    geoFilter = geoFilterToSql(geoInfoP);
+  }
+
+  //
   // Step 1: Discover matching entities with pagination
   //
   long long  count     = 0;
@@ -493,7 +523,7 @@ bool orionldPostTemporalQuery(void)
   PGresult*  entityRes = NULL;
 
   if (pgTemporalEntitiesQuery(&typeList, &idList, idPattern,
-                              timerel, timeAt, endTimeAt, qFilter,
+                              timerel, timeAt, endTimeAt, qFilter, geoFilter,
                               limit, offset, countP, &entityRes) == false)
   {
     orionldError(OrionldInternalError, "Database Error", "temporal entities query failed", 500);

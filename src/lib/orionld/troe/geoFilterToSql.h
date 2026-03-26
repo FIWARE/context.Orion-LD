@@ -1,5 +1,5 @@
-#ifndef SRC_LIB_ORIONLD_TROE_PGTEMPORALENTITIESQUERY_H_
-#define SRC_LIB_ORIONLD_TROE_PGTEMPORALENTITIESQUERY_H_
+#ifndef SRC_LIB_ORIONLD_TROE_GEOFILTERTOSQL_H_
+#define SRC_LIB_ORIONLD_TROE_GEOFILTERTOSQL_H_
 
 /*
 *
@@ -25,29 +25,19 @@
 *
 * Author: Carsten Frey
 */
-#include "orionld/types/StringArray.h"                         // StringArray
-#include "orionld/common/pqHeader.h"                           // PGresult
+#include "orionld/types/OrionldGeoInfo.h"                       // OrionldGeoInfo
 
 
 
 // -----------------------------------------------------------------------------
 //
-// pgTemporalEntitiesQuery -
+// geoFilterToSql - convert an OrionldGeoInfo to a SQL WHERE clause fragment
 //
-extern bool pgTemporalEntitiesQuery
-(
-  StringArray*  typeList,
-  StringArray*  idList,
-  const char*   idPattern,
-  const char*   timerel,
-  const char*   timeAt,
-  const char*   endTimeAt,
-  const char*   qFilter,
-  const char*   geoFilter,
-  int           limit,
-  int           offset,
-  long long*    countP,
-  PGresult**    entityResP
-);
+// Generates an EXISTS subquery that filters entities based on their geo-property
+// using PostGIS spatial functions (ST_DWithin, ST_Intersects, ST_Contains, etc.)
+//
+// Returns the SQL fragment string, or NULL if geoInfoP is NULL or on error.
+//
+extern const char* geoFilterToSql(OrionldGeoInfo* geoInfoP);
 
-#endif  // SRC_LIB_ORIONLD_TROE_PGTEMPORALENTITIESQUERY_H_
+#endif  // SRC_LIB_ORIONLD_TROE_GEOFILTERTOSQL_H_
