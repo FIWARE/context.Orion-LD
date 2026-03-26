@@ -15,7 +15,7 @@
 | # | Methode | Pfad | Status | Quelldatei |
 |---|---------|------|--------|------------|
 | 1 | POST | `/temporal/entities` | **Implementiert** (kleine Luecken) | `orionldPostTemporalEntities.cpp` |
-| 2 | GET | `/temporal/entities` | **Nicht implementiert** (Mintaka-Stub) | `orionldGetTemporalEntities.cpp` |
+| 2 | GET | `/temporal/entities` | **Implementiert** (q, Geo, Aggregation fehlt) | `orionldGetTemporalEntities.cpp` |
 | 3 | GET | `/temporal/entities/{entityId}` | **Implementiert** (Aggregation fehlt) | `orionldGetTemporalEntity.cpp` |
 | 4 | DELETE | `/temporal/entities/{entityId}` | **Nicht implementiert** (501-Stub) | `orionldDeleteTemporalEntity.cpp` |
 | 5 | POST | `/temporal/entities/{entityId}/attrs` | **Nicht implementiert** (501-Stub) | `orionldPostTemporalAttributes.cpp` |
@@ -57,50 +57,38 @@
 
 ### 2.2 GET /temporal/entities (orionldGetTemporalEntities.cpp)
 
-**Status:** Nicht implementiert - Mintaka-Stub (501)
+**Status:** Weitgehend implementiert (Kernfunktionalitaet)
 
-**Was fehlt (komplett):**
+**Was funktioniert:**
+- Multi-Entity temporale Query ueber TRoE PostgreSQL
+- Zwei-Phasen-Architektur: Entity-Discovery mit Paginierung, dann pro Entity pgTemporalEntityQuery/Build
+- Entity-Filterung: `type`, `id` (Liste), `idPattern` (Regex)
+- Temporale Filterung: `timerel` (before/after/between), `timeAt`, `endTimeAt`
+- `timeproperty` (observedAt/modifiedAt/createdAt)
+- `attrs`-Filterung (nur angeforderte Attribute)
+- `lastN` - Letzte N Instanzen pro Attribut/Dataset
+- Paginierung: `limit`, `offset`
+- `count` - NGSILD-Results-Count Header
+- `pick`/`omit` - Inklusions-/Exklusions-Projektion (mutual exclusivity validiert)
+- `datasetId` - Dataset-Filterung (temporal-spezifisch, Arrays bleiben erhalten)
+- `lang`, `format` (normalized/concise/simplified), `options` (sysAttrs, temporalValues)
+- `local` URI-Parameter registriert
+- Validierung: timerel+timeAt pflicht, type oder attrs pflicht, endTimeAt fuer between
+- URI-Parameter in ServiceInit registriert: OPTIONS, FORMAT, LIMIT, OFFSET, COUNT, IDLIST, TYPELIST, IDPATTERN, ATTRS, LASTN, TIMEREL, TIMEAT, ENDTIMEAT, TIMEPROPERTY, PICK, OMIT, DATASETID, LOCAL, LANG
 
-Alle URL-Parameter muessen implementiert werden:
+**Was noch fehlt:**
 
-| Parameter | Typ | Pflicht | Details |
-|-----------|-----|---------|---------|
-| `id` | Comma-separated URIs | Nein | Entity-ID-Filter |
-| `idPattern` | Regex | Nein | ID-Muster |
-| `type` | String | Bedingt | Entity-Typ (Pflicht wenn `attrs` fehlt) |
-| `attrs` | Comma-separated | Bedingt | Attribut-Selektion |
-| `pick` | Comma-separated | Nein | Inklusions-Projektion |
-| `omit` | Comma-separated | Nein | Exklusions-Projektion |
-| `q` | String | Nein | NGSI-LD Query |
-| `csf` | String | Nein | Context Source Filter |
-| `geometry` | String | Bedingt | Geo-Query |
-| `georel` | String | Bedingt | Geo-Relationship |
-| `coordinates` | String | Bedingt | Koordinaten |
-| `geoproperty` | String | Nein | GeoProperty-Name |
-| `timerel` | String | **Ja** | Temporale Beziehung |
-| `timeAt` | DateTime | **Ja** | Vergleichszeitpunkt |
-| `endTimeAt` | DateTime | Bedingt | Endzeitpunkt |
-| `timeproperty` | String | Nein | Temporal Property |
-| `lastN` | Integer | Nein | Letzte N Instanzen |
-| `lang` | String | Nein | Sprache |
-| `aggrMethods` | Comma-separated | Bedingt | Aggregation |
-| `aggrPeriodDuration` | String | Nein | Aggregationsperiode |
-| `scopeQ` | String | Nein | Scope Query |
-| `datasetId` | Comma-separated URIs | Nein | Dataset-Filter |
-| `expandValues` | Comma-separated | Nein | Werte-Expansion |
-| `jsonKeys` | Comma-separated | Nein | JSON-Key-Filter |
-| `orderBy` | String | Nein | Sortierung |
-| `collation` | String | Nein | Collation |
-| `splitEntities` | Boolean | Nein | Verteilte Entities |
-| `entityMap` | Boolean | Nein | EntityMap |
-| `entityMapLifetime` | String | Nein | EntityMap-Lebensdauer |
-| `limit` | Integer | Nein | Paginierung |
-| `count` | Boolean | Nein | Ergebniszaehler |
-| `options` | String | Nein | sysAttrs, aggregatedValues, temporalValues |
-| `format` | String | Nein | normalized, concise, simplified, aggregated |
-| `local` | Boolean | Nein | Nur lokal |
-
-**Bemerkung:** Dies ist der komplexeste Endpunkt. Eine PostgreSQL-basierte Implementierung muss temporale Queries ueber mehrere Entities ausfuehren und das Ergebnis mit Paginierung, Sortierung, Geo-Filterung und Aggregation aufbereiten. Vieles kann von `pgTemporalEntityQuery.cpp` wiederverwendet werden (timeproperty, attrs-Filter, lastN, timerel-Logik).
+| Parameter | Prioritaet | Details |
+|-----------|-----------|---------|
+| `q` | Hoch | NGSI-LD Query Language - erfordert Q-Tree zu SQL Uebersetzung |
+| `geometry`/`georel`/`coordinates`/`geoproperty` | Hoch | Geo-Queries - erfordert PostGIS-Integration |
+| `aggrMethods`/`aggrPeriodDuration` | Mittel | Aggregation (avg, min, max, etc.) |
+| `orderBy` | Mittel | Sortierung nach Entity-Member |
+| `scopeQ` | Niedrig | Scope Query |
+| `csf` | Niedrig | Context Source Filter |
+| `expandValues`/`jsonKeys` | Niedrig | Spezial-Expansion |
+| `collation` | Niedrig | ICU Collation |
+| `splitEntities`/`entityMap`/`entityMapLifetime` | Niedrig | Verteilte Entities und EntityMap |
 
 ---
 

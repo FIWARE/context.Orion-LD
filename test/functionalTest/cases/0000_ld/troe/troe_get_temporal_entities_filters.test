@@ -1,0 +1,283 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+GET /temporal/entities - id filter, attrs, pick, omit
+
+--SHELL-INIT--
+export BROKER=orionld
+dbInit CB
+pgInit $CB_DB_NAME
+brokerStart CB 100 IPv4 -troe -experimental
+
+--SHELL--
+
+#
+# 01. Create entity E1 (type T) with P1=10, P2="a"
+# 02. Create entity E2 (type T) with P1=20, R1
+# 03. GET temporal with type=T, id=E1 - only E1
+# 04. GET temporal with type=T, attrs=P1 - only P1 attribute in both entities
+# 05. GET temporal with type=T, pick=P1 - only P1 visible (id, type removed)
+# 06. GET temporal with type=T, omit=P2 - P2 excluded
+#
+
+echo "01. Create entity E1 (type T) with P1=10, P2=a"
+echo "================================================"
+payload='{
+  "id": "urn:ngsi-ld:entities:E1",
+  "type": "T",
+  "P1": {
+    "type": "Property",
+    "value": 10,
+    "observedAt": "2024-01-01T10:00:00Z"
+  },
+  "P2": {
+    "type": "Property",
+    "value": "a",
+    "observedAt": "2024-01-01T10:00:00Z"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "02. Create entity E2 (type T) with P1=20, R1"
+echo "=============================================="
+payload='{
+  "id": "urn:ngsi-ld:entities:E2",
+  "type": "T",
+  "P1": {
+    "type": "Property",
+    "value": 20,
+    "observedAt": "2024-01-01T10:00:00Z"
+  },
+  "R1": {
+    "type": "Relationship",
+    "object": "urn:ngsi-ld:entities:E3",
+    "observedAt": "2024-01-01T10:00:00Z"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "03. GET temporal with type=T, id=E1 - only E1"
+echo "==============================================="
+orionCurl --url '/ngsi-ld/v1/temporal/entities?type=T&id=urn:ngsi-ld:entities:E1&timerel=before&timeAt=2099-12-31T23:59:59Z'
+echo
+echo
+
+
+echo "04. GET temporal with type=T, attrs=P1 - only P1 attribute in both entities"
+echo "============================================================================="
+orionCurl --url '/ngsi-ld/v1/temporal/entities?type=T&timerel=before&timeAt=2099-12-31T23:59:59Z&attrs=P1'
+echo
+echo
+
+
+echo "05. GET temporal with type=T, pick=P1 - only P1 visible"
+echo "========================================================="
+orionCurl --url '/ngsi-ld/v1/temporal/entities?type=T&timerel=before&timeAt=2099-12-31T23:59:59Z&pick=P1'
+echo
+echo
+
+
+echo "06. GET temporal with type=T, omit=P2 - P2 excluded"
+echo "====================================================="
+orionCurl --url '/ngsi-ld/v1/temporal/entities?type=T&timerel=before&timeAt=2099-12-31T23:59:59Z&omit=P2'
+echo
+echo
+
+
+--REGEXPECT--
+01. Create entity E1 (type T) with P1=10, P2=a
+================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1
+
+
+
+02. Create entity E2 (type T) with P1=20, R1
+==============================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E2
+
+
+
+03. GET temporal with type=T, id=E1 - only E1
+===============================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": 10
+            }
+        ],
+        "P2": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": "a"
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E1",
+        "type": "T"
+    }
+]
+
+
+
+04. GET temporal with type=T, attrs=P1 - only P1 attribute in both entities
+=============================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": 10
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E1",
+        "type": "T"
+    },
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": 20
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E2",
+        "type": "T"
+    }
+]
+
+
+
+05. GET temporal with type=T, pick=P1 - only P1 visible
+=========================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": 10
+            }
+        ]
+    },
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": 20
+            }
+        ]
+    }
+]
+
+
+
+06. GET temporal with type=T, omit=P2 - P2 excluded
+=====================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": 10
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E1",
+        "type": "T"
+    },
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": 20
+            }
+        ],
+        "R1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "object": "urn:ngsi-ld:entities:E3",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Relationship"
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E2",
+        "type": "T"
+    }
+]
+
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
+pgDrop $CB_DB_NAME

@@ -1,0 +1,427 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+GET /temporal/entities - multi-entity temporal query with type filter and pagination
+
+--SHELL-INIT--
+export BROKER=orionld
+dbInit CB
+pgInit $CB_DB_NAME
+brokerStart CB 100 IPv4 -troe -experimental
+
+--SHELL--
+
+#
+# 01. Create entity E1 (type T) with P1=10
+# 02. Create entity E2 (type T) with P1=20, P2="hello"
+# 03. Create entity E3 (type T2) with P1=30
+# 04. Update E1 P1 to 15
+# 05. GET temporal entities with type=T, timerel=before - should return E1 and E2
+# 06. GET temporal entities with type=T, count=true - verify count header
+# 07. GET temporal entities with type=T, limit=1 - only 1 entity
+# 08. GET temporal entities with type=T, limit=1, offset=1 - second entity
+# 09. GET temporal entities without timerel - 400 error
+# 10. GET temporal entities without type and attrs - 400 error
+# 11. GET temporal entities with type=T2 - only E3
+#
+
+echo "01. Create entity E1 (type T) with P1=10"
+echo "=========================================="
+payload='{
+  "id": "urn:ngsi-ld:entities:E1",
+  "type": "T",
+  "P1": {
+    "type": "Property",
+    "value": 10,
+    "observedAt": "2024-01-01T10:00:00Z"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "02. Create entity E2 (type T) with P1=20, P2=hello"
+echo "===================================================="
+payload='{
+  "id": "urn:ngsi-ld:entities:E2",
+  "type": "T",
+  "P1": {
+    "type": "Property",
+    "value": 20,
+    "observedAt": "2024-01-01T10:00:00Z"
+  },
+  "P2": {
+    "type": "Property",
+    "value": "hello",
+    "observedAt": "2024-01-01T10:00:00Z"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "03. Create entity E3 (type T2) with P1=30"
+echo "==========================================="
+payload='{
+  "id": "urn:ngsi-ld:entities:E3",
+  "type": "T2",
+  "P1": {
+    "type": "Property",
+    "value": 30,
+    "observedAt": "2024-01-01T10:00:00Z"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+sleep 1.1
+
+
+echo "04. Update E1 P1 to 15"
+echo "======================="
+payload='{
+  "P1": {
+    "type": "Property",
+    "value": 15,
+    "observedAt": "2024-01-01T11:00:00Z"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1/attrs --payload "$payload" --verb PATCH
+echo
+echo
+
+
+echo "05. GET temporal entities with type=T, timerel=before - E1 and E2"
+echo "=================================================================="
+orionCurl --url '/ngsi-ld/v1/temporal/entities?type=T&timerel=before&timeAt=2099-12-31T23:59:59Z'
+echo
+echo
+
+
+echo "06. GET temporal entities with type=T, count=true - verify count header"
+echo "========================================================================"
+orionCurl --url '/ngsi-ld/v1/temporal/entities?type=T&timerel=before&timeAt=2099-12-31T23:59:59Z&count=true'
+echo
+echo
+
+
+echo "07. GET temporal entities with type=T, limit=1 - only 1 entity"
+echo "==============================================================="
+orionCurl --url '/ngsi-ld/v1/temporal/entities?type=T&timerel=before&timeAt=2099-12-31T23:59:59Z&limit=1'
+echo
+echo
+
+
+echo "08. GET temporal entities with type=T, limit=1, offset=1 - second entity"
+echo "========================================================================="
+orionCurl --url '/ngsi-ld/v1/temporal/entities?type=T&timerel=before&timeAt=2099-12-31T23:59:59Z&limit=1&offset=1'
+echo
+echo
+
+
+echo "09. GET temporal entities without timerel - 400 error"
+echo "======================================================"
+orionCurl --url '/ngsi-ld/v1/temporal/entities?type=T'
+echo
+echo
+
+
+echo "10. GET temporal entities without type and attrs - 400 error"
+echo "============================================================="
+orionCurl --url '/ngsi-ld/v1/temporal/entities?timerel=before&timeAt=2099-12-31T23:59:59Z'
+echo
+echo
+
+
+echo "11. GET temporal entities with type=T2 - only E3"
+echo "=================================================="
+orionCurl --url '/ngsi-ld/v1/temporal/entities?type=T2&timerel=before&timeAt=2099-12-31T23:59:59Z'
+echo
+echo
+
+
+--REGEXPECT--
+01. Create entity E1 (type T) with P1=10
+==========================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1
+
+
+
+02. Create entity E2 (type T) with P1=20, P2=hello
+====================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E2
+
+
+
+03. Create entity E3 (type T2) with P1=30
+===========================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E3
+
+
+
+04. Update E1 P1 to 15
+=======================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+05. GET temporal entities with type=T, timerel=before - E1 and E2
+==================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T11:00:00Z",
+                "type": "Property",
+                "value": 15
+            },
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": 10
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E1",
+        "type": "T"
+    },
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": 20
+            }
+        ],
+        "P2": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": "hello"
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E2",
+        "type": "T"
+    }
+]
+
+
+
+06. GET temporal entities with type=T, count=true - verify count header
+========================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+NGSILD-Results-Count: 2
+
+[
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T11:00:00Z",
+                "type": "Property",
+                "value": 15
+            },
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": 10
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E1",
+        "type": "T"
+    },
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": 20
+            }
+        ],
+        "P2": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": "hello"
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E2",
+        "type": "T"
+    }
+]
+
+
+
+07. GET temporal entities with type=T, limit=1 - only 1 entity
+===============================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T11:00:00Z",
+                "type": "Property",
+                "value": 15
+            },
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": 10
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E1",
+        "type": "T"
+    }
+]
+
+
+
+08. GET temporal entities with type=T, limit=1, offset=1 - second entity
+=========================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": 20
+            }
+        ],
+        "P2": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": "hello"
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E2",
+        "type": "T"
+    }
+]
+
+
+
+09. GET temporal entities without timerel - 400 error
+======================================================
+HTTP/1.1 400 Bad Request
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "timerel",
+    "title": "Missing required URI parameter",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/BadRequestData"
+}
+
+
+
+10. GET temporal entities without type and attrs - 400 error
+=============================================================
+HTTP/1.1 400 Bad Request
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "type or attrs must be provided",
+    "title": "Missing required URI parameter",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/BadRequestData"
+}
+
+
+
+11. GET temporal entities with type=T2 - only E3
+==================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": 30
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E3",
+        "type": "T2"
+    }
+]
+
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
+pgDrop $CB_DB_NAME
