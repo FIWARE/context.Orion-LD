@@ -22,6 +22,7 @@
 *
 * Author: Ken Zangelin
 */
+#include <cstdlib>                                               // free
 #include <string.h>                                              // strcmp, strchr
 
 extern "C"
@@ -191,6 +192,9 @@ bool troePatchEntity2(void)
 
   if (sqlIx > 0)
     pgCommands(sqlV, sqlIx);
+
+  if (attributesBuffer.allocated)    free(attributesBuffer.buf);
+  if (subAttributesBuffer.allocated) free(subAttributesBuffer.buf);
 
   return true;
 }
