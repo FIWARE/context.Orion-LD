@@ -70,16 +70,16 @@ static int limits(PaiArgument* paList, PaiArgument* aP)
   bool           upper = true;
   bool           lower = true;
   char           w[512];
-  int64_t        i64Val;
-  int            iVal;
-  int16_t        sVal;
-  char           cVal;
-  float          fVal;
-  double         dVal;
-  uint64_t       ui64Val;
-  unsigned int   uiVal;
-  uint16_t       usVal;
-  unsigned char  ucVal;
+  int64_t        i64Val  = 0;
+  int            iVal    = 0;
+  int16_t        sVal    = 0;
+  char           cVal    = 0;
+  float          fVal    = 0;
+  double         dVal    = 0;
+  uint64_t       ui64Val = 0;
+  unsigned int   uiVal   = 0;
+  uint16_t       usVal   = 0;
+  unsigned char  ucVal   = 0;
 
   if ((aP->type == PaSList) || (aP->type == PaIList) || (aP->type == PaBoolean))
   {
@@ -110,17 +110,7 @@ static int limits(PaiArgument* paList, PaiArgument* aP)
 
   KT_T(KtPaLimits, "limit check for %s", aP->name);
 
-  w[0]    = 0;
-  i64Val  = *((int64_t*)        aP->varP);
-  iVal    = *((int*)            aP->varP);
-  sVal    = *((int16_t*)        aP->varP);
-  cVal    = *((char*)           aP->varP);
-  fVal    = *((float*)          aP->varP);
-  dVal    = *((double*)         aP->varP);
-  uiVal   = *((unsigned int*)   aP->varP);
-  ui64Val = *((uint64_t*)       aP->varP);
-  usVal   = *((uint16_t*)       aP->varP);
-  ucVal   = *((unsigned char*)  aP->varP);
+  w[0] = 0;
 
   switch (aP->type)
   {
@@ -146,6 +136,7 @@ static int limits(PaiArgument* paList, PaiArgument* aP)
     break;
 
   case PaInt:
+    iVal = *((int*) aP->varP);
     KT_T(KtPaLimits, "checking '%s' (value %d): limits '%d' - '%d'",
                        aP->name, iVal, aP->min, aP->max);
     if ((lower && (iVal < (int) aP->min)) || (upper && (iVal > (int) aP->max)))
@@ -160,6 +151,7 @@ static int limits(PaiArgument* paList, PaiArgument* aP)
     break;
 
   case PaIntU:
+    uiVal = *((unsigned int*) aP->varP);
     KT_T(KtPaLimits, "checking '%s' (value %d): limits '%d' - '%d'",
                        aP->name, uiVal, aP->min, aP->max);
     if ((lower && (uiVal < (unsigned int) aP->min)) || (upper && (uiVal > (unsigned int) aP->max)))
@@ -174,6 +166,7 @@ static int limits(PaiArgument* paList, PaiArgument* aP)
     break;
 
   case PaInt64:
+    i64Val = *((int64_t*) aP->varP);
     KT_T(KtPaLimits, "checking '%s' (value %lld): limits '%d' - '%d'",
                        aP->name, i64Val, aP->min, aP->max);
     if ((lower && (i64Val < aP->min)) || (upper && (i64Val > aP->max)))
@@ -188,6 +181,7 @@ static int limits(PaiArgument* paList, PaiArgument* aP)
     break;
 
   case PaIntU64:
+    ui64Val = *((uint64_t*) aP->varP);
     KT_T(KtPaLimits, "checking '%s' (value %lu): limits '%d' - '%d'",
                        aP->name, ui64Val, aP->min, aP->max);
     if ((lower && (uiVal < (uint64_t) aP->min)) || (upper && (uiVal > (uint64_t) aP->max)))
@@ -202,6 +196,7 @@ static int limits(PaiArgument* paList, PaiArgument* aP)
     break;
 
   case PaShort:
+    sVal = *((int16_t*) aP->varP);
     KT_T(KtPaLimits, "checking '%s' (value %d): limits '%d' - '%d'",
                        aP->name, sVal, aP->min, aP->max);
     if ((lower && (sVal < (int16_t) aP->min)) || (upper && (sVal > (int16_t) aP->max)))
@@ -216,6 +211,7 @@ static int limits(PaiArgument* paList, PaiArgument* aP)
     break;
 
   case PaShortU:
+    usVal = *((uint16_t*) aP->varP);
     KT_T(KtPaLimits, "checking '%s' (value %d): limits '%d' - '%d'",
                        aP->name, usVal, aP->min, aP->max);
     if ((lower && (usVal < (uint16_t) aP->min)) || (upper && (usVal > (uint16_t) aP->max)))
@@ -230,6 +226,7 @@ static int limits(PaiArgument* paList, PaiArgument* aP)
     break;
 
   case PaChar:
+    cVal = *((char*) aP->varP);
     KT_T(KtPaLimits, "checking '%s' (value %d): limits '%d' - '%d'",
                        aP->name, cVal, aP->min, aP->max);
     if ((lower && (cVal < (char) aP->min)) || (upper && (cVal > (char) aP->max)))
@@ -244,6 +241,7 @@ static int limits(PaiArgument* paList, PaiArgument* aP)
     break;
 
   case PaCharU:
+    ucVal = *((unsigned char*) aP->varP);
     KT_T(KtPaLimits, "checking '%s' (value %d): limits '%d' - '%d'",
                        aP->name, ucVal, aP->min, aP->max);
     if ((lower && (ucVal < (uint8_t) aP->min)) || (upper && (ucVal > (uint8_t) aP->max)))
@@ -258,6 +256,7 @@ static int limits(PaiArgument* paList, PaiArgument* aP)
     break;
 
   case PaFloat:
+    fVal = *((float*) aP->varP);
     KT_T(KtPaLimits, "checking '%s' (value %d): limits '%f' - '%f'",
                        aP->name, fVal, aP->min, aP->max);
     if ((lower && (fVal < (float) aP->min)) || (upper && (fVal > (float) aP->max)))
@@ -272,6 +271,7 @@ static int limits(PaiArgument* paList, PaiArgument* aP)
     break;
 
   case PaDouble:
+    dVal = *((double*) aP->varP);
     KT_T(KtPaLimits, "checking '%s' (value %d): limits '%f' - '%f'",
                        aP->name, dVal, aP->min, aP->max);
     if ((lower && (dVal < (double) aP->min)) || (upper && (dVal > (double) aP->max)))
