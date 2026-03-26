@@ -184,13 +184,13 @@ void restErrorReplyGet(ConnectionInfo* ciP, int statusCode, const std::string& d
 
   orionldState.httpStatusCode = SccOk;
 
-  if (ciP->restServiceP->request == QueryContext)
+  if ((ciP->restServiceP != NULL) && (ciP->restServiceP->request == QueryContext))
   {
     QueryContextResponse  qcr(errorCode);
     bool                  asJsonObject = (orionldState.in.attributeFormatAsObject == true) && ((orionldState.out.contentType == MT_JSON) || (orionldState.out.contentType == MT_JSONLD));
     *outStringP = qcr.render(orionldState.apiVersion, asJsonObject);
   }
-  else if (ciP->restServiceP->request == UpdateContext)
+  else if ((ciP->restServiceP != NULL) && (ciP->restServiceP->request == UpdateContext))
   {
     UpdateContextResponse ucr(errorCode);
     bool asJsonObject = (orionldState.in.attributeFormatAsObject == true) && ((orionldState.out.contentType == MT_JSON) || (orionldState.out.contentType == MT_JSONLD));
@@ -200,7 +200,6 @@ void restErrorReplyGet(ConnectionInfo* ciP, int statusCode, const std::string& d
   {
     OrionError oe(errorCode);
 
-    KT_E("Unknown request type: '%d'", ciP->restServiceP->request);
     orionldState.httpStatusCode = oe.code;
     *outStringP = oe.setStatusCodeAndSmartRender(orionldState.apiVersion, &orionldState.httpStatusCode);
   }

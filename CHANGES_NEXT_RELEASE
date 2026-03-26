@@ -78,7 +78,15 @@
   - Added GEOS to external-libraries.md and installation guide dependency list
 
 ## NGSIv1
-  - Removed the support for NGSIv1 endpoints (Telefonica did this easily a year ago)
+  - Removed all NGSIv1 routes (/ngsi9, /ngsi10, /v1) from the REST service tables
+  - Converted /v1/admin/* routes to /admin/* (dropped the v1 prefix)
+  - Removed 62 dead NGSIv1 service routines, 8 mongoBackend functions, v1 forwarding code
+  - Removed src/lib/ngsi9/, src/lib/convenience/, src/lib/jsonParse/ libraries entirely
+  - Stripped ParseData.h of 15 dead NGSIv1 members
+  - Removed 3 dead ngsi10 types (SubscribeContextRequest, UpdateContextSubscription{Request,Response})
+  - Disabled 478 NGSIv1 functional tests (.test.DISABLED), cross-referenced with Telefonica's fiware-orion
+  - Removed 41 dead unit tests (ngsi9/, ngsi10/, convenience/, jsonParse/, serviceRoutines/)
+  - Fixed crash in restErrorReplyGet when restServiceP is NULL (exposed by v1 branch removal)
 
 ## Library version updates
   - Replaced prometheus-client-c with kprom
