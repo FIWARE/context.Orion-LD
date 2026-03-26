@@ -22,9 +22,9 @@
 *
 * Author: Ken Zangelin
 */
+#include <geos_c.h>                                            // GEOSGeoJSONReader, GEOSPrepare
 #include <string>                                              // std::string
 #include <vector>                                              // std::vector
-#include <geos_c.h>                                            // GEOSGeoJSONReader, GEOSPrepare
 
 extern "C"
 {

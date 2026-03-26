@@ -620,7 +620,7 @@ bool orionldDeleteAttribute(void)
   orionldState.httpStatusCode = 204;
   retVal = true;
 
-cleanup:
+ cleanup:
   if (distOpList != NULL)
     distOpListRelease(distOpList);
 
