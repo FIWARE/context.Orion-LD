@@ -26,6 +26,7 @@
 extern "C"
 {
 #include "kalloc/KAlloc.h"                                      // KAlloc
+#include "kalloc/kaStrdup.h"                                    // kaStrdup
 #include "kjson/KjNode.h"                                       // KjNode
 #include "kjson/kjParse.h"                                      // kjParse
 }
@@ -153,12 +154,25 @@ OrionldGeoInfo* pcheckGeoQ(KAlloc* kallocP, KjNode* geoqNodeP, bool isSubscripti
     if (strcmp(pName, "location") != 0)
     {
       char* expanded = orionldAttributeExpand(orionldState.contextP, pName, true, NULL);
-      geoInfoP->geoProperty = strdup(expanded);  // Expanded name with dots intact (for in-memory geo-matching)
-      geopropertyP->value.s = strdup(expanded);  // Must copy - expanded points into context cache and MUST NOT be altered
-      dotForEq(geopropertyP->value.s);            // Dots replaced by '=' for DB attr name lookups
+
+      if (kallocP != NULL)
+        geoInfoP->geoProperty = kaStrdup(kallocP, expanded);  // Validation only - auto-freed with kalloc pool
+      else
+        geoInfoP->geoProperty = strdup(expanded);             // Stored in sub cache - freed on cache removal
+
+      if (!isSubscription)
+      {
+        geopropertyP->value.s = strdup(expanded);  // Must copy - expanded points into context cache and MUST NOT be altered
+        dotForEq(geopropertyP->value.s);            // Dots replaced by '=' for DB attr name lookups
+      }
     }
     else
-      geoInfoP->geoProperty = strdup(pName);
+    {
+      if (kallocP != NULL)
+        geoInfoP->geoProperty = kaStrdup(kallocP, pName);
+      else
+        geoInfoP->geoProperty = strdup(pName);
+    }
   }
 
   return geoInfoP;
