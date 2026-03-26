@@ -67,6 +67,7 @@ SET (SOURCES
     pgTemporalEntityQuery.cpp
     pgTemporalEntitiesQuery.cpp
     pgTemporalEntityBuild.cpp
+    qTreeToSql.cpp
     pgConnect.cpp
     pgConnectionPools.cpp
     pgConnectionPoolsPresent.cpp
@@ -120,6 +121,7 @@ SET (HEADERS
     pgTemporalEntityQuery.h
     pgTemporalEntitiesQuery.h
     pgTemporalEntityBuild.h
+    qTreeToSql.h
     pgAttributeAppend.h
     pgConnect.h
     pgConnectionPools.h

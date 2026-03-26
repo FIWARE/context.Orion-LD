@@ -51,6 +51,7 @@ extern "C"
 #include "orionld/common/omit.h"                                 // omitForEntity
 #include "orionld/common/datasetTemporalEntityFix.h"             // datasetTemporalEntityFix
 #include "orionld/common/temporalValuesTransform.h"              // temporalValuesTransform
+#include "orionld/troe/qTreeToSql.h"                             // troeQStringToSql
 #include "orionld/troe/pgTemporalEntitiesQuery.h"                // pgTemporalEntitiesQuery
 #include "orionld/troe/pgTemporalEntityQuery.h"                  // pgTemporalEntityQuery
 #include "orionld/troe/pgTemporalEntityBuild.h"                  // pgTemporalEntityBuild
@@ -305,12 +306,13 @@ bool orionldPostTemporalQuery(void)
   }
 
   //
-  // Parse top-level fields: type, entities, attrs, temporalQ
+  // Parse top-level fields: type, entities, attrs, temporalQ, q
   //
   KjNode*     typeNodeP    = NULL;
   KjNode*     entitiesP    = NULL;
   KjNode*     attrsP       = NULL;
   KjNode*     temporalQP   = NULL;
+  KjNode*     qNodeP       = NULL;
 
   for (KjNode* nodeP = requestTree->value.firstChildP; nodeP != NULL; nodeP = nodeP->next)
   {
@@ -365,7 +367,21 @@ bool orionldPostTemporalQuery(void)
       }
       temporalQP = nodeP;
     }
-    else if (strcmp(nodeP->name, "q") == 0 || strcmp(nodeP->name, "geoQ") == 0 || strcmp(nodeP->name, "scopeQ") == 0)
+    else if (strcmp(nodeP->name, "q") == 0)
+    {
+      if (nodeP->type != KjString)
+      {
+        orionldError(OrionldBadRequestData, "Invalid JSON type", "q must be a String", 400);
+        return false;
+      }
+      if (nodeP->value.s[0] == 0)
+      {
+        orionldError(OrionldBadRequestData, "Empty String", "q", 400);
+        return false;
+      }
+      qNodeP = nodeP;
+    }
+    else if (strcmp(nodeP->name, "geoQ") == 0 || strcmp(nodeP->name, "scopeQ") == 0)
     {
       orionldError(OrionldOperationNotSupported, "Not Implemented", nodeP->name, 501);
       return false;
@@ -459,6 +475,17 @@ bool orionldPostTemporalQuery(void)
   }
 
   //
+  // Parse q-parameter if present (from POST body)
+  //
+  const char* qFilter = NULL;
+  if (qNodeP != NULL)
+  {
+    qFilter = troeQStringToSql(qNodeP->value.s);
+    if (qFilter == NULL)
+      return false;  // troeQStringToSql already set the error
+  }
+
+  //
   // Step 1: Discover matching entities with pagination
   //
   long long  count     = 0;
@@ -466,7 +493,7 @@ bool orionldPostTemporalQuery(void)
   PGresult*  entityRes = NULL;
 
   if (pgTemporalEntitiesQuery(&typeList, &idList, idPattern,
-                              timerel, timeAt, endTimeAt,
+                              timerel, timeAt, endTimeAt, qFilter,
                               limit, offset, countP, &entityRes) == false)
   {
     orionldError(OrionldInternalError, "Database Error", "temporal entities query failed", 500);

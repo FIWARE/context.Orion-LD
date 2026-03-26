@@ -534,6 +534,7 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
     serviceP->uriParams |= ORIONLD_URIPARAM_IDLIST;
     serviceP->uriParams |= ORIONLD_URIPARAM_TYPELIST;
     serviceP->uriParams |= ORIONLD_URIPARAM_IDPATTERN;
+    serviceP->uriParams |= ORIONLD_URIPARAM_Q;
     serviceP->uriParams |= ORIONLD_URIPARAM_ATTRS;
     serviceP->uriParams |= ORIONLD_URIPARAM_LASTN;
     serviceP->uriParams |= ORIONLD_URIPARAM_TIMEREL;

@@ -1,5 +1,5 @@
-#ifndef SRC_LIB_ORIONLD_TROE_PGTEMPORALENTITIESQUERY_H_
-#define SRC_LIB_ORIONLD_TROE_PGTEMPORALENTITIESQUERY_H_
+#ifndef SRC_LIB_ORIONLD_TROE_QTREETOSQL_H_
+#define SRC_LIB_ORIONLD_TROE_QTREETOSQL_H_
 
 /*
 *
@@ -25,28 +25,29 @@
 *
 * Author: Carsten Frey
 */
-#include "orionld/types/StringArray.h"                         // StringArray
-#include "orionld/common/pqHeader.h"                           // PGresult
+#include "orionld/types/QNode.h"                                 // QNode
 
 
 
 // -----------------------------------------------------------------------------
 //
-// pgTemporalEntitiesQuery -
+// qTreeToSql - convert a QNode tree to a SQL WHERE clause fragment
 //
-extern bool pgTemporalEntitiesQuery
-(
-  StringArray*  typeList,
-  StringArray*  idList,
-  const char*   idPattern,
-  const char*   timerel,
-  const char*   timeAt,
-  const char*   endTimeAt,
-  const char*   qFilter,
-  int           limit,
-  int           offset,
-  long long*    countP,
-  PGresult**    entityResP
-);
+// The returned string is a SQL condition for entity-level filtering,
+// using EXISTS subqueries against the attributes table.
+// Returns NULL if qTree is NULL or on error.
+//
+extern const char* qTreeToSql(QNode* qTree);
 
-#endif  // SRC_LIB_ORIONLD_TROE_PGTEMPORALENTITIESQUERY_H_
+
+
+// -----------------------------------------------------------------------------
+//
+// troeQStringToSql - parse a q-string and convert to SQL WHERE clause fragment
+//
+// Parses the q-string for PostgreSQL (without MongoDB model transformations).
+// Returns SQL WHERE clause fragment, or NULL on error (orionldError set).
+//
+extern const char* troeQStringToSql(char* qString);
+
+#endif  // SRC_LIB_ORIONLD_TROE_QTREETOSQL_H_
