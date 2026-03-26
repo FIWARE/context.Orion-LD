@@ -114,7 +114,6 @@ SET (SOURCES
     rest/OrionError_test.cpp
     rest/Verb_test.cpp
     rest/restReply_test.cpp
-    rest/RestService_test.cpp
     rest/rest_test.cpp
 )
 

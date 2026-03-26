@@ -29,7 +29,6 @@
 
 #include "mongo/client/dbclient.h"
 
-#include "ngsi9/NotifyContextAvailabilityRequest.h"
 #include "ngsi10/NotifyContextRequest.h"
 #include "mongoBackend/safeMongo.h"
 
@@ -91,15 +90,5 @@ extern void setSubscribeContextAvailabilityCollectionName(const char* colName);
 extern bool matchNotifyContextRequest(NotifyContextRequest* expected, NotifyContextRequest* arg);
 
 
-
-/* ****************************************************************************
-*
-* matchNotifyContextAvailabilityRequest -
-*/
-extern bool matchNotifyContextAvailabilityRequest
-(
-  NotifyContextAvailabilityRequest* expected,
-  NotifyContextAvailabilityRequest* arg
-);
 
 #endif  // TEST_UNITTESTS_TESTINIT_H_

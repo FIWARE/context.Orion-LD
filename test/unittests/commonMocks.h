@@ -233,12 +233,6 @@ class NotifierMock : public Notifier
                                               const std::vector<std::string>&  metadataFilter,
                                               bool                             blacklist));
 
-    MOCK_METHOD5(sendNotifyContextAvailabilityRequest, void(NotifyContextAvailabilityRequest*  ncar,
-                                                            const std::string&                 url,
-                                                            const std::string&                 tenant,
-                                                            const std::string&                 fiwareCorrelator,
-                                                            OrionldRenderFormat                renderFormat));
-
     /* Wrappers for parent methods (used in ON_CALL() defaults set in the constructor) */
     void parent_sendNotifyContextRequest(NotifyContextRequest*            ncr,
                                          const ngsiv2::HttpInfo&          httpInfo,
@@ -253,14 +247,6 @@ class NotifierMock : public Notifier
       Notifier::sendNotifyContextRequest(ncr, httpInfo, tenant, xauthToken.c_str(), fiwareCorrelator, renderFormat, attrsFilter, metadataFilter, blacklist);
     }
 
-    void parent_sendNotifyContextAvailabilityRequest(NotifyContextAvailabilityRequest*  ncar,
-                                                     const std::string&                 url,
-                                                     const std::string&                 tenant,
-                                                     const std::string&                 fiwareCorrelator,
-                                                     OrionldRenderFormat                renderFormat)
-    {
-      Notifier::sendNotifyContextAvailabilityRequest(ncar, url, tenant, fiwareCorrelator, renderFormat);
-    }
 };
 
 
