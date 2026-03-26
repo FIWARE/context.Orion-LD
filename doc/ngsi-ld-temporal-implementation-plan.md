@@ -22,7 +22,7 @@
 | 6 | DELETE | `.../attrs/{attrId}` | **Nicht implementiert** (501-Stub) | `orionldDeleteTemporalAttribute.cpp` |
 | 7 | PATCH | `.../attrs/{attrId}/{instanceId}` | **Nicht implementiert** (501-Stub) | `orionldPatchTemporalAttributeInstance.cpp` |
 | 8 | DELETE | `.../attrs/{attrId}/{instanceId}` | **Nicht implementiert** (501-Stub) | `orionldDeleteTemporalAttributeInstance.cpp` |
-| 9 | POST | `/temporal/entityOperations/query` | **Nicht implementiert** (Mintaka-Stub) | `orionldPostTemporalQuery.cpp` |
+| 9 | POST | `/temporal/entityOperations/query` | **Implementiert** (q, Geo, Aggregation fehlt) | `orionldPostTemporalQuery.cpp` |
 
 **Legende:**
 - **Weitgehend implementiert** = Kernfunktionalitaet und die meisten Parameter vorhanden, einzelne Parameter fehlen noch
@@ -240,20 +240,27 @@
 
 ### 2.9 POST /temporal/entityOperations/query (orionldPostTemporalQuery.cpp)
 
-**Status:** Mintaka-Stub (501)
+**Status:** Implementiert (Kernfunktionalitaet)
 
-**Zu implementieren:**
-- Request Body als `Query` mit `TemporalQuery` parsen
-- Alle Filter aus dem Body extrahieren (entities, attrs, q, geoQ, temporalQ, scopeQ)
-- Temporale Multi-Entity-Query gegen TRoE ausfuehren
-- Ergebnis als EntityTemporal[] zurueckgeben
-- 200 OK bei Erfolg
+**Implementiert:**
+- Request Body als `Query` mit `temporalQ` Objekt parsen
+- Entity-Selektoren (type, id, idPattern) aus `entities` Array extrahieren
+- Attribute aus `attrs` Array extrahieren und expandieren
+- `temporalQ` mit timerel, timeAt, endTimeAt, timeproperty parsen und validieren
+- Zweiphasige Abfrage: Entity-Discovery via `pgTemporalEntitiesQuery`, dann pro Entity `pgTemporalEntityQuery` + `pgTemporalEntityBuild`
+- Post-Processing: Compact, datasetId-Filter, Format-Transform, temporalValues, sysAttrs, pick/omit
+- Pagination via URL-Parameter (limit, offset, count)
+- 200 OK mit EntityTemporal[] Array
 
-**Bemerkung:** Dieser Endpunkt ist funktional aequivalent zu GET /temporal/entities, nur mit POST-Body statt URL-Parametern. Sollte nach der GET-Implementierung relativ einfach umgesetzt werden koennen.
+**Noch fehlend:**
+- q-Parameter (NGSI-LD Query Language)
+- geoQ (Geo-Queries via PostGIS)
+- scopeQ
+- Aggregation (aggrMethods, aggrPeriodDuration)
 
 **Betroffene Dateien:**
-- `src/lib/orionld/serviceRoutines/orionldPostTemporalQuery.cpp` - Hauptlogik
-- `src/lib/orionld/service/orionldServiceInit.cpp` - `mintaka = true` entfernen (Zeile 542)
+- `src/lib/orionld/serviceRoutines/orionldPostTemporalQuery.cpp` - Hauptlogik (komplett neu implementiert)
+- `src/lib/orionld/service/orionldServiceInit.cpp` - `mintaka = true` durch URI-Param-Registrierung ersetzt
 
 ---
 
