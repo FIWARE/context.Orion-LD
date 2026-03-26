@@ -220,7 +220,7 @@ bool            strictIdv1;
 bool            disableCusNotif;
 bool            logForHumans;
 bool            disableMetrics;
-int             reqTimeout;
+long            reqTimeout;
 int             distOpTimeout;
 bool            insecureNotif;
 bool            ngsiv1Autocast;
