@@ -233,12 +233,11 @@ SET (ORION_LIBS
     jsonParseV2
     rest          # this is repeated for linking str2Verb from parseSubscription@parseSubscription.cpp.o;
                   # verbName(Verb) from setExtendedHttpInfo@MongoCommonSubscription.cpp.o
-    convenience
-    ngsi9
     ngsi10
     ngsi
     cache
     mongoBackend
+    ngsi
     orionld_config
     orionld_context      # Should not be necessary ... kjTreeFromNotification gets undefined reference to 'orionldAliasLookup' without this ...
     orionld_legacyDriver # legacyDriver uses payloadCheck functions
@@ -373,8 +372,6 @@ if (error EQUAL 0)
   ADD_SUBDIRECTORY(src/lib/ngsi)
   ADD_SUBDIRECTORY(src/lib/serviceRoutines)
   ADD_SUBDIRECTORY(src/lib/serviceRoutinesV2)
-  ADD_SUBDIRECTORY(src/lib/convenience)
-  ADD_SUBDIRECTORY(src/lib/ngsi9)
   ADD_SUBDIRECTORY(src/lib/ngsi10)
   ADD_SUBDIRECTORY(src/lib/ngsiNotify)
   ADD_SUBDIRECTORY(src/lib/apiTypesV2)

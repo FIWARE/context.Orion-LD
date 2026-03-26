@@ -52,9 +52,8 @@ extern "C"
 #include "ngsi/ConditionValueList.h"
 #include "ngsi/Restriction.h"
 #include "ngsi/NotifyConditionVector.h"
+#include "ngsi/ContextRegistrationResponseVector.h"
 #include "ngsi10/UpdateContextResponse.h"
-#include "ngsi9/RegisterContextRequest.h"
-#include "ngsi9/RegisterContextResponse.h"
 #include "ngsiNotify/Notifier.h"
 #include "apiTypesV2/Subscription.h"
 #include "apiTypesV2/HttpInfo.h"
@@ -374,19 +373,6 @@ extern mongo::BSONArray processConditionVector
 
 
 
-/* ****************************************************************************
-*
-* processAvailabilitySubscriptions -
-*/
-extern bool processAvailabilitySubscription(
-    const EntityIdVector& enV,
-    const StringList&     attrL,
-    const std::string&    subId,
-    const std::string&    notifyUrl,
-    OrionldRenderFormat   renderFormat,
-    OrionldTenant*        tenantP,
-    const std::string&    fiwareCorrelator
-);
 
 
 

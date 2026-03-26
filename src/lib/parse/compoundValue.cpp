@@ -83,24 +83,7 @@ void compoundValueEnd(ConnectionInfo* ciP, ParseData* parseDataP)
                    compoundInfo.compoundValueRoot,
                    parseDataP->lastContextAttribute);
 
-  //
-  // Special case for updateContextAttributeRequest. This payload has no
-  // ContextAttribute to point to by lastContextAttribute, as the whole payload
-  // is a part of a ContextAttribute.
-  //
-  RequestType requestType = (orionldState.apiVersion != API_VERSION_NGSILD_V1)? ciP->restServiceP->request : NoRequest;
-  
-  if ((requestType == AttributeValueInstance)                           ||
-      (requestType == AttributeValueInstanceWithTypeAndId)              ||
-      (requestType == IndividualContextEntityAttribute)                 ||
-      (requestType == IndividualContextEntityAttributeWithTypeAndId))
-  {
-    parseDataP->upcar.res.compoundValueP = compoundInfo.compoundValueRoot;
-  }
-  else
-  {
-    parseDataP->lastContextAttribute->compoundValueP = compoundInfo.compoundValueRoot;
-  }
+  parseDataP->lastContextAttribute->compoundValueP = compoundInfo.compoundValueRoot;
 
   // Reset the Compound stuff
   compoundInfo.compoundValueRoot = NULL;

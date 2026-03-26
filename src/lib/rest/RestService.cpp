@@ -357,29 +357,9 @@ static void scopeFilter
 {
   Restriction* restrictionP = NULL;
 
-  if (ciP->restServiceP->request == DiscoverContextAvailability)
-  {
-    restrictionP = &parseDataP->dcar.res.restriction;
-  }
-  else if (ciP->restServiceP->request == SubscribeContextAvailability)
-  {
-    restrictionP = &parseDataP->scar.res.restriction;
-  }
-  else if (ciP->restServiceP->request == UpdateContextAvailabilitySubscription)
-  {
-    restrictionP = &parseDataP->ucas.res.restriction;
-  }
-  else if (ciP->restServiceP->request == QueryContext)
+  if (ciP->restServiceP->request == QueryContext)
   {
     restrictionP = &parseDataP->qcr.res.restriction;
-  }
-  else if (ciP->restServiceP->request == SubscribeContext)
-  {
-    restrictionP = &parseDataP->scr.res.restriction;
-  }
-  else if (ciP->restServiceP->request == UpdateContextSubscription)
-  {
-    restrictionP = &parseDataP->ucsr.res.restriction;
   }
   else
   {

@@ -3,7 +3,7 @@
 
 /*
 *
-* Copyright 2013 Telefonica Investigacion y Desarrollo, S.A.U
+* Copyright 2014 Telefonica Investigacion y Desarrollo, S.A.U
 *
 * This file is part of Orion Context Broker.
 *
@@ -22,44 +22,9 @@
 *
 * For those usages not covered by this license please contact with
 * iot_support at tid dot es
-*
-* Author: Ken Zangelin
 */
-#include <string>
 
-#include "ngsi/EntityId.h"
-#include "ngsi/ContextRegistrationAttribute.h"
-#include "ngsi/Metadata.h"
-
-#include "ngsi9/RegisterContextResponse.h"
-#include "ngsi9/DiscoverContextAvailabilityResponse.h"
-#include "ngsi9/SubscribeContextAvailabilityResponse.h"
-#include "ngsi9/UnsubscribeContextAvailabilityResponse.h"
-#include "ngsi9/UpdateContextAvailabilitySubscriptionResponse.h"
-#include "ngsi10/SubscribeContextResponse.h"
-#include "ngsi10/QueryContextResponse.h"
-#include "ngsi10/UnsubscribeContextResponse.h"
-#include "ngsi10/UpdateContextResponse.h"
-#include "ngsi10/UpdateContextSubscriptionResponse.h"
-
-
-
-/* ****************************************************************************
-*
-* ResponseData - 
-*/
-typedef struct ResponseData
-{
-  RegisterContextResponse                         rcr;
-  DiscoverContextAvailabilityResponse             dcar;
-  QueryContextResponse                            qcr;
-  SubscribeContextAvailabilityResponse            scar;
-  SubscribeContextResponse                        scr;
-  UnsubscribeContextAvailabilityResponse          ucar;
-  UnsubscribeContextResponse                      uncr;
-  UpdateContextAvailabilitySubscriptionResponse   ucas;
-  UpdateContextResponse                           upcr;
-  UpdateContextSubscriptionResponse               ucsr;
-} ResponseData;
+// NOTE: ResponseData is no longer used after NGSIv1 removal.
+// This header is kept empty for now to avoid breaking any stale includes.
 
 #endif  // SRC_LIB_NGSI_RESPONSEDATA_H_
