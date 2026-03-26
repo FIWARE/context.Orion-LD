@@ -22,55 +22,11 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
 
 SET (SOURCES
     jsonRequest.cpp
-    jsonParse.cpp
-
-    jsonRegisterContextRequest.cpp
-    jsonDiscoverContextAvailabilityRequest.cpp
-    jsonSubscribeContextAvailabilityRequest.cpp
-    jsonNotifyContextAvailabilityRequest.cpp
-    jsonUnsubscribeContextAvailabilityRequest.cpp
-    jsonUpdateContextAvailabilitySubscriptionRequest.cpp
-
-    jsonQueryContextRequest.cpp
-    jsonQueryContextResponse.cpp
-    jsonUpdateContextRequest.cpp
-    jsonUpdateContextResponse.cpp
-    jsonSubscribeContextRequest.cpp
-    jsonNotifyContextRequest.cpp
-    jsonUnsubscribeContextRequest.cpp
-    jsonUpdateContextSubscriptionRequest.cpp
-    
-    jsonRegisterProviderRequest.cpp
-    jsonUpdateContextElementRequest.cpp
-    jsonAppendContextElementRequest.cpp
-    jsonUpdateContextAttributeRequest.cpp
 )
 
 SET (HEADERS
     jsonRequest.h
-    jsonParse.h
     JsonNode.h
-
-    jsonRegisterContextRequest.h
-    jsonDiscoverContextAvailabilityRequest.h
-    jsonSubscribeContextAvailabilityRequest.h
-    jsonNotifyContextAvailabilityRequest.h
-    jsonUnsubscribeContextAvailabilityRequest.h
-    jsonUpdateContextAvailabilitySubscriptionRequest.h
-
-    jsonQueryContextRequest.h
-    jsonQueryContextResponse.h
-    jsonUpdateContextRequest.h
-    jsonUpdateContextResponse.h
-    jsonSubscribeContextRequest.h
-    jsonNotifyContextRequest.h
-    jsonUnsubscribeContextRequest.h
-    jsonUpdateContextSubscriptionRequest.h
-    
-    jsonRegisterProviderRequest.h
-    jsonUpdateContextElementRequest.h
-    jsonAppendContextElementRequest.h
-    jsonUpdateContextAttributeRequest.h
 )
 
 
