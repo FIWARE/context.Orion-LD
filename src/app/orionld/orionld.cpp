@@ -231,7 +231,7 @@ bool            pernot;
 bool            disableFileLog;
 bool            lmtmp;
 char            troeHost[256];
-unsigned short  troePort;
+int             troePort;
 char            troeUser[256];
 char            troePwd[256];
 char            troeSslMode[64];
