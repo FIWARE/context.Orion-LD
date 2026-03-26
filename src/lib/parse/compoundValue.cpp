@@ -42,6 +42,9 @@ extern "C"
 #include "parse/CompoundValueNode.h"
 #include "parse/compoundValue.h"
 
+// Definition of the thread-local compoundInfo variable
+__thread CompoundInfo compoundInfo;
+
 
 
 namespace orion

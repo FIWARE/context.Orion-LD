@@ -177,4 +177,19 @@ class CompoundValueNode
 
 }  // namespace orion
 
+
+
+/* *****************************************************************************
+*
+* CompoundInfo -
+*/
+typedef struct CompoundInfo
+{
+  bool                                      inCompoundValue;
+  orion::CompoundValueNode*                 compoundValueP;       // Points to current node in the tree
+  orion::CompoundValueNode*                 compoundValueRoot;    // Points to the root of the tree
+} CompoundInfo;
+
+extern __thread CompoundInfo compoundInfo;
+
 #endif  // SRC_LIB_PARSE_COMPOUNDVALUENODE_H_

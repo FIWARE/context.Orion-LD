@@ -79,7 +79,6 @@ extern "C"
 }
 #include "orionld/common/traceLevels.h"
 
-#include "jsonParse/jsonRequest.h"
 #include "rest/ConnectionInfo.h"
 #include "rest/RestService.h"
 #include "rest/restReply.h"

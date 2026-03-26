@@ -179,7 +179,6 @@ std::string payloadParse
   ConnectionInfo*            ciP,
   ParseData*                 parseDataP,
   RestService*               service,
-  JsonRequest**              jsonPP,
   JsonDelayedRelease*        jsonReleaseP,
   std::vector<std::string>&  compV
 )
@@ -500,7 +499,6 @@ static bool compErrorDetect
 */
 std::string restService(ConnectionInfo* ciP, RestService* serviceV)
 {
-  JsonRequest*              jsonReqP   = NULL;
   ParseData                 parseData;
   JsonDelayedRelease        jsonRelease;
 
@@ -538,15 +536,12 @@ std::string restService(ConnectionInfo* ciP, RestService* serviceV)
     const char*  spath = (ciP->servicePathV.size() > 0)? ciP->servicePathV[0].c_str() : "";
 
     metricsMgr.add(orionldState.tenantP->tenant, spath, METRIC_TRANS_IN_REQ_SIZE, orionldState.in.payloadSize);
-    response = payloadParse(ciP, &parseData, ciP->restServiceP, &jsonReqP, &jsonRelease, ciP->urlCompV);
+    response = payloadParse(ciP, &parseData, ciP->restServiceP, &jsonRelease, ciP->urlCompV);
 
     if (response != "OK")
     {
       alarmMgr.badInput(orionldState.clientIp, response);
       restReply(ciP, response.c_str());
-
-      if (jsonReqP != NULL)
-        jsonReqP->release(&parseData);
 
       if (orionldState.apiVersion == API_VERSION_NGSI_V2)
       {
@@ -581,11 +576,6 @@ std::string restService(ConnectionInfo* ciP, RestService* serviceV)
 
     restReply(ciP, response.c_str());
 
-    if (jsonReqP != NULL)
-    {
-      jsonReqP->release(&parseData);
-    }
-
     if (orionldState.apiVersion == API_VERSION_NGSI_V2)
     {
       delayedRelease(&jsonRelease);
@@ -608,11 +598,6 @@ std::string restService(ConnectionInfo* ciP, RestService* serviceV)
   std::string response = ciP->restServiceP->treat(ciP, ciP->urlComponents, ciP->urlCompV, &parseData);
 
   filterRelease(&parseData, ciP->restServiceP->request);
-
-  if (jsonReqP != NULL)
-  {
-    jsonReqP->release(&parseData);
-  }
 
   if (orionldState.apiVersion == API_VERSION_NGSI_V2)
   {
