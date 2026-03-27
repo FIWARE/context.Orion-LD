@@ -51,6 +51,10 @@ extern "C"
 #include "orionld/common/omit.h"                                 // omitForEntity
 #include "orionld/common/datasetTemporalEntityFix.h"             // datasetTemporalEntityFix
 #include "orionld/common/temporalValuesTransform.h"              // temporalValuesTransform
+#include "orionld/common/aggregatedValuesTransform.h"            // aggregatedValuesTransform
+#include "orionld/troe/qTreeToSql.h"                             // troeQStringToSql
+#include "orionld/troe/geoFilterToSql.h"                         // geoFilterToSql
+#include "orionld/payloadCheck/pcheckGeoQ.h"                     // pcheckGeoQ
 #include "orionld/troe/pgTemporalEntitiesQuery.h"                // pgTemporalEntitiesQuery
 #include "orionld/troe/pgTemporalEntityQuery.h"                  // pgTemporalEntityQuery
 #include "orionld/troe/pgTemporalEntityBuild.h"                  // pgTemporalEntityBuild
@@ -74,13 +78,17 @@ static bool pCheckTemporalQ
   const char** timerelP,
   const char** timeAtP,
   const char** endTimeAtP,
-  const char** timepropertyP
+  const char** timepropertyP,
+  const char** aggrMethodsP,
+  const char** aggrPeriodDurationP
 )
 {
-  const char* timerel      = NULL;
-  const char* timeAt       = NULL;
-  const char* endTimeAt    = NULL;
-  const char* timeproperty = NULL;
+  const char* timerel             = NULL;
+  const char* timeAt              = NULL;
+  const char* endTimeAt           = NULL;
+  const char* timeproperty        = NULL;
+  const char* aggrMethods         = NULL;
+  const char* aggrPeriodDuration  = NULL;
 
   for (KjNode* nodeP = temporalQP->value.firstChildP; nodeP != NULL; nodeP = nodeP->next)
   {
@@ -120,6 +128,30 @@ static bool pCheckTemporalQ
       }
       timeproperty = nodeP->value.s;
     }
+    else if (strcmp(nodeP->name, "aggrMethods") == 0)
+    {
+      if (nodeP->type != KjString)
+      {
+        orionldError(OrionldBadRequestData, "Invalid JSON type", "temporalQ::aggrMethods must be a String", 400);
+        return false;
+      }
+      aggrMethods = nodeP->value.s;
+    }
+    else if (strcmp(nodeP->name, "aggrPeriodDuration") == 0)
+    {
+      if (nodeP->type != KjString)
+      {
+        orionldError(OrionldBadRequestData, "Invalid JSON type", "temporalQ::aggrPeriodDuration must be a String", 400);
+        return false;
+      }
+      aggrPeriodDuration = nodeP->value.s;
+    }
+    else if (strcmp(nodeP->name, "lastN") == 0)
+    {
+      // lastN is also valid in temporalQ - store it in uriParams for downstream use
+      if (nodeP->type == KjInt)
+        orionldState.uriParams.lastN = nodeP->value.i;
+    }
     else
     {
       orionldError(OrionldBadRequestData, "Unknown field in temporalQ", nodeP->name, 400);
@@ -151,10 +183,12 @@ static bool pCheckTemporalQ
     return false;
   }
 
-  *timerelP      = timerel;
-  *timeAtP       = timeAt;
-  *endTimeAtP    = endTimeAt;
-  *timepropertyP = timeproperty;
+  *timerelP             = timerel;
+  *timeAtP              = timeAt;
+  *endTimeAtP           = endTimeAt;
+  *timepropertyP        = timeproperty;
+  *aggrMethodsP         = aggrMethods;
+  *aggrPeriodDurationP  = aggrPeriodDuration;
 
   return true;
 }
@@ -305,12 +339,14 @@ bool orionldPostTemporalQuery(void)
   }
 
   //
-  // Parse top-level fields: type, entities, attrs, temporalQ
+  // Parse top-level fields: type, entities, attrs, temporalQ, q
   //
   KjNode*     typeNodeP    = NULL;
   KjNode*     entitiesP    = NULL;
   KjNode*     attrsP       = NULL;
   KjNode*     temporalQP   = NULL;
+  KjNode*     qNodeP       = NULL;
+  KjNode*     geoQNodeP    = NULL;
 
   for (KjNode* nodeP = requestTree->value.firstChildP; nodeP != NULL; nodeP = nodeP->next)
   {
@@ -365,7 +401,35 @@ bool orionldPostTemporalQuery(void)
       }
       temporalQP = nodeP;
     }
-    else if (strcmp(nodeP->name, "q") == 0 || strcmp(nodeP->name, "geoQ") == 0 || strcmp(nodeP->name, "scopeQ") == 0)
+    else if (strcmp(nodeP->name, "q") == 0)
+    {
+      if (nodeP->type != KjString)
+      {
+        orionldError(OrionldBadRequestData, "Invalid JSON type", "q must be a String", 400);
+        return false;
+      }
+      if (nodeP->value.s[0] == 0)
+      {
+        orionldError(OrionldBadRequestData, "Empty String", "q", 400);
+        return false;
+      }
+      qNodeP = nodeP;
+    }
+    else if (strcmp(nodeP->name, "geoQ") == 0)
+    {
+      if (nodeP->type != KjObject)
+      {
+        orionldError(OrionldBadRequestData, "Invalid JSON type", "geoQ must be a JSON Object", 400);
+        return false;
+      }
+      if (nodeP->value.firstChildP == NULL)
+      {
+        orionldError(OrionldBadRequestData, "Empty Object", "geoQ", 400);
+        return false;
+      }
+      geoQNodeP = nodeP;
+    }
+    else if (strcmp(nodeP->name, "scopeQ") == 0)
     {
       orionldError(OrionldOperationNotSupported, "Not Implemented", nodeP->name, 501);
       return false;
@@ -413,12 +477,15 @@ bool orionldPostTemporalQuery(void)
   }
 
   // Parse temporalQ
-  const char* timerel      = NULL;
-  const char* timeAt       = NULL;
-  const char* endTimeAt    = NULL;
-  const char* timeproperty = NULL;
+  const char* timerel             = NULL;
+  const char* timeAt              = NULL;
+  const char* endTimeAt           = NULL;
+  const char* timeproperty        = NULL;
+  const char* aggrMethods         = NULL;
+  const char* aggrPeriodDuration  = NULL;
 
-  if (pCheckTemporalQ(temporalQP, &timerel, &timeAt, &endTimeAt, &timeproperty) == false)
+  if (pCheckTemporalQ(temporalQP, &timerel, &timeAt, &endTimeAt, &timeproperty,
+                      &aggrMethods, &aggrPeriodDuration) == false)
     return false;
 
   // Extract entity selectors into type/id/idPattern lists
@@ -459,6 +526,30 @@ bool orionldPostTemporalQuery(void)
   }
 
   //
+  // Parse q-parameter if present (from POST body)
+  //
+  const char* qFilter = NULL;
+  if (qNodeP != NULL)
+  {
+    qFilter = troeQStringToSql(qNodeP->value.s);
+    if (qFilter == NULL)
+      return false;  // troeQStringToSql already set the error
+  }
+
+  //
+  // Parse geoQ if present (from POST body)
+  //
+  const char* geoFilter = NULL;
+  if (geoQNodeP != NULL)
+  {
+    OrionldGeoInfo* geoInfoP = (OrionldGeoInfo*) pcheckGeoQ(&orionldState.kalloc, geoQNodeP, false);
+    if (geoInfoP == NULL)
+      return false;  // pcheckGeoQ already set the error
+
+    geoFilter = geoFilterToSql(geoInfoP);
+  }
+
+  //
   // Step 1: Discover matching entities with pagination
   //
   long long  count     = 0;
@@ -466,7 +557,7 @@ bool orionldPostTemporalQuery(void)
   PGresult*  entityRes = NULL;
 
   if (pgTemporalEntitiesQuery(&typeList, &idList, idPattern,
-                              timerel, timeAt, endTimeAt,
+                              timerel, timeAt, endTimeAt, qFilter, geoFilter,
                               limit, offset, countP, &entityRes) == false)
   {
     orionldError(OrionldInternalError, "Database Error", "temporal entities query failed", 500);
@@ -542,6 +633,9 @@ bool orionldPostTemporalQuery(void)
 
     if (orionldState.uriParams.format != NULL && strcmp(orionldState.uriParams.format, "temporalValues") == 0)
       temporalValuesTransform(apiEntityP);
+
+    if (aggrMethods != NULL)
+      aggregatedValuesTransform(apiEntityP, aggrMethods, aggrPeriodDuration, timeAt, endTimeAt);
 
     if (sysAttrs == false)
       kjSysAttrsRemove(apiEntityP, 2);

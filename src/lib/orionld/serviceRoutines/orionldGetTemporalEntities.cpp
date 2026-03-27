@@ -33,6 +33,7 @@ extern "C"
 
 #include "orionld/types/OrionLdRestService.h"                    // OrionLdRestService
 #include "orionld/types/OrionldHeader.h"                         // orionldHeaderAdd, HttpResultsCount
+#include "orionld/types/OrionldGeoInfo.h"                        // OrionldGeoInfo
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/common/pqHeader.h"                             // PGresult, PQclear, PQntuples, PQgetvalue
@@ -45,6 +46,10 @@ extern "C"
 #include "orionld/common/omit.h"                                 // omitForEntity
 #include "orionld/common/datasetTemporalEntityFix.h"             // datasetTemporalEntityFix
 #include "orionld/common/temporalValuesTransform.h"              // temporalValuesTransform
+#include "orionld/troe/qTreeToSql.h"                             // troeQStringToSql
+#include "orionld/common/aggregatedValuesTransform.h"            // aggregatedValuesTransform
+#include "orionld/troe/geoFilterToSql.h"                         // geoFilterToSql
+#include "orionld/payloadCheck/pCheckGeo.h"                      // pCheckGeo
 #include "orionld/troe/pgTemporalEntitiesQuery.h"                // pgTemporalEntitiesQuery
 #include "orionld/troe/pgTemporalEntityQuery.h"                  // pgTemporalEntityQuery
 #include "orionld/troe/pgTemporalEntityBuild.h"                  // pgTemporalEntityBuild
@@ -124,6 +129,31 @@ bool orionldGetTemporalEntities(void)
   }
 
   //
+  // Parse q-parameter if present
+  //
+  const char* qFilter = NULL;
+  if (orionldState.uriParams.q != NULL)
+  {
+    qFilter = troeQStringToSql(orionldState.uriParams.q);
+    if (qFilter == NULL)
+      return false;  // troeQStringToSql already set the error
+  }
+
+  //
+  // Parse geo parameters if present
+  //
+  const char*    geoFilter = NULL;
+  OrionldGeoInfo geoInfo;
+  if (orionldState.uriParams.geometry != NULL)
+  {
+    if (pCheckGeo(&geoInfo, orionldState.uriParams.geometry, orionldState.uriParams.georel,
+                  orionldState.uriParams.coordinates, orionldState.uriParams.geoproperty) == false)
+      return false;
+
+    geoFilter = geoFilterToSql(&geoInfo);
+  }
+
+  //
   // Step 1: Discover matching entities with pagination
   //
   long long  count     = 0;
@@ -132,7 +162,7 @@ bool orionldGetTemporalEntities(void)
 
   if (pgTemporalEntitiesQuery(&orionldState.in.typeList, &orionldState.in.idList,
                               orionldState.uriParams.idPattern,
-                              timerel, timeAt, endTimeAt,
+                              timerel, timeAt, endTimeAt, qFilter, geoFilter,
                               limit, offset, countP, &entityRes) == false)
   {
     orionldError(OrionldInternalError, "Database Error", "temporal entities query failed", 500);
@@ -208,6 +238,11 @@ bool orionldGetTemporalEntities(void)
 
     if (orionldState.uriParams.format != NULL && strcmp(orionldState.uriParams.format, "temporalValues") == 0)
       temporalValuesTransform(apiEntityP);
+
+    if (orionldState.uriParams.aggrMethods != NULL)
+      aggregatedValuesTransform(apiEntityP, orionldState.uriParams.aggrMethods,
+                                orionldState.uriParams.aggrPeriodDuration,
+                                timeAt, endTimeAt);
 
     if (sysAttrs == false)
       kjSysAttrsRemove(apiEntityP, 2);

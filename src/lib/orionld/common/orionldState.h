@@ -181,6 +181,9 @@ typedef struct OrionldUriParams
 
   OrionldContextKind kind;
 
+  char*     aggrMethods;
+  char*     aggrPeriodDuration;
+
   double    observedAtAsDouble;
   uint64_t  mask;
 } OrionldUriParams;
@@ -627,7 +630,7 @@ extern int               subCacheInterval;         // From orionld.cpp
 extern int               subCacheFlushInterval;    // From orionld.cpp
 extern bool              troe;                     // From orionld.cpp
 extern char              troeHost[256];            // From orionld.cpp
-extern unsigned short    troePort;                 // From orionld.cpp
+extern int               troePort;                 // From orionld.cpp
 extern char              troeUser[256];            // From orionld.cpp
 extern char              troePwd[256];             // From orionld.cpp
 extern char              troeSslMode[64];          // From orionld.cpp

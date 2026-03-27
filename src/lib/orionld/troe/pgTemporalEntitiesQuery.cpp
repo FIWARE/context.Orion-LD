@@ -119,6 +119,8 @@ bool pgTemporalEntitiesQuery
   const char*   timerel,
   const char*   timeAt,
   const char*   endTimeAt,
+  const char*   qFilter,
+  const char*   geoFilter,
   int           limit,
   int           offset,
   long long*    countP,
@@ -173,15 +175,25 @@ bool pgTemporalEntitiesQuery
 
   int totalParams = nTimeParams + (idPattern != NULL ? 1 : 0);
 
+  // Build qFilter clause (may be empty or " AND <exists subqueries>")
+  char qFilterClause[4096] = "";
+  if (qFilter != NULL && qFilter[0] != 0)
+    snprintf(qFilterClause, sizeof(qFilterClause), " AND %s", qFilter);
+
+  // Build geoFilter clause (may be empty or " AND EXISTS(...)")
+  char geoFilterClause[4096] = "";
+  if (geoFilter != NULL && geoFilter[0] != 0)
+    snprintf(geoFilterClause, sizeof(geoFilterClause), " AND %s", geoFilter);
+
   // Build the main query
-  char query[4096];
+  char query[16384];
   snprintf(query, sizeof(query),
            "SELECT id, type FROM ("
            "SELECT DISTINCT ON (id) id, type FROM entities "
-           "WHERE 1=1%s%s%s%s "
+           "WHERE 1=1%s%s%s%s%s%s "
            "ORDER BY id, ts DESC"
            ") sub ORDER BY id LIMIT %d OFFSET %d",
-           timeClause, typeF, idF, idPatternClause, limit, offset);
+           timeClause, typeF, idF, idPatternClause, qFilterClause, geoFilterClause, limit, offset);
 
   // Build param values array
   const char* paramValues[4];
@@ -197,14 +209,14 @@ bool pgTemporalEntitiesQuery
   // Run count query if requested
   if (countP != NULL)
   {
-    char countQuery[4096];
+    char countQuery[16384];
     snprintf(countQuery, sizeof(countQuery),
              "SELECT COUNT(*) FROM ("
              "SELECT DISTINCT ON (id) id FROM entities "
-             "WHERE 1=1%s%s%s%s "
+             "WHERE 1=1%s%s%s%s%s%s "
              "ORDER BY id, ts DESC"
              ") sub",
-             timeClause, typeF, idF, idPatternClause);
+             timeClause, typeF, idF, idPatternClause, qFilterClause, geoFilterClause);
 
     PGresult* countRes = PQexecParams(connectionP->connectionP, countQuery,
                                       totalParams, NULL, paramValues, NULL, NULL, 0);

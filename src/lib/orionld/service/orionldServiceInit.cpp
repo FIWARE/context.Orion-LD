@@ -534,6 +534,11 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
     serviceP->uriParams |= ORIONLD_URIPARAM_IDLIST;
     serviceP->uriParams |= ORIONLD_URIPARAM_TYPELIST;
     serviceP->uriParams |= ORIONLD_URIPARAM_IDPATTERN;
+    serviceP->uriParams |= ORIONLD_URIPARAM_Q;
+    serviceP->uriParams |= ORIONLD_URIPARAM_GEOMETRY;
+    serviceP->uriParams |= ORIONLD_URIPARAM_COORDINATES;
+    serviceP->uriParams |= ORIONLD_URIPARAM_GEOREL;
+    serviceP->uriParams |= ORIONLD_URIPARAM_GEOPROPERTY;
     serviceP->uriParams |= ORIONLD_URIPARAM_ATTRS;
     serviceP->uriParams |= ORIONLD_URIPARAM_LASTN;
     serviceP->uriParams |= ORIONLD_URIPARAM_TIMEREL;
@@ -545,6 +550,8 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
     serviceP->uriParams |= ORIONLD_URIPARAM_DATASETID;
     serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
     serviceP->uriParams |= ORIONLD_URIPARAM_LANG;
+    serviceP->uriParams |= ORIONLD_URIPARAM_AGGRMETHODS;
+    serviceP->uriParams |= ORIONLD_URIPARAM_AGGRPERIODDURATION;
   }
   else if (serviceP->serviceRoutine == orionldGetTemporalEntity)
   {
@@ -564,6 +571,8 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
     serviceP->uriParams |= ORIONLD_URIPARAM_DATASETID;
     serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
     serviceP->uriParams |= ORIONLD_URIPARAM_LANG;
+    serviceP->uriParams |= ORIONLD_URIPARAM_AGGRMETHODS;
+    serviceP->uriParams |= ORIONLD_URIPARAM_AGGRPERIODDURATION;
   }
   else if (serviceP->serviceRoutine == orionldPostTemporalQuery)
   {

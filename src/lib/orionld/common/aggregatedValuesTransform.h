@@ -1,6 +1,3 @@
-#ifndef SRC_LIB_ORIONLD_TROE_PGTEMPORALENTITIESQUERY_H_
-#define SRC_LIB_ORIONLD_TROE_PGTEMPORALENTITIESQUERY_H_
-
 /*
 *
 * Copyright 2025 FIWARE Foundation e.V.
@@ -25,29 +22,22 @@
 *
 * Author: Carsten Frey
 */
-#include "orionld/types/StringArray.h"                         // StringArray
-#include "orionld/common/pqHeader.h"                           // PGresult
+#ifndef SRC_LIB_ORIONLD_COMMON_AGGREGATEDVALUESTRANSFORM_H_
+#define SRC_LIB_ORIONLD_COMMON_AGGREGATEDVALUESTRANSFORM_H_
+
+extern "C"
+{
+#include "kjson/KjNode.h"                                        // KjNode
+}
 
 
 
 // -----------------------------------------------------------------------------
 //
-// pgTemporalEntitiesQuery -
+// aggregatedValuesTransform -
 //
-extern bool pgTemporalEntitiesQuery
-(
-  StringArray*  typeList,
-  StringArray*  idList,
-  const char*   idPattern,
-  const char*   timerel,
-  const char*   timeAt,
-  const char*   endTimeAt,
-  const char*   qFilter,
-  const char*   geoFilter,
-  int           limit,
-  int           offset,
-  long long*    countP,
-  PGresult**    entityResP
-);
+extern void aggregatedValuesTransform(KjNode* entityP, const char* aggrMethods,
+                                      const char* aggrPeriodDuration,
+                                      const char* timeAt, const char* endTimeAt);
 
-#endif  // SRC_LIB_ORIONLD_TROE_PGTEMPORALENTITIESQUERY_H_
+#endif  // SRC_LIB_ORIONLD_COMMON_AGGREGATEDVALUESTRANSFORM_H_

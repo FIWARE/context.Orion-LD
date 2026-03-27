@@ -978,6 +978,16 @@ MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
     orionldState.uriParams.lastN = atoi(value);
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_LASTN;
   }
+  else if (strcmp(key, "aggrMethods") == 0)
+  {
+    orionldState.uriParams.aggrMethods = (char*) value;
+    orionldState.uriParams.mask |= ORIONLD_URIPARAM_AGGRMETHODS;
+  }
+  else if (strcmp(key, "aggrPeriodDuration") == 0)
+  {
+    orionldState.uriParams.aggrPeriodDuration = (char*) value;
+    orionldState.uriParams.mask |= ORIONLD_URIPARAM_AGGRPERIODDURATION;
+  }
   else if (strcmp(key, "details") == 0)
   {
     if (strcmp(value, "true") == 0)
