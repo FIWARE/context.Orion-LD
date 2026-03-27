@@ -202,7 +202,20 @@ Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
-REGEX(\[.*"id":"urn:ngsi-ld:entities:E1".*\])
+[
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": 10
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E1",
+        "type": "T"
+    }
+]
 
 
 05. GET temporal entities within polygon covering Berlin+London - E1 and E3
@@ -213,7 +226,32 @@ Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
-REGEX(\[.*"id":"urn:ngsi-ld:entities:E1".*"id":"urn:ngsi-ld:entities:E3".*\])
+[
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": 10
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E1",
+        "type": "T"
+    },
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": 30
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E3",
+        "type": "T"
+    }
+]
 
 
 06. GET temporal entities near Paris (maxDistance=500000m) - E2 and E3
@@ -224,7 +262,32 @@ Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
-REGEX(\[.*"id":"urn:ngsi-ld:entities:E2".*"id":"urn:ngsi-ld:entities:E3".*\])
+[
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": 20
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E2",
+        "type": "T"
+    },
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": 30
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E3",
+        "type": "T"
+    }
+]
 
 
 07. POST temporal query with geoQ near Berlin - should return E1
@@ -235,7 +298,20 @@ Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
-REGEX(\[.*"id":"urn:ngsi-ld:entities:E1".*\])
+[
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": 10
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E1",
+        "type": "T"
+    }
+]
 
 
 08. GET temporal entities q=P1>15 and geo near Paris (500km) - E2 and E3
@@ -246,7 +322,32 @@ Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
-REGEX(\[.*"id":"urn:ngsi-ld:entities:E2".*"id":"urn:ngsi-ld:entities:E3".*\])
+[
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": 20
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E2",
+        "type": "T"
+    },
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": 30
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E3",
+        "type": "T"
+    }
+]
 
 
 --TEARDOWN--
