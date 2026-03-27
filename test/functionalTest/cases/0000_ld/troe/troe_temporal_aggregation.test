@@ -204,7 +204,20 @@ Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
-REGEX(.*"P1":\{.*"type":"Property".*"avg":\[\[20.*\]\].*\}.*)
+{
+    "P1": {
+        "avg": [
+            [
+                20,
+                "2024-01-01T09:00:00Z",
+                "2024-01-01T13:00:00Z"
+            ]
+        ],
+        "type": "Property"
+    },
+    "id": "urn:ngsi-ld:entities:E1",
+    "type": "T"
+}
 
 
 06. GET temporal entity E1 with aggrMethods=min,max,sum
@@ -215,7 +228,34 @@ Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
-REGEX(.*"P1":\{.*"type":"Property".*"min":\[\[10.*\]\].*"max":\[\[30.*\]\].*"sum":\[\[60.*\]\].*\}.*)
+{
+    "P1": {
+        "max": [
+            [
+                30,
+                "2024-01-01T09:00:00Z",
+                "2024-01-01T13:00:00Z"
+            ]
+        ],
+        "min": [
+            [
+                10,
+                "2024-01-01T09:00:00Z",
+                "2024-01-01T13:00:00Z"
+            ]
+        ],
+        "sum": [
+            [
+                60,
+                "2024-01-01T09:00:00Z",
+                "2024-01-01T13:00:00Z"
+            ]
+        ],
+        "type": "Property"
+    },
+    "id": "urn:ngsi-ld:entities:E1",
+    "type": "T"
+}
 
 
 07. GET temporal entities with aggrMethods=avg
@@ -226,7 +266,36 @@ Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
-REGEX(\[.*"id":"urn:ngsi-ld:entities:E1".*"avg":\[\[20.*\]\].*"id":"urn:ngsi-ld:entities:E2".*"avg":\[\[100.*\]\].*\])
+[
+    {
+        "P1": {
+            "avg": [
+                [
+                    20,
+                    "2024-01-01T09:00:00Z",
+                    "2024-01-01T13:00:00Z"
+                ]
+            ],
+            "type": "Property"
+        },
+        "id": "urn:ngsi-ld:entities:E1",
+        "type": "T"
+    },
+    {
+        "P1": {
+            "avg": [
+                [
+                    100,
+                    "2024-01-01T09:00:00Z",
+                    "2024-01-01T13:00:00Z"
+                ]
+            ],
+            "type": "Property"
+        },
+        "id": "urn:ngsi-ld:entities:E2",
+        "type": "T"
+    }
+]
 
 
 08. POST temporal query with aggrMethods=avg in temporalQ
@@ -237,7 +306,36 @@ Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
-REGEX(\[.*"id":"urn:ngsi-ld:entities:E1".*"avg":\[\[20.*\]\].*"id":"urn:ngsi-ld:entities:E2".*"avg":\[\[100.*\]\].*\])
+[
+    {
+        "P1": {
+            "avg": [
+                [
+                    20,
+                    "2024-01-01T09:00:00Z",
+                    "2024-01-01T13:00:00Z"
+                ]
+            ],
+            "type": "Property"
+        },
+        "id": "urn:ngsi-ld:entities:E1",
+        "type": "T"
+    },
+    {
+        "P1": {
+            "avg": [
+                [
+                    100,
+                    "2024-01-01T09:00:00Z",
+                    "2024-01-01T13:00:00Z"
+                ]
+            ],
+            "type": "Property"
+        },
+        "id": "urn:ngsi-ld:entities:E2",
+        "type": "T"
+    }
+]
 
 
 09. GET temporal entity E1 with aggrMethods=avg and aggrPeriodDuration=PT2H
@@ -248,7 +346,25 @@ Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
-REGEX(.*"P1":\{.*"type":"Property".*"avg":\[.*\[.*\].*\[.*\].*\].*\}.*)
+{
+    "P1": {
+        "avg": [
+            [
+                15,
+                "2024-01-01T10:00:00Z",
+                "2024-01-01T12:00:00Z"
+            ],
+            [
+                30,
+                "2024-01-01T12:00:00Z",
+                "2024-01-01T14:00:00Z"
+            ]
+        ],
+        "type": "Property"
+    },
+    "id": "urn:ngsi-ld:entities:E1",
+    "type": "T"
+}
 
 
 10. GET temporal entity E1 with aggrMethods=stddev
@@ -259,7 +375,20 @@ Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
-REGEX(.*"P1":\{.*"type":"Property".*"stddev":\[\[.*\]\].*\}.*)
+{
+    "P1": {
+        "stddev": [
+            [
+                REGEX(8\.16496.*),
+                "2024-01-01T09:00:00Z",
+                "2024-01-01T13:00:00Z"
+            ]
+        ],
+        "type": "Property"
+    },
+    "id": "urn:ngsi-ld:entities:E1",
+    "type": "T"
+}
 
 
 --TEARDOWN--
