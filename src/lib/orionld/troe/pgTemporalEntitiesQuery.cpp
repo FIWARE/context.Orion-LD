@@ -35,6 +35,7 @@ extern "C"
 #include "orionld/types/PgConnection.h"                          // PgConnection
 #include "orionld/types/StringArray.h"                           // StringArray
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/pqHeader.h"                             // PGresult, PQexecParams, etc.
 #include "orionld/troe/pgConnectionGet.h"                        // pgConnectionGet
 #include "orionld/troe/pgConnectionRelease.h"                    // pgConnectionRelease
@@ -175,12 +176,18 @@ bool pgTemporalEntitiesQuery
            ") sub ORDER BY id LIMIT %d OFFSET %d",
            typeF, idF, idPatternClause, qFilterClause, geoFilterClause, limit, offset);
 
-  // Build param values array
-  const char* paramValues[4];
+  // Build param values array (NULL when no params to avoid undefined pointer)
+  const char*  paramValues[4] = { NULL, NULL, NULL, NULL };
+  const char** paramValuesP   = NULL;
   int paramIdx = 0;
 
   if (idPattern != NULL)
+  {
     paramValues[paramIdx++] = idPattern;
+    paramValuesP = paramValues;
+  }
+
+  KT_T(KtSql, "SQL[entities]: %s (totalParams=%d)", query, totalParams);
 
   // Run count query if requested
   if (countP != NULL)
@@ -195,7 +202,7 @@ bool pgTemporalEntitiesQuery
              typeF, idF, idPatternClause, qFilterClause, geoFilterClause);
 
     PGresult* countRes = PQexecParams(connectionP->connectionP, countQuery,
-                                      totalParams, NULL, paramValues, NULL, NULL, 0);
+                                      totalParams, NULL, paramValuesP, NULL, NULL, 0);
 
     if (PQresultStatus(countRes) != PGRES_TUPLES_OK)
     {
@@ -215,7 +222,7 @@ bool pgTemporalEntitiesQuery
 
   // Run the main entity query
   *entityResP = PQexecParams(connectionP->connectionP, query,
-                             totalParams, NULL, paramValues, NULL, NULL, 0);
+                             totalParams, NULL, paramValuesP, NULL, NULL, 0);
 
   if (PQresultStatus(*entityResP) != PGRES_TUPLES_OK)
   {
