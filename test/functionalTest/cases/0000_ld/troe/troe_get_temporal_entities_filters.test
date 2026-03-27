@@ -161,7 +161,6 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 ]
 
 
-
 04. GET temporal with type=T, attrs=P1 - only P1 attribute in both entities
 =============================================================================
 HTTP/1.1 200 OK
@@ -198,7 +197,6 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 ]
 
 
-
 05. GET temporal with type=T, pick=P1 - only P1 visible
 =========================================================
 HTTP/1.1 200 OK
@@ -229,7 +227,6 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         ]
     }
 ]
-
 
 
 06. GET temporal with type=T, omit=P2 - P2 excluded
@@ -274,7 +271,6 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "type": "T"
     }
 ]
-
 
 
 --TEARDOWN--

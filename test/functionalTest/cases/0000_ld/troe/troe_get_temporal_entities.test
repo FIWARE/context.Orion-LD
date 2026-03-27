@@ -249,7 +249,6 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 ]
 
 
-
 06. GET temporal entities with type=T, count=true - verify count header
 ========================================================================
 HTTP/1.1 200 OK
@@ -301,7 +300,6 @@ NGSILD-Results-Count: 2
 ]
 
 
-
 07. GET temporal entities with type=T, limit=1 - only 1 entity
 ===============================================================
 HTTP/1.1 200 OK
@@ -330,7 +328,6 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "type": "T"
     }
 ]
-
 
 
 08. GET temporal entities with type=T, limit=1, offset=1 - second entity
@@ -365,7 +362,6 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 ]
 
 
-
 09. GET temporal entities without timerel - 400 error
 ======================================================
 HTTP/1.1 400 Bad Request
@@ -380,7 +376,6 @@ Date: REGEX(.*)
 }
 
 
-
 10. GET temporal entities without type and attrs - 400 error
 =============================================================
 HTTP/1.1 400 Bad Request
@@ -393,7 +388,6 @@ Date: REGEX(.*)
     "title": "Missing required URI parameter",
     "type": "https://uri.etsi.org/ngsi-ld/errors/BadRequestData"
 }
-
 
 
 11. GET temporal entities with type=T2 - only E3
@@ -418,7 +412,6 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "type": "T2"
     }
 ]
-
 
 
 --TEARDOWN--
