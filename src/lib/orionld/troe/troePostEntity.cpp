@@ -22,6 +22,7 @@
 *
 * Author: Ken Zangelin
 */
+#include <cstdlib>                                             // free
 #include <string.h>                                            // strncpy
 
 extern "C"
@@ -128,6 +129,9 @@ bool troePostEntity(void)
 
   if (sqlIx > 0)
     pgCommands(sqlV, sqlIx);
+
+  if (attributesBuffer.allocated)    free(attributesBuffer.buf);
+  if (subAttributesBuffer.allocated) free(subAttributesBuffer.buf);
 
   return true;
 }
