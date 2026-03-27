@@ -6,36 +6,52 @@ The sink used for TRoE is Postgres, with PostGIS and TimescaleDB extensions.
 
 ## Native Temporal Queries
 
-Orion-LD now supports **native temporal entity queries** directly, without requiring Mintaka. You can retrieve the state of an entity at a specific point in time using the standard NGSI-LD temporal API:
+Orion-LD now supports **native temporal entity queries** directly, without requiring Mintaka. Three endpoints are natively implemented:
 
-```
-GET /ngsi-ld/v1/temporal/entities/{entityId}?timerel=before&timeAt=2024-06-15T12:00:00Z
-```
+- **Entity Retrieval** — `GET /ngsi-ld/v1/temporal/entities/{entityId}` — retrieves the temporal representation of a single entity
+- **Entities Query** — `GET /ngsi-ld/v1/temporal/entities` — queries temporal representations of multiple entities
+- **POST Query** — `POST /ngsi-ld/v1/temporal/entityOperations/query` — POST-based query with request body
+
+All three endpoints return **Temporal Entities** (arrays of attribute instances over time), not point-in-time snapshots of regular entities.
 
 ### Supported Parameters
 
 | Parameter | Values | Description |
 |-----------|--------|-------------|
-| `timerel` | `before`, `after`, `between` | **Required.** Temporal relation |
-| `timeAt` | ISO 8601 timestamp | **Required.** Reference timestamp |
+| `timerel` | `before`, `after`, `between` | Temporal relation (optional for Entity Retrieval) |
+| `timeAt` | ISO 8601 timestamp | Reference timestamp |
 | `endTimeAt` | ISO 8601 timestamp | Required only for `timerel=between` |
-| `options` | `simplified`, `concise` | Output format (default: normalized) |
+| `timeproperty` | `observedAt`, `createdAt`, `modifiedAt` | Which timestamp to filter on (default: `observedAt`) |
+| `attrs` | comma-separated | Filter specific attributes |
+| `pick` / `omit` | comma-separated | Include/exclude attributes in response |
+| `datasetId` | comma-separated | Filter by dataset ID |
+| `q` | NGSI-LD query | Filter by attribute values (comparisons, ranges, patterns) |
+| `georel`, `geometry`, `coordinates` | geo-query params | Geo-spatial filtering (near, within, contains, etc.) |
+| `aggrMethods` | `avg`, `min`, `max`, `sum`, `sumsq`, `stddev`, `distinctCount` | Aggregation methods |
+| `aggrPeriodDuration` | ISO 8601 duration | Time-bucketed aggregation (e.g. `PT1H`) |
+| `options` | `temporalValues`, `simplified`, `concise` | Output format (default: normalized) |
+| `lastN` | integer | Return only the N most recent attribute instances |
 
 ### Examples
 
-**Point-in-time snapshot** (entity state at or before a given time):
-```bash
-curl 'localhost:1026/ngsi-ld/v1/temporal/entities/urn:ngsi-ld:Sensor:001?timerel=before&timeAt=2024-06-15T12:00:00Z'
-```
-
-**Changes since a timestamp:**
-```bash
-curl 'localhost:1026/ngsi-ld/v1/temporal/entities/urn:ngsi-ld:Sensor:001?timerel=after&timeAt=2024-06-01T00:00:00Z'
-```
-
-**Changes within a time window:**
+**Entity Retrieval** — temporal history of one entity within a time window:
 ```bash
 curl 'localhost:1026/ngsi-ld/v1/temporal/entities/urn:ngsi-ld:Sensor:001?timerel=between&timeAt=2024-06-01T00:00:00Z&endTimeAt=2024-06-30T23:59:59Z'
+```
+
+**Entity Retrieval** — full temporal history (no time filter):
+```bash
+curl 'localhost:1026/ngsi-ld/v1/temporal/entities/urn:ngsi-ld:Sensor:001'
+```
+
+**Entities Query** — all TemperatureSensor entities with q-filter:
+```bash
+curl 'localhost:1026/ngsi-ld/v1/temporal/entities?type=TemperatureSensor&q=temperature>20&timerel=after&timeAt=2024-06-01T00:00:00Z'
+```
+
+**Entities Query** — with aggregation (hourly averages):
+```bash
+curl 'localhost:1026/ngsi-ld/v1/temporal/entities?type=TemperatureSensor&aggrMethods=avg&aggrPeriodDuration=PT1H&timerel=between&timeAt=2024-06-01T00:00:00Z&endTimeAt=2024-06-02T00:00:00Z'
 ```
 
 ### Requirements
@@ -46,19 +62,20 @@ curl 'localhost:1026/ngsi-ld/v1/temporal/entities/urn:ngsi-ld:Sensor:001?timerel
 
 ### How It Works
 
-The native temporal query reconstructs an entity's state from the three TRoE tables:
+The native temporal query reconstructs temporal entity representations from the three TRoE tables:
 
-1. **Entity type** — retrieved from the `entities` table at the given timestamp
-2. **Attribute values** — uses `DISTINCT ON (id, datasetId) ORDER BY ts DESC` on the `attributes` table to get the latest value for each attribute at or before the requested time
+1. **Entity discovery** — the `entities` table is queried to find matching entities (by type, id, idPattern)
+2. **Attribute retrieval** — the `attributes` table returns all attribute instances within the requested time range
 3. **Sub-attributes** — retrieved from `subAttributes` for attributes that have sub-properties
+4. **Post-processing** — aggregation, pick/omit, datasetId filtering, and format transformation are applied
 
 All value types are supported: String, Number, Boolean, Relationship, DateTime, Compound, GeoProperty (all geo types), and LanguageMap.
 
 ## Mintaka Compatibility
 
-For more advanced temporal queries (aggregations, pagination of temporal values, etc.), [Mintaka](https://github.com/FIWARE/Mintaka) can still be used as an external temporal query handler on (default) port 8080.
+[Mintaka](https://github.com/FIWARE/Mintaka) can still be used as an external temporal query handler on (default) port 8080. Note that Mintaka supports the NGSI-LD API up to version 1.3.1 and does not implement aggregation (which was introduced in API version 1.6.1). For aggregation support, use the native temporal query endpoints described above.
 
-Compatibility with the latest release version of mintaka will always be assured. See the test results at the [mintaka-compatibility github action.](https://github.com/FIWARE/context.Orion-LD/actions/workflows/mintaka-compatibility.yml)
+Compatibility with the latest release version of Mintaka will always be assured. See the test results at the [mintaka-compatibility github action.](https://github.com/FIWARE/context.Orion-LD/actions/workflows/mintaka-compatibility.yml)
 
 More fine-grained information on compatibility can be found at the [compatibility-matrix](https://github.com/FIWARE/mintaka/blob/main/doc/compatibility/compatibility.md).
 
@@ -135,6 +152,43 @@ Messages must be valid NGSI-LD normalized JSON — identical to `POST /entityOpe
 **Optional Kafka Headers:**
 - `NGSILD-Tenant` — for multi-tenancy support
 - `Link` — custom @context URL
+
+### Producing Messages to Kafka
+
+To send entity updates to Kafka for Orion-LD to consume, use any Kafka producer. Here are some examples:
+
+**Using `kafkacat` / `kcat` (command line):**
+```bash
+# Single entity
+echo '{"id":"urn:ngsi-ld:Sensor:001","type":"TemperatureSensor","temperature":{"type":"Property","value":23.5,"observedAt":"2024-06-15T10:30:00Z"}}' | \
+  kcat -b localhost:9092 -t orionld-entities -k urn:ngsi-ld:Sensor:001
+
+# With custom @context header
+echo '{"id":"urn:ngsi-ld:Sensor:002","type":"TemperatureSensor","temperature":{"type":"Property","value":24.1}}' | \
+  kcat -b localhost:9092 -t orionld-entities -k urn:ngsi-ld:Sensor:002 \
+  -H 'Link=<https://example.com/mycontext.jsonld>'
+```
+
+**Using Kafka's built-in console producer:**
+```bash
+kafka-console-producer.sh --broker-list localhost:9092 --topic orionld-entities \
+  --property "parse.key=true" --property "key.separator=|"
+# Then type:
+urn:ngsi-ld:Sensor:001|{"id":"urn:ngsi-ld:Sensor:001","type":"TemperatureSensor","temperature":{"type":"Property","value":23.5}}
+```
+
+**Using Python (`confluent-kafka`):**
+```python
+from confluent_kafka import Producer
+
+producer = Producer({'bootstrap.servers': 'localhost:9092'})
+producer.produce(
+    'orionld-entities',
+    key='urn:ngsi-ld:Sensor:001',
+    value='{"id":"urn:ngsi-ld:Sensor:001","type":"TemperatureSensor","temperature":{"type":"Property","value":23.5,"observedAt":"2024-06-15T10:30:00Z"}}'
+)
+producer.flush()
+```
 
 ### Micro-Batching Strategy
 

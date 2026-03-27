@@ -343,17 +343,28 @@ This service is experimental and is only in place when Orion-LD is started with 
 ### DELETE /ngsi-ld/v1/jsonldContexts/*
 
 ### GET /ngsi-ld/v1/temporal/entities
-* Not yet implemented natively. Returns 501.
+* **Natively implemented** — multi-entity temporal query ("Entities Query") via TRoE (PostgreSQL).
+* Two-phase architecture: entity discovery (type/id/idPattern filtering) + per-entity temporal attribute retrieval.
+* Supports `q`-filter, geo-queries (near, within, contains, etc.), `attrs`, `pick`, `omit`, `datasetId`.
+* Supports aggregation: `aggrMethods` (avg, min, max, sum, sumsq, stddev, distinctCount) with optional `aggrPeriodDuration`.
+* Supports `timeproperty=observedAt|createdAt|modifiedAt`, `temporalValues`, pagination, count.
+* Requires `-troe` flag to be enabled.
 
 ### GET /ngsi-ld/v1/temporal/entities/*
-* **Natively implemented** — queries TRoE (PostgreSQL) directly to reconstruct entity state at a point in time.
+* **Natively implemented** — single-entity temporal retrieval ("Entity Retrieval") via TRoE (PostgreSQL).
+* Retrieves the temporal representation of a single entity from the TRoE database.
 * Supports `timerel=before`, `after`, `between` with `timeAt` and `endTimeAt` parameters.
+* Supports `pick`, `omit`, `datasetId`, aggregation, `temporalValues`.
+* `timerel`/`timeAt` are optional — if omitted, returns the full temporal history.
 * Supports all output formats: normalized (default), simplified, concise.
 * Supports all value types: String, Number, Boolean, Relationship, DateTime, Compound, GeoProperty, LanguageMap.
 * Includes sub-attributes in the response.
 * Requires `-troe` flag to be enabled.
 
-### POST   /ngsi-ld/v1/temporal/entityOperations/query
+### POST /ngsi-ld/v1/temporal/entityOperations/query
+* **Natively implemented** — POST-based temporal query with request body for `entities`, `attrs`, `temporalQ`, `q`, `geoQ`, and aggregation parameters.
+* Requires `-troe` flag to be enabled.
+
 ### POST   /ngsi-ld/v1/temporal/entities
 ### DELETE /ngsi-ld/v1/temporal/entities/*
 ### POST   /ngsi-ld/v1/temporal/entities/*/attrs
