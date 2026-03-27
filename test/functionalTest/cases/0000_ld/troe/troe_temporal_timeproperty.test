@@ -488,15 +488,15 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 11. GET single entity E1 with timeproperty=modifiedAt, timerel=before, timeAt=2020 - empty (ts is now)
 ========================================================================================================
-HTTP/1.1 404 Not Found
+HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
-    "detail": "urn:ngsi-ld:entities:E1",
-    "title": "Entity Not Found",
-    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
+    "id": "urn:ngsi-ld:entities:E1",
+    "type": "T"
 }
 
 
@@ -512,9 +512,9 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "P1": [
         {
             "instanceId": "REGEX(.*)",
-            "observedAt": "2024-09-15T12:00:00Z",
+            "observedAt": "2024-06-15T12:00:00Z",
             "type": "Property",
-            "value": 30
+            "value": 10
         },
         {
             "instanceId": "REGEX(.*)",
@@ -524,9 +524,9 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         },
         {
             "instanceId": "REGEX(.*)",
-            "observedAt": "2024-06-15T12:00:00Z",
+            "observedAt": "2024-09-15T12:00:00Z",
             "type": "Property",
-            "value": 10
+            "value": 30
         }
     ],
     "id": "urn:ngsi-ld:entities:E1",
@@ -536,27 +536,36 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 13. GET single entity E1 with timeproperty=createdAt, timerel=before, timeAt=2020 - empty (ts is now)
 =======================================================================================================
-HTTP/1.1 404 Not Found
+HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
-    "detail": "urn:ngsi-ld:entities:E1",
-    "title": "Entity Not Found",
-    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
+    "id": "urn:ngsi-ld:entities:E1",
+    "type": "T"
 }
 
 
 14. GET multi-entity with timeproperty=modifiedAt, timerel=before, timeAt=2020 - empty array
 =============================================================================================
 HTTP/1.1 200 OK
-Content-Length: 2
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
-[]
+[
+    {
+        "id": "urn:ngsi-ld:entities:E1",
+        "type": "T"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E2",
+        "type": "T"
+    }
+]
 
 
 15. GET single entity E1 default (observedAt), timerel=before, timeAt=2024-07 - only June and March instances
