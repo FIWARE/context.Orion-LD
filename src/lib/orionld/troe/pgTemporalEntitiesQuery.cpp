@@ -116,9 +116,6 @@ bool pgTemporalEntitiesQuery
   StringArray*  typeList,
   StringArray*  idList,
   const char*   idPattern,
-  const char*   timerel,
-  const char*   timeAt,
-  const char*   endTimeAt,
   const char*   qFilter,
   const char*   geoFilter,
   int           limit,
@@ -142,38 +139,21 @@ bool pgTemporalEntitiesQuery
 
   // idPattern uses a parameterized value for safety
   const char* idPatternClause = "";
-  int         idPatternParam  = 0;
 
-  // Determine number of time params and build the time WHERE clause
-  int         nTimeParams = 0;
-  const char* timeClause  = "";
+  // Entity discovery does NOT filter by time on the entities table.
+  // Time filtering is done at the attribute level in pgTemporalEntityQuery,
+  // using the correct timeproperty column (observedAt, ts, etc.).
+  // The entities table `ts` is the record-creation timestamp, which may differ
+  // significantly from observedAt (e.g., inserting historical data).
 
-  if (strcmp(timerel, "before") == 0)
-  {
-    nTimeParams = 1;
-    timeClause  = " AND ts <= $1";
-  }
-  else if (strcmp(timerel, "after") == 0)
-  {
-    nTimeParams = 1;
-    timeClause  = " AND ts >= $1";
-  }
-  else if (strcmp(timerel, "between") == 0)
-  {
-    nTimeParams = 2;
-    timeClause  = " AND ts >= $1 AND ts <= $2";
-  }
-
-  // idPattern gets next param number after time params
   char idPatternBuf[64] = "";
   if (idPattern != NULL)
   {
-    idPatternParam = nTimeParams + 1;
-    snprintf(idPatternBuf, sizeof(idPatternBuf), " AND id ~ $%d", idPatternParam);
+    snprintf(idPatternBuf, sizeof(idPatternBuf), " AND id ~ $1");
     idPatternClause = idPatternBuf;
   }
 
-  int totalParams = nTimeParams + (idPattern != NULL ? 1 : 0);
+  int totalParams = (idPattern != NULL ? 1 : 0);
 
   // Build qFilter clause (may be empty or " AND <exists subqueries>")
   char qFilterClause[4096] = "";
@@ -190,19 +170,15 @@ bool pgTemporalEntitiesQuery
   snprintf(query, sizeof(query),
            "SELECT id, type FROM ("
            "SELECT DISTINCT ON (id) id, type FROM entities "
-           "WHERE 1=1%s%s%s%s%s%s "
+           "WHERE 1=1%s%s%s%s%s "
            "ORDER BY id, ts DESC"
            ") sub ORDER BY id LIMIT %d OFFSET %d",
-           timeClause, typeF, idF, idPatternClause, qFilterClause, geoFilterClause, limit, offset);
+           typeF, idF, idPatternClause, qFilterClause, geoFilterClause, limit, offset);
 
   // Build param values array
   const char* paramValues[4];
   int paramIdx = 0;
 
-  if (nTimeParams >= 1)
-    paramValues[paramIdx++] = timeAt;
-  if (nTimeParams >= 2)
-    paramValues[paramIdx++] = endTimeAt;
   if (idPattern != NULL)
     paramValues[paramIdx++] = idPattern;
 
@@ -213,10 +189,10 @@ bool pgTemporalEntitiesQuery
     snprintf(countQuery, sizeof(countQuery),
              "SELECT COUNT(*) FROM ("
              "SELECT DISTINCT ON (id) id FROM entities "
-             "WHERE 1=1%s%s%s%s%s%s "
+             "WHERE 1=1%s%s%s%s%s "
              "ORDER BY id, ts DESC"
              ") sub",
-             timeClause, typeF, idF, idPatternClause, qFilterClause, geoFilterClause);
+             typeF, idF, idPatternClause, qFilterClause, geoFilterClause);
 
     PGresult* countRes = PQexecParams(connectionP->connectionP, countQuery,
                                       totalParams, NULL, paramValues, NULL, NULL, 0);

@@ -162,7 +162,7 @@ bool orionldGetTemporalEntities(void)
 
   if (pgTemporalEntitiesQuery(&orionldState.in.typeList, &orionldState.in.idList,
                               orionldState.uriParams.idPattern,
-                              timerel, timeAt, endTimeAt, qFilter, geoFilter,
+                              qFilter, geoFilter,
                               limit, offset, countP, &entityRes) == false)
   {
     orionldError(OrionldInternalError, "Database Error", "temporal entities query failed", 500);

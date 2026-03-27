@@ -557,7 +557,7 @@ bool orionldPostTemporalQuery(void)
   PGresult*  entityRes = NULL;
 
   if (pgTemporalEntitiesQuery(&typeList, &idList, idPattern,
-                              timerel, timeAt, endTimeAt, qFilter, geoFilter,
+                              qFilter, geoFilter,
                               limit, offset, countP, &entityRes) == false)
   {
     orionldError(OrionldInternalError, "Database Error", "temporal entities query failed", 500);

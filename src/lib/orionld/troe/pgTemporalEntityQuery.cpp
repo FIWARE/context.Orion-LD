@@ -222,8 +222,10 @@ bool pgTemporalEntityQuery
   {
     nParams = 2;
 
+    // Entity lookup: no time filter needed - we just need the entity type.
+    // Time filtering happens at the attribute level using the correct timeproperty column.
     snprintf(entityQuery, sizeof(entityQuery),
-             "%sWHERE id = $1 AND ts <= $2 ORDER BY ts DESC LIMIT 1", entitySelect);
+             "%sWHERE id = $1 ORDER BY ts DESC LIMIT 1", entitySelect);
 
     if (lastN > 0)
     {
@@ -256,7 +258,7 @@ bool pgTemporalEntityQuery
     nParams = 2;
 
     snprintf(entityQuery, sizeof(entityQuery),
-             "%sWHERE id = $1 AND ts >= $2 ORDER BY ts ASC LIMIT 1", entitySelect);
+             "%sWHERE id = $1 ORDER BY ts DESC LIMIT 1", entitySelect);
 
     if (lastN > 0)
     {
@@ -289,7 +291,7 @@ bool pgTemporalEntityQuery
     nParams = 3;
 
     snprintf(entityQuery, sizeof(entityQuery),
-             "%sWHERE id = $1 AND ts >= $2 AND ts <= $3 ORDER BY ts DESC LIMIT 1", entitySelect);
+             "%sWHERE id = $1 ORDER BY ts DESC LIMIT 1", entitySelect);
 
     if (lastN > 0)
     {
