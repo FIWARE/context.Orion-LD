@@ -1,0 +1,255 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Temporal queries with geo-filter (spatial entity filtering via PostGIS)
+
+--SHELL-INIT--
+export BROKER=orionld
+dbInit CB
+pgInit $CB_DB_NAME
+brokerStart CB 100 IPv4 -troe -experimental
+
+--SHELL--
+
+#
+# 01. Create entity E1 (type T) in Berlin (13.4, 52.5) with P1=10
+# 02. Create entity E2 (type T) in Paris (2.35, 48.86) with P1=20
+# 03. Create entity E3 (type T) in London (-0.12, 51.51) with P1=30
+# 04. GET temporal entities near Berlin (maxDistance=200000m) - should return E1
+# 05. GET temporal entities within polygon covering Berlin+London - should return E1 and E3
+# 06. GET temporal entities near Paris (maxDistance=500000m) - should return E2 and E3
+# 07. POST temporal query with geoQ near Berlin - should return E1
+# 08. GET temporal entities combining q=P1>15 and geo near Paris - should return E2 and E3
+#
+
+echo "01. Create entity E1 (type T) in Berlin with P1=10"
+echo "===================================================="
+payload='{
+  "id": "urn:ngsi-ld:entities:E1",
+  "type": "T",
+  "location": {
+    "type": "GeoProperty",
+    "value": {
+      "type": "Point",
+      "coordinates": [13.4, 52.5]
+    }
+  },
+  "P1": {
+    "type": "Property",
+    "value": 10,
+    "observedAt": "2024-01-01T10:00:00Z"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "02. Create entity E2 (type T) in Paris with P1=20"
+echo "==================================================="
+payload='{
+  "id": "urn:ngsi-ld:entities:E2",
+  "type": "T",
+  "location": {
+    "type": "GeoProperty",
+    "value": {
+      "type": "Point",
+      "coordinates": [2.35, 48.86]
+    }
+  },
+  "P1": {
+    "type": "Property",
+    "value": 20,
+    "observedAt": "2024-01-01T10:00:00Z"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "03. Create entity E3 (type T) in London with P1=30"
+echo "===================================================="
+payload='{
+  "id": "urn:ngsi-ld:entities:E3",
+  "type": "T",
+  "location": {
+    "type": "GeoProperty",
+    "value": {
+      "type": "Point",
+      "coordinates": [-0.12, 51.51]
+    }
+  },
+  "P1": {
+    "type": "Property",
+    "value": 30,
+    "observedAt": "2024-01-01T10:00:00Z"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+sleep 1
+
+
+echo "04. GET temporal entities near Berlin (maxDistance=200000m) - should return E1"
+echo "=============================================================================="
+orionCurl --url '/ngsi-ld/v1/temporal/entities?type=T&timerel=before&timeAt=2025-01-01T00:00:00Z&georel=near%3BmaxDistance%3D%3D200000&geometry=Point&coordinates=%5B13.4%2C52.5%5D'
+echo
+echo
+
+
+echo "05. GET temporal entities within polygon covering Berlin+London - E1 and E3"
+echo "============================================================================"
+orionCurl --url '/ngsi-ld/v1/temporal/entities?type=T&timerel=before&timeAt=2025-01-01T00:00:00Z&georel=within&geometry=Polygon&coordinates=%5B%5B%5B-2%2C50%5D%2C%5B15%2C50%5D%2C%5B15%2C54%5D%2C%5B-2%2C54%5D%2C%5B-2%2C50%5D%5D%5D'
+echo
+echo
+
+
+echo "06. GET temporal entities near Paris (maxDistance=500000m) - E2 and E3"
+echo "======================================================================"
+orionCurl --url '/ngsi-ld/v1/temporal/entities?type=T&timerel=before&timeAt=2025-01-01T00:00:00Z&georel=near%3BmaxDistance%3D%3D500000&geometry=Point&coordinates=%5B2.35%2C48.86%5D'
+echo
+echo
+
+
+echo "07. POST temporal query with geoQ near Berlin - should return E1"
+echo "================================================================="
+payload='{
+  "type": "Query",
+  "entities": [
+    {
+      "type": "T"
+    }
+  ],
+  "geoQ": {
+    "georel": "near;maxDistance==200000",
+    "geometry": "Point",
+    "coordinates": [13.4, 52.5]
+  },
+  "temporalQ": {
+    "timerel": "before",
+    "timeAt": "2025-01-01T00:00:00Z"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/temporal/entityOperations/query --payload "$payload"
+echo
+echo
+
+
+echo "08. GET temporal entities q=P1>15 and geo near Paris (500km) - E2 and E3"
+echo "========================================================================="
+orionCurl --url '/ngsi-ld/v1/temporal/entities?type=T&timerel=before&timeAt=2025-01-01T00:00:00Z&q=P1%3E15&georel=near%3BmaxDistance%3D%3D500000&geometry=Point&coordinates=%5B2.35%2C48.86%5D'
+echo
+echo
+
+
+--REGEXPECT--
+01. Create entity E1 (type T) in Berlin with P1=10
+====================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1
+
+
+
+02. Create entity E2 (type T) in Paris with P1=20
+===================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E2
+
+
+
+03. Create entity E3 (type T) in London with P1=30
+====================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E3
+
+
+
+04. GET temporal entities near Berlin (maxDistance=200000m) - should return E1
+==============================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+REGEX(\[.*"id":"urn:ngsi-ld:entities:E1".*\])
+
+
+05. GET temporal entities within polygon covering Berlin+London - E1 and E3
+============================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+REGEX(\[.*"id":"urn:ngsi-ld:entities:E1".*"id":"urn:ngsi-ld:entities:E3".*\])
+
+
+06. GET temporal entities near Paris (maxDistance=500000m) - E2 and E3
+======================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+REGEX(\[.*"id":"urn:ngsi-ld:entities:E2".*"id":"urn:ngsi-ld:entities:E3".*\])
+
+
+07. POST temporal query with geoQ near Berlin - should return E1
+=================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+REGEX(\[.*"id":"urn:ngsi-ld:entities:E1".*\])
+
+
+08. GET temporal entities q=P1>15 and geo near Paris (500km) - E2 and E3
+=========================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+REGEX(\[.*"id":"urn:ngsi-ld:entities:E2".*"id":"urn:ngsi-ld:entities:E3".*\])
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
+pgDrop $CB_DB_NAME
