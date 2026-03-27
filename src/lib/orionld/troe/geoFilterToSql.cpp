@@ -116,8 +116,10 @@ const char* geoFilterToSql(OrionldGeoInfo* geoInfoP)
   // Get the expanded geoproperty name
   // pCheckGeo/pcheckGeoQ may store "location" as-is or already expanded
   // For PostgreSQL, we always need the expanded URI form
+  // When geoProperty is NULL, default to "location" (the standard default per NGSI-LD spec)
+  const char* geoProp = (geoInfoP->geoProperty != NULL) ? geoInfoP->geoProperty : "location";
   const char* geoPropExpanded = orionldAttributeExpand(orionldState.contextP,
-                                                       geoInfoP->geoProperty, true, NULL);
+                                                       geoProp, true, NULL);
 
   // Build the spatial predicate based on georel
   char spatialPredicate[8192];
