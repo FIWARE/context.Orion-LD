@@ -1,408 +1,350 @@
-# NGSI-LD Temporal API - Implementierungsplan
+# NGSI-LD Temporal API - Implementation Plan
 
-> Basierend auf: ETSI GS CIM 009 V1.9.1, OpenAPI v1.8.1, Orion-LD Quellcode (Stand: Maerz 2026)
+> Based on: ETSI GS CIM 009 V1.9.1, OpenAPI v1.8.1, Orion-LD source code (as of March 2026)
 
-## Inhaltsverzeichnis
+## Table of Contents
 
-- [1. Status-Uebersicht](#1-status-uebersicht)
-- [2. Detaillierte Gap-Analyse](#2-detaillierte-gap-analyse)
-- [3. Implementierungsplan](#3-implementierungsplan)
-
----
-
-## 1. Status-Uebersicht
-
-| # | Methode | Pfad | Status | Quelldatei |
-|---|---------|------|--------|------------|
-| 1 | POST | `/temporal/entities` | **Implementiert** (kleine Luecken) | `orionldPostTemporalEntities.cpp` |
-| 2 | GET | `/temporal/entities` | **Implementiert** | `orionldGetTemporalEntities.cpp` |
-| 3 | GET | `/temporal/entities/{entityId}` | **Implementiert** | `orionldGetTemporalEntity.cpp` |
-| 4 | DELETE | `/temporal/entities/{entityId}` | **Nicht implementiert** (501-Stub) | `orionldDeleteTemporalEntity.cpp` |
-| 5 | POST | `/temporal/entities/{entityId}/attrs` | **Nicht implementiert** (501-Stub) | `orionldPostTemporalAttributes.cpp` |
-| 6 | DELETE | `.../attrs/{attrId}` | **Nicht implementiert** (501-Stub) | `orionldDeleteTemporalAttribute.cpp` |
-| 7 | PATCH | `.../attrs/{attrId}/{instanceId}` | **Nicht implementiert** (501-Stub) | `orionldPatchTemporalAttributeInstance.cpp` |
-| 8 | DELETE | `.../attrs/{attrId}/{instanceId}` | **Nicht implementiert** (501-Stub) | `orionldDeleteTemporalAttributeInstance.cpp` |
-| 9 | POST | `/temporal/entityOperations/query` | **Implementiert** | `orionldPostTemporalQuery.cpp` |
-
-**Legende:**
-- **Weitgehend implementiert** = Kernfunktionalitaet und die meisten Parameter vorhanden, einzelne Parameter fehlen noch
-- **Implementiert (kleine Luecken)** = Funktional, ein FIXME im Code
-- **Mintaka-Stub** = Gibt 501 zurueck mit Verweis auf Mintaka
-- **501-Stub** = Gibt 501 "Not Implemented" zurueck
+- [1. Status Overview](#1-status-overview)
+- [2. Detailed Gap Analysis](#2-detailed-gap-analysis)
+- [3. Implementation Plan](#3-implementation-plan)
 
 ---
 
-## 2. Detaillierte Gap-Analyse
+## 1. Status Overview
+
+| # | Method | Path | Status | Source File |
+|---|--------|------|--------|-------------|
+| 1 | POST | `/temporal/entities` | **Implemented** (minor gaps) | `orionldPostTemporalEntities.cpp` |
+| 2 | GET | `/temporal/entities` | **Implemented** | `orionldGetTemporalEntities.cpp` |
+| 3 | GET | `/temporal/entities/{entityId}` | **Implemented** | `orionldGetTemporalEntity.cpp` |
+| 4 | DELETE | `/temporal/entities/{entityId}` | **Not implemented** (501 stub) | `orionldDeleteTemporalEntity.cpp` |
+| 5 | POST | `/temporal/entities/{entityId}/attrs` | **Not implemented** (501 stub) | `orionldPostTemporalAttributes.cpp` |
+| 6 | DELETE | `.../attrs/{attrId}` | **Not implemented** (501 stub) | `orionldDeleteTemporalAttribute.cpp` |
+| 7 | PATCH | `.../attrs/{attrId}/{instanceId}` | **Not implemented** (501 stub) | `orionldPatchTemporalAttributeInstance.cpp` |
+| 8 | DELETE | `.../attrs/{attrId}/{instanceId}` | **Not implemented** (501 stub) | `orionldDeleteTemporalAttributeInstance.cpp` |
+| 9 | POST | `/temporal/entityOperations/query` | **Implemented** | `orionldPostTemporalQuery.cpp` |
+
+**Legend:**
+- **Implemented** = Core functionality and most parameters working
+- **Implemented (minor gaps)** = Functional, one FIXME in code
+- **501 stub** = Returns 501 "Not Implemented"
+
+---
+
+## 2. Detailed Gap Analysis
 
 ### 2.1 POST /temporal/entities (orionldPostTemporalEntities.cpp)
 
-**Status:** Implementiert mit kleinen Luecken
+**Status:** Implemented with minor gaps
 
-**Was funktioniert:**
-- Entity-ID und Type werden validiert (`pCheckEntityId`, `pCheckEntityType`)
-- Attribute werden per `pCheckAttribute` validiert und expandiert (Array und Object)
-- TRoE-Datenbank wird via `troePostEntities()` befuellt
-- Upsert-Logik: 201 bei neuer Entity, 204 bei bestehender (`mongocEntityLookup`)
-- `Location`-Header bei 201 Created
-- `local` URI-Parameter registriert (Zeile 523 in ServiceInit)
+**What works:**
+- Entity ID and type are validated (`pCheckEntityId`, `pCheckEntityType`)
+- Attributes validated and expanded via `pCheckAttribute` (Array and Object)
+- TRoE database populated via `troePostEntities()`
+- Upsert logic: 201 for new entity, 204 for existing (`mongocEntityLookup`)
+- `Location` header on 201 Created
+- `local` URI parameter registered (line 523 in ServiceInit)
 
-**Was fehlt:**
+**What's missing:**
 
-| Luecke | Prioritaet | Details |
-|--------|-----------|---------|
-| location/observationSpace/operationSpace | Mittel | FIXME im Code (Zeile 115): Spezial-Attribute werden nicht validiert/verarbeitet |
-| Fehlercode 422 | Niedrig | Laut Spec soll 422 Unprocessable Entity zurueckgegeben werden wenn Operation nicht verfuegbar |
+| Gap | Priority | Details |
+|-----|----------|---------|
+| location/observationSpace/operationSpace | Medium | FIXME in code (line 115): special attributes not validated/processed |
+| Error code 422 | Low | Per spec, 422 Unprocessable Entity should be returned when operation unavailable |
 
 ---
 
 ### 2.2 GET /temporal/entities (orionldGetTemporalEntities.cpp)
 
-**Status:** Weitgehend implementiert (Kernfunktionalitaet)
+**Status:** Implemented
 
-**Was funktioniert:**
-- Multi-Entity temporale Query ueber TRoE PostgreSQL
-- Zwei-Phasen-Architektur: Entity-Discovery mit Paginierung, dann pro Entity pgTemporalEntityQuery/Build
-- Entity-Filterung: `type`, `id` (Liste), `idPattern` (Regex)
-- Temporale Filterung: `timerel` (before/after/between), `timeAt`, `endTimeAt`
+**What works:**
+- Multi-entity temporal query via TRoE PostgreSQL
+- Two-phase architecture: entity discovery with pagination, then per-entity pgTemporalEntityQuery/Build
+- Entity filtering: `type`, `id` (list), `idPattern` (regex)
+- Temporal filtering: `timerel` (before/after/between), `timeAt`, `endTimeAt`
 - `timeproperty` (observedAt/modifiedAt/createdAt)
-- `attrs`-Filterung (nur angeforderte Attribute)
-- `lastN` - Letzte N Instanzen pro Attribut/Dataset
-- Paginierung: `limit`, `offset`
-- `count` - NGSILD-Results-Count Header
-- `pick`/`omit` - Inklusions-/Exklusions-Projektion (mutual exclusivity validiert)
-- `datasetId` - Dataset-Filterung (temporal-spezifisch, Arrays bleiben erhalten)
+- `attrs` filtering (only requested attributes)
+- `lastN` - last N instances per attribute/dataset
+- Pagination: `limit`, `offset`
+- `count` - NGSILD-Results-Count header
+- `pick`/`omit` - inclusion/exclusion projection (mutual exclusivity validated)
+- `datasetId` - dataset filtering (temporal-specific, arrays preserved)
 - `lang`, `format` (normalized/concise/simplified), `options` (sysAttrs, temporalValues)
-- `local` URI-Parameter registriert
-- Validierung: timerel+timeAt pflicht, type oder attrs pflicht, endTimeAt fuer between
-- URI-Parameter in ServiceInit registriert: OPTIONS, FORMAT, LIMIT, OFFSET, COUNT, IDLIST, TYPELIST, IDPATTERN, ATTRS, LASTN, TIMEREL, TIMEAT, ENDTIMEAT, TIMEPROPERTY, PICK, OMIT, DATASETID, LOCAL, LANG
+- `local` URI parameter registered
+- `q` parameter - NGSI-LD query language translated to SQL via `troeQStringToSql`
+- `geometry`/`georel`/`coordinates`/`geoproperty` - geo-queries via PostGIS
+- `aggrMethods`/`aggrPeriodDuration` - aggregation (avg, min, max, sum, sumsq, stddev, distinctCount)
+- Validation: timerel+timeAt mandatory, type or attrs mandatory, endTimeAt for between
 
-**Was noch fehlt:**
+**What's still missing:**
 
-| Parameter | Prioritaet | Details |
-|-----------|-----------|---------|
-| `q` | Hoch | NGSI-LD Query Language - erfordert Q-Tree zu SQL Uebersetzung |
-| `geometry`/`georel`/`coordinates`/`geoproperty` | Hoch | Geo-Queries - erfordert PostGIS-Integration |
-| `aggrMethods`/`aggrPeriodDuration` | Mittel | Aggregation (avg, min, max, etc.) |
-| `orderBy` | Mittel | Sortierung nach Entity-Member |
-| `scopeQ` | Niedrig | Scope Query |
-| `csf` | Niedrig | Context Source Filter |
-| `expandValues`/`jsonKeys` | Niedrig | Spezial-Expansion |
-| `collation` | Niedrig | ICU Collation |
-| `splitEntities`/`entityMap`/`entityMapLifetime` | Niedrig | Verteilte Entities und EntityMap |
+| Parameter | Priority | Details |
+|-----------|----------|---------|
+| `orderBy` | Medium | Sort by entity member |
+| `scopeQ` | Low | Scope query |
+| `csf` | Low | Context source filter |
+| `expandValues`/`jsonKeys` | Low | Special expansion |
+| `collation` | Low | ICU collation |
+| `splitEntities`/`entityMap`/`entityMapLifetime` | Low | Distributed entities and EntityMap |
 
 ---
 
 ### 2.3 GET /temporal/entities/{entityId} (orionldGetTemporalEntity.cpp)
 
-**Status:** Weitgehend implementiert
+**Status:** Implemented
 
-**Was funktioniert:**
-- Entity-ID aus URL extrahiert und validiert (`pCheckUri`)
-- `timerel` (before/after/between), `timeAt`, `endTimeAt` werden validiert
-- `timeproperty` - `timeColumnForTimeproperty()` mappt auf SQL-Spalten (`observedat` fuer observedAt/default, `ts` fuer modifiedAt/createdAt)
-- `attrs`-Filterung via `attrsFilter()` baut `AND id IN (...)` SQL-Clause
-- `lastN` - Window-Function `ROW_NUMBER() OVER (PARTITION BY id, datasetid ORDER BY <timeCol>)` mit `WHERE rn <= lastN`
-- `count` - `NGSILD-Results-Count`-Header via `orionldHeaderAdd()` (Zeile 233-234)
-- PostgreSQL-Query via `pgTemporalEntityQuery()` mit 3 Resultsets (entity, attrs, subAttrs)
-- Entity-Aufbau via `pgTemporalEntityBuild()` mit:
-  - Alle Werttypen: String, Number, Boolean, DateTime, Compound, Relationship, LanguageMap, Geo*
-  - `instanceId` pro Attribut-Instanz
-  - `observedAt` mit PG-Timestamp -> ISO 8601 Konvertierung
-  - `unitCode` und `datasetId`
-  - Sub-Attribute mit Matching ueber `attrInstanceId`
-- Ausgabeformate: simplified, concise, normalized
-- `temporalValues`-Transformation: Array-of-instances -> `{ "type": "...", "values": [[val, ts], ...] }`
-- `sysAttrs`-Option und `lang`-Parameter
-- 404 wenn Entity nicht gefunden, 501 wenn TRoE nicht aktiviert
-- Sortierung nach dynamischem `timeCol` statt hardcoded `ts`
-- URI-Parameter in ServiceInit registriert: `OPTIONS`, `FORMAT`, `ATTRS`, `COUNT`, `LASTN`, `TIMEREL`, `TIMEAT`, `ENDTIMEAT`, `TIMEPROPERTY`, `PICK`, `OMIT`, `DATASETID`, `LOCAL`, `LANG`
-- `pick`-Parameter: Post-Processing via `pickForEntity()` - filtert Attribute nach Namen
-- `omit`-Parameter: Post-Processing via `omitForEntity()` - entfernt benannte Attribute
-- `pick`/`omit` Mutual Exclusivity: 400-Fehler bei gleichzeitiger Verwendung
-- `datasetId`-Filterung: `datasetTemporalEntityFix()` entfernt nicht-passende Instanzen (Arrays bleiben erhalten)
-- `timerel`/`timeAt` optional: ohne diese Parameter werden alle Attribut-Instanzen zurueckgegeben
+**What works:**
+- Entity ID extracted from URL and validated (`pCheckUri`)
+- `timerel` (before/after/between), `timeAt`, `endTimeAt` validated
+- `timeproperty` - `timeColumnForTimeproperty()` maps to SQL columns (`observedat` for observedAt/default, `ts` for modifiedAt/createdAt)
+- `attrs` filtering via `attrsFilter()` builds `AND id IN (...)` SQL clause
+- `lastN` - window function `ROW_NUMBER() OVER (PARTITION BY id, datasetid ORDER BY <timeCol>)` with `WHERE rn <= lastN`
+- `count` - `NGSILD-Results-Count` header via `orionldHeaderAdd()`
+- PostgreSQL query via `pgTemporalEntityQuery()` with 3 result sets (entity, attrs, subAttrs)
+- Entity building via `pgTemporalEntityBuild()` with:
+  - All value types: String, Number, Boolean, DateTime, Compound, Relationship, LanguageMap, Geo*
+  - `instanceId` per attribute instance
+  - `observedAt` with PG timestamp -> ISO 8601 conversion
+  - `unitCode` and `datasetId`
+  - Sub-attributes with matching via `attrInstanceId`
+- Output formats: simplified, concise, normalized
+- `temporalValues` transformation: array-of-instances -> `{ "type": "...", "values": [[val, ts], ...] }`
+- `sysAttrs` option and `lang` parameter
+- 404 when entity not found, 501 when TRoE not enabled
+- Sorting by dynamic `timeCol` instead of hardcoded `ts`
+- `pick` parameter: post-processing via `pickForEntity()` - filters attributes by name
+- `omit` parameter: post-processing via `omitForEntity()` - removes named attributes
+- `pick`/`omit` mutual exclusivity: 400 error when both provided
+- `datasetId` filtering: `datasetTemporalEntityFix()` removes non-matching instances (arrays preserved)
+- `timerel`/`timeAt` optional: without these parameters, all attribute instances are returned
+- `aggrMethods`/`aggrPeriodDuration` - aggregation post-processing
 
-**Kuerzlich implementiert:**
+**What's still missing:**
 
-| Parameter | Status | Details |
-|-----------|--------|---------|
-| `pick` | **Erledigt** | Post-Processing via `pickForEntity()` nach Kompaktierung |
-| `omit` | **Erledigt** | Neues `omit`-Infrastruktur (Flag, Parsing, `omitForEntity()`) |
-| `datasetId` | **Erledigt** | `datasetTemporalEntityFix()` - temporale Variante ohne Array-Flattening |
-| Optional `timerel`/`timeAt` | **Erledigt** | Beide optional per Spec Clause 6.19.3.1 - ohne = alle Instanzen |
-| `pick`/`omit` Mutual Exclusivity | **Erledigt** | 400-Fehler wenn beide gleichzeitig angegeben |
-
-**Was noch fehlt:**
-
-| Parameter | Prioritaet | Aktueller Stand |
-|-----------|-----------|-----------------|
-| `aggrMethods` | Mittel | Nicht implementiert - keine Aggregationslogik |
-| `aggrPeriodDuration` | Mittel | Nicht implementiert |
-| `options` (aggregatedValues) | Mittel | Nicht implementiert (nur `temporalValues` und `sysAttrs`) |
-| `local` | Niedrig | URI-Param registriert, aber keine Logik dahinter |
+| Parameter | Priority | Details |
+|-----------|----------|---------|
+| `local` | Low | URI param registered but no logic behind it |
 
 ---
 
 ### 2.4 DELETE /temporal/entities/{entityId} (orionldDeleteTemporalEntity.cpp)
 
-**Status:** 501-Stub
+**Status:** 501 stub
 
-**Zu implementieren:**
-- Entity-ID aus URL extrahieren und validieren
-- Pruefen ob Entity in TRoE existiert (404 wenn nicht)
-- Alle temporalen Daten aus PostgreSQL (TRoE) loeschen: entities, attributes, sub-attributes Tabellen
-- Optional: Auch aus MongoDB loeschen (abhaengig von Architektur-Entscheidung)
-- 204 No Content bei Erfolg
+**To implement:**
+- Extract and validate entity ID from URL
+- Check if entity exists in TRoE (404 if not)
+- Delete all temporal data from PostgreSQL (TRoE): entities, attributes, sub-attributes tables
+- Optional: also delete from MongoDB (depends on architecture decision)
+- 204 No Content on success
 
-**Betroffene Dateien:**
-- `src/lib/orionld/serviceRoutines/orionldDeleteTemporalEntity.cpp` - Hauptlogik
-- `src/lib/orionld/troe/` - Neue Funktion `pgTemporalEntityDelete()` oder aehnlich
-- `src/lib/orionld/service/orionldServiceInit.cpp` - `notImplemented = true` entfernen (Zeile 548)
+**Affected files:**
+- `src/lib/orionld/serviceRoutines/orionldDeleteTemporalEntity.cpp` - main logic
+- `src/lib/orionld/troe/` - new function `pgTemporalEntityDelete()` or similar
+- `src/lib/orionld/service/orionldServiceInit.cpp` - remove `notImplemented = true`
 
 ---
 
 ### 2.5 POST /temporal/entities/{entityId}/attrs (orionldPostTemporalAttributes.cpp)
 
-**Status:** 501-Stub
+**Status:** 501 stub
 
-**Zu implementieren:**
-- Entity-ID aus URL extrahieren und validieren
-- Pruefen ob Entity existiert (404 wenn nicht)
-- Request Body als `EntityTemporalFragment` parsen und validieren
-- Attribute via `pCheckAttribute` validieren und expandieren
-- Neue Attribut-Instanzen in TRoE einfuegen
-- 204 No Content bei Erfolg
+**To implement:**
+- Extract and validate entity ID from URL
+- Check if entity exists (404 if not)
+- Parse and validate request body as `EntityTemporalFragment`
+- Validate and expand attributes via `pCheckAttribute`
+- Insert new attribute instances into TRoE
+- 204 No Content on success
 
-**Betroffene Dateien:**
-- `src/lib/orionld/serviceRoutines/orionldPostTemporalAttributes.cpp` - Hauptlogik
-- `src/lib/orionld/troe/` - Neue/erweiterte TRoE-Funktionen
-- `src/lib/orionld/service/orionldServiceInit.cpp` - `notImplemented = true` entfernen (Zeile 552)
+**Affected files:**
+- `src/lib/orionld/serviceRoutines/orionldPostTemporalAttributes.cpp` - main logic
+- `src/lib/orionld/troe/` - new/extended TRoE functions
+- `src/lib/orionld/service/orionldServiceInit.cpp` - remove `notImplemented = true`
 
 ---
 
 ### 2.6 DELETE /temporal/entities/{entityId}/attrs/{attrId} (orionldDeleteTemporalAttribute.cpp)
 
-**Status:** 501-Stub
+**Status:** 501 stub
 
-**Zu implementieren:**
-- `entityId` und `attrId` aus URL extrahieren und validieren
-- URL-Parameter `datasetId` und `deleteAll` parsen
-- Pruefen ob Entity und Attribut existieren (404 wenn nicht)
-- Loeschlogik:
-  - `deleteAll=true`: Alle Instanzen des Attributs loeschen
-  - `datasetId` angegeben: Nur das spezifische Dataset loeschen
-  - Weder noch: Default-Attribut-Instanz loeschen
-- Attribut-Daten aus TRoE PostgreSQL loeschen (attributes + sub-attributes)
-- 204 No Content bei Erfolg
+**To implement:**
+- Extract and validate `entityId` and `attrId` from URL
+- Parse URI parameters `datasetId` and `deleteAll`
+- Check if entity and attribute exist (404 if not)
+- Deletion logic:
+  - `deleteAll=true`: delete all instances of the attribute
+  - `datasetId` provided: delete only the specific dataset
+  - Neither: delete the default attribute instance
+- Delete attribute data from TRoE PostgreSQL (attributes + sub-attributes)
+- 204 No Content on success
 
-**Betroffene Dateien:**
-- `src/lib/orionld/serviceRoutines/orionldDeleteTemporalAttribute.cpp` - Hauptlogik
-- `src/lib/orionld/troe/` - Neue Funktion fuer Attribut-Loeschung
-- `src/lib/orionld/service/orionldServiceInit.cpp` - `notImplemented = true` entfernen (Zeile 544)
-- `src/lib/orionld/types/OrionLdRestService.h` - ggf. neue URI-Parameter-Flags fuer `deleteAll`, `datasetId`
+**Affected files:**
+- `src/lib/orionld/serviceRoutines/orionldDeleteTemporalAttribute.cpp` - main logic
+- `src/lib/orionld/troe/` - new function for attribute deletion
+- `src/lib/orionld/service/orionldServiceInit.cpp` - remove `notImplemented = true`
+- `src/lib/orionld/types/OrionLdRestService.h` - possibly new URI parameter flags for `deleteAll`, `datasetId`
 
 ---
 
 ### 2.7 PATCH /temporal/entities/{entityId}/attrs/{attrId}/{instanceId} (orionldPatchTemporalAttributeInstance.cpp)
 
-**Status:** 501-Stub
+**Status:** 501 stub
 
-**Zu implementieren:**
-- `entityId`, `attrId`, `instanceId` aus URL extrahieren und validieren
-- Request Body als `EntityTemporalFragment` parsen
-- Pruefen ob Entity, Attribut und Instanz existieren (404 wenn nicht)
-- Partielle Aktualisierung der Attribut-Instanz in TRoE
-- 204 No Content bei Erfolg
+**To implement:**
+- Extract and validate `entityId`, `attrId`, `instanceId` from URL
+- Parse request body as `EntityTemporalFragment`
+- Check if entity, attribute, and instance exist (404 if not)
+- Partial update of the attribute instance in TRoE
+- 204 No Content on success
 
-**Betroffene Dateien:**
-- `src/lib/orionld/serviceRoutines/orionldPatchTemporalAttributeInstance.cpp` - Hauptlogik
-- `src/lib/orionld/troe/` - Neue Funktion fuer Instanz-Update
-- `src/lib/orionld/service/orionldServiceInit.cpp` - `notImplemented = true` entfernen (Zeile 550)
+**Affected files:**
+- `src/lib/orionld/serviceRoutines/orionldPatchTemporalAttributeInstance.cpp` - main logic
+- `src/lib/orionld/troe/` - new function for instance update
+- `src/lib/orionld/service/orionldServiceInit.cpp` - remove `notImplemented = true`
 
 ---
 
 ### 2.8 DELETE /temporal/entities/{entityId}/attrs/{attrId}/{instanceId} (orionldDeleteTemporalAttributeInstance.cpp)
 
-**Status:** 501-Stub
+**Status:** 501 stub
 
-**Zu implementieren:**
-- `entityId`, `attrId`, `instanceId` aus URL extrahieren und validieren
-- Pruefen ob Entity, Attribut und Instanz existieren (404 wenn nicht)
-- Einzelne Attribut-Instanz aus TRoE loeschen
-- 204 No Content bei Erfolg
+**To implement:**
+- Extract and validate `entityId`, `attrId`, `instanceId` from URL
+- Check if entity, attribute, and instance exist (404 if not)
+- Delete single attribute instance from TRoE
+- 204 No Content on success
 
-**Betroffene Dateien:**
-- `src/lib/orionld/serviceRoutines/orionldDeleteTemporalAttributeInstance.cpp` - Hauptlogik
-- `src/lib/orionld/troe/` - Neue Funktion fuer Instanz-Loeschung
-- `src/lib/orionld/service/orionldServiceInit.cpp` - `notImplemented = true` entfernen (Zeile 546)
+**Affected files:**
+- `src/lib/orionld/serviceRoutines/orionldDeleteTemporalAttributeInstance.cpp` - main logic
+- `src/lib/orionld/troe/` - new function for instance deletion
+- `src/lib/orionld/service/orionldServiceInit.cpp` - remove `notImplemented = true`
 
 ---
 
 ### 2.9 POST /temporal/entityOperations/query (orionldPostTemporalQuery.cpp)
 
-**Status:** Implementiert (Kernfunktionalitaet)
+**Status:** Implemented
 
-**Implementiert:**
-- Request Body als `Query` mit `temporalQ` Objekt parsen
-- Entity-Selektoren (type, id, idPattern) aus `entities` Array extrahieren
-- Attribute aus `attrs` Array extrahieren und expandieren
-- `temporalQ` mit timerel, timeAt, endTimeAt, timeproperty parsen und validieren
-- Zweiphasige Abfrage: Entity-Discovery via `pgTemporalEntitiesQuery`, dann pro Entity `pgTemporalEntityQuery` + `pgTemporalEntityBuild`
-- Post-Processing: Compact, datasetId-Filter, Format-Transform, temporalValues, sysAttrs, pick/omit
-- Pagination via URL-Parameter (limit, offset, count)
-- 200 OK mit EntityTemporal[] Array
+**What works:**
+- Request body parsed as `Query` with `temporalQ` object
+- Entity selectors (type, id, idPattern) extracted from `entities` array
+- Attributes extracted from `attrs` array and expanded
+- `temporalQ` with timerel, timeAt, endTimeAt, timeproperty parsed and validated
+- Two-phase query: entity discovery via `pgTemporalEntitiesQuery`, then per-entity `pgTemporalEntityQuery` + `pgTemporalEntityBuild`
+- Post-processing: compact, datasetId filter, format transform, temporalValues, sysAttrs, pick/omit
+- Pagination via URL parameters (limit, offset, count)
+- `q` parameter (NGSI-LD query language)
+- `geoQ` (geo-queries via PostGIS)
+- `aggrMethods`/`aggrPeriodDuration` aggregation
+- 200 OK with EntityTemporal[] array
 
-**Noch fehlend:**
-- q-Parameter (NGSI-LD Query Language)
-- geoQ (Geo-Queries via PostGIS)
-- scopeQ
-- Aggregation (aggrMethods, aggrPeriodDuration)
+**What's still missing:**
 
-**Betroffene Dateien:**
-- `src/lib/orionld/serviceRoutines/orionldPostTemporalQuery.cpp` - Hauptlogik (komplett neu implementiert)
-- `src/lib/orionld/service/orionldServiceInit.cpp` - `mintaka = true` durch URI-Param-Registrierung ersetzt
+| Parameter | Priority | Details |
+|-----------|----------|---------|
+| `scopeQ` | Low | Scope query |
 
 ---
 
-## 3. Implementierungsplan
+## 3. Implementation Plan
 
-### Phase 1: Bestehende Endpunkte vervollstaendigen (Prioritaet: Hoch)
+### Phase 1: Complete Existing Endpoints (Priority: High)
 
-Vervollstaendigung der bereits funktionierenden Endpunkte.
+Complete the already-functional endpoints with remaining parameter gaps.
 
-#### 1.1 GET /temporal/entities/{entityId} - Fehlende Parameter
+#### 1.1 POST /temporal/entities - Fix FIXME
 
-| Schritt | Beschreibung | Aufwand |
-|---------|--------------|---------|
-| 1.1.1 | `pick`/`omit`-Projektion nach Entity-Build anwenden | Mittel |
-| 1.1.2 | `datasetId`-Filterung in SQL einbauen (`AND datasetid IN (...)`) | Mittel |
-| 1.1.3 | `timerel`/`timeAt` optional machen (ohne = alle Instanzen zurueckgeben) | Niedrig |
-| 1.1.4 | `aggrMethods`/`aggrPeriodDuration` - Aggregationslogik in SQL oder Post-Processing | Hoch |
-| 1.1.5 | `local`-Parameter registrieren und verarbeiten | Niedrig |
+| Step | Description | Effort |
+|------|-------------|--------|
+| 1.1.1 | Recognize and validate `location`, `observationSpace`, `operationSpace` attributes | Medium |
 
-**Kritische Dateien:**
-- `src/lib/orionld/serviceRoutines/orionldGetTemporalEntity.cpp`
-- `src/lib/orionld/troe/pgTemporalEntityQuery.cpp`
-- `src/lib/orionld/troe/pgTemporalEntityBuild.cpp`
-- `src/lib/orionld/service/orionldServiceInit.cpp` (URI-Parameter registrieren)
-
-#### 1.2 POST /temporal/entities - FIXME beheben
-
-| Schritt | Beschreibung | Aufwand |
-|---------|--------------|---------|
-| 1.2.1 | `location`, `observationSpace`, `operationSpace` Attribute erkennen und validieren | Mittel |
-
-**Kritische Dateien:**
+**Critical files:**
 - `src/lib/orionld/serviceRoutines/orionldPostTemporalEntities.cpp`
 
 ---
 
-### Phase 2: Einfache CRUD-Endpunkte (Prioritaet: Hoch)
+### Phase 2: Simple CRUD Endpoints (Priority: High)
 
-Endpunkte die keine komplexen Queries erfordern sondern einfache DB-Operationen.
+Endpoints that require simple DB operations rather than complex queries.
 
 #### 2.1 DELETE /temporal/entities/{entityId}
 
-| Schritt | Beschreibung | Aufwand |
-|---------|--------------|---------|
-| 2.1.1 | TRoE-Loeschfunktion `pgTemporalEntityDelete()` implementieren | Mittel |
-| 2.1.2 | Service-Routine implementieren | Niedrig |
-| 2.1.3 | `notImplemented`-Flag entfernen in ServiceInit | Trivial |
+| Step | Description | Effort |
+|------|-------------|--------|
+| 2.1.1 | Implement TRoE delete function `pgTemporalEntityDelete()` | Medium |
+| 2.1.2 | Implement service routine | Low |
+| 2.1.3 | Remove `notImplemented` flag in ServiceInit | Trivial |
 
 #### 2.2 POST /temporal/entities/{entityId}/attrs
 
-| Schritt | Beschreibung | Aufwand |
-|---------|--------------|---------|
-| 2.2.1 | Attribut-Validierung und Expansion (analog zu POST entities) | Mittel |
-| 2.2.2 | TRoE-Insert fuer neue Attribut-Instanzen | Mittel |
-| 2.2.3 | Service-Routine implementieren | Mittel |
+| Step | Description | Effort |
+|------|-------------|--------|
+| 2.2.1 | Attribute validation and expansion (analogous to POST entities) | Medium |
+| 2.2.2 | TRoE insert for new attribute instances | Medium |
+| 2.2.3 | Implement service routine | Medium |
 
 #### 2.3 DELETE /temporal/entities/{entityId}/attrs/{attrId}
 
-| Schritt | Beschreibung | Aufwand |
-|---------|--------------|---------|
-| 2.3.1 | URL-Parameter `deleteAll` und `datasetId` registrieren | Niedrig |
-| 2.3.2 | TRoE-Loeschfunktion fuer Attribute implementieren | Mittel |
-| 2.3.3 | Service-Routine mit Loeschlogik (deleteAll/datasetId/default) | Mittel |
+| Step | Description | Effort |
+|------|-------------|--------|
+| 2.3.1 | Register URL parameters `deleteAll` and `datasetId` | Low |
+| 2.3.2 | Implement TRoE delete function for attributes | Medium |
+| 2.3.3 | Service routine with deletion logic (deleteAll/datasetId/default) | Medium |
 
 #### 2.4 PATCH /temporal/entities/{entityId}/attrs/{attrId}/{instanceId}
 
-| Schritt | Beschreibung | Aufwand |
-|---------|--------------|---------|
-| 2.4.1 | Instanz-Lookup in TRoE implementieren | Mittel |
-| 2.4.2 | Partielle Update-Logik fuer Attribut-Instanzen | Hoch |
-| 2.4.3 | Service-Routine implementieren | Mittel |
+| Step | Description | Effort |
+|------|-------------|--------|
+| 2.4.1 | Implement instance lookup in TRoE | Medium |
+| 2.4.2 | Partial update logic for attribute instances | High |
+| 2.4.3 | Implement service routine | Medium |
 
 #### 2.5 DELETE /temporal/entities/{entityId}/attrs/{attrId}/{instanceId}
 
-| Schritt | Beschreibung | Aufwand |
-|---------|--------------|---------|
-| 2.5.1 | TRoE-Loeschfunktion fuer einzelne Instanzen | Mittel |
-| 2.5.2 | Service-Routine implementieren | Niedrig |
+| Step | Description | Effort |
+|------|-------------|--------|
+| 2.5.1 | TRoE delete function for individual instances | Medium |
+| 2.5.2 | Implement service routine | Low |
 
 ---
 
-### Phase 3: Komplexe Query-Endpunkte (Prioritaet: Mittel)
+### Phase 3: Advanced Features (Priority: Low)
 
-Diese erfordern umfangreiche SQL-Query-Generierung, Paginierung, Sortierung und Filterung.
-Kernlogik aus `pgTemporalEntityQuery.cpp` (timeproperty, attrs, lastN, timerel) kann wiederverwendet werden.
-
-#### 3.1 GET /temporal/entities
-
-| Schritt | Beschreibung | Aufwand |
-|---------|--------------|---------|
-| 3.1.1 | Multi-Entity temporale Query in PostgreSQL (erweitere pgTemporalEntityQuery fuer Mehrfach-Entities) | Hoch |
-| 3.1.2 | Entity-Typ/ID-Filterung (type, id, idPattern) | Mittel |
-| 3.1.3 | NGSI-LD Query-Sprache (q-Parameter) gegen TRoE | Hoch |
-| 3.1.4 | Geo-Query-Integration | Hoch |
-| 3.1.5 | Paginierung (limit/offset) und Count | Mittel |
-| 3.1.6 | Sortierung (orderBy) | Mittel |
-| 3.1.7 | Scope-Query | Mittel |
-| 3.1.8 | Wiederverwendung bestehender Parameter (timeproperty, attrs, lastN, lang, format, temporalValues) | Niedrig |
-| 3.1.9 | `mintaka`-Flag entfernen in ServiceInit | Trivial |
-
-#### 3.2 POST /temporal/entityOperations/query
-
-| Schritt | Beschreibung | Aufwand |
-|---------|--------------|---------|
-| 3.2.1 | Request-Body-Parsing (Query + TemporalQuery Datentyp) | Mittel |
-| 3.2.2 | Wiederverwendung der GET-Query-Logik | Niedrig |
-| 3.2.3 | `mintaka`-Flag entfernen in ServiceInit | Trivial |
-
----
-
-### Phase 4: Erweiterte Features (Prioritaet: Niedrig)
-
-| Feature | Beschreibung | Betroffene Endpunkte |
-|---------|--------------|---------------------|
-| Aggregation | `aggrMethods`/`aggrPeriodDuration` (avg, min, max, sum, sumsq, stddev, distinctCount) | GET single, GET collection, POST query |
+| Feature | Description | Affected Endpoints |
+|---------|-------------|-------------------|
+| orderBy | Sort by entity member | GET collection |
 | EntityMap | `entityMap`/`entityMapLifetime` | GET collection |
-| Distributed Temporal | Forwarding zu Context Sources | Alle |
-| expandValues/jsonKeys | Spezial-Expansion | GET collection, POST query |
+| Distributed Temporal | Forwarding to context sources | All |
+| expandValues/jsonKeys | Special expansion | GET collection, POST query |
 
 ---
 
-### Zusammenfassung der Infrastruktur-Aenderungen
+### Infrastructure Changes Summary
 
-Folgende Dateien muessen fuer fast alle Implementierungen angepasst werden:
+The following files need modifications for most implementations:
 
-| Datei | Aenderungen |
-|-------|------------|
-| `src/lib/orionld/service/orionldServiceInit.cpp` | `notImplemented`/`mintaka`-Flags entfernen, URI-Parameter registrieren |
-| `src/lib/orionld/types/OrionLdRestService.h` | Neue URI-Parameter-Flags (deleteAll, datasetId, etc.) |
-| `src/lib/orionld/common/orionldState.h` | Neue URI-Parameter-Felder im State |
-| `src/lib/orionld/troe/` | Neue PostgreSQL-Funktionen fuer CRUD und erweiterte Queries |
-| `src/app/orionld/orionldRestServices.cpp` | Routen bleiben bestehen (bereits definiert) |
+| File | Changes |
+|------|---------|
+| `src/lib/orionld/service/orionldServiceInit.cpp` | Remove `notImplemented` flags, register URI parameters |
+| `src/lib/orionld/types/OrionLdRestService.h` | New URI parameter flags (deleteAll, datasetId, etc.) |
+| `src/lib/orionld/common/orionldState.h` | New URI parameter fields in state |
+| `src/lib/orionld/troe/` | New PostgreSQL functions for CRUD and extended queries |
+| `src/app/orionld/orionldRestServices.cpp` | Routes remain as-is (already defined) |
 
-### Bereits vorhandene wiederverwendbare Bausteine
+### Existing Reusable Building Blocks
 
-| Baustein | Datei | Wiederverwendbar fuer |
-|----------|-------|----------------------|
-| `timeColumnForTimeproperty()` | `pgTemporalEntityQuery.cpp:54` | GET collection, POST query |
-| `attrsFilter()` | `pgTemporalEntityQuery.cpp:77` | GET collection, POST query |
-| `lastN` Window-Function | `pgTemporalEntityQuery.cpp:174-178` | GET collection, POST query |
-| `pgTemporalEntityBuild()` | `pgTemporalEntityBuild.cpp:239` | GET collection (pro Entity) |
-| `temporalValuesTransform()` | `orionldGetTemporalEntity.cpp:64` | GET collection, POST query |
-| `pgTimestampToIso8601()` | `pgTemporalEntityBuild.cpp:47` | Alle temporalen Responses |
-| `pgValueNodeBuild()` | `pgTemporalEntityBuild.cpp:108` | Alle temporalen Responses |
-| `troePostEntities()` | `troe/troePostEntities.cpp` | POST attrs (analog) |
+| Building Block | File | Reusable for |
+|----------------|------|--------------|
+| `timeColumnForTimeproperty()` | `pgTemporalEntityQuery.cpp` | All temporal queries |
+| `attrsFilter()` | `pgTemporalEntityQuery.cpp` | All temporal queries |
+| `lastN` window function | `pgTemporalEntityQuery.cpp` | All temporal queries |
+| `pgTemporalEntityBuild()` | `pgTemporalEntityBuild.cpp` | All temporal responses |
+| `temporalValuesTransform()` | `temporalValuesTransform.cpp` | All temporal responses |
+| `aggregatedValuesTransform()` | `aggregatedValuesTransform.cpp` | All temporal responses |
+| `pgTimestampToIso8601()` | `pgTemporalEntityBuild.cpp` | All temporal responses |
+| `pgValueNodeBuild()` | `pgTemporalEntityBuild.cpp` | All temporal responses |
+| `troeQStringToSql()` | `qTreeToSql.cpp` | GET collection, POST query |
+| `geoFilterToSql()` | `geoFilterToSql.cpp` | GET collection, POST query |
+| `troePostEntities()` | `troePostEntities.cpp` | POST attrs (analogous) |
