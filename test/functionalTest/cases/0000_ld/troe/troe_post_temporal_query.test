@@ -115,6 +115,20 @@ echo
 sleep 1
 
 
+echo "04b. Debug: check what's in the TRoE entities table"
+echo "===================================================="
+postgresCmd -sql "SELECT id, type, opmode FROM entities ORDER BY id"
+echo
+echo
+
+
+echo "04c. Debug: GET temporal entities with type=T to compare with POST"
+echo "=================================================================="
+orionCurl --url '/ngsi-ld/v1/temporal/entities?type=T&timerel=before&timeAt=2025-01-01T00:00:00Z'
+echo
+echo
+
+
 echo "05. POST temporal query with entities type=T - should return E1 and E2"
 echo "======================================================================="
 payload='{
@@ -272,6 +286,18 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E3
 ========================
 HTTP/1.1 204 No Content
 Date: REGEX(.*)
+
+
+
+04b. Debug: check what's in the TRoE entities table
+====================================================
+REGEX(.*)
+
+
+
+04c. Debug: GET temporal entities with type=T to compare with POST
+==================================================================
+REGEX(.*)
 
 
 
