@@ -120,7 +120,7 @@ const char* geoFilterToSql(OrionldGeoInfo* geoInfoP)
                                                        geoInfoP->geoProperty, true, NULL);
 
   // Build the spatial predicate based on georel
-  char spatialPredicate[4096];
+  char spatialPredicate[8192];
 
   switch (geoInfoP->georel)
   {
