@@ -126,15 +126,15 @@ echo
 --REGEXPECT--
 02. Get 501 for GET /ngsi-ld/v1/temporal/entities
 =================================================
-HTTP/1.1 501 Not Implemented
-Content-Length: 186
+HTTP/1.1 400 Bad Request
+Content-Length: 113
 Content-Type: application/json
 Date: REGEX(.*)
 
 {
-    "detail": "/ngsi-ld/v1/temporal/entities",
-    "title": "Not Implemented in Orion-LD, please use Mintaka for this operation",
-    "type": "https://uri.etsi.org/ngsi-ld/errors/OperationNotSupported"
+    "detail": "badParam",
+    "title": "Unknown URI parameter",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/BadRequestData"
 }
 
 
@@ -155,13 +155,13 @@ Date: REGEX(.*)
 04. Get 501 for POST /ngsi-ld/v1/temporal/entityOperations/query
 ================================================================
 HTTP/1.1 501 Not Implemented
-Content-Length: 200
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 
 {
     "detail": "/ngsi-ld/v1/temporal/entityOperations/query",
-    "title": "Not Implemented in Orion-LD, please use Mintaka for this operation",
+    "title": "TRoE is not enabled - temporal operations require -troe flag",
     "type": "https://uri.etsi.org/ngsi-ld/errors/OperationNotSupported"
 }
 
