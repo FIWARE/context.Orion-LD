@@ -403,7 +403,7 @@ Date: REGEX(.*)
 20. OPTIONS request for /temporal/entities
 ==========================================
 HTTP/1.1 200 OK
-Allow: POST,OPTIONS
+Allow: GET,POST,OPTIONS
 Content-Length: 0
 Date: REGEX(.*)
 
@@ -439,7 +439,7 @@ Date: REGEX(.*)
 24. OPTIONS request for /temporal/entityOperations/query
 ========================================================
 HTTP/1.1 200 OK
-Allow: OPTIONS
+Allow: POST,OPTIONS
 Content-Length: 0
 Date: REGEX(.*)
 
