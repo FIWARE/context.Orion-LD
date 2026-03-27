@@ -98,7 +98,7 @@ bool            troe                    = false;
 bool            multitenancy            = false;
 bool            lmtmp                   = false;
 char            troeHost[256];
-unsigned short  troePort;
+int             troePort;
 char            troeUser[256];
 char            troePwd[256];
 bool            distributed             = true;
