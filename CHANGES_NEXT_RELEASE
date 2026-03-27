@@ -20,6 +20,7 @@
   #XXXX - Fixed pernot GET rendering to use actual isActive/status instead of hardcoded true/active
 
 ## New Features
+  #XXXX - Native NGSI-LD temporal query support: GET/POST for temporal entities with q-filter, geo-queries, aggregation, pick/omit, datasetId, and temporalValues — replacing previous Mintaka-based stubs
   #XXXX - Implemented PATCH for periodic notification (pernot) subscriptions
   #1905 - New CLI option -troeSslMode (env: ORIONLD_TROE_SSL_MODE) for TRoE Postgres SSL connections
   #XXXX - New CLI option -coreContextDir (env: ORIONLD_CORE_CONTEXT_DIR, default: /opt/orion/ldcontexts)
