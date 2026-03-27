@@ -23,6 +23,13 @@
 * Author: Ken Zangelin
 */
 #include <stdio.h>                                             // snprintf
+#include <string.h>                                            // strlen
+
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+#include "kalloc/kaAlloc.h"                                    // kaAlloc
+}
 
 #include "orionld/types/PgAppendBuffer.h"                      // PgAppendBuffer
 #include "orionld/common/orionldState.h"                       // orionldState
@@ -43,10 +50,24 @@
 //
 void pgEntityAppend(PgAppendBuffer* entitiesBufferP, const char* opMode, const char* entityId, const char* entityType, const char* instanceId)
 {
-  char         buf[1024];
   const char*  comma = (entitiesBufferP->values != 0)? "," : "";
 
-  snprintf(buf, sizeof(buf), "%s('%s', '%s', '%s', '%s', '%s')", comma, instanceId, orionldState.requestTimeString, opMode, entityId, entityType);
+  // Calculate needed size: all string parameters + SQL syntax overhead
+  int neededSize = strlen(instanceId) + strlen(orionldState.requestTimeString)
+                 + strlen(opMode) + strlen(entityId) + strlen(entityType) + 64;
+
+  // Use stack buffer for common case, kaAlloc for long entity IDs/types
+  char  localBuf[1024];
+  char* buf     = localBuf;
+  int   bufSize = sizeof(localBuf);
+
+  if (neededSize > bufSize)
+  {
+    buf     = kaAlloc(&orionldState.kalloc, neededSize);
+    bufSize = neededSize;
+  }
+
+  snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', '%s')", comma, instanceId, orionldState.requestTimeString, opMode, entityId, entityType);
 
   pgAppend(entitiesBufferP, buf, 0);
   entitiesBufferP->values += 1;

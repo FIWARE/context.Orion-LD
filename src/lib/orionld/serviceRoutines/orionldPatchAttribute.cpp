@@ -497,8 +497,16 @@ bool orionldPatchAttribute(void)
 
   responseFix(responseBody, DoUpdateAttrs, 204, entityId);
 
+  //
+  // Save a dedicated copy of the incoming attribute for TRoE
+  // (incomingP is used for alterations and may have been attached to inEntityP via kjChildAdd)
+  //
   if ((troe == true) && (incomingP != NULL))
-    orionldState.requestTree = incomingP;
+  {
+    KjNode* troeTree = kjClone(orionldState.kjsonP, incomingP);
+    troeTree->name   = orionldState.in.pathAttrExpanded;
+    orionldState.requestTree = troeTree;
+  }
 
   return true;
 }

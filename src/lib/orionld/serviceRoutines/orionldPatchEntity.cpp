@@ -279,6 +279,12 @@ bool orionldPatchEntity(void)
   orionldState.entityTypeForTroe = entityType;
 
   KjNode* dbAttrsP = (dbEntityP != NULL)? kjLookup(dbEntityP, "attrs") : NULL;
+
+  // Save a snapshot of the DB attributes before they get modified by dbModelFromApiAttribute.
+  // troePatchEntity uses this to determine per-attribute opMode (Replace vs Append).
+  if (dbAttrsP != NULL)
+    orionldState.patchBase = kjClone(orionldState.kjsonP, dbAttrsP);
+
   if (pCheckEntity(orionldState.requestTree, false, dbAttrsP) == false)
   {
     KT_W("Invalid payload body. %s: %s", orionldState.pd.title, orionldState.pd.detail);

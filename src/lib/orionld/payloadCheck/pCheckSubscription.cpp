@@ -250,9 +250,7 @@ bool pCheckSubscription
         return false;
 
       *geoCoordinatesPP = geoInfoP->coordinates;
-      if (geoInfoP->geoProperty != NULL)
-        free(geoInfoP->geoProperty);
-      geoInfoP->geoProperty = NULL;
+      // geoInfoP and geoProperty are from kaAlloc - auto-freed with request's kalloc pool
       // geoInfoP itself is from kaAlloc - freed when the request's kalloc pool is released
     }
     else if (strcmp(subItemP->name, "csf") == 0)

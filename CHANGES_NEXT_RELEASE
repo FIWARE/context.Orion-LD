@@ -20,6 +20,7 @@
   #XXXX - Fixed pernot GET rendering to use actual isActive/status instead of hardcoded true/active
 
 ## New Features
+  #XXXX - Native NGSI-LD temporal query support: GET/POST for temporal entities with q-filter, geo-queries, aggregation, pick/omit, datasetId, and temporalValues — replacing previous Mintaka-based stubs
   #XXXX - Implemented PATCH for periodic notification (pernot) subscriptions
   #1905 - New CLI option -troeSslMode (env: ORIONLD_TROE_SSL_MODE) for TRoE Postgres SSL connections
   #XXXX - New CLI option -coreContextDir (env: ORIONLD_CORE_CONTEXT_DIR, default: /opt/orion/ldcontexts)
@@ -76,6 +77,18 @@
   - Fixed all README.md for the k-libs
   - Documented geo-fencing for subscriptions (georel types, geometry combinations, custom geoproperty, lifecycle)
   - Added GEOS to external-libraries.md and installation guide dependency list
+
+## Temporal API (TRoE) - replacing Mintaka
+  - Native temporal query implementation, no longer delegating to Mintaka (cfreyfh)
+  - GET /temporal/entities/{entityId} - single entity temporal query
+  - GET /temporal/entities - multi-entity temporal query
+  - POST /temporal/entityOperations/query - batch temporal query
+  - Support for q-filter, geo-queries, aggregation (aggrMethods/aggrPeriodDuration),
+    pick/omit, datasetId, temporalValues, and timeproperty (createdAt/modifiedAt)
+
+## Kafka
+  - Support for Kafka as a fast entity injection channel, treating incoming messages as Batch Upsert
+
 
 ## NGSIv1
   - Removed all NGSIv1 routes (/ngsi9, /ngsi10, /v1) from the REST service tables

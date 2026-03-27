@@ -29,6 +29,8 @@ COPY --from=build-stage /usr/local/lib/* /usr/lib64/
 COPY --from=build-stage /usr/local/lib64/* /usr/lib64/
 COPY --from=build-stage /usr/lib/librdkafka* /usr/lib64/
 COPY --from=build-stage /opt/orion/ldcontexts/ /opt/orion/ldcontexts/
+COPY --from=build-stage /usr/lib/librdkafka* /usr/lib64/
+
 
 COPY docker/other-places.repo /etc/yum.repos.d/
 COPY docker/ubi.repo /etc/yum.repos.d/

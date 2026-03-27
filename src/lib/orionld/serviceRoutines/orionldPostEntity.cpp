@@ -178,6 +178,11 @@ bool orionldPostEntity(void)
   KjNode* initialDbEntityP = NULL;  // kjClone(orionldState.kjsonP, dbEntityP);
   KjNode* dbAttrsP         = (dbEntityP != NULL)? kjLookup(dbEntityP, "attrs") : NULL;
 
+  // Save a snapshot of the DB attributes before they get modified.
+  // troePostEntity uses this to determine per-attribute opMode (Replace vs Append).
+  if (dbAttrsP != NULL)
+    orionldState.patchBase = kjClone(orionldState.kjsonP, dbAttrsP);
+
   //
   // Check the Entity, expand averything and transform it into Normalized form
   //

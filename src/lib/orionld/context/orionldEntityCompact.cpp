@@ -59,5 +59,18 @@ void orionldEntityCompact(KjNode* entityP, OrionldContext* contextP)
         saP->name = orionldContextItemAliasLookup(contextP, saP->name, NULL, NULL);
       }
     }
+    else if (attrP->type == KjArray)
+    {
+      attrP->name = orionldContextItemAliasLookup(contextP, attrP->name, NULL, NULL);
+
+      for (KjNode* instanceP = attrP->value.firstChildP; instanceP != NULL; instanceP = instanceP->next)
+      {
+        if (instanceP->type == KjObject)
+        {
+          for (KjNode* saP = instanceP->value.firstChildP; saP != NULL; saP = saP->next)
+            saP->name = orionldContextItemAliasLookup(contextP, saP->name, NULL, NULL);
+        }
+      }
+    }
   }
 }

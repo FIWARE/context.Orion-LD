@@ -4,15 +4,205 @@ The feature is minimally tested and not production-ready, but more or less worki
 
 The sink used for TRoE is Postgres, with PostGIS and TimescaleDB extensions.
 
-While Orion-LD takes care of populating the TRoE databases, another component handles the queries of temporal data - [Mintaka](https://github.com/FIWARE/Mintaka).
+## Native Temporal Queries
 
-So, for queries of the temporal data, instead of sending the requests to Orion-LD, on (default) port 1026, the queries are sent to Mintaka, on (default) port 8080.
+Orion-LD now supports **native temporal entity queries** directly, without requiring Mintaka. Three endpoints are natively implemented:
 
-## Compatibility
+- **Entity Retrieval** — `GET /ngsi-ld/v1/temporal/entities/{entityId}` — retrieves the temporal representation of a single entity
+- **Entities Query** — `GET /ngsi-ld/v1/temporal/entities` — queries temporal representations of multiple entities
+- **POST Query** — `POST /ngsi-ld/v1/temporal/entityOperations/query` — POST-based query with request body
 
-Compatibility with the latest release version of mintaka will always be assured. See the test results at the [mintaka-compatibility github action.](https://github.com/FIWARE/context.Orion-LD/actions/workflows/mintaka-compatibility.yml) 
+All three endpoints return **Temporal Entities** (arrays of attribute instances over time), not point-in-time snapshots of regular entities.
+
+### Supported Parameters
+
+| Parameter | Values | Description |
+|-----------|--------|-------------|
+| `timerel` | `before`, `after`, `between` | Temporal relation (optional for Entity Retrieval) |
+| `timeAt` | ISO 8601 timestamp | Reference timestamp |
+| `endTimeAt` | ISO 8601 timestamp | Required only for `timerel=between` |
+| `timeproperty` | `observedAt`, `createdAt`, `modifiedAt` | Which timestamp to filter on (default: `observedAt`) |
+| `attrs` | comma-separated | Filter specific attributes |
+| `pick` / `omit` | comma-separated | Include/exclude attributes in response |
+| `datasetId` | comma-separated | Filter by dataset ID |
+| `q` | NGSI-LD query | Filter by attribute values (comparisons, ranges, patterns) |
+| `georel`, `geometry`, `coordinates` | geo-query params | Geo-spatial filtering (near, within, contains, etc.) |
+| `aggrMethods` | `avg`, `min`, `max`, `sum`, `sumsq`, `stddev`, `distinctCount` | Aggregation methods |
+| `aggrPeriodDuration` | ISO 8601 duration | Time-bucketed aggregation (e.g. `PT1H`) |
+| `options` | `temporalValues`, `simplified`, `concise` | Output format (default: normalized) |
+| `lastN` | integer | Return only the N most recent attribute instances |
+
+### Examples
+
+**Entity Retrieval** — temporal history of one entity within a time window:
+```bash
+curl 'localhost:1026/ngsi-ld/v1/temporal/entities/urn:ngsi-ld:Sensor:001?timerel=between&timeAt=2024-06-01T00:00:00Z&endTimeAt=2024-06-30T23:59:59Z'
+```
+
+**Entity Retrieval** — full temporal history (no time filter):
+```bash
+curl 'localhost:1026/ngsi-ld/v1/temporal/entities/urn:ngsi-ld:Sensor:001'
+```
+
+**Entities Query** — all TemperatureSensor entities with q-filter:
+```bash
+curl 'localhost:1026/ngsi-ld/v1/temporal/entities?type=TemperatureSensor&q=temperature>20&timerel=after&timeAt=2024-06-01T00:00:00Z'
+```
+
+**Entities Query** — with aggregation (hourly averages):
+```bash
+curl 'localhost:1026/ngsi-ld/v1/temporal/entities?type=TemperatureSensor&aggrMethods=avg&aggrPeriodDuration=PT1H&timerel=between&timeAt=2024-06-01T00:00:00Z&endTimeAt=2024-06-02T00:00:00Z'
+```
+
+### Requirements
+
+- TRoE must be enabled (`-troe` flag)
+- PostgreSQL/TRoE database must be running and connected
+- The entity must have temporal history in the TRoE database
+
+### How It Works
+
+The native temporal query reconstructs temporal entity representations from the three TRoE tables:
+
+1. **Entity discovery** — the `entities` table is queried to find matching entities (by type, id, idPattern)
+2. **Attribute retrieval** — the `attributes` table returns all attribute instances within the requested time range
+3. **Sub-attributes** — retrieved from `subAttributes` for attributes that have sub-properties
+4. **Post-processing** — aggregation, pick/omit, datasetId filtering, and format transformation are applied
+
+All value types are supported: String, Number, Boolean, Relationship, DateTime, Compound, GeoProperty (all geo types), and LanguageMap.
+
+## Mintaka Compatibility
+
+[Mintaka](https://github.com/FIWARE/Mintaka) can still be used as an external temporal query handler on (default) port 8080. Note that Mintaka supports the NGSI-LD API up to version 1.3.1 and does not implement aggregation (which was introduced in API version 1.6.1). For aggregation support, use the native temporal query endpoints described above.
+
+Compatibility with the latest release version of Mintaka will always be assured. See the test results at the [mintaka-compatibility github action.](https://github.com/FIWARE/context.Orion-LD/actions/workflows/mintaka-compatibility.yml)
 
 More fine-grained information on compatibility can be found at the [compatibility-matrix](https://github.com/FIWARE/mintaka/blob/main/doc/compatibility/compatibility.md).
+
+## Kafka Consumer for High-Throughput Ingestion
+
+For use cases requiring high-throughput time series ingestion (1,000-10,000 msg/s), Orion-LD includes an optional Kafka consumer subsystem. This allows streaming entity updates via Apache Kafka, bypassing HTTP overhead while preserving full validation, MongoDB entity state updates, TRoE temporal writes, and notification dispatch.
+
+### Architecture
+
+```
+Kafka Topic ("orionld-entities")
+       |
+       v
+  Kafka Consumer Thread(s)  [librdkafka, N configurable threads]
+       |
+       |  rd_kafka_consumer_poll() + Micro-Batching
+       v
+  Batch Upsert Pipeline
+       |
+       +-- Validation (3 rounds)
+       +-- MongoDB entity state update
+       +-- TRoE temporal write (PostgreSQL)
+       +-- Notification dispatch
+       +-- Kafka offset commit (at-least-once semantics)
+```
+
+### Enabling Kafka
+
+Start the broker with the `-kafka` flag:
+
+```bash
+orionld -kafka -kafkaBrokerList localhost:9092 -kafkaTopic orionld-entities -troe
+```
+
+### Kafka CLI Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `-kafka` | false | Enable Kafka consumer subsystem |
+| `-kafkaBrokerList` | `localhost:9092` | Kafka broker address(es) |
+| `-kafkaTopic` | `orionld-entities` | Topic to consume from |
+| `-kafkaGroupId` | `orionld-consumer` | Consumer group ID |
+| `-kafkaBatchSize` | 100 | Max entities per micro-batch |
+| `-kafkaBatchLingerMs` | 50 | Max ms to wait before flushing a batch |
+| `-kafkaConsumerThreads` | 2 | Number of consumer threads |
+
+### Message Format
+
+Messages must be valid NGSI-LD normalized JSON — identical to `POST /entityOperations/upsert?options=update`:
+
+**Single entity:**
+```json
+{
+  "id": "urn:ngsi-ld:TemperatureSensor:001",
+  "type": "TemperatureSensor",
+  "temperature": {
+    "type": "Property",
+    "value": 23.5,
+    "observedAt": "2024-06-15T10:30:00Z"
+  }
+}
+```
+
+**Batch (array of entities):**
+```json
+[
+  { "id": "urn:ngsi-ld:Sensor:001", "type": "Sensor", "temperature": { "type": "Property", "value": 23.5 } },
+  { "id": "urn:ngsi-ld:Sensor:002", "type": "Sensor", "temperature": { "type": "Property", "value": 24.1 } }
+]
+```
+
+**Kafka Message Key:** Use the entity ID to guarantee ordering per entity within a partition.
+
+**Optional Kafka Headers:**
+- `NGSILD-Tenant` — for multi-tenancy support
+- `Link` — custom @context URL
+
+### Producing Messages to Kafka
+
+To send entity updates to Kafka for Orion-LD to consume, use any Kafka producer. Here are some examples:
+
+**Using `kafkacat` / `kcat` (command line):**
+```bash
+# Single entity
+echo '{"id":"urn:ngsi-ld:Sensor:001","type":"TemperatureSensor","temperature":{"type":"Property","value":23.5,"observedAt":"2024-06-15T10:30:00Z"}}' | \
+  kcat -b localhost:9092 -t orionld-entities -k urn:ngsi-ld:Sensor:001
+
+# With custom @context header
+echo '{"id":"urn:ngsi-ld:Sensor:002","type":"TemperatureSensor","temperature":{"type":"Property","value":24.1}}' | \
+  kcat -b localhost:9092 -t orionld-entities -k urn:ngsi-ld:Sensor:002 \
+  -H 'Link=<https://example.com/mycontext.jsonld>'
+```
+
+**Using Kafka's built-in console producer:**
+```bash
+kafka-console-producer.sh --broker-list localhost:9092 --topic orionld-entities \
+  --property "parse.key=true" --property "key.separator=|"
+# Then type:
+urn:ngsi-ld:Sensor:001|{"id":"urn:ngsi-ld:Sensor:001","type":"TemperatureSensor","temperature":{"type":"Property","value":23.5}}
+```
+
+**Using Python (`confluent-kafka`):**
+```python
+from confluent_kafka import Producer
+
+producer = Producer({'bootstrap.servers': 'localhost:9092'})
+producer.produce(
+    'orionld-entities',
+    key='urn:ngsi-ld:Sensor:001',
+    value='{"id":"urn:ngsi-ld:Sensor:001","type":"TemperatureSensor","temperature":{"type":"Property","value":23.5,"observedAt":"2024-06-15T10:30:00Z"}}'
+)
+producer.flush()
+```
+
+### Micro-Batching Strategy
+
+Each consumer thread accumulates messages into a local batch. Flush triggers (first one wins):
+
+1. Batch reaches `kafkaBatchSize` entities
+2. `kafkaBatchLingerMs` timer expires
+3. Empty poll result while batch is non-empty
+
+Backpressure is natural: if the batch upsert pipeline is slow (DB load), polling slows down automatically. Kafka offsets are committed only after successful processing (at-least-once semantics with idempotent upserts).
+
+### Dependencies
+
+The Kafka consumer requires [librdkafka](https://github.com/confluentinc/librdkafka) to be installed. See [External Libraries](external-libraries.md).
 
 ## Database setup
 To run Orion-LD with TroE enabled, a PostgreSQL with PostGIS and TimescaleDB is needed.
