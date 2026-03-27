@@ -46,6 +46,7 @@ extern "C"
 #include "orionld/common/omit.h"                                 // omitForEntity
 #include "orionld/common/datasetTemporalEntityFix.h"             // datasetTemporalEntityFix
 #include "orionld/common/temporalValuesTransform.h"              // temporalValuesTransform
+#include "orionld/common/aggregatedValuesTransform.h"            // aggregatedValuesTransform
 #include "orionld/troe/pgTemporalEntityQuery.h"                  // pgTemporalEntityQuery
 #include "orionld/troe/pgTemporalEntityBuild.h"                  // pgTemporalEntityBuild
 #include "orionld/serviceRoutines/orionldGetTemporalEntity.h"    // Own Interface
@@ -184,6 +185,12 @@ bool orionldGetTemporalEntity(void)
   // Apply temporalValues transformation if requested
   if (orionldState.uriParams.format != NULL && strcmp(orionldState.uriParams.format, "temporalValues") == 0)
     temporalValuesTransform(apiEntityP);
+
+  // Apply aggregation if requested
+  if (orionldState.uriParams.aggrMethods != NULL)
+    aggregatedValuesTransform(apiEntityP, orionldState.uriParams.aggrMethods,
+                              orionldState.uriParams.aggrPeriodDuration,
+                              timeAt, endTimeAt);
 
   if (sysAttrs == false)
     kjSysAttrsRemove(apiEntityP, 2);

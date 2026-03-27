@@ -550,6 +550,8 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
     serviceP->uriParams |= ORIONLD_URIPARAM_DATASETID;
     serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
     serviceP->uriParams |= ORIONLD_URIPARAM_LANG;
+    serviceP->uriParams |= ORIONLD_URIPARAM_AGGRMETHODS;
+    serviceP->uriParams |= ORIONLD_URIPARAM_AGGRPERIODDURATION;
   }
   else if (serviceP->serviceRoutine == orionldGetTemporalEntity)
   {
@@ -569,6 +571,8 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
     serviceP->uriParams |= ORIONLD_URIPARAM_DATASETID;
     serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
     serviceP->uriParams |= ORIONLD_URIPARAM_LANG;
+    serviceP->uriParams |= ORIONLD_URIPARAM_AGGRMETHODS;
+    serviceP->uriParams |= ORIONLD_URIPARAM_AGGRPERIODDURATION;
   }
   else if (serviceP->serviceRoutine == orionldPostTemporalQuery)
   {

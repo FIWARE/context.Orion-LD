@@ -181,6 +181,9 @@ typedef struct OrionldUriParams
 
   OrionldContextKind kind;
 
+  char*     aggrMethods;
+  char*     aggrPeriodDuration;
+
   double    observedAtAsDouble;
   uint64_t  mask;
 } OrionldUriParams;

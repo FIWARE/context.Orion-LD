@@ -51,6 +51,7 @@ extern "C"
 #include "orionld/common/omit.h"                                 // omitForEntity
 #include "orionld/common/datasetTemporalEntityFix.h"             // datasetTemporalEntityFix
 #include "orionld/common/temporalValuesTransform.h"              // temporalValuesTransform
+#include "orionld/common/aggregatedValuesTransform.h"            // aggregatedValuesTransform
 #include "orionld/troe/qTreeToSql.h"                             // troeQStringToSql
 #include "orionld/troe/geoFilterToSql.h"                         // geoFilterToSql
 #include "orionld/payloadCheck/pcheckGeoQ.h"                     // pcheckGeoQ
@@ -77,13 +78,17 @@ static bool pCheckTemporalQ
   const char** timerelP,
   const char** timeAtP,
   const char** endTimeAtP,
-  const char** timepropertyP
+  const char** timepropertyP,
+  const char** aggrMethodsP,
+  const char** aggrPeriodDurationP
 )
 {
-  const char* timerel      = NULL;
-  const char* timeAt       = NULL;
-  const char* endTimeAt    = NULL;
-  const char* timeproperty = NULL;
+  const char* timerel             = NULL;
+  const char* timeAt              = NULL;
+  const char* endTimeAt           = NULL;
+  const char* timeproperty        = NULL;
+  const char* aggrMethods         = NULL;
+  const char* aggrPeriodDuration  = NULL;
 
   for (KjNode* nodeP = temporalQP->value.firstChildP; nodeP != NULL; nodeP = nodeP->next)
   {
@@ -123,6 +128,30 @@ static bool pCheckTemporalQ
       }
       timeproperty = nodeP->value.s;
     }
+    else if (strcmp(nodeP->name, "aggrMethods") == 0)
+    {
+      if (nodeP->type != KjString)
+      {
+        orionldError(OrionldBadRequestData, "Invalid JSON type", "temporalQ::aggrMethods must be a String", 400);
+        return false;
+      }
+      aggrMethods = nodeP->value.s;
+    }
+    else if (strcmp(nodeP->name, "aggrPeriodDuration") == 0)
+    {
+      if (nodeP->type != KjString)
+      {
+        orionldError(OrionldBadRequestData, "Invalid JSON type", "temporalQ::aggrPeriodDuration must be a String", 400);
+        return false;
+      }
+      aggrPeriodDuration = nodeP->value.s;
+    }
+    else if (strcmp(nodeP->name, "lastN") == 0)
+    {
+      // lastN is also valid in temporalQ - store it in uriParams for downstream use
+      if (nodeP->type == KjInt)
+        orionldState.uriParams.lastN = nodeP->value.i;
+    }
     else
     {
       orionldError(OrionldBadRequestData, "Unknown field in temporalQ", nodeP->name, 400);
@@ -154,10 +183,12 @@ static bool pCheckTemporalQ
     return false;
   }
 
-  *timerelP      = timerel;
-  *timeAtP       = timeAt;
-  *endTimeAtP    = endTimeAt;
-  *timepropertyP = timeproperty;
+  *timerelP             = timerel;
+  *timeAtP              = timeAt;
+  *endTimeAtP           = endTimeAt;
+  *timepropertyP        = timeproperty;
+  *aggrMethodsP         = aggrMethods;
+  *aggrPeriodDurationP  = aggrPeriodDuration;
 
   return true;
 }
@@ -446,12 +477,15 @@ bool orionldPostTemporalQuery(void)
   }
 
   // Parse temporalQ
-  const char* timerel      = NULL;
-  const char* timeAt       = NULL;
-  const char* endTimeAt    = NULL;
-  const char* timeproperty = NULL;
+  const char* timerel             = NULL;
+  const char* timeAt              = NULL;
+  const char* endTimeAt           = NULL;
+  const char* timeproperty        = NULL;
+  const char* aggrMethods         = NULL;
+  const char* aggrPeriodDuration  = NULL;
 
-  if (pCheckTemporalQ(temporalQP, &timerel, &timeAt, &endTimeAt, &timeproperty) == false)
+  if (pCheckTemporalQ(temporalQP, &timerel, &timeAt, &endTimeAt, &timeproperty,
+                      &aggrMethods, &aggrPeriodDuration) == false)
     return false;
 
   // Extract entity selectors into type/id/idPattern lists
@@ -599,6 +633,9 @@ bool orionldPostTemporalQuery(void)
 
     if (orionldState.uriParams.format != NULL && strcmp(orionldState.uriParams.format, "temporalValues") == 0)
       temporalValuesTransform(apiEntityP);
+
+    if (aggrMethods != NULL)
+      aggregatedValuesTransform(apiEntityP, aggrMethods, aggrPeriodDuration, timeAt, endTimeAt);
 
     if (sysAttrs == false)
       kjSysAttrsRemove(apiEntityP, 2);

@@ -77,6 +77,7 @@ SET (SOURCES
     datasetEntityFix.cpp
     datasetTemporalEntityFix.cpp
     temporalValuesTransform.cpp
+    aggregatedValuesTransform.cpp
 )
 
 # Include directories
