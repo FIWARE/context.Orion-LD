@@ -163,6 +163,13 @@ if (${CMAKE_BUILD_TYPE} STREQUAL DEBUG)
         add_definitions( -DUNIT_TEST )
     endif (UNIT_TEST)
 
+    if (ASAN)
+        MESSAGE("cmake: AddressSanitizer enabled")
+        set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+        set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+        set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+    endif (ASAN)
+
 else (${CMAKE_BUILD_TYPE} STREQUAL DEBUG)
 
     MESSAGE("cmake: RELEASE compilation")

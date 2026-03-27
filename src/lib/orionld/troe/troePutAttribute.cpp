@@ -22,6 +22,8 @@
 *
 * Author: Ken Zangelin
 */
+#include <cstdlib>                                             // free
+
 extern "C"
 {
 #include "ktrace/kTrace.h"                                     // KT_*
@@ -78,6 +80,9 @@ bool troePutAttribute(void)
 
   if (sqlIx > 0)
     pgCommands(sqlV, sqlIx);
+
+  if (attributes.allocated)    free(attributes.buf);
+  if (subAttributes.allocated) free(subAttributes.buf);
 
   return true;
 }

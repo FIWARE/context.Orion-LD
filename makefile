@@ -67,6 +67,7 @@ endif
 all: prepare_release release
 
 di: install_debug
+dia: install_asan
 
 branchFile:
 	./scripts/build/branchFileCreate.sh
@@ -93,6 +94,10 @@ prepare_debug: compile_info src/lib/orionld/troe/dbCreationCommand.cpp
 	mkdir -p  BUILD_DEBUG || true
 	cd BUILD_DEBUG && cmake .. -DCMAKE_BUILD_TYPE=DEBUG -DBUILD_ARCH=$(BUILD_ARCH) -DDEBUG=True -DCMAKE_INSTALL_PREFIX=$(INSTALL_DIR)
 
+prepare_asan: compile_info src/lib/orionld/troe/dbCreationCommand.cpp
+	mkdir -p  BUILD_ASAN || true
+	cd BUILD_ASAN && cmake .. -DCMAKE_BUILD_TYPE=DEBUG -DBUILD_ARCH=$(BUILD_ARCH) -DDEBUG=True -DASAN=True -DCMAKE_INSTALL_PREFIX=$(INSTALL_DIR)
+
 prepare_coverage_func: src/lib/orionld/troe/dbCreationCommand.cpp
 	mkdir -p  BUILD_COVERAGE || true
 	cd BUILD_COVERAGE && cmake .. -DCMAKE_BUILD_TYPE=DEBUG -DBUILD_ARCH=$(BUILD_ARCH) -DUNIT_TEST=False -DCOVERAGE=True -DCMAKE_INSTALL_PREFIX=$(INSTALL_DIR)
@@ -113,6 +118,9 @@ release: prepare_release
 debug: prepare_debug
 	cd BUILD_DEBUG && make -j$(CPU_COUNT)
 
+asan: prepare_asan
+	cd BUILD_ASAN && make -j$(CPU_COUNT)
+
 # Requires root access, i.e. use 'sudo make install' to install
 install: release
 	cd BUILD_RELEASE && make install DESTDIR=$(DESTDIR)
@@ -120,6 +128,9 @@ install: release
 # Requires root access, i.e. use 'sudo make install' to install
 install_debug: debug
 	cd BUILD_DEBUG && make install DESTDIR=$(DESTDIR)
+
+install_asan: asan
+	cd BUILD_ASAN && make install DESTDIR=$(DESTDIR)
 
 install_scripts:
 	cp scripts/accumulator-server.py $(INSTALL_DIR)/bin 
@@ -272,6 +283,7 @@ clean:
 	rm -rf BUILD_DEBUG
 	rm -rf BUILD_COVERAGE
 	rm -rf BUILD_UNITTEST
+	rm -rf BUILD_ASAN
 
 style:
 	./scripts/style_check_in_makefile.sh

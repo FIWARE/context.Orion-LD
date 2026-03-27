@@ -109,7 +109,7 @@ Date: REGEX(.*)
 
 {
     "detail": "timerel",
-    "title": "Missing required URI parameter",
+    "title": "Missing required URI parameter 'timerel' when 'timeAt' is present",
     "type": "https://uri.etsi.org/ngsi-ld/errors/BadRequestData"
 }
 
@@ -123,7 +123,7 @@ Date: REGEX(.*)
 
 {
     "detail": "timeAt",
-    "title": "Missing required URI parameter",
+    "title": "Missing required URI parameter 'timeAt' when 'timerel' is present",
     "type": "https://uri.etsi.org/ngsi-ld/errors/BadRequestData"
 }
 

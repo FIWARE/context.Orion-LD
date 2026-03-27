@@ -22,6 +22,8 @@
 *
 * Author: Ken Zangelin
 */
+#include <cstdlib>                                             // free
+
 extern "C"
 {
 #include "ktrace/kTrace.h"                                     // KT_*
@@ -76,6 +78,8 @@ bool troeDeleteEntity(void)
 
     pgCommands(sqlV, 1);
   }
+
+  if (entitiesBuffer.allocated) free(entitiesBuffer.buf);
 
   return true;
 }

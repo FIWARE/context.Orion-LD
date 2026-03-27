@@ -22,6 +22,8 @@
 *
 * Author: Ken Zangelin
 */
+#include <cstdlib>                                             // free
+
 extern "C"
 {
 #include "ktrace/kTrace.h"                                     // KT_*
@@ -122,6 +124,8 @@ bool troeDeleteAttribute(void)
 
     pgCommands(sqlV, 1);
   }
+
+  if (attributesBuffer.allocated) free(attributesBuffer.buf);
 
   return true;
 }
