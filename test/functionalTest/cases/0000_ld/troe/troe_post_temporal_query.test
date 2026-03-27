@@ -283,7 +283,46 @@ Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
-REGEX(\[.*"id":"urn:ngsi-ld:entities:E1".*"id":"urn:ngsi-ld:entities:E2".*\])
+[
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T11:00:00Z",
+                "type": "Property",
+                "value": 15
+            },
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": 10
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E1",
+        "type": "T"
+    },
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": 20
+            }
+        ],
+        "P2": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": "hello"
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E2",
+        "type": "T"
+    }
+]
 
 
 06. POST temporal query with entities type=T, count=true - verify count header
@@ -295,7 +334,46 @@ Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 NGSILD-Results-Count: 2
 
-REGEX(\[.*"id":"urn:ngsi-ld:entities:E1".*"id":"urn:ngsi-ld:entities:E2".*\])
+[
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T11:00:00Z",
+                "type": "Property",
+                "value": 15
+            },
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": 10
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E1",
+        "type": "T"
+    },
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": 20
+            }
+        ],
+        "P2": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": "hello"
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E2",
+        "type": "T"
+    }
+]
 
 
 07. POST temporal query without temporalQ - 400 error
@@ -348,7 +426,20 @@ Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
-REGEX(\[.*"id":"urn:ngsi-ld:entities:E3".*\])
+[
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": 30
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E3",
+        "type": "T2"
+    }
+]
 
 
 11. POST temporal query with attrs filter
@@ -359,7 +450,24 @@ Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
-REGEX(\[.*"P2".*\])
+[
+    {
+        "id": "urn:ngsi-ld:entities:E1",
+        "type": "T"
+    },
+    {
+        "P2": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-01-01T10:00:00Z",
+                "type": "Property",
+                "value": "hello"
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E2",
+        "type": "T"
+    }
+]
 
 
 --TEARDOWN--
