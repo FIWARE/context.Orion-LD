@@ -523,7 +523,36 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
     serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
   }
   else if (serviceP->serviceRoutine == orionldGetTemporalEntities)
-    serviceP->mintaka = true;
+  {
+    serviceP->options   |= ORIONLD_SERVICE_OPTION_CORE_CONTEXT_IN_RESPONSE;
+
+    serviceP->uriParams |= ORIONLD_URIPARAM_OPTIONS;
+    serviceP->uriParams |= ORIONLD_URIPARAM_FORMAT;
+    serviceP->uriParams |= ORIONLD_URIPARAM_LIMIT;
+    serviceP->uriParams |= ORIONLD_URIPARAM_OFFSET;
+    serviceP->uriParams |= ORIONLD_URIPARAM_COUNT;
+    serviceP->uriParams |= ORIONLD_URIPARAM_IDLIST;
+    serviceP->uriParams |= ORIONLD_URIPARAM_TYPELIST;
+    serviceP->uriParams |= ORIONLD_URIPARAM_IDPATTERN;
+    serviceP->uriParams |= ORIONLD_URIPARAM_Q;
+    serviceP->uriParams |= ORIONLD_URIPARAM_GEOMETRY;
+    serviceP->uriParams |= ORIONLD_URIPARAM_COORDINATES;
+    serviceP->uriParams |= ORIONLD_URIPARAM_GEOREL;
+    serviceP->uriParams |= ORIONLD_URIPARAM_GEOPROPERTY;
+    serviceP->uriParams |= ORIONLD_URIPARAM_ATTRS;
+    serviceP->uriParams |= ORIONLD_URIPARAM_LASTN;
+    serviceP->uriParams |= ORIONLD_URIPARAM_TIMEREL;
+    serviceP->uriParams |= ORIONLD_URIPARAM_TIMEAT;
+    serviceP->uriParams |= ORIONLD_URIPARAM_ENDTIMEAT;
+    serviceP->uriParams |= ORIONLD_URIPARAM_TIMEPROPERTY;
+    serviceP->uriParams |= ORIONLD_URIPARAM_PICK;
+    serviceP->uriParams |= ORIONLD_URIPARAM_OMIT;
+    serviceP->uriParams |= ORIONLD_URIPARAM_DATASETID;
+    serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
+    serviceP->uriParams |= ORIONLD_URIPARAM_LANG;
+    serviceP->uriParams |= ORIONLD_URIPARAM_AGGRMETHODS;
+    serviceP->uriParams |= ORIONLD_URIPARAM_AGGRPERIODDURATION;
+  }
   else if (serviceP->serviceRoutine == orionldGetTemporalEntity)
   {
     serviceP->options   |= ORIONLD_SERVICE_OPTION_CORE_CONTEXT_IN_RESPONSE;
@@ -537,9 +566,30 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
     serviceP->uriParams |= ORIONLD_URIPARAM_TIMEAT;
     serviceP->uriParams |= ORIONLD_URIPARAM_ENDTIMEAT;
     serviceP->uriParams |= ORIONLD_URIPARAM_TIMEPROPERTY;
+    serviceP->uriParams |= ORIONLD_URIPARAM_PICK;
+    serviceP->uriParams |= ORIONLD_URIPARAM_OMIT;
+    serviceP->uriParams |= ORIONLD_URIPARAM_DATASETID;
+    serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
+    serviceP->uriParams |= ORIONLD_URIPARAM_LANG;
+    serviceP->uriParams |= ORIONLD_URIPARAM_AGGRMETHODS;
+    serviceP->uriParams |= ORIONLD_URIPARAM_AGGRPERIODDURATION;
   }
   else if (serviceP->serviceRoutine == orionldPostTemporalQuery)
-    serviceP->mintaka = true;
+  {
+    serviceP->options   |= ORIONLD_SERVICE_OPTION_CORE_CONTEXT_IN_RESPONSE;
+
+    serviceP->uriParams |= ORIONLD_URIPARAM_OPTIONS;
+    serviceP->uriParams |= ORIONLD_URIPARAM_FORMAT;
+    serviceP->uriParams |= ORIONLD_URIPARAM_LIMIT;
+    serviceP->uriParams |= ORIONLD_URIPARAM_OFFSET;
+    serviceP->uriParams |= ORIONLD_URIPARAM_COUNT;
+    serviceP->uriParams |= ORIONLD_URIPARAM_LASTN;
+    serviceP->uriParams |= ORIONLD_URIPARAM_PICK;
+    serviceP->uriParams |= ORIONLD_URIPARAM_OMIT;
+    serviceP->uriParams |= ORIONLD_URIPARAM_DATASETID;
+    serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
+    serviceP->uriParams |= ORIONLD_URIPARAM_LANG;
+  }
   else if (serviceP->serviceRoutine == orionldDeleteTemporalAttribute)
     serviceP->notImplemented = true;
   else if (serviceP->serviceRoutine == orionldDeleteTemporalAttributeInstance)

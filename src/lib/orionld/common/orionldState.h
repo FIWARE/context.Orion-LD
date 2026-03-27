@@ -129,6 +129,7 @@ typedef struct OrionldUriParams
   char*     idPattern;
   char*     attrs;
   char*     pick;
+  char*     omit;
   char*     options;
   int       offset;
   int       limit;
@@ -179,6 +180,9 @@ typedef struct OrionldUriParams
   int       joinLevel;
 
   OrionldContextKind kind;
+
+  char*     aggrMethods;
+  char*     aggrPeriodDuration;
 
   double    observedAtAsDouble;
   uint64_t  mask;
@@ -284,6 +288,7 @@ typedef struct OrionldStateIn
   StringArray  typeList;
   StringArray  attrList;
   StringArray  pickList;
+  StringArray  omitList;
   StringArray  expandValuesList;
   StringArray  datasetIdList;
 
@@ -625,7 +630,7 @@ extern int               subCacheInterval;         // From orionld.cpp
 extern int               subCacheFlushInterval;    // From orionld.cpp
 extern bool              troe;                     // From orionld.cpp
 extern char              troeHost[256];            // From orionld.cpp
-extern unsigned short    troePort;                 // From orionld.cpp
+extern int               troePort;                 // From orionld.cpp
 extern char              troeUser[256];            // From orionld.cpp
 extern char              troePwd[256];             // From orionld.cpp
 extern char              troeSslMode[64];          // From orionld.cpp

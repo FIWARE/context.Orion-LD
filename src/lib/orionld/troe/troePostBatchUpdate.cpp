@@ -22,6 +22,8 @@
 *
 * Author: Ken Zangelin
 */
+#include <cstdlib>                                             // free
+
 extern "C"
 {
 #include "kbase/kMacros.h"                                     // K_FT
@@ -98,6 +100,9 @@ bool troePostBatchUpdate(void)
 
   if (sqlIx > 0)
     pgCommands(sqlV, sqlIx);
+
+  if (attributes.allocated)    free(attributes.buf);
+  if (subAttributes.allocated) free(subAttributes.buf);
 
   return true;
 }

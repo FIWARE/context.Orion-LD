@@ -549,7 +549,7 @@ void requestCompleted
   //
   // Metrics
   //
-  if ((orionldState.apiVersion != API_VERSION_NGSILD_V1) && (metricsMgr.isOn()))
+  if ((orionldState.apiVersion != API_VERSION_NGSILD_V1) && (ciP != NULL) && (metricsMgr.isOn()))
   {
     const char* spath = (ciP->servicePathV.size() > 0)? ciP->servicePathV[0].c_str() : "";
     metricsMgr.add(orionldState.tenantP->tenant, spath, METRIC_TRANS_IN, 1);

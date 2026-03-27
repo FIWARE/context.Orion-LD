@@ -184,12 +184,48 @@ bool pgTemporalEntityQuery
 
   const char* opmodeFilter = createdAtFilter ? " AND opmode = 'Create'" : " AND opmode != 'Delete'";
 
-  if (strcmp(timerel, "before") == 0)
+  if (timerel == NULL)
+  {
+    // No time filter - return all attribute instances
+    nParams = 1;
+
+    snprintf(entityQuery, sizeof(entityQuery),
+             "%sWHERE id = $1 ORDER BY ts DESC LIMIT 1", entitySelect);
+
+    if (lastN > 0)
+    {
+      snprintf(attrQuery, sizeof(attrQuery),
+               "SELECT * FROM ("
+               "SELECT id, valuetype::text, text, boolean, number, datetime, compound, "
+               "observedat, unitcode, datasetid, subproperties, "
+               "ST_AsGeoJSON(geopoint) as geopoint, ST_AsGeoJSON(geopolygon) as geopolygon, "
+               "ST_AsGeoJSON(geomultipoint) as geomultipoint, ST_AsGeoJSON(geomultipolygon) as geomultipolygon, "
+               "ST_AsGeoJSON(geolinestring) as geolinestring, ST_AsGeoJSON(geomultilinestring) as geomultilinestring, "
+               "instanceid, ts, ROW_NUMBER() OVER (PARTITION BY id, datasetid ORDER BY %s DESC) as rn "
+               "FROM attributes "
+               "WHERE entityid = $1%s%s"
+               ") sub WHERE rn <= %d ORDER BY id, datasetid, %s DESC",
+               timeCol, opmodeFilter, attrFilter, lastN, timeCol);
+    }
+    else
+    {
+      snprintf(attrQuery, sizeof(attrQuery),
+               "%sWHERE entityid = $1%s%s ORDER BY id, datasetid, %s DESC",
+               attrSelect, opmodeFilter, attrFilter, timeCol);
+    }
+
+    snprintf(subAttrQuery, sizeof(subAttrQuery),
+             "%sWHERE entityid = $1 ORDER BY id, attrinstanceid, attrdatasetid, ts DESC",
+             subAttrSelect);
+  }
+  else if (strcmp(timerel, "before") == 0)
   {
     nParams = 2;
 
+    // Entity lookup: no time filter needed - we just need the entity type.
+    // Time filtering happens at the attribute level using the correct timeproperty column.
     snprintf(entityQuery, sizeof(entityQuery),
-             "%sWHERE id = $1 AND ts <= $2 ORDER BY ts DESC LIMIT 1", entitySelect);
+             "%sWHERE id = $1 ORDER BY ts DESC LIMIT 1", entitySelect);
 
     if (lastN > 0)
     {
@@ -222,7 +258,7 @@ bool pgTemporalEntityQuery
     nParams = 2;
 
     snprintf(entityQuery, sizeof(entityQuery),
-             "%sWHERE id = $1 AND ts >= $2 ORDER BY ts ASC LIMIT 1", entitySelect);
+             "%sWHERE id = $1 ORDER BY ts DESC LIMIT 1", entitySelect);
 
     if (lastN > 0)
     {
@@ -255,7 +291,7 @@ bool pgTemporalEntityQuery
     nParams = 3;
 
     snprintf(entityQuery, sizeof(entityQuery),
-             "%sWHERE id = $1 AND ts >= $2 AND ts <= $3 ORDER BY ts DESC LIMIT 1", entitySelect);
+             "%sWHERE id = $1 ORDER BY ts DESC LIMIT 1", entitySelect);
 
     if (lastN > 0)
     {
@@ -291,15 +327,17 @@ bool pgTemporalEntityQuery
   }
 
   // Build parameter arrays
+  const char* params1[] = { entityId };
   const char* params2[] = { entityId, timeAt };
   const char* params3[] = { entityId, timeAt, endTimeAt };
-  const char** paramValues = (nParams == 3) ? params3 : params2;
+  const char** paramValues = (nParams == 3) ? params3 : (nParams == 2) ? params2 : params1;
 
   //
-  // Query 1: Entity type
+  // Query 1: Entity type (only needs $1 = entityId, no time params)
   //
+  const char* entityParams[] = { entityId };
   KT_T(KtSql, "SQL[entity]: %s (entityId=%s, timeAt=%s)", entityQuery, entityId, timeAt);
-  *entityResP = PQexecParams(connectionP->connectionP, entityQuery, nParams, NULL, paramValues, NULL, NULL, 0);
+  *entityResP = PQexecParams(connectionP->connectionP, entityQuery, 1, NULL, entityParams, NULL, NULL, 0);
   if (*entityResP == NULL || PQresultStatus(*entityResP) != PGRES_TUPLES_OK)
   {
     KT_E("pgTemporalEntityQuery: entity query failed: %s", PQerrorMessage(connectionP->connectionP));

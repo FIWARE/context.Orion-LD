@@ -72,8 +72,12 @@ SET (SOURCES
     dateTime.cpp
     forbidden.cpp
     pick.cpp
+    omit.cpp
     datasetAttributeFix.cpp
     datasetEntityFix.cpp
+    datasetTemporalEntityFix.cpp
+    temporalValuesTransform.cpp
+    aggregatedValuesTransform.cpp
 )
 
 # Include directories
