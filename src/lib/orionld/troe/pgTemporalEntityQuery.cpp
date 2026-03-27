@@ -333,10 +333,11 @@ bool pgTemporalEntityQuery
   const char** paramValues = (nParams == 3) ? params3 : (nParams == 2) ? params2 : params1;
 
   //
-  // Query 1: Entity type
+  // Query 1: Entity type (only needs $1 = entityId, no time params)
   //
+  const char* entityParams[] = { entityId };
   KT_T(KtSql, "SQL[entity]: %s (entityId=%s, timeAt=%s)", entityQuery, entityId, timeAt);
-  *entityResP = PQexecParams(connectionP->connectionP, entityQuery, nParams, NULL, paramValues, NULL, NULL, 0);
+  *entityResP = PQexecParams(connectionP->connectionP, entityQuery, 1, NULL, entityParams, NULL, NULL, 0);
   if (*entityResP == NULL || PQresultStatus(*entityResP) != PGRES_TUPLES_OK)
   {
     KT_E("pgTemporalEntityQuery: entity query failed: %s", PQerrorMessage(connectionP->connectionP));
