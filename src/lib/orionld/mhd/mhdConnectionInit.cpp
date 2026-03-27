@@ -781,6 +781,11 @@ MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
     orionldState.uriParams.pick  = (char*) value;
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_PICK;
   }
+  else if (strcmp(key, "omit") == 0)
+  {
+    orionldState.uriParams.omit  = (char*) value;
+    orionldState.uriParams.mask |= ORIONLD_URIPARAM_OMIT;
+  }
   else if (strcmp(key, "offset") == 0)
   {
     if (value[0] == '-')
@@ -840,10 +845,11 @@ MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
   {
     orionldState.uriParams.format = (char*) value;
 
-    if      (strcmp(value, "normalized") == 0)  orionldState.out.format = RF_NORMALIZED;
-    else if (strcmp(value, "concise")    == 0)  orionldState.out.format = RF_CONCISE;
-    else if (strcmp(value, "simplified") == 0)  orionldState.out.format = RF_SIMPLIFIED;
-    else if (strcmp(value, "keyValues")  == 0)  orionldState.out.format = RF_SIMPLIFIED;
+    if      (strcmp(value, "normalized")     == 0)  orionldState.out.format = RF_NORMALIZED;
+    else if (strcmp(value, "concise")        == 0)  orionldState.out.format = RF_CONCISE;
+    else if (strcmp(value, "simplified")     == 0)  orionldState.out.format = RF_SIMPLIFIED;
+    else if (strcmp(value, "keyValues")      == 0)  orionldState.out.format = RF_SIMPLIFIED;
+    else if (strcmp(value, "temporalValues") == 0)  orionldState.out.format = RF_NORMALIZED;  // transformed later by temporal service routine
     else
     {
       orionldError(OrionldBadRequestData, "Bad value for URI parameter /format/", value, 400);
@@ -966,6 +972,21 @@ MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
     // FIXME: Check the value
     orionldState.uriParams.endTimeAt = (char*) value;
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_ENDTIMEAT;
+  }
+  else if (strcmp(key, "lastN") == 0)
+  {
+    orionldState.uriParams.lastN = atoi(value);
+    orionldState.uriParams.mask |= ORIONLD_URIPARAM_LASTN;
+  }
+  else if (strcmp(key, "aggrMethods") == 0)
+  {
+    orionldState.uriParams.aggrMethods = (char*) value;
+    orionldState.uriParams.mask |= ORIONLD_URIPARAM_AGGRMETHODS;
+  }
+  else if (strcmp(key, "aggrPeriodDuration") == 0)
+  {
+    orionldState.uriParams.aggrPeriodDuration = (char*) value;
+    orionldState.uriParams.mask |= ORIONLD_URIPARAM_AGGRPERIODDURATION;
   }
   else if (strcmp(key, "details") == 0)
   {
@@ -1382,13 +1403,6 @@ MHD_Result mhdConnectionInit
 
   KT_T(55, "Service Routine at %p", orionldState.serviceP->serviceRoutine);
 
-  if (orionldState.serviceP->mintaka == true)
-    return MHD_YES;
-
-  if (orionldState.serviceP->notImplemented == true)
-    return MHD_YES;
-
-
   //
   // 5. GET URI params
   //
@@ -1397,10 +1411,16 @@ MHD_Result mhdConnectionInit
   //
   // As "format" has precedence over options=concise/simplified/etc, the call to optionsParse must wait until after
   // all calls to orionldUriArgumentGet are done.
-  // Because, optionsParse n eeds to know whether "format" has been used.
+  // Because, optionsParse needs to know whether "format" has been used.
   //
   if (orionldState.uriParams.options != NULL)
     optionsParse(orionldState.uriParams.options);
+
+  if (orionldState.serviceP->mintaka == true)
+    return MHD_YES;
+
+  if (orionldState.serviceP->notImplemented == true)
+    return MHD_YES;
 
   //
   // Format of response payload

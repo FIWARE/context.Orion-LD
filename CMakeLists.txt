@@ -163,6 +163,13 @@ if (${CMAKE_BUILD_TYPE} STREQUAL DEBUG)
         add_definitions( -DUNIT_TEST )
     endif (UNIT_TEST)
 
+    if (ASAN)
+        MESSAGE("cmake: AddressSanitizer enabled")
+        set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+        set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+        set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+    endif (ASAN)
+
 else (${CMAKE_BUILD_TYPE} STREQUAL DEBUG)
 
     MESSAGE("cmake: RELEASE compilation")
@@ -205,6 +212,7 @@ SET (ORION_LIBS
     orionld_mqtt
     orionld_ws
     orionld_dds
+    orionld_kafka
     orionld_service
     orionld_http
     orionld_context
@@ -305,6 +313,7 @@ SET (DYNAMIC_LIBS
     resolv
     paho-mqtt3cs
     geos_c         # for GEOS geofencing in subscription matching
+    rdkafka        # for Kafka-based time series ingestion
     pq             # for TRoE & Postgres
     ${LIBMONGOC_LIBRARIES}
     ${LIBBSON_LIBRARIES}
@@ -410,6 +419,7 @@ if (error EQUAL 0)
   ADD_SUBDIRECTORY(src/lib/orionld/mqtt)
   ADD_SUBDIRECTORY(src/lib/orionld/ws)
   ADD_SUBDIRECTORY(src/lib/orionld/dds)
+  ADD_SUBDIRECTORY(src/lib/orionld/kafka)
   ADD_SUBDIRECTORY(src/lib/orionld/http)
   ADD_SUBDIRECTORY(src/lib/orionld/prometheus)
   ADD_SUBDIRECTORY(src/lib/orionld/legacyDriver)

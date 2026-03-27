@@ -1,0 +1,223 @@
+# Copyright 2024 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Native temporal entity query with all attribute types - GET /temporal/entities/{entityId}
+
+--SHELL-INIT--
+export BROKER=orionld
+dbInit CB
+pgInit $CB_DB_NAME
+brokerStart CB 100 IPv4 -troe -experimental
+
+--SHELL--
+
+#
+# 01. Create entity E1 with all attribute types: String, Number, Boolean, Relationship, Compound, sub-attributes
+# 02. See the attributes in the temporal database
+# 03. See the sub-attributes in the temporal database
+# 04. GET temporal entity E1 with timerel=before - verify all types are returned correctly
+#
+
+echo "01. Create entity E1 with all attribute types"
+echo "=============================================="
+payload='{
+  "id": "urn:ngsi-ld:entities:E1",
+  "type": "T",
+  "StringProp": {
+    "type": "Property",
+    "value": "hello world",
+    "observedAt": "2024-06-15T10:00:00Z"
+  },
+  "NumberProp": {
+    "type": "Property",
+    "value": 3.14159,
+    "unitCode": "m/s",
+    "observedAt": "2024-06-15T10:00:00Z"
+  },
+  "BoolProp": {
+    "type": "Property",
+    "value": true,
+    "observedAt": "2024-06-15T10:00:00Z"
+  },
+  "Rel1": {
+    "type": "Relationship",
+    "object": "urn:ngsi-ld:entities:Target1",
+    "observedAt": "2024-06-15T10:00:00Z"
+  },
+  "CompoundProp": {
+    "type": "Property",
+    "value": {
+      "street": "Main St",
+      "number": 42
+    },
+    "observedAt": "2024-06-15T10:00:00Z"
+  },
+  "PropWithSub": {
+    "type": "Property",
+    "value": "parent value",
+    "observedAt": "2024-06-15T10:00:00Z",
+    "SubProp1": {
+      "type": "Property",
+      "value": "sub-prop value",
+      "observedAt": "2024-06-15T10:01:00Z"
+    },
+    "SubRel1": {
+      "type": "Relationship",
+      "object": "urn:ngsi-ld:entities:SubTarget",
+      "observedAt": "2024-06-15T10:01:00Z"
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "02. See the attributes in the temporal database"
+echo "================================================"
+postgresCmd -sql "SELECT opMode,id,valueType,entityId,subProperties,unitcode,datasetid,text,number,boolean,compound,observedAt FROM attributes ORDER BY id"
+echo
+echo
+
+
+echo "03. See the sub-attributes in the temporal database"
+echo "===================================================="
+postgresCmd -sql "SELECT id,valueType,entityId,attrInstanceId,text,observedAt FROM subAttributes ORDER BY id"
+echo
+echo
+
+
+echo "04. GET temporal entity E1 with timerel=before - verify all types are returned correctly"
+echo "========================================================================================="
+orionCurl --url '/ngsi-ld/v1/temporal/entities/urn:ngsi-ld:entities:E1?timerel=before&timeAt=2099-12-31T23:59:59Z'
+echo
+echo
+
+--REGEXPECT--
+01. Create entity E1 with all attribute types
+==============================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1
+
+
+
+02. See the attributes in the temporal database
+================================================
+opmode,id,valuetype,entityid,subproperties,unitcode,datasetid,text,number,boolean,compound,observedat
+Create,https://uri.etsi.org/ngsi-ld/default-context/BoolProp,Boolean,urn:ngsi-ld:entities:E1,f,,None,,,t,,2024-06-15 10:00:00
+Create,https://uri.etsi.org/ngsi-ld/default-context/CompoundProp,Compound,urn:ngsi-ld:entities:E1,f,,None,,,,REGEX(.*),2024-06-15 10:00:00
+Create,https://uri.etsi.org/ngsi-ld/default-context/NumberProp,Number,urn:ngsi-ld:entities:E1,f,m/s,None,,3.14159,,,2024-06-15 10:00:00
+Create,https://uri.etsi.org/ngsi-ld/default-context/PropWithSub,String,urn:ngsi-ld:entities:E1,t,,None,parent value,,,,2024-06-15 10:00:00
+Create,https://uri.etsi.org/ngsi-ld/default-context/Rel1,Relationship,urn:ngsi-ld:entities:E1,f,,None,urn:ngsi-ld:entities:Target1,,,,2024-06-15 10:00:00
+Create,https://uri.etsi.org/ngsi-ld/default-context/StringProp,String,urn:ngsi-ld:entities:E1,f,,None,hello world,,,,2024-06-15 10:00:00
+
+
+03. See the sub-attributes in the temporal database
+====================================================
+id,valuetype,entityid,attrinstanceid,text,observedat
+https://uri.etsi.org/ngsi-ld/default-context/SubProp1,String,urn:ngsi-ld:entities:E1,urn:ngsi-ld:attribute:instance:REGEX(.*),sub-prop value,2024-06-15 10:01:00
+https://uri.etsi.org/ngsi-ld/default-context/SubRel1,Relationship,urn:ngsi-ld:entities:E1,urn:ngsi-ld:attribute:instance:REGEX(.*),urn:ngsi-ld:entities:SubTarget,2024-06-15 10:01:00
+
+
+04. GET temporal entity E1 with timerel=before - verify all types are returned correctly
+=========================================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "BoolProp": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-06-15T10:00:00Z",
+            "type": "Property",
+            "value": true
+        }
+    ],
+    "CompoundProp": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-06-15T10:00:00Z",
+            "type": "Property",
+            "value": {
+                "number": 42,
+                "street": "Main St"
+            }
+        }
+    ],
+    "NumberProp": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-06-15T10:00:00Z",
+            "type": "Property",
+            "unitCode": "m/s",
+            "value": REGEX(3\.14159.*)
+        }
+    ],
+    "PropWithSub": [
+        {
+            "SubProp1": {
+                "observedAt": "2024-06-15T10:01:00Z",
+                "type": "Property",
+                "value": "sub-prop value"
+            },
+            "SubRel1": {
+                "object": "urn:ngsi-ld:entities:SubTarget",
+                "observedAt": "2024-06-15T10:01:00Z",
+                "type": "Relationship"
+            },
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-06-15T10:00:00Z",
+            "type": "Property",
+            "value": "parent value"
+        }
+    ],
+    "Rel1": [
+        {
+            "instanceId": "REGEX(.*)",
+            "object": "urn:ngsi-ld:entities:Target1",
+            "observedAt": "2024-06-15T10:00:00Z",
+            "type": "Relationship"
+        }
+    ],
+    "StringProp": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-06-15T10:00:00Z",
+            "type": "Property",
+            "value": "hello world"
+        }
+    ],
+    "id": "urn:ngsi-ld:entities:E1",
+    "type": "T"
+}
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
+pgDrop $CB_DB_NAME

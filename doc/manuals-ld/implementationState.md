@@ -61,6 +61,14 @@ Then I got users (a European project) using the feature and it was too late to r
 
 
 ## 4. Extra Stuff that Orion-LD supports but that may never enter the NGSI-LD API
+### Kafka Consumer for High-Throughput Ingestion
+  Orion-LD includes an optional Kafka consumer subsystem for high-throughput time series ingestion (1,000-10,000+ msg/s).
+  When enabled with the `-kafka` CLI flag, the broker subscribes to a Kafka topic and processes incoming NGSI-LD entity
+  updates through the standard batch upsert pipeline (validation, MongoDB, TRoE, notifications).
+  This provides the same data consistency as the REST API but with significantly reduced overhead for bulk data ingestion.
+  Requires [librdkafka](https://github.com/confluentinc/librdkafka).
+  See [TRoE documentation](troe.md) for configuration details.
+
 ### Cross Notifications
 ### POST /ngsi-ld/ex/v1/notify
   The ability to receive notifications from an NGSI-LD Broker and treat the notification as a BATCH Upsert.
@@ -335,9 +343,28 @@ This service is experimental and is only in place when Orion-LD is started with 
 ### DELETE /ngsi-ld/v1/jsonldContexts/*
 
 ### GET /ngsi-ld/v1/temporal/entities
-### GET /ngsi-ld/v1/temporal/entities/*
+* **Natively implemented** — multi-entity temporal query ("Entities Query") via TRoE (PostgreSQL).
+* Two-phase architecture: entity discovery (type/id/idPattern filtering) + per-entity temporal attribute retrieval.
+* Supports `q`-filter, geo-queries (near, within, contains, etc.), `attrs`, `pick`, `omit`, `datasetId`.
+* Supports aggregation: `aggrMethods` (avg, min, max, sum, sumsq, stddev, distinctCount) with optional `aggrPeriodDuration`.
+* Supports `timeproperty=observedAt|createdAt|modifiedAt`, `temporalValues`, pagination, count.
+* Requires `-troe` flag to be enabled.
 
-### POST   /ngsi-ld/v1/temporal/entityOperations/query
+### GET /ngsi-ld/v1/temporal/entities/*
+* **Natively implemented** — single-entity temporal retrieval ("Entity Retrieval") via TRoE (PostgreSQL).
+* Retrieves the temporal representation of a single entity from the TRoE database.
+* Supports `timerel=before`, `after`, `between` with `timeAt` and `endTimeAt` parameters.
+* Supports `pick`, `omit`, `datasetId`, aggregation, `temporalValues`.
+* `timerel`/`timeAt` are optional — if omitted, returns the full temporal history.
+* Supports all output formats: normalized (default), simplified, concise.
+* Supports all value types: String, Number, Boolean, Relationship, DateTime, Compound, GeoProperty, LanguageMap.
+* Includes sub-attributes in the response.
+* Requires `-troe` flag to be enabled.
+
+### POST /ngsi-ld/v1/temporal/entityOperations/query
+* **Natively implemented** — POST-based temporal query with request body for `entities`, `attrs`, `temporalQ`, `q`, `geoQ`, and aggregation parameters.
+* Requires `-troe` flag to be enabled.
+
 ### POST   /ngsi-ld/v1/temporal/entities
 ### DELETE /ngsi-ld/v1/temporal/entities/*
 ### POST   /ngsi-ld/v1/temporal/entities/*/attrs

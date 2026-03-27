@@ -616,7 +616,7 @@ Create,urn:E1,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
 ==============================
 opmode,id,valuetype,entityid,subproperties,unitcode,datasetid,text,number,boolean,observedat,ts
 Create,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
-Replace,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Append,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
 
 
 21. Delete the attribute P2 (added in step 11) in  from urn:E1 - to TRoE
@@ -643,7 +643,7 @@ Create,urn:E1,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
 ============================================================================
 opmode,id,valuetype,entityid,subproperties,unitcode,datasetid,text,number,boolean,observedat,ts
 Create,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
-Replace,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Append,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
 Delete,https://uri.etsi.org/ngsi-ld/default-context/P2,,urn:E1,,,None,,,,,202REGEX(.*)
 
 
@@ -671,7 +671,7 @@ Create,urn:E1,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
 ========================================================
 opmode,id,valuetype,entityid,subproperties,unitcode,datasetid,text,number,boolean,observedat,ts
 Create,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
-Replace,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Append,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
 Delete,https://uri.etsi.org/ngsi-ld/default-context/P2,,urn:E1,,,None,,,,,202REGEX(.*)
 Update,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,31,,,202REGEX(.*)
 
@@ -701,7 +701,7 @@ Delete,urn:E1,NULL,202REGEX(.*)
 ==========================================
 opmode,id,valuetype,entityid,subproperties,unitcode,datasetid,text,number,boolean,observedat,ts
 Create,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
-Replace,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Append,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
 Delete,https://uri.etsi.org/ngsi-ld/default-context/P2,,urn:E1,,,None,,,,,202REGEX(.*)
 Update,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,31,,,202REGEX(.*)
 
@@ -733,7 +733,7 @@ Create,urn:E4,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
 ==================================================================
 opmode,id,valuetype,entityid,subproperties,unitcode,datasetid,text,number,boolean,observedat,ts
 Create,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
-Replace,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Append,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
 Delete,https://uri.etsi.org/ngsi-ld/default-context/P2,,urn:E1,,,None,,,,,202REGEX(.*)
 Update,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,31,,,202REGEX(.*)
 Create,https://uri.etsi.org/ngsi-ld/default-context/P51,Number,urn:E3,f,,None,,32,,,202REGEX(.*)
@@ -769,7 +769,7 @@ Create,urn:E7,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
 ==================================================================
 opmode,id,valuetype,entityid,subproperties,unitcode,datasetid,text,number,boolean,observedat,ts
 Create,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
-Replace,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Append,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
 Delete,https://uri.etsi.org/ngsi-ld/default-context/P2,,urn:E1,,,None,,,,,202REGEX(.*)
 Update,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,31,,,202REGEX(.*)
 Create,https://uri.etsi.org/ngsi-ld/default-context/P51,Number,urn:E3,f,,None,,32,,,202REGEX(.*)
@@ -800,7 +800,7 @@ Create,urn:E7,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
 ==========================================================================
 opmode,id,valuetype,entityid,subproperties,unitcode,datasetid,text,number,boolean,observedat,ts
 Create,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
-Replace,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Append,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
 Delete,https://uri.etsi.org/ngsi-ld/default-context/P2,,urn:E1,,,None,,,,,202REGEX(.*)
 Update,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,31,,,202REGEX(.*)
 Create,https://uri.etsi.org/ngsi-ld/default-context/P51,Number,urn:E3,f,,None,,32,,,202REGEX(.*)
@@ -840,7 +840,7 @@ Create,urn:E7,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
 =========================================================
 opmode,id,valuetype,entityid,subproperties,unitcode,datasetid,text,number,boolean,observedat,ts
 Create,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
-Replace,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Append,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
 Delete,https://uri.etsi.org/ngsi-ld/default-context/P2,,urn:E1,,,None,,,,,202REGEX(.*)
 Update,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,31,,,202REGEX(.*)
 Create,https://uri.etsi.org/ngsi-ld/default-context/P51,Number,urn:E3,f,,None,,32,,,202REGEX(.*)
@@ -881,7 +881,7 @@ Create,urn:E7,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
 =========================================================
 opmode,id,valuetype,entityid,subproperties,unitcode,datasetid,text,number,boolean,observedat,ts
 Create,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
-Replace,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Append,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
 Delete,https://uri.etsi.org/ngsi-ld/default-context/P2,,urn:E1,,,None,,,,,202REGEX(.*)
 Update,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,31,,,202REGEX(.*)
 Create,https://uri.etsi.org/ngsi-ld/default-context/P51,Number,urn:E3,f,,None,,32,,,202REGEX(.*)
@@ -924,7 +924,7 @@ Replace,urn:E6,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
 =============================================================
 opmode,id,valuetype,entityid,subproperties,unitcode,datasetid,text,number,boolean,observedat,ts
 Create,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
-Replace,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Append,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
 Delete,https://uri.etsi.org/ngsi-ld/default-context/P2,,urn:E1,,,None,,,,,202REGEX(.*)
 Update,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,31,,,202REGEX(.*)
 Create,https://uri.etsi.org/ngsi-ld/default-context/P51,Number,urn:E3,f,,None,,32,,,202REGEX(.*)
@@ -968,7 +968,7 @@ Replace,urn:E6,https://uri.etsi.org/ngsi-ld/default-context/T1,202REGEX(.*)
 =============================================================
 opmode,id,valuetype,entityid,subproperties,unitcode,datasetid,text,number,boolean,observedat,ts
 Create,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
-Replace,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Append,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
 Delete,https://uri.etsi.org/ngsi-ld/default-context/P2,,urn:E1,,,None,,,,,202REGEX(.*)
 Update,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,31,,,202REGEX(.*)
 Create,https://uri.etsi.org/ngsi-ld/default-context/P51,Number,urn:E3,f,,None,,32,,,202REGEX(.*)
@@ -1010,7 +1010,7 @@ Delete,urn:E7,NULL,202REGEX(.*)
 ===========================================
 opmode,id,valuetype,entityid,subproperties,unitcode,datasetid,text,number,boolean,observedat,ts
 Create,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
-Replace,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
+Append,https://uri.etsi.org/ngsi-ld/default-context/P2,Number,urn:E1,f,,None,,1,,,202REGEX(.*)
 Delete,https://uri.etsi.org/ngsi-ld/default-context/P2,,urn:E1,,,None,,,,,202REGEX(.*)
 Update,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:E1,f,,None,,31,,,202REGEX(.*)
 Create,https://uri.etsi.org/ngsi-ld/default-context/P51,Number,urn:E3,f,,None,,32,,,202REGEX(.*)

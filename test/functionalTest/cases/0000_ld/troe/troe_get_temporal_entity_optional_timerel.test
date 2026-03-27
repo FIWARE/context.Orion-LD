@@ -1,0 +1,172 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Temporal entity query with optional timerel/timeAt (returns all instances)
+
+--SHELL-INIT--
+export BROKER=orionld
+dbInit CB
+pgInit $CB_DB_NAME
+brokerStart CB 100 IPv4 -troe -experimental
+
+--SHELL--
+
+#
+# 01. Create entity E1 with P1=10
+# 02. Update P1 to 20
+# 03. GET temporal WITHOUT timerel/timeAt - all instances returned
+# 04. GET temporal with only timerel (no timeAt) - 400 error
+# 05. GET temporal with only timeAt (no timerel) - 400 error
+#
+
+echo "01. Create entity E1 with P1=10"
+echo "================================"
+payload='{
+  "id": "urn:ngsi-ld:entities:E1",
+  "type": "T",
+  "P1": {
+    "type": "Property",
+    "value": 10,
+    "observedAt": "2024-01-01T10:00:00Z"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+sleep 1.1
+
+
+echo "02. Update P1 to 20"
+echo "===================="
+payload='{
+  "P1": {
+    "type": "Property",
+    "value": 20,
+    "observedAt": "2024-01-01T11:00:00Z"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1/attrs --payload "$payload" --verb PATCH
+echo
+echo
+
+
+echo "03. GET temporal WITHOUT timerel/timeAt - all instances returned"
+echo "================================================================"
+orionCurl --url '/ngsi-ld/v1/temporal/entities/urn:ngsi-ld:entities:E1'
+echo
+echo
+
+
+echo "04. GET temporal with only timerel (no timeAt) - 400 error"
+echo "==========================================================="
+orionCurl --url '/ngsi-ld/v1/temporal/entities/urn:ngsi-ld:entities:E1?timerel=before'
+echo
+echo
+
+
+echo "05. GET temporal with only timeAt (no timerel) - 400 error"
+echo "==========================================================="
+orionCurl --url '/ngsi-ld/v1/temporal/entities/urn:ngsi-ld:entities:E1?timeAt=2024-01-01T10:00:00Z'
+echo
+echo
+
+
+--REGEXPECT--
+01. Create entity E1 with P1=10
+================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1
+
+
+
+02. Update P1 to 20
+====================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+03. GET temporal WITHOUT timerel/timeAt - all instances returned
+================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "P1": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T11:00:00Z",
+            "type": "Property",
+            "value": 20
+        },
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T10:00:00Z",
+            "type": "Property",
+            "value": 10
+        }
+    ],
+    "id": "urn:ngsi-ld:entities:E1",
+    "type": "T"
+}
+
+
+04. GET temporal with only timerel (no timeAt) - 400 error
+===========================================================
+HTTP/1.1 400 Bad Request
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "timeAt",
+    "title": "Missing required URI parameter 'timeAt' when 'timerel' is present",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/BadRequestData"
+}
+
+
+05. GET temporal with only timeAt (no timerel) - 400 error
+===========================================================
+HTTP/1.1 400 Bad Request
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "timerel",
+    "title": "Missing required URI parameter 'timerel' when 'timeAt' is present",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/BadRequestData"
+}
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
+pgDrop $CB_DB_NAME

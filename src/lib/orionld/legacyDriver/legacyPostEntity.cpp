@@ -236,6 +236,10 @@ bool legacyPostEntity(void)
     return false;
   }
 
+  // Save a snapshot of DB attributes for TRoE Append/Replace determination
+  if (troe)
+    orionldState.patchBase = kjClone(orionldState.kjsonP, dbAttrsP);
+
   kjChildAdd(responseP, updatedP);
   kjChildAdd(responseP, notUpdatedP);
 

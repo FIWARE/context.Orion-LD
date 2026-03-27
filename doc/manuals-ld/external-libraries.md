@@ -10,6 +10,7 @@ The LD part of Orion-LD depends on the following external libraries:
 * khash
 * kjson
 * GEOS (Geometry Engine - Open Source) - for in-memory geo-spatial subscription matching
+* librdkafka (optional, for Kafka consumer subsystem — only needed when using `-kafka` flag)
 
 ## MongoDB Version Requirement
 Orion-LD uses libmongoc (the MongoDB C driver), which requires MongoDB wire protocol version 8 or higher.

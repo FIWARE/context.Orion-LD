@@ -113,6 +113,14 @@ docker run quay.io/fiware/orion-ld:1.12.0
 
 Please check [quay.io](https://quay.io/repository/fiware/orion-ld?tab=tags) or [dockerhub](https://hub.docker.com/r/fiware/orion-ld/tags) for other releases.
 
+## Key Features
+-   Full NGSI-LD API support (near-compliant with ETSI specification v1.6.1)
+-   NGSIv2 API compatibility
+-   **Temporal Representation of Entities (TRoE)** — stores full entity history in PostgreSQL with native point-in-time queries
+-   **Kafka Consumer Subsystem** — high-throughput time series ingestion (1,000-10,000 msg/s) via Apache Kafka, bypassing REST overhead while preserving validation and entity state updates
+-   Distributed operations with context source registrations
+-   Subscriptions and notifications (including MQTT)
+
 ## Documentation:
 -   [Guide to NGSI-LD entities and attributes](doc/manuals-ld/entities-and-attributes.md)
 -   [Guide to the JSON-LD @context](doc/manuals-ld/the-context.md)

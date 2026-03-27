@@ -1,0 +1,576 @@
+# Copyright 2024 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Native temporal entity query - GET /temporal/entities/{entityId} with timerel=before
+
+--SHELL-INIT--
+export BROKER=orionld
+dbInit CB
+pgInit $CB_DB_NAME
+brokerStart CB 100 IPv4 -troe -experimental
+
+--SHELL--
+
+#
+# 01. Create an entity E1 with attrs P1=10, R1, B1=true
+# 02. Update P1 to 20 and add P2="hello"
+# 03. Update P1 to 30 and B1 to false
+# 04. See the attributes in the temporal database (should show 3 versions of P1)
+# 05. GET temporal with timerel=before - all instances as arrays
+# 06. GET temporal with timerel=after - all temporal data
+# 07. GET temporal with options=simplified
+# 08. GET temporal with attrs=P1 - only P1 attribute
+# 09. GET temporal with lastN=2 - only last 2 instances per attribute
+# 10. GET temporal with count=true - NGSILD-Results-Count header
+# 11. GET temporal with format=temporalValues
+#
+
+echo "01. Create an entity E1 with attrs P1=10, R1, B1=true"
+echo "====================================================="
+payload='{
+  "id": "urn:ngsi-ld:entities:E1",
+  "type": "T",
+  "P1": {
+    "type": "Property",
+    "value": 10,
+    "unitCode": "CEL",
+    "observedAt": "2024-01-01T10:00:00Z"
+  },
+  "R1": {
+    "type": "Relationship",
+    "object": "urn:ngsi-ld:entities:E2",
+    "observedAt": "2024-01-01T10:00:00Z"
+  },
+  "B1": {
+    "type": "Property",
+    "value": true,
+    "observedAt": "2024-01-01T10:00:00Z"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+# Small sleep to ensure distinct timestamps in TRoE
+sleep 1.1
+
+
+echo "02. Update P1 to 20 and add P2=hello"
+echo "====================================="
+payload='{
+  "P1": {
+    "type": "Property",
+    "value": 20,
+    "unitCode": "CEL",
+    "observedAt": "2024-01-01T11:00:00Z"
+  },
+  "P2": {
+    "type": "Property",
+    "value": "hello",
+    "observedAt": "2024-01-01T11:00:00Z"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1/attrs --payload "$payload" --verb PATCH
+echo
+echo
+
+
+sleep 1.1
+
+
+echo "03. Update P1 to 30 and B1 to false"
+echo "===================================="
+payload='{
+  "P1": {
+    "type": "Property",
+    "value": 30,
+    "unitCode": "CEL",
+    "observedAt": "2024-01-01T12:00:00Z"
+  },
+  "B1": {
+    "type": "Property",
+    "value": false,
+    "observedAt": "2024-01-01T12:00:00Z"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1/attrs --payload "$payload" --verb PATCH
+echo
+echo
+
+
+echo "04. See the attributes in the temporal database (should show 3 versions of P1)"
+echo "==============================================================================="
+postgresCmd -sql "SELECT opMode,id,valueType,entityId,text,number,boolean,observedAt FROM attributes ORDER BY id,ts"
+echo
+echo
+
+
+echo "05. GET /temporal/entities/E1?timerel=before&timeAt=<now> - should get all latest attrs"
+echo "======================================================================================="
+orionCurl --url '/ngsi-ld/v1/temporal/entities/urn:ngsi-ld:entities:E1?timerel=before&timeAt=2099-12-31T23:59:59Z'
+echo
+echo
+
+
+echo "06. GET /temporal/entities/E1?timerel=after&timeAt=2024-01-01 - all temporal data"
+echo "================================================================================="
+orionCurl --url '/ngsi-ld/v1/temporal/entities/urn:ngsi-ld:entities:E1?timerel=after&timeAt=2020-01-01T00:00:00Z'
+echo
+echo
+
+
+echo "07. GET /temporal/entities/E1?timerel=before&timeAt=<now>&options=simplified - simplified format"
+echo "================================================================================================"
+orionCurl --url '/ngsi-ld/v1/temporal/entities/urn:ngsi-ld:entities:E1?timerel=before&timeAt=2099-12-31T23:59:59Z&options=simplified'
+echo
+echo
+
+
+echo "08. GET temporal with attrs=P1 - only P1 attribute"
+echo "==================================================="
+orionCurl --url '/ngsi-ld/v1/temporal/entities/urn:ngsi-ld:entities:E1?timerel=before&timeAt=2099-12-31T23:59:59Z&attrs=P1'
+echo
+echo
+
+
+echo "09. GET temporal with lastN=2 - only last 2 instances per attribute"
+echo "===================================================================="
+orionCurl --url '/ngsi-ld/v1/temporal/entities/urn:ngsi-ld:entities:E1?timerel=before&timeAt=2099-12-31T23:59:59Z&lastN=2'
+echo
+echo
+
+
+echo "10. GET temporal with count=true - NGSILD-Results-Count header"
+echo "==============================================================="
+orionCurl --url '/ngsi-ld/v1/temporal/entities/urn:ngsi-ld:entities:E1?timerel=before&timeAt=2099-12-31T23:59:59Z&count=true'
+echo
+echo
+
+
+echo "11. GET temporal with format=temporalValues"
+echo "============================================="
+orionCurl --url '/ngsi-ld/v1/temporal/entities/urn:ngsi-ld:entities:E1?timerel=before&timeAt=2099-12-31T23:59:59Z&attrs=P1&format=temporalValues'
+echo
+echo
+
+
+--REGEXPECT--
+01. Create an entity E1 with attrs P1=10, R1, B1=true
+=====================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1
+
+
+
+02. Update P1 to 20 and add P2=hello
+=====================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+03. Update P1 to 30 and B1 to false
+====================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+04. See the attributes in the temporal database (should show 3 versions of P1)
+===============================================================================
+opmode,id,valuetype,entityid,text,number,boolean,observedat
+Create,https://uri.etsi.org/ngsi-ld/default-context/B1,Boolean,urn:ngsi-ld:entities:E1,,,t,2024-01-01 10:00:00
+Replace,https://uri.etsi.org/ngsi-ld/default-context/B1,Boolean,urn:ngsi-ld:entities:E1,,,f,2024-01-01 12:00:00
+Create,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:ngsi-ld:entities:E1,,10,,2024-01-01 10:00:00
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:ngsi-ld:entities:E1,,20,,2024-01-01 11:00:00
+Replace,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:ngsi-ld:entities:E1,,30,,2024-01-01 12:00:00
+Append,https://uri.etsi.org/ngsi-ld/default-context/P2,String,urn:ngsi-ld:entities:E1,hello,,,2024-01-01 11:00:00
+Create,https://uri.etsi.org/ngsi-ld/default-context/R1,Relationship,urn:ngsi-ld:entities:E1,urn:ngsi-ld:entities:E2,,,2024-01-01 10:00:00
+
+
+05. GET /temporal/entities/E1?timerel=before&timeAt=<now> - should get all latest attrs
+=======================================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "B1": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T12:00:00Z",
+            "type": "Property",
+            "value": false
+        },
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T10:00:00Z",
+            "type": "Property",
+            "value": true
+        }
+    ],
+    "P1": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T12:00:00Z",
+            "type": "Property",
+            "unitCode": "CEL",
+            "value": 30
+        },
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T11:00:00Z",
+            "type": "Property",
+            "unitCode": "CEL",
+            "value": 20
+        },
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T10:00:00Z",
+            "type": "Property",
+            "unitCode": "CEL",
+            "value": 10
+        }
+    ],
+    "P2": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T11:00:00Z",
+            "type": "Property",
+            "value": "hello"
+        }
+    ],
+    "R1": [
+        {
+            "instanceId": "REGEX(.*)",
+            "object": "urn:ngsi-ld:entities:E2",
+            "observedAt": "2024-01-01T10:00:00Z",
+            "type": "Relationship"
+        }
+    ],
+    "id": "urn:ngsi-ld:entities:E1",
+    "type": "T"
+}
+
+
+06. GET /temporal/entities/E1?timerel=after&timeAt=2024-01-01 - all temporal data
+=================================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "B1": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T10:00:00Z",
+            "type": "Property",
+            "value": true
+        },
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T12:00:00Z",
+            "type": "Property",
+            "value": false
+        }
+    ],
+    "P1": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T10:00:00Z",
+            "type": "Property",
+            "unitCode": "CEL",
+            "value": 10
+        },
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T11:00:00Z",
+            "type": "Property",
+            "unitCode": "CEL",
+            "value": 20
+        },
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T12:00:00Z",
+            "type": "Property",
+            "unitCode": "CEL",
+            "value": 30
+        }
+    ],
+    "P2": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T11:00:00Z",
+            "type": "Property",
+            "value": "hello"
+        }
+    ],
+    "R1": [
+        {
+            "instanceId": "REGEX(.*)",
+            "object": "urn:ngsi-ld:entities:E2",
+            "observedAt": "2024-01-01T10:00:00Z",
+            "type": "Relationship"
+        }
+    ],
+    "id": "urn:ngsi-ld:entities:E1",
+    "type": "T"
+}
+
+
+07. GET /temporal/entities/E1?timerel=before&timeAt=<now>&options=simplified - simplified format
+================================================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "B1": [
+        false,
+        true
+    ],
+    "P1": [
+        30,
+        20,
+        10
+    ],
+    "P2": [
+        "hello"
+    ],
+    "R1": [
+        "urn:ngsi-ld:entities:E2"
+    ],
+    "id": "urn:ngsi-ld:entities:E1",
+    "type": "T"
+}
+
+
+08. GET temporal with attrs=P1 - only P1 attribute
+===================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "P1": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T12:00:00Z",
+            "type": "Property",
+            "unitCode": "CEL",
+            "value": 30
+        },
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T11:00:00Z",
+            "type": "Property",
+            "unitCode": "CEL",
+            "value": 20
+        },
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T10:00:00Z",
+            "type": "Property",
+            "unitCode": "CEL",
+            "value": 10
+        }
+    ],
+    "id": "urn:ngsi-ld:entities:E1",
+    "type": "T"
+}
+
+
+09. GET temporal with lastN=2 - only last 2 instances per attribute
+====================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "B1": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T12:00:00Z",
+            "type": "Property",
+            "value": false
+        },
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T10:00:00Z",
+            "type": "Property",
+            "value": true
+        }
+    ],
+    "P1": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T12:00:00Z",
+            "type": "Property",
+            "unitCode": "CEL",
+            "value": 30
+        },
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T11:00:00Z",
+            "type": "Property",
+            "unitCode": "CEL",
+            "value": 20
+        }
+    ],
+    "P2": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T11:00:00Z",
+            "type": "Property",
+            "value": "hello"
+        }
+    ],
+    "R1": [
+        {
+            "instanceId": "REGEX(.*)",
+            "object": "urn:ngsi-ld:entities:E2",
+            "observedAt": "2024-01-01T10:00:00Z",
+            "type": "Relationship"
+        }
+    ],
+    "id": "urn:ngsi-ld:entities:E1",
+    "type": "T"
+}
+
+
+10. GET temporal with count=true - NGSILD-Results-Count header
+===============================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+NGSILD-Results-Count: 7
+
+{
+    "B1": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T12:00:00Z",
+            "type": "Property",
+            "value": false
+        },
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T10:00:00Z",
+            "type": "Property",
+            "value": true
+        }
+    ],
+    "P1": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T12:00:00Z",
+            "type": "Property",
+            "unitCode": "CEL",
+            "value": 30
+        },
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T11:00:00Z",
+            "type": "Property",
+            "unitCode": "CEL",
+            "value": 20
+        },
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T10:00:00Z",
+            "type": "Property",
+            "unitCode": "CEL",
+            "value": 10
+        }
+    ],
+    "P2": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-01-01T11:00:00Z",
+            "type": "Property",
+            "value": "hello"
+        }
+    ],
+    "R1": [
+        {
+            "instanceId": "REGEX(.*)",
+            "object": "urn:ngsi-ld:entities:E2",
+            "observedAt": "2024-01-01T10:00:00Z",
+            "type": "Relationship"
+        }
+    ],
+    "id": "urn:ngsi-ld:entities:E1",
+    "type": "T"
+}
+
+
+11. GET temporal with format=temporalValues
+=============================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "P1": {
+        "type": "Property",
+        "values": [
+            [
+                30,
+                "2024-01-01T12:00:00Z"
+            ],
+            [
+                20,
+                "2024-01-01T11:00:00Z"
+            ],
+            [
+                10,
+                "2024-01-01T10:00:00Z"
+            ]
+        ]
+    },
+    "id": "urn:ngsi-ld:entities:E1",
+    "type": "T"
+}
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
+pgDrop $CB_DB_NAME

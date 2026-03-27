@@ -1,0 +1,602 @@
+# Copyright 2025 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Temporal queries with timeproperty=createdAt and timeproperty=modifiedAt across all endpoints
+
+--SHELL-INIT--
+export BROKER=orionld
+dbInit CB
+pgInit $CB_DB_NAME
+brokerStart CB 100 IPv4 -troe -experimental
+
+--SHELL--
+
+#
+# Test plan:
+#   Create E1 with P1=10 (observedAt June), then update P1=20 (observedAt March),
+#   then update P1=30 (observedAt September). The ts (record time) is always "now",
+#   so ts ordering is: 10 < 20 < 30 chronologically.
+#   observedAt ordering is: March(20) < June(10) < September(30)
+#
+#   Create E2 with P1=100 (observedAt April).
+#
+# 01. Create entity E1 with P1=10, observedAt June 2024
+# 02. Update P1=20, observedAt March 2024
+# 03. Update P1=30, observedAt September 2024
+# 04. Create entity E2 with P1=100, observedAt April 2024
+# 05. GET single entity E1 with timeproperty=createdAt - only Create instance (P1=10)
+# 06. GET single entity E1 with timeproperty=modifiedAt - all instances sorted by ts DESC
+# 07. GET multi-entity with timeproperty=createdAt - only Create instances for E1 and E2
+# 08. GET multi-entity with timeproperty=modifiedAt - all instances sorted by ts DESC
+# 09. POST temporal query with timeproperty=createdAt - only Create instances
+# 10. POST temporal query with timeproperty=modifiedAt - all instances sorted by ts DESC
+# 11. GET single entity E1 with timeproperty=modifiedAt, timerel=before, timeAt=2020 - empty (ts is "now")
+# 12. GET single entity E1 with timeproperty=modifiedAt, timerel=after, timeAt=2020 - all instances (ts > 2020)
+# 13. GET single entity E1 with timeproperty=createdAt, timerel=before, timeAt=2020 - empty (ts is "now")
+# 14. GET multi-entity with timeproperty=modifiedAt, timerel=before, timeAt=2020 - empty array
+# 15. GET single entity E1 default (observedAt), timerel=before, timeAt=2024-07 - only June and March instances
+#
+
+echo "01. Create entity E1 with P1=10, observedAt June 2024"
+echo "======================================================"
+payload='{
+  "id": "urn:ngsi-ld:entities:E1",
+  "type": "T",
+  "P1": {
+    "type": "Property",
+    "value": 10,
+    "observedAt": "2024-06-15T12:00:00Z"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+sleep 1.1
+
+
+echo "02. Update P1=20, observedAt March 2024"
+echo "========================================"
+payload='{
+  "P1": {
+    "type": "Property",
+    "value": 20,
+    "observedAt": "2024-03-15T12:00:00Z"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1/attrs --payload "$payload" --verb PATCH
+echo
+echo
+
+
+sleep 1.1
+
+
+echo "03. Update P1=30, observedAt September 2024"
+echo "============================================="
+payload='{
+  "P1": {
+    "type": "Property",
+    "value": 30,
+    "observedAt": "2024-09-15T12:00:00Z"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1/attrs --payload "$payload" --verb PATCH
+echo
+echo
+
+
+echo "04. Create entity E2 with P1=100, observedAt April 2024"
+echo "========================================================"
+payload='{
+  "id": "urn:ngsi-ld:entities:E2",
+  "type": "T",
+  "P1": {
+    "type": "Property",
+    "value": 100,
+    "observedAt": "2024-04-10T12:00:00Z"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+sleep 1
+
+
+echo "05. GET single entity E1 with timeproperty=createdAt - only Create instance (P1=10)"
+echo "===================================================================================="
+orionCurl --url '/ngsi-ld/v1/temporal/entities/urn:ngsi-ld:entities:E1?timerel=before&timeAt=2099-12-31T23:59:59Z&timeproperty=createdAt'
+echo
+echo
+
+
+echo "06. GET single entity E1 with timeproperty=modifiedAt - all instances sorted by ts DESC"
+echo "========================================================================================"
+orionCurl --url '/ngsi-ld/v1/temporal/entities/urn:ngsi-ld:entities:E1?timerel=before&timeAt=2099-12-31T23:59:59Z&timeproperty=modifiedAt'
+echo
+echo
+
+
+echo "07. GET multi-entity with timeproperty=createdAt - only Create instances"
+echo "========================================================================"
+orionCurl --url '/ngsi-ld/v1/temporal/entities?type=T&timerel=before&timeAt=2099-12-31T23:59:59Z&timeproperty=createdAt'
+echo
+echo
+
+
+echo "08. GET multi-entity with timeproperty=modifiedAt - all instances sorted by ts DESC"
+echo "===================================================================================="
+orionCurl --url '/ngsi-ld/v1/temporal/entities?type=T&timerel=before&timeAt=2099-12-31T23:59:59Z&timeproperty=modifiedAt'
+echo
+echo
+
+
+echo "09. POST temporal query with timeproperty=createdAt - only Create instances"
+echo "============================================================================"
+payload='{
+  "type": "Query",
+  "entities": [
+    {
+      "type": "T"
+    }
+  ],
+  "temporalQ": {
+    "timerel": "before",
+    "timeAt": "2099-12-31T23:59:59Z",
+    "timeproperty": "createdAt"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/temporal/entityOperations/query --payload "$payload"
+echo
+echo
+
+
+echo "10. POST temporal query with timeproperty=modifiedAt - all instances sorted by ts DESC"
+echo "======================================================================================="
+payload='{
+  "type": "Query",
+  "entities": [
+    {
+      "type": "T"
+    }
+  ],
+  "temporalQ": {
+    "timerel": "before",
+    "timeAt": "2099-12-31T23:59:59Z",
+    "timeproperty": "modifiedAt"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/temporal/entityOperations/query --payload "$payload"
+echo
+echo
+
+
+echo "11. GET single entity E1 with timeproperty=modifiedAt, timerel=before, timeAt=2020 - empty (ts is now)"
+echo "========================================================================================================"
+orionCurl --url '/ngsi-ld/v1/temporal/entities/urn:ngsi-ld:entities:E1?timerel=before&timeAt=2020-01-01T00:00:00Z&timeproperty=modifiedAt'
+echo
+echo
+
+
+echo "12. GET single entity E1 with timeproperty=modifiedAt, timerel=after, timeAt=2020 - all instances"
+echo "=================================================================================================="
+orionCurl --url '/ngsi-ld/v1/temporal/entities/urn:ngsi-ld:entities:E1?timerel=after&timeAt=2020-01-01T00:00:00Z&timeproperty=modifiedAt'
+echo
+echo
+
+
+echo "13. GET single entity E1 with timeproperty=createdAt, timerel=before, timeAt=2020 - empty (ts is now)"
+echo "======================================================================================================="
+orionCurl --url '/ngsi-ld/v1/temporal/entities/urn:ngsi-ld:entities:E1?timerel=before&timeAt=2020-01-01T00:00:00Z&timeproperty=createdAt'
+echo
+echo
+
+
+echo "14. GET multi-entity with timeproperty=modifiedAt, timerel=before, timeAt=2020 - empty array"
+echo "============================================================================================="
+orionCurl --url '/ngsi-ld/v1/temporal/entities?type=T&timerel=before&timeAt=2020-01-01T00:00:00Z&timeproperty=modifiedAt'
+echo
+echo
+
+
+echo "15. GET single entity E1 default (observedAt), timerel=before, timeAt=2024-07 - only June and March instances"
+echo "=============================================================================================================="
+orionCurl --url '/ngsi-ld/v1/temporal/entities/urn:ngsi-ld:entities:E1?timerel=before&timeAt=2024-07-01T00:00:00Z'
+echo
+echo
+
+
+--REGEXPECT--
+01. Create entity E1 with P1=10, observedAt June 2024
+======================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1
+
+
+
+02. Update P1=20, observedAt March 2024
+========================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+03. Update P1=30, observedAt September 2024
+=============================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+04. Create entity E2 with P1=100, observedAt April 2024
+========================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E2
+
+
+
+05. GET single entity E1 with timeproperty=createdAt - only Create instance (P1=10)
+====================================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "P1": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-06-15T12:00:00Z",
+            "type": "Property",
+            "value": 10
+        }
+    ],
+    "id": "urn:ngsi-ld:entities:E1",
+    "type": "T"
+}
+
+
+06. GET single entity E1 with timeproperty=modifiedAt - all instances sorted by ts DESC
+========================================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "P1": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-09-15T12:00:00Z",
+            "type": "Property",
+            "value": 30
+        },
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-03-15T12:00:00Z",
+            "type": "Property",
+            "value": 20
+        },
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-06-15T12:00:00Z",
+            "type": "Property",
+            "value": 10
+        }
+    ],
+    "id": "urn:ngsi-ld:entities:E1",
+    "type": "T"
+}
+
+
+07. GET multi-entity with timeproperty=createdAt - only Create instances
+========================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-06-15T12:00:00Z",
+                "type": "Property",
+                "value": 10
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E1",
+        "type": "T"
+    },
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-04-10T12:00:00Z",
+                "type": "Property",
+                "value": 100
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E2",
+        "type": "T"
+    }
+]
+
+
+08. GET multi-entity with timeproperty=modifiedAt - all instances sorted by ts DESC
+====================================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-09-15T12:00:00Z",
+                "type": "Property",
+                "value": 30
+            },
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-03-15T12:00:00Z",
+                "type": "Property",
+                "value": 20
+            },
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-06-15T12:00:00Z",
+                "type": "Property",
+                "value": 10
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E1",
+        "type": "T"
+    },
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-04-10T12:00:00Z",
+                "type": "Property",
+                "value": 100
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E2",
+        "type": "T"
+    }
+]
+
+
+09. POST temporal query with timeproperty=createdAt - only Create instances
+============================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-06-15T12:00:00Z",
+                "type": "Property",
+                "value": 10
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E1",
+        "type": "T"
+    },
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-04-10T12:00:00Z",
+                "type": "Property",
+                "value": 100
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E2",
+        "type": "T"
+    }
+]
+
+
+10. POST temporal query with timeproperty=modifiedAt - all instances sorted by ts DESC
+=======================================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-09-15T12:00:00Z",
+                "type": "Property",
+                "value": 30
+            },
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-03-15T12:00:00Z",
+                "type": "Property",
+                "value": 20
+            },
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-06-15T12:00:00Z",
+                "type": "Property",
+                "value": 10
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E1",
+        "type": "T"
+    },
+    {
+        "P1": [
+            {
+                "instanceId": "REGEX(.*)",
+                "observedAt": "2024-04-10T12:00:00Z",
+                "type": "Property",
+                "value": 100
+            }
+        ],
+        "id": "urn:ngsi-ld:entities:E2",
+        "type": "T"
+    }
+]
+
+
+11. GET single entity E1 with timeproperty=modifiedAt, timerel=before, timeAt=2020 - empty (ts is now)
+========================================================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "id": "urn:ngsi-ld:entities:E1",
+    "type": "T"
+}
+
+
+12. GET single entity E1 with timeproperty=modifiedAt, timerel=after, timeAt=2020 - all instances
+==================================================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "P1": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-06-15T12:00:00Z",
+            "type": "Property",
+            "value": 10
+        },
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-03-15T12:00:00Z",
+            "type": "Property",
+            "value": 20
+        },
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-09-15T12:00:00Z",
+            "type": "Property",
+            "value": 30
+        }
+    ],
+    "id": "urn:ngsi-ld:entities:E1",
+    "type": "T"
+}
+
+
+13. GET single entity E1 with timeproperty=createdAt, timerel=before, timeAt=2020 - empty (ts is now)
+=======================================================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "id": "urn:ngsi-ld:entities:E1",
+    "type": "T"
+}
+
+
+14. GET multi-entity with timeproperty=modifiedAt, timerel=before, timeAt=2020 - empty array
+=============================================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "id": "urn:ngsi-ld:entities:E1",
+        "type": "T"
+    },
+    {
+        "id": "urn:ngsi-ld:entities:E2",
+        "type": "T"
+    }
+]
+
+
+15. GET single entity E1 default (observedAt), timerel=before, timeAt=2024-07 - only June and March instances
+==============================================================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "P1": [
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-06-15T12:00:00Z",
+            "type": "Property",
+            "value": 10
+        },
+        {
+            "instanceId": "REGEX(.*)",
+            "observedAt": "2024-03-15T12:00:00Z",
+            "type": "Property",
+            "value": 20
+        }
+    ],
+    "id": "urn:ngsi-ld:entities:E1",
+    "type": "T"
+}
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
+pgDrop $CB_DB_NAME

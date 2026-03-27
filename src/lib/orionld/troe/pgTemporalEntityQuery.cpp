@@ -1,0 +1,390 @@
+/*
+*
+* Copyright 2024 FIWARE Foundation e.V.
+*
+* This file is part of Orion-LD Context Broker.
+*
+* Orion-LD Context Broker is free software: you can redistribute it and/or
+* modify it under the terms of the GNU Affero General Public License as
+* published by the Free Software Foundation, either version 3 of the
+* License, or (at your option) any later version.
+*
+* Orion-LD Context Broker is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+* General Public License for more details.
+*
+* You should have received a copy of the GNU Affero General Public License
+* along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+*
+* For those usages not covered by this license please contact with
+* orionld at fiware dot org
+*
+* Author: Carsten Frey
+*/
+#include <stdio.h>                                            // snprintf
+#include <string.h>                                            // strcmp, strlen
+
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+#include "kalloc/kaAlloc.h"                                    // kaAlloc
+}
+
+#include "orionld/types/PgConnection.h"                        // PgConnection
+#include "orionld/types/StringArray.h"                         // StringArray
+#include "orionld/common/orionldState.h"                       // orionldState
+#include "orionld/common/traceLevels.h"                        // KTrace levels
+#include "orionld/common/pqHeader.h"                           // PGresult, PQexecParams, etc.
+#include "orionld/troe/pgConnectionGet.h"                      // pgConnectionGet
+#include "orionld/troe/pgConnectionRelease.h"                  // pgConnectionRelease
+#include "orionld/troe/pgTemporalEntityQuery.h"                // Own interface
+
+
+
+// -----------------------------------------------------------------------------
+//
+// timeColumnForTimeproperty - determine the SQL time column from the timeproperty URI param
+//
+// Per ETSI GS CIM 009 (Clause 4.5.6):
+//   - observedAt (default): filter on the observedat column
+//   - modifiedAt: filter on ts (the record timestamp)
+//   - createdAt:  filter on ts with additional opmode='Create' constraint
+//
+static const char* timeColumnForTimeproperty(const char* timeproperty)
+{
+  if (timeproperty == NULL)
+    return "observedat";
+
+  if (strcmp(timeproperty, "modifiedAt") == 0)
+    return "ts";
+
+  if (strcmp(timeproperty, "createdAt") == 0)
+    return "ts";
+
+  return "observedat";
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// attrsFilter - build an SQL IN clause for attribute name filtering
+//
+// Returns "" if no attrs filter, or " AND id IN ('attr1','attr2',...)" if attrs are specified.
+// The returned buffer is allocated via kaAlloc.
+//
+static const char* attrsFilter(StringArray* attrList)
+{
+  if (attrList->items == 0)
+    return "";
+
+  // Calculate needed size: " AND id IN (" + quoted attrs + ")"
+  int needed = 16;  // " AND id IN (" + ")"
+  for (int i = 0; i < attrList->items; i++)
+    needed += strlen(attrList->array[i]) + 3;  // 'x',
+
+  char* buf = kaAlloc(&orionldState.kalloc, needed);
+  int   pos = 0;
+
+  pos += snprintf(buf + pos, needed - pos, " AND id IN (");
+  for (int i = 0; i < attrList->items; i++)
+  {
+    if (i > 0) buf[pos++] = ',';
+    pos += snprintf(buf + pos, needed - pos, "'%s'", attrList->array[i]);
+  }
+  buf[pos++] = ')';
+  buf[pos]   = 0;
+
+  return buf;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// SQL query SELECT/FROM/ORDER parts (shared between all timerel variants)
+//
+static const char* entitySelect =
+  "SELECT id, type FROM entities ";
+
+static const char* attrSelect =
+  "SELECT "
+  "id, valuetype::text, text, boolean, number, datetime, compound, "
+  "observedat, unitcode, datasetid, subproperties, "
+  "ST_AsGeoJSON(geopoint) as geopoint, "
+  "ST_AsGeoJSON(geopolygon) as geopolygon, "
+  "ST_AsGeoJSON(geomultipoint) as geomultipoint, "
+  "ST_AsGeoJSON(geomultipolygon) as geomultipolygon, "
+  "ST_AsGeoJSON(geolinestring) as geolinestring, "
+  "ST_AsGeoJSON(geomultilinestring) as geomultilinestring, "
+  "instanceid "
+  "FROM attributes ";
+
+static const char* subAttrSelect =
+  "SELECT "
+  "id, attrinstanceid, attrdatasetid, valuetype::text, "
+  "text, boolean, number, datetime, compound, "
+  "observedat, unitcode, "
+  "ST_AsGeoJSON(geopoint) as geopoint "
+  "FROM subattributes ";
+
+
+
+// -----------------------------------------------------------------------------
+//
+// pgTemporalEntityQuery -
+//
+bool pgTemporalEntityQuery
+(
+  const char*   entityId,
+  const char*   timerel,
+  const char*   timeAt,
+  const char*   endTimeAt,
+  const char*   timeproperty,
+  StringArray*  attrList,
+  int           lastN,
+  PGresult**    entityResP,
+  PGresult**    attrResP,
+  PGresult**    subAttrResP
+)
+{
+  *entityResP  = NULL;
+  *attrResP    = NULL;
+  *subAttrResP = NULL;
+
+  PgConnection* connectionP = pgConnectionGet(orionldState.tenantP->troeDbName);
+  if ((connectionP == NULL) || (connectionP->connectionP == NULL))
+  {
+    KT_E("pgTemporalEntityQuery: no connection to postgres");
+    return false;
+  }
+
+  const char* timeCol  = timeColumnForTimeproperty(timeproperty);
+  bool createdAtFilter = (timeproperty != NULL && strcmp(timeproperty, "createdAt") == 0);
+
+  //
+  // Build attribute name filter (empty string if no attrs specified)
+  //
+  const char* attrFilter = attrsFilter(attrList);
+
+  //
+  // Build query strings dynamically based on timerel, timeproperty, attrs, and lastN
+  //
+  // For lastN we use a window function approach:
+  //   SELECT * FROM (
+  //     SELECT ..., ROW_NUMBER() OVER (PARTITION BY id, datasetid ORDER BY <timeCol> DESC) as rn
+  //     FROM attributes WHERE ...
+  //   ) sub WHERE rn <= lastN ORDER BY id, datasetid, <timeCol> DESC
+  //
+  char entityQuery[512];
+  char attrQuery[4096];
+  char subAttrQuery[1024];
+  int  nParams;
+
+  const char* opmodeFilter = createdAtFilter ? " AND opmode = 'Create'" : " AND opmode != 'Delete'";
+
+  if (timerel == NULL)
+  {
+    // No time filter - return all attribute instances
+    nParams = 1;
+
+    snprintf(entityQuery, sizeof(entityQuery),
+             "%sWHERE id = $1 ORDER BY ts DESC LIMIT 1", entitySelect);
+
+    if (lastN > 0)
+    {
+      snprintf(attrQuery, sizeof(attrQuery),
+               "SELECT * FROM ("
+               "SELECT id, valuetype::text, text, boolean, number, datetime, compound, "
+               "observedat, unitcode, datasetid, subproperties, "
+               "ST_AsGeoJSON(geopoint) as geopoint, ST_AsGeoJSON(geopolygon) as geopolygon, "
+               "ST_AsGeoJSON(geomultipoint) as geomultipoint, ST_AsGeoJSON(geomultipolygon) as geomultipolygon, "
+               "ST_AsGeoJSON(geolinestring) as geolinestring, ST_AsGeoJSON(geomultilinestring) as geomultilinestring, "
+               "instanceid, ts, ROW_NUMBER() OVER (PARTITION BY id, datasetid ORDER BY %s DESC) as rn "
+               "FROM attributes "
+               "WHERE entityid = $1%s%s"
+               ") sub WHERE rn <= %d ORDER BY id, datasetid, %s DESC",
+               timeCol, opmodeFilter, attrFilter, lastN, timeCol);
+    }
+    else
+    {
+      snprintf(attrQuery, sizeof(attrQuery),
+               "%sWHERE entityid = $1%s%s ORDER BY id, datasetid, %s DESC",
+               attrSelect, opmodeFilter, attrFilter, timeCol);
+    }
+
+    snprintf(subAttrQuery, sizeof(subAttrQuery),
+             "%sWHERE entityid = $1 ORDER BY id, attrinstanceid, attrdatasetid, ts DESC",
+             subAttrSelect);
+  }
+  else if (strcmp(timerel, "before") == 0)
+  {
+    nParams = 2;
+
+    // Entity lookup: no time filter needed - we just need the entity type.
+    // Time filtering happens at the attribute level using the correct timeproperty column.
+    snprintf(entityQuery, sizeof(entityQuery),
+             "%sWHERE id = $1 ORDER BY ts DESC LIMIT 1", entitySelect);
+
+    if (lastN > 0)
+    {
+      snprintf(attrQuery, sizeof(attrQuery),
+               "SELECT * FROM ("
+               "SELECT id, valuetype::text, text, boolean, number, datetime, compound, "
+               "observedat, unitcode, datasetid, subproperties, "
+               "ST_AsGeoJSON(geopoint) as geopoint, ST_AsGeoJSON(geopolygon) as geopolygon, "
+               "ST_AsGeoJSON(geomultipoint) as geomultipoint, ST_AsGeoJSON(geomultipolygon) as geomultipolygon, "
+               "ST_AsGeoJSON(geolinestring) as geolinestring, ST_AsGeoJSON(geomultilinestring) as geomultilinestring, "
+               "instanceid, ts, ROW_NUMBER() OVER (PARTITION BY id, datasetid ORDER BY %s DESC) as rn "
+               "FROM attributes "
+               "WHERE entityid = $1 AND %s <= $2%s%s"
+               ") sub WHERE rn <= %d ORDER BY id, datasetid, %s DESC",
+               timeCol, timeCol, opmodeFilter, attrFilter, lastN, timeCol);
+    }
+    else
+    {
+      snprintf(attrQuery, sizeof(attrQuery),
+               "%sWHERE entityid = $1 AND %s <= $2%s%s ORDER BY id, datasetid, %s DESC",
+               attrSelect, timeCol, opmodeFilter, attrFilter, timeCol);
+    }
+
+    snprintf(subAttrQuery, sizeof(subAttrQuery),
+             "%sWHERE entityid = $1 AND ts <= $2 ORDER BY id, attrinstanceid, attrdatasetid, ts DESC",
+             subAttrSelect);
+  }
+  else if (strcmp(timerel, "after") == 0)
+  {
+    nParams = 2;
+
+    snprintf(entityQuery, sizeof(entityQuery),
+             "%sWHERE id = $1 ORDER BY ts DESC LIMIT 1", entitySelect);
+
+    if (lastN > 0)
+    {
+      snprintf(attrQuery, sizeof(attrQuery),
+               "SELECT * FROM ("
+               "SELECT id, valuetype::text, text, boolean, number, datetime, compound, "
+               "observedat, unitcode, datasetid, subproperties, "
+               "ST_AsGeoJSON(geopoint) as geopoint, ST_AsGeoJSON(geopolygon) as geopolygon, "
+               "ST_AsGeoJSON(geomultipoint) as geomultipoint, ST_AsGeoJSON(geomultipolygon) as geomultipolygon, "
+               "ST_AsGeoJSON(geolinestring) as geolinestring, ST_AsGeoJSON(geomultilinestring) as geomultilinestring, "
+               "instanceid, ts, ROW_NUMBER() OVER (PARTITION BY id, datasetid ORDER BY %s DESC) as rn "
+               "FROM attributes "
+               "WHERE entityid = $1 AND %s >= $2%s%s"
+               ") sub WHERE rn <= %d ORDER BY id, datasetid, %s DESC",
+               timeCol, timeCol, opmodeFilter, attrFilter, lastN, timeCol);
+    }
+    else
+    {
+      snprintf(attrQuery, sizeof(attrQuery),
+               "%sWHERE entityid = $1 AND %s >= $2%s%s ORDER BY id, datasetid, %s ASC",
+               attrSelect, timeCol, opmodeFilter, attrFilter, timeCol);
+    }
+
+    snprintf(subAttrQuery, sizeof(subAttrQuery),
+             "%sWHERE entityid = $1 AND ts >= $2 ORDER BY id, attrinstanceid, attrdatasetid, ts ASC",
+             subAttrSelect);
+  }
+  else if (strcmp(timerel, "between") == 0)
+  {
+    nParams = 3;
+
+    snprintf(entityQuery, sizeof(entityQuery),
+             "%sWHERE id = $1 ORDER BY ts DESC LIMIT 1", entitySelect);
+
+    if (lastN > 0)
+    {
+      snprintf(attrQuery, sizeof(attrQuery),
+               "SELECT * FROM ("
+               "SELECT id, valuetype::text, text, boolean, number, datetime, compound, "
+               "observedat, unitcode, datasetid, subproperties, "
+               "ST_AsGeoJSON(geopoint) as geopoint, ST_AsGeoJSON(geopolygon) as geopolygon, "
+               "ST_AsGeoJSON(geomultipoint) as geomultipoint, ST_AsGeoJSON(geomultipolygon) as geomultipolygon, "
+               "ST_AsGeoJSON(geolinestring) as geolinestring, ST_AsGeoJSON(geomultilinestring) as geomultilinestring, "
+               "instanceid, ts, ROW_NUMBER() OVER (PARTITION BY id, datasetid ORDER BY %s DESC) as rn "
+               "FROM attributes "
+               "WHERE entityid = $1 AND %s >= $2 AND %s <= $3%s%s"
+               ") sub WHERE rn <= %d ORDER BY id, datasetid, %s DESC",
+               timeCol, timeCol, timeCol, opmodeFilter, attrFilter, lastN, timeCol);
+    }
+    else
+    {
+      snprintf(attrQuery, sizeof(attrQuery),
+               "%sWHERE entityid = $1 AND %s >= $2 AND %s <= $3%s%s ORDER BY id, datasetid, %s DESC",
+               attrSelect, timeCol, timeCol, opmodeFilter, attrFilter, timeCol);
+    }
+
+    snprintf(subAttrQuery, sizeof(subAttrQuery),
+             "%sWHERE entityid = $1 AND ts >= $2 AND ts <= $3 ORDER BY id, attrinstanceid, attrdatasetid, ts DESC",
+             subAttrSelect);
+  }
+  else
+  {
+    KT_E("pgTemporalEntityQuery: invalid timerel '%s'", timerel);
+    pgConnectionRelease(connectionP);
+    return false;
+  }
+
+  // Build parameter arrays
+  const char* params1[] = { entityId };
+  const char* params2[] = { entityId, timeAt };
+  const char* params3[] = { entityId, timeAt, endTimeAt };
+  const char** paramValues = (nParams == 3) ? params3 : (nParams == 2) ? params2 : params1;
+
+  //
+  // Query 1: Entity type (only needs $1 = entityId, no time params)
+  //
+  const char* entityParams[] = { entityId };
+  KT_T(KtSql, "SQL[entity]: %s (entityId=%s, timeAt=%s)", entityQuery, entityId, timeAt);
+  *entityResP = PQexecParams(connectionP->connectionP, entityQuery, 1, NULL, entityParams, NULL, NULL, 0);
+  if (*entityResP == NULL || PQresultStatus(*entityResP) != PGRES_TUPLES_OK)
+  {
+    KT_E("pgTemporalEntityQuery: entity query failed: %s", PQerrorMessage(connectionP->connectionP));
+    if (*entityResP != NULL)
+      PQclear(*entityResP);
+    *entityResP = NULL;
+    pgConnectionRelease(connectionP);
+    return false;
+  }
+
+  // If no entity found, return successfully but with empty result (caller checks ntuples)
+  if (PQntuples(*entityResP) == 0)
+  {
+    pgConnectionRelease(connectionP);
+    return true;
+  }
+
+  //
+  // Query 2: Attributes (all instances in the time window, filtered by attrs and limited by lastN)
+  //
+  KT_T(KtSql, "SQL[attrs]: %s", attrQuery);
+  *attrResP = PQexecParams(connectionP->connectionP, attrQuery, nParams, NULL, paramValues, NULL, NULL, 0);
+  if (*attrResP == NULL || PQresultStatus(*attrResP) != PGRES_TUPLES_OK)
+  {
+    KT_E("pgTemporalEntityQuery: attributes query failed: %s", PQerrorMessage(connectionP->connectionP));
+    if (*attrResP != NULL)
+      PQclear(*attrResP);
+    *attrResP = NULL;
+    pgConnectionRelease(connectionP);
+    return false;
+  }
+
+  //
+  // Query 3: Sub-Attributes
+  //
+  KT_T(KtSql, "SQL[subAttrs]: %s", subAttrQuery);
+  *subAttrResP = PQexecParams(connectionP->connectionP, subAttrQuery, nParams, NULL, paramValues, NULL, NULL, 0);
+  if (*subAttrResP == NULL || PQresultStatus(*subAttrResP) != PGRES_TUPLES_OK)
+  {
+    KT_E("pgTemporalEntityQuery: sub-attributes query failed: %s", PQerrorMessage(connectionP->connectionP));
+    if (*subAttrResP != NULL)
+      PQclear(*subAttrResP);
+    *subAttrResP = NULL;
+    pgConnectionRelease(connectionP);
+    return false;
+  }
+
+  pgConnectionRelease(connectionP);
+  return true;
+}
