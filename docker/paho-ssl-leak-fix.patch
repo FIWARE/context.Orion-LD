@@ -1,0 +1,41 @@
+diff --git a/src/MQTTClient.c b/src/MQTTClient.c
+index 7cba42b..a2ba60f 100644
+--- a/src/MQTTClient.c
++++ b/src/MQTTClient.c
+@@ -578,6 +578,19 @@ void MQTTClient_destroy(MQTTClient* handle)
+ 	{
+ 		SOCKET saved_socket = m->c->net.socket;
+ 		char* saved_clientid = MQTTStrdup(m->c->clientID);
++#if defined(OPENSSL)
++		/* Ensure SSL context is freed even if disconnect wasn't called or socket was already closed */
++		if (m->c->net.ssl != NULL)
++		{
++			SSLSocket_close(&m->c->net);
++			m->c->net.ssl = NULL;
++		}
++		if (m->c->session != NULL)
++		{
++			SSL_SESSION_free(m->c->session);
++			m->c->session = NULL;
++		}
++#endif
+ #if !defined(NO_PERSISTENCE)
+ 		MQTTPersistence_close(m->c);
+ #endif
+@@ -1088,6 +1101,16 @@ static void MQTTClient_closeSession(Clients* client, enum MQTTReasonCodes reason
+ 		client->net.ssl = NULL;
+ #endif
+ 	}
++#if defined(OPENSSL)
++	else if (client->net.ssl != NULL)
++	{
++		/* Socket already closed but SSL context not freed - clean it up */
++		Thread_lock_mutex(socket_mutex);
++		SSLSocket_close(&client->net);
++		Thread_unlock_mutex(socket_mutex);
++		client->net.ssl = NULL;
++	}
++#endif
+ 	client->connected = 0;
+ 	client->connect_state = NOT_IN_PROGRESS;
+ 
