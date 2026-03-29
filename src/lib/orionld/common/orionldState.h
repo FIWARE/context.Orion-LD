@@ -435,6 +435,13 @@ typedef struct OrionldConnectionState
   void*                   delayedFreePointer;
 
   //
+  // Delayed cleanup - pointers that need a custom free function after response rendering
+  //
+  void                    (*delayedCleanupFunc)(void* ptr);
+  void*                   delayedCleanupVec[100];
+  int                     delayedCleanupCount;
+
+  //
   // Notifications
   //
   OrionldAlteration*      alterations;

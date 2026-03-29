@@ -27,13 +27,14 @@ Update the entity with the dateExpires attribute, in order to make it transient
 --SHELL-INIT--
 dbInit CB
 brokerStart CB
+mongoCmd admin 'db.adminCommand({setParameter:1, ttlMonitorSleepSecs: 2})'
 
 --SHELL--
 
 #
 # 01. POST /v2/entities without dateExpires attribute, create regular entity
 # 02. PUT /v2/entities/E1/attrs with dateExpires attribute, the entity becomes transient
-# 03. GET /v2/entities after 60 seconds (default removal interval of mongo TTL thread)
+# 03. GET /v2/entities after a few seconds (TTL monitor sped up to 2s)
 # and check if the entity was removed.
 #
 
@@ -61,13 +62,13 @@ payload='{
     }
 }'
 orionCurl --url /v2/entities/E1/attrs --payload "$payload" -X PUT
-sleep 60
+sleep 10
 echo
 echo
 
 
-echo "03. GET /v2/entities after 60 seconds and check if the entity was removed"
-echo "========================================================================="
+echo "03. GET /v2/entities after a few seconds and check if the entity was removed"
+echo "============================================================================"
 orionCurl --url "/v2/entities"
 echo
 echo
@@ -91,8 +92,8 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 
 
-03. GET /v2/entities after 60 seconds and check if the entity was removed
-=========================================================================
+03. GET /v2/entities after a few seconds and check if the entity was removed
+============================================================================
 HTTP/1.1 200 OK
 Content-Length: 2
 Content-Type: application/json

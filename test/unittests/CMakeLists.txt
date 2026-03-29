@@ -65,31 +65,6 @@ SET (SOURCES
     testInit.cpp
     unittest.cpp
 
-    ngsi9/RegisterContextRequest_test.cpp
-    ngsi9/RegisterContextResponse_test.cpp
-    ngsi9/DiscoverContextAvailabilityRequest_test.cpp
-    ngsi9/DiscoverContextAvailabilityResponse_test.cpp
-    ngsi9/SubscribeAvailabilityRequest_test.cpp
-    ngsi9/SubscribeContextAvailabilityResponse_test.cpp
-    ngsi9/NotifyContextAvailabilityRequest_test.cpp
-    ngsi9/NotifyContextAvailabilityResponse_test.cpp
-    ngsi9/UnsubscribeContextAvailabilityRequest_test.cpp
-    ngsi9/UnsubscribeContextAvailabilityResponse_test.cpp
-    ngsi9/UpdateContextAvailabilitySubscriptionRequest_test.cpp
-    ngsi9/UpdateContextAvailabilitySubscriptionResponse_test.cpp
-
-    ngsi10/QueryContextRequest_test.cpp
-    ngsi10/QueryContextResponse_test.cpp
-    ngsi10/NotifyContextRequest_test.cpp
-    ngsi10/SubscribeContextRequest_test.cpp
-    ngsi10/SubscribeContextResponse_test.cpp
-    ngsi10/UnsubscribeContextRequest_test.cpp
-    ngsi10/UnsubscribeContextResponse_test.cpp
-    ngsi10/UpdateContextRequest_test.cpp
-    ngsi10/UpdateContextResponse_test.cpp
-    ngsi10/UpdateContextSubscriptionRequest_test.cpp
-    ngsi10/UpdateContextSubscriptionResponse_test.cpp
-
     ngsi/ContextAttribute_test.cpp
     ngsi/ContextElement_test.cpp
     ngsi/NotifyCondition_test.cpp
@@ -134,14 +109,11 @@ SET (SOURCES
     apiTypesV2/EntityVector_test.cpp
 
     parse/CompoundValueNode_test.cpp
-    parse/compoundValue_test.cpp
     parse/nullTreat_test.cpp
-    jsonParse/jsonRequest_test.cpp
 
     rest/OrionError_test.cpp
     rest/Verb_test.cpp
     rest/restReply_test.cpp
-    rest/RestService_test.cpp
     rest/rest_test.cpp
 )
 

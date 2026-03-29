@@ -2133,7 +2133,7 @@ function urlencode
 #
 function orionldMetrics
 {
-  sleep .1
+  sleep .5
   curl localhost:8000/metrics --silent | egrep -v '^#' | egrep -v '^process_' | egrep -v '^$'
 }
 

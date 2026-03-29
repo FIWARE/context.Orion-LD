@@ -33,13 +33,10 @@ extern "C"
 #include "common/globals.h"
 #include "common/tag.h"
 #include "alarmMgr/alarmMgr.h"
-#include "convenience/UpdateContextElementRequest.h"
-#include "convenience/AppendContextElementRequest.h"
 #include "ngsi/ContextElement.h"
 #include "ngsi/ContextAttribute.h"
 #include "ngsi10/UpdateContextRequest.h"
 #include "ngsi10/UpdateContextResponse.h"
-#include "convenience/UpdateContextAttributeRequest.h"
 
 
 /* ****************************************************************************
@@ -119,151 +116,6 @@ std::string UpdateContextRequest::check(ApiVersion apiVersion, bool asJsonObject
 void UpdateContextRequest::release(void)
 {
   contextElementVector.release();
-}
-
-
-
-/* ****************************************************************************
-*
-* UpdateContextRequest::fill -
-*/
-void UpdateContextRequest::fill
-(
-  const UpdateContextElementRequest* ucerP,
-  const std::string&                 entityId,
-  const std::string&                 entityType
-)
-{
-  ContextElement* ceP = new ContextElement();
-
-  ceP->entityId.fill(entityId, entityType, "false");
-
-  ceP->attributeDomainName.fill(ucerP->attributeDomainName);
-  ceP->contextAttributeVector.fill((ContextAttributeVector*) &ucerP->contextAttributeVector);
-  ceP->domainMetadataVector.fill((MetadataVector*) &ucerP->domainMetadataVector);
-
-  contextElementVector.push_back(ceP);
-
-  updateActionType = ActionTypeUpdate;  // Coming from an UpdateContextElementRequest (PUT), must be UPDATE
-}
-
-
-
-/* ****************************************************************************
-*
-* UpdateContextRequest::fill -
-*/
-void UpdateContextRequest::fill
-(
-  const AppendContextElementRequest*  acerP,
-  const std::string&                  entityId,
-  const std::string&                  entityType
-)
-{
-  ContextElement* ceP = new ContextElement();
-
-  ceP->entityId.fill(entityId, entityType, "false");
-
-  ceP->attributeDomainName.fill(acerP->attributeDomainName);
-  ceP->contextAttributeVector.fill((ContextAttributeVector*) &acerP->contextAttributeVector);
-  ceP->domainMetadataVector.fill((MetadataVector*) &acerP->domainMetadataVector);
-
-  contextElementVector.push_back(ceP);
-  updateActionType = ActionTypeAppend;  // Coming from an AppendContextElementRequest (POST), must be APPEND
-}
-
-
-
-/* ****************************************************************************
-*
-* UpdateContextRequest::fill -
-*/
-void UpdateContextRequest::fill
-(
-  const std::string& entityId,
-  const std::string& entityType,
-  const std::string& isPattern,
-  const std::string& attributeName,
-  const std::string& metaID,
-  ActionType         _updateActionType
-)
-{
-  ContextElement* ceP = new ContextElement();
-
-  ceP->entityId.fill(entityId, entityType, isPattern);
-  contextElementVector.push_back(ceP);
-
-  updateActionType = _updateActionType;
-
-  if (attributeName != "")
-  {
-    ContextAttribute* caP = new ContextAttribute(attributeName, "", "");
-    ceP->contextAttributeVector.push_back(caP);
-
-    if (metaID != "")
-    {
-      Metadata* mP = new Metadata("ID", "", metaID);
-
-      caP->metadataVector.push_back(mP);
-    }
-  }
-}
-
-
-
-/* ****************************************************************************
-*
-* UpdateContextRequest::fill -
-*/
-void UpdateContextRequest::fill
-(
-  const UpdateContextAttributeRequest* ucarP,
-  const std::string&                   entityId,
-  const std::string&                   entityType,
-  const std::string&                   attributeName,
-  const std::string&                   metaID,
-  ActionType                           _updateActionType
-)
-{
-  ContextElement*   ceP = new ContextElement();
-  ContextAttribute* caP;
-
-  if (ucarP->compoundValueP != NULL)
-  {
-    caP = new ContextAttribute(attributeName, ucarP->type, ucarP->compoundValueP);
-  }
-  else
-  {
-    caP = new ContextAttribute(attributeName, ucarP->type, ucarP->contextValue);
-    caP->valueType = ucarP->valueType;
-  }
-
-  caP->metadataVector.fill((MetadataVector*) &ucarP->metadataVector);
-  ceP->contextAttributeVector.push_back(caP);
-  ceP->entityId.fill(entityId, entityType, "false");
-
-  contextElementVector.push_back(ceP);
-
-  //
-  // If there is a metaID, then the metadata named ID must exist.
-  // If it doesn't exist already, it must be created
-  //
-  if (metaID != "")
-  {
-    Metadata* mP = caP->metadataVector.lookupByName("ID");
-
-    if (mP == NULL)
-    {
-      mP = new Metadata("ID", "", metaID);
-      caP->metadataVector.push_back(mP);
-    }
-    else if (mP->stringValue != metaID)
-    {
-      alarmMgr.badInput(orionldState.clientIp, "metaID differs in URI and payload");
-    }
-  }
-
-  updateActionType = _updateActionType;
 }
 
 

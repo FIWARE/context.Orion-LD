@@ -31,4 +31,9 @@ wget https://repo.almalinux.org/almalinux/RPM-GPG-KEY-AlmaLinux
 
 yum install -y epel-release
 
-yum install -y gnutls-devel
+# Work around .hmac file conflict between gnutls and gnutls-devel (RHEL 8 packaging bug)
+# Install deps via yum first, then force gnutls-devel with rpm --replacefiles --nodeps
+yum install -y gnutls-c++ gnutls-dane nettle-devel libtasn1-devel p11-kit-devel libidn2-devel || true
+yum download --arch x86_64 gnutls-devel
+rpm -ivh --replacefiles --nodeps gnutls-devel-*.rpm
+rm -f gnutls-devel-*.rpm

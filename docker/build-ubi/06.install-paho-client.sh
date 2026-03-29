@@ -34,6 +34,10 @@ cd ${ROOT_FOLDER}/paho.mqtt.c                                                   
 git fetch -a
 git checkout tags/v1.3.1                                                      # OK - git checkout develop ...
 
+# Patch: fix SSL context leak when socket is already closed (MQTTClient_closeSession)
+echo -e "\e[1;32m Applying Paho SSL leak fix patch \e[0m"
+patch -p1 < ${PATH_TO_SRC}/docker/paho-ssl-leak-fix.patch || true
+
 echo -e "\e[1;32m Building Paho MQTT C Library \e[0m"
 make > /tmp/paho-build 2&>1 || /bin/true
 echo -e "\e[1;32m Paho Built ... \e[0m"

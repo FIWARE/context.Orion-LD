@@ -156,10 +156,11 @@ bool orionldGetTemporalEntity(void)
   // Build the NGSI-LD entity from the query results
   KjNode* apiEntityP = pgTemporalEntityBuild(entityRes, attrRes, subAttrRes);
 
-  // Clean up PGresult handles
-  PQclear(entityRes);
-  if (attrRes != NULL)    PQclear(attrRes);
-  if (subAttrRes != NULL) PQclear(subAttrRes);
+  // Delay PQclear until after response rendering - the KjNode tree points into PGresult buffers
+  orionldState.delayedCleanupFunc = (void(*)(void*)) PQclear;
+  orionldState.delayedCleanupVec[orionldState.delayedCleanupCount++] = entityRes;
+  if (attrRes != NULL)    orionldState.delayedCleanupVec[orionldState.delayedCleanupCount++] = attrRes;
+  if (subAttrRes != NULL) orionldState.delayedCleanupVec[orionldState.delayedCleanupCount++] = subAttrRes;
 
   if (apiEntityP == NULL)
   {

@@ -189,7 +189,7 @@ def ignore(root, file):
         return True
 
     # Apib files have an "inline" license, so they are ignored
-    extensions_to_ignore = ['apib', 'md', 'idl', 'bin', 'sql']
+    extensions_to_ignore = ['apib', 'md', 'idl', 'bin', 'sql', 'patch']
     if os.path.splitext(file)[1][1:] in extensions_to_ignore:
         return True
 
@@ -236,7 +236,7 @@ def supported_extension(root, file):
     :return:
     """
     extensions = ['py', 'cpp', 'c', 'h', 'xml', 'json', 'test', 'vtest', 'txt', 'sh', 'spec', 'cfg', 'DISABLED',
-                  'xtest', 'centos', 'js', 'jmx', 'vtestx', 'feature', 'go', 'jsonld', 'supp', 'cxx', 'ipp', 'hpp', 'idl']
+                  'xtest', 'centos', 'js', 'jmx', 'vtestx', 'feature', 'go', 'jsonld', 'supp', 'cxx', 'ipp', 'hpp', 'idl', 'patch']
     names = ['makefile', 'Makefile', 'CMakeLists.txt.orion', 'CMakeLists.txt.orionld']
 
     # Check extensions

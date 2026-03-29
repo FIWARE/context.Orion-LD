@@ -614,9 +614,11 @@ bool orionldPostTemporalQuery(void)
     // Build the NGSI-LD temporal entity
     KjNode* apiEntityP = pgTemporalEntityBuild(eRes, aRes, saRes);
 
-    PQclear(eRes);
-    if (aRes  != NULL) PQclear(aRes);
-    if (saRes != NULL) PQclear(saRes);
+    // Delay PQclear - the KjNode tree points into PGresult buffers
+    orionldState.delayedCleanupFunc = (void(*)(void*)) PQclear;
+    orionldState.delayedCleanupVec[orionldState.delayedCleanupCount++] = eRes;
+    if (aRes  != NULL) orionldState.delayedCleanupVec[orionldState.delayedCleanupCount++] = aRes;
+    if (saRes != NULL) orionldState.delayedCleanupVec[orionldState.delayedCleanupCount++] = saRes;
 
     if (apiEntityP == NULL)
       continue;
@@ -649,7 +651,7 @@ bool orionldPostTemporalQuery(void)
     kjChildAdd(resultArray, apiEntityP);
   }
 
-  PQclear(entityRes);
+  orionldState.delayedCleanupVec[orionldState.delayedCleanupCount++] = entityRes;
 
   orionldState.responseTree   = resultArray;
   orionldState.httpStatusCode = 200;

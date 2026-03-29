@@ -22,18 +22,19 @@
 
 --NAME--
 Create a new transient entity, by specifying dateExpires attribute.
-Sleep 60 seconds, the default time interval for Mongo TTL monitor to remove expired entity.
+Speed up Mongo TTL monitor and wait for it to remove the expired entity.
 
 --SHELL-INIT--
 dbInit CB
 brokerStart CB
+mongoCmd admin 'db.adminCommand({setParameter:1, ttlMonitorSleepSecs: 2})'
 
 --SHELL--
 
 #
 # 01. POST /v2/entities with dateExpires attribute (expired ISO8601 date value)
 # 02. GET /v2/entities the entity is present (expired but not removed yet)
-# 03. GET /v2/entities after 60 seconds (default removal interval of mongo TTL thread)
+# 03. GET /v2/entities after a few seconds (TTL monitor sped up to 2s)
 # and check if the entity was removed.
 #
 
@@ -55,13 +56,13 @@ echo
 echo "02. GET /v2/entities (see if entity is still present, expired but not yet removed)"
 echo "=================================================================================="
 orionCurl --url "/v2/entities"
-sleep 60
+sleep 6
 echo
 echo
 
 
-echo "03. GET /v2/entities after 60 seconds (default removal interval of mongo TTL thread)"
-echo "===================================================================================="
+echo "03. GET /v2/entities after a few seconds (TTL monitor sped up to 2s)"
+echo "===================================================================="
 orionCurl --url "/v2/entities"
 echo
 echo
@@ -93,8 +94,8 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 ]
 
 
-03. GET /v2/entities after 60 seconds (default removal interval of mongo TTL thread)
-====================================================================================
+03. GET /v2/entities after a few seconds (TTL monitor sped up to 2s)
+====================================================================
 HTTP/1.1 200 OK
 Content-Length: 2
 Content-Type: application/json

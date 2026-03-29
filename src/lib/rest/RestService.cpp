@@ -24,8 +24,6 @@
 */
 #include <string>
 
-#include "jsonParse/jsonRequest.h"
-
 extern "C"
 {
 #include "ktrace/kTrace.h"
@@ -151,18 +149,6 @@ static void delayedRelease(JsonDelayedRelease* releaseP)
     releaseP->attribute = NULL;
   }
 
-  if (releaseP->scrP != NULL)
-  {
-    releaseP->scrP->release();
-    releaseP->scrP = NULL;
-  }
-
-  if (releaseP->ucsrP != NULL)
-  {
-    releaseP->ucsrP->release();
-    releaseP->ucsrP = NULL;
-  }
-
   if (releaseP->subsP != NULL)
   {
     delete releaseP->subsP;
@@ -181,7 +167,6 @@ std::string payloadParse
   ConnectionInfo*            ciP,
   ParseData*                 parseDataP,
   RestService*               service,
-  JsonRequest**              jsonPP,
   JsonDelayedRelease*        jsonReleaseP,
   std::vector<std::string>&  compV
 )
@@ -190,20 +175,11 @@ std::string payloadParse
 
   if (orionldState.in.contentType == MT_JSON)
   {
-    if (orionldState.apiVersion == API_VERSION_NGSI_V2)
-    {
-      //
-      // FIXME #3151: jsonRequestTreat should return 'bool' and accept an output parameter 'OrionError* oeP'.
-      //              Same same for all underlying JSON APIv2 parsing functions
-      //              Not sure the same thing can be done for 'jsonTreat' in the else-part, but this should AT LEAST
-      //              be fixed for V2.
-      //
-      result = jsonRequestTreat(ciP, parseDataP, service->request, jsonReleaseP, compV);
-    }
-    else
-    {
-      result = jsonTreat(orionldState.in.payload, ciP, parseDataP, service->request, jsonPP);
-    }
+    //
+    // FIXME #3151: jsonRequestTreat should return 'bool' and accept an output parameter 'OrionError* oeP'.
+    //              Same same for all underlying JSON APIv2 parsing functions
+    //
+    result = jsonRequestTreat(ciP, parseDataP, service->request, jsonReleaseP, compV);
   }
   else if (orionldState.in.contentType == MT_TEXT)
   {
@@ -368,29 +344,9 @@ static void scopeFilter
 {
   Restriction* restrictionP = NULL;
 
-  if (ciP->restServiceP->request == DiscoverContextAvailability)
-  {
-    restrictionP = &parseDataP->dcar.res.restriction;
-  }
-  else if (ciP->restServiceP->request == SubscribeContextAvailability)
-  {
-    restrictionP = &parseDataP->scar.res.restriction;
-  }
-  else if (ciP->restServiceP->request == UpdateContextAvailabilitySubscription)
-  {
-    restrictionP = &parseDataP->ucas.res.restriction;
-  }
-  else if (ciP->restServiceP->request == QueryContext)
+  if (ciP->restServiceP->request == QueryContext)
   {
     restrictionP = &parseDataP->qcr.res.restriction;
-  }
-  else if (ciP->restServiceP->request == SubscribeContext)
-  {
-    restrictionP = &parseDataP->scr.res.restriction;
-  }
-  else if (ciP->restServiceP->request == UpdateContextSubscription)
-  {
-    restrictionP = &parseDataP->ucsr.res.restriction;
   }
   else
   {
@@ -531,7 +487,6 @@ static bool compErrorDetect
 */
 std::string restService(ConnectionInfo* ciP, RestService* serviceV)
 {
-  JsonRequest*              jsonReqP   = NULL;
   ParseData                 parseData;
   JsonDelayedRelease        jsonRelease;
 
@@ -569,15 +524,12 @@ std::string restService(ConnectionInfo* ciP, RestService* serviceV)
     const char*  spath = (ciP->servicePathV.size() > 0)? ciP->servicePathV[0].c_str() : "";
 
     metricsMgr.add(orionldState.tenantP->tenant, spath, METRIC_TRANS_IN_REQ_SIZE, orionldState.in.payloadSize);
-    response = payloadParse(ciP, &parseData, ciP->restServiceP, &jsonReqP, &jsonRelease, ciP->urlCompV);
+    response = payloadParse(ciP, &parseData, ciP->restServiceP, &jsonRelease, ciP->urlCompV);
 
     if (response != "OK")
     {
       alarmMgr.badInput(orionldState.clientIp, response);
       restReply(ciP, response.c_str());
-
-      if (jsonReqP != NULL)
-        jsonReqP->release(&parseData);
 
       if (orionldState.apiVersion == API_VERSION_NGSI_V2)
       {
@@ -612,11 +564,6 @@ std::string restService(ConnectionInfo* ciP, RestService* serviceV)
 
     restReply(ciP, response.c_str());
 
-    if (jsonReqP != NULL)
-    {
-      jsonReqP->release(&parseData);
-    }
-
     if (orionldState.apiVersion == API_VERSION_NGSI_V2)
     {
       delayedRelease(&jsonRelease);
@@ -639,11 +586,6 @@ std::string restService(ConnectionInfo* ciP, RestService* serviceV)
   std::string response = ciP->restServiceP->treat(ciP, ciP->urlComponents, ciP->urlCompV, &parseData);
 
   filterRelease(&parseData, ciP->restServiceP->request);
-
-  if (jsonReqP != NULL)
-  {
-    jsonReqP->release(&parseData);
-  }
 
   if (orionldState.apiVersion == API_VERSION_NGSI_V2)
   {

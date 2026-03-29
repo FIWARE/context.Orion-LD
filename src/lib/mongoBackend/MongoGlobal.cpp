@@ -2418,85 +2418,12 @@ BSONArray processConditionVector
 
 
 /* ****************************************************************************
-*
-* mongoUpdateCasubNewNotification -
-*/
-static HttpStatusCode mongoUpdateCasubNewNotification(std::string subId, std::string* err, OrionldTenant* tenantP)
-{
-  /* Update the document */
-  BSONObj     query  = BSON("_id" << OID(subId));
-  BSONObj     update = BSON("$set" << BSON(CASUB_LASTNOTIFICATION << orionldState.requestTime) <<
-                            "$inc" << BSON(CASUB_COUNT << 1));
-
-  collectionUpdate(tenantP->avSubscriptions, query, update, false, err);
-
-  return SccOk;
-}
-
-
-
-/* ****************************************************************************
-*
-* processAvailabilitySubscription -
-*
-* This function is called from two places:
-*
-* 1) initial processing of subscribeContextAvailability (and updateContextAvailabilitySubscription),
-*   so an "initial" notification for all matching context registrations is sent
-* 2) registerContext processing logic when the new (or updated) context registration
-*   matches an availability subscription
-*
 * The enV arguments is set with all the entities included in the subscription (case 1) or
 * with only the triggering entities (case 2).
 *
 * This method returns true if the notification was actually send. Otherwise, false
 * is returned.
 */
-bool processAvailabilitySubscription
-(
-  const EntityIdVector& enV,
-  const StringList&     attrL,
-  const std::string&    subId,
-  const std::string&    notifyUrl,
-  OrionldRenderFormat   renderFormat,
-  OrionldTenant*        tenantP,
-  const std::string&    fiwareCorrelator
-)
-{
-  std::string                       err;
-  NotifyContextAvailabilityRequest  ncar;
-  std::vector<std::string>          servicePathV;  // FIXME P5: servicePath for NGSI9 Subscriptions
-  servicePathV.push_back("");                      // While this gets implemented, "" default is used.
-
-  if (!registrationsQuery(enV, attrL, &ncar.contextRegistrationResponseVector, &err, tenantP, servicePathV))
-  {
-    ncar.contextRegistrationResponseVector.release();
-    return false;
-  }
-
-  if (ncar.contextRegistrationResponseVector.size() > 0)
-  {
-    /* Complete the fields in NotifyContextRequest */
-    ncar.subscriptionId.set(subId);
-
-    getNotifier()->sendNotifyContextAvailabilityRequest(&ncar, notifyUrl, tenantP->tenant, fiwareCorrelator, renderFormat);
-    ncar.contextRegistrationResponseVector.release();
-
-    /* Update database fields due to new notification */
-    if (mongoUpdateCasubNewNotification(subId, &err, tenantP) != SccOk)
-    {
-      return false;
-    }
-
-    return true;
-  }
-
-  ncar.contextRegistrationResponseVector.release();
-  return false;
-}
-
-
-
 /* ****************************************************************************
 *
 * slashEscape - escape all slashes in 'from' into 'to'

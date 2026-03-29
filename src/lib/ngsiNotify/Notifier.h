@@ -30,7 +30,6 @@
 
 #include "apiTypesV2/HttpInfo.h"
 #include "common/RenderFormat.h"
-#include "ngsi9/NotifyContextAvailabilityRequest.h"
 #include "ngsi10/NotifyContextRequest.h"
 #include "ngsiNotify/ThreadData.h"
 
@@ -57,11 +56,6 @@ public:
                                         const std::vector<std::string>&            metadataFilter,
                                         bool                                       blackList);
 
-  virtual void sendNotifyContextAvailabilityRequest(NotifyContextAvailabilityRequest* ncr,
-                                                    const std::string&                url,
-                                                    const std::string&                tenant,
-                                                    const std::string&                fiwareCorrelator,
-                                                    OrionldRenderFormat               renderFormat);
 protected:
   static std::vector<SenderThreadParams*>* buildSenderParams(NotifyContextRequest*            ncrP,
                                                              const ngsiv2::HttpInfo&          httpInfo,
