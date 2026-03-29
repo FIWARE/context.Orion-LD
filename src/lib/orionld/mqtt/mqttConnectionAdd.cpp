@@ -23,6 +23,7 @@
 * Author: Ken Zangelin
 */
 #include <string.h>                                            // strdup
+#include <strings.h>                                           // bzero
 #include <stdlib.h>                                            // realloc
 
 extern "C"
@@ -55,11 +56,13 @@ MqttConnection* mqttConnectionAdd
   MqttConnection* mqP = NULL;
 
   // Any empty slots?
+  bool reuse = false;
   for (int ix = 0; ix < mqttConnectionListIx; ix++)
   {
     if (mqttConnectionList[ix].host == NULL)
     {
       mqP = &mqttConnectionList[ix];
+      reuse = true;
       break;
     }
   }
@@ -91,11 +94,17 @@ MqttConnection* mqttConnectionAdd
   if (mqttConnect(mqP, mqtts, username, password, host, port, version) == false)
   {
     KT_E("Internal Error (mqttConnect failed)");
+    free(mqP->host);
+    free(mqP->username);
+    free(mqP->password);
+    free(mqP->version);
+    bzero(mqP, sizeof(MqttConnection));
     return NULL;
   }
 
   KT_T(KtMqtt, "Added an MQTT connection for %s:%d (user: '%s', pwd: '%s', ver: '%s')", mqP->host, mqP->port, mqP->username, mqP->password, mqP->version);
-  ++mqttConnectionListIx;
+  if (!reuse)
+    ++mqttConnectionListIx;
   KT_T(KtMqtt, "mqttConnectionListIx is now %d", mqttConnectionListIx);
 
   return mqP;
