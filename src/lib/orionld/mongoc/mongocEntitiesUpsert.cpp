@@ -57,11 +57,48 @@ bool mongocEntitiesUpsert(KjNode* createArrayP, KjNode* updateArrayP)
     for (KjNode* entityP = createArrayP->value.firstChildP; entityP != NULL; entityP = entityP->next)
     {
       bson_t doc;
+      bson_t match;
 
       bson_init(&doc);
+      bson_init(&match);
+
+      // Build match on the full _id compound document for upsert to avoid E11000 race conditions
+      // MongoDB requires _id to be exactly specified (not via sub-path) for upsert operations
+      KjNode* _idP = kjLookup(entityP, "_id");
+
+      if (_idP == NULL)
+      {
+        KT_E("Can't create an entity without _id");
+        bson_destroy(&doc);
+        bson_destroy(&match);
+        continue;
+      }
+
+      bson_t idDoc;
+      bson_append_document_begin(&match, "_id", 3, &idDoc);
+
+      KjNode* idP = kjLookup(_idP, "id");
+      if (idP != NULL)
+        bson_append_utf8(&idDoc, "id", 2, idP->value.s, -1);
+
+      KjNode* typeP = kjLookup(_idP, "type");
+      if (typeP != NULL)
+        bson_append_utf8(&idDoc, "type", 4, typeP->value.s, -1);
+
+      KjNode* spP = kjLookup(_idP, "servicePath");
+      if (spP != NULL)
+        bson_append_utf8(&idDoc, "servicePath", 11, spP->value.s, -1);
+
+      bson_append_document_end(&match, &idDoc);
+
+      // Remove _id from entity before converting to BSON - can't have _id in replacement document
+      // MongoDB will use the _id from the match filter for the upserted document
+      kjChildRemove(entityP, _idP);
+
       mongocKjTreeToBson(entityP, &doc);  // The entity needs to be DB-Prepared !
-      mongoc_bulk_operation_insert(bulkP, &doc);
+      mongoc_bulk_operation_replace_one(bulkP, &match, &doc, true);  // upsert=true
       bson_destroy(&doc);
+      bson_destroy(&match);
     }
   }
 
