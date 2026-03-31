@@ -91,6 +91,10 @@ bool mongocEntitiesUpsert(KjNode* createArrayP, KjNode* updateArrayP)
 
       bson_append_document_end(&match, &idDoc);
 
+      // Remove _id from entity before converting to BSON - can't have _id in replacement document
+      // MongoDB will use the _id from the match filter for the upserted document
+      kjChildRemove(entityP, _idP);
+
       mongocKjTreeToBson(entityP, &doc);  // The entity needs to be DB-Prepared !
       mongoc_bulk_operation_replace_one(bulkP, &match, &doc, true);  // upsert=true
       bson_destroy(&doc);
