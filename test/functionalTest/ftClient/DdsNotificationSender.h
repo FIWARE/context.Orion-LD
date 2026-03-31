@@ -42,7 +42,9 @@
 #include <fastdds/dds/publisher/DataWriter.hpp>
 #include <fastdds/dds/publisher/DataWriterListener.hpp>
 
-using namespace eprosima::fastdds::dds;
+using eprosima::fastdds::dds::DataWriterListener;
+using eprosima::fastdds::dds::DataWriter;
+using eprosima::fastdds::dds::PublicationMatchedStatus;
 
 
 

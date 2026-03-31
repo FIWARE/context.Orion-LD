@@ -62,7 +62,11 @@ extern "C"
 #include "ftClient/NgsildSample.hpp"
 #include "ftClient/DdsNotificationSender.h"              // DdsNotificationSender
 
-using namespace eprosima::fastdds::dds;
+using eprosima::fastdds::dds::DomainParticipant;
+using eprosima::fastdds::dds::Publisher;
+using eprosima::fastdds::dds::Topic;
+using eprosima::fastdds::dds::DataWriter;
+using eprosima::fastdds::dds::TypeSupport;
 
 
 

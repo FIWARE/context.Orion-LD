@@ -25,6 +25,7 @@
 *
 * Author: Ken Zangelin
 */
+#include <geos_c.h>                                          // GEOSGeometry, GEOSPreparedGeometry
 #include <regex.h>
 #include <string>
 #include <vector>
@@ -32,8 +33,6 @@
 #include "common/RenderFormat.h"
 #include "apiTypesV2/HttpInfo.h"                             // HttpInfo
 #include "apiTypesV2/SubscriptionExpression.h"
-
-#include <geos_c.h>                                          // GEOSGeometry, GEOSPreparedGeometry
 
 #include "orionld/types/QNode.h"                             // QNode
 #include "orionld/types/OrionldGeoInfo.h"                    // OrionldGeoInfo
@@ -92,7 +91,7 @@ struct CachedSubscription
   char*                       url;             // Copy of httpInfo.url (parsed and destroyed) - allocated and must be freed
   char*                       protocolString;  // pointing to 'protocol' part of 'url'
   char*                       ip;              // pointing to 'ip' part of 'url'
-  unsigned short              port;            // port, as parsed from 'url'
+  uint16_t                    port;            // port, as parsed from 'url'
   char*                       rest;            // pointing to 'rest' part of 'url'
   Protocol                    protocol;
 

@@ -78,6 +78,22 @@
   - Documented geo-fencing for subscriptions (georel types, geometry combinations, custom geoproperty, lifecycle)
   - Added GEOS to external-libraries.md and installation guide dependency list
 
+## Temporal API (TRoE) - replacing Mintaka
+  - Native temporal query implementation, no longer delegating to Mintaka (cfreyfh)
+  - GET /temporal/entities/{entityId} - single entity temporal query
+  - GET /temporal/entities - multi-entity temporal query
+  - POST /temporal/entityOperations/query - batch temporal query
+  - Support for q-filter, geo-queries, aggregation (aggrMethods/aggrPeriodDuration),
+    pick/omit, datasetId, temporalValues, and timeproperty (createdAt/modifiedAt)
+
+## Kafka
+  - Support for Kafka as a fast entity injection channel, treating incoming messages as Batch Upsert
+
+
+## NGSIv1
+  - Removed all NGSIv1 routes (/ngsi9, /ngsi10, /v1) from the REST service tables
+  - Converted /v1/admin/* routes to /admin/* (dropped the v1 prefix)
+
 ## Library version updates
   - Replaced prometheus-client-c with kprom
   - Bumped PostgreSQL client packages from v13 to v17

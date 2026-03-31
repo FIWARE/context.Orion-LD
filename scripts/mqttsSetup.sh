@@ -83,6 +83,10 @@ function generateCerts()
 #
 function startMqtts()
 {
+  if ! command -v mosquitto &>/dev/null; then
+    return 0
+  fi
+
   # Stop any existing instance
   stopMqtts
 
@@ -116,7 +120,7 @@ function stopMqtts()
   fi
 
   # Also kill by config file pattern in case PID file was lost
-  pkill -f "mosquitto -c $CONF_FILE" 2>/dev/null
+  pkill -f "mosquitto -c $CONF_FILE" 2>/dev/null || true
 }
 
 

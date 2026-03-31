@@ -1,5 +1,5 @@
-#ifndef POST_DDS_ACTION_H
-#define POST_DDS_ACTION_H
+#ifndef TEST_FUNCTIONALTEST_FTCLIENT_POSTDDSACTION_H_
+#define TEST_FUNCTIONALTEST_FTCLIENT_POSTDDSACTION_H_
 
 /*
 *
@@ -38,4 +38,4 @@ extern "C"
 //
 extern KjNode* postDdsAction(int* statusCodeP);
 
-#endif  // POST_DDS_ACTION_H
+#endif  // TEST_FUNCTIONALTEST_FTCLIENT_POSTDDSACTION_H_

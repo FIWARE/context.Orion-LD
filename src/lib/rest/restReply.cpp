@@ -39,19 +39,8 @@ extern "C"
 #include "ngsi/StatusCode.h"
 #include "metricsMgr/metricsMgr.h"
 
-#include "ngsi9/DiscoverContextAvailabilityResponse.h"
-#include "ngsi9/RegisterContextResponse.h"
-#include "ngsi9/SubscribeContextAvailabilityResponse.h"
-#include "ngsi9/UnsubscribeContextAvailabilityResponse.h"
-#include "ngsi9/UpdateContextAvailabilitySubscriptionResponse.h"
-#include "ngsi9/NotifyContextAvailabilityResponse.h"
-
 #include "ngsi10/QueryContextResponse.h"
-#include "ngsi10/SubscribeContextResponse.h"
-#include "ngsi10/UnsubscribeContextResponse.h"
 #include "ngsi10/UpdateContextResponse.h"
-#include "ngsi10/UpdateContextSubscriptionResponse.h"
-#include "ngsi10/NotifyContextResponse.h"
 
 #include "rest/HttpHeaders.h"                                    // HTTP_* defines
 #include "rest/rest.h"
@@ -195,73 +184,22 @@ void restErrorReplyGet(ConnectionInfo* ciP, int statusCode, const std::string& d
 
   orionldState.httpStatusCode = SccOk;
 
-  if (ciP->restServiceP->request == RegisterContext)
-  {
-    RegisterContextResponse rcr("000000000000000000000000", errorCode);
-    *outStringP = rcr.render();
-  }
-  else if (ciP->restServiceP->request == DiscoverContextAvailability)
-  {
-    DiscoverContextAvailabilityResponse dcar(errorCode);
-    *outStringP = dcar.render();
-  }
-  else if (ciP->restServiceP->request == SubscribeContextAvailability)
-  {
-    SubscribeContextAvailabilityResponse scar("000000000000000000000000", errorCode);
-    *outStringP = scar.render();
-  }
-  else if ((ciP->restServiceP->request == UpdateContextAvailabilitySubscription) || (ciP->restServiceP->request == Ngsi9SubscriptionsConvOp))
-  {
-    UpdateContextAvailabilitySubscriptionResponse ucas(errorCode);
-    *outStringP = ucas.render();
-  }
-  else if (ciP->restServiceP->request == UnsubscribeContextAvailability)
-  {
-    UnsubscribeContextAvailabilityResponse ucar(errorCode);
-    *outStringP = ucar.render();
-  }
-  else if (ciP->restServiceP->request == NotifyContextAvailability)
-  {
-    NotifyContextAvailabilityResponse ncar(errorCode);
-    *outStringP = ncar.render();
-  }
-  else if (ciP->restServiceP->request == QueryContext)
+  if ((ciP->restServiceP != NULL) && (ciP->restServiceP->request == QueryContext))
   {
     QueryContextResponse  qcr(errorCode);
     bool                  asJsonObject = (orionldState.in.attributeFormatAsObject == true) && ((orionldState.out.contentType == MT_JSON) || (orionldState.out.contentType == MT_JSONLD));
     *outStringP = qcr.render(orionldState.apiVersion, asJsonObject);
   }
-  else if (ciP->restServiceP->request == SubscribeContext)
-  {
-    SubscribeContextResponse scr(errorCode);
-    *outStringP = scr.render();
-  }
-  else if ((ciP->restServiceP->request == UpdateContextSubscription) || (ciP->restServiceP->request == Ngsi10SubscriptionsConvOp))
-  {
-    UpdateContextSubscriptionResponse ucsr(errorCode);
-    *outStringP = ucsr.render();
-  }
-  else if (ciP->restServiceP->request == UnsubscribeContext)
-  {
-    UnsubscribeContextResponse uncr(errorCode);
-    *outStringP = uncr.render();
-  }
-  else if (ciP->restServiceP->request == UpdateContext)
+  else if ((ciP->restServiceP != NULL) && (ciP->restServiceP->request == UpdateContext))
   {
     UpdateContextResponse ucr(errorCode);
     bool asJsonObject = (orionldState.in.attributeFormatAsObject == true) && ((orionldState.out.contentType == MT_JSON) || (orionldState.out.contentType == MT_JSONLD));
     *outStringP = ucr.render(orionldState.apiVersion, asJsonObject);
   }
-  else if (ciP->restServiceP->request == NotifyContext)
-  {
-    NotifyContextResponse ncr(errorCode);
-    *outStringP = ncr.render();
-  }
   else
   {
     OrionError oe(errorCode);
 
-    KT_E("Unknown request type: '%d'", ciP->restServiceP->request);
     orionldState.httpStatusCode = oe.code;
     *outStringP = oe.setStatusCodeAndSmartRender(orionldState.apiVersion, &orionldState.httpStatusCode);
   }

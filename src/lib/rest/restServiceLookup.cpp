@@ -32,7 +32,6 @@
 #include "rest/RestService.h"
 #include "rest/restServiceLookup.h"
 
-#include "serviceRoutines/postDiscoverContextAvailability.h"
 #include "serviceRoutines/badVerbPostOnly.h"
 
 

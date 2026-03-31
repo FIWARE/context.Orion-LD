@@ -359,7 +359,6 @@ bool orionldPostSubscriptions(void)
   unsigned short  mqttPort         = 0;
   char*           mqttTopic        = NULL;
   char*           mqttVersion      = NULL;  // NOTE, my (KZ) local mosquitto seems to only support "mqtt3.1.1"
-  int             mqttQoS          = 0;
 
   if (mqtt == true)
   {
@@ -391,8 +390,7 @@ bool orionldPostSubscriptions(void)
         KjNode* keyP   = kjLookup(kvPairP, "key");
         KjNode* valueP = kjLookup(kvPairP, "value");
 
-        if      (strcmp(keyP->name, "MQTT-Version") == 0)  mqttVersion = valueP->value.s;
-        else if (strcmp(keyP->name, "MQTT-QoS")     == 0)  mqttQoS     = atoi(valueP->value.s);
+        if (strcmp(keyP->name, "MQTT-Version") == 0)  mqttVersion = valueP->value.s;
       }
     }
 
@@ -525,31 +523,6 @@ bool orionldPostSubscriptions(void)
       qRelease(qTree);
 
     return false;
-  }
-
-  //
-  // MQTT details of the cached subscription
-  // - For now, timeInterval cannot be done via MQTT
-  //
-  if (timeInterval == 0)
-  {
-    bzero(&cSubP->httpInfo.mqtt, sizeof(cSubP->httpInfo.mqtt));
-    if (mqttSubscription == true)
-    {
-      cSubP->httpInfo.mqtt.mqtts = mqtts;
-      cSubP->httpInfo.mqtt.port  = mqttPort;
-      cSubP->httpInfo.mqtt.qos   = mqttQoS;
-
-      if (mqttHost     != NULL)  strncpy(cSubP->httpInfo.mqtt.host,     mqttHost,     sizeof(cSubP->httpInfo.mqtt.host)     - 1);
-      if (mqttUser     != NULL)  strncpy(cSubP->httpInfo.mqtt.username, mqttUser,     sizeof(cSubP->httpInfo.mqtt.username) - 1);
-      if (mqttPassword != NULL)  strncpy(cSubP->httpInfo.mqtt.password, mqttPassword, sizeof(cSubP->httpInfo.mqtt.password) - 1);
-      if (mqttVersion  != NULL)  strncpy(cSubP->httpInfo.mqtt.version,  mqttVersion,  sizeof(cSubP->httpInfo.mqtt.version)  - 1);
-      if (mqttTopic    != NULL)  strncpy(cSubP->httpInfo.mqtt.topic,    mqttTopic,    sizeof(cSubP->httpInfo.mqtt.topic)    - 1);
-    }
-  }
-  else if (mqttSubscription == true)
-  {
-    // This is already taken care of.
   }
 
   orionldState.httpStatusCode = 201;

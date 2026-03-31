@@ -195,7 +195,7 @@ static void* wsClientRecvLoop(void* arg)
     }
   }
 
-done:
+ done:
   wscP->active = false;
   return NULL;
 }

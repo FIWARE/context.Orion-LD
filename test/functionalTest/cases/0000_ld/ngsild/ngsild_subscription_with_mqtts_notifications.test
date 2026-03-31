@@ -24,6 +24,7 @@
 Notifications via MQTTS (MQTT over TLS)
 
 --SHELL-INIT--
+${REPO_HOME}/scripts/mqttsSetup.sh start
 dbInit CB
 orionldStart CB -mongocOnly
 ftClientStart -t 0-5000
@@ -311,3 +312,4 @@ Date: REGEX(.*)
 brokerStop CB
 ftClientStop
 dbDrop CB
+${REPO_HOME}/scripts/mqttsSetup.sh stop

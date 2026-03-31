@@ -27,14 +27,15 @@ Delete dateExpires attribute, in order to make the entity regular
 --SHELL-INIT--
 dbInit CB
 brokerStart CB
+mongoCmd admin 'db.adminCommand({setParameter:1, ttlMonitorSleepSecs: 2})'
 
 --SHELL--
 
 #
 # 01. POST /v2/entities with dateExpires attribute, create transient entity
 # 02. DELETE /v2/entities/E1/attrs/dateExpires attribute, the entity becomes regular
-# 03. GET /V2/entities after 60 seconds (default removal interval of mongo TTL thread)
-# the entity became regular, then is still present.
+# 03. GET /V2/entities after a few seconds (TTL monitor sped up to 2s)
+# the entity became regular, so it is still present.
 #
 
 echo "01. POST /v2/entities with dateExpires attribute, create transient entity"
@@ -55,13 +56,13 @@ echo
 echo "02. DELETE /v2/entities/E1/attrs/dateExpires attribute, the entity becomes regular"
 echo "=================================================================================="
 orionCurl --url /v2/entities/E1/attrs/dateExpires -X DELETE
-sleep 60
+sleep 6
 echo
 echo
 
 
-echo "03. GET /V2/entities after 60 seconds the entity became regular, then is still present"
-echo "======================================================================================"
+echo "03. GET /V2/entities after a few seconds the entity became regular, so is still present"
+echo "======================================================================================="
 orionCurl --url "/v2/entities"
 echo
 echo
@@ -85,8 +86,8 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 
 
-03. GET /V2/entities after 60 seconds the entity became regular, then is still present
-======================================================================================
+03. GET /V2/entities after a few seconds the entity became regular, so is still present
+=======================================================================================
 HTTP/1.1 200 OK
 Content-Length: 25
 Content-Type: application/json

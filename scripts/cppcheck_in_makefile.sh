@@ -91,7 +91,6 @@ cpp_check test/unittests/unittest.h
 # Broker libs
 #
 cpp_check src/lib/logSummary
-cpp_check src/lib/jsonParseV2
 cpp_check src/lib/apiTypesV2
 cpp_check src/lib/mongoBackend
 cpp_check src/lib/serviceRoutinesV2

@@ -55,6 +55,7 @@ extern "C"
 #include "orionld/dbModel/dbModelToApiCoordinates.h"             // dbModelToApiCoordinates
 #include "orionld/payloadCheck/pcheckGeoQ.h"                     // pcheckGeoQ
 #include "orionld/mqtt/mqttParse.h"                              // mqttParse
+#include "orionld/mqtt/mqttConnectionEstablish.h"                // mqttConnectionEstablish
 
 
 
@@ -379,6 +380,27 @@ static void subCacheItemFill
 
         cSubP->httpInfo.mqtt.mqtts = mqtts;
         cSubP->httpInfo.mqtt.port  = mqttPort;
+
+        // QoS and Version are in notifierInfo, not in the MQTT URL
+        KjNode* notifierInfoP2 = kjLookup(endpointP, "notifierInfo");
+        if (notifierInfoP2 != NULL)
+        {
+          for (KjNode* niP = notifierInfoP2->value.firstChildP; niP != NULL; niP = niP->next)
+          {
+            KjNode* keyP   = kjLookup(niP, "key");
+            KjNode* valueP = kjLookup(niP, "value");
+            if (keyP != NULL && valueP != NULL)
+            {
+              if (strcmp(keyP->value.s, "MQTT-QoS") == 0)
+                cSubP->httpInfo.mqtt.qos = atoi(valueP->value.s);
+              else if (strcmp(keyP->value.s, "MQTT-Version") == 0)
+                strncpy(cSubP->httpInfo.mqtt.version, valueP->value.s, sizeof(cSubP->httpInfo.mqtt.version) - 1);
+            }
+          }
+        }
+
+        mqttConnectionEstablish(mqtts, cSubP->httpInfo.mqtt.username, cSubP->httpInfo.mqtt.password,
+                                mqttHost, mqttPort, cSubP->httpInfo.mqtt.version);
       }
 
       if (acceptP != NULL)

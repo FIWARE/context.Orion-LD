@@ -34,7 +34,6 @@
 #include "ngsi/ParseData.h"
 #include "rest/OrionError.h"
 #include "mongoBackend/mongoUpdateSubscription.h"
-#include "ngsi10/UpdateContextSubscriptionResponse.h"
 #include "serviceRoutinesV2/patchSubscription.h"
 
 

@@ -305,6 +305,18 @@ void orionldStateRelease(void)
     orionldState.delayedFreePointer = NULL;
   }
 
+  // Delayed cleanup for pointers that need a custom free function (e.g. PQclear for PGresult)
+  if (orionldState.delayedCleanupFunc != NULL)
+  {
+    for (int ix = 0; ix < orionldState.delayedCleanupCount; ix++)
+    {
+      if (orionldState.delayedCleanupVec[ix] != NULL)
+        orionldState.delayedCleanupFunc(orionldState.delayedCleanupVec[ix]);
+    }
+  }
+  orionldState.delayedCleanupFunc  = NULL;
+  orionldState.delayedCleanupCount = 0;
+
   if (orionldState.qMongoFilterP != NULL)
     delete orionldState.qMongoFilterP;
 }

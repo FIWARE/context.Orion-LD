@@ -52,6 +52,14 @@ extern "C"
 #include "orionld/common/orionldState.h"                    // orionldState
 #include "ftClient/NgsildPublisher.h"                       // NgsildPublisher
 
+using eprosima::fastdds::dds::DomainParticipantFactory;
+using eprosima::fastdds::dds::DomainParticipantQos;
+using eprosima::fastdds::dds::DataWriterQos;
+using eprosima::fastdds::dds::ReturnCode_t;
+using eprosima::fastdds::dds::TOPIC_QOS_DEFAULT;
+using eprosima::fastdds::dds::PUBLISHER_QOS_DEFAULT;
+using eprosima::fastdds::dds::DATAWRITER_QOS_DEFAULT;
+
 
 
 // -----------------------------------------------------------------------------

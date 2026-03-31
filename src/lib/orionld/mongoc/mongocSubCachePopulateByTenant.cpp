@@ -22,6 +22,7 @@
 *
 * Author: Ken Zangelin
 */
+#include <string.h>                                              // strstr
 #include <mongoc/mongoc.h>                                       // MongoDB C Client Driver
 
 extern "C"
@@ -30,8 +31,6 @@ extern "C"
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
-
-#include <string.h>                                              // strstr
 
 #include "orionld/types/OrionldTenant.h"                         // OrionldTenant
 #include "orionld/types/QNode.h"                                 // QNode

@@ -1339,6 +1339,12 @@ MHD_Result mhdConnectionTreat(void)
           KT_T(KtContextInBody, "@context is an array with a single URI inside - flattening");
           orionldState.payloadContextNode = orionldState.payloadContextNode->value.firstChildP;
           orionldState.contextP = orionldContextFromUrl(orionldState.payloadContextNode->value.s, orionldState.payloadContextNode->value.s);
+          if (orionldState.contextP == NULL)
+          {
+            KT_W("Unable to resolve @context '%s'", orionldState.payloadContextNode->value.s);
+            orionldError(OrionldLdContextNotAvailable, "Unable to resolve @context", orionldState.payloadContextNode->value.s, 503);
+            return MHD_YES;
+          }
           KT_T(KtContextInBody, "All done: orionldState.contextP->url: '%s'", orionldState.contextP->url);
           allDone = true;
         }

@@ -86,7 +86,6 @@ style_check src/lib/alarmMgr
 style_check src/lib/metricsMgr
 style_check test/unittests
 style_check test/unittests/orionTypes
-style_check test/unittests/jsonParse
 style_check test/unittests/apiTypesV2
 style_check test/unittests/cache
 style_check test/unittests/rest
