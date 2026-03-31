@@ -57,11 +57,28 @@ bool mongocEntitiesUpsert(KjNode* createArrayP, KjNode* updateArrayP)
     for (KjNode* entityP = createArrayP->value.firstChildP; entityP != NULL; entityP = entityP->next)
     {
       bson_t doc;
+      bson_t match;
 
       bson_init(&doc);
+      bson_init(&match);
+
+      // Build match on _id.id for upsert (instead of plain insert) to avoid E11000 race conditions
+      KjNode* _idP = kjLookup(entityP, "_id");
+      KjNode* idP  = (_idP != NULL) ? kjLookup(_idP, "id") : NULL;
+
+      if (idP == NULL)
+      {
+        KT_E("Can't create an entity without entity id");
+        bson_destroy(&doc);
+        bson_destroy(&match);
+        continue;
+      }
+
+      bson_append_utf8(&match, "_id.id", 6, idP->value.s, -1);
       mongocKjTreeToBson(entityP, &doc);  // The entity needs to be DB-Prepared !
-      mongoc_bulk_operation_insert(bulkP, &doc);
+      mongoc_bulk_operation_replace_one(bulkP, &match, &doc, true);  // upsert=true
       bson_destroy(&doc);
+      bson_destroy(&match);
     }
   }
 
