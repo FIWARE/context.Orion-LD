@@ -172,8 +172,8 @@ void ddsEntityAttributeUpsert(const char* entityId, const char* entityType, cons
       orionldState.in.pathAttrExpanded = attrLongName;
       orionldState.serviceP            = serviceLookupByServiceRoutine(orionldPutAttribute, HTTP_PUT);
       orionldState.requestTree         = ddsAttributeValues();
-
       KT_T(StDdsServicePrepopulate, "The attribute '%s' exists - calling orionldPutAttribute", attributeName);
+
       orionldPutAttribute();
     }
   }

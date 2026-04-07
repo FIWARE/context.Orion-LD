@@ -137,11 +137,11 @@ void HttpInfo::fill(const BSONObj* boP)
   this->url    = boP->hasField(CSUB_REFERENCE)? getStringFieldF(boP,  CSUB_REFERENCE) : "";
   this->custom = boP->hasField(CSUB_CUSTOM)?    getBoolFieldF(boP,    CSUB_CUSTOM)    : false;
 
-  bool  mqtt           = (strncmp(url.c_str(), "mqtt", 4) == 0);
-  char* mimeTypeString = (char*) getStringFieldF(boP, CSUB_MIMETYPE);
+  bool        mqtt           = (strncmp(url.c_str(), "mqtt", 4) == 0);
+  const char* mimeTypeString = boP->hasField(CSUB_MIMETYPE)? getStringFieldF(boP, CSUB_MIMETYPE) : "";
 
   if (mimeTypeString[0] == 0)
-    mimeTypeString = (char*) "application/json";  // Default value
+    mimeTypeString = "application/json";  // Default value
 
   this->mimeType = longStringToMimeType(mimeTypeString);
 

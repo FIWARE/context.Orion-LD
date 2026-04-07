@@ -344,7 +344,7 @@ echo
 echo "29. PATCH 'expiresAt'"
 echo "====================="
 payload='{
-  "expiresAt": "2026-04-01T12:34:56"
+  "expiresAt": "2031-04-01T12:34:56"
 }'
 orionCurl --url /ngsi-ld/v1/subscriptions/urn:ngsi-ld:subscriptions:S01 -X PATCH --payload "$payload"
 echo
@@ -1557,7 +1557,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     },
     "status": "ok"
   },
-  "expiresAt": "2026-04-01T12:34:56.000Z",
+  "expiresAt": "2031-04-01T12:34:56.000Z",
   "throttling": 5,
   "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
 }
@@ -1621,7 +1621,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     },
     "status": "ok"
   },
-  "expiresAt": "2026-04-01T12:34:56.000Z",
+  "expiresAt": "2031-04-01T12:34:56.000Z",
   "throttling": 12,
   "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
 }
@@ -1635,7 +1635,7 @@ connecting to: REGEX(.)
 MongoDB server version: REGEX(.)
 {
 	"_id" : "urn:ngsi-ld:subscriptions:S01",
-	"expiration" : 1775046896,
+	"expiration" : 1932813296,
 	"reference" : "http://localhost:1234/notify2",
 	"custom" : false,
 	"mimeType" : "application/json",
