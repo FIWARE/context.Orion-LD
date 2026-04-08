@@ -343,7 +343,7 @@ echo
 echo "29. PATCH 'expiresAt'"
 echo "====================="
 payload='{
-  "expiresAt": "2026-04-01T12:34:56"
+  "expiresAt": "2031-04-01T12:34:56"
 }'
 orionCurl --url /ngsi-ld/v1/subscriptions/urn:ngsi-ld:subscriptions:S01 -X PATCH --payload "$payload"
 echo
@@ -1532,7 +1532,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     },
     "status": "ok"
   },
-  "expiresAt": "2026-04-01T12:34:56.000Z",
+  "expiresAt": "2031-04-01T12:34:56.000Z",
   "throttling": 5,
   "origin": "cache",
   "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
@@ -1593,7 +1593,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     },
     "status": "ok"
   },
-  "expiresAt": "2026-04-01T12:34:56.000Z",
+  "expiresAt": "2031-04-01T12:34:56.000Z",
   "throttling": 12,
   "origin": "cache",
   "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
@@ -1637,7 +1637,7 @@ MongoDB server version: REGEX(.)
 		"geoproperty" : "https://uri=etsi=org/ngsi-ld/default-context/geo1"
 	},
 	"status" : "inactive",
-	"expiration" : 1775046896,
+	"expiration" : 1932813296,
 	"throttling" : 12,
 	"createdAt" : REGEX(\d+\.\d+),
 	"modifiedAt" : REGEX(\d+\.\d+),
