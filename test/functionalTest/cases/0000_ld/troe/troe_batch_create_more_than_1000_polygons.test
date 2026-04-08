@@ -111,6 +111,8 @@ orionCurl --url /ngsi-ld/v1/entityOperations/create --payload "$entities" | grep
 echo
 echo
 
+# TRoE writes are async w.r.t. the HTTP response - wait for them to land
+sleep 1
 
 echo "02. Count the entities in the TRoE DB"
 echo "====================================="
