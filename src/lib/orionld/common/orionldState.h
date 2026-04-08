@@ -423,9 +423,12 @@ typedef struct OrionldConnectionState
 #endif
 
   //
-  // Array of allocated buffers that are to be freed when the request thread ends
+  // Array of allocated buffers that are to be freed when the request thread ends.
+  // Lazily allocated and grown via realloc (see orionldStateDelayedFreeEnqueue).
+  // The buffer itself persists across requests on the same thread (only the
+  // contents are freed in orionldStateRelease) to avoid per-request churn.
   //
-  void*                   delayedFreeVec[1001];  // FIXME: try to make this number smaller ...
+  void**                  delayedFreeVec;
   int                     delayedFreeVecIndex;
   int                     delayedFreeVecSize;
 

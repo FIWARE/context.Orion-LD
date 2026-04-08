@@ -18,6 +18,7 @@
   #XXXX - Fixed Ngsild-Attribute-Format header in pernot notifications (was hardcoded to Normalized)
   #XXXX - Fixed Link header scoping bug in pernot notifications (linkHeader buffer out of scope)
   #XXXX - Fixed pernot GET rendering to use actual isActive/status instead of hardcoded true/active
+  #XXXX - Fixed broker abort on requests that allocate more than 1000 buffers needing delayed free (e.g. large TRoE batch operations)
 
 ## New Features
   #XXXX - Native NGSI-LD temporal query support: GET/POST for temporal entities with q-filter, geo-queries, aggregation, pick/omit, datasetId, and temporalValues — replacing previous Mintaka-based stubs

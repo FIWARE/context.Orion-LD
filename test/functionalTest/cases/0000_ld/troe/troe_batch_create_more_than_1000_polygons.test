@@ -1,0 +1,137 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Batch Create with > 1000 non-Point GeoProperties in a single request (delayedFreeVec growth)
+
+--SHELL-INIT--
+dbInit CB
+pgInit $CB_DB_NAME
+orionldStart CB -troe -experimental
+
+--SHELL--
+
+#
+# This test exercises orionldState.delayedFreeVec, which used to be a static
+# array of 1001 slots. Each non-Point GeoProperty processed by pgAttributeAppend
+# (TRoE) malloc's a coords buffer and registers it via orionldStateDelayedFreeEnqueue.
+# Pre-fix, going past 1000 enqueues in a single request aborted the broker thread
+# with "Internal Error (the size of orionldState.delayedFreeVec needs to be augmented)".
+# Post-fix, delayedFreeVec is grown on demand via realloc and the request must succeed.
+#
+# 200 entities x 6 Polygon GeoProperties = 1200 enqueues, well over the old 1000 cap.
+#
+# 01. Batch create 200 entities, each with 6 Polygon GeoProperties (1200 enqueues)
+# 02. Count the entities in the TRoE DB
+#
+
+echo "01. Batch create 200 entities, each with 6 Polygon GeoProperties (1200 enqueues)"
+echo "================================================================================"
+typeset -i eId
+eId=1
+entities="["
+while [ $eId -le 200 ]
+do
+  entity='{
+    "id": "urn:ngsi-ld:Zone:'$eId'",
+    "type": "Zone",
+    "area1": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Polygon",
+        "coordinates": [[[0,0],[1,0],[1,1],[0,1],[0,0]]]
+      }
+    },
+    "area2": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Polygon",
+        "coordinates": [[[0,0],[2,0],[2,2],[0,2],[0,0]]]
+      }
+    },
+    "area3": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Polygon",
+        "coordinates": [[[0,0],[3,0],[3,3],[0,3],[0,0]]]
+      }
+    },
+    "area4": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Polygon",
+        "coordinates": [[[0,0],[4,0],[4,4],[0,4],[0,0]]]
+      }
+    },
+    "area5": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Polygon",
+        "coordinates": [[[0,0],[5,0],[5,5],[0,5],[0,0]]]
+      }
+    },
+    "area6": {
+      "type": "GeoProperty",
+      "value": {
+        "type": "Polygon",
+        "coordinates": [[[0,0],[6,0],[6,6],[0,6],[0,0]]]
+      }
+    }
+  }'
+  entities=$entities$entity
+  if [ $eId != 200 ]
+  then
+    entities=$entities","
+  fi
+  eId=$eId+1
+done
+entities=$entities"]"
+echo $entities > /tmp/entities
+
+orionCurl --url /ngsi-ld/v1/entityOperations/create --payload "$entities" | grep "^HTTP/1.1"
+echo
+echo
+
+
+echo "02. Count the entities in the TRoE DB"
+echo "====================================="
+postgresCmd -sql "SELECT count(*) FROM entities"
+echo
+echo
+
+
+--REGEXPECT--
+01. Batch create 200 entities, each with 6 Polygon GeoProperties (1200 enqueues)
+================================================================================
+HTTP/1.1 201 Created
+
+
+02. Count the entities in the TRoE DB
+=====================================
+count
+200
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
+pgDrop $CB_DB_NAME
