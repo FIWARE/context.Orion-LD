@@ -23,6 +23,8 @@
 * Author: Ken Zangelin
 */
 #include <stdint.h>                                              // types: uint64_t, ...
+#include <stdlib.h>                                              // malloc
+#include <time.h>                                                // time
 
 #include "ddsenabler/DDSEnabler.hpp"                             // DDSEnabler::send_service_request
 
@@ -30,12 +32,15 @@ extern "C"
 {
 #include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kalloc/kaAlloc.h"                                      // kaAlloc
+#include "kalloc/kaBufferInit.h"                                 // kaBufferInit
 #include "kjson/KjNode.h"                                        // KjNode
+#include "kjson/kjBufferCreate.h"                                // kjBufferCreate
+#include "kjson/kjClone.h"                                       // kjClone
 #include "kjson/kjRenderSize.h"                                  // kjFastRenderSize
 #include "kjson/kjRender.h"                                      // kjFastRender
 }
 
-#include "orionld/types/DdsService.h"                            // DdsService
+#include "orionld/types/DdsService.h"                            // DdsService, DdsServiceInstance
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/traceLevels.h"                          // KT_T trace levels
 #include "orionld/dds/ddsInit.h"                                 // ddsEnabler
@@ -56,11 +61,34 @@ void ddsService(DdsService* serviceP, KjNode* attributeValueP)
   KT_T(StDdsService, "Servicing '%s'", serviceP->name);
 
   //
-  // Create the instance and add it to the 'instances' list
+  // Create the instance and add it to the 'instances' list.
+  //
+  // The instance owns its own KAlloc/Kjson buffer pair so the cloned request
+  // KjNode tree survives from this (request) thread until the reply arrives on
+  // the DDS callback thread - well past the lifetime of orionldState.kalloc.
   //
   DdsServiceInstance* dsiP = (DdsServiceInstance*) malloc(sizeof(DdsServiceInstance));
-  dsiP->requestId     = 0;
-  dsiP->next          = serviceP->instances;
+  if (dsiP == NULL)
+  {
+    KT_E("Out of memory allocating DdsServiceInstance for service '%s'", serviceP->name);
+    return;
+  }
+
+  dsiP->requestId   = 0;
+  dsiP->requestTree = NULL;
+  dsiP->publishedAt = (int64_t) time(NULL);
+  dsiP->next        = serviceP->instances;
+
+  kaBufferInit(&dsiP->kalloc, NULL, 0, 4096, NULL, "DdsServiceInstance KAlloc");
+  if (kjBufferCreate(&dsiP->kjson, &dsiP->kalloc) == NULL)
+  {
+    KT_E("kjBufferCreate failed for DdsServiceInstance of service '%s'", serviceP->name);
+    free(dsiP);
+    return;
+  }
+
+  dsiP->requestTree = kjClone(&dsiP->kjson, attributeValueP);
+
   serviceP->instances = dsiP;
 
   // Start the service

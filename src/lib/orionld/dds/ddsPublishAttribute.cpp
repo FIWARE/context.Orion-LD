@@ -163,6 +163,17 @@ static char* kjDdsType(KjNode* valueP, char* buf, int bufSize)
 //
 void ddsPublishAttribute(const char* entityId, char* attrShortName, KjNode* attrP, bool isValue)
 {
+  //
+  // If we are inside a DDS callback (a sample/reply that was just merge-patched
+  // back into the entity), do NOT republish to DDS - that would re-trigger the
+  // same service/topic and cause an infinite loop.
+  //
+  if (orionldState.ddsSample == true)
+  {
+    KT_T(StDds, "DDS callback context - skipping republish of '%s' to avoid loop", attrShortName);
+    return;
+  }
+
   KjNode* valueP = (isValue == true)? attrP : kjLookup(attrP, "value");
   if (valueP == NULL)
     KT_RVE("Attribute '%s' doesn't have a value!'", attrShortName);

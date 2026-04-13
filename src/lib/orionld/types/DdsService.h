@@ -27,15 +27,30 @@
 */
 #include <stdint.h>                                              // types: uint64_t, ...
 
+extern "C"
+{
+#include "kalloc/KAlloc.h"                                       // KAlloc
+#include "kjson/kjson.h"                                         // Kjson
+#include "kjson/KjNode.h"                                        // KjNode
+}
+
 
 
 // -----------------------------------------------------------------------------
 //
 // DdsServiceInstance -
 //
+// One-per-in-flight-request. Owns its own KAlloc/Kjson buffer pair so the cloned
+// request KjNode tree survives from the request thread until the reply arrives
+// on the DDS callback thread. Released by kaBufferReset(&kalloc, false) + free().
+//
 typedef struct DdsServiceInstance
 {
   uint64_t                    requestId;
+  KAlloc                      kalloc;        // dedicated allocator for the request tree
+  Kjson                       kjson;         // kjson context built on 'kalloc'
+  KjNode*                     requestTree;   // cloned request payload (lives in 'kalloc')
+  int64_t                     publishedAt;   // wall-clock seconds since epoch when the request was sent
   struct DdsServiceInstance*  next;
 } DdsServiceInstance;
 

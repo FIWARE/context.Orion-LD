@@ -48,6 +48,8 @@ extern "C"
 //
 // ddsNotification -
 //
+// FIXME: change "xId" to "instanceHandlerId"
+//
 void ddsNotification(const char* topicName, const char* json, int64_t publishTime)
 {
   KT_T(StDdsNotification, "----------------------------------------");

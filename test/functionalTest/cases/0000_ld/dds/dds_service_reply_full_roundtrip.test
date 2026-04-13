@@ -1,0 +1,292 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+#
+# IMPORTANT - this test depends on a patched FIWARE-DDS-Enabler.
+# See doc/dds-service-reply-rework.md section 4 for the patch (eProsima
+# branch 'orionld/broker-as-client-publish-rpc-relax'). Without that
+# patch installed in /usr/local/lib, send_service_request() in the broker
+# refuses to publish and the test fails at step 04.
+#
+
+--NAME--
+DDS Service: full request/reply roundtrip stores request+reply sub-attributes, loop guard prevents republish
+
+--SHELL-INIT--
+ddsClean
+
+# Broker config: service mapping (with full type info) + typesDirectory so the
+# broker can serialize outgoing service requests and deserialize incoming
+# replies. The request/reply type names allow the broker to call
+# announce_service() at startup, before DDS discovery races it.
+$REPO_HOME/scripts/configFile.sh \
+  --ddsService "add_two_ints,Calculator,urn:ngsi-ld:calc:1,operation,example_interfaces::srv::dds_::AddTwoInts_Request_,example_interfaces::srv::dds_::AddTwoInts_Response_" \
+  --ddsTypesDirectory "$REPO_HOME/test/functionalTest/ddsTypes" \
+  > $HOME/.orionld
+
+# ftClient config: same service mapping (types loaded later via POST /dds/type)
+$REPO_HOME/scripts/configFile.sh \
+  --ddsService "add_two_ints,Calculator,urn:ngsi-ld:calc:1,operation" \
+  > $HOME/.ftClient
+
+ftClientStart --dds
+sleep .2
+valgrindSleep 5
+
+# Pre-load DDS types into ftClient BEFORE the broker starts.
+# The broker calls announce_service() inside ddsInit() (before its REST port is
+# even open) and that triggers DDS discovery into ftClient. If ftClient's type
+# directory isn't already configured at that moment, ftClient's type-query
+# callback fails, the reply schema never enters ftClient's schemas_ map, and
+# every later send_service_reply for this service fails with "schema not
+# available".
+payload='{"path": "'$REPO_HOME'/test/functionalTest/ddsTypes"}'
+orionCurl --url /dds/type --port $FT_PORT --payload "$payload" >/dev/null 2>&1
+
+# Announce ftClient as the service server BEFORE broker startup so its
+# request/reply schemas land in its schemas_ map up front.
+payload='{
+  "name": "add_two_ints",
+  "requestType": "example_interfaces::srv::dds_::AddTwoInts_Request_",
+  "replyType": "example_interfaces::srv::dds_::AddTwoInts_Response_"
+}'
+orionCurl --url /dds/service --port $FT_PORT --payload "$payload" >/dev/null 2>&1
+
+dbInit CB
+orionldStart CB -mongocOnly -wip dds
+
+# Give DDS participants time to discover each other
+sleep .5
+
+--SHELL--
+valgrindSleep 5
+
+#
+# (DDS type loading and service announcement on ftClient happen in SHELL-INIT
+# above, BEFORE the broker is started, so that the broker's early-announce in
+# ddsInit() doesn't race ftClient's type loading.)
+#
+# 01. PATCH the operation attribute (first request)
+# 02. ftClient sends a reply for the first request
+# 03. GET entity - the new request/reply sub-attribute structure must be present
+# 04. PATCH the operation attribute (second request - loop guard regression)
+# 05. ftClient sends a reply for the second request
+# 06. GET entity - the second reply must have replaced the first
+#
+
+echo "01. PATCH operation attribute (first request)"
+echo "=============================================="
+payload='{
+  "operation": {
+    "type": "Property",
+    "value": {
+      "a": 5,
+      "b": 3
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:calc:1 -X PATCH --payload "$payload"
+echo
+echo
+
+
+echo "02. Send first reply from ftClient"
+echo "==================================="
+sleep .5
+# requestId 1 is what the broker's enabler assigns to the first request
+payload='{
+  "service": "add_two_ints",
+  "requestId": 1,
+  "body": {
+    "sum": 8
+  }
+}'
+orionCurl --url /dds/service/reply --port $FT_PORT --payload "$payload"
+echo
+echo
+
+
+echo "03. GET entity - the request and reply sub-attributes must be present"
+echo "======================================================================"
+sleep .5
+valgrindSleep 5
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:calc:1?options=concise
+echo
+echo
+
+
+echo "04. PATCH operation attribute (second request - loop guard regression)"
+echo "======================================================================="
+payload='{
+  "operation": {
+    "type": "Property",
+    "value": {
+      "a": 7,
+      "b": 11
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:calc:1 -X PATCH --payload "$payload"
+echo
+echo
+
+
+echo "05. Send second reply from ftClient"
+echo "===================================="
+sleep .5
+payload='{
+  "service": "add_two_ints",
+  "requestId": 2,
+  "body": {
+    "sum": 18
+  }
+}'
+orionCurl --url /dds/service/reply --port $FT_PORT --payload "$payload"
+echo
+echo
+
+
+echo "06. GET entity - the second reply replaced the first"
+echo "====================================================="
+sleep .5
+valgrindSleep 5
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:calc:1?options=concise
+echo
+echo
+
+
+--REGEXPECT--
+01. PATCH operation attribute (first request)
+==============================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+02. Send first reply from ftClient
+===================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+03. GET entity - the request and reply sub-attributes must be present
+======================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "ddsType": "fastdds",
+    "id": "urn:ngsi-ld:calc:1",
+    "operation": {
+        "reply": {
+            "ddsDataType": "example_interfaces::srv::dds_::AddTwoInts_Response_",
+            "participantId": "REGEX([0-9a-f.]+)",
+            "publishedAt": REGEX(\d+),
+            "requestId": 1,
+            "value": {
+                "sum": 8
+            },
+            "xId": "REGEX([0-9a-f.]+)"
+        },
+        "request": {
+            "ddsDataType": "example_interfaces::srv::dds_::AddTwoInts_Request_",
+            "publishedAt": REGEX(\d+),
+            "requestId": 1,
+            "value": {
+                "a": 5,
+                "b": 3
+            }
+        },
+        "value": {
+            "a": 5,
+            "b": 3
+        }
+    },
+    "type": "Calculator"
+}
+
+
+04. PATCH operation attribute (second request - loop guard regression)
+=======================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+05. Send second reply from ftClient
+====================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+06. GET entity - the second reply replaced the first
+=====================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "ddsType": "fastdds",
+    "id": "urn:ngsi-ld:calc:1",
+    "operation": {
+        "reply": {
+            "ddsDataType": "example_interfaces::srv::dds_::AddTwoInts_Response_",
+            "participantId": "REGEX([0-9a-f.]+)",
+            "publishedAt": REGEX(\d+),
+            "requestId": 1,
+            "value": {
+                "sum": 18
+            },
+            "xId": "REGEX([0-9a-f.]+)"
+        },
+        "request": {
+            "ddsDataType": "example_interfaces::srv::dds_::AddTwoInts_Request_",
+            "publishedAt": REGEX(\d+),
+            "requestId": 1,
+            "value": {
+                "a": 7,
+                "b": 11
+            }
+        },
+        "value": {
+            "a": 7,
+            "b": 11
+        }
+    },
+    "type": "Calculator"
+}
+
+
+--TEARDOWN--
+ddsClean
+ftClientStop
+brokerStop CB
+dbDrop CB
+rm -f $HOME/.orionld
+rm -f $HOME/.ftClient

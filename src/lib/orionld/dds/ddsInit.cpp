@@ -53,6 +53,8 @@ extern "C"
 #include "orionld/dds/ddsActionFeedbackNotification.h"      // ddsActionFeedbackNotification
 #include "orionld/dds/ddsActionStatusNotification.h"        // ddsActionStatusNotification
 #include "orionld/dds/ddsCategoryToKlogSeverity.h"          // ddsCategoryToKlogSeverity
+#include "orionld/dds/ddsTypeLoad.h"                        // ddsTypeLoad, ddsTypesDirectorySet
+#include "orionld/dds/ddsServiceLookup.h"                   // ddsServiceLookup
 #include "orionld/dds/ddsInit.h"                            // Own interface
 
 
@@ -69,6 +71,12 @@ std::shared_ptr<eprosima::ddsenabler::DDSEnabler>  ddsEnabler;
 //
 // ddsTypeQuery -
 //
+// Called by the DDS Enabler when it needs the binary type representation for a
+// given type name (e.g. when serializing an outgoing service request or when
+// deserializing an incoming reply). The bytes are loaded on demand from the
+// directory configured via 'dds.ngsild.typesDirectory' in the broker's config
+// file. Ownership of the buffer is transferred to the enabler via unique_ptr.
+//
 static bool ddsTypeQuery  // DdsTypeQuery
 (
   const char*                              typeName,
@@ -76,8 +84,76 @@ static bool ddsTypeQuery  // DdsTypeQuery
   uint32_t&                                serializedTypeInternalSize
 )
 {
-  KT_T(StDdsTypes, "Got a type query/request callback ('%s', %d)", typeName, serializedTypeInternalSize);
-  return true;;
+  KT_T(StDdsTypes, "Got a type query/request callback ('%s')", typeName);
+
+  unsigned char*  data = NULL;
+  uint32_t        size = 0;
+
+  if (ddsTypeLoad(typeName, &data, &size) == false)
+  {
+    KT_T(StDdsTypes, "DDS type '%s' could not be loaded", typeName);
+    return false;
+  }
+
+  serializedTypeInternal.reset(data);  // enabler takes ownership
+  serializedTypeInternalSize = size;
+  return true;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// ddsServiceQuery -
+//
+// Called by the DDS Enabler from inside announce_service() to fetch the
+// request/reply type names (and QoS) for a service the broker wants to
+// register. We look the service up in the broker's local 'ddsServices' linked
+// list - which is populated at startup from the config file by
+// ddsServicesPopulateFromConfig().
+//
+static bool ddsServiceQuery
+(
+  const char*                                      serviceName,
+  eprosima::ddsenabler::participants::ServiceInfo& serviceInfo
+)
+{
+  KT_T(StDdsService, "Got a Service Query for '%s'", serviceName);
+
+  DdsService* sP = ddsServiceLookup(serviceName);
+  if (sP == NULL)
+  {
+    KT_W("Service Query for unknown service '%s'", serviceName);
+    return false;
+  }
+
+  if ((sP->requestType == NULL) || (sP->replyType == NULL))
+  {
+    KT_W("Service Query for '%s': request/reply types not yet known", serviceName);
+    return false;
+  }
+
+  //
+  // Default serialized QoS used when the broker config doesn't override it.
+  // Must match ftClient's defaults (and the ROS2 default for service writers/
+  // readers) - otherwise the broker's writers come up as Best Effort while the
+  // peer's readers are Reliable, the endpoints never match, and no service
+  // request ever crosses the wire.
+  //
+  static const char* defaultServiceQoS =
+      "reliability: true\n"
+      "durability: false\n"
+      "ownership: false\n"
+      "keyed: false";
+
+  serviceInfo.request.type_name      = sP->requestType;
+  serviceInfo.request.serialized_qos = (sP->requestQoS != NULL)? sP->requestQoS : defaultServiceQoS;
+  serviceInfo.reply.type_name        = sP->replyType;
+  serviceInfo.reply.serialized_qos   = (sP->replyQoS   != NULL)? sP->replyQoS   : defaultServiceQoS;
+
+  KT_T(StDdsService, "Service Query for '%s': req='%s', reply='%s'",
+       serviceName, sP->requestType, sP->replyType);
+  return true;
 }
 
 
@@ -197,13 +273,34 @@ bool ddsActionQuery
 //
 int ddsInit(Kjson* kjP)
 {
-  KjNode* topicsNode   = kjTreeNavigate(configTree, "dds.ngsild.topics",   NULL);
-  KjNode* servicesNode = kjTreeNavigate(configTree, "dds.ngsild.services", NULL);
-  KjNode* actionsNode  = kjTreeNavigate(configTree, "dds.ngsild.actions",  NULL);
+  KjNode* topicsNode   = kjTreeNavigate(configTree, "dds.ngsild.topics",         NULL);
+  KjNode* servicesNode = kjTreeNavigate(configTree, "dds.ngsild.services",       NULL);
+  KjNode* actionsNode  = kjTreeNavigate(configTree, "dds.ngsild.actions",        NULL);
+  KjNode* typesDirNode = kjTreeNavigate(configTree, "dds.ngsild.typesDirectory", NULL);
+
+  //
+  // Synchronously create the in-memory DdsService linked list from the config
+  // tree. Must run BEFORE the enabler is created so the broker can call
+  // announce_service() at startup with the request/reply types known. Without
+  // this the broker can never load the type schemas it needs to act as a DDS
+  // service client (see doc/dds-service-reply-rework.md).
+  //
+  ddsServicesPopulateFromConfig(servicesNode);
 
   if (topicsNode   != NULL)  ddsPrePopulateDb(DdsTopics,   topicsNode);
   if (servicesNode != NULL)  ddsPrePopulateDb(DdsServices, servicesNode);
   if (actionsNode  != NULL)  ddsPrePopulateDb(DdsActions,  actionsNode);
+
+  //
+  // Configure the directory the broker uses to load DDS type definitions
+  // (.bin files) on demand. Without this, the broker can't serialize outgoing
+  // service requests or deserialize incoming replies.
+  //
+  if ((typesDirNode != NULL) && (typesDirNode->type == KjString))
+  {
+    KT_T(StDds, "Setting DDS types directory to '%s'", typesDirNode->value.s);
+    ddsTypesDirectorySet(typesDirNode->value.s);
+  }
 
   KT_T(StDds, "Calling create_dds_enabler('%s')", configFile);
 
@@ -221,7 +318,8 @@ int ddsInit(Kjson* kjP)
   {
     ddsServiceNotification,
     ddsServiceRequestNotification,
-    ddsServiceReplyNotification
+    ddsServiceReplyNotification,
+    ddsServiceQuery
   };
   eprosima::ddsenabler::ActionCallbacks actionCallbacks =
   {
@@ -246,6 +344,38 @@ int ddsInit(Kjson* kjP)
   if (r == false)
     KT_X(1, "Unable to create the DDS Enabler");
   KT_T(StDds, "DDS Enabler created");
+
+  //
+  // For each service the broker knows about (from the config file) that has
+  // request/reply types configured, call announce_service NOW. This forces
+  // the enabler to invoke our serviceQuery + typeQuery callbacks, which
+  // loads the type schemas into the enabler's internal map. Without it,
+  // send_service_request() fails with "schema not available".
+  //
+  // Note: this requires the eProsima patch in
+  //   doc/dds-service-reply-rework.md  section 4
+  // to allow publish_rpc() to publish requests when the local enabler has
+  // announced the service (enabler_as_server=true) but no peer has been
+  // discovered yet (external_server=false). Without that patch, the schemas
+  // load successfully here but the eventual send_service_request() is still
+  // refused.
+  //
+  for (DdsService* sP = ddsServices; sP != NULL; sP = sP->next)
+  {
+    if ((sP->requestType == NULL) || (sP->replyType == NULL))
+    {
+      KT_T(StDdsService, "Service '%s' has no configured request/reply types - skipping early announce", sP->name);
+      continue;
+    }
+
+    KT_T(StDdsService, "Early-announcing service '%s' (req='%s', reply='%s')",
+         sP->name, sP->requestType, sP->replyType);
+
+    if (ddsEnabler->announce_service(sP->name, eprosima::ddsenabler::participants::Protocol::ROS2))
+      KT_T(StDdsService, "Service '%s' early-announced", sP->name);
+    else
+      KT_W("Failed to early-announce service '%s' to the local DDS Enabler", sP->name);
+  }
 
   return 0;
 }
