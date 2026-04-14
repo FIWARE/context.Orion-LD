@@ -892,9 +892,13 @@ then
         docker run --rm -d --name context-server -p 7080:8080 -e MEMORY_ENABLED=true wistefan/context-server
         echo "... Context Server Started"
         sleep $CB_CONTEXT_SERVER_DELAY  # Very slow - it doesn't work without this delay
-    else
-        pushContexts=0                                 # Assuming the @contexts have been pushed already
     fi
+    # Always push the contexts. The context-server container runs with
+    # MEMORY_ENABLED=true - its state is lost on restart. We can't tell from
+    # "the container is running" that the contexts are still loaded (it may
+    # have been started outside the test suite, or restarted separately).
+    # POSTing is idempotent enough for our needs: a conflict on an existing
+    # context just means it's there already, which is what we want.
 else
     echo "* docker is not installed - if we're in GitHub Actions, that's how it should be."
     echo "* If not in GitHub Actions, this might be a problem."
