@@ -175,7 +175,8 @@ void orionldStateInit(MHD_Connection* connection)
   orionldState.errorAttributeArraySize = sizeof(orionldState.errorAttributeArray);
   orionldState.contextP                = orionldCoreContextP;
   orionldState.distOpAttrsCompacted    = true;
-  orionldState.delayedFreeVecSize      = sizeof(orionldState.delayedFreeVec) / sizeof(orionldState.delayedFreeVec[0]);
+  // Note: delayedFreeVec is lazily allocated on first use (see orionldStateDelayedFreeEnqueue)
+  // and persists across requests on the same thread, so we don't (re)initialize it here.
 
   orionldState.uriParams.spaces        = 2;
 
@@ -401,9 +402,17 @@ void orionldStateDelayedKjFreeEnqueue(KjNode* tree)  // Outdeffed
 //
 void orionldStateDelayedFreeEnqueue(void* allocatedBuffer)
 {
-  if (orionldState.delayedFreeVecIndex >= orionldState.delayedFreeVecSize - 1)
-    KT_X(1, "DFREE: Internal Error (the size of orionldState.delayedFreeVec needs to be augmented (delayedFreeVecIndex=%d, delayedFreeVecSize=%d))",
-         orionldState.delayedFreeVecIndex, orionldState.delayedFreeVecSize);
+  if (orionldState.delayedFreeVecIndex >= orionldState.delayedFreeVecSize)
+  {
+    int newSize = (orionldState.delayedFreeVecSize == 0) ? 256 : orionldState.delayedFreeVecSize * 2;
+
+    void** newVec = (void**) realloc(orionldState.delayedFreeVec, newSize * sizeof(void*));
+    if (newVec == NULL)
+      KT_X(1, "DFREE: out of memory growing orionldState.delayedFreeVec to %d slots", newSize);
+
+    orionldState.delayedFreeVec     = newVec;
+    orionldState.delayedFreeVecSize = newSize;
+  }
 
   orionldState.delayedFreeVec[orionldState.delayedFreeVecIndex] = allocatedBuffer;
   ++orionldState.delayedFreeVecIndex;
@@ -419,9 +428,9 @@ void orionldStateDelayedFreeCancel(void* allocatedBuffer)
 {
   for (int ix = 0; ix < orionldState.delayedFreeVecIndex; ix++)
   {
-    if (orionldState.delayedFreeVec[orionldState.delayedFreeVecIndex] == allocatedBuffer)
+    if (orionldState.delayedFreeVec[ix] == allocatedBuffer)
     {
-      orionldState.delayedFreeVec[orionldState.delayedFreeVecIndex] = NULL;
+      orionldState.delayedFreeVec[ix] = NULL;
       return;
     }
   }
