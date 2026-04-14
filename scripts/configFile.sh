@@ -51,7 +51,7 @@ function usage()
   empty=$(echo $sfile | tr 'a-zA-z/0-9.:' ' ')
   echo "$sfile [-u (usage)]"
   echo "$empty [--ddsTopic <topic>,<entity type>,<entity id>,<attribute name>]"
-  echo "$empty [--ddsService <name>,<entity type>,<entity id>,<attribute name>[,<request type>,<reply type>]]"
+  echo "$empty [--ddsService <name>,<entity type>,<entity id>,<attribute name>]"
   echo "$empty [--ddsAction <action>,<entity type>,<entity id>,<attribute name>]"
   echo "$empty [--ddsTypesDirectory <absolute path to directory of .bin type files>]"
   echo "$empty [--troe <id,idPattern,type1+type2+...typeN,attribute1+attribute2+...attributeN>]"
@@ -188,8 +188,6 @@ then
         eType=$(echo $items   | awk -F, '{ print $2 }')
         eId=$(echo   $items   | awk -F, '{ print $3 }')
         attr=$(echo  $items   | awk -F, '{ print $4 }')
-        reqType=$(echo $items | awk -F, '{ print $5 }')
-        repType=$(echo $items | awk -F, '{ print $6 }')
 
         if [ $ix != $ddsServiceIx ]
         then
@@ -201,8 +199,6 @@ then
         echo '        "'$service'": {'
         echo '          "entityType": "'$eType'",'
         echo '          "entityId": "'$eId'",'
-        if [ "$reqType" != "" ]; then echo '          "requestType": "'$reqType'",'; fi
-        if [ "$repType" != "" ]; then echo '          "replyType": "'$repType'",'; fi
         echo '          "attribute": "'$attr'"'
         echo '        }'$comma
 

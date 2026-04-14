@@ -164,13 +164,9 @@ static void* ddsPrePopulateDbInThread(void* vP)
     KjNode* entityTypeNode  = kjLookup(topic, "entityType");
     KjNode* entityIdNode    = kjLookup(topic, "entityId");
     KjNode* attrNameNode    = kjLookup(topic, "attribute");
-    KjNode* requestTypeNode = kjLookup(topic, "requestType");
-    KjNode* replyTypeNode   = kjLookup(topic, "replyType");
     char*   entityType      = (entityTypeNode  != NULL)? entityTypeNode->value.s  : NULL;
     char*   entityId        = (entityIdNode    != NULL)? entityIdNode->value.s    : NULL;
     char*   attrName        = (attrNameNode    != NULL)? attrNameNode->value.s    : NULL;
-    char*   requestType     = (requestTypeNode != NULL)? requestTypeNode->value.s : NULL;
-    char*   replyType       = (replyTypeNode   != NULL)? replyTypeNode->value.s   : NULL;
 
     if ((entityType == NULL) || (entityId == NULL) || (attrName == NULL))
     {
@@ -187,7 +183,7 @@ static void* ddsPrePopulateDbInThread(void* vP)
     if (isService == true)
     {
       if (ddsServiceLookup(topic->name) == NULL)
-        ddsServiceCreate(topic->name, requestType, NULL, replyType, NULL, entityId, entityType, attrName);
+        ddsServiceCreate(topic->name, NULL, NULL, NULL, NULL, entityId, entityType, attrName);
     }
     else if (isAction == true)
     {
@@ -355,44 +351,6 @@ static void* ddsPrePopulateDbInThread(void* vP)
   pthread_exit(0);
 
   return NULL;
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
-// ddsServicesPopulateFromConfig -
-//
-// Synchronously walk the 'services' config node and create the broker's
-// in-memory DdsService linked list. Done before spawning the prepopulate-DB
-// thread (and before creating the DDS Enabler) so that the request/reply
-// type names are known and announce_service() can be called at startup,
-// before DDS discovery races us into the wrong code path inside eProsima.
-//
-void ddsServicesPopulateFromConfig(KjNode* servicesNode)
-{
-  if (servicesNode == NULL)
-    return;
-
-  for (KjNode* svc = servicesNode->value.firstChildP; svc != NULL; svc = svc->next)
-  {
-    KjNode* entityTypeNode  = kjLookup(svc, "entityType");
-    KjNode* entityIdNode    = kjLookup(svc, "entityId");
-    KjNode* attrNameNode    = kjLookup(svc, "attribute");
-    KjNode* requestTypeNode = kjLookup(svc, "requestType");
-    KjNode* replyTypeNode   = kjLookup(svc, "replyType");
-    const char* entityType  = (entityTypeNode  != NULL)? entityTypeNode->value.s  : NULL;
-    const char* entityId    = (entityIdNode    != NULL)? entityIdNode->value.s    : NULL;
-    const char* attrName    = (attrNameNode    != NULL)? attrNameNode->value.s    : NULL;
-    const char* requestType = (requestTypeNode != NULL)? requestTypeNode->value.s : NULL;
-    const char* replyType   = (replyTypeNode   != NULL)? replyTypeNode->value.s   : NULL;
-
-    if ((entityType == NULL) || (entityId == NULL) || (attrName == NULL))
-      continue;
-
-    if (ddsServiceLookup(svc->name) == NULL)
-      ddsServiceCreate(svc->name, requestType, NULL, replyType, NULL, entityId, entityType, attrName);
-  }
 }
 
 

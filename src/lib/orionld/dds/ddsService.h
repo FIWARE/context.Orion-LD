@@ -38,6 +38,6 @@ extern "C"
 //
 // ddsService
 //
-extern void ddsService(DdsService* serviceP, KjNode* attributeValueP);
+extern bool ddsService(DdsService* serviceP, KjNode* attributeValueP);
 
 #endif  // SRC_LIB_ORIONLD_DDS_DDSSERVICE_H_

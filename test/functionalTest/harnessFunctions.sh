@@ -2179,10 +2179,13 @@ function ros2ServiceStart
     return 1
   fi
 
-  # Start the ROS2 container
+  # Start the ROS2 container. --ipc=host so the container shares /dev/shm
+  # with the broker (Fast-DDS SHM transport). --net=host is intentionally
+  # omitted - with both flags, DDS participant discovery over UDP gets
+  # confused and service topics never surface (housekeeping topics do).
   docker run --rm -d \
     --name ros2_service_server \
-    --network host \
+    --ipc=host \
     -e ROS_DOMAIN_ID=$_domain \
     -v "$_scripts_dir:/scripts:ro" \
     eprosima/vulcanexus:jazzy-desktop \

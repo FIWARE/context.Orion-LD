@@ -278,15 +278,6 @@ int ddsInit(Kjson* kjP)
   KjNode* actionsNode  = kjTreeNavigate(configTree, "dds.ngsild.actions",        NULL);
   KjNode* typesDirNode = kjTreeNavigate(configTree, "dds.ngsild.typesDirectory", NULL);
 
-  //
-  // Synchronously create the in-memory DdsService linked list from the config
-  // tree. Must run BEFORE the enabler is created so the broker can call
-  // announce_service() at startup with the request/reply types known. Without
-  // this the broker can never load the type schemas it needs to act as a DDS
-  // service client (see doc/dds-service-reply-rework.md).
-  //
-  ddsServicesPopulateFromConfig(servicesNode);
-
   if (topicsNode   != NULL)  ddsPrePopulateDb(DdsTopics,   topicsNode);
   if (servicesNode != NULL)  ddsPrePopulateDb(DdsServices, servicesNode);
   if (actionsNode  != NULL)  ddsPrePopulateDb(DdsActions,  actionsNode);
@@ -344,38 +335,6 @@ int ddsInit(Kjson* kjP)
   if (r == false)
     KT_X(1, "Unable to create the DDS Enabler");
   KT_T(StDds, "DDS Enabler created");
-
-  //
-  // For each service the broker knows about (from the config file) that has
-  // request/reply types configured, call announce_service NOW. This forces
-  // the enabler to invoke our serviceQuery + typeQuery callbacks, which
-  // loads the type schemas into the enabler's internal map. Without it,
-  // send_service_request() fails with "schema not available".
-  //
-  // Note: this requires the eProsima patch in
-  //   doc/dds-service-reply-rework.md  section 4
-  // to allow publish_rpc() to publish requests when the local enabler has
-  // announced the service (enabler_as_server=true) but no peer has been
-  // discovered yet (external_server=false). Without that patch, the schemas
-  // load successfully here but the eventual send_service_request() is still
-  // refused.
-  //
-  for (DdsService* sP = ddsServices; sP != NULL; sP = sP->next)
-  {
-    if ((sP->requestType == NULL) || (sP->replyType == NULL))
-    {
-      KT_T(StDdsService, "Service '%s' has no configured request/reply types - skipping early announce", sP->name);
-      continue;
-    }
-
-    KT_T(StDdsService, "Early-announcing service '%s' (req='%s', reply='%s')",
-         sP->name, sP->requestType, sP->replyType);
-
-    if (ddsEnabler->announce_service(sP->name, eprosima::ddsenabler::participants::Protocol::ROS2))
-      KT_T(StDdsService, "Service '%s' early-announced", sP->name);
-    else
-      KT_W("Failed to early-announce service '%s' to the local DDS Enabler", sP->name);
-  }
 
   return 0;
 }

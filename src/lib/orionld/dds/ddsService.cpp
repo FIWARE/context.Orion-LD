@@ -42,6 +42,7 @@ extern "C"
 
 #include "orionld/types/DdsService.h"                            // DdsService, DdsServiceInstance
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/common/traceLevels.h"                          // KT_T trace levels
 #include "orionld/dds/ddsInit.h"                                 // ddsEnabler
 
@@ -51,7 +52,7 @@ extern "C"
 //
 // ddsService
 //
-void ddsService(DdsService* serviceP, KjNode* attributeValueP)
+bool ddsService(DdsService* serviceP, KjNode* attributeValueP)
 {
   int   jsonLen = kjFastRenderSize(attributeValueP);
   char* json    = kaAlloc(&orionldState.kalloc, jsonLen + 20);
@@ -71,7 +72,7 @@ void ddsService(DdsService* serviceP, KjNode* attributeValueP)
   if (dsiP == NULL)
   {
     KT_E("Out of memory allocating DdsServiceInstance for service '%s'", serviceP->name);
-    return;
+    return false;
   }
 
   dsiP->requestId   = 0;
@@ -84,14 +85,26 @@ void ddsService(DdsService* serviceP, KjNode* attributeValueP)
   {
     KT_E("kjBufferCreate failed for DdsServiceInstance of service '%s'", serviceP->name);
     free(dsiP);
-    return;
+    return false;
   }
 
   dsiP->requestTree = kjClone(&dsiP->kjson, attributeValueP);
 
   serviceP->instances = dsiP;
 
-  // Start the service
-  ddsEnabler->send_service_request(serviceP->name, json, dsiP->requestId, eprosima::ddsenabler::participants::Protocol::ROS2);
+  //
+  // send_service_request fails immediately if the enabler has not yet
+  // discovered a DDS server for this service. Surface that back to the HTTP
+  // caller as 503 ServiceUnavailable - the NGSI-LD update has already been
+  // written to the DB, but the DDS side of the bridge could not deliver.
+  //
+  if (!ddsEnabler->send_service_request(serviceP->name, json, dsiP->requestId, eprosima::ddsenabler::participants::Protocol::ROS2))
+  {
+    KT_E("send_service_request failed for service '%s' (no DDS server discovered yet?)", serviceP->name);
+    orionldError(OrionldInternalError, "DDS service unavailable", serviceP->name, 503);
+    return false;
+  }
+
   KT_T(StDdsService, "Started Service '%s' (req id: %llu)", serviceP->name, dsiP->requestId);
+  return true;
 }

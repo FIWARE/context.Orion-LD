@@ -51,17 +51,4 @@ typedef enum DdsConceptType
 //
 extern void ddsPrePopulateDb(DdsConceptType type, KjNode* configNode);
 
-
-
-// -----------------------------------------------------------------------------
-//
-// ddsServicesPopulateFromConfig -
-//
-// Walks 'dds.ngsild.services' from the config tree and synchronously creates
-// the broker's in-memory DdsService linked list. Must run before the DDS
-// Enabler is created so that announce_service() can be called at startup
-// (before discovery completes).
-//
-extern void ddsServicesPopulateFromConfig(KjNode* servicesNode);
-
 #endif  // SRC_LIB_ORIONLD_DDS_DDSPREPOPULATEDB_H_

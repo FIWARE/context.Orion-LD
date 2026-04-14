@@ -285,6 +285,11 @@ void ddsServiceReplyNotification
 {
   KT_T(StDdsService, "Got a Service Reply Notification (service: '%s', req: %llu): '%s'", serviceName, requestId, json);
 
+  // The enabler passes publishTime as nanoseconds since epoch - convert to
+  // seconds so reply.publishedAt matches request.publishedAt (which the
+  // broker captures with time(NULL)).
+  publishTime /= 1000000000LL;
+
   DdsService* serviceP = ddsServiceLookup(serviceName);
   if (serviceP == NULL)
   {
