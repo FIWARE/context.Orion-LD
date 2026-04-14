@@ -97,9 +97,16 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 02. PATCH add_two_ints-listParams of the entity urn:ngsi-ld:two-ints - triggers a service where the broker is the client
 ========================================================================================================================
-HTTP/1.1 204 No Content
+HTTP/1.1 503 Service Unavailable
+Content-Length: REGEX(\d+)
+Content-Type: application/json
 Date: REGEX(.*)
 
+{
+    "detail": "add_two_ints",
+    "title": "DDS service unavailable",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/InternalError"
+}
 
 
 --TEARDOWN--
