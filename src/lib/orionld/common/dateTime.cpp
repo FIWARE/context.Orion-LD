@@ -439,15 +439,29 @@ static bool timezoneParse(const char* dateTime, char* timezoneString, int* hourP
 // - TIME
 // - TIMEZONE
 //
-double dateTimeFromString(const char* iso8601String, char* errorString, int errorStringLen)
+//
+// FAIL - return -1 with or without an E: trace depending on errOnNotDateTime.
+// Used in place of KT_RE inside dateTimeFromString so callers that probe a
+// string (StringFilter's RHS type detection, ContextAttribute autocast) can
+// silence the trace without touching KT_RE everywhere.
+//
+#define DT_FAIL(...)                                                                                    \
+  do                                                                                                    \
+  {                                                                                                     \
+    if (errOnNotDateTime)                                                                               \
+      ktOut(__FILE__, __LINE__, __FUNCTION__, 'E', -1, __VA_ARGS__);                                    \
+    return -1;                                                                                          \
+  } while (0)
+
+double dateTimeFromString(const char* iso8601String, char* errorString, int errorStringLen, bool errOnNotDateTime)
 {
   char iso8601[64];
 
   if (iso8601String == NULL)
-    KT_RE(-1, "NULL ISO8601 String");
+    DT_FAIL("NULL ISO8601 String");
 
   if (*iso8601String == 0)
-    KT_RE(-1, "Empty ISO8601 String");
+    DT_FAIL("Empty ISO8601 String");
 
   strncpy(iso8601, iso8601String, sizeof(iso8601) - 1);
 
@@ -481,7 +495,7 @@ double dateTimeFromString(const char* iso8601String, char* errorString, int erro
     strncpy(iso8601_2, date, sizeof(iso8601_2) - 1);
 
     if (dateParse(iso8601String, iso8601_2, &year, &month, &day, errorString, errorStringLen) == false)
-      KT_RE(-1, "Error parsing ISO8601 timestamp '%s': %s", iso8601String, errorString);
+      DT_FAIL("Error parsing ISO8601 timestamp '%s': %s", iso8601String, errorString);
 
 
     strncpy(dateString, date, sizeof(dateString) - 1);
@@ -523,13 +537,13 @@ double dateTimeFromString(const char* iso8601String, char* errorString, int erro
   char   sign      = 'Z';
 
   if (dateParse(iso8601String, dateString, &year, &month, &day, errorString, errorStringLen) == false)
-    KT_RE(-1, "Error parsing ISO8601 timestamp '%s': %s", iso8601String, errorString);
+    DT_FAIL("Error parsing ISO8601 timestamp '%s': %s", iso8601String, errorString);
 
   if (timeParse(iso8601String, timeString, &hour, &minute, &secs, errorString, errorStringLen) == false)
-    KT_RE(-1, "Error parsing ISO8601 timestamp '%s': %s", iso8601String, errorString);
+    DT_FAIL("Error parsing ISO8601 timestamp '%s': %s", iso8601String, errorString);
 
   if (timezoneParse(iso8601String, timezoneString, &tzHour, &tzMinute, &sign, errorString, errorStringLen) == false)
-    KT_RE(-1, "Error parsing ISO8601 timestamp '%s': %s", iso8601String, errorString);
+    DT_FAIL("Error parsing ISO8601 timestamp '%s': %s", iso8601String, errorString);
 
 
   //

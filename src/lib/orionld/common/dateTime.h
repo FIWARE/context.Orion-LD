@@ -40,6 +40,9 @@ extern char* dateTimeToString(double timestamp);
 //
 // dateTimeFromString -
 //
-extern double dateTimeFromString(const char* iso8601, char* errorString, int errorStringLen);
+// errOnNotDateTime: if true (default), log E: on parse failure. Pass false
+// from callers that probe a string to see *whether* it is a date (e.g.
+// StringFilter's RHS type detection) - there the trace is noise, not error.
+extern double dateTimeFromString(const char* iso8601, char* errorString, int errorStringLen, bool errOnNotDateTime = true);
 
 #endif  // SRC_LIB_ORIONLD_COMMON_DATETIME_H_

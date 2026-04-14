@@ -463,15 +463,12 @@ function localBrokerStart()
         break
       fi
 
-      # Port not open - check if broker died. Only X: (fatal) aborts startup;
-      # E: is a non-fatal error trace (e.g. dateTimeFromString complaining
-      # during StringFilter's RHS type probe on subCache reload) and the
-      # broker keeps running.
-      if [ -s "$brokerStartErr" ] && grep -qE "^X:" "$brokerStartErr"
+      # Port not open - check if broker died with error (E: or X: from ktrace)
+      if [ -s "$brokerStartErr" ] && grep -qE "^E:|^X:" "$brokerStartErr"
       then
         echo "ERROR: Broker failed during startup"
         echo "Command: $CB_START_CMD"
-        grep -E "^X:" "$brokerStartErr"
+        grep -E "^E:|^X:" "$brokerStartErr"
         rm -f $brokerStartErr
         exit 1
       fi
@@ -740,15 +737,12 @@ function orionldStart
         break
       fi
 
-      # Port not open - check if broker died. Only X: (fatal) aborts startup;
-      # E: is a non-fatal error trace (e.g. dateTimeFromString complaining
-      # during StringFilter's RHS type probe on subCache reload) and the
-      # broker keeps running.
-      if [ -s "$brokerStartErr" ] && grep -qE "^X:" "$brokerStartErr"
+      # Port not open - check if broker died with error (E: or X: from ktrace)
+      if [ -s "$brokerStartErr" ] && grep -qE "^E:|^X:" "$brokerStartErr"
       then
         echo "ERROR: Broker failed during startup"
         echo "Command: $BROKER_START_CMD"
-        grep -E "^X:" "$brokerStartErr"
+        grep -E "^E:|^X:" "$brokerStartErr"
         rm -f $brokerStartErr
         exit 1
       fi
