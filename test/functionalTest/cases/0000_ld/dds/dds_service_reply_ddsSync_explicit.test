@@ -1,0 +1,133 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY
+
+#
+# Explicit ?ddsSync=true: the PATCH must block until the DDS reply is merged.
+# The GET immediately after the PATCH (no sleep) must already see the reply
+# sub-attribute. Requires the ROS2 AdditionServer via ros2ServiceStart.
+#
+
+--NAME--
+DDS Service: explicit ?ddsSync=true blocks PATCH until reply is merged
+
+--SHELL-INIT--
+ddsClean
+
+$REPO_HOME/scripts/configFile.sh \
+  --ddsService "add_two_ints,Calculator,urn:ngsi-ld:calc:1,operation" \
+  --ddsTypesDirectory "$REPO_HOME/test/functionalTest/ddsTypes" \
+  > $HOME/.orionld
+
+ros2ServiceStart --service add_two_ints --samples 10
+sleep 5
+
+dbInit CB
+orionldStart CB -mongocOnly -wip dds
+
+# Wait for DDS discovery between broker and ROS2 server.
+sleep 5
+
+--SHELL--
+valgrindSleep 5
+
+#
+# 01. PATCH with ?ddsSync=true
+# 02. GET entity WITHOUT any sleep - reply sub-attribute must already be present
+#
+
+echo "01. PATCH operation attribute with ddsSync=true"
+echo "================================================"
+payload='{
+  "operation": {
+    "type": "Property",
+    "value": {
+      "a": 4,
+      "b": 6
+    }
+  }
+}'
+orionCurl --url '/ngsi-ld/v1/entities/urn:ngsi-ld:calc:1?ddsSync=true' -X PATCH --payload "$payload"
+echo
+echo
+
+
+echo "02. GET entity (no sleep - reply must already be merged)"
+echo "========================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:calc:1?options=concise
+echo
+echo
+
+
+--REGEXPECT--
+01. PATCH operation attribute with ddsSync=true
+================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+02. GET entity (no sleep - reply must already be merged)
+=========================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "ddsType": "fastdds",
+    "id": "urn:ngsi-ld:calc:1",
+    "operation": {
+        "reply": {
+            "ddsDataType": "example_interfaces::srv::dds_::AddTwoInts_Response_",
+            "participantId": "REGEX([0-9a-f.]+)",
+            "publishedAt": REGEX(-?\d+),
+            "requestId": 1,
+            "value": {
+                "sum": 10
+            },
+            "xId": "REGEX([0-9a-f.]+)"
+        },
+        "request": {
+            "ddsDataType": "example_interfaces::srv::dds_::AddTwoInts_Request_",
+            "publishedAt": REGEX(\d+),
+            "requestId": 1,
+            "value": {
+                "a": 4,
+                "b": 6
+            }
+        },
+        "value": {
+            "a": 4,
+            "b": 6
+        }
+    },
+    "type": "Calculator"
+}
+
+
+--TEARDOWN--
+ddsClean
+ros2ServiceStop
+brokerStop CB
+dbDrop CB
+rm -f $HOME/.orionld

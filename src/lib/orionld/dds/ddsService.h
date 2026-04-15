@@ -38,6 +38,12 @@ extern "C"
 //
 // ddsService
 //
-extern bool ddsService(DdsService* serviceP, KjNode* attributeValueP);
+// sync == false: fire-and-forget; dsiOut ignored. Returns true if the DDS
+// send succeeded (no wait for the reply).
+// sync == true : blocks up to ddsSyncTimeoutMs for the reply. On success,
+// '*dsiOut' is set to the reply-filled, unlinked instance and the caller
+// must call ddsInstanceFree after consuming it. On failure returns false
+// with orionldError already set (503 on send failure, 504 on timeout).
+extern bool ddsService(DdsService* serviceP, KjNode* attributeValueP, bool sync = false, DdsServiceInstance** dsiOut = NULL);
 
 #endif  // SRC_LIB_ORIONLD_DDS_DDSSERVICE_H_

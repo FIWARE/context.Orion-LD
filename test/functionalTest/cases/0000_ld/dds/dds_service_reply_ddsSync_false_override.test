@@ -1,0 +1,142 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY
+
+#
+# ?ddsSync=false explicit override: broker default (with ddsSupport on) is
+# sync, but the caller can opt out per-request and get today's fire-and-forget
+# semantics. PATCH returns 204 right away with no reply merged; the reply
+# arrives asynchronously a moment later.
+#
+
+--NAME--
+DDS Service: ?ddsSync=false overrides the broker default and keeps fire-and-forget
+
+--SHELL-INIT--
+ddsClean
+
+$REPO_HOME/scripts/configFile.sh \
+  --ddsService "add_two_ints,Calculator,urn:ngsi-ld:calc:1,operation" \
+  --ddsTypesDirectory "$REPO_HOME/test/functionalTest/ddsTypes" \
+  > $HOME/.orionld
+
+ros2ServiceStart --service add_two_ints --samples 10
+sleep 5
+
+dbInit CB
+orionldStart CB -mongocOnly -wip dds
+
+sleep 5
+
+--SHELL--
+valgrindSleep 5
+
+#
+# 01. PATCH with ?ddsSync=false - must return 204 (sync hook skipped by
+#     opt-out, async path takes over)
+# 02. Sleep + GET - reply must have arrived via the async path
+#
+# Note: we don't try to observe the "PATCH returned but reply not merged
+# yet" intermediate state. With --ipc=host and a local ROS2 server the
+# reply lands in sub-millisecond time, so there's no reliable window.
+# The invariants this test does verify:
+#   - ?ddsSync=false is accepted (not rejected as bad URL param)
+#   - the PATCH doesn't block, and the async reply eventually merges.
+#
+
+echo "01. PATCH operation attribute with ddsSync=false"
+echo "================================================="
+payload='{
+  "operation": {
+    "type": "Property",
+    "value": {
+      "a": 2,
+      "b": 3
+    }
+  }
+}'
+orionCurl --url '/ngsi-ld/v1/entities/urn:ngsi-ld:calc:1?ddsSync=false' -X PATCH --payload "$payload"
+echo
+echo
+
+
+echo "02. Sleep and GET - reply must have arrived asynchronously"
+echo "==========================================================="
+sleep 2
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:calc:1?options=concise
+echo
+echo
+
+
+--REGEXPECT--
+01. PATCH operation attribute with ddsSync=false
+=================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+02. Sleep and GET - reply must have arrived asynchronously
+===========================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "ddsType": "fastdds",
+    "id": "urn:ngsi-ld:calc:1",
+    "operation": {
+        "reply": {
+            "ddsDataType": "example_interfaces::srv::dds_::AddTwoInts_Response_",
+            "participantId": "REGEX([0-9a-f.]+)",
+            "publishedAt": REGEX(-?\d+),
+            "requestId": 1,
+            "value": {
+                "sum": 5
+            },
+            "xId": "REGEX([0-9a-f.]+)"
+        },
+        "request": {
+            "ddsDataType": "example_interfaces::srv::dds_::AddTwoInts_Request_",
+            "publishedAt": REGEX(\d+),
+            "requestId": 1,
+            "value": {
+                "a": 2,
+                "b": 3
+            }
+        },
+        "value": {
+            "a": 2,
+            "b": 3
+        }
+    },
+    "type": "Calculator"
+}
+
+
+--TEARDOWN--
+ddsClean
+ros2ServiceStop
+brokerStop CB
+dbDrop CB
+rm -f $HOME/.orionld

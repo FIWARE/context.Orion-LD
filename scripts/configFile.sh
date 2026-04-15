@@ -54,6 +54,7 @@ function usage()
   echo "$empty [--ddsService <name>,<entity type>,<entity id>,<attribute name>]"
   echo "$empty [--ddsAction <action>,<entity type>,<entity id>,<attribute name>]"
   echo "$empty [--ddsTypesDirectory <absolute path to directory of .bin type files>]"
+  echo "$empty [--ddsSyncTimeoutMs <milliseconds>]"
   echo "$empty [--troe <id,idPattern,type1+type2+...typeN,attribute1+attribute2+...attributeN>]"
   echo
   exit $1
@@ -89,6 +90,11 @@ do
     elif [ "$1" == "--ddsTypesDirectory" ]
     then
         ddsTypesDirectory="$2"
+        shift
+        shift
+    elif [ "$1" == "--ddsSyncTimeoutMs" ]
+    then
+        ddsSyncTimeoutMs="$2"
         shift
         shift
     elif [ "$1" == "--troe" ]
@@ -241,10 +247,19 @@ then
     done
 fi
 
-if [ "$ddsTypesDirectory" != "" ]
+if [ "$ddsTypesDirectory" != "" ] || [ "$ddsSyncTimeoutMs" != "" ]
 then
     echo '      },'
-    echo '      "typesDirectory": "'$ddsTypesDirectory'"'
+    if [ "$ddsTypesDirectory" != "" ] && [ "$ddsSyncTimeoutMs" != "" ]
+    then
+        echo '      "typesDirectory": "'$ddsTypesDirectory'",'
+        echo '      "syncTimeoutMs": '$ddsSyncTimeoutMs
+    elif [ "$ddsTypesDirectory" != "" ]
+    then
+        echo '      "typesDirectory": "'$ddsTypesDirectory'"'
+    else
+        echo '      "syncTimeoutMs": '$ddsSyncTimeoutMs
+    fi
 else
     echo '      }'
 fi

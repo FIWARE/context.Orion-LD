@@ -52,6 +52,8 @@ DdsService* ddsServiceCreate
   bzero(sP, sizeof(DdsService));
 
   sP->name = strdup(name);
+  pthread_mutex_init(&sP->instancesMtx, NULL);
+
   if (requestType   != NULL) sP->requestType   = strdup(requestType);
   if (requestQoS    != NULL) sP->requestQoS    = strdup(requestQoS);
   if (replyType     != NULL) sP->replyType     = strdup(replyType);

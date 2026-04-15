@@ -349,6 +349,7 @@ static void restServicePrepare(OrionLdRestService* serviceP, OrionLdRestServiceS
     serviceP->uriParams |= ORIONLD_URIPARAM_OBSERVEDAT;
     serviceP->uriParams |= ORIONLD_URIPARAM_TYPELIST;
     serviceP->uriParams |= ORIONLD_URIPARAM_LOCAL;
+    serviceP->uriParams |= ORIONLD_URIPARAM_DDSSYNC;
   }
   else if (serviceP->serviceRoutine == orionldPutEntity)
   {

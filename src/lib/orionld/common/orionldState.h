@@ -186,6 +186,9 @@ typedef struct OrionldUriParams
 
   double    observedAtAsDouble;
   uint64_t  mask;
+
+  // DDS
+  bool      ddsSync;    // meaningful only if (mask & ORIONLD_URIPARAM_DDSSYNC); tri-state: unset = follow broker default
 } OrionldUriParams;
 
 

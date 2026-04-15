@@ -67,6 +67,8 @@ extern "C"
 #include "orionld/notifications/orionldAlterations.h"            // orionldAlterations
 #include "orionld/notifications/previousValues.h"                // previousValues
 #include "orionld/dds/ddsPublishAttributes.h"                    // ddsPublishAttributes
+#include "orionld/dds/ddsSyncPatchEntity.h"                      // ddsSyncPatchEntityProcess
+#include "orionld/types/OrionLdRestService.h"                    // ORIONLD_URIPARAM_DDSSYNC
 #include "orionld/serviceRoutines/orionldPatchEntity2.h"         // Own Interface
 
 
@@ -631,6 +633,50 @@ bool orionldPatchEntity2(void)
   }
 
   previousValues(orionldState.requestTree, dbAttrsP);
+
+
+  //
+  // ddsSync: if DDS is active AND the caller hasn't opted out via
+  // ?ddsSync=false, synchronously execute any DDS service calls embedded in
+  // the payload before we write anything to mongo. On failure (503/504),
+  // orionldError has been set and we bail BEFORE mongo/notifs/TRoE so the
+  // whole PATCH is atomic - including any non-DDS attrs in the same payload.
+  //
+  // Only PATCH /entities/{id} (this routine) gets this treatment.
+  // PATCH /entities/{id}/attrs (orionldPatchEntity) stays fire-and-forget
+  // as an intentional escape hatch for callers who want async semantics.
+  //
+  //
+  // ddsSample == true means this PATCH is being driven by the reply-handler
+  // thread (ddsServiceReplyNotification merges reply sub-attrs back into the
+  // entity via orionldPatchEntity2). That merge must NOT re-trigger a sync
+  // DDS call - otherwise the reply thread would send a NEW request to the
+  // same DDS service and block on its own callback. Skip the sync hook.
+  //
+  if ((ddsSupport == true) && (orionldState.ddsSample == false))
+  {
+    // Effective sync:
+    //   - if ?ddsSync=true|false present: the param value wins.
+    //   - else: follow the broker default, which when ddsSupport is on is
+    //     'sync' (DDS-integrated broker, DDS-aware clients).
+    bool ddsSyncOverride  = (orionldState.uriParams.mask & ORIONLD_URIPARAM_DDSSYNC) != 0;
+    bool ddsSyncEffective = ddsSyncOverride ? orionldState.uriParams.ddsSync : true;
+
+    if (ddsSyncEffective == true)
+    {
+      bool anyProcessed = false;
+
+      if (ddsSyncPatchEntityProcess(orionldState.requestTree, &anyProcessed) == false)
+        return false;
+
+      // Only set ddsSample when we actually made a DDS service call. Without
+      // this guard, a PATCH with only DDS-TOPIC attrs (no services) would
+      // get ddsSample=true and the post-mongo async publish at the bottom
+      // would no-op, breaking the topic-publish path.
+      if (anyProcessed)
+        orionldState.ddsSample = true;
+    }
+  }
 
 
   DistOp*  distOpList = NULL;

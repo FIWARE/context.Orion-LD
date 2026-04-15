@@ -167,6 +167,7 @@ typedef struct OrionLdRestServiceSimplifiedVector
 #define ORIONLD_URIPARAM_OMIT                 (UINT64_C(1) << 48)
 #define ORIONLD_URIPARAM_AGGRMETHODS          (UINT64_C(1) << 49)
 #define ORIONLD_URIPARAM_AGGRPERIODDURATION   (UINT64_C(1) << 50)
+#define ORIONLD_URIPARAM_DDSSYNC              (UINT64_C(1) << 51)
 
 
 

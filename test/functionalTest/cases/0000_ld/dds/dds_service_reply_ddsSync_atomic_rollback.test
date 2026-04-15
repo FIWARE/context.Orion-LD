@@ -1,0 +1,155 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY
+
+#
+# ddsSync atomic rollback: a PATCH payload that mixes a DDS-tied attr (operation)
+# with a regular attr (priority) must fail atomically when the DDS call fails.
+# Neither attribute gets written to mongo. No notifications fire. No TRoE record.
+#
+# Failure mode here: no DDS server running -> send_service_request returns
+# false -> 503 -> broker returns before touching mongo.
+#
+
+--NAME--
+DDS Service: ddsSync=true on a mixed payload rolls back all attrs when DDS fails
+
+--SHELL-INIT--
+ddsClean
+
+# Seed the entity with a known priority value so we can tell if the rolled-back
+# PATCH leaked through. Service mapping for 'operation' points at add_two_ints.
+$REPO_HOME/scripts/configFile.sh \
+  --ddsService "add_two_ints,Calculator,urn:ngsi-ld:calc:1,operation" \
+  --ddsTypesDirectory "$REPO_HOME/test/functionalTest/ddsTypes" \
+  --ddsSyncTimeoutMs 500 \
+  > $HOME/.orionld
+
+dbInit CB
+orionldStart CB -mongocOnly -wip dds
+
+# No DDS server started - the ddsSync PATCH below must fail with 503.
+
+#
+# Seed 'priority' = 1 so we can verify the PATCH leaves it unchanged at 1.
+# Use a non-ddsSync (default async would also fail here, so go via the
+# attrs-level PATCH which stays async and skips the DDS side entirely).
+#
+payload='{"priority":{"type":"Property","value":1}}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:calc:1/attrs -X POST --payload "$payload" >/dev/null 2>&1
+
+--SHELL--
+valgrindSleep 5
+
+#
+# 01. GET entity (baseline - priority = 1, operation = uninitialized)
+# 02. PATCH with ?ddsSync=true: operation (DDS-tied) + priority (regular) -> 503
+# 03. GET entity - both attributes must be unchanged from the baseline
+#
+
+echo "01. GET entity (baseline)"
+echo "========================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:calc:1?options=concise
+echo
+echo
+
+
+echo "02. PATCH mixed payload with ddsSync=true - expect 503, atomic rollback"
+echo "========================================================================"
+payload='{
+  "operation": {
+    "type": "Property",
+    "value": {
+      "a": 3,
+      "b": 4
+    }
+  },
+  "priority": {
+    "type": "Property",
+    "value": 99
+  }
+}'
+orionCurl --url '/ngsi-ld/v1/entities/urn:ngsi-ld:calc:1?ddsSync=true' -X PATCH --payload "$payload"
+echo
+echo
+
+
+echo "03. GET entity - both attrs must be unchanged"
+echo "=============================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:calc:1?options=concise
+echo
+echo
+
+
+--REGEXPECT--
+01. GET entity (baseline)
+=========================
+HTTP/1.1 200 OK
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "ddsType": "fastdds",
+    "id": "urn:ngsi-ld:calc:1",
+    "operation": "uninitialized",
+    "priority": 1,
+    "type": "Calculator"
+}
+
+
+02. PATCH mixed payload with ddsSync=true - expect 503, atomic rollback
+========================================================================
+HTTP/1.1 503 Service Unavailable
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "add_two_ints",
+    "title": "DDS service unavailable",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/InternalError"
+}
+
+
+03. GET entity - both attrs must be unchanged
+==============================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "ddsType": "fastdds",
+    "id": "urn:ngsi-ld:calc:1",
+    "operation": "uninitialized",
+    "priority": 1,
+    "type": "Calculator"
+}
+
+
+--TEARDOWN--
+ddsClean
+brokerStop CB
+dbDrop CB
+rm -f $HOME/.orionld

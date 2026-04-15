@@ -21,7 +21,9 @@
   #XXXX - Fixed broker abort on requests that allocate more than 1000 buffers needing delayed free (e.g. large TRoE batch operations)
 
 ## New Features
-  #XXXX - Native NGSI-LD temporal query support: GET/POST for temporal entities with q-filter, geo-queries, aggregation, pick/omit, datasetId, and temporalValues — replacing previous Mintaka-based stubs
+  #XXXX - Native NGSI-LD temporal query support: GET/POST for temporal entities with:
+          q-filter, geo-queries, aggregation, pick/omit, datasetId, and temporalValues
+          — replacing previous Mintaka-based stubs
   #XXXX - Implemented PATCH for periodic notification (pernot) subscriptions
   #1905 - New CLI option -troeSslMode (env: ORIONLD_TROE_SSL_MODE) for TRoE Postgres SSL connections
   #XXXX - New CLI option -coreContextDir (env: ORIONLD_CORE_CONTEXT_DIR, default: /opt/orion/ldcontexts)
@@ -70,6 +72,7 @@
   - DDS Service Reply: ddsServiceReplyNotification support
   - DDS publish for already existing attributes in BATCH Update operations
   - Graceful DDS shutdown
+  - Synchronous DDS semantics for PATCH /entities/{id} (when -wip dds is set); opt out with ?ddsSync=false
 
 ## Documentation
   - Added TRoE database schema and advanced optimization documentation

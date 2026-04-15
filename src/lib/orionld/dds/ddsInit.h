@@ -44,6 +44,17 @@ extern std::shared_ptr<eprosima::ddsenabler::DDSEnabler>  ddsEnabler;
 
 // -----------------------------------------------------------------------------
 //
+// ddsSyncTimeoutMs - how long PATCH /entities/{id}?ddsSync=true waits for the
+// DDS service reply before giving up and returning 504 Gateway Timeout.
+// Configured via 'dds.ngsild.syncTimeoutMs' in the broker config. Defaults
+// to 5000ms.
+//
+extern int64_t ddsSyncTimeoutMs;
+
+
+
+// -----------------------------------------------------------------------------
+//
 // ddsInit -
 //
 extern int ddsInit(Kjson* kjP);

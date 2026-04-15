@@ -245,7 +245,7 @@ static void ddsTypeNotification
 //
 void ddsTopicNotification(const char* topicName, const eprosima::ddsenabler::participants::TopicInfo& topicInfo)
 {
-  KT_T(StDds, "Got a topic notification ('%s', '%s', '%s')", topicName, topicInfo.type_name, topicInfo.serialized_qos);
+  KT_T(StDds, "Got a topic notification ('%s', '%s', '%s')", topicName, topicInfo.type_name.c_str(), topicInfo.serialized_qos.c_str());
 }
 
 
