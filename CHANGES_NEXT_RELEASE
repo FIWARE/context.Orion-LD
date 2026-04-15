@@ -1,5 +1,6 @@
 ## Fixed Issues
   #1905 - TRoE: segfault (exit 139) connecting to TimescaleDB Cloud - added SSL support and fixed NULL pointer crash
+  #XXXX - Fixed crash under concurrent notification delivery by replacing thread-unsafe gethostbyname with getaddrinfo in orionldServerConnect
   #XXXX - Fixed query of many large entities (cfreyfh - Carsten Freyh at Fraunhofer IKTS)
   #XXXX - Wait for postgres instead of exiting after the first try - just like for mongo (1 try per second during 30 secs)
   #XXXX - Fixed crash in relationship endpoint when no relations found (cfreyfh)
