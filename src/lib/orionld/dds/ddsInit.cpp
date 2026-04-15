@@ -281,6 +281,20 @@ bool ddsActionQuery
 //
 int ddsInit(Kjson* kjP)
 {
+  //
+  // ddsInit is called twice from orionld.cpp main() - once before the
+  // startup kaBufferReset (for real work) and once after. The second call
+  // navigates configTree with kjTreeNavigate which allocates path-split
+  // strings from orionldState.kalloc - which was just reset. Pushing that
+  // too hard (5+ navigations' worth of kaStrdup on a freshly-reset buffer)
+  // has been observed to hang the broker. Make ddsInit idempotent: the
+  // enabler is created on the first call and that's all we need.
+  //
+  static bool alreadyInitialized = false;
+  if (alreadyInitialized == true)
+    return 0;
+  alreadyInitialized = true;
+
   KjNode* topicsNode       = kjTreeNavigate(configTree, "dds.ngsild.topics",         NULL);
   KjNode* servicesNode     = kjTreeNavigate(configTree, "dds.ngsild.services",       NULL);
   KjNode* actionsNode      = kjTreeNavigate(configTree, "dds.ngsild.actions",        NULL);
