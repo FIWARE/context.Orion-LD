@@ -68,10 +68,11 @@ jobs:
           image: ${{ env.IMAGE_ORG }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_PRE }}
           args: --file=docker/Dockerfile-ubi
 
-      - name: Upload result to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: snyk.sarif
+      # Upload of Snyk results to GitHub Code Scanning removed - the SARIF
+      # output from snyk/actions/docker sometimes has null severity values
+      # which upload-sarif rejects ("invalid security severity value, is
+      # not a number: null"). We don't consume the Code Scanning dashboard
+      # anyway, and Snyk results remain visible in the step log above.
 
   deploy-debug-dockerhub:
 
