@@ -6,7 +6,11 @@ on:
 
 env:
   IMAGE_NAME: localhost:5000/orion-ld-test:latest
-  IGNORE_TEST: ''
+  # dds_service_reply_full_roundtrip.test needs Docker + a ROS2 AdditionServer
+  # (eprosima/vulcanexus:jazzy-desktop) on the host. GA runners don't have
+  # Docker-in-Docker available to the test container, so we skip it in CI.
+  # Run it locally before merging DDS changes.
+  IGNORE_TEST: 'dds_service_reply_full_roundtrip.test'
 
 ## Cancel running tests, get faster test-results for the latest commit
 concurrency:
