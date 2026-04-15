@@ -47,6 +47,12 @@ extern "C"
 // then skip the mongo write to guarantee atomic rollback across all attrs
 // in the payload.
 //
-extern bool ddsSyncPatchEntityProcess(KjNode* requestTree);
+// *anyProcessedP is set to true if at least one DDS service call actually
+// happened (and succeeded). The caller uses this to decide whether to set
+// orionldState.ddsSample = true to block the post-mongo async re-publish.
+// When no DDS-tied attr is in the payload, anyProcessedP stays false and
+// the async path runs unchanged (DDS topic publish etc.).
+//
+extern bool ddsSyncPatchEntityProcess(KjNode* requestTree, bool* anyProcessedP);
 
 #endif  // SRC_LIB_ORIONLD_DDS_DDSSYNCPATCHENTITY_H_

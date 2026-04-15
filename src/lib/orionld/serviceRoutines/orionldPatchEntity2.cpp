@@ -646,7 +646,14 @@ bool orionldPatchEntity2(void)
   // PATCH /entities/{id}/attrs (orionldPatchEntity) stays fire-and-forget
   // as an intentional escape hatch for callers who want async semantics.
   //
-  if (ddsSupport == true)
+  //
+  // ddsSample == true means this PATCH is being driven by the reply-handler
+  // thread (ddsServiceReplyNotification merges reply sub-attrs back into the
+  // entity via orionldPatchEntity2). That merge must NOT re-trigger a sync
+  // DDS call - otherwise the reply thread would send a NEW request to the
+  // same DDS service and block on its own callback. Skip the sync hook.
+  //
+  if ((ddsSupport == true) && (orionldState.ddsSample == false))
   {
     // Effective sync:
     //   - if ?ddsSync=true|false present: the param value wins.
@@ -657,12 +664,17 @@ bool orionldPatchEntity2(void)
 
     if (ddsSyncEffective == true)
     {
-      if (ddsSyncPatchEntityProcess(orionldState.requestTree) == false)
+      bool anyProcessed = false;
+
+      if (ddsSyncPatchEntityProcess(orionldState.requestTree, &anyProcessed) == false)
         return false;
 
-      // Prevent the post-mongo async re-publish path from firing - we've
-      // already done the DDS work and merged the reply sub-attrs in-place.
-      orionldState.ddsSample = true;
+      // Only set ddsSample when we actually made a DDS service call. Without
+      // this guard, a PATCH with only DDS-TOPIC attrs (no services) would
+      // get ddsSample=true and the post-mongo async publish at the bottom
+      // would no-op, breaking the topic-publish path.
+      if (anyProcessed)
+        orionldState.ddsSample = true;
     }
   }
 

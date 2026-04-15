@@ -52,7 +52,7 @@ extern "C"
 // request synchronously and merge request/reply sub-attributes into 'attrP'.
 // If it doesn't map to a DDS service, passes through unchanged (returns true).
 //
-static bool patchAttrSync(KjNode* attrP)
+static bool patchAttrSync(KjNode* attrP, bool* processedP)
 {
   if ((attrP == NULL) || (attrP->type != KjObject) || (attrP->name == NULL))
     return true;
@@ -70,10 +70,12 @@ static bool patchAttrSync(KjNode* attrP)
   KjNode* valueP = kjLookup(attrP, "value");
   if ((valueP == NULL) || (valueP->type != KjObject))
   {
-    orionldError(OrionldBadRequestData,
-                 "DDS service attribute requires an object value",
-                 attrShortName, 400);
-    return false;
+    // Scalar / missing value - nothing meaningful to ship to a DDS service.
+    // Matches the async path (ddsPublishAttribute) which just skips with a
+    // warning rather than rejecting the PATCH.
+    KT_W("ddsSync: attribute '%s' maps to DDS service '%s' but value is not an object - skipping DDS call",
+         attrShortName, serviceP->name);
+    return true;
   }
 
   KT_T(StDdsService, "ddsSync: sending request for attribute '%s' (service '%s')",
@@ -115,6 +117,7 @@ static bool patchAttrSync(KjNode* attrP)
   }
 
   ddsInstanceFree(dsiP);
+  *processedP = true;
   return true;
 }
 
@@ -124,14 +127,16 @@ static bool patchAttrSync(KjNode* attrP)
 //
 // ddsSyncPatchEntityProcess -
 //
-bool ddsSyncPatchEntityProcess(KjNode* requestTree)
+bool ddsSyncPatchEntityProcess(KjNode* requestTree, bool* anyProcessedP)
 {
+  *anyProcessedP = false;
+
   if ((requestTree == NULL) || (requestTree->type != KjObject))
     return true;
 
   for (KjNode* attrP = requestTree->value.firstChildP; attrP != NULL; attrP = attrP->next)
   {
-    if (!patchAttrSync(attrP))
+    if (!patchAttrSync(attrP, anyProcessedP))
       return false;
   }
 

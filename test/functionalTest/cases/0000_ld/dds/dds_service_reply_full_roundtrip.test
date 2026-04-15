@@ -190,7 +190,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             "ddsDataType": "example_interfaces::srv::dds_::AddTwoInts_Response_",
             "participantId": "REGEX([0-9a-f.]+)",
             "publishedAt": REGEX(-?\d+),
-            "requestId": 1,
+            "requestId": 2,
             "value": {
                 "sum": 18
             },
@@ -199,7 +199,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "request": {
             "ddsDataType": "example_interfaces::srv::dds_::AddTwoInts_Request_",
             "publishedAt": REGEX(\d+),
-            "requestId": 1,
+            "requestId": 2,
             "value": {
                 "a": 7,
                 "b": 11
