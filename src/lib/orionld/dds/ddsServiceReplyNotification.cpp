@@ -34,6 +34,7 @@ extern "C"
 #include "kjson/kjBuilder.h"                                     // kjObject, kjString, kjInteger, kjChildAdd
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjClone.h"                                       // kjClone
+#include "kalloc/kaStrdup.h"                                     // kaStrdup
 }
 
 #include "orionld/types/DdsService.h"                            // DdsService, DdsServiceInstance
@@ -45,204 +46,15 @@ extern "C"
 #include "orionld/serviceRoutines/orionldPatchEntity2.h"         // orionldPatchEntity2
 #include "orionld/service/serviceLookupByServiceRoutine.h"       // serviceLookupByServiceRoutine
 #include "orionld/dds/ddsServiceLookup.h"                        // ddsServiceLookup
+#include "orionld/dds/ddsInstance.h"                             // ddsInstancePop, ddsInstanceFree
+#include "orionld/dds/ddsReplyBuild.h"                           // ddsReplyBuildSubAttribute, ddsReplyExtractMetadata
 #include "orionld/dds/ddsServiceReplyNotification.h"             // Own interface
 
 
 
-// -----------------------------------------------------------------------------
-//
-// ddsInstancePop - find the in-flight request, unlink it from the service's
-// instances list, and return it (caller is responsible for freeing).
-//
-static DdsServiceInstance* ddsInstancePop(DdsService* serviceP, uint64_t requestId)
-{
-  DdsServiceInstance* prev = NULL;
-
-  for (DdsServiceInstance* dsiP = serviceP->instances; dsiP != NULL; dsiP = dsiP->next)
-  {
-    if (dsiP->requestId == requestId)
-    {
-      if (prev != NULL)
-        prev->next = dsiP->next;
-      else
-        serviceP->instances = dsiP->next;
-
-      return dsiP;
-    }
-    prev = dsiP;
-  }
-  return NULL;
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
-// ddsInstanceFree - tear down a popped DdsServiceInstance and release its memory.
-//
-static void ddsInstanceFree(DdsServiceInstance* dsiP)
-{
-  if (dsiP == NULL)
-    return;
-  kaBufferReset(&dsiP->kalloc, KFALSE);
-  free(dsiP);
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
-// stringPropertyNode - convenience: build a Property whose value is a string.
-//
-static KjNode* stringPropertyNode(const char* name, const char* value)
-{
-  KjNode* prop  = kjObject(orionldState.kjsonP, name);
-  KjNode* tNode = kjString(orionldState.kjsonP, "type",  "Property");
-  KjNode* vNode = kjString(orionldState.kjsonP, "value", (value != NULL)? value : "");
-
-  kjChildAdd(prop, tNode);
-  kjChildAdd(prop, vNode);
-  return prop;
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
-// integerPropertyNode - convenience: build a Property whose value is an integer.
-//
-static KjNode* integerPropertyNode(const char* name, long long value)
-{
-  KjNode* prop  = kjObject(orionldState.kjsonP, name);
-  KjNode* tNode = kjString(orionldState.kjsonP, "type",  "Property");
-  KjNode* vNode = kjInteger(orionldState.kjsonP, "value", value);
-
-  kjChildAdd(prop, tNode);
-  kjChildAdd(prop, vNode);
-  return prop;
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
-// extractReplyMetadata -
-//
-// The DDS Enabler delivers a reply as a JSON object structured like:
-//
-//   {
-//     "id":   "<participantId>",     // top-level
-//     "type": "fastdds",             // protocol marker
-//     "rr/<service>Reply": {
-//       "type": "<ddsDataType>",     // e.g. example_interfaces::srv::dds_::AddTwoInts_Response_
-//       "data": {
-//         "<xId>": <actual reply payload>
-//       }
-//     }
-//   }
-//
-// This function teases out the four fields we want to surface as Properties on
-// the reply sub-attribute and returns the actual reply payload (a KjNode that
-// is still parented to 'replyTree' and must be detached/cloned by the caller).
-//
-// All output pointers are filled with NULL when the corresponding field can't
-// be found - the caller decides how to react.
-//
-static KjNode* extractReplyMetadata
-(
-  KjNode*       replyTree,
-  const char**  participantIdP,
-  const char**  ddsDataTypeP,
-  const char**  xIdP
-)
-{
-  *participantIdP = NULL;
-  *ddsDataTypeP   = NULL;
-  *xIdP           = NULL;
-
-  if ((replyTree == NULL) || (replyTree->type != KjObject))
-    return NULL;
-
-  // Top-level "id" -> participantId
-  KjNode* idNode = kjLookup(replyTree, "id");
-  if ((idNode != NULL) && (idNode->type == KjString))
-    *participantIdP = idNode->value.s;
-
-  // Find the "rr/<something>Reply" child
-  KjNode* rrNode = NULL;
-  for (KjNode* child = replyTree->value.firstChildP; child != NULL; child = child->next)
-  {
-    if ((child->name != NULL) && (strncmp(child->name, "rr/", 3) == 0))
-    {
-      rrNode = child;
-      break;
-    }
-  }
-
-  if ((rrNode == NULL) || (rrNode->type != KjObject))
-    return NULL;
-
-  KjNode* typeNode = kjLookup(rrNode, "type");
-  if ((typeNode != NULL) && (typeNode->type == KjString))
-    *ddsDataTypeP = typeNode->value.s;
-
-  KjNode* dataNode = kjLookup(rrNode, "data");
-  if ((dataNode == NULL) || (dataNode->type != KjObject))
-    return NULL;
-
-  // The single child of "data" is keyed by xId; its value is the actual reply payload.
-  KjNode* xIdValueNode = dataNode->value.firstChildP;
-  if (xIdValueNode == NULL)
-    return NULL;
-
-  *xIdP = xIdValueNode->name;
-  return xIdValueNode;
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
-// buildSubAttribute - build a "request" or "reply" sub-attribute Property
-// with all its NGSI-LD sub-sub-attribute Properties (requestId, xId,
-// participantId, ddsDataType, publishedAt) and the cloned payload as its value.
-//
-// 'subName'        : "request" or "reply"
-// 'payloadValue'   : KjNode that becomes the Property's value (will be reused -
-//                     caller must pass a node it doesn't need elsewhere)
-// 'requestId'      : the DDS request id assigned by the enabler
-// 'xId'            : may be NULL (request side typically has none)
-// 'participantId'  : may be NULL (request side typically has none)
-// 'ddsDataType'    : may be NULL on the request side
-// 'publishedAt'    : seconds since epoch
-//
-static KjNode* buildSubAttribute
-(
-  const char*  subName,
-  KjNode*      payloadValue,
-  uint64_t     requestId,
-  const char*  xId,
-  const char*  participantId,
-  const char*  ddsDataType,
-  int64_t      publishedAt
-)
-{
-  KjNode* sub      = kjObject(orionldState.kjsonP, subName);
-  KjNode* typeNode = kjString(orionldState.kjsonP, "type", "Property");
-
-  payloadValue->name = (char*) "value";
-
-  kjChildAdd(sub, typeNode);
-  kjChildAdd(sub, payloadValue);
-
-  kjChildAdd(sub, integerPropertyNode("requestId",   (long long) requestId));
-  if (xId           != NULL) kjChildAdd(sub, stringPropertyNode("xId",            xId));
-  if (participantId != NULL) kjChildAdd(sub, stringPropertyNode("participantId",  participantId));
-  if (ddsDataType   != NULL) kjChildAdd(sub, stringPropertyNode("ddsDataType",    ddsDataType));
-  kjChildAdd(sub, integerPropertyNode("publishedAt", (long long) publishedAt));
-
-  return sub;
-}
+// (Sub-attribute helpers - stringPropertyNode, integerPropertyNode,
+// extractReplyMetadata, buildSubAttribute - moved to ddsReplyBuild.{h,cpp}
+// so the ddsSync path can share them.)
 
 
 
@@ -302,7 +114,49 @@ void ddsServiceReplyNotification
   //
   DdsServiceInstance* dsiP = ddsInstancePop(serviceP, requestId);
   if (dsiP == NULL)
-    KT_W("Instance '%llu' of service '%s' not found", requestId, serviceName);
+  {
+    // Happens legitimately if the PATCH thread (in ddsSync mode) already
+    // timed out and popped the instance itself. No state to restore.
+    KT_W("Instance '%llu' of service '%s' not found (ddsSync timeout raced?)", requestId, serviceName);
+    return;
+  }
+
+  //
+  // ddsSync path: the request thread is blocked on dsiP->cv. Parse the reply
+  // into the instance's own kalloc so it survives past this callback, store
+  // the envelope metadata, then signal. The request thread performs the
+  // merge-patch itself - this thread returns immediately.
+  //
+  if (dsiP->syncMode == true)
+  {
+    KjNode*     replyTreeSync = kjParse(&dsiP->kjson, (char*) json);
+    const char* participantId = NULL;
+    const char* ddsDataType   = NULL;
+    const char* xId           = NULL;
+    KjNode*     replyPayload  = (replyTreeSync != NULL)
+                                ? ddsReplyExtractMetadata(replyTreeSync, &participantId, &ddsDataType, &xId)
+                                : NULL;
+
+    if (replyPayload == NULL)
+    {
+      KT_W("Reply for service '%s' (sync) didn't match the expected envelope - storing raw tree", serviceName);
+      replyPayload = replyTreeSync;
+    }
+
+    pthread_mutex_lock(&dsiP->mtx);
+    dsiP->replyTree        = replyPayload;
+    dsiP->replyPublishedAt = publishTime;
+    dsiP->ddsDataType      = (ddsDataType   != NULL) ? kaStrdup(&dsiP->kalloc, ddsDataType)   : NULL;
+    dsiP->participantId    = (participantId != NULL) ? kaStrdup(&dsiP->kalloc, participantId) : NULL;
+    dsiP->xId              = (xId           != NULL) ? kaStrdup(&dsiP->kalloc, xId)           : NULL;
+    dsiP->replyReceived    = true;
+    pthread_cond_signal(&dsiP->cv);
+    pthread_mutex_unlock(&dsiP->mtx);
+
+    // Do NOT free - the request thread consumes replyTree and frees via
+    // ddsInstanceFree once it's done merging into the entity tree.
+    return;
+  }
 
   //
   // No entity/attribute mapping -> nothing to store. Still free the instance.
@@ -334,7 +188,7 @@ void ddsServiceReplyNotification
   const char* participantId = NULL;
   const char* ddsDataType   = NULL;
   const char* xId           = NULL;
-  KjNode*     replyPayload  = extractReplyMetadata(replyTree, &participantId, &ddsDataType, &xId);
+  KjNode*     replyPayload  = ddsReplyExtractMetadata(replyTree, &participantId, &ddsDataType, &xId);
 
   if (replyPayload == NULL)
   {
@@ -368,7 +222,7 @@ void ddsServiceReplyNotification
   if ((dsiP != NULL) && (dsiP->requestTree != NULL))
   {
     KjNode* clonedRequest = kjClone(orionldState.kjsonP, dsiP->requestTree);
-    KjNode* requestSub    = buildSubAttribute("request",
+    KjNode* requestSub    = ddsReplyBuildSubAttribute("request",
                                               clonedRequest,
                                               requestId,
                                               NULL,                  // xId           - not exposed by enabler
@@ -381,7 +235,7 @@ void ddsServiceReplyNotification
   //
   // reply sub-attribute
   //
-  KjNode* replySub = buildSubAttribute("reply",
+  KjNode* replySub = ddsReplyBuildSubAttribute("reply",
                                        replyPayload,
                                        requestId,
                                        xId,

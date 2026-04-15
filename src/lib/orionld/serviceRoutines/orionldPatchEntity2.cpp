@@ -67,6 +67,8 @@ extern "C"
 #include "orionld/notifications/orionldAlterations.h"            // orionldAlterations
 #include "orionld/notifications/previousValues.h"                // previousValues
 #include "orionld/dds/ddsPublishAttributes.h"                    // ddsPublishAttributes
+#include "orionld/dds/ddsSyncPatchEntity.h"                      // ddsSyncPatchEntityProcess
+#include "orionld/types/OrionLdRestService.h"                    // ORIONLD_URIPARAM_DDSSYNC
 #include "orionld/serviceRoutines/orionldPatchEntity2.h"         // Own Interface
 
 
@@ -631,6 +633,38 @@ bool orionldPatchEntity2(void)
   }
 
   previousValues(orionldState.requestTree, dbAttrsP);
+
+
+  //
+  // ddsSync: if DDS is active AND the caller hasn't opted out via
+  // ?ddsSync=false, synchronously execute any DDS service calls embedded in
+  // the payload before we write anything to mongo. On failure (503/504),
+  // orionldError has been set and we bail BEFORE mongo/notifs/TRoE so the
+  // whole PATCH is atomic - including any non-DDS attrs in the same payload.
+  //
+  // Only PATCH /entities/{id} (this routine) gets this treatment.
+  // PATCH /entities/{id}/attrs (orionldPatchEntity) stays fire-and-forget
+  // as an intentional escape hatch for callers who want async semantics.
+  //
+  if (ddsSupport == true)
+  {
+    // Effective sync:
+    //   - if ?ddsSync=true|false present: the param value wins.
+    //   - else: follow the broker default, which when ddsSupport is on is
+    //     'sync' (DDS-integrated broker, DDS-aware clients).
+    bool ddsSyncOverride  = (orionldState.uriParams.mask & ORIONLD_URIPARAM_DDSSYNC) != 0;
+    bool ddsSyncEffective = ddsSyncOverride ? orionldState.uriParams.ddsSync : true;
+
+    if (ddsSyncEffective == true)
+    {
+      if (ddsSyncPatchEntityProcess(orionldState.requestTree) == false)
+        return false;
+
+      // Prevent the post-mongo async re-publish path from firing - we've
+      // already done the DDS work and merged the reply sub-attrs in-place.
+      orionldState.ddsSample = true;
+    }
+  }
 
 
   DistOp*  distOpList = NULL;

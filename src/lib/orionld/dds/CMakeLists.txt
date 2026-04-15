@@ -33,7 +33,10 @@ SET (SOURCES
   ddsPrePopulateDb.cpp
   ddsTopicNotification.cpp
   ddsServiceNotification.cpp
+  ddsInstance.cpp
+  ddsReplyBuild.cpp
   ddsService.cpp
+  ddsSyncPatchEntity.cpp
   ddsServiceListFunction.cpp
   ddsServiceCreate.cpp
   ddsServiceLookup.cpp

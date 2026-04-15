@@ -69,6 +69,14 @@ std::shared_ptr<eprosima::ddsenabler::DDSEnabler>  ddsEnabler;
 
 // -----------------------------------------------------------------------------
 //
+// ddsSyncTimeoutMs - default 5s; overridable via 'dds.ngsild.syncTimeoutMs'.
+//
+int64_t ddsSyncTimeoutMs = 5000;
+
+
+
+// -----------------------------------------------------------------------------
+//
 // ddsTypeQuery -
 //
 // Called by the DDS Enabler when it needs the binary type representation for a
@@ -273,10 +281,17 @@ bool ddsActionQuery
 //
 int ddsInit(Kjson* kjP)
 {
-  KjNode* topicsNode   = kjTreeNavigate(configTree, "dds.ngsild.topics",         NULL);
-  KjNode* servicesNode = kjTreeNavigate(configTree, "dds.ngsild.services",       NULL);
-  KjNode* actionsNode  = kjTreeNavigate(configTree, "dds.ngsild.actions",        NULL);
-  KjNode* typesDirNode = kjTreeNavigate(configTree, "dds.ngsild.typesDirectory", NULL);
+  KjNode* topicsNode       = kjTreeNavigate(configTree, "dds.ngsild.topics",         NULL);
+  KjNode* servicesNode     = kjTreeNavigate(configTree, "dds.ngsild.services",       NULL);
+  KjNode* actionsNode      = kjTreeNavigate(configTree, "dds.ngsild.actions",        NULL);
+  KjNode* typesDirNode     = kjTreeNavigate(configTree, "dds.ngsild.typesDirectory", NULL);
+  KjNode* syncTimeoutNode  = kjTreeNavigate(configTree, "dds.ngsild.syncTimeoutMs",  NULL);
+
+  if ((syncTimeoutNode != NULL) && (syncTimeoutNode->type == KjInt) && (syncTimeoutNode->value.i > 0))
+  {
+    ddsSyncTimeoutMs = syncTimeoutNode->value.i;
+    KT_T(StDds, "DDS sync timeout set to %lld ms", (long long) ddsSyncTimeoutMs);
+  }
 
   if (topicsNode   != NULL)  ddsPrePopulateDb(DdsTopics,   topicsNode);
   if (servicesNode != NULL)  ddsPrePopulateDb(DdsServices, servicesNode);
