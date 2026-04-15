@@ -22,6 +22,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
 
 SET (SOURCES
   ddsInit.cpp
+  ddsTypeLoad.cpp
   ddsCategoryToKlogSeverity.cpp
   ddsNotification.cpp
   ddsEntityCreateFromAttribute.cpp

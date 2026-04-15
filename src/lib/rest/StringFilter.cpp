@@ -448,7 +448,7 @@ bool StringFilterItem::valueGet
   {
     *valueTypeP = SfvtNumber;
   }
-  else if ((*doubleP = dateTimeFromString(s, errorString, sizeof(errorString))) >= 0)
+  else if ((*doubleP = dateTimeFromString(s, errorString, sizeof(errorString), false)) >= 0)
   {
     *valueTypeP = SfvtDate;
   }

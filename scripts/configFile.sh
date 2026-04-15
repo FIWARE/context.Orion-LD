@@ -36,6 +36,8 @@ declare -A troeV
 typeset -i troeIx
 troeIx=-1
 
+ddsTypesDirectory=""
+
 
 
 
@@ -49,8 +51,9 @@ function usage()
   empty=$(echo $sfile | tr 'a-zA-z/0-9.:' ' ')
   echo "$sfile [-u (usage)]"
   echo "$empty [--ddsTopic <topic>,<entity type>,<entity id>,<attribute name>]"
-  echo "$empty [--ddsService <topic>,<entity type>,<entity id>,<attribute name>]"
+  echo "$empty [--ddsService <name>,<entity type>,<entity id>,<attribute name>]"
   echo "$empty [--ddsAction <action>,<entity type>,<entity id>,<attribute name>]"
+  echo "$empty [--ddsTypesDirectory <absolute path to directory of .bin type files>]"
   echo "$empty [--troe <id,idPattern,type1+type2+...typeN,attribute1+attribute2+...attributeN>]"
   echo
   exit $1
@@ -81,6 +84,11 @@ do
     then
         ddsActionIx=$ddsActionIx+1
         ddsActionV[$ddsActionIx]="$2"
+        shift
+        shift
+    elif [ "$1" == "--ddsTypesDirectory" ]
+    then
+        ddsTypesDirectory="$2"
         shift
         shift
     elif [ "$1" == "--troe" ]
@@ -177,9 +185,9 @@ then
         items=${ddsServiceV[$ix]}
 
         service=$(echo $items | awk -F, '{ print $1 }')
-        eType=$(echo $items | awk -F, '{ print $2 }')
-        eId=$(echo   $items | awk -F, '{ print $3 }')
-        attr=$(echo  $items | awk -F, '{ print $4 }')
+        eType=$(echo $items   | awk -F, '{ print $2 }')
+        eId=$(echo   $items   | awk -F, '{ print $3 }')
+        attr=$(echo  $items   | awk -F, '{ print $4 }')
 
         if [ $ix != $ddsServiceIx ]
         then
@@ -233,7 +241,13 @@ then
     done
 fi
 
-echo '      }'
+if [ "$ddsTypesDirectory" != "" ]
+then
+    echo '      },'
+    echo '      "typesDirectory": "'$ddsTypesDirectory'"'
+else
+    echo '      }'
+fi
 echo '    }'
 echo '  },'
 echo '  "troe": {'

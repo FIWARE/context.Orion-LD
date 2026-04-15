@@ -161,12 +161,12 @@ static void* ddsPrePopulateDbInThread(void* vP)
   for (KjNode* topic = topics->value.firstChildP; topic != NULL; topic = topic->next)
   {
     KT_T(StDdsPrePopulate, "%s '%s'", conceptName, topic->name);
-    KjNode* entityTypeNode = kjLookup(topic, "entityType");
-    KjNode* entityIdNode   = kjLookup(topic, "entityId");
-    KjNode* attrNameNode   = kjLookup(topic, "attribute");
-    char*   entityType     = (entityTypeNode != NULL)? entityTypeNode->value.s : NULL;
-    char*   entityId       = (entityIdNode   != NULL)? entityIdNode->value.s   : NULL;
-    char*   attrName       = (attrNameNode   != NULL)? attrNameNode->value.s   : NULL;
+    KjNode* entityTypeNode  = kjLookup(topic, "entityType");
+    KjNode* entityIdNode    = kjLookup(topic, "entityId");
+    KjNode* attrNameNode    = kjLookup(topic, "attribute");
+    char*   entityType      = (entityTypeNode  != NULL)? entityTypeNode->value.s  : NULL;
+    char*   entityId        = (entityIdNode    != NULL)? entityIdNode->value.s    : NULL;
+    char*   attrName        = (attrNameNode    != NULL)? attrNameNode->value.s    : NULL;
 
     if ((entityType == NULL) || (entityId == NULL) || (attrName == NULL))
     {

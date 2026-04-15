@@ -49,6 +49,17 @@ extern "C"
 //
 void ddsPublishAttributes(const char* entityId, KjNode* incoming, KjNode* dbAttrsP)
 {
+  //
+  // If we are inside a DDS callback (a sample/reply that was just merge-patched
+  // back into the entity), do NOT republish to DDS - that would re-trigger the
+  // same service/topic and cause an infinite loop.
+  //
+  if (orionldState.ddsSample == true)
+  {
+    KT_T(StDds, "DDS callback context - skipping republish to avoid loop");
+    return;
+  }
+
   KT_T(StDds, "Pushing attributes to DDS");
 
   KjNode* patchTree = orionldState.requestTree;
