@@ -253,6 +253,8 @@ sudo systemctl start mosquitto
 sudo systemctl enable mosquitto
 ```
 
+Note: Orion-LD's MQTT subscription support includes MQTT 5.0, which requires Mosquitto 2.0 or later. The EPEL package for CentOS 7 ships 1.4.x, so if you need MQTT 5.0 use the upstream repository from https://mosquitto.org.
+
 ### Fast-DDS (optional, for DDS support)
 
 Fast-DDS is eProsima's implementation of the DDS (Data Distribution Service) standard. It enables Orion-LD to communicate with DDS-based systems.

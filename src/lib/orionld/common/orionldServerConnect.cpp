@@ -22,9 +22,10 @@
 *
 * Author: Ken Zangelin
 */
-#include <string.h>                                              // strerror
+#include <stdio.h>                                               // snprintf
+#include <string.h>                                              // strerror, memset
 #include <unistd.h>                                              // close
-#include <netdb.h>                                               // struct hostent
+#include <netdb.h>                                               // getaddrinfo, freeaddrinfo, gai_strerror
 #include <errno.h>                                               // errno
 #include <sys/types.h>                                           // types
 #include <sys/socket.h>                                          // socket
@@ -46,36 +47,47 @@ extern "C"
 //
 int orionldServerConnect(const char* ip, uint16_t portNo)
 {
-  int                 fd;
-  struct hostent*     heP;
-  struct sockaddr_in  server;
+  // getaddrinfo is POSIX-mandated thread-safe; the older gethostbyname
+  // writes into a single process-wide static hostent and crashed under
+  // concurrent notification delivery when two MHD threads raced on that
+  // shared buffer.
+  struct addrinfo   hints;
+  struct addrinfo*  res = NULL;
+  char              portStr[16];
+  int               fd;
 
   KT_T(KtNotificationMsg, "Connecting to IP: '%s'", ip);
-  heP = gethostbyname(ip);
-  if (heP == NULL)
+
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family   = AF_INET;
+  hints.ai_socktype = SOCK_STREAM;
+  hints.ai_flags    = AI_NUMERICSERV;  // port is a numeric string — skip servent lookup
+
+  snprintf(portStr, sizeof(portStr), "%u", portNo);
+
+  int rc = getaddrinfo(ip, portStr, &hints, &res);
+  if (rc != 0 || res == NULL)
   {
-    KT_E("unable to find host '%s'", ip);
+    KT_E("unable to resolve host '%s': %s", ip, gai_strerror(rc));
     return -1;
   }
 
-  fd = socket(AF_INET, SOCK_STREAM, 0);
+  fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
   if (fd == -1)
   {
     KT_E("Can't even create a socket: %s", strerror(errno));
+    freeaddrinfo(res);
     return -1;
   }
 
-  server.sin_family = AF_INET;
-  server.sin_port   = htons(portNo);
-  server.sin_addr   = *((struct in_addr*) heP->h_addr);
-  bzero(&server.sin_zero, 8);
-
-  if (connect(fd, (struct sockaddr*) &server, sizeof(struct sockaddr)) == -1)
+  if (connect(fd, res->ai_addr, res->ai_addrlen) == -1)
   {
-    close(fd);
     KT_E("Unable to connect to host/port: %s:%d", ip, portNo);
+    close(fd);
+    freeaddrinfo(res);
     return -1;
   }
 
+  freeaddrinfo(res);
   return fd;
 }

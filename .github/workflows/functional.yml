@@ -80,11 +80,6 @@ jobs:
     needs: [check-changes, build-test-image]
     if: needs.check-changes.outputs.should_run == 'true'
     services:
-      mosquitto:
-        image: eclipse-mosquitto:1.6
-        ports:
-          - 1883:1883
-          - 9001:9001
       postgres:
         image: postgis/postgis:17-3.5-alpine
         env:
@@ -126,11 +121,23 @@ jobs:
         run: |
           docker load --input /tmp/test-image.tar
 
-      - name: Start MQTTS broker
+      - name: Start MQTT + MQTTS brokers
         run: |
           sudo apt-get install -y mosquitto openssl
+          # Stop the systemd-launched mosquitto so we can run with our own
+          # config (mosquitto 2.0 defaults to allow_anonymous false, which
+          # breaks the test suite's assumption of an open broker).
+          sudo systemctl stop mosquitto || true
+
+          # Plain MQTT on 1883 — anonymous enabled
+          cat > /tmp/mosquitto-plain.conf << EOF
+          listener 1883
+          allow_anonymous true
+          EOF
+          mosquitto -c /tmp/mosquitto-plain.conf -d
+
+          # MQTTS on 8883 with self-signed certs
           mkdir -p /tmp/mosquitto-mqtts
-          # Generate self-signed certs for MQTTS testing
           openssl req -new -x509 -days 30 -nodes \
             -keyout /tmp/mosquitto-mqtts/ca.key -out /tmp/mosquitto-mqtts/ca.crt \
             -subj "/CN=MQTT Test CA" 2>/dev/null
