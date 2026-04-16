@@ -463,10 +463,12 @@ If you wish to enable `mosquitto` to have it start automatically on system reboo
 sudo systemctl enable mosquitto
 ```
 
-### Postgres 12
+Note: Orion-LD's MQTT subscription support includes MQTT 5.0, which requires Mosquitto 2.0 or later. The Ubuntu 18.04 distro package ships 1.4.x, so if you need MQTT 5.0 use the upstream PPA: `sudo add-apt-repository ppa:mosquitto-dev/mosquitto-ppa`.
+
+### Postgres 17
 Postgres is used as database for the Temporal Evolution of entities
 
-#### Install Postgres 12
+#### Install Postgres 17
 ```bash
 wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
 echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" | sudo tee  /etc/apt/sources.list.d/pgdg.list
