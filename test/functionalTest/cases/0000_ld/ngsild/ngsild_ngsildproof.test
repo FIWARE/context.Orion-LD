@@ -347,11 +347,11 @@ MongoDB server version: REGEX(.*)
 			"md" : {
 				"ngsildproof" : {
 					"type" : "Property",
-					"https://uri.etsi.org/ngsi-ld/default-context/entityIdSealed" : {
+					"https://uri=etsi=org/ngsi-ld/default-context/entityIdSealed" : {
 						"type" : "Property",
 						"value" : "urn:E1"
 					},
-					"https://uri.etsi.org/ngsi-ld/default-context/entityTypeSealed" : {
+					"https://uri=etsi=org/ngsi-ld/default-context/entityTypeSealed" : {
 						"type" : "Property",
 						"value" : "T"
 					},

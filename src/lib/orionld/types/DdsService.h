@@ -68,7 +68,7 @@ typedef struct DdsServiceInstance
   int64_t                     replyPublishedAt;// reply's publishedAt in seconds (after ns->s conversion)
   char*                       ddsDataType;     // reply envelope: "rr/<service>Reply.type" (strdup'd in 'kalloc')
   char*                       participantId;   // reply envelope: top-level "id" (strdup'd in 'kalloc')
-  char*                       xId;             // reply envelope: key under rr/<service>Reply.data (strdup'd in 'kalloc')
+  char*                       instanceHandleId; // reply envelope: key under rr/<service>Reply.data (strdup'd in 'kalloc')
 
   struct DdsServiceInstance*  next;
 } DdsServiceInstance;

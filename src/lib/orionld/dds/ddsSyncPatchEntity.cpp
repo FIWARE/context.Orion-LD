@@ -94,8 +94,8 @@ static bool patchAttrSync(KjNode* attrP, bool* processedP)
   KjNode* requestSub   = ddsReplyBuildSubAttribute("request",
                                                    requestValue,
                                                    dsiP->requestId,
-                                                   NULL,   // xId           - not exposed by enabler on request side
-                                                   NULL,   // participantId - not exposed by enabler on request side
+                                                   NULL,   // instanceHandleId - not exposed by enabler on request side
+                                                   NULL,   // participantId    - not exposed by enabler on request side
                                                    serviceP->requestType,
                                                    dsiP->publishedAt);
   kjChildAdd(attrP, requestSub);
@@ -109,7 +109,7 @@ static bool patchAttrSync(KjNode* attrP, bool* processedP)
     KjNode* replySub   = ddsReplyBuildSubAttribute("reply",
                                                    replyValue,
                                                    dsiP->requestId,
-                                                   dsiP->xId,
+                                                   dsiP->instanceHandleId,
                                                    dsiP->participantId,
                                                    dsiP->ddsDataType,
                                                    dsiP->replyPublishedAt);

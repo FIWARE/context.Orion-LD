@@ -51,15 +51,15 @@ extern KjNode* ddsReplyStringPropertyNode(const char* name, const char* value);
 // Build a Property whose value is an integer: { "<name>": { type:Property, value:<value> } }
 extern KjNode* ddsReplyIntegerPropertyNode(const char* name, long long value);
 
-// Tease out participantId / ddsDataType / xId from the enabler's reply envelope
-// and return the actual reply payload (a child of 'replyTree' - caller must
+// Tease out participantId / ddsDataType / instanceHandleId from the enabler's reply
+// envelope and return the actual reply payload (a child of 'replyTree' - caller must
 // clone it before reusing the tree for anything else).
 extern KjNode* ddsReplyExtractMetadata
 (
   KjNode*       replyTree,
   const char**  participantIdP,
   const char**  ddsDataTypeP,
-  const char**  xIdP
+  const char**  instanceHandleIdP
 );
 
 // Build a "request" or "reply" sub-attribute Property. 'payloadValue' becomes
@@ -70,7 +70,7 @@ extern KjNode* ddsReplyBuildSubAttribute
   const char*  subName,
   KjNode*      payloadValue,
   uint64_t     requestId,
-  const char*  xId,
+  const char*  instanceHandleId,
   const char*  participantId,
   const char*  ddsDataType,
   int64_t      publishedAt

@@ -1,0 +1,279 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY
+
+#
+# Two consecutive PATCH /entities/{id}/attrs/{attr} on a DDS-service-mapped
+# attribute (async path - the entity-level PATCH would be the sync path).
+# The attr-level endpoint stays fire-and-forget, the reply merges back via
+# ddsServiceReplyNotification on the DDS callback thread.
+#
+# Reported by Carlos Ferreira Gonzalez (eProsima): the second GET-after-PATCH
+# returns HTTP 500 even though the merged body is correct. Until that bug is
+# fixed, this test fails on step 04 (HTTP 500 instead of HTTP 200).
+#
+# Requires Docker and the eprosima/vulcanexus:jazzy-desktop image (same as
+# dds_service_reply_full_roundtrip.test). Skipped in GitHub Actions via
+# IGNORE_TEST in .github/workflows/functional.yml.
+#
+
+--NAME--
+DDS Service: two consecutive attr-level PATCH+GET on async path - both GETs must return 200
+
+--SHELL-INIT--
+ddsClean
+
+$REPO_HOME/scripts/configFile.sh \
+  --ddsService "add_two_ints,Calculator,urn:ngsi-ld:calc:1,operation" \
+  --ddsTypesDirectory "$REPO_HOME/test/functionalTest/ddsTypes" \
+  > $HOME/.orionld
+
+ros2ServiceStart --service add_two_ints --samples 10
+sleep 5
+
+dbInit CB
+orionldStart CB -mongocOnly -wip dds
+
+sleep 5
+
+--SHELL--
+valgrindSleep 5
+
+#
+# 01. First attr-level PATCH (?ddsSync=false to opt out of sync semantics
+#     even though the broker default with -wip dds is sync - we want the
+#     async path that Carlos's repro hits)
+# 02. GET - must be HTTP 200, reply has sum=8
+# 03. Second attr-level PATCH
+# 04. GET - must be HTTP 200, reply has sum=18
+#
+
+echo "01. First PATCH operation attribute (async path)"
+echo "================================================="
+payload='{
+  "type": "Property",
+  "value": {
+    "a": 5,
+    "b": 3
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:calc:1/attrs/operation -X PATCH --payload "$payload"
+echo
+echo
+
+
+echo "02. GET entity by type query - must be HTTP 200 with merged reply"
+echo "=================================================================="
+sleep 2
+valgrindSleep 5
+orionCurl --url '/ngsi-ld/v1/entities?type=Calculator'
+echo
+echo
+
+
+echo "03. Second PATCH operation attribute (async path)"
+echo "=================================================="
+payload='{
+  "type": "Property",
+  "value": {
+    "a": 7,
+    "b": 11
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:calc:1/attrs/operation -X PATCH --payload "$payload"
+echo
+echo
+
+
+echo "04. GET entity by type query - must be HTTP 200 (regression: returned 500 before fix)"
+echo "======================================================================================="
+sleep 2
+valgrindSleep 5
+orionCurl --url '/ngsi-ld/v1/entities?type=Calculator'
+echo
+echo
+
+
+--REGEXPECT--
+01. First PATCH operation attribute (async path)
+=================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+02. GET entity by type query - must be HTTP 200 with merged reply
+==================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "ddsType": {
+            "type": "Property",
+            "value": "fastdds"
+        },
+        "id": "urn:ngsi-ld:calc:1",
+        "operation": {
+            "reply": {
+                "ddsDataType": {
+                    "type": "Property",
+                    "value": "example_interfaces::srv::dds_::AddTwoInts_Response_"
+                },
+                "instanceHandleId": {
+                    "type": "Property",
+                    "value": "REGEX([0-9a-f.]+)"
+                },
+                "participantId": {
+                    "type": "Property",
+                    "value": "REGEX([0-9a-f.]+)"
+                },
+                "publishedAt": {
+                    "type": "Property",
+                    "value": REGEX(-?\d+)
+                },
+                "requestId": {
+                    "type": "Property",
+                    "value": 1
+                },
+                "type": "Property",
+                "value": {
+                    "sum": 8
+                }
+            },
+            "request": {
+                "ddsDataType": {
+                    "type": "Property",
+                    "value": "example_interfaces::srv::dds_::AddTwoInts_Request_"
+                },
+                "publishedAt": {
+                    "type": "Property",
+                    "value": REGEX(\d+)
+                },
+                "requestId": {
+                    "type": "Property",
+                    "value": 1
+                },
+                "type": "Property",
+                "value": {
+                    "a": 5,
+                    "b": 3
+                }
+            },
+            "type": "Property",
+            "value": {
+                "a": 5,
+                "b": 3
+            }
+        },
+        "type": "Calculator"
+    }
+]
+
+
+03. Second PATCH operation attribute (async path)
+==================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+04. GET entity by type query - must be HTTP 200 (regression: returned 500 before fix)
+=======================================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "ddsType": {
+            "type": "Property",
+            "value": "fastdds"
+        },
+        "id": "urn:ngsi-ld:calc:1",
+        "operation": {
+            "reply": {
+                "ddsDataType": {
+                    "type": "Property",
+                    "value": "example_interfaces::srv::dds_::AddTwoInts_Response_"
+                },
+                "instanceHandleId": {
+                    "type": "Property",
+                    "value": "REGEX([0-9a-f.]+)"
+                },
+                "participantId": {
+                    "type": "Property",
+                    "value": "REGEX([0-9a-f.]+)"
+                },
+                "publishedAt": {
+                    "type": "Property",
+                    "value": REGEX(-?\d+)
+                },
+                "requestId": {
+                    "type": "Property",
+                    "value": REGEX(\d+)
+                },
+                "type": "Property",
+                "value": {
+                    "sum": 18
+                }
+            },
+            "request": {
+                "ddsDataType": {
+                    "type": "Property",
+                    "value": "example_interfaces::srv::dds_::AddTwoInts_Request_"
+                },
+                "publishedAt": {
+                    "type": "Property",
+                    "value": REGEX(\d+)
+                },
+                "requestId": {
+                    "type": "Property",
+                    "value": REGEX(\d+)
+                },
+                "type": "Property",
+                "value": {
+                    "a": 7,
+                    "b": 11
+                }
+            },
+            "type": "Property",
+            "value": {
+                "a": 7,
+                "b": 11
+            }
+        },
+        "type": "Calculator"
+    }
+]
+
+
+--TEARDOWN--
+ddsClean
+ros2ServiceStop
+brokerStop CB
+dbDrop CB
+rm -f $HOME/.orionld

@@ -78,10 +78,10 @@ extern "C"
 //     },
 //     "reply": {
 //       "type": "Property",
-//       "value": <actual reply payload (xId-keyed value, unwrapped)>,
-//       "requestId":     { "type": "Property", "value": <id> },
-//       "xId":           { "type": "Property", "value": <xId> },
-//       "participantId": { "type": "Property", "value": <participantId> },
+//       "value": <actual reply payload (instance-handle-keyed value, unwrapped)>,
+//       "requestId":        { "type": "Property", "value": <id> },
+//       "instanceHandleId": { "type": "Property", "value": <instanceHandleId> },
+//       "participantId":    { "type": "Property", "value": <participantId> },
 //       "ddsDataType":   { "type": "Property", "value": <ddsDataType> },
 //       "publishedAt":   { "type": "Property", "value": <seconds since epoch> }
 //     }
@@ -129,13 +129,13 @@ void ddsServiceReplyNotification
   //
   if (dsiP->syncMode == true)
   {
-    KjNode*     replyTreeSync = kjParse(&dsiP->kjson, (char*) json);
-    const char* participantId = NULL;
-    const char* ddsDataType   = NULL;
-    const char* xId           = NULL;
-    KjNode*     replyPayload  = (replyTreeSync != NULL)
-                                ? ddsReplyExtractMetadata(replyTreeSync, &participantId, &ddsDataType, &xId)
-                                : NULL;
+    KjNode*     replyTreeSync    = kjParse(&dsiP->kjson, (char*) json);
+    const char* participantId    = NULL;
+    const char* ddsDataType      = NULL;
+    const char* instanceHandleId = NULL;
+    KjNode*     replyPayload     = (replyTreeSync != NULL)
+                                   ? ddsReplyExtractMetadata(replyTreeSync, &participantId, &ddsDataType, &instanceHandleId)
+                                   : NULL;
 
     if (replyPayload == NULL)
     {
@@ -146,9 +146,9 @@ void ddsServiceReplyNotification
     pthread_mutex_lock(&dsiP->mtx);
     dsiP->replyTree        = replyPayload;
     dsiP->replyPublishedAt = publishTime;
-    dsiP->ddsDataType      = (ddsDataType   != NULL) ? kaStrdup(&dsiP->kalloc, ddsDataType)   : NULL;
-    dsiP->participantId    = (participantId != NULL) ? kaStrdup(&dsiP->kalloc, participantId) : NULL;
-    dsiP->xId              = (xId           != NULL) ? kaStrdup(&dsiP->kalloc, xId)           : NULL;
+    dsiP->ddsDataType      = (ddsDataType      != NULL) ? kaStrdup(&dsiP->kalloc, ddsDataType)      : NULL;
+    dsiP->participantId    = (participantId    != NULL) ? kaStrdup(&dsiP->kalloc, participantId)    : NULL;
+    dsiP->instanceHandleId = (instanceHandleId != NULL) ? kaStrdup(&dsiP->kalloc, instanceHandleId) : NULL;
     dsiP->replyReceived    = true;
     pthread_cond_signal(&dsiP->cv);
     pthread_mutex_unlock(&dsiP->mtx);
@@ -185,10 +185,10 @@ void ddsServiceReplyNotification
     return;
   }
 
-  const char* participantId = NULL;
-  const char* ddsDataType   = NULL;
-  const char* xId           = NULL;
-  KjNode*     replyPayload  = ddsReplyExtractMetadata(replyTree, &participantId, &ddsDataType, &xId);
+  const char* participantId    = NULL;
+  const char* ddsDataType      = NULL;
+  const char* instanceHandleId = NULL;
+  KjNode*     replyPayload     = ddsReplyExtractMetadata(replyTree, &participantId, &ddsDataType, &instanceHandleId);
 
   if (replyPayload == NULL)
   {
@@ -216,8 +216,8 @@ void ddsServiceReplyNotification
   //
   // ddsDataType is taken from the broker's known service config
   // (serviceP->requestType) - that's the request side's type name. The other
-  // two DDS-specific identifiers (xId, participantId) are not exposed by the
-  // eProsima enabler at request submission time and are left out.
+  // two DDS-specific identifiers (instanceHandleId, participantId) are not
+  // exposed by the eProsima enabler at request submission time and are left out.
   //
   if ((dsiP != NULL) && (dsiP->requestTree != NULL))
   {
@@ -225,8 +225,8 @@ void ddsServiceReplyNotification
     KjNode* requestSub    = ddsReplyBuildSubAttribute("request",
                                               clonedRequest,
                                               requestId,
-                                              NULL,                  // xId           - not exposed by enabler
-                                              NULL,                  // participantId - not exposed by enabler
+                                              NULL,                  // instanceHandleId - not exposed by enabler
+                                              NULL,                  // participantId    - not exposed by enabler
                                               serviceP->requestType, // ddsDataType   - from broker config
                                               dsiP->publishedAt);
     kjChildAdd(attrBody, requestSub);
@@ -238,7 +238,7 @@ void ddsServiceReplyNotification
   KjNode* replySub = ddsReplyBuildSubAttribute("reply",
                                        replyPayload,
                                        requestId,
-                                       xId,
+                                       instanceHandleId,
                                        participantId,
                                        ddsDataType,
                                        publishTime);

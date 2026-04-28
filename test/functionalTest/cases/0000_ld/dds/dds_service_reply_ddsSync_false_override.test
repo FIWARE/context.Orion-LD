@@ -108,13 +108,13 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "operation": {
         "reply": {
             "ddsDataType": "example_interfaces::srv::dds_::AddTwoInts_Response_",
+            "instanceHandleId": "REGEX([0-9a-f.]+)",
             "participantId": "REGEX([0-9a-f.]+)",
             "publishedAt": REGEX(-?\d+),
             "requestId": 1,
             "value": {
                 "sum": 5
-            },
-            "xId": "REGEX([0-9a-f.]+)"
+            }
         },
         "request": {
             "ddsDataType": "example_interfaces::srv::dds_::AddTwoInts_Request_",
