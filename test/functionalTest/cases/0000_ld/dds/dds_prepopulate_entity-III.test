@@ -162,6 +162,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             "type": "Property",
             "value": "NgsildSample"
         },
+        "instanceHandleId": {
+            "type": "Property",
+            "value": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0"
+        },
         "participantId": {
             "type": "Property",
             "value": "REGEX(.*)"
@@ -180,10 +184,6 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
                 2
             ],
             "s": "step 02"
-        },
-        "xId": {
-            "type": "Property",
-            "value": "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0"
         }
     },
     "type": "Camera"

@@ -48,8 +48,6 @@ extern "C"
 //
 // ddsNotification -
 //
-// FIXME: change "xId" to "instanceHandlerId"
-//
 void ddsNotification(const char* topicName, const char* json, int64_t publishTime)
 {
   KT_T(StDdsNotification, "----------------------------------------");
@@ -103,16 +101,16 @@ void ddsNotification(const char* topicName, const char* json, int64_t publishTim
   if (tNodeP != NULL)
     kjChildRemove(topicNameNodeP, tNodeP);
 
-  KjNode* valueNodeP  = dataNodeP->value.firstChildP;
-  char*   xId         = valueNodeP->name;
-  KjNode* subAttrP    = kjString(orionldState.kjsonP, "xId", xId);
-  KjNode* attrNodeP   = kjObject(orionldState.kjsonP, NULL);
+  KjNode* valueNodeP        = dataNodeP->value.firstChildP;
+  char*   instanceHandleId  = valueNodeP->name;
+  KjNode* subAttrP          = kjString(orionldState.kjsonP, "instanceHandleId", instanceHandleId);
+  KjNode* attrNodeP         = kjObject(orionldState.kjsonP, NULL);
 
   valueNodeP->name = (char*) "value";
 
   kjChildAdd(attrNodeP, valueNodeP);
 
-  // Add the xId node as "hidden" sub-property - not to be included in GETs, only for DDS publish reconstruction
+  // Add the instanceHandleId node as "hidden" sub-property - not to be included in GETs, only for DDS publish reconstruction
   kjChildAdd(attrNodeP, subAttrP);
 
   orionldState.payloadIdNode   = idNodeP;

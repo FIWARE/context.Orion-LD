@@ -161,6 +161,39 @@ bool dbModelFromApiSubAttribute(KjNode* saP, KjNode* dbMdP, KjNode* mdAddedV, Kj
       valueP->name = (char*) "value";
 
     //
+    // dotForEq on sub-sub-attribute names (children of saP).
+    //
+    // The DDS reply layout puts nested Properties (requestId, ddsDataType,
+    // publishedAt, instanceHandleId, participantId) as siblings of 'value'
+    // inside 'request'/'reply' sub-attrs. Their NGSI-LD-expanded names contain
+    // dots (e.g. "https://uri.etsi.org/ngsi-ld/default-context/requestId").
+    //
+    // First-round storage (whole-object insert) tolerated literal dots in
+    // mongo field names, but on the second-round incremental $set the path
+    // "attrs.<eq>operation.md.<eq>request.https://uri.etsi.org/.../requestId"
+    // makes mongo interpret each dot as a path separator and create a phantom
+    // nested {https://uri:{etsi:{org/...:{...}}}} object. The next GET hits
+    // that artifact in dbModelToApiSubAttribute2, finds no 'type', fires
+    // orionldError(...500) - body still renders, status is 500.
+    //
+    // Skip the special names that dbModelToApiSubAttribute2 / read path
+    // already handle without recursion (they have no dots anyway).
+    //
+    for (KjNode* child = saP->value.firstChildP; child != NULL; child = child->next)
+    {
+      if (strcmp(child->name, "value")      == 0)  continue;
+      if (strcmp(child->name, "type")       == 0)  continue;
+      if (strcmp(child->name, "createdAt")  == 0)  continue;
+      if (strcmp(child->name, "modifiedAt") == 0)  continue;
+      if (strcmp(child->name, "observedAt") == 0)  continue;
+      if (strcmp(child->name, "unitCode")   == 0)  continue;
+      if (strcmp(child->name, "objectType") == 0)  continue;
+
+      child->name = kaStrdup(&orionldState.kalloc, child->name);  // can't mutate the @context-owned string
+      dotForEq(child->name);
+    }
+
+    //
     // If the sub-attr didn't exist, it needs a "createdAt"
     // If it did exist, then steal if from DB, if there. If not, create it
     //

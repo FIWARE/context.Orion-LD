@@ -62,20 +62,20 @@ eProsima reported two problems with this:
   "request": {
     "type": "Property",
     "value": { ... },
-    "requestId":     { "type": "Property", "value": <id> },
-    "xId":           { "type": "Property", "value": "<xId>" },
-    "participantId": { "type": "Property", "value": "<participantId>" },
-    "ddsDataType":   { "type": "Property", "value": "<typeName>" },
-    "publishedAt":   { "type": "Property", "value": <epoch seconds> }
+    "requestId":        { "type": "Property", "value": <id> },
+    "instanceHandleId": { "type": "Property", "value": "<instanceHandleId>" },
+    "participantId":    { "type": "Property", "value": "<participantId>" },
+    "ddsDataType":      { "type": "Property", "value": "<typeName>" },
+    "publishedAt":      { "type": "Property", "value": <epoch seconds> }
   },
   "reply": {
     "type": "Property",
     "value": { ... },
-    "requestId":     { "type": "Property", "value": <id> },
-    "xId":           { "type": "Property", "value": "<xId>" },
-    "participantId": { "type": "Property", "value": "<participantId>" },
-    "ddsDataType":   { "type": "Property", "value": "<typeName>" },
-    "publishedAt":   { "type": "Property", "value": <epoch seconds> }
+    "requestId":        { "type": "Property", "value": <id> },
+    "instanceHandleId": { "type": "Property", "value": "<instanceHandleId>" },
+    "participantId":    { "type": "Property", "value": "<participantId>" },
+    "ddsDataType":      { "type": "Property", "value": "<typeName>" },
+    "publishedAt":      { "type": "Property", "value": <epoch seconds> }
   }
 }
 ```
@@ -103,8 +103,8 @@ shown above. Key pieces:
 - `extractReplyMetadata()` parses the eProsima reply envelope and pulls out:
   - `participantId` ← top-level `id`
   - `ddsDataType`   ← `rr/<service>Reply.type`
-  - `xId`           ← the single key under `rr/<service>Reply.data`
-  - `value`         ← the value under that `xId` key
+  - `instanceHandleId` ← the single key under `rr/<service>Reply.data` (FastDDS `InstanceHandle_t`)
+  - `value`            ← the value under that `instanceHandleId` key
 - `buildSubAttribute()` wraps a payload + metadata block into a nested NGSI-LD
   Property.
 - `stringPropertyNode()` / `integerPropertyNode()` are small helpers for the
@@ -145,11 +145,11 @@ freed.
 
 ## 3. What we could *not* deliver
 
-### 3.1 `xId` and `participantId` on the request side
+### 3.1 `instanceHandleId` and `participantId` on the request side
 
 eProsima asked for the `request` sub-attribute to carry the same six metadata
-fields as `reply` (`value`, `requestId`, `xId`, `participantId`, `ddsDataType`,
-`publishedAt`). We can populate four of them:
+fields as `reply` (`value`, `requestId`, `instanceHandleId`, `participantId`,
+`ddsDataType`, `publishedAt`). We can populate four of them:
 
 | field          | source                                                                                  |
 |----------------|------------------------------------------------------------------------------------------|
@@ -161,10 +161,10 @@ fields as `reply` (`value`, `requestId`, `xId`, `participantId`, `ddsDataType`,
 The other two are **not exposed by the eProsima enabler** at request submission
 time:
 
-- `xId`: the reply envelope JSON shows it (the 16-dot key under
-  `rr/<service>Reply.data`), so the value evidently exists somewhere inside the
-  enabler at the moment a request is being prepared. There is no way to read
-  it from the public `DDSEnabler` API.
+- `instanceHandleId`: the reply envelope JSON shows it (the 16-dot key under
+  `rr/<service>Reply.data` — a FastDDS `InstanceHandle_t`), so the value evidently
+  exists somewhere inside the enabler at the moment a request is being prepared.
+  There is no way to read it from the public `DDSEnabler` API.
 - `participantId`: conceptually the broker's own DDS participant GUID prefix.
   Knowable in principle, but not exposed via any public `DDSEnabler` accessor.
 
@@ -172,12 +172,12 @@ So today the `request` sub-attribute is built with **4 of the 6** fields
 eProsima asked for. The two missing fields are intentionally omitted rather
 than zero-filled, to avoid storing fake values.
 
-**Question for eProsima:** is there a way to expose `xId` and `participantId`
-on the client side at request submission time? The cleanest fix would be a
-companion to `send_service_request` that fills a small struct (`xId`,
-`participantId`) by reference, mirroring how `request_id` is returned today —
-or a public `DDSEnabler::participant_guid_prefix()` accessor for the
-participant id.
+**Question for eProsima:** is there a way to expose `instanceHandleId` and
+`participantId` on the client side at request submission time? The cleanest fix
+would be a companion to `send_service_request` that fills a small struct
+(`instanceHandleId`, `participantId`) by reference, mirroring how `request_id`
+is returned today — or a public `DDSEnabler::participant_guid_prefix()`
+accessor for the participant id.
 
 ### 3.2 The attribute's top-level `value` is left alone
 
@@ -316,9 +316,10 @@ cmake --build . && sudo cmake --install .
 
 After applying this patch, the broker can call `send_service_request()`
 successfully and the full reply roundtrip works as documented in §3.3. The
-remaining limitations from §3.1 still hold: `xId` and `participantId` on
-the request side need additional eProsima API surface that this patch does
-not introduce. They are absent on the request sub-attribute today.
+remaining limitations from §3.1 still hold: `instanceHandleId` and
+`participantId` on the request side need additional eProsima API surface
+that this patch does not introduce. They are absent on the request
+sub-attribute today.
 
 ### Known limitation in `orionldPatchEntity2` (not eProsima)
 

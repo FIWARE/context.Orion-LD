@@ -68,12 +68,12 @@ KjNode* ddsReplyExtractMetadata
   KjNode*       replyTree,
   const char**  participantIdP,
   const char**  ddsDataTypeP,
-  const char**  xIdP
+  const char**  instanceHandleIdP
 )
 {
-  *participantIdP = NULL;
-  *ddsDataTypeP   = NULL;
-  *xIdP           = NULL;
+  *participantIdP    = NULL;
+  *ddsDataTypeP      = NULL;
+  *instanceHandleIdP = NULL;
 
   if ((replyTree == NULL) || (replyTree->type != KjObject))
     return NULL;
@@ -103,12 +103,12 @@ KjNode* ddsReplyExtractMetadata
   if ((dataNode == NULL) || (dataNode->type != KjObject))
     return NULL;
 
-  KjNode* xIdValueNode = dataNode->value.firstChildP;
-  if (xIdValueNode == NULL)
+  KjNode* instanceHandleValueNode = dataNode->value.firstChildP;
+  if (instanceHandleValueNode == NULL)
     return NULL;
 
-  *xIdP = xIdValueNode->name;
-  return xIdValueNode;
+  *instanceHandleIdP = instanceHandleValueNode->name;
+  return instanceHandleValueNode;
 }
 
 
@@ -118,7 +118,7 @@ KjNode* ddsReplyBuildSubAttribute
   const char*  subName,
   KjNode*      payloadValue,
   uint64_t     requestId,
-  const char*  xId,
+  const char*  instanceHandleId,
   const char*  participantId,
   const char*  ddsDataType,
   int64_t      publishedAt
@@ -132,11 +132,11 @@ KjNode* ddsReplyBuildSubAttribute
   kjChildAdd(sub, typeNode);
   kjChildAdd(sub, payloadValue);
 
-  kjChildAdd(sub, ddsReplyIntegerPropertyNode("requestId",   (long long) requestId));
-  if (xId           != NULL) kjChildAdd(sub, ddsReplyStringPropertyNode("xId",           xId));
-  if (participantId != NULL) kjChildAdd(sub, ddsReplyStringPropertyNode("participantId", participantId));
-  if (ddsDataType   != NULL) kjChildAdd(sub, ddsReplyStringPropertyNode("ddsDataType",   ddsDataType));
-  kjChildAdd(sub, ddsReplyIntegerPropertyNode("publishedAt", (long long) publishedAt));
+  kjChildAdd(sub, ddsReplyIntegerPropertyNode("requestId",        (long long) requestId));
+  if (instanceHandleId != NULL) kjChildAdd(sub, ddsReplyStringPropertyNode("instanceHandleId", instanceHandleId));
+  if (participantId    != NULL) kjChildAdd(sub, ddsReplyStringPropertyNode("participantId",    participantId));
+  if (ddsDataType      != NULL) kjChildAdd(sub, ddsReplyStringPropertyNode("ddsDataType",      ddsDataType));
+  kjChildAdd(sub, ddsReplyIntegerPropertyNode("publishedAt",      (long long) publishedAt));
 
   return sub;
 }

@@ -121,7 +121,7 @@ bool ddsService(DdsService* serviceP, KjNode* attributeValueP, bool sync, DdsSer
   dsiP->replyPublishedAt = 0;
   dsiP->ddsDataType      = NULL;
   dsiP->participantId    = NULL;
-  dsiP->xId              = NULL;
+  dsiP->instanceHandleId = NULL;
   dsiP->next             = NULL;
 
   pthread_mutex_init(&dsiP->mtx, NULL);
@@ -175,7 +175,7 @@ bool ddsService(DdsService* serviceP, KjNode* attributeValueP, bool sync, DdsSer
   if (gotReply)
   {
     // Reply thread has already popped the instance from the list and filled
-    // replyTree / ddsDataType / participantId / xId / replyPublishedAt. Hand
+    // replyTree / ddsDataType / participantId / instanceHandleId / replyPublishedAt. Hand
     // ownership to the caller; it will call ddsInstanceFree when done.
     if (dsiOut != NULL)
       *dsiOut = dsiP;
