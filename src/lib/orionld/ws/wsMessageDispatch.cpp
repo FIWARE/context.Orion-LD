@@ -28,9 +28,6 @@
 extern "C"
 {
 #include "ktrace/kTrace.h"                                       // KT_*
-#include "kalloc/kaBufferInit.h"                                 // kaBufferInit
-#include "kjson/kjson.h"                                         // Kjson
-#include "kjson/kjBufferCreate.h"                                // kjBufferCreate
 #include "kjson/kjParse.h"                                       // kjParse
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjRenderSize.h"                                  // kjFastRenderSize
@@ -79,34 +76,18 @@ void wsMessageDispatch(WsConnection* wsP, char* message, size_t messageLen)
   orionldStateInit(NULL);
 
   //
-  // 2. Parse the incoming JSON envelope using a malloc-backed Kjson.
-  //    NOT using kalloc — the tree must survive through the service routine call.
-  //    kalloc is reserved for the service routine's temporary allocations.
-  //
+  // 2. Parse the incoming JSON envelope into orionldState.kjsonP — kalloc was
+  //    just reset by orionldStateInit and shares its buffer with the service
+  //    routine's allocations, so the request tree survives until wsRequestCleanup.
   //    The 'message' buffer is malloc'd by MHD_websocket_decode and stays alive
-  //    until the caller (wsReceiveLoop) frees it.
-  //    kjParse works in-place on 'message', so KjNode string values point into it.
+  //    until the caller (wsReceiveLoop) frees it. kjParse works in-place on
+  //    'message', so KjNode string values point into it.
   //
-  char*   parseBuf = (char*) malloc(8192);
-  if (parseBuf == NULL)
-  {
-    KT_E("Out of memory allocating WS parse buffer");
-    wsErrorResponse(wsP, 500, "Internal Error", "Out of memory");
-    return;
-  }
-
-  Kjson   kjson;
-  KAlloc  kalloc;
-  memset(&kjson, 0, sizeof(kjson));
-  kaBufferInit(&kalloc, parseBuf, 8192, 8 * 1024, NULL, "WS parse buffer");
-  Kjson*  kjsonP = kjBufferCreate(&kjson, &kalloc);
-
-  KjNode* tree = kjParse(kjsonP, message);
+  KjNode* tree = kjParse(orionldState.kjsonP, message);
   if (tree == NULL)
   {
     KT_W("WS message parse failed");
     wsErrorResponse(wsP, 400, "JSON Parse Error", "Cannot parse incoming WebSocket message");
-    free(parseBuf);
     return;
   }
 
@@ -120,7 +101,6 @@ void wsMessageDispatch(WsConnection* wsP, char* message, size_t messageLen)
   {
     KT_W("WS message missing 'metadata' or 'body'");
     wsErrorResponse(wsP, 400, "Bad Request", "WebSocket message must contain 'metadata' and 'body'");
-    free(parseBuf);
     return;
   }
 
@@ -144,7 +124,6 @@ void wsMessageDispatch(WsConnection* wsP, char* message, size_t messageLen)
   {
     KT_W("WS unsupported operation: '%s'", operation);
     wsErrorResponse(wsP, 400, "Unsupported Operation", "Supported operations: 'createEntity', 'createSubscription', 'putEntity', 'patchEntity', 'patchSubscription'");
-    free(parseBuf);
     return;
   }
 
@@ -292,7 +271,6 @@ void wsMessageDispatch(WsConnection* wsP, char* message, size_t messageLen)
   // 13. Free malloc'd buffers
   //
   free(responseJson);
-  free(parseBuf);
   free(savedId);
   free(savedTitle);
   free(savedDetail);

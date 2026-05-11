@@ -22,11 +22,18 @@
 *
 * Author: Ken Zangelin, David Campo, Luis Arturo Frigolet
 */
-#include <unistd.h>                                         // sleep
-#include <string.h>                                         // memcpy
+#include <unistd.h>                                         // sleep, read, close, write
+#include <string.h>                                         // memcpy, strsignal
 #include <strings.h>                                        // bzero
 #include <stdlib.h>                                         // exit, malloc, calloc, free
 #include <stdarg.h>                                         // va_start, ...
+#include <fcntl.h>                                          // open, O_RDONLY
+#include <sys/stat.h>                                       // stat
+#include <errno.h>                                          // errno
+#include <pthread.h>                                        // pthread_mutex_t
+#include <signal.h>                                         // sigaction, SIG*
+#include <execinfo.h>                                       // backtrace, backtrace_symbols_fd
+#include <time.h>                                           // time, ctime_r
 
 #include <string>                                           // std::string
 #include <memory>                                           // for std::unique_ptr
@@ -86,6 +93,8 @@ char                 configFile[512];
 bool                 ddsSupport       = false;
 char*                ddsServiceName   = NULL;
 char*                ddsActionName    = NULL;
+bool                 prettyPrint      = false;
+bool                 accFmt           = false;  // /dump output style: accumulator (true) or legacy (false). Both buffers exist either way.
 
 
 
@@ -107,6 +116,9 @@ KArg kargs[] =
   { "--dds",              "-dds",   KaBool,    &ddsSupport,           KaOpt, KFALSE,     KA_NL,    KA_NL,      "DDS Support"                                       },
   { "--ddsService",       "-ddss",  KaString,  &ddsServiceName,       KaOpt, NULL,       KA_NL,    KA_NL,      "DDS Service to announce as server"                 },
   { "--ddsAction",        "-ddsa",  KaString,  &ddsActionName,        KaOpt, NULL,       KA_NL,    KA_NL,      "DDS Action to announce as server"                  },
+
+  { "--pretty-print",     "-pp",    KaBool,    &prettyPrint,          KaOpt, KFALSE,     KA_NL,    KA_NL,      "Pretty-print JSON bodies in /dump"                 },
+  { "--accFmt",           "-af",    KaBool,    &accFmt,               KaOpt, KFALSE,     KA_NL,    KA_NL,      "Render /dump in accumulator format"                },
 
   //
   // Broker options
@@ -180,8 +192,10 @@ static void klibLogFunction
 
 
 
-extern KjNode*  ddsDumpArray;
-KjNode*         ddsServiceRequestsArray = NULL;  // Stores received DDS service requests
+extern KjNode*          ddsDumpArray;
+extern pthread_mutex_t  dumpMutex;
+extern void             dumpLockOrAbort(const char* siteTag);
+KjNode*                 ddsServiceRequestsArray = NULL;  // Stores received DDS service requests
 
 
 
@@ -202,6 +216,7 @@ static void ddsNotification(const char* topicName, const char* json, int64_t pub
   if (dump == NULL)
     KT_E("Error parsing the incoming JSON notification");
 
+  dumpLockOrAbort("ddsNotification:ftClient");
   if (ddsDumpArray == NULL)
   {
     KT_T(StDdsDump, "Creating the DDS DumpArray");
@@ -209,6 +224,7 @@ static void ddsNotification(const char* topicName, const char* json, int64_t pub
   }
   dump = kjClone(NULL, dump);
   kjChildAdd(ddsDumpArray, dump);
+  pthread_mutex_unlock(&dumpMutex);
 }
 
 
@@ -536,6 +552,212 @@ static bool ddsActionQuery
 
 
 std::shared_ptr<eprosima::ddsenabler::DDSEnabler> ddsEnabler;
+
+
+
+// Runtime base address of the ftClient executable, captured at link time.
+// On a PIE binary, addresses from backtrace() are runtime VAs and have to be
+// translated to file offsets for `addr2line -e` to work. Each backtrace line
+// prints both: the raw runtime VA and (vp - ftClientLoadBase).
+extern "C" const char __executable_start;
+static const unsigned long ftClientLoadBase = (unsigned long) &__executable_start;
+
+
+// -----------------------------------------------------------------------------
+//
+// crashHandler - async-signal-safe minimal handler for fatal signals
+//
+// Writes a single-line marker + a backtrace to /tmp/ftClient.crash (overwritten
+// each crash) and to stderr, then re-raises so the default handler can produce
+// a core dump if enabled. Only async-signal-safe calls used.
+//
+// -----------------------------------------------------------------------------
+//
+// Async-signal-safe helpers — do not call malloc, snprintf, strsignal, etc.
+// Only the syscalls listed in signal-safety(7) (write, open, close, getpid,
+// raise, signal, sigaction, backtrace, backtrace_symbols_fd).
+//
+// backtrace_symbols_fd is in glibc's "approximately safe" zone (uses dladdr
+// which allocates), but it's the conventional choice in crash handlers and
+// the realistic alternative is no symbols at all.
+//
+static void asWriteUint(int fd, unsigned long v)
+{
+  char    buf[24];
+  int     n = 0;
+  if (v == 0) { buf[n++] = '0'; }
+  else        { while (v) { buf[n++] = '0' + (v % 10); v /= 10; } }
+  // reverse
+  for (int i = 0, j = n - 1; i < j; ++i, --j) { char t = buf[i]; buf[i] = buf[j]; buf[j] = t; }
+  ssize_t wr = write(fd, buf, n);  (void) wr;
+}
+
+static void asWriteStr(int fd, const char* s)
+{
+  size_t n = 0; while (s[n]) ++n;
+  ssize_t wr = write(fd, s, n);  (void) wr;
+}
+
+static void crashHandler(int sig)
+{
+  // Build the crash-file path manually (no snprintf in signal context).
+  // "/tmp/ftClient.crash." + pid digits + NUL
+  char path[64];
+  const char prefix[] = "/tmp/ftClient.crash.";
+  size_t i = 0;
+  for (; i < sizeof(prefix) - 1; ++i) path[i] = prefix[i];
+
+  pid_t pid = getpid();
+  // pid to ascii (max 10 digits + sign for 32-bit)
+  char  pidbuf[16];
+  int   pn = 0;
+  pid_t v = pid;
+  if (v == 0) { pidbuf[pn++] = '0'; }
+  else        { while (v) { pidbuf[pn++] = '0' + (v % 10); v /= 10; } }
+  for (int k = pn - 1; k >= 0; --k)
+  {
+    if (i < sizeof(path) - 1) path[i++] = pidbuf[k];
+  }
+  path[i] = 0;
+
+  int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+
+  // Build the header line piece by piece — no snprintf, no strsignal.
+  // Format: "ftClient port=<port> pid=<pid> crashed: signal <num>\n"
+  int outs[2]; int outn = 0;
+  outs[outn++] = STDERR_FILENO;
+  if (fd >= 0) outs[outn++] = fd;
+
+  for (int x = 0; x < outn; ++x)
+  {
+    asWriteStr(outs[x], "ftClient port=");
+    asWriteUint(outs[x], (unsigned long) ldPort);
+    asWriteStr(outs[x], " pid=");
+    asWriteUint(outs[x], (unsigned long) pid);
+    asWriteStr(outs[x], " crashed: signal ");
+    asWriteUint(outs[x], (unsigned long) sig);
+    asWriteStr(outs[x], "\n");
+  }
+
+  // Print the load base so addresses can be reproduced from file offsets later.
+  for (int x = 0; x < outn; ++x)
+  {
+    asWriteStr(outs[x], "ftClient load base: 0x");
+    {
+      unsigned long a = ftClientLoadBase;
+      char          hex[20];
+      int           hp = 0;
+      const char* digits = "0123456789abcdef";
+      bool started = false;
+      for (int s = 60; s >= 0; s -= 4)
+      {
+        unsigned d = (a >> s) & 0xf;
+        if (d || started || s == 0) { hex[hp++] = digits[d]; started = true; }
+      }
+      ssize_t wr = write(outs[x], hex, hp);  (void) wr;
+    }
+    asWriteStr(outs[x], "\n");
+  }
+
+  // Backtrace — raw addresses only. backtrace() itself is async-signal-safe;
+  // backtrace_symbols_fd is *not* (it calls dladdr which can take a malloc
+  // arena lock, and if the original crash was in malloc itself we deadlock
+  // the handler). Resolve later via:
+  //   addr2line -fe /usr/bin/ftClient <file_offset>   (use the (rel ...) value)
+  void* bt[64];
+  int   bn = backtrace(bt, 64);
+  for (int k = 0; k < bn; ++k)
+  {
+    unsigned long a   = (unsigned long) bt[k];
+    unsigned long rel = (a >= ftClientLoadBase) ? (a - ftClientLoadBase) : 0;
+
+    for (int x = 0; x < outn; ++x)
+    {
+      asWriteStr(outs[x], "  ");
+      // Print runtime VA, then file offset (relative to load base).
+      const char* digits = "0123456789abcdef";
+
+      for (int pass = 0; pass < 2; ++pass)
+      {
+        unsigned long v = (pass == 0) ? a : rel;
+        if (pass == 1) asWriteStr(outs[x], "  (rel ");
+        asWriteStr(outs[x], "0x");
+        char hex[20];
+        int  hp = 0;
+        bool started = false;
+        for (int s = 60; s >= 0; s -= 4)
+        {
+          unsigned d = (v >> s) & 0xf;
+          if (d || started || s == 0) { hex[hp++] = digits[d]; started = true; }
+        }
+        ssize_t wr = write(outs[x], hex, hp);  (void) wr;
+        if (pass == 1) asWriteStr(outs[x], ")");
+      }
+      asWriteStr(outs[x], "\n");
+    }
+  }
+
+  if (fd >= 0)
+    close(fd);
+
+  // Re-raise with default handler so a core can be dumped if ulimit permits.
+  signal(sig, SIG_DFL);
+  raise(sig);
+}
+
+
+
+static void crashHandlerInstall(void)
+{
+  // Prime the libgcc_s.so.1 unwinder NOW. backtrace() lazily dlopens it on
+  // first use; if that first use is in a signal handler running after a crash
+  // in malloc, the dlopen's own malloc deadlocks. Calling backtrace() once
+  // here forces the dlopen to happen while the process state is healthy.
+  // See: glibc bug #15605 / signal-safety(7) "Async-signal-safety of backtrace".
+  void* dummy[4];
+  (void) backtrace(dummy, 4);
+
+  struct sigaction sa;
+  memset(&sa, 0, sizeof(sa));
+  sa.sa_handler = crashHandler;
+  sigemptyset(&sa.sa_mask);
+  sa.sa_flags = SA_RESETHAND | SA_NODEFER;
+  sigaction(SIGSEGV, &sa, NULL);
+  sigaction(SIGABRT, &sa, NULL);
+  sigaction(SIGBUS,  &sa, NULL);
+  sigaction(SIGFPE,  &sa, NULL);
+  sigaction(SIGILL,  &sa, NULL);
+  // Also catch external kills (SIGTERM/SIGINT/SIGPIPE) so we know when something
+  // outside ftClient is shutting us down vs an internal crash.
+  sigaction(SIGTERM, &sa, NULL);
+  sigaction(SIGINT,  &sa, NULL);
+  sigaction(SIGPIPE, &sa, NULL);
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// exitMarker - writes /tmp/ftClient.exit.<pid> on any process exit, so we can
+// tell if ftClient died via exit()/return-from-main vs. a signal (which writes
+// /tmp/ftClient.crash.<pid>).
+//
+extern unsigned short ldPort;
+static void exitMarker(void)
+{
+  char path[64];
+  snprintf(path, sizeof(path), "/tmp/ftClient.exit.%d", (int) getpid());
+  int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+  if (fd < 0) return;
+  char line[128];
+  int  n = snprintf(line, sizeof(line), "ftClient port=%u pid=%d exited via exit()/return\n",
+                    (unsigned) ldPort, (int) getpid());
+  ssize_t wr = write(fd, line, n);  (void) wr;
+  close(fd);
+}
+
+
+
 // -----------------------------------------------------------------------------
 //
 // main -
@@ -545,6 +767,9 @@ int main(int argC, char* argV[])
   KArgsStatus ks;
   const char* progName = "ftClient";
   char        configFilePath[256];
+
+  crashHandlerInstall();
+  atexit(exitMarker);
 
   ks = kargsInit(progName, kargs, "FTCLIENT");
   if (ks != KargsOk)
@@ -594,6 +819,50 @@ int main(int argC, char* argV[])
   //       configuration.
   //
   KT_D("%s version: %s", progName, FTCLIENT_VERSION);
+
+  // mhdStart expects httpsKey/httpsCertificate to be PEM contents (string), not paths.
+  // If the user passed file paths via --httpsKey/--httpsCertificate, slurp the files
+  // here and replace the globals with their contents before mhdInit runs.
+  if ((httpsKey != NULL) && (httpsCertificate != NULL))
+  {
+    for (int pass = 0; pass < 2; ++pass)
+    {
+      char**       slot   = (pass == 0) ? &httpsKey : &httpsCertificate;
+      const char*  label  = (pass == 0) ? "httpsKey" : "httpsCertificate";
+      struct stat  st;
+      int          fd     = open(*slot, O_RDONLY);
+
+      if (fd == -1)
+      {
+        fprintf(stderr, "ftClient: cannot open %s '%s': %s\n", label, *slot, strerror(errno));
+        exit(1);
+      }
+      if (fstat(fd, &st) != 0)
+      {
+        close(fd);
+        fprintf(stderr, "ftClient: cannot stat %s '%s': %s\n", label, *slot, strerror(errno));
+        exit(1);
+      }
+      if ((st.st_size <= 0) || (st.st_size > (off_t)(64 * 1024)))
+      {
+        close(fd);
+        fprintf(stderr, "ftClient: %s '%s' has unreasonable size %lld\n", label, *slot, (long long) st.st_size);
+        exit(1);
+      }
+      size_t  sz  = (size_t) st.st_size;
+      char*   buf = (char*) malloc(sz + 1);
+      ssize_t nb  = read(fd, buf, sz);
+      close(fd);
+      if (nb < 0 || (size_t) nb != sz)
+      {
+        free(buf);
+        fprintf(stderr, "ftClient: short read on %s '%s'\n", label, *slot);
+        exit(1);
+      }
+      buf[sz] = 0;
+      *slot = buf;  // overwrite the global path with the file contents
+    }
+  }
 
   mhdInit(ldPort);
 

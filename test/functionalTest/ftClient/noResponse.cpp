@@ -1,6 +1,6 @@
 /*
 *
-* Copyright 2024 FIWARE Foundation e.V.
+* Copyright 2026 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -22,40 +22,30 @@
 *
 * Author: Ken Zangelin
 */
-#include <unistd.h>                                         // NULL
-#include <pthread.h>                                        // pthread_mutex_t
+#include <unistd.h>                                         // sleep
 
 extern "C"
 {
 #include "ktrace/kTrace.h"                                  // trace messages - ktrace library
 #include "kjson/KjNode.h"                                   // KjNode
-#include "kjson/kjFree.h"                                   // kjFree
-#include "kjson/kjBuilder.h"                                // kjArray
 }
 
-#include "common/orionldState.h"                            // orionldState
 #include "common/traceLevels.h"                             // Trace levels for ktrace
+#include "ftClient/noResponse.h"                            // Own interface
 
 
 
-extern KjNode*          ddsDumpArray;
-extern pthread_mutex_t  dumpMutex;
-extern void             dumpLockOrAbort(const char* siteTag);
 // -----------------------------------------------------------------------------
 //
-// deleteDdsDump -
+// noResponse - sleep 10 seconds, then return 200
 //
-KjNode* deleteDdsDump(int* statusCodeP)
+// Purpose: exercise broker-side notification timeout handling.
+// Replaces scripts/accumulator-server.py's /noresponse route.
+//
+KjNode* noResponse(int* statusCodeP)
 {
-  KT_T(StRequest, "Resetting DDS Dump");
-
-  dumpLockOrAbort("deleteDdsDump");
-  if (ddsDumpArray != NULL)
-    kjFree(ddsDumpArray);  // Crash!
-
-  ddsDumpArray = NULL;
-  pthread_mutex_unlock(&dumpMutex);
-
+  KT_T(StRequest, "/noresponse: sleeping 10s before returning 200");
+  sleep(10);
   *statusCodeP = 200;
   return NULL;
 }

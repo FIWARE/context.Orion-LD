@@ -22,6 +22,8 @@
 *
 * Author: Ken Zangelin
 */
+#include <pthread.h>                                        // pthread_mutex_t
+
 extern "C"
 {
 #include "ktrace/kTrace.h"                                  // trace messages - ktrace library
@@ -35,7 +37,9 @@ extern "C"
 
 
 // FIXME: put in header file and include
-extern KjNode*  dumpArray;
+extern KjNode*          dumpArray;
+extern pthread_mutex_t  dumpMutex;
+extern void             dumpLockOrAbort(const char* siteTag);
 
 
 
@@ -47,10 +51,12 @@ KjNode* deleteDump(int* statusCodeP)
 {
   KT_T(StRequest, "Resetting HTTP Dump");
 
+  dumpLockOrAbort("deleteDump");
   if (dumpArray != NULL)
     kjFree(dumpArray);
 
   dumpArray = kjArray(NULL, "dumpArray");
+  pthread_mutex_unlock(&dumpMutex);
 
   *statusCodeP = 204;
   KT_T(StRequest, "Reset HTTP Dump");

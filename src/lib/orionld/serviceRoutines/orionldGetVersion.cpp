@@ -45,6 +45,7 @@ extern "C"
 #include "kprom/version.h"                                     // kpromVersion
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjBuilder.h"                                   // kjObject, kjString, kjBoolean, ...
+#include "kjson/kjSort.h"                                      // kjSort
 }
 
 #include "cache/subCache.h"                                    // subCacheItems
@@ -222,6 +223,10 @@ bool orionldGetVersion(void)
     nodeP = kjInteger(orionldState.kjsonP, "MQTT Connections", mqttConnections);
     kjChildAdd(orionldState.responseTree, nodeP);
   }
+
+  // Alphabetically sort the keys so output is deterministic across changes
+  // to the insertion order in this function.
+  kjSort(orionldState.responseTree);
 
   // This request is ALWAYS returned with pretty-print
   orionldState.uriParams.prettyPrint     = true;

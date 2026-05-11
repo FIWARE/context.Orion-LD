@@ -62,9 +62,6 @@ MHD_Result mhdRequest
   void**           con_cls
 )
 {
-  if (mhdCalls > 50)
-    KT_X(1, "More than 50 MHD calls");
-
   if (*con_cls == NULL)
   {
     ++mhdCalls;

@@ -22,6 +22,8 @@
 *
 * Author: Ken Zangelin
 */
+#include <strings.h>                                        // strcasecmp
+#include <stdlib.h>                                         // atoi
 #include <microhttpd.h>                                     // MHD_Result, MHD_Connection, MHD_get_connection_values, ...
 
 extern "C"
@@ -56,6 +58,11 @@ static MHD_Result headerReceive(void* cbDataP, MHD_ValueKind kind, const char* k
   KjNode* headerP = kjString(NULL, key, value);
   kjChildAdd(httpHeaders, headerP);
 
+  // Capture Content-Length so the payload reader can pick a big-enough
+  // buffer; otherwise large bodies (>4KB) overflow the prealloc buffer.
+  if (strcasecmp(key, "Content-Length") == 0)
+    orionldState.in.contentLength = atoi(value);
+
   return MHD_YES;
 }
 
@@ -81,12 +88,20 @@ MHD_Result uriParamReceive(void* cbDataP, MHD_ValueKind kind, const char* key, c
 //
 // mhdRequestInit -
 //
+extern __thread char* responseText;
+
 MHD_Result mhdRequestInit(MHD_Connection* connection, const char* url, const char* method, const char* version, void** con_cls)
 {
   orionldStateInit(connection);
   orionldState.verbString = (char*) method;
   orionldState.verb       = verbGet(method);
   orionldState.urlPath    = (char*) url;
+
+  // responseText points into the kalloc buffer (or to a string literal) and
+  // becomes stale after mhdRequestEnded resets kalloc. Clear it here so a
+  // route returning NULL+statusCode (e.g. DELETE /dump → 204) doesn't make
+  // mhdRequestTreat return a dangling pointer.
+  responseText = NULL;
 
   httpHeaders = kjObject(NULL, "headers");
   uriParams   = kjObject(NULL, "params");
