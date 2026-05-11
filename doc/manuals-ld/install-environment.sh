@@ -82,22 +82,75 @@ install_build_tools() {
 
 install_libraries() {
     log_step "Installing ${RED}dependency libraries${NC}"
-    sudo aptitude -y install \
-        libssl-dev gnutls-dev libcurl4-gnutls-dev libsasl2-dev \
-        libgcrypt-dev uuid-dev libboost-all-dev libz-dev \
-        libpq-dev >/dev/null 2>>$LOGFILE
+    # gnutls-dev was renamed to libgnutls28-dev on 24.04+ (the metapackage no longer exists)
+    # libboost-all-dev intentionally omitted: Orion-LD requires Boost <= 1.71, but
+    # 26.04 ships 1.90. Build Boost 1.67 from source separately and install to
+    # /usr/local before running this script.
+    #
+    # apt-get rather than aptitude: aptitude's resolver was silently dropping
+    # explicitly-listed packages on re-runs (its pkgstates file remembered an
+    # earlier libboost-dev purge cascade). apt-get with --no-install-recommends
+    # avoids that and won't re-pull libboost-dev via libasio-dev's Recommends.
+    #
+    # librdkafka-dev intentionally NOT installed here: the apt package hard-
+    # Depends on libcurl4-openssl-dev which conflicts with libcurl4-gnutls-dev
+    # (the variant Orion-LD's curl-using code is built against). Build
+    # librdkafka from source instead — see install_librdkafka below (or do it
+    # manually and place headers under /usr/local/include/librdkafka/).
+    sudo apt-get install -y --no-install-recommends \
+        libssl-dev libgnutls28-dev libcurl4-gnutls-dev libsasl2-dev \
+        libgcrypt-dev uuid-dev libz-dev \
+        libpq-dev libgeos-dev libicu-dev >/dev/null 2>>$LOGFILE
     log_done
 }
 
 install_mongo_legacy_driver() {
-    log_step "Installing ${RED}libmongoclient-dev (legacy driver)${NC}"
-    sudo aptitude -y install libmongoclient-dev >/dev/null 2>>$LOGFILE
+    local GROUP=$(get_group)
+    # libmongoclient-dev was removed from Debian/Ubuntu after 18.04. Build the
+    # FIWARE-Ops fork from source — same approach as docker/build-ubi.
+    log_step "Installing ${RED}legacy mongo cxx driver from source${NC}"
+
+    if [ -f /usr/local/lib/libmongoclient.a ]; then
+        echo -n " (already installed, skipping)"
+        log_done
+        return
+    fi
+
+    # The SConstruct is Python 2 only. On 24.04+ we expect a separately built
+    # /opt/python2/bin/scons (see comment block at top of this file). Older
+    # systems can use the apt-packaged scons.
+    local SCONS=scons
+    if [ -x /opt/python2/bin/scons ]; then
+        SCONS=/opt/python2/bin/scons
+    else
+        sudo aptitude -y install scons >/dev/null 2>>$LOGFILE
+    fi
+
+    sudo mkdir -p /opt/mongo-cxx-legacy >/dev/null 2>>$LOGFILE
+    sudo chown $USER:$GROUP /opt/mongo-cxx-legacy >/dev/null 2>>$LOGFILE
+    cd /opt/mongo-cxx-legacy >/dev/null 2>>$LOGFILE
+    if [ -d mongo-cxx-driver ]; then rm -rf mongo-cxx-driver; fi
+    git clone https://github.com/FIWARE-Ops/mongo-cxx-driver >/dev/null 2>>$LOGFILE
+    cd mongo-cxx-driver >/dev/null 2>>$LOGFILE
+    # boost::next was removed from gcc-15's transitive includes; std::next is
+    # the C++11 equivalent.
+    sed -i 's/boost::next(batch_iter)/std::next(batch_iter)/g' \
+        src/mongo/client/command_writer.cpp \
+        src/mongo/client/wire_protocol_writer.cpp 2>>$LOGFILE
+    $SCONS --disable-warnings-as-errors --use-sasl-client --ssl >/dev/null 2>>$LOGFILE
+    sudo $SCONS install --disable-warnings-as-errors --prefix=/usr/local --use-sasl-client --ssl >/dev/null 2>>$LOGFILE
     log_done
 }
 
 install_mongo_c_driver() {
     local GROUP=$(get_group)
     log_step "Installing ${RED}mongo-c-driver ${MONGO_C_DRIVER_VERSION}${NC}"
+
+    if [ -f /usr/local/lib/libmongoc2.so ] || [ -f /usr/local/lib/libmongoc-1.0.so ]; then
+        echo -n " (already installed, skipping)"
+        log_done
+        return
+    fi
 
     sudo mkdir -p /opt/mongoc >/dev/null 2>>$LOGFILE
     sudo chown $USER:$GROUP /opt/mongoc >/dev/null 2>>$LOGFILE
@@ -114,18 +167,60 @@ install_mongo_c_driver() {
     log_done
 }
 
+install_librdkafka() {
+    local GROUP=$(get_group)
+    log_step "Installing ${RED}librdkafka 2.13.0${NC}"
+
+    if [ -f /usr/local/include/librdkafka/rdkafka.h ]; then
+        echo -n " (already installed, skipping)"
+        log_done
+        return
+    fi
+
+    # Build from source instead of `apt install librdkafka-dev`: the apt
+    # package hard-Depends on libcurl4-openssl-dev, which conflicts with
+    # libcurl4-gnutls-dev (Orion-LD's curl flavor).
+    sudo mkdir -p /opt/librdkafka >/dev/null 2>>$LOGFILE
+    sudo chown $USER:$GROUP /opt/librdkafka >/dev/null 2>>$LOGFILE
+    cd /opt/librdkafka >/dev/null 2>>$LOGFILE
+    if [ ! -d librdkafka ]; then
+        git clone https://github.com/confluentinc/librdkafka.git >/dev/null 2>>$LOGFILE
+    fi
+    cd librdkafka >/dev/null 2>>$LOGFILE
+    git checkout v2.13.0 >/dev/null 2>>$LOGFILE
+    ./configure --prefix=/usr/local >/dev/null 2>>$LOGFILE
+    make >/dev/null 2>>$LOGFILE
+    sudo make install >/dev/null 2>>$LOGFILE
+    sudo ldconfig >/dev/null 2>>$LOGFILE
+    log_done
+}
+
 install_libmicrohttpd() {
     local GROUP=$(get_group)
     log_step "Installing ${RED}libmicrohttpd ${LIBMICROHTTPD_VERSION}${NC}"
+
+    # Use the experimental websocket header as the install marker — the lib
+    # ships with 0.9.x without --enable-experimental but Orion-LD needs
+    # microhttpd_ws.h, so the .so alone isn't a valid done-state.
+    if [ -f /usr/local/include/microhttpd_ws.h ]; then
+        echo -n " (already installed, skipping)"
+        log_done
+        return
+    fi
 
     sudo mkdir -p /opt/libmicrohttpd >/dev/null 2>>$LOGFILE
     sudo chown $USER:$GROUP /opt/libmicrohttpd >/dev/null 2>>$LOGFILE
     cd /opt/libmicrohttpd >/dev/null 2>>$LOGFILE
 
-    wget https://ftp.gnu.org/gnu/libmicrohttpd/libmicrohttpd-${LIBMICROHTTPD_VERSION}.tar.gz >/dev/null 2>>$LOGFILE
-    tar xvf libmicrohttpd-${LIBMICROHTTPD_VERSION}.tar.gz >/dev/null 2>>$LOGFILE
+    if [ ! -d libmicrohttpd-${LIBMICROHTTPD_VERSION} ]; then
+        wget https://ftp.gnu.org/gnu/libmicrohttpd/libmicrohttpd-${LIBMICROHTTPD_VERSION}.tar.gz >/dev/null 2>>$LOGFILE
+        tar xvf libmicrohttpd-${LIBMICROHTTPD_VERSION}.tar.gz >/dev/null 2>>$LOGFILE
+    fi
     cd libmicrohttpd-${LIBMICROHTTPD_VERSION} >/dev/null 2>>$LOGFILE
-    ./configure --disable-messages --disable-postprocessor --disable-dauth >/dev/null 2>>$LOGFILE
+    # --enable-experimental: enables microhttpd_ws.h (websocket support) used by
+    # Orion-LD's src/lib/orionld/ws/. --enable-https for TLS endpoints.
+    ./configure --disable-messages --disable-postprocessor --disable-dauth \
+        --enable-https --enable-experimental >/dev/null 2>>$LOGFILE
     make >/dev/null 2>>$LOGFILE
     sudo make install >/dev/null 2>>$LOGFILE
     log_done
@@ -134,6 +229,12 @@ install_libmicrohttpd() {
 install_rapidjson() {
     local GROUP=$(get_group)
     log_step "Installing ${RED}rapidjson ${RAPIDJSON_VERSION}${NC}"
+
+    if [ -f /usr/local/include/rapidjson/document.h ]; then
+        echo -n " (already installed, skipping)"
+        log_done
+        return
+    fi
 
     sudo mkdir -p /opt/rapidjson >/dev/null 2>>$LOGFILE
     sudo chown $USER:$GROUP /opt/rapidjson >/dev/null 2>>$LOGFILE
@@ -150,30 +251,54 @@ install_k_libs() {
 
     mkdir -p ~/git >/dev/null 2>>$LOGFILE
 
-    # Clone all k-libs
-    for kproj in kbase ktrace klog kargs kalloc khash kjson; do
+    # All 8 k-libs Orion-LD's CMakeLists references. kprom is on a different
+    # release line (0.1.0) — see special-case below.
+    local KLIBS="kbase ktrace klog kargs kalloc khash kjson kprom"
+
+    # Clone all k-libs (skip if already cloned)
+    for kproj in $KLIBS; do
         log_step "Cloning ${RED}${kproj}${NC}"
         cd ~/git >/dev/null 2>>$LOGFILE
-        if [ -d "$kproj" ]; then
-            rm -rf $kproj
+        if [ -d "$kproj/.git" ]; then
+            echo -n " (already cloned)"
+        else
+            # Use sudo for rm: a previous `sudo make install` may have left
+            # root-owned files in $kproj/bin/ that the user can't remove.
+            sudo rm -rf $kproj >/dev/null 2>>$LOGFILE
+            git clone https://gitlab.com/kzangeli/${kproj}.git >/dev/null 2>>$LOGFILE
         fi
-        git clone https://gitlab.com/kzangeli/${kproj}.git >/dev/null 2>>$LOGFILE
         log_done
     done
 
-    # Build and install in correct order
-    for kproj in kbase ktrace klog kargs kalloc khash kjson; do
+    # Build and install in correct order. The Makefiles' `install` target only
+    # copies the test binary to $kproj/bin/ (no /usr/local writes), so no sudo
+    # is needed — using sudo was the cause of the root-owned-bin/ mess.
+    for kproj in $KLIBS; do
         log_step "Building and installing ${RED}${kproj}${NC}"
         cd ~/git/${kproj} >/dev/null 2>>$LOGFILE
-        git checkout ${K_LIBS_VERSION} >/dev/null 2>>$LOGFILE
-        make >/dev/null 2>>$LOGFILE
-        sudo make install >/dev/null 2>>$LOGFILE
+        local branch=${K_LIBS_VERSION}
+        if [ "$kproj" = "kprom" ]; then
+            branch=release/0.1.0
+        fi
+        git checkout $branch >/dev/null 2>>$LOGFILE
+        if [ -f lib${kproj}.a ]; then
+            echo -n " (already built)"
+        else
+            make >/dev/null 2>>$LOGFILE
+            make install >/dev/null 2>>$LOGFILE
+        fi
         log_done
     done
 }
 
 install_paho_mqtt() {
     log_step "Installing ${RED}Eclipse Paho MQTT ${PAHO_VERSION}${NC}"
+
+    if [ -f /usr/local/lib/libpaho-mqtt3cs.so.1 ]; then
+        echo -n " (already installed, skipping)"
+        log_done
+        return
+    fi
 
     sudo rm -f /usr/local/lib/libpaho* >/dev/null 2>>$LOGFILE
     cd ~/git >/dev/null 2>>$LOGFILE
@@ -184,15 +309,31 @@ install_paho_mqtt() {
     cd paho.mqtt.c >/dev/null 2>>$LOGFILE
     git fetch -a >/dev/null 2>>$LOGFILE
     git checkout tags/${PAHO_VERSION} >/dev/null 2>>$LOGFILE
-    make >/dev/null 2>>$LOGFILE
-    sudo make install >/dev/null 2>>$LOGFILE
+    # gcc-15 defaults to C23, which made `bool` a keyword. Paho 1.3.x has
+    # `typedef unsigned int bool;` in MQTTPacket.h. Force gnu11.
+    make CFLAGS=-std=gnu11 >/dev/null 2>>$LOGFILE
+    # `make install` depends on the test binaries (test1.c, etc.), which have
+    # genuine pre-C23 issues that gcc-15 rejects. Copy the built libs/headers
+    # manually instead.
+    sudo bash -c '
+        cp -d build/output/libpaho-mqtt3a.so*  /usr/local/lib/
+        cp -d build/output/libpaho-mqtt3as.so* /usr/local/lib/
+        cp -d build/output/libpaho-mqtt3c.so*  /usr/local/lib/
+        cp -d build/output/libpaho-mqtt3cs.so* /usr/local/lib/
+        cp src/MQTTAsync.h src/MQTTClient.h src/MQTTClientPersistence.h \
+           src/MQTTProperties.h src/MQTTReasonCodes.h src/MQTTSubscribeOpts.h \
+           /usr/local/include/
+        ldconfig
+    ' >/dev/null 2>>$LOGFILE
     log_done
 }
 
 install_paho_python() {
     log_step "Installing ${RED}paho-mqtt Python library${NC}"
-    sudo aptitude -y install python3-pip >/dev/null 2>>$LOGFILE
-    pip3 install paho-mqtt >/dev/null 2>>$LOGFILE
+    # On 24.04+ the system Python is PEP 668 "externally managed" — pip refuses
+    # to install into it. Use the apt package instead (24.04 ships 1.6.x,
+    # 26.04 ships 2.1.x; either is fine for the functional tests).
+    sudo aptitude -y install python3-paho-mqtt python3-pip >/dev/null 2>>$LOGFILE
     log_done
 }
 
@@ -207,17 +348,24 @@ install_mosquitto() {
 install_prometheus_client() {
     log_step "Installing ${RED}Prometheus C client ${PROMETHEUS_VERSION}${NC}"
 
+    if [ -f /usr/local/lib/libpromhttp.so ] && [ -f /usr/local/lib/libprom.so ]; then
+        echo -n " (already installed, skipping)"
+        log_done
+        return
+    fi
+
     cd ~/git >/dev/null 2>>$LOGFILE
     if [ -d "prometheus-client-c" ]; then
-        rm -rf prometheus-client-c
+        sudo rm -rf prometheus-client-c >/dev/null 2>>$LOGFILE
     fi
     git clone https://github.com/digitalocean/prometheus-client-c.git >/dev/null 2>>$LOGFILE
     cd prometheus-client-c >/dev/null 2>>$LOGFILE
     git checkout ${PROMETHEUS_VERSION} >/dev/null 2>>$LOGFILE
 
-    # Fix for MHD_AccessHandlerCallback
-    sed 's/\&promhttp_handler,/(MHD_AccessHandlerCallback) \&promhttp_handler,/' promhttp/src/promhttp.c > XXX
-    mv XXX promhttp/src/promhttp.c
+    # Fix for MHD_AccessHandlerCallback (newer libmicrohttpd headers)
+    sed -i 's/\&promhttp_handler,/(MHD_AccessHandlerCallback) \&promhttp_handler,/' promhttp/src/promhttp.c
+    # CMake 4.x removed the legacy `-v` flag — autolib/build.sh still passes it.
+    sed -i 's/build_test cmake -v/build_test cmake/' autolib/build.sh
 
     ./auto build >/dev/null 2>>$LOGFILE
 
@@ -231,10 +379,24 @@ install_fastdds() {
     local GROUP=$(get_group)
     log_section "Installing Fast-DDS (optional)"
 
+    # Idempotence: the function builds ~10 cmake projects in /opt/Fast-DDS,
+    # any of which fails on a re-run because git-clone refuses to clone over
+    # an existing tree. If the final artifact (libddsenabler.so) is already
+    # in /usr/local, skip the whole section.
+    if [ -f /usr/local/lib/libddsenabler.so ]; then
+        log_step "Fast-DDS chain"
+        echo -n " (already installed, skipping)"
+        log_done
+        return
+    fi
+
     # Dependencies
     log_step "Installing ${RED}DDS dependencies${NC}"
+    # nlohmann-json3-dev provides <nlohmann/json.hpp> which FIWARE-DDS-Enabler's
+    # public headers include — without it Orion-LD's dds module fails to
+    # compile. libjsoncpp-dev is a different library kept for compatibility.
     sudo aptitude -y install libtinyxml2-dev libyaml-cpp-dev libasio-dev \
-        liblz4-dev libzstd-dev libjsoncpp-dev >/dev/null 2>>$LOGFILE
+        liblz4-dev libzstd-dev libjsoncpp-dev nlohmann-json3-dev >/dev/null 2>>$LOGFILE
     log_done
 
     sudo mkdir -p /opt/Fast-DDS >/dev/null 2>>$LOGFILE
@@ -341,8 +503,12 @@ install_fastdds() {
 clone_orionld() {
     log_step "Cloning ${RED}Orion-LD${NC}"
     cd ~/git >/dev/null 2>>$LOGFILE
-    if [ -d "context.Orion-LD" ]; then
-        rm -rf context.Orion-LD
+    # Skip if a clone (or symlink to one) is already present — never delete
+    # an existing working tree.
+    if [ -e "context.Orion-LD/.git" ]; then
+        echo -n " (already present, skipping)"
+        log_done
+        return
     fi
     git clone https://github.com/FIWARE/context.Orion-LD.git >/dev/null 2>>$LOGFILE
     log_done
@@ -354,12 +520,15 @@ compile_orionld() {
 
     cd ~/git/context.Orion-LD >/dev/null 2>>$LOGFILE
 
-    sudo touch /usr/bin/orionld >/dev/null 2>>$LOGFILE
-    sudo chown $USER:$GROUP /usr/bin/orionld >/dev/null 2>>$LOGFILE
-    sudo touch /etc/init.d/orionld >/dev/null 2>>$LOGFILE
-    sudo chown $USER:$GROUP /etc/init.d/orionld >/dev/null 2>>$LOGFILE
-    sudo touch /etc/default/orionld >/dev/null 2>>$LOGFILE
-    sudo chown $USER:$GROUP /etc/default/orionld >/dev/null 2>>$LOGFILE
+    # `make install` writes to /usr/bin and /etc unprivileged. Pre-create and
+    # chown every install target so the dev workflow (re-run make install)
+    # never needs sudo. Six targets: orionld + ftClient, each with a binary,
+    # init script, and defaults file.
+    for f in /usr/bin/orionld /etc/init.d/orionld /etc/default/orionld \
+             /usr/bin/ftClient /etc/init.d/ftClient /etc/default/ftClient; do
+        sudo touch "$f" >/dev/null 2>>$LOGFILE
+        sudo chown $USER:$GROUP "$f" >/dev/null 2>>$LOGFILE
+    done
 
     make install >/dev/null 2>>$LOGFILE
     log_done
@@ -368,23 +537,45 @@ compile_orionld() {
 install_mongodb() {
     log_section "Installing MongoDB Server"
 
+    # If a `mongo44` Docker container is already running on 127.0.0.1:27017,
+    # skip the system-wide install. On 26.04 the apt path is broken anyway:
+    # mongo 4.4 (the version Orion-LD's tests target) needs libssl1.1 which
+    # resolute doesn't ship. Recommend `docker run -d --name mongo44 --restart
+    # unless-stopped -p 127.0.0.1:27017:27017 -v mongo44-data:/data/db mongo:4.4`.
+    # Need sudo for `docker ps` until the user is in the `docker` group AND
+    # has re-logged in (group membership won't propagate to this shell).
+    if command -v docker >/dev/null && sudo docker ps --format '{{.Names}}' 2>/dev/null | grep -qx mongo44; then
+        log_step "MongoDB"
+        echo -n " (mongo44 docker container running, skipping system install)"
+        log_done
+        return
+    fi
+
     log_step "Installing gnupg and importing MongoDB GPG key"
-    sudo aptitude -y install gnupg >/dev/null 2>>$LOGFILE
-    echo -n "  "
-    wget -qO - https://www.mongodb.org/static/pgp/server-4.4.asc | sudo apt-key add -
+    sudo apt-get install -y gnupg >/dev/null 2>>$LOGFILE
+    # apt-key was removed in 24.04+. Use signed-by= keyring instead.
+    sudo mkdir -p /etc/apt/keyrings >/dev/null 2>>$LOGFILE
+    wget -qO- https://www.mongodb.org/static/pgp/server-4.4.asc | \
+        sudo gpg --dearmor --yes -o /etc/apt/keyrings/mongodb-server-4.4.gpg \
+        2>>$LOGFILE
+    log_done
 
     log_step "Creating MongoDB repository list"
-    # Detect Ubuntu version
-    UBUNTU_CODENAME=$(lsb_release -cs)
-    echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu ${UBUNTU_CODENAME}/mongodb-org/4.4 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.4.list >/dev/null 2>>$LOGFILE
+    # MongoDB 4.4 (the version Orion-LD's functional tests target) only ships
+    # `mongodb-org-server` packages for `focal` (20.04) and `bionic` (18.04).
+    # Newer codenames' 4.4 repos exist but only contain mongosh (the shell);
+    # the server binaries were stripped. Pin to focal regardless of host —
+    # libc6 is backwards-compatible enough that focal binaries run on resolute.
+    UBUNTU_CODENAME=focal
+    echo "deb [ arch=amd64,arm64 signed-by=/etc/apt/keyrings/mongodb-server-4.4.gpg ] https://repo.mongodb.org/apt/ubuntu ${UBUNTU_CODENAME}/mongodb-org/4.4 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.4.list >/dev/null 2>>$LOGFILE
     log_done
 
     log_step "Updating package database"
-    sudo aptitude -y update >/dev/null 2>>$LOGFILE
+    sudo apt-get update >/dev/null 2>>$LOGFILE
     log_done
 
     log_step "Installing MongoDB packages"
-    sudo aptitude -y install mongodb-org >/dev/null 2>>$LOGFILE
+    sudo apt-get install -y mongodb-org >/dev/null 2>>$LOGFILE
     log_done
 
     log_step "Starting MongoDB daemon"
@@ -409,13 +600,29 @@ install_unit_test_deps() {
     log_done
 
     log_step "Installing ${RED}gmock ${GMOCK_VERSION}${NC}"
+    if [ -f /usr/local/lib/libgmock.so ]; then
+        echo -n " (already installed, skipping)"
+        log_done
+        return
+    fi
+
     sudo mkdir -p /opt/gmock >/dev/null 2>>$LOGFILE
     sudo chown $USER:$GROUP /opt/gmock >/dev/null 2>>$LOGFILE
     cd /opt/gmock >/dev/null 2>>$LOGFILE
 
-    wget https://src.fedoraproject.org/repo/pkgs/gmock/gmock-${GMOCK_VERSION}.tar.bz2/d738cfee341ad10ce0d7a0cc4209dd5e/gmock-${GMOCK_VERSION}.tar.bz2 >/dev/null 2>>$LOGFILE
-    tar xfvj gmock-${GMOCK_VERSION}.tar.bz2 >/dev/null 2>>$LOGFILE
+    if [ ! -d gmock-${GMOCK_VERSION} ]; then
+        wget https://src.fedoraproject.org/repo/pkgs/gmock/gmock-${GMOCK_VERSION}.tar.bz2/d738cfee341ad10ce0d7a0cc4209dd5e/gmock-${GMOCK_VERSION}.tar.bz2 >/dev/null 2>>$LOGFILE
+        tar xfvj gmock-${GMOCK_VERSION}.tar.bz2 >/dev/null 2>>$LOGFILE
+    fi
     cd gmock-${GMOCK_VERSION} >/dev/null 2>>$LOGFILE
+    # gmock 1.5.0's fuse_gtest_files.py is Python 2 (uses `print` statement).
+    # Point the shebang at /opt/python2/bin/python2 (built earlier in the
+    # mongo-cxx-legacy step). On systems without /opt/python2, this step would
+    # fall through to /usr/bin/env python which fails on resolute.
+    if [ -x /opt/python2/bin/python2 ]; then
+        sed -i '1c#!/opt/python2/bin/python2' \
+            gtest/scripts/fuse_gtest_files.py 2>>$LOGFILE
+    fi
     ./configure >/dev/null 2>>$LOGFILE
     make >/dev/null 2>>$LOGFILE
     sudo make install >/dev/null 2>>$LOGFILE
@@ -470,6 +677,10 @@ Ubuntu24.04() {
     Ubuntu_common
 }
 
+Ubuntu26.04() {
+    Ubuntu_common
+}
+
 Ubuntu_common() {
     log_section "Installing Orion-LD from source code"
     echo "Log file: $LOGFILE"
@@ -487,6 +698,7 @@ Ubuntu_common() {
     # Build dependencies from source
     log_section "Building dependencies from source"
     install_mongo_c_driver
+    install_librdkafka
     install_libmicrohttpd
     install_rapidjson
 
@@ -557,6 +769,7 @@ usage() {
     echo "  - Ubuntu 20.04"
     echo "  - Ubuntu 22.04"
     echo "  - Ubuntu 24.04"
+    echo "  - Ubuntu 26.04"
     echo ""
 }
 
