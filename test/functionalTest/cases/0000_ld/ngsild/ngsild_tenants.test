@@ -26,6 +26,7 @@ Tenant test
 --SHELL-INIT--
 dbInit CB
 dbInit CB tn1
+dbInit CB tn13
 dbResetAll
 orionldStart CB -multiservice
 
@@ -366,3 +367,4 @@ brokerStop CB
 accumulatorStop
 dbDrop CB
 dbDrop CB tn1
+dbDrop CB tn13

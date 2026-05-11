@@ -110,7 +110,7 @@ NGSILD-Tenant: openiot
 
 03. See the notification in the accumulator
 ===========================================
-POST http://REGEX(.*)/notify
+POST http://REGEX(.*)
 Fiware-Servicepath: /
 Content-Length: 291
 User-Agent: REGEX(.*)

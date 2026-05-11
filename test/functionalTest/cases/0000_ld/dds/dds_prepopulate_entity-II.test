@@ -57,7 +57,7 @@ valgrindSleep 5
 #
 
 # Sleep to allow DDS topic notifications to be processed and add ddsTypeName
-sleep .1
+sleep 2
 valgrindSleep 5
 
 echo "01. GET all entities from the broker"

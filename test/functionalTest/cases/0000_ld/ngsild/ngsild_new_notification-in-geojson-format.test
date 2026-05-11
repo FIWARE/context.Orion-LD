@@ -139,7 +139,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:E01
 
 03. Dump accumulator to see one notification - in GeoJSON format
 ================================================================
-POST http://REGEX(.*)/notify
+POST http://REGEX(.*)
 Content-Length: 570
 User-Agent: orionld/REGEX(.*)
 REGEX(.*)
@@ -204,7 +204,7 @@ Date: REGEX(.*)
 
 05. Dump accumulator to see another GeoJSON format notification
 ===============================================================
-POST http://REGEX(.*)/notify
+POST http://REGEX(.*)
 Content-Length: 605
 User-Agent: orionld/REGEX(.*)
 REGEX(.*)

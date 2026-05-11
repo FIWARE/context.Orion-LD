@@ -245,7 +245,7 @@ Link: REGEX(.*)
 
 06. Dump the accumulator - see one notification - then reset the accumulator
 ============================================================================
-POST http://REGEX(.*)/notify
+POST http://REGEX(.*)
 Fiware-Servicepath: /
 Content-Length: 321
 User-Agent: REGEX(.*)

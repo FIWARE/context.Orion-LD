@@ -99,7 +99,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:test:E1
 
 03. Dump accumulator to see one notification, make sure that unitCode is OK
 ===========================================================================
-POST http://REGEX(.*)/notify
+POST http://REGEX(.*)
 Fiware-Servicepath: /
 Content-Length: 305
 User-Agent: orion/REGEX(.*)

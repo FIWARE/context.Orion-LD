@@ -202,7 +202,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 04. Dump accumulator to see one notification, make sure the observedAt timestamp is OK and that the Content-Type is application/ld+json
 =======================================================================================================================================
-POST http://REGEX(.*)/notify
+POST http://REGEX(.*)
 Fiware-Servicepath: /
 Content-Length: 560
 User-Agent: orion/REGEX(.*)
@@ -260,7 +260,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:Vehicle:B4568
 
 07. Dump accumulator to see one notification, make sure the observedAt timestamp is OK and that the Content-Type is application/json and Link header present
 ============================================================================================================================================================
-POST http://REGEX(.*)/notify
+POST http://REGEX(.*)
 Fiware-Servicepath: /
 Content-Length: 488
 User-Agent: orion/REGEX(.*)

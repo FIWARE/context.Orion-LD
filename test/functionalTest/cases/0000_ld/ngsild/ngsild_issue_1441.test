@@ -45,7 +45,7 @@ echo "01. Ask broker for 'ngsi-ld version' - to see the open FDs"
 echo "=========================================================="
 orionCurl --url /ngsi-ld/ex/v1/version
 typeset -i fd1
-fd1=$(grep "Next File Descriptor" /tmp/orionCurl.response | awk -F: '{ print $2 }')
+fd1=$(grep "Next File Descriptor" /tmp/orionCurl.response | awk -F: '{ print $2 }' | tr -d ' ,')
 echo
 echo
 
@@ -115,7 +115,7 @@ echo "05. Ask broker for 'ngsi-ld version' - to see the open FDs"
 echo "=========================================================="
 orionCurl --url /ngsi-ld/ex/v1/version
 typeset -i fd2
-fd2=$(grep "Next File Descriptor" /tmp/orionCurl.response | awk -F: '{ print $2 }')
+fd2=$(grep "Next File Descriptor" /tmp/orionCurl.response | awk -F: '{ print $2 }' | tr -d ' ,')
 echo
 echo
 

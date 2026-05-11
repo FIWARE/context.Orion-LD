@@ -142,7 +142,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:E01
 
 03. Dump accumulator to see one notification, then reset the accumulator
 ========================================================================
-POST http://REGEX(.*)/notify
+POST http://REGEX(.*)
 Fiware-Servicepath: /
 Content-Length: 361
 User-Agent: orion/REGEX(.*)
@@ -183,7 +183,7 @@ Date: REGEX(.*)
 
 05. Dump accumulator to see one notification
 ============================================
-POST http://REGEX(.*)/notify
+POST http://REGEX(.*)
 Fiware-Servicepath: /
 Content-Length: 368
 User-Agent: orion/REGEX(.*)

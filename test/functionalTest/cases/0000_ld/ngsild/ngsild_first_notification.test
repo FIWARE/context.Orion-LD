@@ -149,7 +149,7 @@ Date: REGEX(.*)
 
 05. Dump accumulator to see one notification
 ============================================
-POST http://REGEX(.*)/notify
+POST http://REGEX(.*)
 Fiware-Servicepath: /
 Content-Length: 413
 User-Agent: orion/REGEX(.*)

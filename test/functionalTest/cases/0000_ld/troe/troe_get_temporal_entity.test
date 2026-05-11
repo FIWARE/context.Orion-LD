@@ -187,9 +187,26 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1
 
 02. Update P1 to 20 and add P2=hello
 =====================================
-HTTP/1.1 204 No Content
+HTTP/1.1 207 Multi-Status
+Content-Length: REGEX(.*)
+Content-Type: application/json
 Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
+{
+    "notUpdated": [
+        {
+            "attributes": [
+                "P2"
+            ],
+            "statusCode": 404,
+            "title": "Attribute Not Found"
+        }
+    ],
+    "updated": [
+        "P1"
+    ]
+}
 
 
 03. Update P1 to 30 and B1 to false
@@ -207,7 +224,6 @@ Replace,https://uri.etsi.org/ngsi-ld/default-context/B1,Boolean,urn:ngsi-ld:enti
 Create,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:ngsi-ld:entities:E1,,10,,2024-01-01 10:00:00
 Replace,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:ngsi-ld:entities:E1,,20,,2024-01-01 11:00:00
 Replace,https://uri.etsi.org/ngsi-ld/default-context/P1,Number,urn:ngsi-ld:entities:E1,,30,,2024-01-01 12:00:00
-Append,https://uri.etsi.org/ngsi-ld/default-context/P2,String,urn:ngsi-ld:entities:E1,hello,,,2024-01-01 11:00:00
 Create,https://uri.etsi.org/ngsi-ld/default-context/R1,Relationship,urn:ngsi-ld:entities:E1,urn:ngsi-ld:entities:E2,,,2024-01-01 10:00:00
 
 
@@ -255,14 +271,6 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             "type": "Property",
             "unitCode": "CEL",
             "value": 10
-        }
-    ],
-    "P2": [
-        {
-            "instanceId": "REGEX(.*)",
-            "observedAt": "2024-01-01T11:00:00Z",
-            "type": "Property",
-            "value": "hello"
         }
     ],
     "R1": [
@@ -324,14 +332,6 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             "value": 30
         }
     ],
-    "P2": [
-        {
-            "instanceId": "REGEX(.*)",
-            "observedAt": "2024-01-01T11:00:00Z",
-            "type": "Property",
-            "value": "hello"
-        }
-    ],
     "R1": [
         {
             "instanceId": "REGEX(.*)",
@@ -362,9 +362,6 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         30,
         20,
         10
-    ],
-    "P2": [
-        "hello"
     ],
     "R1": [
         "urn:ngsi-ld:entities:E2"
@@ -450,14 +447,6 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             "value": 20
         }
     ],
-    "P2": [
-        {
-            "instanceId": "REGEX(.*)",
-            "observedAt": "2024-01-01T11:00:00Z",
-            "type": "Property",
-            "value": "hello"
-        }
-    ],
     "R1": [
         {
             "instanceId": "REGEX(.*)",
@@ -478,7 +467,7 @@ Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
-NGSILD-Results-Count: 7
+NGSILD-Results-Count: 6
 
 {
     "B1": [
@@ -516,14 +505,6 @@ NGSILD-Results-Count: 7
             "type": "Property",
             "unitCode": "CEL",
             "value": 10
-        }
-    ],
-    "P2": [
-        {
-            "instanceId": "REGEX(.*)",
-            "observedAt": "2024-01-01T11:00:00Z",
-            "type": "Property",
-            "value": "hello"
         }
     ],
     "R1": [

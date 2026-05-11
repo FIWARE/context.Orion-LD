@@ -66,31 +66,31 @@ Content-Type: application/json
 Date: REGEX(.*)
 
 {
+  "Core Context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
+  "Next File Descriptor": REGEX(.*),
   "Orion-LD version": REGEX(.*),
   "based on orion": "1.15.0-next",
-  "kbase version": "0.10.0",
-  "ktrace version": "0.10.0",
-  "kalloc version": "0.10.1",
-  "khash version": "0.10.0",
-  "kjson version": "0.10.2",
+  "boost version": REGEX(.*),
+  "branch": REGEX(.*),
+  "bson version": "2.2.2",
+  "cached subscriptions": 0,
+  "geos version": "REGEX(.*)",
+  "kalloc version": "REGEX(.*)",
+  "kbase version": "REGEX(.*)",
+  "khash version": "REGEX(.*)",
+  "kjson version": "REGEX(.*)",
   "kprom version": "0.1.0",
-  "microhttpd version": "1.0.2-0",
-  "rapidjson version": REGEX(.*),
+  "ktrace version": "REGEX(.*)",
   "libcurl version": REGEX(.*),
   "libuuid version": REGEX(.*),
-  "mongocpp version": "REGEX((1.1.2|1.1.3))",
+  "microhttpd version": "1.0.2-0",
   "mongoc version": "2.2.2",
-  "bson version": "2.2.2",
-  "geos version": "REGEX(.*)",
+  "mongocpp version": "REGEX((1.1.2|1.1.3))",
   "mongodb server version": "REGEX(.*)",
-  "boost version": REGEX(.*),
   "openssl version": REGEX(.*),
   "postgres libpq version": "REGEX(.*)",
-  "postgres server version": "17.REGEX(.*)",
-  "branch": REGEX(.*),
-  "cached subscriptions": 0,
-  "Core Context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
-  "Next File Descriptor": REGEX(.*)
+  "postgres server version": "REGEX(.*)",
+  "rapidjson version": REGEX(.*)
 }
 
 

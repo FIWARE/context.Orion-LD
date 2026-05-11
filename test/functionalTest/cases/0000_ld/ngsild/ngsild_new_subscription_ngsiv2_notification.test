@@ -394,7 +394,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1
 
 03. Dump accumulator to see the notification
 ============================================
-POST http://REGEX(.*)/notify
+POST http://REGEX(.*)
 Content-Length: 236
 User-Agent: orionld/REGEX(.*)
 Ngsiv2-Attrsformat: normalized
@@ -446,7 +446,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E2
 
 07. Dump accumulator to see the notification (and reset the accumulator afterwards)
 ===================================================================================
-POST http://REGEX(.*)/notify
+POST http://REGEX(.*)
 Content-Length: 237
 User-Agent: orionld/REGEX(.*)
 Ngsiv2-Attrsformat: normalized
@@ -498,7 +498,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E3
 
 11. Dump accumulator to see the notification with P3 only (and reset the accumulator afterwards)
 ================================================================================================
-POST http://REGEX(.*)/notify
+POST http://REGEX(.*)
 Content-Length: 238
 User-Agent: orionld/REGEX(.*)
 Ngsiv2-Attrsformat: normalized
@@ -550,7 +550,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E4
 
 15. Dump accumulator to see location in the notification (and reset the accumulator afterwards)
 ===============================================================================================
-POST http://REGEX(.*)/notify
+POST http://REGEX(.*)
 Content-Length: 238
 User-Agent: orionld/REGEX(.*)
 Ngsiv2-Attrsformat: normalized
@@ -628,7 +628,7 @@ Date: REGEX(.*)
 
 18. Dump accumulator to see observationSpace in the notification (and reset the accumulator afterwards)
 =======================================================================================================
-POST http://REGEX(.*)/notify
+POST http://REGEX(.*)
 Content-Length: 388
 User-Agent: orionld/REGEX(.*)
 Ngsiv2-Attrsformat: normalized
@@ -686,7 +686,7 @@ Date: REGEX(.*)
 
 20. Dump accumulator to see operationSpace in the notification (and reset the accumulator afterwards)
 =====================================================================================================
-POST http://REGEX(.*)/notify
+POST http://REGEX(.*)
 Content-Length: 536
 User-Agent: orionld/REGEX(.*)
 Ngsiv2-Attrsformat: normalized
