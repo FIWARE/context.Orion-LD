@@ -161,7 +161,7 @@ void orionldStateInit(MHD_Connection* connection)
   //
   // Creating kjson environment for KJson parse and render
   //
-  kaBufferInit(&orionldState.kalloc, orionldState.kallocBuffer, sizeof(orionldState.kallocBuffer), 64 * 1024, NULL, "Thread KAlloc buffer");
+  kaBufferInit(&orionldState.kalloc, orionldState.kallocBuffer, sizeof(orionldState.kallocBuffer), 4 * 1024 * 1024, NULL, "Thread KAlloc buffer");
 
   kTimeGet(&orionldState.timestamp);
   orionldState.mhdConnection           = connection;

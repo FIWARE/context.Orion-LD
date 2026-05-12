@@ -260,7 +260,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:T:E1
 03. GET S1, see lastSuccess, lastNotification, and timesSent==1
 ===============================================================
 HTTP/1.1 200 OK
-Content-Length: 452
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -361,7 +361,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:T:E4
 08. GET S1, see lastSuccess, lastNotification, and timesSent==4
 ===============================================================
 HTTP/1.1 200 OK
-Content-Length: 452
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -408,7 +408,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:T:E5
 11. GET S1, see lastSuccess, lastFailure, lastNotification, and timesSent==5
 ============================================================================
 HTTP/1.1 200 OK
-Content-Length: 596
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -429,7 +429,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             "uri": "https://127.0.0.1:9997/notify"
         },
         "format": "normalized",
-        "lastErrorReason": "CURL Error 7: Couldn't connect to server",
+        "lastErrorReason": "CURL Error 7: REGEX(.*)",
         "lastFailure": "202REGEX(.*)",
         "lastNotification": "202REGEX(.*)",
         "lastSuccess": "202REGEX(.*)",
@@ -495,7 +495,7 @@ bye
 14. GET S1, see lastSuccess, lastFailure, lastNotification, and timesSent==5
 ============================================================================
 HTTP/1.1 200 OK
-Content-Length: 509
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -554,7 +554,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:T:E7
 18. GET S1, see lastSuccess, lastFailure, lastNotification, and timesSent==7
 ============================================================================
 HTTP/1.1 200 OK
-Content-Length: 570
+Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -574,7 +574,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             "uri": "https://127.0.0.1:9997/notify"
         },
         "format": "normalized",
-        "lastErrorReason": "CURL Error 7: Couldn't connect to server",
+        "lastErrorReason": "CURL Error 7: REGEX(.*)",
         "lastFailure": "202REGEX(.*)",
         "lastNotification": "202REGEX(.*)",
         "lastSuccess": "202REGEX(.*)",

@@ -25,6 +25,7 @@ Deletion of a NEW registration
 
 --SHELL-INIT--
 dbInit CB
+dbInit CB t1
 orionldStart CB -experimental -multiservice
 
 --SHELL--
@@ -392,3 +393,4 @@ Date: REGEX(.*)
 --TEARDOWN--
 brokerStop CB
 dbDrop CB
+dbDrop CB t1

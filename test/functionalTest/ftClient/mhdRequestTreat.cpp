@@ -22,6 +22,8 @@
 *
 * Author: Ken Zangelin
 */
+#include <pthread.h>                                        // pthread_mutex_t
+
 extern "C"
 {
 #include "ktrace/kTrace.h"                                  // trace messages - ktrace library
@@ -48,6 +50,7 @@ extern "C"
 #include "ftClient/getDump.h"                               // getDump
 #include "ftClient/deleteDump.h"                            // deleteDump
 #include "ftClient/die.h"                                   // die
+#include "ftClient/noResponse.h"                            // noResponse
 #include "ftClient/deleteDdsDump.h"                         // deleteDdsDump
 #include "ftClient/getDdsDump.h"                            // getDdsDump
 #include "ftClient/postDdsPub.h"                            // postDdsPub
@@ -66,6 +69,32 @@ extern __thread KjNode* httpHeaders;  // Perhaps a callback to reach headerRecei
 
 KjNode*                 dumpArray    = NULL;
 KjNode*                 ddsDumpArray = NULL;
+pthread_mutex_t         dumpMutex    = PTHREAD_MUTEX_INITIALIZER;  // Guards dumpArray + ddsDumpArray (MHD thread pool, 4 threads)
+
+
+
+// -----------------------------------------------------------------------------
+//
+// dumpLockOrAbort - acquire dumpMutex with a deadline, abort() on timeout.
+//
+// Converts a deadlock (e.g. a thread crashed while holding the mutex) into a
+// real SIGABRT so the crash handler writes /tmp/ftClient.crash.<pid> with a
+// backtrace from the blocked thread. Without this, a wedged mutex leaves the
+// whole process unresponsive forever.
+//
+void dumpLockOrAbort(const char* siteTag)
+{
+  struct timespec deadline;
+  clock_gettime(CLOCK_REALTIME, &deadline);
+  deadline.tv_sec += 5;
+
+  int rc = pthread_mutex_timedlock(&dumpMutex, &deadline);
+  if (rc == 0)
+    return;
+
+  KT_E("ftClient: dumpMutex timeout at %s (rc=%d) — aborting to surface the deadlock", siteTag, rc);
+  abort();
+}
 
 
 
@@ -92,6 +121,7 @@ FtService serviceV[] =
   { HTTP_GET,      "/dump",                  getDump                 },
   { HTTP_DELETE,   "/dump",                  deleteDump              },
   { HTTP_GET,      "/die",                   die                     },
+  { HTTP_POST,     "/noresponse",            noResponse              },
   { HTTP_POST,     "/dds/sub",               postDdsSub              },
   { HTTP_POST,     "/dds/pub",               postDdsPub              },
   { HTTP_GET,      "/dds/dump",              getDdsDump              },
@@ -208,7 +238,14 @@ char* mhdRequestTreat(int* statusCodeP)
     requestTree->name = (char*) "body";
     kjChildAdd(dump, requestTree);
   }
+  else if (orionldState.in.payload != NULL && orionldState.in.payload[0] != 0)
+  {
+    // Raw body (non-JSON, e.g. text/plain) — preserve as a string so it shows up in /dump
+    KjNode* bodyP = kjString(NULL, "body", orionldState.in.payload);
+    kjChildAdd(dump, bodyP);
+  }
 
+  dumpLockOrAbort("mhdRequestTreat:append");
   if (dumpArray == NULL)
   {
     KT_T(StDump, "Creating the dump array");
@@ -217,6 +254,7 @@ char* mhdRequestTreat(int* statusCodeP)
 
   KT_TREE(dump, "Adding to dump array", StDump);
   kjChildAdd(dumpArray, dump);
+  pthread_mutex_unlock(&dumpMutex);
 
   *statusCodeP = 200;
 

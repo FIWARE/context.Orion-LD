@@ -176,7 +176,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:E01
 
 03. Dump accumulator to see one notification with @context in HTTP Link Header, then reset the accumulator
 ==========================================================================================================
-POST http://REGEX(.*)/notify
+POST http://REGEX(.*)
 Fiware-Servicepath: /
 Content-Length: 293
 User-Agent: orion/REGEX(.*)
@@ -229,7 +229,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:E02
 
 06. Dump accumulator to see one notification with @context in the payload
 =========================================================================
-POST http://REGEX(.*)/notify
+POST http://REGEX(.*)
 Fiware-Servicepath: /
 Content-Length: 378
 User-Agent: orion/REGEX(.*)

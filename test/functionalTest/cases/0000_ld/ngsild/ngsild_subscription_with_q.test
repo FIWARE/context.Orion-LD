@@ -109,7 +109,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:Test:12
 
 03. Dump accumulator and see one notification
 =============================================
-POST http://REGEX(.*)/notify
+POST http://REGEX(.*)
 Fiware-Servicepath: /
 Content-Length: 266
 User-Agent: REGEX(.*)

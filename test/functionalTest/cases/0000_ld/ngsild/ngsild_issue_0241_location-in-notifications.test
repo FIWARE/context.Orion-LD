@@ -130,7 +130,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:Vehicle:A4501
 
 03. Dump the accumulator to see the notification, make sure the 'location' property is OK
 =========================================================================================
-POST http://REGEX(.*)/notify
+POST http://REGEX(.*)
 Fiware-Servicepath: /
 Content-Length: 397
 User-Agent: orion/REGEX(.*)

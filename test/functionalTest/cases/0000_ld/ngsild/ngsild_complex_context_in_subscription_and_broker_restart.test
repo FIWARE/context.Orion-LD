@@ -25,6 +25,7 @@ Issue #1708
 
 --SHELL-INIT--
 dbInit CB
+dbInit CB openiot
 orionldStart CB
 accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
 
@@ -365,3 +366,4 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 brokerStop CB
 accumulatorStop
 dbDrop CB
+dbDrop CB openiot

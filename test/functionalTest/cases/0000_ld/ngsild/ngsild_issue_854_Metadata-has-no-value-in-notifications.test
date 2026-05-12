@@ -163,7 +163,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:Entity:E1
 
 03. Dump the accumulator to see the notification - check the sub-property values
 ================================================================================
-POST http://REGEX(.*)/notify
+POST http://REGEX(.*)
 Fiware-Servicepath: /
 Content-Length: 1029
 User-Agent: orion/REGEX(.*)

@@ -1,6 +1,9 @@
+#ifndef TEST_FUNCTIONALTEST_FTCLIENT_NORESPONSE_H_
+#define TEST_FUNCTIONALTEST_FTCLIENT_NORESPONSE_H_
+
 /*
 *
-* Copyright 2024 FIWARE Foundation e.V.
+* Copyright 2026 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -22,40 +25,17 @@
 *
 * Author: Ken Zangelin
 */
-#include <unistd.h>                                         // NULL
-#include <pthread.h>                                        // pthread_mutex_t
-
 extern "C"
 {
-#include "ktrace/kTrace.h"                                  // trace messages - ktrace library
 #include "kjson/KjNode.h"                                   // KjNode
-#include "kjson/kjFree.h"                                   // kjFree
-#include "kjson/kjBuilder.h"                                // kjArray
 }
 
-#include "common/orionldState.h"                            // orionldState
-#include "common/traceLevels.h"                             // Trace levels for ktrace
 
 
-
-extern KjNode*          ddsDumpArray;
-extern pthread_mutex_t  dumpMutex;
-extern void             dumpLockOrAbort(const char* siteTag);
 // -----------------------------------------------------------------------------
 //
-// deleteDdsDump -
+// noResponse - sleep 10 seconds then return 200 (for broker timeout testing)
 //
-KjNode* deleteDdsDump(int* statusCodeP)
-{
-  KT_T(StRequest, "Resetting DDS Dump");
+extern KjNode* noResponse(int* statusCodeP);
 
-  dumpLockOrAbort("deleteDdsDump");
-  if (ddsDumpArray != NULL)
-    kjFree(ddsDumpArray);  // Crash!
-
-  ddsDumpArray = NULL;
-  pthread_mutex_unlock(&dumpMutex);
-
-  *statusCodeP = 200;
-  return NULL;
-}
+#endif  // TEST_FUNCTIONALTEST_FTCLIENT_NORESPONSE_H_

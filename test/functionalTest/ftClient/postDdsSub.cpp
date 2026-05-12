@@ -22,6 +22,8 @@
 *
 * Author: Ken Zangelin
 */
+#include <pthread.h>                                        // pthread_mutex_t
+
 extern "C"
 {
 #include "kbase/kStringSplit.h"                             // kStringSplit
@@ -44,8 +46,10 @@ extern "C"
 //
 //  ddsDumpArray - accumulating data from DDS notifications
 //
-extern KjNode* ddsDumpArray;
-extern bool    ddsSupport;
+extern KjNode*          ddsDumpArray;
+extern pthread_mutex_t  dumpMutex;
+extern void             dumpLockOrAbort(const char* siteTag);
+extern bool             ddsSupport;
 
 
 
@@ -58,12 +62,6 @@ extern bool    ddsSupport;
 void ddsNotification(const char* entityType, const char* entityId, const char* attrName, KjNode* attrValue)
 {
   KT_T(StDdsDump, "Got a DDS notification");
-
-  if (ddsDumpArray == NULL)
-  {
-    KT_T(StDdsDump, "Creating the DDS DumpArray");
-    ddsDumpArray = kjArray(NULL, "ddsDumpArray");
-  }
 
   KjNode* entityTypeNode = kjString(NULL, "entityType", entityType);
   KjNode* entityIdNode   = kjString(NULL, "entityId",   entityId);
@@ -85,11 +83,18 @@ void ddsNotification(const char* entityType, const char* entityId, const char* a
   kjChildAdd(notificationP, entityIdNode);
   kjChildAdd(notificationP, kjClone(NULL, attrValue));
 
+  dumpLockOrAbort("ddsNotification:postDdsSub");
+  if (ddsDumpArray == NULL)
+  {
+    KT_T(StDdsDump, "Creating the DDS DumpArray");
+    ddsDumpArray = kjArray(NULL, "ddsDumpArray");
+  }
   KT_TREE(ddsDumpArray, "DDS dump array before", StDdsDump);
   KT_TREE(notificationP, "Adding to DDS dump array", StDdsDump);
 
   kjChildAdd(ddsDumpArray, notificationP);
   KT_TREE(ddsDumpArray, "DDS dump array after", StDdsDump);
+  pthread_mutex_unlock(&dumpMutex);
 }
 
 

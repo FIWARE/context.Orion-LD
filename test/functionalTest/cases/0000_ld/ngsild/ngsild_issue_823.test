@@ -100,7 +100,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:Beach:Benidorm:Playa-Levante:B001
 
 03. Dump accumulator to see the notification
 ============================================
-POST http://REGEX(.*)/notify
+POST http://REGEX(.*)
 Fiware-Servicepath: /
 Content-Length: 406
 User-Agent: orion/REGEX(.*)

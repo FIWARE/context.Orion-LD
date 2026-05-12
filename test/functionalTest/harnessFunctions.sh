@@ -968,8 +968,10 @@ function brokerStop
 #
 function ftClientStart()
 {
-  ftClientStop
-
+  # Note: ftClientStop is called below AFTER parsing --port, so we know which
+  # instance to stop. An earlier unconditional call (defaulting to 7701) was
+  # removed because it killed a sibling ftClient on 7701 when this call
+  # targets a different port (tests with multiple ftClient instances).
   _port=7701
   _verbose=""
   _traceLevels=""
@@ -1053,6 +1055,16 @@ function ftClientStop()
   done
 
   curl localhost:$_port/die > /dev/null 2> /dev/null
+
+  # If a previous ftClient is hung and didn't respond to /die, or if a stale
+  # orphan was left by a test that died before TEARDOWN, reap by port.
+  sleep .1
+  orphanPid=$(fuser $_port/tcp 2>/dev/null | tr -d ' ')
+  if [ -n "$orphanPid" ]; then
+    kill -9 $orphanPid 2>/dev/null
+    sleep .05
+  fi
+
   return 0
 }
 
@@ -1081,6 +1093,16 @@ function accumulatorStop()
     sleep .01
     kill -9 $pid 2> /dev/null
     rm -f /tmp/accumulator.$port.pid
+  fi
+
+  # Also reap any orphan ftClient still bound to the port (pid file may be stale if
+  # a previous test died before its TEARDOWN). Without this, the next accumulatorStart
+  # finds the port already "open" and the new ftClient silently fails to bind.
+  orphans=$(fuser $port/tcp 2>/dev/null)
+  if [ "$orphans" != "" ]
+  then
+    kill -9 $orphans 2> /dev/null
+    sleep .05
   fi
 }
 
@@ -1151,9 +1173,41 @@ function accumulatorStart()
   accumulatorStop $port
 
   cd $REPO_HOME
-  echo scripts/accumulator-server.py --port $port --url "$URL" --host $bindIp $pretty $https $key $cert > /tmp/accumulator_${port}_stdout 2> /tmp/accumulator_${port}_stderr >> /tmp/accumulatorStart
-  scripts/accumulator-server.py --port $port --url "$URL" --host $bindIp $pretty $https $key $cert > /tmp/accumulator_${port}_stdout 2> /tmp/accumulator_${port}_stderr &
-  echo accumulator running as PID $$
+  # ftClient as accumulator. URL is unused (ftClient catches any unmatched route into the dump array).
+  # https/key/cert: --https is implied when both --httpsKey and --httpsCertificate are given.
+  httpsKeyArg=""
+  httpsCertArg=""
+  if [ "$key" != "" ]; then
+    keyFile=$(echo "$key" | awk '{print $2}')
+    httpsKeyArg="--httpsKey $keyFile"
+  fi
+  if [ "$cert" != "" ]; then
+    certFile=$(echo "$cert" | awk '{print $2}')
+    httpsCertArg="--httpsCertificate $certFile"
+  fi
+
+  prettyArg=""
+  if [ "$pretty" = "--pretty-print" ]; then
+    prettyArg="--pretty-print"
+  fi
+
+  ftLogDir="/tmp/ftAcc.$port"
+  mkdir -p "$ftLogDir"
+
+  # Belt-and-suspenders: ensure no other ftClient is bound to this port before launching.
+  # The pid-file kill in accumulatorStop only catches what we recorded; a previous test that
+  # died before TEARDOWN can leave an orphan that fuser-kills here.
+  orphanPid=$(fuser $port/tcp 2>/dev/null | tr -d ' ')
+  if [ -n "$orphanPid" ]; then
+    kill -9 $orphanPid 2>/dev/null
+    sleep .1
+  fi
+
+  echo ftClient --accFmt $prettyArg --port $port --logDir $ftLogDir $httpsKeyArg $httpsCertArg > /tmp/accumulatorStart
+  ftClient --accFmt $prettyArg --port $port --logDir $ftLogDir $httpsKeyArg $httpsCertArg > /tmp/accumulator_${port}_stdout 2> /tmp/accumulator_${port}_stderr &
+  ftPid=$!
+  echo "$ftPid" > /tmp/accumulator.$port.pid
+  echo accumulator running as PID $ftPid
   cd - > /dev/null 2>&1
   # Wait until accumulator has started or we have waited a given maximum time
   port_not_ok=1
@@ -1344,9 +1398,9 @@ function accumulatorCount()
 
   if [ "$1" == "IPV6" ]
   then
-    curl -g [::1]:${LISTENER_PORT}/number -s -S 2> /dev/null
+    curl -g [::1]:${LISTENER_PORT}/dump?count=true\&limit=0 -s -S 2> /dev/null
   else
-    curl localhost:${LISTENER_PORT}/number -s -S 2> /dev/null
+    curl localhost:${LISTENER_PORT}/dump?count=true\&limit=0 -s -S 2> /dev/null
   fi
 }
 
@@ -1361,9 +1415,9 @@ function accumulator2Count()
 
   if [ "$1" == "IPV6" ]
   then
-    curl -g [::1]:${LISTENER2_PORT}/number -s -S 2> /dev/null
+    curl -g [::1]:${LISTENER2_PORT}/dump?count=true\&limit=0 -s -S 2> /dev/null
   else
-    curl localhost:${LISTENER2_PORT}/number -s -S 2> /dev/null
+    curl localhost:${LISTENER2_PORT}/dump?count=true\&limit=0 -s -S 2> /dev/null
   fi
 }
 
@@ -1378,9 +1432,9 @@ function accumulator3Count()
 
   if [ "$1" == "IPV6" ]
   then
-    curl -g [::1]:${LISTENER3_PORT}/number -s -S 2> /dev/null
+    curl -g [::1]:${LISTENER3_PORT}/dump?count=true\&limit=0 -s -S 2> /dev/null
   else
-    curl localhost:${LISTENER3_PORT}/number -s -S 2> /dev/null
+    curl localhost:${LISTENER3_PORT}/dump?count=true\&limit=0 -s -S 2> /dev/null
   fi
 }
 
@@ -1393,9 +1447,9 @@ function accumulatorReset()
 {
   if [ "$1" == "HTTPS" ]
   then
-    curl -k https://localhost:${LISTENER_PORT}/reset -s -S -X POST
+    curl -k https://localhost:${LISTENER_PORT}/dump -s -S -X DELETE
   else
-    curl localhost:${LISTENER_PORT}/reset -s -S -X POST
+    curl localhost:${LISTENER_PORT}/dump -s -S -X DELETE
   fi
 }
 
@@ -1408,9 +1462,9 @@ function accumulator2Reset()
 {
   if [ "$1" == "HTTPS" ]
   then
-    curl -k https://localhost:${LISTENER2_PORT}/reset -s -S -X POST
+    curl -k https://localhost:${LISTENER2_PORT}/dump -s -S -X DELETE
   else
-    curl localhost:${LISTENER2_PORT}/reset -s -S -X POST
+    curl localhost:${LISTENER2_PORT}/dump -s -S -X DELETE
   fi
 }
 
@@ -1625,6 +1679,7 @@ function orionCurl()
     elif [ "$1" == "--url" ]; then             _url=$2; shift;
     elif [ "$1" == "--urlParams" ]; then       _urlParams=$2; shift;
     elif [ "$1" == "-X" ]; then                _method="-X $2"; shift;
+    elif [ "$1" == "--verb" ]; then            _method="-X $2"; shift;
     elif [ "$1" == "--payload" ]; then         _payload=$2; shift;
     elif [ "$1" == "--noPayloadCheck" ]; then  _noPayloadCheck='on'; _forcedNoPayloadCheck='on'
     elif [ "$1" == "--payloadCheck" ]; then    _payloadCheck=$2; _noPayloadCheck='off'; shift;

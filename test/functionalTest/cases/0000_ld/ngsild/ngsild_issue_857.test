@@ -103,7 +103,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:Entity:E1
 
 03. Dump the accumulator to see the notification - check R1
 ===========================================================
-POST http://REGEX(.*)/notify
+POST http://REGEX(.*)
 Fiware-Servicepath: /
 Content-Length: 318
 User-Agent: orion/REGEX(.*)

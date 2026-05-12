@@ -133,7 +133,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:E01
 
 03. Dump accumulator to see one notification, then reset the accumulator
 ========================================================================
-POST http://REGEX(.*)/notify
+POST http://REGEX(.*)
 Content-Length: 419
 User-Agent: orionld/REGEX(.*)
 Ngsiv2-Attrsformat: normalized

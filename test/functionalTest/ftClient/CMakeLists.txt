@@ -28,6 +28,7 @@ SET (SOURCES
     getDump.cpp
     deleteDump.cpp
     die.cpp
+    noResponse.cpp
     deleteDdsDump.cpp
     getDdsDump.cpp
     postDdsSub.cpp
@@ -129,6 +130,9 @@ link_directories("/usr/lib/x86_64-linux-gnu")
 # ------------------------------------------------------------
 
 ADD_EXECUTABLE(ftClient ${SOURCES} ${HEADERS})
+
+# -rdynamic so backtrace_symbols_fd() in the crash handler can resolve function names
+SET_TARGET_PROPERTIES(ftClient PROPERTIES ENABLE_EXPORTS ON)
 
 TARGET_LINK_LIBRARIES(ftClient ${STATIC_LIBS} ${DYNAMIC_LIBS} -lmicrohttpd -lmicrohttpd_ws -lpaho-mqtt3cs)
 
