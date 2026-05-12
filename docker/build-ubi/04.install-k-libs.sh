@@ -55,7 +55,7 @@ do
         branch=release/0.1.0
     elif [ $kproj = "kjson" ]
     then
-        branch=release/0.10.2
+        branch=release/0.11
     elif [ $kproj = "kalloc" ]
     then
         branch=release/0.10.1
