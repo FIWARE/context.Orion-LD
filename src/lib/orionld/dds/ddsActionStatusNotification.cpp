@@ -36,32 +36,8 @@ extern "C"
 #include "orionld/common/traceLevels.h"                          // KT_T trace levels
 #include "orionld/dds/ddsActionLookup.h"                         // ddsActionLookup
 #include "orionld/dds/ddsActionSubAttributeUpdate.h"             // ddsActionSubAttributeUpdate
+#include "orionld/dds/ddsActionBuild.h"                          // ddsActionStatusCodeToString
 #include "orionld/dds/ddsActionStatusNotification.h"             // Own interface
-
-
-
-// -----------------------------------------------------------------------------
-//
-// statusCodeToString -
-//
-static const char* statusCodeToString(eprosima::ddsenabler::participants::StatusCode code)
-{
-  switch (code)
-  {
-  case eprosima::ddsenabler::participants::StatusCode::UNKNOWN:              return "UNKNOWN";
-  case eprosima::ddsenabler::participants::StatusCode::ACCEPTED:             return "ACCEPTED";
-  case eprosima::ddsenabler::participants::StatusCode::EXECUTING:            return "EXECUTING";
-  case eprosima::ddsenabler::participants::StatusCode::CANCELING:            return "CANCELING";
-  case eprosima::ddsenabler::participants::StatusCode::SUCCEEDED:            return "SUCCEEDED";
-  case eprosima::ddsenabler::participants::StatusCode::CANCELED:             return "CANCELED";
-  case eprosima::ddsenabler::participants::StatusCode::ABORTED:              return "ABORTED";
-  case eprosima::ddsenabler::participants::StatusCode::REJECTED:             return "REJECTED";
-  case eprosima::ddsenabler::participants::StatusCode::TIMEOUT:              return "TIMEOUT";
-  case eprosima::ddsenabler::participants::StatusCode::FAILED:               return "FAILED";
-  case eprosima::ddsenabler::participants::StatusCode::CANCEL_REQUEST_FAILED: return "CANCEL_REQUEST_FAILED";
-  }
-  return "UNKNOWN";
-}
 
 
 
@@ -90,17 +66,30 @@ void ddsActionStatusNotification
   if (actionP->entityId == NULL || actionP->attributeName == NULL)
     return;
 
+  publishTime /= 1000000000LL;
+
   //
-  // Build a JSON object for the status: { "code": "EXECUTING", "message": "..." }
+  // Build a JSON object for the status: { "code": "executing", "message": "..." }
+  // This becomes the envelope's value; goalId/publishedAt are added by
+  // ddsActionSubAttributeUpdate.
   //
   orionldStateInit(NULL);
 
   KjNode* statusTree = kjObject(orionldState.kjsonP, NULL);
-  KjNode* codeNode   = kjString(orionldState.kjsonP, "code", statusCodeToString(statusCode));
+  KjNode* codeNode   = kjString(orionldState.kjsonP, "code", ddsActionStatusCodeToString(statusCode));
   KjNode* msgNode    = kjString(orionldState.kjsonP, "message", (statusMessage != NULL) ? statusMessage : "");
 
   kjChildAdd(statusTree, codeNode);
   kjChildAdd(statusTree, msgNode);
 
-  ddsActionSubAttributeUpdate(actionP->entityId, actionP->entityType, actionP->attributeName, "ddsActionStatus", statusTree, publishTime);
+  ddsActionSubAttributeUpdate(actionP->entityId,
+                              actionP->entityType,
+                              actionP->attributeName,
+                              "ddsActionStatus",
+                              statusTree,
+                              goalId,
+                              /*instanceHandleId*/ NULL,
+                              /*participantId*/    NULL,
+                              /*ddsDataType*/      NULL,
+                              publishTime);
 }

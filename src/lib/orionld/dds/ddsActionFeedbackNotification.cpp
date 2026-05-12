@@ -36,6 +36,7 @@ extern "C"
 #include "orionld/common/traceLevels.h"                          // KT_T trace levels
 #include "orionld/dds/ddsActionLookup.h"                         // ddsActionLookup
 #include "orionld/dds/ddsActionSubAttributeUpdate.h"             // ddsActionSubAttributeUpdate
+#include "orionld/dds/ddsReplyBuild.h"                           // ddsReplyExtractMetadata
 #include "orionld/dds/ddsActionFeedbackNotification.h"           // Own interface
 
 
@@ -64,6 +65,8 @@ void ddsActionFeedbackNotification
   if (actionP->entityId == NULL || actionP->attributeName == NULL)
     return;
 
+  publishTime /= 1000000000LL;
+
   orionldStateInit(NULL);
   KjNode* feedbackTree = kjParse(orionldState.kjsonP, (char*) json);
   if (feedbackTree == NULL)
@@ -72,5 +75,22 @@ void ddsActionFeedbackNotification
     return;
   }
 
-  ddsActionSubAttributeUpdate(actionP->entityId, actionP->entityType, actionP->attributeName, "ddsActionFeedback", feedbackTree, publishTime);
+  const char* participantId    = NULL;
+  const char* ddsDataType      = NULL;
+  const char* instanceHandleId = NULL;
+  KjNode*     feedbackPayload  = ddsReplyExtractMetadata(feedbackTree, &participantId, &ddsDataType, &instanceHandleId);
+
+  if (feedbackPayload == NULL)
+    feedbackPayload = feedbackTree;
+
+  ddsActionSubAttributeUpdate(actionP->entityId,
+                              actionP->entityType,
+                              actionP->attributeName,
+                              "ddsActionFeedback",
+                              feedbackPayload,
+                              goalId,
+                              instanceHandleId,
+                              participantId,
+                              ddsDataType,
+                              publishTime);
 }

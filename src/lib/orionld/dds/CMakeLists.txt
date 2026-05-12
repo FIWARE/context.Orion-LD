@@ -50,6 +50,8 @@ SET (SOURCES
   ddsActionFeedbackNotification.cpp
   ddsActionStatusNotification.cpp
   ddsActionSubAttributeUpdate.cpp
+  ddsActionBuild.cpp
+  ddsActionGoalCancel.cpp
 )
 
 # Include directories

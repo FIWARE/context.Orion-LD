@@ -1,0 +1,288 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+#
+# This test requires Docker and the eprosima/vulcanexus:jazzy-desktop image.
+# A real ROS2 FibonacciServer runs in a container and the broker is the DDS
+# action client - it discovers the action via DDS and, after the PATCH that
+# triggers a goal, receives feedback/result/status notifications which it
+# stores as envelope sub-attributes on the action-tied 'fib' attribute,
+# keyed by datasetId=urn:goal:<uuid>.
+#
+# Skipped in GitHub Actions (the test container can't reach the docker
+# daemon).
+#
+
+--NAME--
+DDS Action: full goal roundtrip materialises feedback/result/status envelopes per goalId
+
+--SHELL-INIT--
+ddsClean
+
+$REPO_HOME/scripts/configFile.sh \
+  --ddsAction "fibonacci,Robot,urn:ngsi-ld:robot:r1,fib" \
+  --ddsTypesDirectory "$REPO_HOME/test/functionalTest/ddsTypes" \
+  > $HOME/.orionld
+
+# Start the ROS2 FibonacciServer first so DDS discovery + types are in place
+# by the time the broker comes up. RCL python + action announce takes longer
+# than the AdditionServer used by the service tests, so we wait 10s.
+ros2ActionStart --samples 1
+sleep 10
+
+dbInit CB
+orionldStart CB -mongocOnly -wip dds
+
+# Allow discovery between the broker and the action server, and for the
+# Fibonacci request/feedback/result types to propagate.
+sleep 7
+
+--SHELL--
+valgrindSleep 5
+
+#
+# 01. PATCH the 'fib' attribute  -> broker sends an action goal for Fibonacci(5)
+# 02. Wait for FibonacciServer to emit feedback (3 samples, 1s apart) + final result
+# 03. GET the entity in concise format - the per-goal instance must contain
+#     ddsActionFeedback, ddsActionResult and ddsActionStatus envelope sub-attrs
+# 04. Pull the goalId out of the response, then GET fib via the synonym
+#     ?goal=<uuid>  -> the same envelope instance comes back
+#
+
+echo "01. PATCH 'fib' attribute (order=5)"
+echo "===================================="
+payload='{
+  "fib": {
+    "type": "Property",
+    "value": { "order": 5 }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1 -X PATCH --payload "$payload"
+echo
+echo
+
+
+echo "02. Wait for FibonacciServer (3 feedback + 1 result + status transitions)"
+echo "=========================================================================="
+sleep 6
+echo
+
+
+echo "03. GET urn:ngsi-ld:robot:r1?options=concise - per-goal instance present with envelope sub-attrs"
+echo "================================================================================================="
+orionCurl --url '/ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1?options=concise'
+echo
+echo
+
+
+echo "04. GET /attrs/fib (no filter) - see the whole attribute with all instances"
+echo "============================================================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1/attrs/fib
+echo
+echo
+
+
+echo "05. Pull goalId from the response, then GET fib via ?goal=<uuid>"
+echo "================================================================="
+goalId=$(echo "$_response" | grep -oE 'urn:goal:[0-9a-f-]+' | head -1 | sed 's/^urn:goal://')
+echo "Using goalId: $goalId"
+orionCurl --url "/ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1/attrs/fib?goal=$goalId"
+echo
+echo
+
+
+--REGEXPECT--
+01. PATCH 'fib' attribute (order=5)
+====================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+02. Wait for FibonacciServer (3 feedback + 1 result + status transitions)
+==========================================================================
+
+
+03. GET urn:ngsi-ld:robot:r1?options=concise - per-goal instance present with envelope sub-attrs
+=================================================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "ddsType": "fastdds",
+    "fib": [
+        {
+            "value": {
+                "order": 5
+            }
+        },
+        {
+            "datasetId": "urn:goal:REGEX([0-9a-f-]+)",
+            "ddsActionFeedback": {
+                "goalId": "REGEX([0-9a-f-]+)",
+                "publishedAt": REGEX(\d+),
+                "value": REGEX(.*)
+            },
+            "ddsActionResult": {
+                "goalId": "REGEX([0-9a-f-]+)",
+                "publishedAt": REGEX(\d+),
+                "value": REGEX(.*)
+            },
+            "ddsActionStatus": {
+                "goalId": REGEX(.*),
+                "publishedAt": REGEX(\d+),
+                "value": {
+                    "code": "succeeded",
+                    "message": ""
+                }
+            }
+        }
+    ],
+    "id": "urn:ngsi-ld:robot:r1",
+    "type": "Robot"
+}
+
+
+04. GET /attrs/fib (no filter) - see the whole attribute with all instances
+============================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[
+    {
+        "type": "Property",
+        "value": {
+            "order": 5
+        }
+    },
+    {
+        "type": "Property",
+        "datasetId": "urn:goal:REGEX([0-9a-f-]+)",
+        "ddsActionFeedback": {
+            "type": "Property",
+            "value": REGEX(.*),
+            "goalId": {
+                "type": "Property",
+                "value": "REGEX([0-9a-f-]+)"
+            },
+            "publishedAt": {
+                "type": "Property",
+                "value": REGEX(\d+)
+            }
+        },
+        "ddsActionResult": {
+            "type": "Property",
+            "value": REGEX(.*),
+            "goalId": {
+                "type": "Property",
+                "value": "REGEX([0-9a-f-]+)"
+            },
+            "publishedAt": {
+                "type": "Property",
+                "value": REGEX(\d+)
+            }
+        },
+        "ddsActionStatus": {
+            "type": "Property",
+            "value": {
+                "code": "succeeded",
+                "message": ""
+            },
+            "goalId": {
+                "type": "Property",
+                "value": "REGEX([0-9a-f-]+)"
+            },
+            "publishedAt": {
+                "type": "Property",
+                "value": REGEX(\d+)
+            }
+        }
+    }
+]
+
+
+05. Pull goalId from the response, then GET fib via ?goal=<uuid>
+=================================================================
+Using goalId: REGEX([0-9a-f-]+)
+HTTP/1.1 200 OK
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "type": "Property",
+    "datasetId": "urn:goal:REGEX([0-9a-f-]+)",
+    "ddsActionFeedback": {
+        "type": "Property",
+        "value": REGEX(.*),
+        "goalId": {
+            "type": "Property",
+            "value": "REGEX([0-9a-f-]+)"
+        },
+        "publishedAt": {
+            "type": "Property",
+            "value": REGEX(\d+)
+        }
+    },
+    "ddsActionResult": {
+        "type": "Property",
+        "value": REGEX(.*),
+        "goalId": {
+            "type": "Property",
+            "value": "REGEX([0-9a-f-]+)"
+        },
+        "publishedAt": {
+            "type": "Property",
+            "value": REGEX(\d+)
+        }
+    },
+    "ddsActionStatus": {
+        "type": "Property",
+        "value": {
+            "code": "succeeded",
+            "message": ""
+        },
+        "goalId": {
+            "type": "Property",
+            "value": "REGEX([0-9a-f-]+)"
+        },
+        "publishedAt": {
+            "type": "Property",
+            "value": REGEX(\d+)
+        }
+    }
+}
+
+
+--TEARDOWN--
+ddsClean
+ros2ActionStop
+brokerStop CB
+dbDrop CB
+rm -f $HOME/.orionld

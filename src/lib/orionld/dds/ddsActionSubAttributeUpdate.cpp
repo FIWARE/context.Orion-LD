@@ -26,7 +26,7 @@ extern "C"
 {
 #include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 #include "kjson/KjNode.h"                                        // KjNode
-#include "kjson/kjBuilder.h"                                     // kjObject, kjChildAdd
+#include "kjson/kjBuilder.h"                                     // kjObject, kjChildAdd, kjString
 }
 
 #include "orionld/common/orionldState.h"                         // orionldState
@@ -36,6 +36,7 @@ extern "C"
 #include "orionld/context/orionldAttributeExpand.h"              // orionldAttributeExpand
 #include "orionld/serviceRoutines/orionldPatchEntity2.h"         // orionldPatchEntity2
 #include "orionld/service/serviceLookupByServiceRoutine.h"       // serviceLookupByServiceRoutine
+#include "orionld/dds/ddsActionBuild.h"                          // ddsActionBuildSubAttribute, ddsActionGoalDatasetId
 #include "orionld/dds/ddsActionSubAttributeUpdate.h"             // Own interface
 
 
@@ -44,36 +45,59 @@ extern "C"
 //
 // ddsActionSubAttributeUpdate -
 //
-// Merge-patches a sub-attribute onto an entity's attribute.
-// The request tree for merge-patch at entity level:
-//   { "<attrLongName>": { "<subAttrName>": { "type": "Property", "value": <valueTree> } } }
+// Build a merge-patch tree of the form:
 //
-// Same pattern as ddsServiceReplyNotification.
+//   { "<attrLongName>": {
+//       "type": "Property",
+//       "datasetId": "urn:goal:<uuid>",
+//       "<subAttributeName>": { ... envelope ... }
+//   } }
+//
+// and call orionldPatchEntity2.
 //
 void ddsActionSubAttributeUpdate
 (
-  const char* entityId,
-  const char* entityType,
-  const char* attributeName,
-  const char* subAttributeName,
-  KjNode*     valueTree,
-  int64_t     publishTime
+  const char*                                       entityId,
+  const char*                                       entityType,
+  const char*                                       attributeName,
+  const char*                                       subAttributeName,
+  KjNode*                                           subAttributeValue,
+  const eprosima::ddsenabler::participants::UUID&   goalId,
+  const char*                                       instanceHandleId,
+  const char*                                       participantId,
+  const char*                                       ddsDataType,
+  int64_t                                           publishTime
 )
 {
   orionldStateInit(NULL);
 
   char* attrLongName = orionldAttributeExpand(orionldState.contextP, attributeName, true, NULL);
 
-  KjNode* entityBody    = kjObject(orionldState.kjsonP, NULL);
-  KjNode* attrBody      = kjObject(orionldState.kjsonP, attrLongName);
-  KjNode* subAttr       = kjObject(orionldState.kjsonP, subAttributeName);
-  KjNode* subAttrType   = kjString(orionldState.kjsonP, "type", "Property");
+  //
+  // Envelope sub-attribute (goalId/publishedAt/etc. inside)
+  //
+  KjNode* envelope = ddsActionBuildSubAttribute(subAttributeName,
+                                                subAttributeValue,
+                                                goalId,
+                                                instanceHandleId,
+                                                participantId,
+                                                ddsDataType,
+                                                publishTime);
 
-  valueTree->name = (char*) "value";
+  //
+  // datasetId for the action attribute instance — keyed by goalId
+  //
+  char datasetIdStr[48];
+  ddsActionGoalDatasetId(goalId, datasetIdStr);
 
-  kjChildAdd(subAttr, subAttrType);
-  kjChildAdd(subAttr, valueTree);
-  kjChildAdd(attrBody, subAttr);
+  KjNode* entityBody     = kjObject(orionldState.kjsonP, NULL);
+  KjNode* attrBody       = kjObject(orionldState.kjsonP, attrLongName);
+  KjNode* attrTypeNode   = kjString(orionldState.kjsonP, "type", "Property");
+  KjNode* datasetIdNode  = kjString(orionldState.kjsonP, "datasetId", datasetIdStr);
+
+  kjChildAdd(attrBody, attrTypeNode);
+  kjChildAdd(attrBody, datasetIdNode);
+  kjChildAdd(attrBody, envelope);
   kjChildAdd(entityBody, attrBody);
 
   char* expandedType = orionldContextItemExpand(orionldState.contextP, entityType, true, NULL);
@@ -87,7 +111,8 @@ void ddsActionSubAttributeUpdate
   orionldState.uriParams.type      = expandedType;
   orionldState.serviceP            = serviceLookupByServiceRoutine(orionldPatchEntity2, HTTP_PATCH);
 
-  KT_T(StDdsAction, "Merge-patching entity '%s' with '%s' for attribute '%s'", entityId, subAttributeName, attributeName);
+  KT_T(StDdsAction, "Merge-patching entity '%s' with '%s' for attribute '%s' (datasetId %s)",
+       entityId, subAttributeName, attributeName, datasetIdStr);
   orionldPatchEntity2();
 
   void* con_cls;

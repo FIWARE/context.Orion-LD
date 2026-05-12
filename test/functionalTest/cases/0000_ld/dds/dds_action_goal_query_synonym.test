@@ -1,0 +1,174 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+'?goal=<uuid>' URI param is a synonym for '?datasetId=urn:goal:<uuid>' under -wip dds
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -mongocOnly -wip dds
+
+--SHELL--
+
+#
+# 01. Create an entity E1 with two instances of attribute 'fib', keyed by
+#     datasetId=urn:goal:11111111-1111-1111-1111-111111111111 and
+#     datasetId=urn:goal:22222222-2222-2222-2222-222222222222.
+# 02. GET the 'fib' attribute with ?datasetId=urn:goal:11111111-1111-1111-1111-111111111111
+#     => see only instance 1
+# 03. GET the same 'fib' attribute with ?goal=11111111-1111-1111-1111-111111111111
+#     => same response as step 02 (synonym proven)
+# 04. GET the same 'fib' attribute with ?goal=22222222-2222-2222-2222-222222222222
+#     => only instance 2
+# 05. GET the entity with ?goal=33333333-3333-3333-3333-333333333333
+#     => 404 (no such dataset instance)
+#
+
+echo "01. Create entity E1 with two datasetId instances of 'fib'"
+echo "==========================================================="
+payload='{
+  "id": "urn:ngsi-ld:robot:r1",
+  "type": "Robot",
+  "fib": [
+    {
+      "type": "Property",
+      "datasetId": "urn:goal:11111111-1111-1111-1111-111111111111",
+      "value": { "order": 10 }
+    },
+    {
+      "type": "Property",
+      "datasetId": "urn:goal:22222222-2222-2222-2222-222222222222",
+      "value": { "order": 20 }
+    }
+  ]
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "02. GET fib?datasetId=urn:goal:11111111-1111-1111-1111-111111111111"
+echo "===================================================================="
+orionCurl --url '/ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1/attrs/fib?datasetId=urn:goal:11111111-1111-1111-1111-111111111111'
+echo
+echo
+
+
+echo "03. GET fib?goal=11111111-1111-1111-1111-111111111111 (synonym)"
+echo "================================================================"
+orionCurl --url '/ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1/attrs/fib?goal=11111111-1111-1111-1111-111111111111'
+echo
+echo
+
+
+echo "04. GET fib?goal=22222222-2222-2222-2222-222222222222 (other dataset)"
+echo "======================================================================"
+orionCurl --url '/ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1/attrs/fib?goal=22222222-2222-2222-2222-222222222222'
+echo
+echo
+
+
+echo "05. GET fib?goal=33333333-3333-3333-3333-333333333333 (no such instance -> 404)"
+echo "================================================================================"
+orionCurl --url '/ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1/attrs/fib?goal=33333333-3333-3333-3333-333333333333'
+echo
+echo
+
+
+--REGEXPECT--
+01. Create entity E1 with two datasetId instances of 'fib'
+===========================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1
+
+
+
+02. GET fib?datasetId=urn:goal:11111111-1111-1111-1111-111111111111
+====================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "datasetId": "urn:goal:11111111-1111-1111-1111-111111111111",
+    "type": "Property",
+    "value": {
+        "order": 10
+    }
+}
+
+
+03. GET fib?goal=11111111-1111-1111-1111-111111111111 (synonym)
+================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "datasetId": "urn:goal:11111111-1111-1111-1111-111111111111",
+    "type": "Property",
+    "value": {
+        "order": 10
+    }
+}
+
+
+04. GET fib?goal=22222222-2222-2222-2222-222222222222 (other dataset)
+======================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "datasetId": "urn:goal:22222222-2222-2222-2222-222222222222",
+    "type": "Property",
+    "value": {
+        "order": 20
+    }
+}
+
+
+05. GET fib?goal=33333333-3333-3333-3333-333333333333 (no such instance -> 404)
+================================================================================
+HTTP/1.1 404 Not Found
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": REGEX(.*),
+    "title": REGEX(.*),
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
+}
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
