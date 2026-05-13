@@ -27,6 +27,8 @@
 */
 #include <stdint.h>                                              // int64_t
 
+#include "ddsenabler_participants/rpc/RpcTypes.hpp"              // UUID
+
 extern "C"
 {
 #include "kjson/KjNode.h"                                        // KjNode
@@ -38,17 +40,40 @@ extern "C"
 //
 // ddsActionSubAttributeUpdate -
 //
-// Merge-patches a sub-attribute onto an entity attribute.
-// Used for ddsActionResult, ddsActionFeedback, ddsActionStatus.
+// Merge-patch a single envelope-rich sub-attribute (ddsActionFeedback /
+// ddsActionResult / ddsActionStatus) onto the action-tied attribute of an
+// entity, keyed by datasetId=urn:goal:<goalId>.
+//
+// The resulting attribute instance has the form:
+//
+//   "<attrLongName>": {
+//     "type": "Property",
+//     "datasetId": "urn:goal:<uuid>",
+//     "<subAttributeName>": {
+//        "type": "Property",
+//        "value": <subAttributeValue>,
+//        "goalId":      { "type": "Property", "value": "<uuid>" },
+//        "publishedAt": { "type": "Property", "value": <secs> }
+//        [+ optional ddsDataType / instanceHandleId / participantId]
+//     }
+//   }
+//
+// Passing subAttributeValue = NULL produces an envelope with no value (used
+// by status notifications whose payload is split across statusCode/message
+// rendered inside the caller).
 //
 extern void ddsActionSubAttributeUpdate
 (
-  const char* entityId,
-  const char* entityType,
-  const char* attributeName,
-  const char* subAttributeName,
-  KjNode*     valueTree,
-  int64_t     publishTime
+  const char*                                       entityId,
+  const char*                                       entityType,
+  const char*                                       attributeName,
+  const char*                                       subAttributeName,
+  KjNode*                                           subAttributeValue,
+  const eprosima::ddsenabler::participants::UUID&   goalId,
+  const char*                                       instanceHandleId,
+  const char*                                       participantId,
+  const char*                                       ddsDataType,
+  int64_t                                           publishTime
 );
 
 #endif  // SRC_LIB_ORIONLD_DDS_DDSACTIONSUBATTRIBUTEUPDATE_H_

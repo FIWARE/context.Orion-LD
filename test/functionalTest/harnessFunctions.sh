@@ -2271,6 +2271,87 @@ function ros2ServiceStop
 
 
 
+# -----------------------------------------------------------------------------
+#
+# ros2ActionStart - start a ROS2 action server in a Docker container
+#
+# Parameters:
+#   --samples <n>      Number of goals to handle before the server exits (default: 10)
+#   --domain <n>       ROS domain ID (default: 0)
+#   --expect-cancel    Have the server count canceled goals towards --samples
+#
+# Uses the eprosima FibonacciServer.py from FIWARE-DDS-Enabler/ddsenabler_test.
+# That script is currently broken on Vulcanexus jazzy-desktop (RCLError on the
+# first executor.spin_once - see doc/dds/eprosima_fibonacci_server_jazzy_bug.md).
+# The standard ROS2 fibonacci_action_server (action_tutorials_cpp / _py) cannot
+# be used as a drop-in replacement because the eprosima DDS Enabler uses a
+# non-ROS2 action topic naming convention (<action_name><suffix>, e.g.
+# "fibonaccisend_goal") that the canonical servers do not announce.
+#
+# Until eprosima fixes the Jazzy bug (or ships a C++ FibonacciServer that uses
+# their convention), the dds_action_full_roundtrip.test will fail at the goal-
+# send step. Keep the helper here so the test source compiles and so the wiring
+# is in place once a working server is available.
+#
+function ros2ActionStart
+{
+  _samples=10
+  _domain=0
+  _expectCancel=""
+
+  while [ "$#" != 0 ]
+  do
+    if   [ "$1" == "--samples" ];       then _samples=$2; shift;
+    elif [ "$1" == "--domain" ];        then _domain=$2;  shift;
+    elif [ "$1" == "--expect-cancel" ]; then _expectCancel="--expect-cancel";
+    else
+      echo "Bad parameter for ros2ActionStart: $1"
+      exit 1
+    fi
+    shift
+  done
+
+  ros2ActionStop
+
+  _scripts_dir="$HOME/git/DDS/FIWARE-DDS-Enabler/ddsenabler_test/compose/scripts"
+  if [ ! -d "$_scripts_dir" ]
+  then
+    echo "ROS2 scripts directory not found: $_scripts_dir"
+    echo "Please ensure the DDS Enabler repository is available at ~/git/DDS/FIWARE-DDS-Enabler"
+    return 1
+  fi
+
+  docker run --rm -d \
+    --name ros2_action_server \
+    --ipc=host \
+    -e ROS_DOMAIN_ID=$_domain \
+    -v "$_scripts_dir:/scripts:ro" \
+    eprosima/vulcanexus:jazzy-desktop \
+    python3 /scripts/ros2_nodes/node_main.py --action --samples $_samples $_expectCancel > /dev/null 2>&1
+
+  sleep .1
+  return 0
+}
+
+
+
+# -----------------------------------------------------------------------------
+#
+# ros2ActionStop - stop the ROS2 action server container
+#
+function ros2ActionStop
+{
+  CID=$(docker ps | grep ros2_action_server | awk '{print $1}')
+
+  if [ "$CID" != "" ]
+  then
+    docker kill $CID > /dev/null 2>&1
+    sleep .1
+  fi
+}
+
+
+
 # ------------------------------------------------------------------------------
 #
 # wsConnect - connect to broker via WebSocket and create a subscription
@@ -2526,6 +2607,8 @@ export -f ftClientStart
 export -f ftClientStop
 export -f ros2ServiceStart
 export -f ros2ServiceStop
+export -f ros2ActionStart
+export -f ros2ActionStop
 export -f wsConnect
 export -f wsSend
 export -f wsSendBurst

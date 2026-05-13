@@ -936,6 +936,23 @@ MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
       orionldState.uriParams.mask |= ORIONLD_URIPARAM_DATASETID_LIST;
     }
   }
+  else if ((ddsSupport == true) && (strcmp(key, "goal") == 0))
+  {
+    //
+    // Synonym for ?datasetId=urn:goal:<value>, only valid when started with
+    // -wip dds. Lets users address a specific DDS action goal by UUID without
+    // having to spell out the full "urn:goal:" prefix.
+    //
+    size_t valueLen = strlen(value);
+    char*  buf      = (char*) kaAlloc(&orionldState.kalloc, valueLen + 10);  // "urn:goal:" = 9 + NUL
+    snprintf(buf, valueLen + 10, "urn:goal:%s", value);
+
+    if (pCheckUri(buf, "datasetId", true) == false)
+      return MHD_YES;
+
+    orionldState.uriParams.datasetId = buf;
+    orionldState.uriParams.mask |= ORIONLD_URIPARAM_DATASETID;
+  }
   else if (strcmp(key, "deleteAll") == 0)
   {
     if (strcmp(value, "true") == 0)

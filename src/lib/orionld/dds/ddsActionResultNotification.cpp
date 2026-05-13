@@ -38,6 +38,7 @@ extern "C"
 #include "orionld/common/traceLevels.h"                          // KT_T trace levels
 #include "orionld/dds/ddsActionLookup.h"                         // ddsActionLookup
 #include "orionld/dds/ddsActionSubAttributeUpdate.h"             // ddsActionSubAttributeUpdate
+#include "orionld/dds/ddsReplyBuild.h"                           // ddsReplyExtractMetadata
 #include "orionld/dds/ddsActionResultNotification.h"             // Own interface
 
 
@@ -90,6 +91,10 @@ void ddsActionResultNotification
     prev = gP;
   }
 
+  // publishTime arrives from the enabler in nanoseconds since epoch; reduce to
+  // seconds so it matches request-side timestamps recorded with time(NULL).
+  publishTime /= 1000000000LL;
+
   orionldStateInit(NULL);
   KjNode* resultTree = kjParse(orionldState.kjsonP, (char*) json);
   if (resultTree == NULL)
@@ -98,5 +103,27 @@ void ddsActionResultNotification
     return;
   }
 
-  ddsActionSubAttributeUpdate(actionP->entityId, actionP->entityType, actionP->attributeName, "ddsActionResult", resultTree, publishTime);
+  //
+  // If the enabler's payload carries the same envelope shape as a service
+  // reply ({ "id": <participantId>, "rr/<ddsDataType>": { "type": ..., "data": { "<handle>": <payload> } } })
+  // tease it out so we can populate the envelope sub-Properties.
+  //
+  const char* participantId    = NULL;
+  const char* ddsDataType      = NULL;
+  const char* instanceHandleId = NULL;
+  KjNode*     resultPayload    = ddsReplyExtractMetadata(resultTree, &participantId, &ddsDataType, &instanceHandleId);
+
+  if (resultPayload == NULL)
+    resultPayload = resultTree;  // no envelope — store the raw tree as value
+
+  ddsActionSubAttributeUpdate(actionP->entityId,
+                              actionP->entityType,
+                              actionP->attributeName,
+                              "ddsActionResult",
+                              resultPayload,
+                              goalId,
+                              instanceHandleId,
+                              participantId,
+                              ddsDataType,
+                              publishTime);
 }

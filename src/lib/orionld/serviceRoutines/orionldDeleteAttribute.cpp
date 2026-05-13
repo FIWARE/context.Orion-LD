@@ -58,6 +58,7 @@ extern "C"
 #include "orionld/distOp/distOpListRelease.h"                    // distOpListRelease
 #include "orionld/distOp/xForwardedForCompose.h"                 // xForwardedForCompose
 #include "orionld/distOp/viaCompose.h"                           // viaCompose
+#include "orionld/dds/ddsActionGoalCancel.h"                     // ddsActionGoalCancelIfMapped
 #include "orionld/serviceRoutines/orionldDeleteAttribute.h"      // Own interface
 
 
@@ -277,6 +278,18 @@ bool orionldDeleteAttribute(void)
 
   if ((orionldState.uriParams.datasetId != NULL) && (strcmp(orionldState.uriParams.datasetId, "@none") == 0))
     orionldState.uriParams.datasetId = NULL;
+
+  //
+  // If this attribute is mapped to a DDS action and a datasetId is present,
+  // interpret the datasetId as "urn:goal:<uuid>" and ask the enabler to
+  // cancel the in-flight goal. The final cancellation state is communicated
+  // separately by the action server via a status notification.
+  //
+  if (orionldState.uriParams.datasetId != NULL)
+  {
+    char* attrShortName = orionldContextItemAliasLookup(orionldState.contextP, attrName, NULL, NULL);
+    (void) ddsActionGoalCancelIfMapped(attrShortName, orionldState.uriParams.datasetId);
+  }
 
   KjNode* entityP       = NULL;
   KjNode* defaultAttrP  = NULL;
