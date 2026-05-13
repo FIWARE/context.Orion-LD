@@ -130,7 +130,7 @@ bool mhdStart
     {
       serverMode |= MHD_USE_SSL;
       mhdDaemon = MHD_start_daemon(serverMode,
-                                   htons(ldPort),
+                                   ldPort,  // host byte order; sad4/sad6->sin_port already carries the network-order value
                                    NULL,
                                    NULL,
                                    mhdRequest,                          NULL,
@@ -146,7 +146,7 @@ bool mhdStart
     }
     else
       mhdDaemon = MHD_start_daemon(serverMode,
-                                   htons(ldPort),
+                                   ldPort,  // host byte order; sad4/sad6->sin_port already carries the network-order value
                                    NULL,
                                    NULL,
                                    mhdRequest,                          NULL,
@@ -169,7 +169,7 @@ bool mhdStart
     {
       serverMode |= MHD_USE_SSL;
       mhdDaemon = MHD_start_daemon(serverMode,
-                                   htons(ldPort),
+                                   ldPort,  // host byte order; sad4/sad6->sin_port already carries the network-order value
                                    NULL,
                                    NULL,
                                    mhdRequest,                          NULL,
@@ -185,7 +185,7 @@ bool mhdStart
     }
     else
       mhdDaemon = MHD_start_daemon(serverMode,
-                                   htons(ldPort),
+                                   ldPort,  // host byte order; sad4/sad6->sin_port already carries the network-order value
                                    NULL,
                                    NULL,
                                    mhdRequest,                          NULL,
