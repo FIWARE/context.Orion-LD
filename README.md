@@ -129,6 +129,7 @@ Please check [quay.io](https://quay.io/repository/fiware/orion-ld?tab=tags) or [
 -   [External Libraries](doc/manuals-ld/external-libraries.md)
 -   [Temporal Representation](doc/manuals-ld/troe.md)
 -   [The Broker as Context Server](doc/manuals-ld/contextServer.md)
+-   [DDS Integration (Topics, Services, Actions)](doc/dds/orion-ld-dds.md)
 -   [Roadmap](doc/roadmap.md)
 -   [Functional Test Suite](doc/manuals-ld/functionalTests.md)
 
