@@ -86,7 +86,7 @@ sub-Properties (metadata) — `observedAt`, `unitCode`, `lang`, etc.
 ```
 
 Attributes are CRUD'd over REST. The endpoints relevant to DDS are listed in
-[§9](#9-which-rest-endpoints-trigger-dds).
+[§11](#11-which-rest-endpoints-trigger-dds).
 
 For DDS purposes you only need to remember: **one attribute = one DDS
 endpoint** (topic, service, or action), and the JSON `value` is what travels.
@@ -110,7 +110,7 @@ Runtime requirements:
   (multicast or discovery server).
 - The FIWARE-DDS-Enabler shared libraries on the broker's `LD_LIBRARY_PATH`.
 - For services/actions: matching IDL `.bin` type files in the directory
-  pointed to by `typesDirectory` (see [§10](#10-type-discovery)).
+  pointed to by `typesDirectory` (see [§12](#12-type-discovery)).
 
 ---
 
@@ -163,7 +163,7 @@ The relevant fields for DDS users:
 | `ngsild.topics["<TopicName>"]` | Maps the DDS topic `<TopicName>` to an `(entityType, entityId, attribute)` triple. |
 | `ngsild.services["<ServiceName>"]` | Same, for DDS services. |
 | `ngsild.actions["<ActionName>"]` | Same, for DDS actions. |
-| `ngsild.typesDirectory` | Directory of pre-built `.bin` IDL type files (required for services and actions — see [§10](#10-type-discovery)). |
+| `ngsild.typesDirectory` | Directory of pre-built `.bin` IDL type files (required for services and actions — see [§12](#12-type-discovery)). |
 | `ngsild.syncTimeoutMs` | Default timeout (ms) for synchronous service requests. |
 
 ### 4.1. The `configFile.sh` helper
