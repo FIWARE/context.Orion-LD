@@ -24,27 +24,28 @@
 '?goal=<uuid>' URI param is a synonym for '?datasetId=urn:goal:<uuid>' under -wip dds
 
 --SHELL-INIT--
+$REPO_HOME/scripts/configFile.sh > $HOME/.orionld
 dbInit CB
 orionldStart CB -mongocOnly -wip dds
 
 --SHELL--
 
 #
-# 01. Create an entity E1 with two instances of attribute 'fib', keyed by
+# 01. Create an entity with two instances of attribute 'fib', keyed by
 #     datasetId=urn:goal:11111111-1111-1111-1111-111111111111 and
 #     datasetId=urn:goal:22222222-2222-2222-2222-222222222222.
-# 02. GET the 'fib' attribute with ?datasetId=urn:goal:11111111-1111-1111-1111-111111111111
-#     => see only instance 1
-# 03. GET the same 'fib' attribute with ?goal=11111111-1111-1111-1111-111111111111
+# 02. GET the entity with ?datasetId=urn:goal:11111111-1111-1111-1111-111111111111
+#     => entity returned with only instance 1 of 'fib'
+# 03. GET the entity with ?goal=11111111-1111-1111-1111-111111111111
 #     => same response as step 02 (synonym proven)
-# 04. GET the same 'fib' attribute with ?goal=22222222-2222-2222-2222-222222222222
-#     => only instance 2
+# 04. GET the entity with ?goal=22222222-2222-2222-2222-222222222222
+#     => entity returned with only instance 2 of 'fib'
 # 05. GET the entity with ?goal=33333333-3333-3333-3333-333333333333
-#     => 404 (no such dataset instance)
+#     => entity returned with no 'fib' attribute (no instance matched)
 #
 
-echo "01. Create entity E1 with two datasetId instances of 'fib'"
-echo "==========================================================="
+echo "01. Create entity with two datasetId instances of 'fib'"
+echo "========================================================"
 payload='{
   "id": "urn:ngsi-ld:robot:r1",
   "type": "Robot",
@@ -66,37 +67,37 @@ echo
 echo
 
 
-echo "02. GET fib?datasetId=urn:goal:11111111-1111-1111-1111-111111111111"
-echo "===================================================================="
-orionCurl --url '/ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1/attrs/fib?datasetId=urn:goal:11111111-1111-1111-1111-111111111111'
+echo "02. GET entity with ?datasetId=urn:goal:11111111-1111-1111-1111-111111111111"
+echo "============================================================================="
+orionCurl --url '/ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1?datasetId=urn:goal:11111111-1111-1111-1111-111111111111&prettyPrint=yes' --noPayloadCheck
 echo
 echo
 
 
-echo "03. GET fib?goal=11111111-1111-1111-1111-111111111111 (synonym)"
-echo "================================================================"
-orionCurl --url '/ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1/attrs/fib?goal=11111111-1111-1111-1111-111111111111'
+echo "03. GET entity with ?goal=11111111-1111-1111-1111-111111111111 (synonym)"
+echo "========================================================================="
+orionCurl --url '/ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1?goal=11111111-1111-1111-1111-111111111111&prettyPrint=yes' --noPayloadCheck
 echo
 echo
 
 
-echo "04. GET fib?goal=22222222-2222-2222-2222-222222222222 (other dataset)"
-echo "======================================================================"
-orionCurl --url '/ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1/attrs/fib?goal=22222222-2222-2222-2222-222222222222'
+echo "04. GET entity with ?goal=22222222-2222-2222-2222-222222222222 (other dataset)"
+echo "==============================================================================="
+orionCurl --url '/ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1?goal=22222222-2222-2222-2222-222222222222&prettyPrint=yes' --noPayloadCheck
 echo
 echo
 
 
-echo "05. GET fib?goal=33333333-3333-3333-3333-333333333333 (no such instance -> 404)"
-echo "================================================================================"
-orionCurl --url '/ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1/attrs/fib?goal=33333333-3333-3333-3333-333333333333'
+echo "05. GET entity with ?goal=33333333-3333-3333-3333-333333333333 (no match)"
+echo "=========================================================================="
+orionCurl --url '/ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1?goal=33333333-3333-3333-3333-333333333333&prettyPrint=yes' --noPayloadCheck
 echo
 echo
 
 
 --REGEXPECT--
-01. Create entity E1 with two datasetId instances of 'fib'
-===========================================================
+01. Create entity with two datasetId instances of 'fib'
+========================================================
 HTTP/1.1 201 Created
 Content-Length: 0
 Date: REGEX(.*)
@@ -104,8 +105,8 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1
 
 
 
-02. GET fib?datasetId=urn:goal:11111111-1111-1111-1111-111111111111
-====================================================================
+02. GET entity with ?datasetId=urn:goal:11111111-1111-1111-1111-111111111111
+=============================================================================
 HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
 Content-Type: application/json
@@ -113,16 +114,21 @@ Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
-    "datasetId": "urn:goal:11111111-1111-1111-1111-111111111111",
+  "id": "urn:ngsi-ld:robot:r1",
+  "type": "Robot",
+  "fib": {
     "type": "Property",
+    "datasetId": "urn:goal:11111111-1111-1111-1111-111111111111",
     "value": {
-        "order": 10
+      "order": 10
     }
+  }
 }
 
 
-03. GET fib?goal=11111111-1111-1111-1111-111111111111 (synonym)
-================================================================
+
+03. GET entity with ?goal=11111111-1111-1111-1111-111111111111 (synonym)
+=========================================================================
 HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
 Content-Type: application/json
@@ -130,16 +136,21 @@ Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
-    "datasetId": "urn:goal:11111111-1111-1111-1111-111111111111",
+  "id": "urn:ngsi-ld:robot:r1",
+  "type": "Robot",
+  "fib": {
     "type": "Property",
+    "datasetId": "urn:goal:11111111-1111-1111-1111-111111111111",
     "value": {
-        "order": 10
+      "order": 10
     }
+  }
 }
 
 
-04. GET fib?goal=22222222-2222-2222-2222-222222222222 (other dataset)
-======================================================================
+
+04. GET entity with ?goal=22222222-2222-2222-2222-222222222222 (other dataset)
+===============================================================================
 HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
 Content-Type: application/json
@@ -147,26 +158,32 @@ Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
+  "id": "urn:ngsi-ld:robot:r1",
+  "type": "Robot",
+  "fib": {
+    "type": "Property",
     "datasetId": "urn:goal:22222222-2222-2222-2222-222222222222",
-    "type": "Property",
     "value": {
-        "order": 20
+      "order": 20
     }
+  }
 }
 
 
-05. GET fib?goal=33333333-3333-3333-3333-333333333333 (no such instance -> 404)
-================================================================================
-HTTP/1.1 404 Not Found
+
+05. GET entity with ?goal=33333333-3333-3333-3333-333333333333 (no match)
+==========================================================================
+HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
-    "detail": REGEX(.*),
-    "title": REGEX(.*),
-    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
+  "id": "urn:ngsi-ld:robot:r1",
+  "type": "Robot"
 }
+
 
 
 --TEARDOWN--
