@@ -1284,9 +1284,9 @@ function ftClientReset()
 
   if [ "$_https" == "HTTPS" ]
   then
-    curl -k https://localhost:${_port}/dump -s -S -X DELETE
+    curl -k https://localhost:${_port}/dump -s -S -X DELETE 2> /dev/null
   else
-    curl localhost:${_port}/dump -s -S -X DELETE
+    curl localhost:${_port}/dump -s -S -X DELETE 2> /dev/null
   fi
 }
 
