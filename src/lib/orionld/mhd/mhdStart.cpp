@@ -22,6 +22,11 @@
 *
 * Author: Ken Zangelin
 */
+#include <sys/socket.h>                                          // socket, setsockopt, bind, listen, SO_REUSEADDR
+#include <netinet/in.h>                                          // sockaddr_in, sockaddr_in6
+#include <unistd.h>                                              // close
+#include <errno.h>                                               // errno
+#include <string.h>                                              // strerror
 #include <microhttpd.h>                                          // MHD
 
 extern "C"
@@ -124,6 +129,56 @@ bool mhdStart
   KT_T(StMhdInit, "httpsKey:          '%s'", httpsKey);
   KT_T(StMhdInit, "httpsCertificate:  '%s'", httpsCertificate);
 
+  //
+  // Pre-create listening sockets with SO_REUSEADDR so a fresh start can bind
+  // over TIME_WAIT entries left by previously-accepted connections (notification
+  // sinks like ftClient restart on every test). SO_REUSEADDR — NOT SO_REUSEPORT
+  // (which load-balances across live listeners and caused dropped notifications
+  // in earlier CI runs). Passing the socket via MHD_OPTION_LISTEN_SOCKET lets
+  // MHD use it as-is (the port argument to MHD_start_daemon is ignored when
+  // this option is set).
+  //
+  int listenFd4 = -1;
+  int listenFd6 = -1;
+
+  if (ip4 == true)
+  {
+    listenFd4 = socket(AF_INET, SOCK_STREAM, 0);
+    if (listenFd4 < 0)
+      KT_X(1, "socket(AF_INET) failed: %s", strerror(errno));
+
+    int one = 1;
+    if (setsockopt(listenFd4, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one)) != 0)
+      KT_X(1, "setsockopt(SO_REUSEADDR) failed: %s", strerror(errno));
+
+    if (bind(listenFd4, (struct sockaddr*) &sad4, sizeof(sad4)) != 0)
+      KT_X(1, "bind(IPv4 port %d) failed: %s", ldPort, strerror(errno));
+
+    if (listen(listenFd4, mhdMaxConnections) != 0)
+      KT_X(1, "listen(IPv4 port %d) failed: %s", ldPort, strerror(errno));
+  }
+
+  if (ip6 == true)
+  {
+    listenFd6 = socket(AF_INET6, SOCK_STREAM, 0);
+    if (listenFd6 < 0)
+      KT_X(1, "socket(AF_INET6) failed: %s", strerror(errno));
+
+    int one = 1;
+    if (setsockopt(listenFd6, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one)) != 0)
+      KT_X(1, "setsockopt(SO_REUSEADDR, v6) failed: %s", strerror(errno));
+
+    // V6ONLY so the v6 listener doesn't collide with the v4 listener on dual stack
+    int v6only = 1;
+    setsockopt(listenFd6, IPPROTO_IPV6, IPV6_V6ONLY, &v6only, sizeof(v6only));
+
+    if (bind(listenFd6, (struct sockaddr*) &sad6, sizeof(sad6)) != 0)
+      KT_X(1, "bind(IPv6 port %d) failed: %s", ldPort, strerror(errno));
+
+    if (listen(listenFd6, mhdMaxConnections) != 0)
+      KT_X(1, "listen(IPv6 port %d) failed: %s", ldPort, strerror(errno));
+  }
+
   if (ip4 == true)
   {
     if (https == true)
@@ -136,7 +191,7 @@ bool mhdStart
                                    mhdRequest,                          NULL,
                                    MHD_OPTION_NOTIFY_COMPLETED,         endF, NULL,
                                    MHD_OPTION_CONNECTION_TIMEOUT,       mhdTimeout,
-                                   MHD_OPTION_SOCK_ADDR,                (struct sockaddr*) &sad4,
+                                   MHD_OPTION_LISTEN_SOCKET,            listenFd4,
                                    MHD_OPTION_THREAD_POOL_SIZE,         mhdPoolSize,
                                    MHD_OPTION_CONNECTION_MEMORY_LIMIT,  mhdMemoryLimit,
                                    MHD_OPTION_CONNECTION_LIMIT,         mhdMaxConnections,
@@ -152,7 +207,7 @@ bool mhdStart
                                    mhdRequest,                          NULL,
                                    MHD_OPTION_NOTIFY_COMPLETED,         endF, NULL,
                                    MHD_OPTION_CONNECTION_TIMEOUT,       mhdTimeout,
-                                   MHD_OPTION_SOCK_ADDR,                (struct sockaddr*) &sad4,
+                                   MHD_OPTION_LISTEN_SOCKET,            listenFd4,
                                    MHD_OPTION_THREAD_POOL_SIZE,         mhdPoolSize,
                                    MHD_OPTION_CONNECTION_MEMORY_LIMIT,  mhdMemoryLimit,
                                    MHD_OPTION_CONNECTION_LIMIT,         mhdMaxConnections,
@@ -175,7 +230,7 @@ bool mhdStart
                                    mhdRequest,                          NULL,
                                    MHD_OPTION_NOTIFY_COMPLETED,         endF, NULL,
                                    MHD_OPTION_CONNECTION_TIMEOUT,       mhdTimeout,
-                                   MHD_OPTION_SOCK_ADDR,                (struct sockaddr*) &sad6,
+                                   MHD_OPTION_LISTEN_SOCKET,            listenFd6,
                                    MHD_OPTION_THREAD_POOL_SIZE,         mhdPoolSize,
                                    MHD_OPTION_CONNECTION_MEMORY_LIMIT,  mhdMemoryLimit,
                                    MHD_OPTION_CONNECTION_LIMIT,         mhdMaxConnections,
@@ -191,7 +246,7 @@ bool mhdStart
                                    mhdRequest,                          NULL,
                                    MHD_OPTION_NOTIFY_COMPLETED,         endF, NULL,
                                    MHD_OPTION_CONNECTION_TIMEOUT,       mhdTimeout,
-                                   MHD_OPTION_SOCK_ADDR,                (struct sockaddr*) &sad6,
+                                   MHD_OPTION_LISTEN_SOCKET,            listenFd6,
                                    MHD_OPTION_THREAD_POOL_SIZE,         mhdPoolSize,
                                    MHD_OPTION_CONNECTION_MEMORY_LIMIT,  mhdMemoryLimit,
                                    MHD_OPTION_CONNECTION_LIMIT,         mhdMaxConnections,
