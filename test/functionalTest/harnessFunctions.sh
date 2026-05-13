@@ -1092,14 +1092,15 @@ function ftClientStop()
   fi
   rm -f /tmp/ftClient.$_port.pid
 
-  # Wait for the listening socket to actually be released. Even with
-  # SO_REUSEPORT set on the daemon, CI has occasionally produced a race
-  # between fuser-kill and the next ftClientStart's bind. Poll up to 2s.
+  # Wait for the port AND any pid still holding it to be fully gone. fuser
+  # may report no orphan but the kernel can still have the listener and
+  # accepted-connection TIME_WAITs registered briefly. Poll up to 2s.
   typeset -i ftStopWaitNo
   ftStopWaitNo=0
   while [ $ftStopWaitNo -lt 20 ]
   do
-    if ! nc -z localhost $_port 2>/dev/null </dev/null; then break; fi
+    portBusy=$(fuser $_port/tcp 2>/dev/null | tr -d ' ')
+    if [ -z "$portBusy" ] && ! nc -z localhost $_port 2>/dev/null </dev/null; then break; fi
     sleep .1
     ftStopWaitNo=$ftStopWaitNo+1
   done
