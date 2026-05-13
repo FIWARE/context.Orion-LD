@@ -44,7 +44,7 @@ echo "==========================================================================
 payload='{
   "notification": {
     "http": {
-      "url": "http://localhost:'$LISTENER_PORT'/notify"
+      "url": "http://localhost:'$FT_PORT'/notify"
     }
   },
   "subject": {

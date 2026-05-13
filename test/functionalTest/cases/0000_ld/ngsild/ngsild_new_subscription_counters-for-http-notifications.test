@@ -26,7 +26,7 @@ Subscription Counters and timestamps for HTTP notifications
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -experimental -cSubCounters 5
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -64,7 +64,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -145,7 +145,7 @@ echo
 
 echo "09. Kill accumulator"
 echo "===================="
-accumulatorStop
+ftClientStop
 echo
 echo
 
@@ -206,7 +206,7 @@ echo
 
 echo "16. Start the accumulator again"
 echo "==============================="
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 echo
 echo
 
@@ -269,7 +269,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "notification": {
         "endpoint": {
             "accept": "application/json",
-            "uri": "http://127.0.0.1:9997/notify"
+            "uri": "http://127.0.0.1:7701/notify"
         },
         "format": "normalized",
         "lastNotification": "202REGEX(.*)",
@@ -309,7 +309,7 @@ MongoDB server version: REGEX(.*)
 		"q" : "",
 		"mq" : ""
 	},
-	"reference" : "http://127.0.0.1:9997/notify",
+	"reference" : "http://127.0.0.1:7701/notify",
 	"mimeType" : "application/json",
 	"attrs" : [ ],
 	"format" : "normalized",
@@ -370,7 +370,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "notification": {
         "endpoint": {
             "accept": "application/json",
-            "uri": "http://127.0.0.1:9997/notify"
+            "uri": "http://127.0.0.1:7701/notify"
         },
         "format": "normalized",
         "lastNotification": "202REGEX(.*)",
@@ -418,7 +418,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "consecutiveErrors": 1,
         "endpoint": {
             "accept": "application/json",
-            "uri": "http://127.0.0.1:9997/notify"
+            "uri": "http://127.0.0.1:7701/notify"
         },
         "format": "normalized",
         "lastErrorReason": "Unable to connect to notification endpoint",
@@ -461,7 +461,7 @@ MongoDB server version: REGEX(.*)
 		"q" : "",
 		"mq" : ""
 	},
-	"reference" : "http://127.0.0.1:9997/notify",
+	"reference" : "http://127.0.0.1:7701/notify",
 	"mimeType" : "application/json",
 	"attrs" : [ ],
 	"format" : "normalized",
@@ -504,7 +504,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "notification": {
         "endpoint": {
             "accept": "application/json",
-            "uri": "http://127.0.0.1:9997/notify"
+            "uri": "http://127.0.0.1:7701/notify"
         },
         "format": "normalized",
         "lastFailure": "202REGEX(.*)",
@@ -531,7 +531,6 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:T:E6
 
 16. Start the accumulator again
 ===============================
-accumulator running as PID REGEX(\d+)
 
 
 17. Create a matching entity E7
@@ -563,7 +562,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "notification": {
         "endpoint": {
             "accept": "application/json",
-            "uri": "http://127.0.0.1:9997/notify"
+            "uri": "http://127.0.0.1:7701/notify"
         },
         "format": "normalized",
         "lastErrorReason": "Unable to connect to notification endpoint",

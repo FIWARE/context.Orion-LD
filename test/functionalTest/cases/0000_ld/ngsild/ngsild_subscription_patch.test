@@ -26,7 +26,7 @@ Subscription Patch
 --SHELL-INIT--
 dbInit CB
 orionldStart CB
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -61,7 +61,7 @@ payload='{
     "attributes": [ "P1", "P2", "A3" ],
     "format": "keyValues",
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify",
+      "uri": "http://localhost:'$FT_PORT'/notify",
       "accept": "application/ld+json"
     }
   },
@@ -129,7 +129,7 @@ echo
 
 echo "08. Dump the accumulator to see the notification"
 echo "================================================"
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -152,7 +152,7 @@ MongoDB server version: REGEX(.*)
 {
 	"_id" : "urn:ngsi-ld:subscriptions:01",
 	"expiration" : REGEX(.*),
-	"reference" : "http://localhost:9997/notify",
+	"reference" : "http://localhost:7701/notify",
 	"custom" : false,
 	"mimeType" : "application/ld+json",
 	"throttling" : 5,
@@ -227,7 +227,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     ],
     "format": "keyValues",
     "endpoint": {
-      "uri": "http://localhost:9997/notify",
+      "uri": "http://localhost:7701/notify",
       "accept": "application/ld+json"
     },
     "status": "ok"
@@ -282,7 +282,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     ],
     "format": "keyValues",
     "endpoint": {
-      "uri": "http://localhost:9997/notify",
+      "uri": "http://localhost:7701/notify",
       "accept": "application/ld+json"
     },
     "status": "ok"
@@ -302,7 +302,7 @@ MongoDB server version: REGEX(.*)
 {
 	"_id" : "urn:ngsi-ld:subscriptions:01",
 	"expiration" : REGEX(.*),
-	"reference" : "http://localhost:9997/notify",
+	"reference" : "http://localhost:7701/notify",
 	"custom" : false,
 	"mimeType" : "application/ld+json",
 	"throttling" : 5,
@@ -356,12 +356,12 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:E01
 
 08. Dump the accumulator to see the notification
 ================================================
-POST http://localhost:9997/notify?subscriptionId=urn:ngsi-ld:subscriptions:01
+POST http://localhost:7701/notify?subscriptionId=urn:ngsi-ld:subscriptions:01
 Fiware-Servicepath: /
 Content-Length: 312
 User-Agent: REGEX(.*)
 Ngsiv2-Attrsformat: keyValues
-Host: localhost:9997
+Host: localhost:7701
 Accept: application/json
 Content-Type: application/ld+json
 
@@ -385,4 +385,4 @@ Content-Type: application/ld+json
 --TEARDOWN--
 brokerStop CB
 dbDrop CB
-accumulatorStop
+ftClientStop

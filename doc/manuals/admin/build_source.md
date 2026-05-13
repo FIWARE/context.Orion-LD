@@ -87,13 +87,10 @@ The Orion Context Broker comes with a suite of functional, valgrind and end-to-e
 
 * Install the required tools:
 
-        sudo yum install python python-flask pyOpenSSL curl nc mongodb-org-shell valgrind bc
+        sudo yum install python curl nc mongodb-org-shell valgrind bc
 
-* Prepare the environment for test harness. Basically, you have to install the `accumulator-server.py` script and in a path under your control, `~/bin` is the recommended one. Alternatively, you can install them in a system directory such as `/usr/bin` but it could collide with an RPM installation, thus it is not recommended. In addition, you have to set several environment variables used by the harness script (see `scripts/testEnv.sh` file).
+* Prepare the environment for the test harness. The harness uses `ftClient` (built from the broker tree under `test/functionalTest/ftClient/`) as its all-purpose notification accumulator and DDS test peer. Set the harness environment variables before running the suite:
 
-        mkdir ~/bin
-        export PATH=~/bin:$PATH
-        make install_scripts INSTALL_DIR=~
         . scripts/testEnv.sh
 
 * Run test harness (it takes some time, please be patient).

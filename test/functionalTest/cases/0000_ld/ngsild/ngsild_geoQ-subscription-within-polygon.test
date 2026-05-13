@@ -223,78 +223,78 @@ HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
 Date: REGEX(.*)
 
-POST /notify?subscriptionId=urn:ngsi-ld:Subscription:S1
+POST http://REGEX(.*)/notify?subscriptionId=urn:ngsi-ld:Subscription:S1
 Content-Length: REGEX(\d+)
-Content-Type: application/json
 User-Agent: orionld/REGEX(.*)
 Host: REGEX(.*)
 Accept: application/json
-Ngsild-Attribute-Format: Normalized
+Content-Type: application/json
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+Ngsild-Attribute-Format: Normalized
 
 {
-  "id": "urn:ngsi-ld:Notification:REGEX(.*)",
-  "type": "Notification",
-  "subscriptionId": "urn:ngsi-ld:Subscription:S1",
-  "notifiedAt": "REGEX(.*)",
-  "data": [
-    {
-      "id": "urn:ngsi-ld:City:E1",
-      "type": "City",
-      "name": {
-        "type": "Property",
-        "value": "Madrid"
-      },
-      "location": {
-        "type": "GeoProperty",
-        "value": {
-          "type": "Point",
-          "coordinates": [
-            -3.691944,
-            40.418889
-          ]
+    "data": [
+        {
+            "id": "urn:ngsi-ld:City:E1",
+            "location": {
+                "type": "GeoProperty",
+                "value": {
+                    "coordinates": [
+                        -3.691944,
+                        40.418889
+                    ],
+                    "type": "Point"
+                }
+            },
+            "name": {
+                "type": "Property",
+                "value": "Madrid"
+            },
+            "type": "City"
         }
-      }
-    }
-  ]
+    ],
+    "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+    "notifiedAt": "REGEX(.*)",
+    "subscriptionId": "urn:ngsi-ld:Subscription:S1",
+    "type": "Notification"
 }
-================================================================================
-
-POST /notify?subscriptionId=urn:ngsi-ld:Subscription:S1
+=======================================
+POST http://REGEX(.*)/notify?subscriptionId=urn:ngsi-ld:Subscription:S1
 Content-Length: REGEX(\d+)
-Content-Type: application/json
 User-Agent: orionld/REGEX(.*)
 Host: REGEX(.*)
 Accept: application/json
-Ngsild-Attribute-Format: Normalized
+Content-Type: application/json
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+Ngsild-Attribute-Format: Normalized
 
 {
-  "id": "urn:ngsi-ld:Notification:REGEX(.*)",
-  "type": "Notification",
-  "subscriptionId": "urn:ngsi-ld:Subscription:S1",
-  "notifiedAt": "REGEX(.*)",
-  "data": [
-    {
-      "id": "urn:ngsi-ld:City:E3",
-      "type": "City",
-      "name": {
-        "type": "Property",
-        "value": "Lisbon"
-      },
-      "location": {
-        "type": "GeoProperty",
-        "value": {
-          "type": "Point",
-          "coordinates": [
-            -9.139337,
-            38.722252
-          ]
+    "data": [
+        {
+            "id": "urn:ngsi-ld:City:E3",
+            "location": {
+                "type": "GeoProperty",
+                "value": {
+                    "coordinates": [
+                        -9.139337,
+                        38.722252
+                    ],
+                    "type": "Point"
+                }
+            },
+            "name": {
+                "type": "Property",
+                "value": "Lisbon"
+            },
+            "type": "City"
         }
-      }
-    }
-  ]
+    ],
+    "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+    "notifiedAt": "REGEX(.*)",
+    "subscriptionId": "urn:ngsi-ld:Subscription:S1",
+    "type": "Notification"
 }
+=======================================
 
 
 

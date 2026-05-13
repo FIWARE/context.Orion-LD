@@ -27,7 +27,7 @@ Subscription Creation and a simple notification
 # Copied from ngsild_first_notification.test
 dbInit CB
 orionldStart CB -mongocOnly
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT} -url /noresponse
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -82,7 +82,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/noresponse"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/noresponse"
     }
   }
 }'
@@ -282,5 +282,5 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

@@ -28,9 +28,9 @@ dbInit CB
 dbInit CB t1
 dbInit CB t2
 brokerStart CB 0-255 IPv4 -multiservice -subCacheIval 5
-accumulatorStart --pretty-print localhost $LISTENER_PORT
-accumulatorStart --pretty-print localhost $LISTENER2_PORT
-accumulatorStart --pretty-print localhost $LISTENER3_PORT
+ftClientStart --pretty-print --port $FT_PORT
+ftClientStart --pretty-print --port $FT2_PORT
+ftClientStart --pretty-print --port $FT3_PORT
 
 --SHELL--
 
@@ -63,7 +63,7 @@ payload='{
       "id": "s0.*"
     }
   ],
-  "reference": "http://localhost:'${LISTENER_PORT}'/notify",
+  "reference": "http://localhost:'${FT_PORT}'/notify",
   "duration": "P5Y",
   "notifyConditions": [
     {
@@ -86,7 +86,7 @@ payload='{
       "id": "s1.*"
     }
   ],
-  "reference": "http://localhost:'${LISTENER2_PORT}'/notify",
+  "reference": "http://localhost:'${FT2_PORT}'/notify",
   "duration": "P5Y",
   "notifyConditions": [
     {
@@ -109,7 +109,7 @@ payload='{
       "id": "s2.*"
     }
   ],
-  "reference": "http://localhost:'${LISTENER3_PORT}'/notify",
+  "reference": "http://localhost:'${FT3_PORT}'/notify",
   "duration": "P5Y",
   "notifyConditions": [
     {
@@ -160,21 +160,21 @@ echo
 
 echo "07. Dump accumulator1 - see s01/A"
 echo "================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
 
 echo "08. Dump accumulator2 - see s11/A"
 echo "================================="
-accumulator2Dump
+ftClientDump --port $FT2_PORT
 echo
 echo
 
 
 echo "09. Dump accumulator3 - see s21/A"
 echo "================================="
-accumulator3Dump
+ftClientDump --port $FT3_PORT
 echo
 echo
 
@@ -218,21 +218,21 @@ echo
 
 echo "14. Dump accumulator1 - see s01/A, creation+update"
 echo "=================================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
 
 echo "15. Dump accumulator2 - see s11/A, creation+update"
 echo "=================================================="
-accumulator2Dump
+ftClientDump --port $FT2_PORT
 echo
 echo
 
 
 echo "16. Dump accumulator3 - see s21/A, creation+update"
 echo "=================================================="
-accumulator3Dump
+ftClientDump --port $FT3_PORT
 echo
 echo
 
@@ -682,9 +682,9 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop $LISTENER_PORT
-accumulatorStop $LISTENER2_PORT
-accumulatorStop $LISTENER3_PORT
+ftClientStop
+ftClientStop --port $FT2_PORT
+ftClientStop --port $FT3_PORT
 dbDrop CB
 dbDrop CB t1
 dbDrop CB t2

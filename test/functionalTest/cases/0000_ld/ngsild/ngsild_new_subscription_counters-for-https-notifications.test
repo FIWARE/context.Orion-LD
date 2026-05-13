@@ -27,7 +27,7 @@ Subscription Counters and timestamps for HTTPS notifications
 ${SCRIPT_HOME}/httpsPrepare.sh --keyFileName /tmp/harnessTest.key --certFileName /tmp/harnessTest.pem
 dbInit CB
 orionldStart CB -experimental -cSubCounters 5
-accumulatorStart --pretty-print --https --key /tmp/harnessTest.key --cert /tmp/harnessTest.pem
+ftClientStart --pretty-print --https --httpsKey /tmp/harnessTest.key --httpsCertificate /tmp/harnessTest.pem
 
 --SHELL--
 
@@ -65,7 +65,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "https://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "https://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -149,7 +149,7 @@ echo
 
 echo "09. Kill accumulator"
 echo "===================="
-accumulatorStop
+ftClientStop
 echo
 echo
 
@@ -212,7 +212,7 @@ echo
 
 echo "16. Start the accumulator again"
 echo "==============================="
-accumulatorStart --pretty-print --https --key /tmp/harnessTest.key --cert /tmp/harnessTest.pem
+ftClientStart --pretty-print --https --httpsKey /tmp/harnessTest.key --httpsCertificate /tmp/harnessTest.pem
 echo
 echo
 
@@ -277,7 +277,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "notification": {
         "endpoint": {
             "accept": "application/json",
-            "uri": "https://127.0.0.1:9997/notify"
+            "uri": "https://127.0.0.1:7701/notify"
         },
         "format": "normalized",
         "lastNotification": "202REGEX(.*)",
@@ -317,7 +317,7 @@ MongoDB server version: REGEX(.*)
 		"q" : "",
 		"mq" : ""
 	},
-	"reference" : "https://127.0.0.1:9997/notify",
+	"reference" : "https://127.0.0.1:7701/notify",
 	"mimeType" : "application/json",
 	"attrs" : [ ],
 	"format" : "normalized",
@@ -378,7 +378,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "notification": {
         "endpoint": {
             "accept": "application/json",
-            "uri": "https://127.0.0.1:9997/notify"
+            "uri": "https://127.0.0.1:7701/notify"
         },
         "format": "normalized",
         "lastNotification": "202REGEX(.*)",
@@ -426,7 +426,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "consecutiveErrors": 1,
         "endpoint": {
             "accept": "application/json",
-            "uri": "https://127.0.0.1:9997/notify"
+            "uri": "https://127.0.0.1:7701/notify"
         },
         "format": "normalized",
         "lastErrorReason": "CURL Error 7: REGEX(.*)",
@@ -469,7 +469,7 @@ MongoDB server version: REGEX(.*)
 		"q" : "",
 		"mq" : ""
 	},
-	"reference" : "https://127.0.0.1:9997/notify",
+	"reference" : "https://127.0.0.1:7701/notify",
 	"mimeType" : "application/json",
 	"attrs" : [ ],
 	"format" : "normalized",
@@ -512,7 +512,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "notification": {
         "endpoint": {
             "accept": "application/json",
-            "uri": "https://127.0.0.1:9997/notify"
+            "uri": "https://127.0.0.1:7701/notify"
         },
         "format": "normalized",
         "lastFailure": "202REGEX(.*)",
@@ -539,7 +539,6 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:T:E6
 
 16. Start the accumulator again
 ===============================
-accumulator running as PID REGEX(\d+)
 
 
 17. Create a matching entity E7
@@ -571,7 +570,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "notification": {
         "endpoint": {
             "accept": "application/json",
-            "uri": "https://127.0.0.1:9997/notify"
+            "uri": "https://127.0.0.1:7701/notify"
         },
         "format": "normalized",
         "lastErrorReason": "CURL Error 7: REGEX(.*)",

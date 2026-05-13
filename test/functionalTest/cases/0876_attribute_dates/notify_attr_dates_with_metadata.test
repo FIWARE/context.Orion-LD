@@ -26,7 +26,7 @@ Notify attribute dates as metadata
 --SHELL-INIT--
 dbInit CB
 brokerStart CB
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -77,7 +77,7 @@ payload='{
          }
     },
     "notification": {
-        "http": {"url": "http://localhost:'$LISTENER_PORT'/notify"},
+        "http": {"url": "http://localhost:'$FT_PORT'/notify"},
         "metadata": [ "dateCreated" ]
     },
     "expires": "2050-04-05T14:00:00.00Z"
@@ -131,8 +131,8 @@ echo
 
 echo "01d. Dump and reset: see E1 with metadata dateCreated (2 notifications)"
 echo "======================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -152,7 +152,7 @@ payload='{
          }
     },
     "notification": {
-        "http": {"url": "http://localhost:'$LISTENER_PORT'/notify"},
+        "http": {"url": "http://localhost:'$FT_PORT'/notify"},
         "metadata": [ "dateModified" ]
     },
     "expires": "2050-04-05T14:00:00.00Z"
@@ -206,8 +206,8 @@ echo
 
 echo "02d. Dump and reset: see E2 with metadata dateModified (2 notifications)"
 echo "========================================================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -227,7 +227,7 @@ payload='{
          }
     },
     "notification": {
-        "http": {"url": "http://localhost:'$LISTENER_PORT'/notify"},
+        "http": {"url": "http://localhost:'$FT_PORT'/notify"},
         "metadata": [ "dateCreated", "dateModified" ]
     },
     "expires": "2050-04-05T14:00:00.00Z"
@@ -281,8 +281,8 @@ echo
 
 echo "03d. Dump and reset: see E3 with metadata dateCreated and dateModified (2 notifications)"
 echo "========================================================================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -302,7 +302,7 @@ payload='{
          }
     },
     "notification": {
-        "http": {"url": "http://localhost:'$LISTENER_PORT'/notify"},
+        "http": {"url": "http://localhost:'$FT_PORT'/notify"},
         "metadata": [ "dateModified", "dateCreated", "*" ]
     },
     "expires": "2050-04-05T14:00:00.00Z"
@@ -356,8 +356,8 @@ echo
 
 echo "04d. Dump and reset: see E4 with metadata M1, M2, dateCreated, dateModified (2 notifications)"
 echo "============================================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -377,7 +377,7 @@ payload='{
          }
     },
     "notification": {
-        "http": {"url": "http://localhost:'$LISTENER_PORT'/notify"},
+        "http": {"url": "http://localhost:'$FT_PORT'/notify"},
         "metadata": [ "dateModified", "dateCreated", "M1" ]
     },
     "expires": "2050-04-05T14:00:00.00Z"
@@ -431,8 +431,8 @@ echo
 
 echo "05d. Dump and reset: see E5 with metadata M1, dateCreated, dateModified (2 notifications)"
 echo "========================================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -452,7 +452,7 @@ payload='{
          }
     },
     "notification": {
-        "http": {"url": "http://localhost:'$LISTENER_PORT'/notify"},
+        "http": {"url": "http://localhost:'$FT_PORT'/notify"},
         "metadata": [ "M2" ]
     },
     "expires": "2050-04-05T14:00:00.00Z"
@@ -506,8 +506,8 @@ echo
 
 echo "06d. Dump and reset: see E6 with attribute M2 (2 notifications)"
 echo "==============================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -1115,5 +1115,5 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop $LISTENER_PORT
+ftClientStop
 dbDrop CB

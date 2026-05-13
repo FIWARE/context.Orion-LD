@@ -26,7 +26,7 @@ Test of the fix for the problem of 404 Not Found responses when updating attribu
 --SHELL-INIT--
 dbInit CB
 brokerStart CB
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -67,7 +67,7 @@ doc='{
                "isDomain":"false"
             }
          ],
-         "providingApplication":"http://localhost:9997/bug2871"
+         "providingApplication":"http://localhost:7701/bug2871"
       }
    ]
 }'
@@ -215,7 +215,7 @@ echo
 
 echo "08. Dump accumulator and see five forwarded updates"
 echo "==================================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -436,5 +436,5 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

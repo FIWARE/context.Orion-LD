@@ -26,7 +26,7 @@ Pernot Subscription - periodic notifications
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -pernot -experimental
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -51,7 +51,7 @@ payload='{
   "timeInterval": 2,
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     },
     "attributes": [ "P1", "P2" ],
     "sysAttrs": false,
@@ -76,7 +76,7 @@ payload='{
   "q": "P3==1|P3==2",
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     },
     "attributes": [ "P1", "P2" ],
     "sysAttrs": false,
@@ -146,7 +146,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             ],
             "endpoint": {
                 "accept": "application/json",
-                "uri": "http://127.0.0.1:9997/notify"
+                "uri": "http://127.0.0.1:7701/notify"
             },
             "format": "normalized",
             "lastNotification": "202REGEX(.*)Z",
@@ -176,7 +176,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             ],
             "endpoint": {
                 "accept": "application/json",
-                "uri": "http://127.0.0.1:9997/notify"
+                "uri": "http://127.0.0.1:7701/notify"
             },
             "format": "normalized",
             "status": "ok"
@@ -214,7 +214,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             ],
             "endpoint": {
                 "accept": "application/json",
-                "uri": "http://127.0.0.1:9997/notify"
+                "uri": "http://127.0.0.1:7701/notify"
             },
             "format": "normalized",
             "lastNotification": "202REGEX(.*)Z",
@@ -244,7 +244,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             ],
             "endpoint": {
                 "accept": "application/json",
-                "uri": "http://127.0.0.1:9997/notify"
+                "uri": "http://127.0.0.1:7701/notify"
             },
             "format": "normalized",
             "status": "ok"

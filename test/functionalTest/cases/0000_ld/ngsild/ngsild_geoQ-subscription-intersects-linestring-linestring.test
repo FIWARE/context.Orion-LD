@@ -192,90 +192,90 @@ HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
 Date: REGEX(.*)
 
-POST /notify?subscriptionId=urn:ngsi-ld:Subscription:S1
+POST http://REGEX(.*)/notify?subscriptionId=urn:ngsi-ld:Subscription:S1
 Content-Length: REGEX(\d+)
-Content-Type: application/json
 User-Agent: orionld/REGEX(.*)
 Host: REGEX(.*)
 Accept: application/json
-Ngsild-Attribute-Format: Normalized
+Content-Type: application/json
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+Ngsild-Attribute-Format: Normalized
 
 {
-  "id": "urn:ngsi-ld:Notification:REGEX(.*)",
-  "type": "Notification",
-  "subscriptionId": "urn:ngsi-ld:Subscription:S1",
-  "notifiedAt": "REGEX(.*)",
-  "data": [
-    {
-      "id": "urn:ngsi-ld:Route:E1",
-      "type": "Route",
-      "name": {
-        "type": "Property",
-        "value": "NW-SE Route"
-      },
-      "location": {
-        "type": "GeoProperty",
-        "value": {
-          "type": "LineString",
-          "coordinates": [
-            [
-              -5,
-              43
-            ],
-            [
-              3,
-              38
-            ]
-          ]
+    "data": [
+        {
+            "id": "urn:ngsi-ld:Route:E1",
+            "location": {
+                "type": "GeoProperty",
+                "value": {
+                    "coordinates": [
+                        [
+                            -5,
+                            43
+                        ],
+                        [
+                            3,
+                            38
+                        ]
+                    ],
+                    "type": "LineString"
+                }
+            },
+            "name": {
+                "type": "Property",
+                "value": "NW-SE Route"
+            },
+            "type": "Route"
         }
-      }
-    }
-  ]
+    ],
+    "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+    "notifiedAt": "REGEX(.*)",
+    "subscriptionId": "urn:ngsi-ld:Subscription:S1",
+    "type": "Notification"
 }
-================================================================================
-
-POST /notify?subscriptionId=urn:ngsi-ld:Subscription:S1
+=======================================
+POST http://REGEX(.*)/notify?subscriptionId=urn:ngsi-ld:Subscription:S1
 Content-Length: REGEX(\d+)
-Content-Type: application/json
 User-Agent: orionld/REGEX(.*)
 Host: REGEX(.*)
 Accept: application/json
-Ngsild-Attribute-Format: Normalized
+Content-Type: application/json
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+Ngsild-Attribute-Format: Normalized
 
 {
-  "id": "urn:ngsi-ld:Notification:REGEX(.*)",
-  "type": "Notification",
-  "subscriptionId": "urn:ngsi-ld:Subscription:S1",
-  "notifiedAt": "REGEX(.*)",
-  "data": [
-    {
-      "id": "urn:ngsi-ld:Route:E3",
-      "type": "Route",
-      "name": {
-        "type": "Property",
-        "value": "North-South Route"
-      },
-      "location": {
-        "type": "GeoProperty",
-        "value": {
-          "type": "LineString",
-          "coordinates": [
-            [
-              0,
-              38
-            ],
-            [
-              0,
-              45
-            ]
-          ]
+    "data": [
+        {
+            "id": "urn:ngsi-ld:Route:E3",
+            "location": {
+                "type": "GeoProperty",
+                "value": {
+                    "coordinates": [
+                        [
+                            0,
+                            38
+                        ],
+                        [
+                            0,
+                            45
+                        ]
+                    ],
+                    "type": "LineString"
+                }
+            },
+            "name": {
+                "type": "Property",
+                "value": "North-South Route"
+            },
+            "type": "Route"
         }
-      }
-    }
-  ]
+    ],
+    "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+    "notifiedAt": "REGEX(.*)",
+    "subscriptionId": "urn:ngsi-ld:Subscription:S1",
+    "type": "Notification"
 }
+=======================================
 
 
 

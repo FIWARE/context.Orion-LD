@@ -603,57 +603,58 @@ HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
 Date: REGEX(.*)
 
-POST /notify?subscriptionId=urn:s1
+POST http://REGEX(.*)/notify?subscriptionId=urn:s1
 Content-Length: REGEX(.*)
-Content-Type: application/json
 User-Agent: orionld/REGEX(.*)
 Host: REGEX(.*)
 Accept: application/json
-Ngsild-Attribute-Format: Concise
+Content-Type: application/json
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+Ngsild-Attribute-Format: Concise
 
 {
-  "id": "urn:ngsi-ld:Notification:REGEX(.*)",
-  "type": "Notification",
-  "subscriptionId": "urn:s1",
-  "notifiedAt": "202REGEX(.*)Z",
-  "data": [
-    {
-      "id": "urn:E3",
-      "type": "T",
-      "A1": {
-        "value": "A1 in step 08",
-        "ngsildproof": {
-          "entityIdSealed": "urn:E3",
-          "entityTypeSealed": "T",
-          "value": {
-            "type": "DataIntegrityProof",
-            "created": "202REGEX(.*)Z",
-            "verificationMethod": "https://example.edu/issuers/565049#z6MkwXG2WjeQnN....Hc6SaVWoT",
-            "cryptosuite": "eddsa-rdfc-2022",
-            "proofPurpose": "assertionMethod",
-            "proofValue": "z3XrH3diVCqpVHXkE7WbnictqyQCkJBGTx....NRTzmuoWU1Y2FyqGfSV9eT"
-          }
+    "data": [
+        {
+            "A1": {
+                "ngsildproof": {
+                    "entityIdSealed": "urn:E3",
+                    "entityTypeSealed": "T",
+                    "value": {
+                        "created": "202REGEX(.*)Z",
+                        "cryptosuite": "eddsa-rdfc-2022",
+                        "proofPurpose": "assertionMethod",
+                        "proofValue": "z3XrH3diVCqpVHXkE7WbnictqyQCkJBGTx....NRTzmuoWU1Y2FyqGfSV9eT",
+                        "type": "DataIntegrityProof",
+                        "verificationMethod": "https://example.edu/issuers/565049#z6MkwXG2WjeQnN....Hc6SaVWoT"
+                    }
+                },
+                "value": "A1 in step 08"
+            },
+            "A2": {
+                "ngsildproof": {
+                    "entityIdSealed": "urn:E3",
+                    "entityTypeSealed": "T",
+                    "value": {
+                        "created": "202REGEX(.*)Z",
+                        "cryptosuite": "eddsa-rdfc-2022",
+                        "proofPurpose": "assertionMethod",
+                        "proofValue": "z3XrH3diVCqpVHXkE7WbnictqyQCkJBGTx....NRTzmuoWU1Y2FyqGfSV9eT",
+                        "type": "DataIntegrityProof",
+                        "verificationMethod": "https://example.edu/issuers/565049#z6MkwXG2WjeQnN....Hc6SaVWoT"
+                    }
+                },
+                "value": "A2 in step 08"
+            },
+            "id": "urn:E3",
+            "type": "T"
         }
-      },
-      "A2": {
-        "value": "A2 in step 08",
-        "ngsildproof": {
-          "entityIdSealed": "urn:E3",
-          "entityTypeSealed": "T",
-          "value": {
-            "type": "DataIntegrityProof",
-            "created": "202REGEX(.*)Z",
-            "verificationMethod": "https://example.edu/issuers/565049#z6MkwXG2WjeQnN....Hc6SaVWoT",
-            "cryptosuite": "eddsa-rdfc-2022",
-            "proofPurpose": "assertionMethod",
-            "proofValue": "z3XrH3diVCqpVHXkE7WbnictqyQCkJBGTx....NRTzmuoWU1Y2FyqGfSV9eT"
-          }
-        }
-      }
-    }
-  ]
+    ],
+    "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+    "notifiedAt": "202REGEX(.*)Z",
+    "subscriptionId": "urn:s1",
+    "type": "Notification"
 }
+=======================================
 
 
 

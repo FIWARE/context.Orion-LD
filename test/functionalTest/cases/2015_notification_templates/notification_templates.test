@@ -26,7 +26,7 @@ Notification Templates, Normal Case
 --SHELL-INIT--
 dbInit CB
 brokerStart CB
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -57,7 +57,7 @@ payload='{
   },
   "notification": {
     "httpCustom": {
-      "url":     "http://127.0.0.1:'${LISTENER_PORT}'/${NOTIFY_URL}",
+      "url":     "http://127.0.0.1:'${FT_PORT}'/${NOTIFY_URL}",
       "qs":      { "step": "01" }
     }
   }
@@ -82,7 +82,7 @@ payload='{
   },
   "notification": {
     "httpCustom": {
-      "url":     "http://127.0.0.1:'${LISTENER_PORT}'/${NOTIFY_URL}",
+      "url":     "http://127.0.0.1:'${FT_PORT}'/${NOTIFY_URL}",
       "method":  "PATCH",
       "qs":      { "step": "02" }
     }
@@ -108,7 +108,7 @@ payload='{
   },
   "notification": {
     "httpCustom": {
-      "url":     "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "url":     "http://127.0.0.1:'${FT_PORT}'/notify",
       "payload": "{ %22A1%22: %22${A1}%22, %22A2%22: %22${A2}%22, %22A3%22: %22${A3}%22, %22step%22: %2203%22 }",
       "qs":       { "step": "03" }
     }
@@ -134,7 +134,7 @@ payload='{
   },
   "notification": {
     "httpCustom": {
-      "url":      "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "url":      "http://127.0.0.1:'${FT_PORT}'/notify",
       "qs":       { "step": "04", "id": "${id}", "type": "${type}", "a1": "${A1}", "a2": "${A2}", "a3": "${A3}" }
     }
   }
@@ -159,7 +159,7 @@ payload='{
   },
   "notification": {
     "httpCustom": {
-      "url":     "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "url":     "http://127.0.0.1:'${FT_PORT}'/notify",
       "headers": { "entity-id": "${id}", "entity-type": "${type}", "A1": "${A1}", "A2": "${A2}", "A3": "${A3}", "step": "05" },
       "qs":      { "step": "05" }
     }
@@ -185,7 +185,7 @@ payload='{
   },
   "notification": {
     "httpCustom": {
-      "url":      "http://127.0.0.1:'${LISTENER_PORT}'/${NOTIFY_URL}",
+      "url":      "http://127.0.0.1:'${FT_PORT}'/${NOTIFY_URL}",
       "method":   "DELETE",
       "payload":  "{ %22A1%22: %22${A1}%22, %22A2%22: %22${A2}%22, %22A3%22: %22${A3}%22 }",
       "qs":       { "step": "06", "id": "${id}", "type": "${type}", "a1": "${A1}", "a2": "${A2}", "a3": "${A3}" },
@@ -213,7 +213,7 @@ payload='{
   },
   "notification": {
     "httpCustom": {
-      "url":      "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "url":      "http://127.0.0.1:'${FT_PORT}'/notify",
       "payload":  "{ %22A1%22: %22${A1}%22, %22A2%22: %22${A2}%22, %22A4%22: %22${A4}%22 }",
       "qs":       { "step": "07", "id": "${id}", "type": "${type}", "a1": "${A1}", "a2": "${A2}", "a4": "${A4}" },
       "headers":  { "entity-id": "${id}", "entity-type": "${type}", "A1": "${A1}", "A2": "${A2}", "A4": "${A4}", "step": "07", "Content-Type": "user-specified" }
@@ -242,7 +242,7 @@ echo
 echo "09. Dump accumulator, see 7 notifications"
 echo "========================================="
 sleep 0.5  # Without this sleep, sometimes the last notification is missing
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -331,7 +331,7 @@ Location: /v2/entities/E1?type=Thing
 09. Dump accumulator, see 7 notifications
 =========================================
 #SORT_START
-POST http://127.0.0.1:9997/notify?step=01
+POST http://127.0.0.1:7701/notify?step=01
 Fiware-Servicepath: /
 Content-Length: 285
 User-Agent: orion/REGEX(\d+\.\d+\.\d+.*)
@@ -371,7 +371,7 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
     "subscriptionId": "REGEX([0-9a-f]{24})"
 }
 =======================================
-PATCH http://127.0.0.1:9997/notify?step=02
+PATCH http://127.0.0.1:7701/notify?step=02
 Fiware-Servicepath: /
 Content-Length: 285
 User-Agent: orion/REGEX(\d+\.\d+\.\d+.*)
@@ -411,7 +411,7 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
     "subscriptionId": "REGEX([0-9a-f]{24})"
 }
 =======================================
-POST http://127.0.0.1:9997/notify?step=03
+POST http://127.0.0.1:7701/notify?step=03
 Fiware-Servicepath: /
 Content-Length: 52
 User-Agent: orion/REGEX(\d+\.\d+\.\d+.*)
@@ -428,7 +428,7 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
     "step": "03"
 }
 =======================================
-POST http://127.0.0.1:9997/notify?a1=a1&a2=a2&a3=13&id=E1&step=04&type=Thing
+POST http://127.0.0.1:7701/notify?a1=a1&a2=a2&a3=13&id=E1&step=04&type=Thing
 Fiware-Servicepath: /
 Content-Length: 285
 User-Agent: orion/REGEX(\d+\.\d+\.\d+.*)
@@ -468,7 +468,7 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
     "subscriptionId": "REGEX([0-9a-f]{24})"
 }
 =======================================
-POST http://127.0.0.1:9997/notify?step=05
+POST http://127.0.0.1:7701/notify?step=05
 Fiware-Servicepath: /
 Ngsiv2-Attrsformat: normalized
 Entity-Id: E1
@@ -514,7 +514,7 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
     "subscriptionId": "REGEX([0-9a-f]{24})"
 }
 =======================================
-DELETE http://127.0.0.1:9997/notify?a1=a1&a2=a2&a3=13&id=E1&step=06&type=Thing
+DELETE http://127.0.0.1:7701/notify?a1=a1&a2=a2&a3=13&id=E1&step=06&type=Thing
 Fiware-Servicepath: /
 Ngsiv2-Attrsformat: custom
 Entity-Id: E1
@@ -536,7 +536,7 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
     "A3": "13"
 }
 =======================================
-POST http://127.0.0.1:9997/notify?a1=a1&a2=a2&id=E1&step=07&type=Thing
+POST http://127.0.0.1:7701/notify?a1=a1&a2=a2&id=E1&step=07&type=Thing
 Fiware-Servicepath: /
 Entity-Id: E1
 Content-Length: 36
@@ -563,4 +563,4 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 --TEARDOWN--
 brokerStop CB
 dbDrop CB
-accumulatorStop
+ftClientStop

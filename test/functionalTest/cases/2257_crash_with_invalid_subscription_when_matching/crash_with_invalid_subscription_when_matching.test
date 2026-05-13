@@ -49,7 +49,7 @@ payload='{
          }
     },
     "notification": {
-        "http": { "url": "http://localhost:'$LISTENER_PORT'/notify" },
+        "http": { "url": "http://localhost:'$FT_PORT'/notify" },
         "attrs": [ ]
     },
     "expires": "2050-04-05T14:00:00.00Z"

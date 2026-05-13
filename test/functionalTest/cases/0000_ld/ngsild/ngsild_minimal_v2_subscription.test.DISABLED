@@ -42,7 +42,7 @@ payload='{
       "id": "E1"
     }
   ],
-  "reference": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+  "reference": "http://127.0.0.1:'${FT_PORT}'/notify",
   "notifyConditions": [
     {
       "type": "ONCHANGE"
@@ -86,7 +86,7 @@ MongoDB server version: REGEX(.*)
 {
 	"_id" : REGEX(.*),
 	"expiration" : REGEX(.*),
-	"reference" : "http://127.0.0.1:9997/notify",
+	"reference" : "http://127.0.0.1:7701/notify",
 	"custom" : false,
 	"mimeType" : "application/json",
 	"throttling" : -1,

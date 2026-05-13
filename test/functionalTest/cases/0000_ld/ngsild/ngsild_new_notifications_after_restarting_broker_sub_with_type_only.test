@@ -27,7 +27,7 @@ Notifications after killing and restarting broker - sub on type only
 # Copied from ngsild_notifications_after_restarting_broker_sub_with_type_only.test
 dbInit CB
 orionldStart CB -experimental
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT} -v
+ftClientStart --pretty-print --port ${FT_PORT} -v
 
 --SHELL--
 
@@ -76,7 +76,7 @@ payload='{
   "notification": {
     "format": "normalized",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
       "accept": "application/json"
     }
   },
@@ -109,8 +109,8 @@ echo
 
 echo "05. Dump accumulator to see one notification - NGSI-LD has no initial notifications"
 echo "==================================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -140,7 +140,7 @@ echo
 echo "08. Dump accumulator to see one notification"
 echo "============================================"
 sleep .2
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -194,7 +194,7 @@ MongoDB server version: REGEX(.*)
 		"mq" : ""
 	},
 	"format" : "normalized",
-	"reference" : "http://127.0.0.1:9997/notify",
+	"reference" : "http://127.0.0.1:7701/notify",
 	"mimeType" : "application/json",
 	"attrs" : [ ],
 	"conditions" : [ ],
@@ -307,5 +307,5 @@ Ngsild-Attribute-Format: Normalized
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

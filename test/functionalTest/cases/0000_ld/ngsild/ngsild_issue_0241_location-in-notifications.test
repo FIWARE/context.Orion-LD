@@ -27,7 +27,7 @@ Notifications - correct representation of location inside notifications
 dbInit CB
 dbInit orionld
 orionldStart CB
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -54,7 +54,7 @@ payload='{
   "notification": {
     "format": "normalized",
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify",
+      "uri": "http://localhost:'$FT_PORT'/notify",
       "accept": "application/ld+json"
     }
   }
@@ -89,8 +89,8 @@ echo
 echo "03. Dump the accumulator to see the notification, make sure the 'location' property is OK"
 echo "========================================================================================="
 sleep 1
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -209,7 +209,7 @@ MongoDB server version: REGEX(.*)
 {
 	"_id" : "urn:ngsi-ld:Subscription:01",
 	"expiration" : 0,
-	"reference" : "http://localhost:9997/notify",
+	"reference" : "http://localhost:7701/notify",
 	"custom" : false,
 	"mimeType" : "application/ld+json",
 	"throttling" : 0,

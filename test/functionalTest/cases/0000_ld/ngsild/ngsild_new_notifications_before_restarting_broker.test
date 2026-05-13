@@ -27,7 +27,7 @@ Notifications before killing and restarting broker - tmp?
 # Copied from ngsild_notifications_before_restarting_broker.test
 dbInit CB
 orionldStart CB -experimental
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT} -v
+ftClientStart --pretty-print --port ${FT_PORT} -v
 
 --SHELL--
 
@@ -74,7 +74,7 @@ payload='{
   "notification": {
     "format": "normalized",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
       "accept": "application/json"
     }
   },
@@ -107,8 +107,8 @@ echo
 
 echo "05. Dump accumulator to see one notification - NGSI-LD has no initial notifications"
 echo "==================================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -162,7 +162,7 @@ MongoDB server version: REGEX(.*)
 		"mq" : ""
 	},
 	"format" : "normalized",
-	"reference" : "http://127.0.0.1:9997/notify",
+	"reference" : "http://127.0.0.1:7701/notify",
 	"mimeType" : "application/json",
 	"attrs" : [ ],
 	"conditions" : [ ],
@@ -222,5 +222,5 @@ Ngsild-Attribute-Format: Normalized
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

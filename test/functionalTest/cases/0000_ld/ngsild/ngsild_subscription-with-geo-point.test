@@ -130,5 +130,5 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

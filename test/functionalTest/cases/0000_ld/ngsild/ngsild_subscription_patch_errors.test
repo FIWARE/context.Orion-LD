@@ -203,7 +203,7 @@ payload='{
     "attributes": [ "P1", "P2", "A3" ],
     "format": "keyValues",
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify",
+      "uri": "http://localhost:'$FT_PORT'/notify",
       "accept": "application/ld+json"
     }
   },

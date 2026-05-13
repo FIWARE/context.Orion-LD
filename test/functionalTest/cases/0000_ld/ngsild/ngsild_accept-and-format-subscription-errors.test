@@ -26,7 +26,7 @@ Subscription Creation Errors test - incompatibility between format and accept fi
 --SHELL-INIT--
 dbInit CB
 orionldStart CB
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -51,7 +51,7 @@ payload='{
     "attributes": [ ],
     "format": "x-ngsiv2-normalized",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
       "accept": "application/ld+json"
     }
   }
@@ -78,5 +78,5 @@ Date: REGEX(.*)
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

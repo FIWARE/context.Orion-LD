@@ -28,7 +28,7 @@ dbInit CB
 dbInit CP1
 orionldStart CB -experimental -forwarding
 orionldStart CP1 -experimental
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -102,7 +102,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -127,7 +127,7 @@ echo
 
 echo "05. Dump/Reset accumulator, see ONE notification with TWO deleted entities"
 echo "=========================================================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -347,4 +347,4 @@ Date: REGEX(.*)
 --TEARDOWN--
 brokerStop CB
 dbDrop CB
-accumulatorStop
+ftClientStop

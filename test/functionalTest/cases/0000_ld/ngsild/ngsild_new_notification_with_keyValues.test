@@ -27,7 +27,7 @@ Subscription Creation and a simple notification with keyValues
 # Copied from ngsild_notification_with_keyValues.test
 dbInit CB
 orionldStart CB -experimental
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -55,7 +55,7 @@ payload='{
   "notification": {
     "format": "keyValues",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
       "accept": "application/ld+json"
     }
   },
@@ -89,8 +89,8 @@ echo
 
 echo "03. Dump accumulator to see one notification, then reset the accumulator"
 echo "========================================================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -111,7 +111,7 @@ echo
 
 echo "05. Dump accumulator to see one notification"
 echo "============================================"
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -201,5 +201,5 @@ Ngsild-Attribute-Format: Simplified
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

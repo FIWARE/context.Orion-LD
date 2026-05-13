@@ -26,7 +26,7 @@ Subscription ID metadata
 --SHELL-INIT--
 dbInit CB
 brokerStart CB
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -42,7 +42,7 @@ payload='{
     "attributes": [
         "temperature"
     ],
-    "reference": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+    "reference": "http://127.0.0.1:'${FT_PORT}'/notify",
     "duration": "PT1H",
     "notifyConditions": [
         {
@@ -98,7 +98,7 @@ orionCurl --url "$url" --payload "$payload"
 
 echo
 echo "Accumulated data:"
-accumulatorDump
+ftClientDump
 
 
 --REGEXPECT--
@@ -220,5 +220,5 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 --TEARDOWN--
 
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

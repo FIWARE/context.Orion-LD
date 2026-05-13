@@ -26,7 +26,7 @@ Case sensitivness in httpCustom notification headers
 --SHELL-INIT--
 dbInit CB
 brokerStart CB
-accumulatorStart
+ftClientStart
 
 --SHELL--
 
@@ -51,7 +51,7 @@ payload='{
   },
   "notification": {
     "httpCustom": {
-      "url":     "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "url":     "http://127.0.0.1:'${FT_PORT}'/notify",
       "headers": { "${A3}": "${A4}" },
       "payload" : "Attributes are: ${A1} - ${A2} - ${A3} - ${A4}\n"
     }
@@ -78,7 +78,7 @@ echo
 
 echo "03. Dump accumulator, see 1 notification"
 echo "========================================"
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -123,4 +123,4 @@ Attributes are: foo - bar - Content-Type - text/plain
 --TEARDOWN--
 brokerStop CB
 dbDrop CB
-accumulatorStop
+ftClientStop

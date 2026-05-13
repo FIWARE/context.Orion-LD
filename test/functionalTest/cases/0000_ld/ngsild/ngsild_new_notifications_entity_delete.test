@@ -26,7 +26,7 @@ Notifications on Entity Deletion
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -experimental -forwarding
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -68,7 +68,7 @@ payload='{
   "q": "name==%221%22",
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
       "receiverInfo": [
         {
           "key": "FIWARE-Correlator",
@@ -96,7 +96,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -118,7 +118,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -140,7 +140,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -159,7 +159,7 @@ echo
 
 echo "04.  Dump the accumulator, see two notifications (S1+S2) on Entity deletion for urn:E1, see the 'FIWARE-Correlator' header for the S1 notification"
 echo "=================================================================================================================================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -271,4 +271,4 @@ Ngsild-Attribute-Format: Normalized
 --TEARDOWN--
 brokerStop CB
 dbDrop CB
-accumulatorStop
+ftClientStop

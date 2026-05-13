@@ -27,7 +27,7 @@ Subscription Cache Throttling and expiration after Refresh
 dbInit CB
 dbInit CB t1
 brokerStart CB 38,101,205,206 IPv4 -multiservice -subCacheIval 10 --cache
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -55,7 +55,7 @@ payload='{
       "id": "s0.*"
     }
   ],
-  "reference": "http://localhost:'${LISTENER_PORT}'/notify",
+  "reference": "http://localhost:'${FT_PORT}'/notify",
   "duration": "PT21S",
   "throttling": "PT4S",
   "notifyConditions": [
@@ -151,7 +151,7 @@ echo
 echo "11. Dump accumulator - see two notifications"
 echo "============================================"
 sleep 1
-accumulatorDump
+ftClientDump
 echo
 echo
 

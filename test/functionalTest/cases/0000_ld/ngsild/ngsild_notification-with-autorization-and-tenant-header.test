@@ -27,7 +27,7 @@ NGSI-LD Notification with HTTP headers
 dbInit CB
 dbInit CB t1
 orionldStart CB -forwarding -multiservice
-accumulatorStart --pretty-print --url /notify
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -49,7 +49,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify"
+      "uri": "http://localhost:'$FT_PORT'/notify"
     }
   }
 }'
@@ -79,7 +79,7 @@ echo
 
 echo "03. Dump accumulator and see the notification message and its headers"
 echo "====================================================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -107,13 +107,13 @@ NGSILD-Tenant: t1
 
 03. Dump accumulator and see the notification message and its headers
 =====================================================================
-POST http://localhost:9997/notify?subscriptionId=urn:ngsi-ld:subscriptions:s1
+POST http://localhost:7701/notify?subscriptionId=urn:ngsi-ld:subscriptions:s1
 Fiware-Servicepath: /
 Content-Length: 337
 X-Auth-Token: xauth
 User-Agent: REGEX(.*)
 Ngsiv2-Attrsformat: normalized
-Host: localhost:9997
+Host: localhost:7701
 Accept: application/json
 Ngsild-Tenant: t1
 Content-Type: application/json; charset=utf-8
@@ -146,4 +146,4 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 brokerStop CB
 dbDrop CB
 dbDrop CB t1
-accumulatorStop
+ftClientStop

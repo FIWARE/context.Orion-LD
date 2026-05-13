@@ -27,7 +27,7 @@ NGSI-LD Forward of GET /entities/{eid} with HTTP headers
 dbInit CB
 dbInit CB t1
 orionldStart CB -forwarding -multiservice
-accumulatorStart --pretty-print --url "/ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1" 
+ftClientStart --pretty-print 
 
 --SHELL--
 
@@ -72,7 +72,7 @@ payload='{
       ]
     }
   ],
-  "endpoint": "http://localhost:'$LISTENER_PORT'"
+  "endpoint": "http://localhost:'$FT_PORT'"
 }'
 orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload"  --tenant T1
 echo
@@ -88,7 +88,7 @@ echo
 
 echo "04. Dump accumulator and see the forwarded message and its headers"
 echo "=================================================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -141,7 +141,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 GET http://localhost:REGEX(\d+)/ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1
 Authorization: auth
 X-Auth-Token: xauth
-Host: localhost:9997
+Host: localhost:7701
 Accept: application/json
 Ngsild-Tenant: t1
 =======================================
@@ -151,4 +151,4 @@ Ngsild-Tenant: t1
 brokerStop CB
 dbDrop CB
 dbDrop CB t1
-accumulatorStop
+ftClientStop

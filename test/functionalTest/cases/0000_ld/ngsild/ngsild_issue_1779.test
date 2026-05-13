@@ -147,39 +147,40 @@ Date: REGEX(.*)
 04. Dump the ftClient to see the notification
 =============================================
 HTTP/1.1 200 OK
-Content-Length: 846
+Content-Length: REGEX(.*)
 Date: REGEX(.*)
 
-POST /notify?subscriptionId=urn:s1
-Content-Length: 360
-Content-Type: application/json
+POST http://REGEX(.*)/notify?subscriptionId=urn:s1
+Content-Length: REGEX(\d+)
 User-Agent: orionld/REGEX(.*)
-Host: 127.0.0.1:7701
+Host: REGEX(.*)
 Accept: application/json
-Ngsild-Attribute-Format: Normalized
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 Ngsild-Tenant: t1
+Content-Type: application/json
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+Ngsild-Attribute-Format: Normalized
 
 {
-  "id": "urn:ngsi-ld:Notification:REGEX(.*)",
-  "type": "Notification",
-  "subscriptionId": "urn:s1",
-  "notifiedAt": "202REGEX(.*)",
-  "data": [
-    {
-      "id": "urn:ngsi-ld:CowEvent:20260113161457",
-      "type": "CowEvent",
-      "refAbout": {
-        "type": "Relationship",
-        "object": "urn:ngsi-ld:Cow:20260113161457"
-      },
-      "eventName": {
-        "type": "Property",
-        "value": "REGEX(.*)"
-      }
-    }
-  ]
+    "data": [
+        {
+            "eventName": {
+                "type": "Property",
+                "value": "REGEX(.*)"
+            },
+            "id": "urn:ngsi-ld:CowEvent:20260113161457",
+            "refAbout": {
+                "object": "urn:ngsi-ld:Cow:20260113161457",
+                "type": "Relationship"
+            },
+            "type": "CowEvent"
+        }
+    ],
+    "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+    "notifiedAt": "202REGEX(.*)",
+    "subscriptionId": "urn:s1",
+    "type": "Notification"
 }
+=======================================
 
 
 

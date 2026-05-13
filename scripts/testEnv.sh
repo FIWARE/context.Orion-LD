@@ -49,10 +49,8 @@ export MAXIMUM_WAIT=${MAXIMUM_WAIT:-30}
 # o CP5_PORT         - port where the fifth contextProvider listens for connections
 # o CP6_PORT         - port where the sixth contextProvider listens for connections
 #
-# o LISTENER_PORT    - port where listening (test) applications listen for connections
-# o LISTENER2_PORT   - port where a second listening (test) application listens for connections
-# o LISTENER3_PORT   - port where a third listening (test) application listens for connections
-# o LISTENER4_PORT   - port where a fourth listening (test) application listens for connections
+# o FT_PORT          - port where ftClient (the all-purpose test client / notification accumulator) listens
+# o FT2_PORT ... FT5_PORT - extra ftClient instances for multi-accumulator tests
 #
 # o MQTT_BROKER_PORT - port of the MQTT Broker
 # o MQTT_BROKER_HOST - host of the MQTT Broker
@@ -66,11 +64,6 @@ export CP3_PORT=${CP3_PORT:-9803}
 export CP4_PORT=${CP4_PORT:-9804}
 export CP5_PORT=${CP5_PORT:-9805}
 export CP6_PORT=${CP6_PORT:-9806}
-
-export LISTENER_PORT=${LISTENER_PORT:-9997}
-export LISTENER2_PORT=${LISTENER2_PORT:-9977}
-export LISTENER3_PORT=${LISTENER3_PORT:-9957}
-export LISTENER4_PORT=${LISTENER4_PORT:-9937}
 
 export MQTT_BROKER_PORT=${MQTT_BROKER_PORT:-1883}
 export MQTT_BROKER_HOST=${MQTT_BROKER_HOST:-localhost}

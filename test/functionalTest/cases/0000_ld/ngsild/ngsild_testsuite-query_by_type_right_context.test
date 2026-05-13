@@ -105,5 +105,5 @@ Link: <https://fiware.github.io/NGSI-LD_TestSuite/ldContext/testFullContext.json
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

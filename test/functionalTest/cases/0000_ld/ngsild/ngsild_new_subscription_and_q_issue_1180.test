@@ -26,7 +26,7 @@ Subscriptions with q-filter over string value
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -experimental
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -53,7 +53,7 @@ payload='{
   "q": "P==%22STRING%22",
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -97,7 +97,7 @@ echo
 
 echo "06. Dump accumulator"
 echo "===================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -139,7 +139,7 @@ MongoDB server version: REGEX(.*)
 		"q" : "https://uri=etsi=org/ngsi-ld/default-context/P.value==%22STRING%22",
 		"mq" : ""
 	},
-	"reference" : "http://127.0.0.1:9997/notify",
+	"reference" : "http://127.0.0.1:7701/notify",
 	"mimeType" : "application/json",
 	"attrs" : [ ],
 	"format" : "normalized",
@@ -173,7 +173,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "notification": {
         "endpoint": {
             "accept": "application/json",
-            "uri": "http://127.0.0.1:9997/notify"
+            "uri": "http://127.0.0.1:7701/notify"
         },
         "format": "normalized",
         "status": "ok"
@@ -206,7 +206,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "notification": {
             "endpoint": {
                 "accept": "application/json",
-                "uri": "http://127.0.0.1:9997/notify"
+                "uri": "http://127.0.0.1:7701/notify"
             },
             "format": "normalized",
             "status": "ok"
@@ -260,5 +260,5 @@ Ngsild-Attribute-Format: Normalized
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

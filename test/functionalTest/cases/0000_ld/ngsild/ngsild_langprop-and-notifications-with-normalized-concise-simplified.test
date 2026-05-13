@@ -26,7 +26,7 @@ Subscriptions with 'lang' - notifications with Language Property (strings+arrays
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -experimental
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -67,7 +67,7 @@ payload='{
   "notification": {
     "format": "normalized",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   },
   "lang": "es"  
@@ -90,7 +90,7 @@ payload='{
   "notification": {
     "format": "concise",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   },
   "lang": "es"  
@@ -113,7 +113,7 @@ payload='{
   "notification": {
     "format": "simplified",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   },
   "lang": "es"  
@@ -138,8 +138,8 @@ echo
 echo '04b. Dump/Reset Accumulator'
 echo '==========================='
 sleep .5
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -159,8 +159,8 @@ echo
 echo "05b. Dump/Reset Accumulator"
 echo "==========================="
 sleep .5
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -180,8 +180,8 @@ echo
 echo "06b. Dump/Reset Accumulator"
 echo "==========================="
 sleep .5
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -201,8 +201,8 @@ echo
 echo "07b. Dump/Reset Accumulator"
 echo "==========================="
 sleep .5
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -222,8 +222,8 @@ echo
 echo '08b. Dump/Reset Accumulator'
 echo '==========================='
 sleep .5
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -243,8 +243,8 @@ echo
 echo '09b. Dump/Reset Accumulator'
 echo '==========================='
 sleep .5
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -264,8 +264,8 @@ echo
 echo '10b. Dump/Reset Accumulator'
 echo '==========================='
 sleep .5
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -285,8 +285,8 @@ echo
 echo '11b. Dump/Reset Accumulator'
 echo '==========================='
 sleep .5
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -1067,5 +1067,5 @@ Ngsild-Attribute-Format: Normalized
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

@@ -27,7 +27,7 @@ GET Subscriptions - issue #1179
 dbInit CB
 dbInit CB captn
 orionldStart CB -multiservice
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -75,7 +75,7 @@ payload='{
     ],
     "format": "normalized",
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify",
+      "uri": "http://localhost:'$FT_PORT'/notify",
       "accept": "application/json"
     }
   },
@@ -107,7 +107,7 @@ echo
 
 echo "04. Dump accumulator - see one notification"
 echo "==========================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -145,7 +145,7 @@ payload='{
     ],
     "format": "normalized",
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify",
+      "uri": "http://localhost:'$FT_PORT'/notify",
       "accept": "application/json"
     }
   },
@@ -189,7 +189,7 @@ payload='{
     ],
     "format": "normalized",
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify",
+      "uri": "http://localhost:'$FT_PORT'/notify",
       "accept": "application/json"
     }
   },
@@ -233,7 +233,7 @@ MongoDB server version: REGEX(.*)
 {
 	"_id" : "urn:ngsi-ld:Subscription:REGEX(.*)",
 	"expiration" : 0,
-	"reference" : "http://localhost:9997/notify",
+	"reference" : "http://localhost:7701/notify",
 	"custom" : false,
 	"mimeType" : "application/json",
 	"throttling" : 0,
@@ -384,7 +384,7 @@ NGSILD-Results-Count: 3
             ],
             "endpoint": {
                 "accept": "application/json",
-                "uri": "http://localhost:9997/notify"
+                "uri": "http://localhost:7701/notify"
             },
             "format": "normalized",
             "lastNotification": "202REGEX(.*)",
@@ -427,7 +427,7 @@ NGSILD-Results-Count: 3
             ],
             "endpoint": {
                 "accept": "application/json",
-                "uri": "http://localhost:9997/notify"
+                "uri": "http://localhost:7701/notify"
             },
             "format": "normalized",
             "status": "ok"
@@ -467,7 +467,7 @@ NGSILD-Results-Count: 3
             ],
             "endpoint": {
                 "accept": "application/json",
-                "uri": "http://localhost:9997/notify"
+                "uri": "http://localhost:7701/notify"
             },
             "format": "normalized",
             "status": "ok"
@@ -520,7 +520,7 @@ NGSILD-Results-Count: 3
             ],
             "endpoint": {
                 "accept": "application/json",
-                "uri": "http://localhost:9997/notify"
+                "uri": "http://localhost:7701/notify"
             },
             "format": "normalized",
             "lastNotification": "202REGEX(.*)",
@@ -563,7 +563,7 @@ NGSILD-Results-Count: 3
             ],
             "endpoint": {
                 "accept": "application/json",
-                "uri": "http://localhost:9997/notify"
+                "uri": "http://localhost:7701/notify"
             },
             "format": "normalized",
             "status": "ok"
@@ -603,7 +603,7 @@ NGSILD-Results-Count: 3
             ],
             "endpoint": {
                 "accept": "application/json",
-                "uri": "http://localhost:9997/notify"
+                "uri": "http://localhost:7701/notify"
             },
             "format": "normalized",
             "status": "ok"
@@ -622,4 +622,4 @@ NGSILD-Results-Count: 3
 brokerStop CB
 dbDrop CB
 dbDrop CB captn
-accumulatorStop
+ftClientStop

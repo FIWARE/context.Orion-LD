@@ -27,7 +27,7 @@ GET Subscriptions - issue #1179
 dbInit CB
 dbInit CB captn
 orionldStart CB -multiservice -experimental
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -75,7 +75,7 @@ payload='{
     ],
     "format": "normalized",
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify",
+      "uri": "http://localhost:'$FT_PORT'/notify",
       "accept": "application/json"
     }
   },
@@ -107,7 +107,7 @@ echo
 
 echo "04. Dump accumulator - see one notification"
 echo "==========================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -145,7 +145,7 @@ payload='{
     ],
     "format": "normalized",
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify",
+      "uri": "http://localhost:'$FT_PORT'/notify",
       "accept": "application/json"
     }
   },
@@ -189,7 +189,7 @@ payload='{
     ],
     "format": "normalized",
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify",
+      "uri": "http://localhost:'$FT_PORT'/notify",
       "accept": "application/json"
     }
   },
@@ -272,7 +272,7 @@ MongoDB server version: REGEX(.*)
 		"https://uri.etsi.org/ngsi-ld/default-context/address"
 	],
 	"format" : "normalized",
-	"reference" : "http://localhost:9997/notify",
+	"reference" : "http://localhost:7701/notify",
 	"mimeType" : "application/json",
 	"custom" : false,
 	"servicePath" : "/#",
@@ -380,7 +380,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             ],
             "endpoint": {
                 "accept": "application/json",
-                "uri": "http://localhost:9997/notify"
+                "uri": "http://localhost:7701/notify"
             },
             "format": "normalized",
             "lastNotification": "202REGEX(.*)",
@@ -424,7 +424,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             ],
             "endpoint": {
                 "accept": "application/json",
-                "uri": "http://localhost:9997/notify"
+                "uri": "http://localhost:7701/notify"
             },
             "format": "normalized",
             "status": "ok"
@@ -465,7 +465,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             ],
             "endpoint": {
                 "accept": "application/json",
-                "uri": "http://localhost:9997/notify"
+                "uri": "http://localhost:7701/notify"
             },
             "format": "normalized",
             "status": "ok"
@@ -496,4 +496,4 @@ NGSILD-Results-Count: 3
 brokerStop CB
 dbDrop CB
 dbDrop CB captn
-accumulatorStop
+ftClientStop

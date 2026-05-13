@@ -26,7 +26,7 @@ Patching attributes for an entity
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -experimental
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 --SHELL--
 
 #
@@ -51,7 +51,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -104,7 +104,7 @@ echo
 
 echo "06. Dump accumulator - see two notification (from step 01 and 03)"
 echo "================================================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -319,5 +319,5 @@ Ngsild-Attribute-Format: Normalized
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

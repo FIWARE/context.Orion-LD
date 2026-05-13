@@ -26,7 +26,7 @@ Simple NGSI10 subscription for both cities with isPattern and with deep recursiv
 --SHELL-INIT--
 dbInit CB
 brokerStart CB 0-255
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -51,7 +51,7 @@ payload='{
   "attributes": [
     "A1"
   ],
-  "reference": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+  "reference": "http://127.0.0.1:'${FT_PORT}'/notify",
   "duration": "P1M",
   "throttling": "PT1S",
   "notifyConditions": [
@@ -104,7 +104,7 @@ echo
 echo "04. Check that the accumulator received the notification of both cities"
 echo "======================================================================="
 sleep 1
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -261,5 +261,5 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 --TEARDOWN---
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

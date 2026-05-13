@@ -26,7 +26,7 @@ Custom qs and headers names
 --SHELL-INIT--
 dbInit CB
 brokerStart CB
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -51,7 +51,7 @@ payload='{
   },
   "notification": {
     "httpCustom": {
-      "url":     "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "url":     "http://127.0.0.1:'${FT_PORT}'/notify",
       "qs":      { "param${A1}": "${A2}" },
       "headers": { "X-${A3}": "${A4}" }
     }
@@ -78,7 +78,7 @@ echo
 
 echo "03. Dump accumulator, see 1 notification"
 echo "========================================"
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -152,4 +152,4 @@ X-Myheader: 23
 --TEARDOWN--
 brokerStop CB
 dbDrop CB
-accumulatorStop
+ftClientStop

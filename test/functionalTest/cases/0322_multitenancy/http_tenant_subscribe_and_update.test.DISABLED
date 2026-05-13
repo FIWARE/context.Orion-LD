@@ -28,8 +28,8 @@ dbInit CB
 dbInit ${CB_DB_NAME} t_01
 dbInit ${CB_DB_NAME} t_02
 brokerStart CB 0-255 IPV4 -multiservice
-accumulatorStart  --pretty-print
-accumulatorStart 127.0.0.1 $LISTENER2_PORT --pretty-print
+ftClientStart  --pretty-print
+ftClientStart --port $FT2_PORT --pretty-print
 
 --SHELL--
 
@@ -45,7 +45,7 @@ payload='{
     }
   ],
   "attributes": [ ],
-  "reference": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+  "reference": "http://127.0.0.1:'${FT_PORT}'/notify",
   "duration": "PT1H",
   "notifyConditions": [
       {
@@ -72,7 +72,7 @@ payload='{
     }
   ],
   "attributes": [ ],
-  "reference": "http://127.0.0.1:'${LISTENER2_PORT}'/notify",
+  "reference": "http://127.0.0.1:'${FT2_PORT}'/notify",
   "duration": "PT1H",
   "notifyConditions": [
       {
@@ -137,13 +137,13 @@ echo
 
 echo "5. Dump accumulator t_01"
 echo "+++++++++++++++++++++++++"
-accumulatorDump
+ftClientDump
 echo
 
 
 echo "6. Dump accumulator t_02"
 echo "+++++++++++++++++++++++++"
-accumulator2Dump
+ftClientDump --port $FT2_PORT
 echo
 
 
@@ -319,8 +319,8 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 --TEARDOWN--
 
 brokerStop CB
-accumulatorStop $LISTENER_PORT
-accumulatorStop $LISTENER2_PORT
+ftClientStop
+ftClientStop --port $FT2_PORT
 dbDrop CB
 dbDrop ${CB_DB_NAME} t_01
 dbDrop ${CB_DB_NAME} t_02

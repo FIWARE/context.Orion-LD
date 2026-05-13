@@ -26,7 +26,7 @@ HTTP header test for forwarding of 'q'
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -experimental -forwarding -wip entityMaps
-accumulatorStart --pretty-print --url /ngsi-ld/v1/entities 127.0.0.1 ${LISTENER_PORT} 
+ftClientStart --pretty-print --port ${FT_PORT} 
 
 --SHELL--
 #
@@ -49,7 +49,7 @@ payload='{
       ]
     }
   ],
-  "endpoint": "http://localhost:'$LISTENER_PORT'",
+  "endpoint": "http://localhost:'$FT_PORT'",
   "operations": [ "queryEntity" ],
   "mode": "inclusive"
 }'
@@ -68,12 +68,12 @@ echo
 
 echo "03. Dump the accumulator to see the forwarded request, make sure the correct 'q' is there"
 echo "========================================================================================="
-accumulatorDump > /tmp/dump
+ftClientDump > /tmp/dump
 firstLine=$(head -1 /tmp/dump | awk -F'q=' '{ print $2 }')
 echo q: $firstLine
 cat /tmp/dump
 rm -f /tmp/dump
-accumulatorReset
+ftClientReset
 echo
 echo
 
@@ -115,4 +115,4 @@ Via: 1.1 REGEX(.*)
 --TEARDOWN--
 brokerStop CB
 dbDrop CB
-accumulatorStop
+ftClientStop

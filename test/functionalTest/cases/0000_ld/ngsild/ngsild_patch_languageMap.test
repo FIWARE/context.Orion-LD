@@ -28,7 +28,7 @@ dbInit CB
 export CB_TRACELEVELS=${CB_TRACELEVELS:-47,241,252}
 
 orionldStart CB -experimental
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -68,7 +68,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     },
     "showChanges": true
   }
@@ -119,8 +119,8 @@ echo
 echo "06. Dump/Reset accumulator, see L1's languageMap and previousLanguageMap"
 echo "========================================================================"
 sleep .2
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -298,5 +298,5 @@ Ngsild-Attribute-Format: Normalized
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

@@ -26,7 +26,7 @@ Subscription Test - Any attribute watched. Non existent attribute asked
 --SHELL-INIT--
 dbInit CB
 orionldStart CB
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -68,7 +68,7 @@ payload='{
   "q": "speed>80",
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
       "accept": "application/json"
     }
   }
@@ -94,7 +94,7 @@ echo
 
 echo "03. Dump accumulator and see no notification"
 echo "============================================"
-accumulatorDump
+ftClientDump
 echo
 echo
 

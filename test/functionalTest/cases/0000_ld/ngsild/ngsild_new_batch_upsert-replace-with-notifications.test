@@ -27,8 +27,8 @@ New Batch Upsert - Update-REPLACE with notifications
 dbInit CB
 dbDrop orionld
 orionldStart CB -experimental
-accumulatorStart --pretty-print 127.0.0.1 $LISTENER_PORT
-accumulatorStart --pretty-print 127.0.0.1 $LISTENER2_PORT
+ftClientStart --pretty-print --port $FT_PORT
+ftClientStart --pretty-print --port $FT2_PORT
 
 --SHELL--
 
@@ -57,7 +57,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -78,7 +78,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER2_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT2_PORT}'/notify"
     }
   }
 }'
@@ -169,15 +169,15 @@ echo
 
 echo "09. Dump Accumulator - see four notifications (one double)"
 echo "=========================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
 
 echo "10. Dump Accumulator2 - see four notifications (one double)"
 echo "==========================================================="
-accumulator2Dump
+ftClientDump --port $FT2_PORT
 echo
 echo
 
@@ -587,5 +587,5 @@ Ngsild-Attribute-Format: Normalized
 --TEARDOWN--
 brokerStop CB
 dbDrop CB
-accumulatorStop
-accumulatorStop $LISTENER2_PORT
+ftClientStop
+ftClientStop --port $FT2_PORT

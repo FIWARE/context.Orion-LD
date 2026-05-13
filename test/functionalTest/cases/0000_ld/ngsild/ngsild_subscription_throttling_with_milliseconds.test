@@ -26,7 +26,7 @@ Subscription Throttling with milliseconds
 --SHELL-INIT--
 dbInit CB
 orionldStart CB
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -68,7 +68,7 @@ payload='{
     "attributes": [ "P1" ],
     "format": "keyValues",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
       "accept": "application/json"
     }
   },
@@ -129,7 +129,7 @@ echo
  
 echo "04. Get number of notifications from accumulator - see 6 notifications"
 echo "======================================================================"
-accumulatorCount
+ftClientCount
 echo
 echo
 
@@ -165,5 +165,5 @@ REGEX((5|6))
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

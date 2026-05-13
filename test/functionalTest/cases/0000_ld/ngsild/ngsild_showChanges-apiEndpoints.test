@@ -27,7 +27,7 @@ showChanges in Subscription - provoke a notification and see the previousValue f
 dbInit CB
 export CB_TRACELEVELS=${CB_TRACELEVELS:-47,241,252}
 orionldStart CB -experimental
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -94,7 +94,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     },
     "showChanges": true
   }
@@ -122,8 +122,8 @@ echo
 echo "02b. Dump/Reset accumulator, see A1's value but no previousValue, as it's a creation"
 echo "===================================================================================="
 sleep .2
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -141,8 +141,8 @@ echo
 echo "03b. Dump/Reset accumulator, see A1's value and previousValue"
 echo "============================================================="
 sleep .2
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -160,8 +160,8 @@ echo
 echo "04b. Dump/Reset accumulator, see R1's object and previousObject"
 echo "==============================================================="
 sleep .2
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -179,8 +179,8 @@ echo
 echo "05b. Dump/Reset accumulator, see L1's languageMap and previousLanguageMap"
 echo "========================================================================="
 sleep .2
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -198,8 +198,8 @@ echo
 echo "06b. Dump/Reset accumulator, see G1's value and previousValue"
 echo "============================================================="
 sleep .2
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -221,8 +221,8 @@ echo
 echo "07b. Dump/Reset accumulator, see all previous values"
 echo "===================================================="
 sleep .2
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -243,8 +243,8 @@ echo
 echo "08b. Dump/Reset accumulator, see all previous values"
 echo "===================================================="
 sleep .2
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -265,8 +265,8 @@ echo
 echo "09b. Dump/Reset accumulator, see all previous values"
 echo "===================================================="
 sleep .2
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -284,8 +284,8 @@ echo
 echo "10b. Dump/Reset accumulator, see A1's value and previousValue"
 echo "============================================================="
 sleep .2
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -303,8 +303,8 @@ echo
 echo "11b. Dump/Reset accumulator, see R1's object and previousObject"
 echo "==============================================================="
 sleep .2
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -322,8 +322,8 @@ echo
 echo "12b. Dump/Reset accumulator, see L1's languageMap and previousLanguageMap"
 echo "========================================================================="
 sleep .2
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -341,8 +341,8 @@ echo
 echo "13b. Dump/Reset accumulator, see G1's value and previousValue"
 echo "============================================================="
 sleep .2
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -365,8 +365,8 @@ echo
 echo "14b. Dump/Reset accumulator, see all previous values"
 echo "===================================================="
 sleep .2
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -1245,5 +1245,5 @@ Ngsild-Attribute-Format: Normalized
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

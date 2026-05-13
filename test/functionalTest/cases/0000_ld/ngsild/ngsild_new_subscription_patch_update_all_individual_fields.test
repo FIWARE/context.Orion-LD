@@ -106,7 +106,7 @@ payload='{
     "attributes": [ "P1", "P2", "A3" ],
     "format": "keyValues",
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify",
+      "uri": "http://localhost:'$FT_PORT'/notify",
       "accept": "application/ld+json"
     }
   },
@@ -565,7 +565,7 @@ MongoDB server version: REGEX(.*)
 		"https://uri.etsi.org/ngsi-ld/default-context/A3"
 	],
 	"format" : "keyValues",
-	"reference" : "http://localhost:9997/notify",
+	"reference" : "http://localhost:7701/notify",
 	"mimeType" : "application/ld+json",
 	"custom" : false,
 	"servicePath" : "/#",
@@ -617,7 +617,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     ],
     "format": "keyValues",
     "endpoint": {
-      "uri": "http://localhost:9997/notify",
+      "uri": "http://localhost:7701/notify",
       "accept": "application/ld+json"
     },
     "status": "ok"
@@ -679,7 +679,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     ],
     "format": "keyValues",
     "endpoint": {
-      "uri": "http://localhost:9997/notify",
+      "uri": "http://localhost:7701/notify",
       "accept": "application/ld+json"
     },
     "status": "ok"
@@ -741,7 +741,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     ],
     "format": "keyValues",
     "endpoint": {
-      "uri": "http://localhost:9997/notify",
+      "uri": "http://localhost:7701/notify",
       "accept": "application/ld+json"
     },
     "status": "ok"
@@ -807,7 +807,7 @@ MongoDB server version: REGEX(.*)
 		"https://uri.etsi.org/ngsi-ld/default-context/A3"
 	],
 	"format" : "keyValues",
-	"reference" : "http://localhost:9997/notify",
+	"reference" : "http://localhost:7701/notify",
 	"mimeType" : "application/ld+json",
 	"custom" : false,
 	"servicePath" : "/#",
@@ -861,7 +861,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     ],
     "format": "keyValues",
     "endpoint": {
-      "uri": "http://localhost:9997/notify",
+      "uri": "http://localhost:7701/notify",
       "accept": "application/ld+json"
     },
     "status": "ok"
@@ -927,7 +927,7 @@ MongoDB server version: REGEX(.*)
 		"https://uri.etsi.org/ngsi-ld/default-context/A3"
 	],
 	"format" : "keyValues",
-	"reference" : "http://localhost:9997/notify",
+	"reference" : "http://localhost:7701/notify",
 	"mimeType" : "application/ld+json",
 	"custom" : false,
 	"servicePath" : "/#",
@@ -981,7 +981,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     ],
     "format": "keyValues",
     "endpoint": {
-      "uri": "http://localhost:9997/notify",
+      "uri": "http://localhost:7701/notify",
       "accept": "application/ld+json"
     },
     "status": "ok"
@@ -1061,7 +1061,7 @@ MongoDB server version: REGEX(.)
 		"https://uri.etsi.org/ngsi-ld/default-context/A3"
 	],
 	"format" : "keyValues",
-	"reference" : "http://localhost:9997/notify",
+	"reference" : "http://localhost:7701/notify",
 	"mimeType" : "application/ld+json",
 	"custom" : false,
 	"servicePath" : "/#",
@@ -1115,7 +1115,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     ],
     "format": "keyValues",
     "endpoint": {
-      "uri": "http://localhost:9997/notify",
+      "uri": "http://localhost:7701/notify",
       "accept": "application/ld+json"
     },
     "status": "ok"
@@ -1181,7 +1181,7 @@ MongoDB server version: REGEX(.)
 		"https://uri.etsi.org/ngsi-ld/default-context/A3"
 	],
 	"format" : "keyValues",
-	"reference" : "http://localhost:9997/notify",
+	"reference" : "http://localhost:7701/notify",
 	"mimeType" : "application/ld+json",
 	"custom" : false,
 	"servicePath" : "/#",
@@ -1232,7 +1232,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     ],
     "format": "keyValues",
     "endpoint": {
-      "uri": "http://localhost:9997/notify",
+      "uri": "http://localhost:7701/notify",
       "accept": "application/ld+json"
     },
     "status": "ok"
@@ -1298,7 +1298,7 @@ MongoDB server version: REGEX(.)
 		"https://uri.etsi.org/ngsi-ld/default-context/A3"
 	],
 	"format" : "keyValues",
-	"reference" : "http://localhost:9997/notify",
+	"reference" : "http://localhost:7701/notify",
 	"mimeType" : "application/ld+json",
 	"custom" : false,
 	"servicePath" : "/#",
@@ -1349,7 +1349,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     ],
     "format": "keyValues",
     "endpoint": {
-      "uri": "http://localhost:9997/notify",
+      "uri": "http://localhost:7701/notify",
       "accept": "application/ld+json"
     },
     "status": "ok"

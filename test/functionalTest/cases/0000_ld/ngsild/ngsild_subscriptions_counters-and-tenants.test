@@ -27,7 +27,7 @@ Subscription Counters and tenants - error reported in the "end of" issue #1179
 dbInit CB
 dbInit CB captn
 orionldStart CB -multiservice
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -58,7 +58,7 @@ payload='{
     "attributes": [],
     "format": "normalized",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
       "accept": "application/json",
       "receiverInfo": [
         {
@@ -91,8 +91,8 @@ echo
 
 echo "03. Dumping/Reseting accumulator to see one notification"
 echo "========================================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -185,7 +185,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
                     "value": "captn"
                 }
             ],
-            "uri": "http://127.0.0.1:9997/notify"
+            "uri": "http://127.0.0.1:7701/notify"
         },
         "format": "normalized",
         "lastNotification": "202REGEX(.*)",
@@ -204,6 +204,6 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB
 dbDrop CB captn

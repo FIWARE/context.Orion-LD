@@ -26,7 +26,7 @@ PATCH Pernot Subscription - verify notifications change after PATCH
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -pernot -experimental
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -60,7 +60,7 @@ payload='{
   "notification": {
     "attributes": [ "P1" ],
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     },
     "format": "normalized"
   }
@@ -107,8 +107,8 @@ echo
 
 echo "05. Dump/Reset accumulator - see one notification with urn:E1 only (P1 attr, normalized)"
 echo "========================================================================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -136,8 +136,8 @@ echo
 
 echo "08. Dump/Reset accumulator - see one notification with urn:E2 only (P1+P2, simplified)"
 echo "======================================================================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -179,8 +179,8 @@ echo
 
 echo "12. Dump/Reset accumulator - see one notification with urn:E3 only (P1+P2, simplified)"
 echo "======================================================================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -337,4 +337,4 @@ Ngsild-Attribute-Format: Simplified
 --TEARDOWN--
 brokerStop CB
 dbDrop CB
-accumulatorStop
+ftClientStop

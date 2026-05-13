@@ -27,7 +27,7 @@ No notification if no real change
 # Copied from ngsild_no_notification_on_nochange_2.test
 dbInit CB
 orionldStart CB -noNotifyFalseUpdate -experimental
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -56,7 +56,7 @@ payload='{
   "notification": {
     "format": "normalized",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -98,8 +98,8 @@ echo
 
 echo "03. Dump and reset accumulator and see one notification"
 echo "======================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -117,7 +117,7 @@ echo
 
 echo "05. Dump accumulator, see no notification"
 echo "========================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -136,7 +136,7 @@ echo
 
 echo "11. Dump accumulator, see no notification"
 echo "========================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -154,7 +154,7 @@ echo
 
 echo "13. Dump accumulator, see no notification"
 echo "========================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -276,5 +276,5 @@ Date: REGEX(.*)
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

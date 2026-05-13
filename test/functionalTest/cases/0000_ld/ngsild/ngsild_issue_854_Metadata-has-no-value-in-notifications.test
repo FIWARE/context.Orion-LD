@@ -26,7 +26,7 @@ Notifications - value of sub-properties that are compound
 --SHELL-INIT--
 dbInit CB
 orionldStart CB
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -49,7 +49,7 @@ payload='{
   "notification": {
     "format": "normalized",
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify",
+      "uri": "http://localhost:'$FT_PORT'/notify",
       "accept": "application/json"
     }
   }
@@ -137,7 +137,7 @@ echo
 echo "03. Dump the accumulator to see the notification - check the sub-property values"
 echo "================================================================================"
 sleep 1
-accumulatorDump
+ftClientDump
 echo
 echo
 

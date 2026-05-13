@@ -26,7 +26,7 @@ Blacklist of attributes in subscription notification
 --SHELL-INIT--
 dbInit CB
 brokerStart CB 0 IPv4 -subCacheIval 1
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -64,7 +64,7 @@ payload='
          }
     },
     "notification": {
-        "http": {"url": "http://localhost:'${LISTENER_PORT}'/notify"},
+        "http": {"url": "http://localhost:'${FT_PORT}'/notify"},
         "exceptAttrs": [ "B", "X" ]
     },
     "expires": "2050-04-05T14:00:00.00Z",
@@ -174,7 +174,7 @@ echo
 
 echo "10. Accumulator dump"
 echo "===================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -218,7 +218,7 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
             "X"
         ],
         "http": {
-            "url": "http://localhost:9997/notify"
+            "url": "http://localhost:7701/notify"
         },
         "lastNotification": "REGEX(.*)",
         "lastSuccess": "REGEX(.*)",
@@ -275,7 +275,7 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
             "X"
         ],
         "http": {
-            "url": "http://localhost:9997/notify"
+            "url": "http://localhost:7701/notify"
         },
         "lastNotification": "REGEX(.*)",
         "lastSuccess": "REGEX(.*)",
@@ -332,7 +332,7 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
             "X"
         ],
         "http": {
-            "url": "http://localhost:9997/notify"
+            "url": "http://localhost:7701/notify"
         },
         "lastNotification": "REGEX(.*)",
         "lastSuccess": "REGEX(.*)",
@@ -450,6 +450,6 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 
 --TEARDOWN--
-accumulatorStop
+ftClientStop
 brokerStop CB
 dbDrop CB

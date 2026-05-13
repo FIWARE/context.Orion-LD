@@ -26,7 +26,7 @@ Subscription with unitCode - issue #622
 --SHELL-INIT--
 dbInit CB
 orionldStart CB
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -45,7 +45,7 @@ payload='{
   "notification": {
     "format": "normalized",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
       "accept": "application/json"
     }
   }
@@ -73,7 +73,7 @@ echo
 
 echo "03. Dump accumulator to see one notification, make sure that unitCode is OK"
 echo "==========================================================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -131,5 +131,5 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

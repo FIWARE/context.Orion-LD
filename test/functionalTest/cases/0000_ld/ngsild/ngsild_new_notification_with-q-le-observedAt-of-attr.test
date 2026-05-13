@@ -26,7 +26,7 @@ Notification for subscriptions with q that is an LE comparison of the observedAt
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -experimental
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -52,7 +52,7 @@ payload='{
   "notification": {
     "format": "simplified",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -78,8 +78,8 @@ echo
 
 echo "03. Dump accumulator to see one notification"
 echo "============================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -101,8 +101,8 @@ echo
 
 echo "05. Dump accumulator to see NO notification"
 echo "==========================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -168,5 +168,5 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:T:E2
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

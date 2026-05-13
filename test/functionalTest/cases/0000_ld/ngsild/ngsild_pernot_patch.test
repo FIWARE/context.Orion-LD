@@ -57,7 +57,7 @@ payload='{
   "notification": {
     "attributes": [ "P1" ],
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
       "accept": "application/json"
     },
     "format": "normalized"
@@ -83,7 +83,7 @@ payload='{
   "isActive": false,
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify2",
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify2",
       "accept": "application/ld+json"
     },
     "format": "simplified"

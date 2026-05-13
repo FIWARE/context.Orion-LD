@@ -26,7 +26,7 @@ Using attrs and q at the same time in conditions
 --SHELL-INIT--
 dbInit CB
 brokerStart CB 0 IPv4 -subCacheIval 2
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -62,7 +62,7 @@ payload='
     },
     "notification": {
         "http": {
-          "url": "http://localhost:'$LISTENER_PORT'/notify"
+          "url": "http://localhost:'$FT_PORT'/notify"
         },
         "attrs": [ ]
     }
@@ -93,7 +93,7 @@ payload='
     },
     "notification": {
         "http": {
-          "url": "http://localhost:'$LISTENER_PORT'/notify"
+          "url": "http://localhost:'$FT_PORT'/notify"
         },
         "attrs": [ ]
     }
@@ -124,7 +124,7 @@ payload='
     },
     "notification": {
         "http": {
-          "url": "http://localhost:'$LISTENER_PORT'/notify"
+          "url": "http://localhost:'$FT_PORT'/notify"
         },
         "attrs": [ ]
     }
@@ -187,16 +187,16 @@ echo
 
 echo "08. Dump accumulator: see four"
 echo "=============================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
 echo "09. Check that the order is the following: sub1, sub2, sub3, sub1"
 echo "================================================================="
-notif1=$(accumulatorDump | grep '"subscriptionId"' | awk -F\" '{print $4}'| head -n 1)
-notif2=$(accumulatorDump | grep '"subscriptionId"' | awk -F\" '{print $4}'| head -n 2 | tail -n 1)
-notif3=$(accumulatorDump | grep '"subscriptionId"' | awk -F\" '{print $4}'| head -n 3 | tail -n 1)
-notif4=$(accumulatorDump | grep '"subscriptionId"' | awk -F\" '{print $4}'| head -n 4 | tail -n 1)
+notif1=$(ftClientDump | grep '"subscriptionId"' | awk -F\" '{print $4}'| head -n 1)
+notif2=$(ftClientDump | grep '"subscriptionId"' | awk -F\" '{print $4}'| head -n 2 | tail -n 1)
+notif3=$(ftClientDump | grep '"subscriptionId"' | awk -F\" '{print $4}'| head -n 3 | tail -n 1)
+notif4=$(ftClientDump | grep '"subscriptionId"' | awk -F\" '{print $4}'| head -n 4 | tail -n 1)
 
 if [ "$notif1" == "$subId1" ]
 then
@@ -298,7 +298,7 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 08. Dump accumulator: see four
 ==============================
-POST http://localhost:9997/notifyREGEX(.*)
+POST http://localhost:7701/notifyREGEX(.*)
 Fiware-Servicepath: /
 Content-Length: 133
 User-Agent: orion/REGEX(\d+\.\d+\.\d+.*)
@@ -323,7 +323,7 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
     "subscriptionId": "REGEX([0-9a-f]{24})"
 }
 =======================================
-POST http://localhost:9997/notifyREGEX(.*)
+POST http://localhost:7701/notifyREGEX(.*)
 Fiware-Servicepath: /
 Content-Length: 133
 User-Agent: orion/REGEX(\d+\.\d+\.\d+.*)
@@ -348,7 +348,7 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
     "subscriptionId": "REGEX([0-9a-f]{24})"
 }
 =======================================
-POST http://localhost:9997/notifyREGEX(.*)
+POST http://localhost:7701/notifyREGEX(.*)
 Fiware-Servicepath: /
 Content-Length: 132
 User-Agent: orion/REGEX(\d+\.\d+\.\d+.*)
@@ -373,7 +373,7 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
     "subscriptionId": "REGEX([0-9a-f]{24})"
 }
 =======================================
-POST http://localhost:9997/notifyREGEX(.*)
+POST http://localhost:7701/notifyREGEX(.*)
 Fiware-Servicepath: /
 Content-Length: 133
 User-Agent: orion/REGEX(\d+\.\d+\.\d+.*)
@@ -410,5 +410,5 @@ Notification 4: OK
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

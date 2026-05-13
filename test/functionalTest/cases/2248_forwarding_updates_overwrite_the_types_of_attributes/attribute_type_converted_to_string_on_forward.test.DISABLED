@@ -26,7 +26,7 @@ Integer attribute values must not be converted to string on forward
 --SHELL-INIT--
 dbInit CB
 brokerStart CB 0-255
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -53,7 +53,7 @@ payload='{
           "isDomain": "false"
         }
       ],
-      "providingApplication": "http://localhost:'${LISTENER_PORT}'/v1"
+      "providingApplication": "http://localhost:'${FT_PORT}'/v1"
     }
   ],
   "duration": "P1M"
@@ -74,7 +74,7 @@ echo
 
 echo "03. Dump accumulator to see the forward message - is the Number a Number or a string? Must be a Number"
 echo "======================================================================================================"
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -148,5 +148,5 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

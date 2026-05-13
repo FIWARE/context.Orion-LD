@@ -26,7 +26,7 @@ notifyFormat_ngsi10
 --SHELL-INIT--
 dbInit CB
 brokerStart CB 38,101,102 IPv4 -subCacheIval 8 --cache
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -76,7 +76,7 @@ payload='{
     "A1"
   ],
   "throttling": "PT1S",
-  "reference": "http://localhost:'${LISTENER_PORT}'/notify",
+  "reference": "http://localhost:'${FT_PORT}'/notify",
   "duration": "PT2S",
   "notifyConditions": [
     {
@@ -182,7 +182,7 @@ echo
 
 echo "13. Dump accumulator - see four notifications"
 echo "============================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -487,5 +487,5 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

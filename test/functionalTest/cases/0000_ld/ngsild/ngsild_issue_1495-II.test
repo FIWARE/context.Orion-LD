@@ -28,7 +28,7 @@ ${SCRIPT_HOME}/httpsPrepare.sh --keyFileName /tmp/harnessTest.key --certFileName
 dbInit CB
 dbInit CB captn
 orionldStart CB -mongocOnly -multiservice
-accumulatorStart --pretty-print --https --key /tmp/harnessTest.key --cert /tmp/harnessTest.pem
+ftClientStart --pretty-print --https --httpsKey /tmp/harnessTest.key --httpsCertificate /tmp/harnessTest.pem
 
 --SHELL--
 
@@ -202,4 +202,4 @@ Date: REGEX(.*)
 brokerStop CB
 dbDrop CB
 dbDrop CB captn
-accumulatorStop
+ftClientStop

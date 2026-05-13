@@ -26,7 +26,7 @@ Subscription Creation and a simple notification
 --SHELL-INIT--
 dbInit CB
 orionldStart CB
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -56,7 +56,7 @@ payload='{
     "attributes": [ ],
     "format": "normalized",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
       "accept": "application/json"
     }
   },
@@ -91,8 +91,8 @@ echo
 
 echo "03. Dump accumulator to see one notification with @context in HTTP Link Header, then reset the accumulator"
 echo "=========================================================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -114,7 +114,7 @@ payload='{
     "attributes": [ ],
     "format": "normalized",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
       "accept": "application/ld+json"
     }
   },
@@ -150,7 +150,7 @@ echo
 echo "06. Dump accumulator to see one notification with @context in the payload"
 echo "========================================================================="
 sleep .2
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -264,5 +264,5 @@ Content-Type: application/ld+json
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

@@ -26,7 +26,7 @@ Notification for subscriptions with q: LT (less than)
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -experimental
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -90,7 +90,7 @@ payload='{
   "notification": {
     "format": "simplified",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -113,8 +113,8 @@ echo
 
 echo "03. Dump accumulator to see one notification"
 echo "============================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -133,8 +133,8 @@ echo
 
 echo "05. Dump accumulator to see NO notification"
 echo "==========================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -160,7 +160,7 @@ payload='{
   "notification": {
     "format": "simplified",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -183,8 +183,8 @@ echo
 
 echo "13. Dump accumulator to see one notification"
 echo "============================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -203,8 +203,8 @@ echo
 
 echo "15. Dump accumulator to see NO notification"
 echo "==========================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -230,7 +230,7 @@ payload='{
   "notification": {
     "format": "simplified",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -253,8 +253,8 @@ echo
 
 echo "23. Dump accumulator to see one notification"
 echo "============================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -273,8 +273,8 @@ echo
 
 echo "25. Dump accumulator to see NO notification"
 echo "==========================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -300,7 +300,7 @@ payload='{
   "notification": {
     "format": "simplified",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -323,7 +323,7 @@ payload='{
   "notification": {
     "format": "simplified",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -347,8 +347,8 @@ echo
 
 echo "43. Dump accumulator to see one notification"
 echo "============================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -380,8 +380,8 @@ echo
 
 echo "46. Dump accumulator to see TWO notifications"
 echo "============================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -407,7 +407,7 @@ payload='{
   "notification": {
     "format": "simplified",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -431,8 +431,8 @@ echo
 
 echo "53. Dump accumulator to see one notification"
 echo "============================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -464,8 +464,8 @@ echo
 
 echo "56. Dump accumulator to see NO notifications"
 echo "============================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -872,5 +872,5 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:T:E14
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

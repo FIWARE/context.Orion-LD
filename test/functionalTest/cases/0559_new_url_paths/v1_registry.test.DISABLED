@@ -90,7 +90,7 @@ payload='{
       "id": "EI"
     }
   ],
-  "reference": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+  "reference": "http://127.0.0.1:'${FT_PORT}'/notify",
   "duration": "PT5H"
 }'
 orionCurl --url /v1/registry/subscribeContextAvailability --payload "${payload}"

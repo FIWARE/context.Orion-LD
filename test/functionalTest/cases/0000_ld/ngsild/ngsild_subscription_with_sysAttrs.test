@@ -26,7 +26,7 @@ Subscription with sysAttrs
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -experimental
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -67,7 +67,7 @@ payload='{
     "sysAttrs": true,
     "format": "simplified",
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify"
+      "uri": "http://localhost:'$FT_PORT'/notify"
     }   
   }
 }'
@@ -88,7 +88,7 @@ payload='{
   "notification": {
     "sysAttrs": 14,
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify"
+      "uri": "http://localhost:'$FT_PORT'/notify"
     }   
   }
 }'
@@ -110,7 +110,7 @@ payload='{
   "notification": {
     "sysAttrs": true,
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify"
+      "uri": "http://localhost:'$FT_PORT'/notify"
     }   
   }
 }'
@@ -157,8 +157,8 @@ echo
 
 echo "08. See the notification in the accumulator, especially the sysAttrs (createdAt+modifiedAt)"
 echo "==========================================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -175,8 +175,8 @@ echo
 
 echo "10. See the notification in the accumulator, especially the sysAttrs (createdAt+modifiedAt)"
 echo "==========================================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -193,8 +193,8 @@ echo
 
 echo "12. See the notification in the accumulator, BUT NOTE that sysAttrs haven't been implemented for PATCH Entity"
 echo "============================================================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -211,8 +211,8 @@ echo
 
 echo "14. See the notification in the accumulator, especially the sysAttrs (createdAt+modifiedAt)"
 echo "==========================================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -229,8 +229,8 @@ echo
 
 echo "16. See the notification in the accumulator, especially the sysAttrs (createdAt+modifiedAt)"
 echo "==========================================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -247,8 +247,8 @@ echo
 
 echo "18. See the notification in the accumulator, especially the sysAttrs (createdAt+modifiedAt)"
 echo "==========================================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -266,8 +266,8 @@ echo
 
 echo "20. See the notification in the accumulator, especially the sysAttrs (createdAt+modifiedAt)"
 echo "==========================================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -330,7 +330,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "notification": {
         "endpoint": {
             "accept": "application/json",
-            "uri": "http://localhost:9997/notify"
+            "uri": "http://localhost:7701/notify"
         },
         "format": "normalized",
         "status": "ok",
@@ -362,7 +362,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "notification": {
         "endpoint": {
             "accept": "application/json",
-            "uri": "http://localhost:9997/notify"
+            "uri": "http://localhost:7701/notify"
         },
         "format": "normalized",
         "status": "ok",
@@ -401,7 +401,7 @@ MongoDB server version: REGEX(.*)
 		"mq" : ""
 	},
 	"sysAttrs" : true,
-	"reference" : "http://localhost:9997/notify",
+	"reference" : "http://localhost:7701/notify",
 	"mimeType" : "application/json",
 	"attrs" : [ ],
 	"format" : "normalized",
@@ -702,5 +702,5 @@ Ngsild-Attribute-Format: Normalized
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

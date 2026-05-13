@@ -26,7 +26,7 @@ Possible bug with notifications and -noCache
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -noCache
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -48,7 +48,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -71,7 +71,7 @@ echo
 
 echo "03. Dump accumulator to see no notifications"
 echo "============================================"
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -111,5 +111,5 @@ Date: REGEX(.*)
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

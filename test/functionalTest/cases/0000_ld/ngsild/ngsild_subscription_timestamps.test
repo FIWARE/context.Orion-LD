@@ -26,7 +26,7 @@ Subscription timestamps
 --SHELL-INIT--
 dbInit CB
 orionldStart CB
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -65,7 +65,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   },
   "expiresAt": "2028-12-31T11:12:13.456",
@@ -109,8 +109,8 @@ echo
 
 echo "05. Dump the accumulator - check milliseconds for all timestamps"
 echo "================================================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -208,7 +208,7 @@ echo
 
 echo "10. Kill the accumulator to make room for a failed notification"
 echo "==============================================================="
-accumulatorStop
+ftClientStop
 echo Accumulator has been stopped
 echo
 echo

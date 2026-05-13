@@ -26,7 +26,7 @@ Subscription Q-Filter with string-list
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -experimental
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -59,7 +59,7 @@ payload='{
   "q": "status==%22occupied%22,%22free%22",
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -108,8 +108,8 @@ echo
 
 echo "06. Dump the accumulator and see the notification for E1"
 echo "========================================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -127,7 +127,7 @@ payload='{
   "q": "status==%22occupied2%22|status==%22free2%22",
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -176,7 +176,7 @@ echo
 
 echo "12. Dump the accumulator and see the notification for E3"
 echo "========================================================"
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -218,7 +218,7 @@ MongoDB server version: REGEX(.*)
 		"q" : "https://uri=etsi=org/ngsi-ld/status.value==%22occupied%22,%22free%22",
 		"mq" : ""
 	},
-	"reference" : "http://127.0.0.1:9997/notify",
+	"reference" : "http://127.0.0.1:7701/notify",
 	"mimeType" : "application/json",
 	"attrs" : [ ],
 	"format" : "normalized",
@@ -254,7 +254,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
   "notification": {
     "format": "normalized",
     "endpoint": {
-      "uri": "http://127.0.0.1:9997/notify",
+      "uri": "http://127.0.0.1:7701/notify",
       "accept": "application/json"
     },
     "status": "ok"
@@ -349,7 +349,7 @@ MongoDB server version: REGEX(.*)
 		"q" : "P;!P",
 		"mq" : "P.P;!P.P"
 	},
-	"reference" : "http://127.0.0.1:9997/notify",
+	"reference" : "http://127.0.0.1:7701/notify",
 	"mimeType" : "application/json",
 	"attrs" : [ ],
 	"format" : "normalized",
@@ -385,7 +385,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
   "notification": {
     "format": "normalized",
     "endpoint": {
-      "uri": "http://127.0.0.1:9997/notify",
+      "uri": "http://127.0.0.1:7701/notify",
       "accept": "application/json"
     },
     "status": "ok"

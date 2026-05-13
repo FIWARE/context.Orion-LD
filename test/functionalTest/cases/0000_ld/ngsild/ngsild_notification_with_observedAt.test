@@ -26,7 +26,7 @@ Subscription with observedAt timestamp - issue #93
 --SHELL-INIT--
 dbInit CB
 orionldStart CB
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -51,7 +51,7 @@ payload='{
   "notification": {
     "format": "normalized",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
       "accept": "application/ld+json"
     }
   }
@@ -95,8 +95,8 @@ echo
 
 echo "04. Dump accumulator to see one notification, make sure the observedAt timestamp is OK and that the Content-Type is application/ld+json"
 echo "======================================================================================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -112,7 +112,7 @@ payload='{
   "notification": {
     "format": "normalized",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
       "accept": "application/json"
     }
   }
@@ -149,7 +149,7 @@ echo
 
 echo "07. Dump accumulator to see one notification, make sure the observedAt timestamp is OK and that the Content-Type is application/json and Link header present"
 echo "============================================================================================================================================================"
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -300,5 +300,5 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

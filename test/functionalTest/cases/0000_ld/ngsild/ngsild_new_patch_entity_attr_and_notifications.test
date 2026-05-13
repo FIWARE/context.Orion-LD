@@ -27,7 +27,7 @@ Update an entity attribute using PATCH, and see the notifications
 # Copied from ngsild_patch_entity_attr_and_notifications.test
 dbInit CB
 orionldStart CB -experimental
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 #
@@ -69,7 +69,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -90,7 +90,7 @@ echo
 
 echo "04. Dump accumulator - see one notification"
 echo "==========================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -107,7 +107,7 @@ echo
 
 echo "06. Dump accumulator - see two notifications"
 echo "============================================"
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -234,5 +234,5 @@ Ngsild-Attribute-Format: Normalized
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

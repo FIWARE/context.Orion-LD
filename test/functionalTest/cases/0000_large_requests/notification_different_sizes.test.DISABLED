@@ -26,7 +26,7 @@ Notifications of different sizes
 --SHELL-INIT--
 dbInit CB
 brokerStart CB 0-255 IPV4 -ki
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 #
 # Taking into account that the notification size depends on (but is not exactly equal to)
@@ -51,7 +51,7 @@ payload='{
     }
   ],
   "attributes": [ ],
-  "reference": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+  "reference": "http://127.0.0.1:'${FT_PORT}'/notify",
   "duration": "PT1H",
   "notifyConditions": [
       {
@@ -78,7 +78,7 @@ payload='{
     }
   ],
   "attributes": [ ],
-  "reference": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+  "reference": "http://127.0.0.1:'${FT_PORT}'/notify",
   "duration": "PT1H",
   "notifyConditions": [
       {
@@ -106,7 +106,7 @@ payload='{
     }
   ],
   "attributes": [ ],
-  "reference": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+  "reference": "http://127.0.0.1:'${FT_PORT}'/notify",
   "duration": "PT1H",
   "notifyConditions": [
       {
@@ -134,7 +134,7 @@ payload='{
     }
   ],
   "attributes": [ ],
-  "reference": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+  "reference": "http://127.0.0.1:'${FT_PORT}'/notify",
   "duration": "PT1H",
   "notifyConditions": [
       {
@@ -151,7 +151,7 @@ echo
 
 echo "4: ++++++++++++++++++++"
 echo "** Notifications sent:"
-accumulatorCount
+ftClientCount
 
 # ----------------------------------------------------------------------
 # NOTE (not a FIXME):
@@ -255,5 +255,5 @@ Sending message 3 to HTTP server: sending message of REGEX((810048[0-9]|810049[0
 #       19675:   d.dd.d-next
 
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

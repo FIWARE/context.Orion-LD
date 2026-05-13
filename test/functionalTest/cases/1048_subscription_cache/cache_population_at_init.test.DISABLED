@@ -50,7 +50,7 @@ payload='{
   "attributes": [
     "A1"
   ],
-  "reference": "http://localhost:'${LISTENER_PORT}'/notify",
+  "reference": "http://localhost:'${FT_PORT}'/notify",
   "duration": "P1M",
   "throttling": "PT1S",
   "notifyConditions": [
@@ -85,7 +85,7 @@ payload='{
     "A1",
     "A2"
   ],
-  "reference": "http://localhost:'${LISTENER_PORT}'/notify",
+  "reference": "http://localhost:'${FT_PORT}'/notify",
   "duration": "P1M",
   "throttling": "PT1S",
   "notifyConditions": [
@@ -127,7 +127,7 @@ payload='{
     "A2",
     "A3"
   ],
-  "reference": "http://localhost:'${LISTENER_PORT}'/notify",
+  "reference": "http://localhost:'${FT_PORT}'/notify",
   "duration": "P1M",
   "throttling": "PT1S",
   "notifyConditions": [

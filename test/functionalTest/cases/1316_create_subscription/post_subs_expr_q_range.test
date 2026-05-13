@@ -26,7 +26,7 @@ POST Subscriptions V2 q expression (range)
 --SHELL-INIT--
 dbInit CB
 brokerStart CB
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -61,7 +61,7 @@ payload='
          }
     },
     "notification": {
-        "http": {"url": "http://localhost:'$LISTENER_PORT'/notify"},
+        "http": {"url": "http://localhost:'$FT_PORT'/notify"},
         "attrs": ["temperature" ]
     },
     "expires": "2050-04-05T14:00:00.00Z"
@@ -146,7 +146,7 @@ echo
 
 echo "09. Get accumulator dump (4 notifications)"
 echo "=========================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -325,5 +325,5 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop $LISTENER_PORT
+ftClientStop
 dbDrop CB

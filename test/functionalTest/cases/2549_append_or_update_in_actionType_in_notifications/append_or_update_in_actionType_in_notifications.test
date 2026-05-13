@@ -26,7 +26,7 @@ append or update in actionType in notifications
 --SHELL-INIT--
 dbInit CB
 brokerStart CB
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -49,7 +49,7 @@ echo "================================="
 payload='{
   "notification": {
     "http": {
-      "url": "http://localhost:'$LISTENER_PORT'/notify"
+      "url": "http://localhost:'$FT_PORT'/notify"
     },
     "metadata": [ "actionType" ]
   },
@@ -82,8 +82,8 @@ echo
 
 echo "03. See 'append' in notification and reset"
 echo "=========================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -97,8 +97,8 @@ echo
 
 echo "05. See 'update' in notification and reset"
 echo "=========================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -115,8 +115,8 @@ echo
 
 echo "07. See 'update' in notification and reset"
 echo "=========================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -133,8 +133,8 @@ echo
 
 echo "09. See 'append' in notification and reset"
 echo "=========================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -153,8 +153,8 @@ echo
 
 echo "11. See 'append' for A3 and 'update' for A2"
 echo "==========================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -405,4 +405,4 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 --TEARDOWN--
 brokerStop CB
 dbDrop CB
-accumulatorStop
+ftClientStop

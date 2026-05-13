@@ -28,7 +28,7 @@ ${SCRIPT_HOME}/httpsPrepare.sh --keyFileName /tmp/harnessTest.key --certFileName
 
 dbInit CB
 brokerStart CB
-accumulatorStart --pretty-print --https --key /tmp/harnessTest.key --cert /tmp/harnessTest.pem
+ftClientStart --pretty-print --https --httpsKey /tmp/harnessTest.key --httpsCertificate /tmp/harnessTest.pem
 
 --SHELL--
 
@@ -54,7 +54,7 @@ payload='{
     }
   },
   "notification": {
-    "http": {"url": "https://localhost:'$LISTENER_PORT'/notify"}
+    "http": {"url": "https://localhost:'$FT_PORT'/notify"}
   }
 }'
 orionCurl --url /v2/subscriptions --payload "$payload"
@@ -77,17 +77,19 @@ echo
 
 echo "03. Dump accumulator and see no notification"
 echo "============================================"
-accumulatorDump IPV4 HTTPS
+ftClientDump IPV4 HTTPS
 echo
 echo
 
-# Note: The log message differs depending on libcurl version:
-# - Older: "Peer certificate cannot be authenticated with known/given CA certificates"
-# - Newer: "SSL peer certificate or SSH remote key was not OK"
+# The notification should have been attempted (curl_easy_perform), failed at TLS
+# handshake (self-signed not in the trust store), and the broker should have
+# recorded that as a subscription failure (status=failed, lastFailure set,
+# lastSuccess absent).
 
-echo "04. Look in the CB log for the warning about cert not accepted"
-echo "=============================================================="
-grep "curl_easy_perform failed:.*\(ertificate\|SSL peer\)" /tmp/Orion-LD.log | awk -F "curl_easy_perform" '{ print $2 }' | awk -F ")" '{ print $1 }'
+echo "04. GET the subscription - verify the broker recorded a failed delivery"
+echo "======================================================================="
+sleep 1
+orionCurl --url /v2/subscriptions
 echo
 echo
 
@@ -117,13 +119,44 @@ Location: /v2/entities/E1?type=Thing
 ============================================
 
 
-04. Look in the CB log for the warning about cert not accepted
-==============================================================
- failed: REGEX(.*)
+04. GET the subscription - verify the broker recorded a failed delivery
+=======================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Fiware-Correlator: REGEX([0-9a-f\-]{36})
+
+[
+    {
+        "id": "REGEX([0-9a-f]{24})",
+        "notification": {
+            "attrs": [],
+            "attrsFormat": "normalized",
+            "http": {
+                "url": "https://localhost:REGEX(\d+)/notify"
+            },
+            "lastFailure": "REGEX(.*)",
+            "lastNotification": "REGEX(.*)",
+            "timesSent": 1
+        },
+        "status": "failed",
+        "subject": {
+            "condition": {
+                "attrs": []
+            },
+            "entities": [
+                {
+                    "idPattern": "E.*"
+                }
+            ]
+        }
+    }
+]
 
 
 --TEARDOWN--
 brokerStop CB
 dbDrop CB
-accumulatorStop
+ftClientStop
 rm -f /tmp/harnessTest.key /tmp/harnessTest.pem

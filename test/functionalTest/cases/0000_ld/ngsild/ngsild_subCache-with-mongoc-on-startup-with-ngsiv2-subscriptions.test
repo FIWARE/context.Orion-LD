@@ -55,7 +55,7 @@ payload='
          }
     },
     "notification": {
-        "http": {"url": "http://localhost:'${LISTENER_PORT}'/notify"},
+        "http": {"url": "http://localhost:'${FT_PORT}'/notify"},
         "attrs": [ ]
     },
     "description": "S1",
@@ -124,7 +124,7 @@ MongoDB server version: REGEX(.*)
 {
 	"_id" : REGEX(.*),
 	"expiration" : REGEX(.*),
-	"reference" : "http://localhost:9997/notify",
+	"reference" : "http://localhost:7701/notify",
 	"custom" : false,
 	"mimeType" : "application/json",
 	"throttling" : 0,
@@ -173,7 +173,7 @@ MongoDB server version: REGEX(.*)
 {
 	"_id" : REGEX(.*),
 	"expiration" : REGEX(.*),
-	"reference" : "http://localhost:9997/notify",
+	"reference" : "http://localhost:7701/notify",
 	"custom" : false,
 	"mimeType" : "application/json",
 	"throttling" : 0,
@@ -231,7 +231,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "notification": {
             "endpoint": {
                 "accept": "application/json",
-                "uri": "http://localhost:9997/notify"
+                "uri": "http://localhost:7701/notify"
             },
             "format": "normalized",
             "status": "ok"
@@ -268,7 +268,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "notification": {
             "endpoint": {
                 "accept": "application/json",
-                "uri": "http://localhost:9997/notify"
+                "uri": "http://localhost:7701/notify"
             },
             "format": "normalized",
             "status": "ok"

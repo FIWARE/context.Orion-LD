@@ -26,7 +26,7 @@ String filters for compound values of metadata: string match in subscriptions
 --SHELL-INIT--
 dbInit CB
 brokerStart CB
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -84,7 +84,7 @@ payload='{
          }
     },
     "notification": {
-        "http": { "url": "http://localhost:'$LISTENER_PORT'/notify" },
+        "http": { "url": "http://localhost:'$FT_PORT'/notify" },
         "attrs": [ ]
     },
     "expires": "2050-04-05T14:00:00.00Z"
@@ -96,8 +96,8 @@ echo
 
 echo "03. Dump and reset accumulator, see one notification"
 echo "===================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -119,7 +119,7 @@ payload='{
          }
     },
     "notification": {
-        "http": { "url": "http://localhost:'$LISTENER_PORT'/notify" },
+        "http": { "url": "http://localhost:'$FT_PORT'/notify" },
         "attrs": [ ]
     },
     "expires": "2050-04-05T14:00:00.00Z"
@@ -131,8 +131,8 @@ echo
 
 echo "05. Dump and reset accumulator, see one notification"
 echo "===================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -154,7 +154,7 @@ payload='{
          }
     },
     "notification": {
-        "http": { "url": "http://localhost:'$LISTENER_PORT'/notify" },
+        "http": { "url": "http://localhost:'$FT_PORT'/notify" },
         "attrs": [ ]
     },
     "expires": "2050-04-05T14:00:00.00Z"
@@ -166,8 +166,8 @@ echo
 
 echo "07. Dump and reset accumulator, see one notification"
 echo "===================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -189,7 +189,7 @@ payload='{
          }
     },
     "notification": {
-        "http": { "url": "http://localhost:'$LISTENER_PORT'/notify" },
+        "http": { "url": "http://localhost:'$FT_PORT'/notify" },
         "attrs": [ ]
     },
     "expires": "2050-04-05T14:00:00.00Z"
@@ -201,8 +201,8 @@ echo
 
 echo "09. Dump and reset accumulator, see no notification"
 echo "==================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -231,8 +231,8 @@ echo
 
 echo "11. Dump and reset accumulator, see 3 notifications"
 echo "==================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -528,5 +528,5 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

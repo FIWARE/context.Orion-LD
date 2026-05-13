@@ -26,7 +26,7 @@ Bad Input On Notification Error for API v1 (with relogged alarms)
 --SHELL-INIT--
 dbInit CB
 brokerStart CB 0-255 IPv4 -subCacheIval 5 -relogAlarms
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -138,7 +138,7 @@ payload='{
         "id": "E1"
     }
   ],
-  "reference": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+  "reference": "http://127.0.0.1:'${FT_PORT}'/notify",
   "duration": "P1M",
   "notifyConditions": [
     {
@@ -310,5 +310,5 @@ Runtime Error (not sending NotifyContextRequest: malformed URL: 'badReferenceFor
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop $LISTENER_PORT
+ftClientStop
 dbDrop CB

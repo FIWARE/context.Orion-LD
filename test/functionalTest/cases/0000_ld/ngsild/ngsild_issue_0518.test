@@ -26,7 +26,7 @@ HTTP Headers included in notifications
 --SHELL-INIT--
 dbInit CB
 orionldStart CB
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -50,7 +50,7 @@ payload='{
   "watchedAttributes": ["speed"],
   "notification": {
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify",
+      "uri": "http://localhost:'$FT_PORT'/notify",
       "accept": "application/json",
       "receiverInfo": [
         {
@@ -98,7 +98,7 @@ echo
 
 echo "04. Dump the accumulator - see one notification - make sure the two extra HTTP headers are present"
 echo "=================================================================================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -130,7 +130,7 @@ MongoDB server version: REGEX(.*)
 {
 	"_id" : "urn:ngsi-ld:Subscription:S01",
 	"expiration" : REGEX(.*),
-	"reference" : "http://localhost:9997/notify",
+	"reference" : "http://localhost:7701/notify",
 	"custom" : false,
 	"mimeType" : "application/json",
 	"headers" : {
@@ -209,5 +209,5 @@ H2: 456
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

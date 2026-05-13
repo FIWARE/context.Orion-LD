@@ -26,7 +26,7 @@ Entity dates overridden by the user (subscription/notification cases)
 --SHELL-INIT--
 dbInit CB
 brokerStart CB
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -73,7 +73,7 @@ payload='{
          }
     },
     "notification": {
-        "http": {"url": "http://localhost:'$LISTENER_PORT'/notify"},
+        "http": {"url": "http://localhost:'$FT_PORT'/notify"},
         "attrs": [ "dateModified", "*" ]
     }
 }'
@@ -118,8 +118,8 @@ echo
 
 echo "04. Dump & reset accumulator: see E2 notif [but also E1 notif, with autoprovided dateModified]"
 echo "=============================================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -152,8 +152,8 @@ echo
 
 echo "07. Dump & reset accumulator: see E2 notif [but also E1, with autoprovided dateModified]"
 echo "========================================================================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -175,7 +175,7 @@ payload='{
          }
     },
     "notification": {
-        "http": {"url": "http://localhost:'$LISTENER_PORT'/notify"},
+        "http": {"url": "http://localhost:'$FT_PORT'/notify"},
         "attrs": [ "dateModified", "*" ]
     }
 }'
@@ -186,8 +186,8 @@ echo
 
 echo "09. Dump & reset accumulator: see csub initial notif with E2 [but also E1 is included, with user provided dateModified]"
 echo "======================================================================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -202,7 +202,7 @@ echo
 echo "11. Delete user dateModified from E1 (should not trigger notif) & reset accumulator"
 echo "==================================================================================="
 orionCurl --url '/v2/entities/E1/attrs/dateModified' -X DELETE
-accumulatorReset
+ftClientReset
 echo
 echo
 
@@ -235,8 +235,8 @@ echo
 
 echo "14. Dump & reset accumulator: 2 notif E1 and 2 for E2"
 echo "====================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 

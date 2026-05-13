@@ -26,7 +26,7 @@ NGSIv1: Empty attribute values in notifications
 --SHELL-INIT--
 dbInit CB
 brokerStart CB
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -52,7 +52,7 @@ payload='{
   "attributes": [
     "attr"
   ],
-  "reference": "http://localhost:'${LISTENER_PORT}'/notify",
+  "reference": "http://localhost:'${FT_PORT}'/notify",
   "duration": "P1M",
   "notifyConditions": [
     {
@@ -184,7 +184,7 @@ echo
 
 echo "07. Dump 4 notifications [<>, <foo>, <>, <bar>]"
 echo "==============================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -509,4 +509,4 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 --TEARDOWN--
 brokerStop CB
 dbDrop CB
-accumulatorStop
+ftClientStop

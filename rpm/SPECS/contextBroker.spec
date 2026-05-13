@@ -116,7 +116,6 @@ find $RPM_BUILD_ROOT/usr/share/contextBroker/tests/cases/ -name *.DISABLED -exec
 rm $RPM_BUILD_ROOT/usr/share/contextBroker/tests/cases/CMakeLists.txt
 cp LICENSE $RPM_BUILD_ROOT/usr/share/doc/contextBroker
 cp scripts/testEnv.sh test/functionalTest/testHarness.sh test/functionalTest/testDiff.py test/functionalTest/harnessFunctions.sh $RPM_BUILD_ROOT/usr/share/contextBroker/tests
-cp scripts/accumulator-server.py $RPM_BUILD_ROOT/usr/share/contextBroker/tests 
 cp test/functionalTest/httpsPrepare.sh $RPM_BUILD_ROOT/usr/share/contextBroker/tests
 cp scripts/managedb/garbage-collector.py $RPM_BUILD_ROOT/usr/share/contextBroker
 cp scripts/managedb/latest-updates.py $RPM_BUILD_ROOT/usr/share/contextBroker

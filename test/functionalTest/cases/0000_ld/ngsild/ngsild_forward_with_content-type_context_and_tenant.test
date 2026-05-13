@@ -26,7 +26,7 @@ Content-Type, @context, and tenant in Distributed Operations
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -experimental -forwarding
-accumulatorStart --pretty-print --url /ngsi-ld/v1/entities/urn:E1
+ftClientStart --pretty-print
 
 --SHELL--
 #
@@ -86,7 +86,7 @@ payload='{
   ],
   "mode": "inclusive",
   "operations": [ "mergeEntity", "retrieveEntity" ],
-  "endpoint": "http://localhost:'$LISTENER_PORT'"
+  "endpoint": "http://localhost:'$FT_PORT'"
 }'
 orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload"
 echo
@@ -105,8 +105,8 @@ echo
 
 echo "04. Dump and reset the accumulator. See Content-Type: application/json and no @context (Core Context is used)"
 echo "============================================================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -120,8 +120,8 @@ echo
 
 echo "06. Dump and reset the accumulator. See no link header in the GET request, as only the Core context is used"
 echo "==========================================================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -151,7 +151,7 @@ payload='{
   ],
   "mode": "inclusive",
   "operations": [ "mergeEntity", "retrieveEntity" ],
-  "endpoint": "http://localhost:'$LISTENER_PORT'",
+  "endpoint": "http://localhost:'$FT_PORT'",
   "tenant": "do_t1"
 }'
 orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload"
@@ -171,8 +171,8 @@ echo
 
 echo "10. Dump and reset the accumulator. See Content-Type: application/json and no @context (Core Context is used) AND the NGSILD-Tenant header"
 echo "=========================================================================================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -186,8 +186,8 @@ echo
 
 echo "12. Dump and reset the accumulator. See no link header in the GET request, but the NGSILD-Tenant header is present"
 echo "=================================================================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -205,8 +205,8 @@ echo
 
 echo "14. Dump and reset the accumulator. See Content-Type: application/ld+json and a @context field in the payload body (Core Context)"
 echo "================================================================================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -247,7 +247,7 @@ payload='{
   ],
   "mode": "inclusive",
   "operations": [ "mergeEntity", "retrieveEntity" ],
-  "endpoint": "http://localhost:'$LISTENER_PORT'"
+  "endpoint": "http://localhost:'$FT_PORT'"
 }'
 orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload"
 echo
@@ -267,8 +267,8 @@ echo
 
 echo "18. Dump and reset the accumulator. See Content-Type: application/json and The HTTP Header 'Link: xxx'"
 echo "======================================================================================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -282,8 +282,8 @@ echo
 
 echo "20. Dump and reset the accumulator. See HTTP Header 'Link: xxx'"
 echo "==============================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -563,5 +563,5 @@ Date: REGEX(.*)
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

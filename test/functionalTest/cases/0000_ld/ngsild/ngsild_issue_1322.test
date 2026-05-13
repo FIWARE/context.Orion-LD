@@ -28,8 +28,8 @@ ${SCRIPT_HOME}/httpsPrepare.sh --keyFileName /tmp/harnessTest.key --certFileName
 dbInit CB
 dbInit CB captn
 orionldStart CB -mongocOnly -multiservice
-accumulatorStart --pretty-print --url /yvonne 127.0.0.1 $LISTENER_PORT
-accumulatorStart --pretty-print --https --key /tmp/harnessTest.key --cert /tmp/harnessTest.pem --url /yvonne 127.0.0.1 $LISTENER2_PORT
+ftClientStart --pretty-print --port $FT_PORT
+ftClientStart --pretty-print --https --httpsKey /tmp/harnessTest.key --httpsCertificate /tmp/harnessTest.pem --port $FT2_PORT
 
 --SHELL--
 
@@ -83,7 +83,7 @@ payload='{
     "attributes": [ "location", "atmosphericPressure", "dateObserved" ],
     "format": "normalized",
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/yvonne",
+      "uri": "http://localhost:'$FT_PORT'/yvonne",
       "accept": "application/json"
     }
   }
@@ -113,7 +113,7 @@ payload='{
     "attributes": [ "location", "atmosphericPressure", "dateObserved" ],
     "format": "normalized",
     "endpoint": {
-      "uri": "https://localhost:'$LISTENER2_PORT'/yvonne",
+      "uri": "https://localhost:'$FT2_PORT'/yvonne",
       "accept": "application/json"
     }
   }
@@ -149,8 +149,8 @@ echo
 
 echo "05. Dump accumulators and see the two notifications"
 echo "==================================================="
-accumulatorDump
-accumulator2Dump IPV4 HTTPS
+ftClientDump
+ftClientDump --port $FT2_PORT IPV4 HTTPS
 echo
 echo
 
@@ -304,5 +304,5 @@ NGSILD-Tenant: captn
 brokerStop CB
 dbDrop CB
 dbDrop CB captn
-accumulatorStop $LISTENER_PORT
-accumulatorStop $LISTENER2_PORT
+ftClientStop
+ftClientStop --port $FT2_PORT

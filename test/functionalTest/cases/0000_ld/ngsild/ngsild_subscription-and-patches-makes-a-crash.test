@@ -27,7 +27,7 @@ Patching an entity triggering notifications crashes the broker (report by AWS)
 dbInit CB
 export CB_TRACELEVELS=${CB_TRACELEVELS:-43,44,241}
 orionldStart CB -mongocOnly -subCacheIval 1
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -55,7 +55,7 @@ payload='{
   "notification": {
     "format": "keyValues",
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify"
+      "uri": "http://localhost:'$FT_PORT'/notify"
     }
   }
 }'
@@ -91,8 +91,8 @@ echo
 
 echo "04. Dump accumulator, see one notification"
 echo "=========================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -115,8 +115,8 @@ echo "06. Dump accumulator, see 100 notifications"
 echo "==========================================="
 sleep 1
 # valgrindSleep 1
-accumulatorDump | grep '"notifiedAt":' | wc -l
-accumulatorReset
+ftClientDump | grep '"notifiedAt":' | wc -l
+ftClientReset
 echo
 echo
 
@@ -206,7 +206,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "notification": {
         "endpoint": {
             "accept": "application/json",
-            "uri": "http://localhost:9997/notify"
+            "uri": "http://localhost:7701/notify"
         },
         "format": "keyValues",
         "lastNotification": "202REGEX(.*)Z",
@@ -223,5 +223,5 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

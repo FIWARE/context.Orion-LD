@@ -26,7 +26,7 @@ Subscriptions with q-filter over string value
 --SHELL-INIT--
 dbInit CB
 orionldStart CB
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -53,7 +53,7 @@ payload='{
   "q": "P==%22STRING%22",
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -97,7 +97,7 @@ echo
 
 echo "06. Dump accumulator"
 echo "===================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -120,7 +120,7 @@ MongoDB server version: REGEX(.*)
 {
 	"_id" : "urn:ngsi-ld:subscriptions:S1",
 	"expiration" : 0,
-	"reference" : "http://127.0.0.1:9997/notify",
+	"reference" : "http://127.0.0.1:7701/notify",
 	"custom" : false,
 	"mimeType" : "application/json",
 	"throttling" : 0,
@@ -174,7 +174,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "notification": {
         "endpoint": {
             "accept": "application/json",
-            "uri": "http://127.0.0.1:9997/notify"
+            "uri": "http://127.0.0.1:7701/notify"
         },
         "format": "normalized",
         "status": "ok"
@@ -206,7 +206,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "notification": {
             "endpoint": {
                 "accept": "application/json",
-                "uri": "http://127.0.0.1:9997/notify"
+                "uri": "http://127.0.0.1:7701/notify"
             },
             "format": "normalized",
             "status": "ok"
@@ -229,12 +229,12 @@ Location: /ngsi-ld/v1/entities/urn:E1
 
 06. Dump accumulator
 ====================
-POST http://127.0.0.1:9997/notify?subscriptionId=urn:ngsi-ld:subscriptions:S1
+POST http://127.0.0.1:7701/notify?subscriptionId=urn:ngsi-ld:subscriptions:S1
 Fiware-Servicepath: /
 Content-Length: 258
 User-Agent: orion/REGEX(.*)
 Ngsiv2-Attrsformat: normalized
-Host: 127.0.0.1:9997
+Host: 127.0.0.1:7701
 Accept: application/json
 Content-Type: application/json; charset=utf-8
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -260,5 +260,5 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

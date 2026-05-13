@@ -27,7 +27,7 @@ Do NOT propagate Service-Path when not in initial frequest
 dbInit CB
 
 brokerStart CB
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -57,7 +57,7 @@ payload='{
         "isDomain": "false"
       }
     ],
-    "providingApplication": "http://localhost:'${LISTENER_PORT}'/v1"
+    "providingApplication": "http://localhost:'${FT_PORT}'/v1"
     }
  ],
  "duration": "P1M"
@@ -91,7 +91,7 @@ echo
 
 echo "03. Dump accumulator to see that the forward was made without service-path"
 echo "=========================================================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -163,4 +163,4 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 --TEARDOWN--
 brokerStop CB
 dbDrop CB
-accumulatorStop
+ftClientStop

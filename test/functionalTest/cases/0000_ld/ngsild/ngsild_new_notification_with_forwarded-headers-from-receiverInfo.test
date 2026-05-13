@@ -26,7 +26,7 @@ Notification with forwarded headers fron receiverInfo og the subscription
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -multiservice -experimental
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -53,7 +53,7 @@ payload='{
   "notification": {
     "format": "concise",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
       "receiverInfo": [
         {
           "key": "H1",
@@ -109,8 +109,8 @@ echo
 
 echo "03. Dump accumulator to see one notification with the three receiverInfo headers + X-Auth-Token and Authorization AND FIWARE-Correlator from step 02"
 echo "===================================================================================================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -127,8 +127,8 @@ echo
 
 echo "05. Dump accumulator and make sure the FIWARE-Correlator header is not present"
 echo "=============================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -236,6 +236,6 @@ H3: 789
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB
 dbDrop CB t1

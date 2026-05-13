@@ -26,7 +26,7 @@ NGSIv2 notification formats
 --SHELL-INIT--
 dbInit CB
 brokerStart CB 0
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -69,7 +69,7 @@ payload='
   },
   "notification": {
     "http": {
-      "url": "http://localhost:'$LISTENER_PORT'/notify"
+      "url": "http://localhost:'$FT_PORT'/notify"
     },
     "attrs": [ "A2", "A4", "A6", "A5", "A3", "A1" ],
     "attrsFormat": "values"
@@ -83,7 +83,7 @@ echo
 
 echo "03. Dump accumulator to see the notification"
 echo "============================================"
-accumulatorDump
+ftClientDump
 echo
 echo
 

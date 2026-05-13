@@ -26,7 +26,7 @@ Update an entity using Real PATCH - add two sub-attributes to a Property with no
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -experimental
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 #
@@ -82,7 +82,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
       "accept": "application/ld+json"
     }
   }
@@ -104,7 +104,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
       "accept": "application/ld+json"
     }
   }
@@ -126,7 +126,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
       "accept": "application/ld+json"
     }
   }
@@ -149,7 +149,7 @@ payload='{
   "watchedAttributes": ["P1", "P2", "P3" ],
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
       "accept": "application/ld+json"
     }
   }
@@ -172,7 +172,7 @@ payload='{
   "watchedAttributes": ["P2" ],
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
       "accept": "application/ld+json"
     }
   }
@@ -194,8 +194,8 @@ echo
 
 echo "17. Dump+Reset accumulator - see three notifications: S1, S2, and S4"
 echo "===================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -212,8 +212,8 @@ echo
 
 echo "19. Dump+Reset accumulator - see two notifications: S2 and S4"
 echo "============================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -230,8 +230,8 @@ echo
 
 echo "21. Dump+Reset accumulator - see three notifications: S2, S4, and S5"
 echo "===================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -529,5 +529,5 @@ Ngsild-Attribute-Format: Normalized
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

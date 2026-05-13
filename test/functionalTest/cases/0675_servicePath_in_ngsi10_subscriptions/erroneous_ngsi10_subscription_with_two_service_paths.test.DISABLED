@@ -48,7 +48,7 @@ payload='{
   "attributes": [
     "A1"
   ],
-  "reference": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+  "reference": "http://127.0.0.1:'${FT_PORT}'/notify",
   "duration": "P1M",
   "throttling": "PT1S",
   "notifyConditions": [

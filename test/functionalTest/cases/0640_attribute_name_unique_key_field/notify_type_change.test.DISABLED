@@ -26,7 +26,7 @@ Update attribute type
 --SHELL-INIT--
 dbInit CB
 brokerStart CB 0-255
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -64,7 +64,7 @@ payload='{
         "id": "E"
     }
   ],
-  "reference": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+  "reference": "http://127.0.0.1:'${FT_PORT}'/notify",
   "duration": "P1M",
   "notifyConditions": [
     {
@@ -105,7 +105,7 @@ echo
 
 echo "05. Check that 2 notification arrived (initial one an the one due to step 3)"
 echo "============================================================================"
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -259,5 +259,5 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

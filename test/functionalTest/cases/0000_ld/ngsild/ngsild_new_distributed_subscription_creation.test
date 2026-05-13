@@ -28,7 +28,7 @@ dbInit CB
 dbInit CP1
 orionldStart CB -experimental -wip distSubs
 orionldStart CP1 -experimental
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -93,7 +93,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify",
+      "uri": "http://localhost:'$FT_PORT'/notify",
       "receiverInfo": [
         {
           "key": "X-Auth-Token",
@@ -145,7 +145,7 @@ echo
 
 echo "05. Dump the accumulator to see the notification"
 echo "================================================"
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -227,7 +227,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify"
+      "uri": "http://localhost:'$FT_PORT'/notify"
     }
   }
 }'
@@ -255,7 +255,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify"
+      "uri": "http://localhost:'$FT_PORT'/notify"
     }
   }
 }'
@@ -433,7 +433,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
                     "value": "urn:ngsi-ld:request"
                 }
             ],
-            "uri": "http://localhost:9997/notify"
+            "uri": "http://localhost:7701/notify"
         },
         "format": "normalized",
         "status": "ok"
@@ -550,7 +550,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
                     "value": "urn:ngsi-ld:request"
                 }
             ],
-            "uri": "http://localhost:9997/notify"
+            "uri": "http://localhost:7701/notify"
         },
         "format": "normalized",
         "status": "ok"
@@ -697,6 +697,6 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 --TEARDOWN--
 brokerStop CB
 brokerStop CP1
-accumulatorStop
+ftClientStop
 dbDrop CB
 dbDrop CP1

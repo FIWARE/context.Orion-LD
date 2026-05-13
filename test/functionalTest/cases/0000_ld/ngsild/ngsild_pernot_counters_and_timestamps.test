@@ -26,7 +26,7 @@ Pernot Subscription - periodic notifications and counters/timestamps
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -pernot -experimental -subCacheFlushIval 2
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -97,7 +97,7 @@ payload='{
   "notification": {
     "attributes": [ "P1", "P2" ],
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -144,8 +144,8 @@ echo
 
 echo "13. Dump the accumulator to see the notification"
 echo "================================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -219,7 +219,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         ],
         "endpoint": {
             "accept": "application/json",
-            "uri": "http://127.0.0.1:9997/notify"
+            "uri": "http://127.0.0.1:7701/notify"
         },
         "format": "normalized",
         "lastNotification": "202REGEX(.*)Z",
@@ -310,7 +310,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         ],
         "endpoint": {
             "accept": "application/json",
-            "uri": "http://127.0.0.1:9997/notify"
+            "uri": "http://127.0.0.1:7701/notify"
         },
         "format": "normalized",
         "lastNotification": "202REGEX(.*)Z",
@@ -368,7 +368,7 @@ MongoDB server version: REGEX(.*)
 		"https://uri.etsi.org/ngsi-ld/default-context/P1",
 		"https://uri.etsi.org/ngsi-ld/default-context/P2"
 	],
-	"reference" : "http://127.0.0.1:9997/notify",
+	"reference" : "http://127.0.0.1:7701/notify",
 	"mimeType" : "application/json",
 	"format" : "normalized",
 	"conditions" : [ ],
@@ -387,4 +387,4 @@ bye
 --TEARDOWN--
 brokerStop CB
 dbDrop CB
-accumulatorStop
+ftClientStop

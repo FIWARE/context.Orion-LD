@@ -26,7 +26,7 @@ Notifications with Language Property - old style notifications
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -experimental
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -65,7 +65,7 @@ payload='{
   "notification": {
     "attributes": [ "L1" ],
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -89,7 +89,7 @@ payload='{
   "notification": {
     "attributes": [ "L2" ],
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   },
   "lang": "en"
@@ -141,8 +141,8 @@ echo
 
 echo "06. Dump/Reset accumulator - see one notification for S1, with L1 as a LanguageProperty"
 echo "======================================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -168,8 +168,8 @@ echo
 
 echo "08. Dump/Reset accumulator - see one notification for S2, with L2 as a Property"
 echo "==============================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -189,7 +189,7 @@ payload='{
   "notification": {
     "attributes": [ "L3" ],
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     },
     "format": "keyValues"
   },
@@ -221,8 +221,8 @@ echo
 
 echo "11. Dump/Reset accumulator - see one notification for S3, with L3 as a String"
 echo "============================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -255,8 +255,8 @@ echo
 
 echo "23. Dump/Reset accumulator - see one notification for S1, with L1 as a Property"
 echo "==============================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -320,7 +320,7 @@ MongoDB server version: REGEX(.*)
 	"attrs" : [
 		"https://uri.etsi.org/ngsi-ld/default-context/L2"
 	],
-	"reference" : "http://127.0.0.1:9997/notify",
+	"reference" : "http://127.0.0.1:7701/notify",
 	"mimeType" : "application/json",
 	"format" : "normalized",
 	"status" : "active",
@@ -357,7 +357,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         ],
         "endpoint": {
             "accept": "application/json",
-            "uri": "http://127.0.0.1:9997/notify"
+            "uri": "http://127.0.0.1:7701/notify"
         },
         "format": "normalized",
         "status": "ok"
@@ -663,5 +663,5 @@ bye
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

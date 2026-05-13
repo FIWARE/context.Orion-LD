@@ -27,7 +27,7 @@ Notification for subscriptions with q: Attribute String Match
 export BROKER=orionld
 dbInit CB
 brokerStart CB 0 IPv4 -experimental
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -66,7 +66,7 @@ payload='{
   "notification": {
     "format": "simplified",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -101,8 +101,8 @@ echo
 
 echo "04. Dump accumulator to see one notification"
 echo "============================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -128,7 +128,7 @@ payload='{
   "notification": {
     "format": "simplified",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -163,8 +163,8 @@ echo
 
 echo "14. Dump accumulator to see one notification (E3)"
 echo "================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -191,7 +191,7 @@ payload='{
   "notification": {
     "format": "simplified",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -228,8 +228,8 @@ echo
 
 echo "24. Dump accumulator to see one notification (E5)"
 echo "================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -411,5 +411,5 @@ Ngsild-Attribute-Format: Simplified
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

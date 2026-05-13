@@ -26,7 +26,7 @@ Issue #1519 - loooooong valuews of http headers in distops
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -experimental -distributed -wip entityMaps
-accumulatorStart --pretty-print --url /ngsi-ld/v1/entities/urn:E1
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -58,7 +58,7 @@ payload='{
     }
   ],
   "operations": [ "mergeEntity", "deleteEntity" ],
-  "endpoint": "http://localhost:'$LISTENER_PORT'"
+  "endpoint": "http://localhost:'$FT_PORT'"
 }'
 orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload"
 echo
@@ -78,7 +78,7 @@ echo
 
 echo "03. Dump the accumulator and see the long Authorization header"
 echo "=============================================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -123,4 +123,4 @@ Via: 1.1 REGEX(.*)
 --TEARDOWN--
 brokerStop CB
 dbDrop CB
-accumulatorStop
+ftClientStop

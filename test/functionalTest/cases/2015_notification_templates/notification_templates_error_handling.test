@@ -108,7 +108,7 @@ payload='{
   },
   "notification": {
     "httpCustom": {
-      "url": "http://127.0.0.1:'${LISTENER_PORT}'/${NOTIFY_URL}",
+      "url": "http://127.0.0.1:'${FT_PORT}'/${NOTIFY_URL}",
       "method": "PUTTY"
     }
   }
@@ -177,10 +177,10 @@ payload='{
   },
   "notification": {
     "http": {
-      "url": "http://127.0.0.1:'${LISTENER_PORT}'/${NOTIFY_URL}"
+      "url": "http://127.0.0.1:'${FT_PORT}'/${NOTIFY_URL}"
     },
     "httpCustom": {
-      "url": "http://127.0.0.1:'${LISTENER_PORT}'/${NOTIFY_URL}"
+      "url": "http://127.0.0.1:'${FT_PORT}'/${NOTIFY_URL}"
     }
   }
 }'

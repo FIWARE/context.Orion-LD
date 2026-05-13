@@ -160,31 +160,32 @@ HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
 Date: REGEX(.*)
 
-POST /notify?subscriptionId=urn:S1
+POST http://REGEX(.*)/notify?subscriptionId=urn:S1
 Content-Length: REGEX(\d+)
-Content-Type: application/json
 User-Agent: orionld/REGEX(.*)
 Host: REGEX(.*)
 Accept: application/json
-Ngsild-Attribute-Format: Normalized
+Content-Type: application/json
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+Ngsild-Attribute-Format: Normalized
 
 {
-  "id": "urn:ngsi-ld:Notification:REGEX(.*)",
-  "type": "Notification",
-  "subscriptionId": "urn:S1",
-  "notifiedAt": "REGEX(.*)",
-  "data": [
-    {
-      "id": "urn:E1",
-      "type": "T",
-      "P1": {
-        "type": "Property",
-        "value": 1
-      }
-    }
-  ]
+    "data": [
+        {
+            "P1": {
+                "type": "Property",
+                "value": 1
+            },
+            "id": "urn:E1",
+            "type": "T"
+        }
+    ],
+    "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+    "notifiedAt": "REGEX(.*)",
+    "subscriptionId": "urn:S1",
+    "type": "Notification"
 }
+=======================================
 
 
 
@@ -277,31 +278,32 @@ HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
 Date: REGEX(.*)
 
-POST /notify?subscriptionId=urn:S1
+POST http://REGEX(.*)/notify?subscriptionId=urn:S1
 Content-Length: REGEX(\d+)
-Content-Type: application/json
 User-Agent: orionld/REGEX(.*)
 Host: REGEX(.*)
 Accept: application/json
-Ngsild-Attribute-Format: Normalized
+Content-Type: application/json
 Link: <https://fiware.github.io/NGSI-LD_TestSuite/ldContext/testContext.jsonld>REGEX(.*)
+Ngsild-Attribute-Format: Normalized
 
 {
-  "id": "urn:ngsi-ld:Notification:REGEX(.*)",
-  "type": "Notification",
-  "subscriptionId": "urn:S1",
-  "notifiedAt": "REGEX(.*)",
-  "data": [
-    {
-      "id": "urn:E1",
-      "type": "T",
-      "P1": {
-        "type": "Property",
-        "value": 1
-      }
-    }
-  ]
+    "data": [
+        {
+            "P1": {
+                "type": "Property",
+                "value": 1
+            },
+            "id": "urn:E1",
+            "type": "T"
+        }
+    ],
+    "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+    "notifiedAt": "REGEX(.*)",
+    "subscriptionId": "urn:S1",
+    "type": "Notification"
 }
+=======================================
 
 
 

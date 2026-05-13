@@ -26,7 +26,7 @@ Avoid printing spurious decimals in custom notifications
 --SHELL-INIT--
 dbInit CB
 brokerStart CB
-accumulatorStart
+ftClientStart
 
 --SHELL--
 
@@ -55,7 +55,7 @@ payload='{
   },
   "notification": {
     "httpCustom": {
-      "url":     "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "url":     "http://127.0.0.1:'${FT_PORT}'/notify",
       "headers": { "Content-Type": "text/plain" },
       "payload": "The temperature is ${temperature} degrees"
     }
@@ -100,7 +100,7 @@ echo
 
 echo "05. Dump accumulator, see 3 notifications, all of them with the correct number of decimals"
 echo "=========================================================================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -184,4 +184,4 @@ The temperature is 34.123456700 degrees=======================================
 --TEARDOWN--
 brokerStop CB
 dbDrop CB
-accumulatorStop
+ftClientStop

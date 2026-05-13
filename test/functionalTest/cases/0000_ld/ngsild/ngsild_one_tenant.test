@@ -131,6 +131,6 @@ Date: REGEX(.*)
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB
 dbDrop CB tn-1

@@ -26,7 +26,7 @@ Sub Cache with mongoc - testing counters for 3 subscriptions after a sub-cache r
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -experimental -subCacheIval 5
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -59,7 +59,7 @@ payload='{
   "notification": {
     "format": "simplified",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -105,7 +105,7 @@ payload='{
   "notification": {
     "format": "simplified",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -150,8 +150,8 @@ echo
 echo "08. Dump accumulator to see notification for S1"
 echo "==============================================="
 sleep .5  # Sometimes the notification isn't there, so, let's sleep a little
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -244,7 +244,7 @@ MongoDB server version: REGEX(.*)
 		"mq" : ""
 	},
 	"format" : "simplified",
-	"reference" : "http://127.0.0.1:9997/notify",
+	"reference" : "http://127.0.0.1:7701/notify",
 	"mimeType" : "application/json",
 	"attrs" : [ ],
 	"status" : "active",
@@ -330,7 +330,7 @@ MongoDB server version: REGEX(.*)
 		"mq" : ""
 	},
 	"format" : "simplified",
-	"reference" : "http://127.0.0.1:9997/notify",
+	"reference" : "http://127.0.0.1:7701/notify",
 	"mimeType" : "application/json",
 	"attrs" : [ ],
 	"status" : "active",
@@ -414,7 +414,7 @@ MongoDB server version: REGEX(.*)
 		"mq" : ""
 	},
 	"format" : "simplified",
-	"reference" : "http://127.0.0.1:9997/notify",
+	"reference" : "http://127.0.0.1:7701/notify",
 	"mimeType" : "application/json",
 	"attrs" : [ ],
 	"status" : "active",
@@ -507,7 +507,7 @@ MongoDB server version: REGEX(.*)
 		"mq" : ""
 	},
 	"format" : "simplified",
-	"reference" : "http://127.0.0.1:9997/notify",
+	"reference" : "http://127.0.0.1:7701/notify",
 	"mimeType" : "application/json",
 	"attrs" : [ ],
 	"status" : "active",
@@ -521,5 +521,5 @@ bye
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

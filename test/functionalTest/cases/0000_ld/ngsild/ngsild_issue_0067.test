@@ -27,7 +27,7 @@ Subscription Creation/Retrieval and Deletion
 dbInit CB
 dbInit CB openiot
 orionldStart CB -multiservice
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -147,6 +147,6 @@ Date: REGEX(.*)
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB
 dbDrop CB openiot

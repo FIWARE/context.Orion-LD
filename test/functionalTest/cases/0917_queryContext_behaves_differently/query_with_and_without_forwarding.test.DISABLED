@@ -26,7 +26,7 @@ Query With And Without Forwarding
 --SHELL-INIT--
 dbInit CB
 brokerStart CB
-accumulatorStart
+ftClientStart
 
 --SHELL--
 
@@ -87,7 +87,7 @@ payload='{
         "isDomain": "false"
       }
     ],
-    "providingApplication": "http://localhost:'${LISTENER_PORT}'/noresponse"
+    "providingApplication": "http://localhost:'${FT_PORT}'/noresponse"
     }
  ],
  "duration": "P1M"
@@ -201,4 +201,4 @@ Date: REGEX(.*)
 --TEARDOWN--
 brokerStop CB
 dbDrop CB
-accumulatorStop
+ftClientStop

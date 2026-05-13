@@ -26,7 +26,7 @@ Create a Subscription with notifications in GeoJSON, and GET it
 --SHELL-INIT--
 dbInit CB
 orionldStart CB
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -52,7 +52,7 @@ payload='{
   "notification": {
     "attributes": [ ],
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
       "accept": "application/geo+json"
     }
   },
@@ -96,7 +96,7 @@ MongoDB server version: REGEX(.*)
 {
 	"_id" : "http://a.b.c/subs/sub01",
 	"expiration" : 1861869600,
-	"reference" : "http://127.0.0.1:9997/notify",
+	"reference" : "http://127.0.0.1:7701/notify",
 	"custom" : false,
 	"mimeType" : "application/geo+json",
 	"throttling" : 0,
@@ -155,7 +155,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "notification": {
         "endpoint": {
             "accept": "application/geo+json",
-            "uri": "http://127.0.0.1:9997/notify"
+            "uri": "http://127.0.0.1:7701/notify"
         },
         "format": "normalized",
         "status": "ok"
@@ -168,5 +168,5 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

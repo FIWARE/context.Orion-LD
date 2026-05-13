@@ -26,7 +26,7 @@ Filter with attr dateModified in subscriptions
 --SHELL-INIT--
 dbInit CB
 brokerStart CB
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -77,7 +77,7 @@ payload='
          }
     },
     "notification": {
-        "http": {"url": "http://localhost:'$LISTENER_PORT'/notify"},
+        "http": {"url": "http://localhost:'$FT_PORT'/notify"},
         "attrs": [ ]
     },
     "expires": "2050-04-05T14:00:00.00Z"
@@ -134,7 +134,7 @@ echo
 
 echo "07. Get accumulator dump (2 notifications), for T_5 and T_6"
 echo "==========================================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -248,5 +248,5 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop $LISTENER_PORT
+ftClientStop
 dbDrop CB

@@ -26,7 +26,7 @@ CPr invalid response (non-NGSI) does not break CB
 --SHELL-INIT--
 dbInit CB
 brokerStart CB
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -69,7 +69,7 @@ payload='{
           "isDomain": "false"
         }
       ],
-      "providingApplication": "http://localhost:'${LISTENER_PORT}'/badresponse"
+      "providingApplication": "http://localhost:'${FT_PORT}'/badresponse"
     }
   ],
   "duration": "P1M"
@@ -150,5 +150,5 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

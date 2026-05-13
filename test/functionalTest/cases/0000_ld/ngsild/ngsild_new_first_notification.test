@@ -27,7 +27,7 @@ Subscription Creation and a simple notification
 # Copied from ngsild_first_notification.test
 dbInit CB
 orionldStart CB -experimental
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -75,7 +75,7 @@ payload='{
   "notification": {
     "format": "normalized",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
       "accept": "application/ld+json"
     }
   },
@@ -89,7 +89,7 @@ echo
 
 echo "03. Dump accumulator to see NO notification - NGSI-LD has no initial notifications"
 echo "=================================================================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -110,8 +110,8 @@ echo
 
 echo "05. Dump accumulator to see one notification"
 echo "============================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -239,5 +239,5 @@ bye
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

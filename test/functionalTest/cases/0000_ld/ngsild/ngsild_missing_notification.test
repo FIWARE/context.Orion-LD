@@ -27,7 +27,7 @@ Notification test for https://stackoverflow.com/questions/70588960/orion-ld-issu
 dbInit CB
 dbInit CB openiot
 orionldStart CB -multiservice
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -77,7 +77,7 @@ payload='{
     "attributes": ["temperature"],
     "format": "normalized",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
       "accept": "application/json"
     }
   },
@@ -112,8 +112,8 @@ echo
 
 echo "03. Dumping/Reseting accumulator to see one notification"
 echo "========================================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -140,7 +140,7 @@ echo
 
 echo "05. Dumping accumulator to see one notification"
 echo "==============================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -258,6 +258,6 @@ Link: <http://localhost:7080/jsonldContexts/testContext>; rel="http://www.w3.org
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB
 dbDrop CB openiot

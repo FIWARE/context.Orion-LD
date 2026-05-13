@@ -200,118 +200,118 @@ HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
 Date: REGEX(.*)
 
-POST /notify?subscriptionId=urn:ngsi-ld:Subscription:S1
+POST http://REGEX(.*)/notify?subscriptionId=urn:ngsi-ld:Subscription:S1
 Content-Length: REGEX(\d+)
-Content-Type: application/json
 User-Agent: orionld/REGEX(.*)
 Host: REGEX(.*)
 Accept: application/json
-Ngsild-Attribute-Format: Normalized
+Content-Type: application/json
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+Ngsild-Attribute-Format: Normalized
 
 {
-  "id": "urn:ngsi-ld:Notification:REGEX(.*)",
-  "type": "Notification",
-  "subscriptionId": "urn:ngsi-ld:Subscription:S1",
-  "notifiedAt": "REGEX(.*)",
-  "data": [
-    {
-      "id": "urn:ngsi-ld:Region:E1",
-      "type": "Region",
-      "name": {
-        "type": "Property",
-        "value": "Eastern Spain"
-      },
-      "location": {
-        "type": "GeoProperty",
-        "value": {
-          "type": "Polygon",
-          "coordinates": [
-            [
-              [
-                -4,
-                39
-              ],
-              [
-                0,
-                39
-              ],
-              [
-                0,
-                43
-              ],
-              [
-                -4,
-                43
-              ],
-              [
-                -4,
-                39
-              ]
-            ]
-          ]
+    "data": [
+        {
+            "id": "urn:ngsi-ld:Region:E1",
+            "location": {
+                "type": "GeoProperty",
+                "value": {
+                    "coordinates": [
+                        [
+                            [
+                                -4,
+                                39
+                            ],
+                            [
+                                0,
+                                39
+                            ],
+                            [
+                                0,
+                                43
+                            ],
+                            [
+                                -4,
+                                43
+                            ],
+                            [
+                                -4,
+                                39
+                            ]
+                        ]
+                    ],
+                    "type": "Polygon"
+                }
+            },
+            "name": {
+                "type": "Property",
+                "value": "Eastern Spain"
+            },
+            "type": "Region"
         }
-      }
-    }
-  ]
+    ],
+    "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+    "notifiedAt": "REGEX(.*)",
+    "subscriptionId": "urn:ngsi-ld:Subscription:S1",
+    "type": "Notification"
 }
-================================================================================
-
-POST /notify?subscriptionId=urn:ngsi-ld:Subscription:S1
+=======================================
+POST http://REGEX(.*)/notify?subscriptionId=urn:ngsi-ld:Subscription:S1
 Content-Length: REGEX(\d+)
-Content-Type: application/json
 User-Agent: orionld/REGEX(.*)
 Host: REGEX(.*)
 Accept: application/json
-Ngsild-Attribute-Format: Normalized
+Content-Type: application/json
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+Ngsild-Attribute-Format: Normalized
 
 {
-  "id": "urn:ngsi-ld:Notification:REGEX(.*)",
-  "type": "Notification",
-  "subscriptionId": "urn:ngsi-ld:Subscription:S1",
-  "notifiedAt": "REGEX(.*)",
-  "data": [
-    {
-      "id": "urn:ngsi-ld:Region:E3",
-      "type": "Region",
-      "name": {
-        "type": "Property",
-        "value": "Central Spain"
-      },
-      "location": {
-        "type": "GeoProperty",
-        "value": {
-          "type": "Polygon",
-          "coordinates": [
-            [
-              [
-                -5,
-                39
-              ],
-              [
-                -3,
-                39
-              ],
-              [
-                -3,
-                41
-              ],
-              [
-                -5,
-                41
-              ],
-              [
-                -5,
-                39
-              ]
-            ]
-          ]
+    "data": [
+        {
+            "id": "urn:ngsi-ld:Region:E3",
+            "location": {
+                "type": "GeoProperty",
+                "value": {
+                    "coordinates": [
+                        [
+                            [
+                                -5,
+                                39
+                            ],
+                            [
+                                -3,
+                                39
+                            ],
+                            [
+                                -3,
+                                41
+                            ],
+                            [
+                                -5,
+                                41
+                            ],
+                            [
+                                -5,
+                                39
+                            ]
+                        ]
+                    ],
+                    "type": "Polygon"
+                }
+            },
+            "name": {
+                "type": "Property",
+                "value": "Central Spain"
+            },
+            "type": "Region"
         }
-      }
-    }
-  ]
+    ],
+    "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+    "notifiedAt": "REGEX(.*)",
+    "subscriptionId": "urn:ngsi-ld:Subscription:S1",
+    "type": "Notification"
 }
+=======================================
 
 
 

@@ -26,7 +26,7 @@ Disable custom notifications CLI
 --SHELL-INIT--
 dbInit CB
 brokerStart CB 0 IPv4 -disableCustomNotifications
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -94,7 +94,7 @@ payload='{
   },
   "notification": {
     "http": {
-      "url": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "url": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   },
   "throttling": 0
@@ -119,7 +119,7 @@ payload='{
   },
   "notification": {
     "httpCustom": {
-      "url": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "url": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   },
   "throttling": 0
@@ -144,7 +144,7 @@ payload='{
   },
   "notification": {
     "httpCustom": {
-      "url": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "url": "http://127.0.0.1:'${FT_PORT}'/notify",
       "method": "PUT",
       "payload": "{ %22A1%22: %22${A1}%22, %22A2%22: %22${A2}%22, %22A3%22: %22${A3}%22 }",
       "qs":       { "id": "${id}", "type": "${type}", "a1": "${A1}", "a2": "${A2}", "a3": "${A3}" },
@@ -161,7 +161,7 @@ echo
 echo "07. Dump accumulator and see 3 notifications (all multi-entity)"
 echo "==============================================================="
 sleep 0.5  # Without this sleep, sometimes the last notification is missing
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -363,4 +363,4 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 --TEARDOWN--
 brokerStop CB
 dbDrop CB
-accumulatorStop
+ftClientStop

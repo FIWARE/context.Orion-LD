@@ -26,8 +26,8 @@ Notification filters on "attributes" - issue #1244
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -experimental
-accumulatorStart --pretty-print 127.0.0.1 $LISTENER_PORT
-accumulatorStart --pretty-print 127.0.0.1 $LISTENER2_PORT
+ftClientStart --pretty-print --port $FT_PORT
+ftClientStart --pretty-print --port $FT2_PORT
 
 --SHELL--
 
@@ -54,7 +54,7 @@ payload='{
     "format": "normalized",
     "attributes": ["speed", "brandName"],
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
       "accept": "application/ld+json"
     }
   }
@@ -74,7 +74,7 @@ payload='{
   "notification": {
     "format": "normalized",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER2_PORT}'/notify",
+      "uri": "http://127.0.0.1:'${FT2_PORT}'/notify",
       "accept": "application/ld+json"
     }
   }
@@ -111,8 +111,8 @@ echo
 
 echo "03. Dump accumulator1 to see one notification, then reset the accumulator1"
 echo "=========================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -130,8 +130,8 @@ echo
 
 echo "05. Dump accumulator1 to see one notification"
 echo "============================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -155,15 +155,15 @@ echo
 
 echo "07. Dump accumulator1 to see one notification, just only with the speed attribute"
 echo "================================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
 
 echo "08. Dump accumulator2 - see 3 notification (first 2 with 3 attrs, last notif with only speed)"
 echo "============================================================================================="
-accumulator2Dump
+ftClientDump --port $FT2_PORT
 echo
 echo
 
@@ -411,6 +411,6 @@ Ngsild-Attribute-Format: Normalized
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
-accumulatorStop $LISTENER2_PORT
+ftClientStop
+ftClientStop --port $FT2_PORT
 dbDrop CB

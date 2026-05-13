@@ -26,7 +26,7 @@ Prometheus metrics - testing number of OK/Failed requests
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -experimental
-accumulatorStart
+ftClientStart
 
 --SHELL--
 
@@ -61,7 +61,7 @@ payload='{
   "watchedAttributes": [ "A1", "A2" ],
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'

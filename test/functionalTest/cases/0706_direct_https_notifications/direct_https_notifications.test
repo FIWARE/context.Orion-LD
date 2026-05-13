@@ -28,7 +28,7 @@ ${SCRIPT_HOME}/httpsPrepare.sh --keyFileName /tmp/harnessTest.key --certFileName
 
 dbInit CB
 brokerStart CB 0 IPV4 -insecureNotif
-accumulatorStart --pretty-print --https --key /tmp/harnessTest.key --cert /tmp/harnessTest.pem
+ftClientStart --pretty-print --https --httpsKey /tmp/harnessTest.key --httpsCertificate /tmp/harnessTest.pem
 
 --SHELL--
 
@@ -53,7 +53,7 @@ payload='{
     }
   },
   "notification": {
-    "http": {"url": "https://localhost:'$LISTENER_PORT'/notify"}
+    "http": {"url": "https://localhost:'$FT_PORT'/notify"}
   }
 }'
 orionCurl --url /v2/subscriptions --payload "$payload"
@@ -76,7 +76,7 @@ echo
 
 echo "03. Dump accumulator and see 1 notification"
 echo "==========================================="
-accumulatorDump IPV4 HTTPS
+ftClientDump IPV4 HTTPS
 echo
 echo
 
@@ -134,5 +134,5 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 --TEARDOWN--
 brokerStop CB
 dbDrop CB
-accumulatorStop
+ftClientStop
 rm -f /tmp/harnessTest.key /tmp/harnessTest.pem

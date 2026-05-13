@@ -27,7 +27,7 @@ Distributed Subscriptions - non-empty URL path for notifications
 dbInit CB
 orionldStart CB -experimental -wip distSubs
 ftClientStart -t 0-5000
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -71,7 +71,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify"
+      "uri": "http://localhost:'$FT_PORT'/notify"
     }
   }
 }'
@@ -113,26 +113,27 @@ HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
 Date: REGEX(.*)
 
-POST /orionld/ngsi-ld/v1/subscriptions
+POST http://REGEX(.*)/orionld/ngsi-ld/v1/subscriptions
+Content-Length: REGEX(.*)
 Host: REGEX(.*)
 Accept: */*
-Content-Length: REGEX(.*)
 Content-Type: application/json
 
 {
-  "id": "urn:ngsi-ld:Subscription:S1:1",
-  "type": "Subscription",
-  "entities": [
-    {
-      "type": "T"
-    }
-  ],
-  "notification": {
-    "endpoint": {
-      "uri": "http://REGEX(.*)/ngsi-ld/ex/v1/notifications/urn:ngsi-ld:Subscription:S1"
-    }
-  }
+    "entities": [
+        {
+            "type": "T"
+        }
+    ],
+    "id": "urn:ngsi-ld:Subscription:S1:1",
+    "notification": {
+        "endpoint": {
+            "uri": "http://REGEX(.*)/ngsi-ld/ex/v1/notifications/urn:ngsi-ld:Subscription:S1"
+        }
+    },
+    "type": "Subscription"
 }
+=======================================
 
 
 

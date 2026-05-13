@@ -26,7 +26,7 @@ failure stats in db and notifications
 --SHELL-INIT--
 dbInit CB
 brokerStart CB 0 IPv4 -subCacheIval 3
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -70,7 +70,7 @@ payload='{
   },
   "notification": {
     "http": {
-      "url": "http://nohost:'$LISTENER_PORT'/notify"
+      "url": "http://nohost:'$FT_PORT'/notify"
     },
     "attrs": [ ]
   }
@@ -109,7 +109,7 @@ payload='{
   },
   "notification": {
     "http": {
-      "url": "http://localhost:'$LISTENER_PORT'/notify"
+      "url": "http://localhost:'$FT_PORT'/notify"
     },
     "attrs": [ ]
   }
@@ -153,7 +153,7 @@ echo
 
 echo "08. Dump accelerator, see 2 notification"
 echo "========================================"
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -173,7 +173,7 @@ payload='{
   },
   "notification": {
     "http": {
-      "url": "http://nohost:'$LISTENER_PORT'/notify"
+      "url": "http://nohost:'$FT_PORT'/notify"
     },
     "attrs": [ ]
   }
@@ -441,5 +441,5 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

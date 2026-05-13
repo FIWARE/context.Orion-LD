@@ -26,7 +26,7 @@ No notification on update that doesn't change anything
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -noNotifyFalseUpdate -experimental
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -54,7 +54,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -84,8 +84,8 @@ echo
 
 echo "03. Dump and reset accumulator - see one notification"
 echo "====================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -102,8 +102,8 @@ echo
 
 echo "05. Dump and reset accumulator - see no notification"
 echo "===================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -120,8 +120,8 @@ echo
 
 echo "07. Dump and reset accumulator - see one notification"
 echo "====================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -233,5 +233,5 @@ Ngsild-Attribute-Format: Normalized
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

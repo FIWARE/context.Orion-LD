@@ -26,7 +26,7 @@ Notifications for PUT /entities/{entityId}
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -experimental
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -64,7 +64,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify"
+      "uri": "http://localhost:'$FT_PORT'/notify"
     }   
   }
 }'
@@ -87,8 +87,8 @@ echo
 
 echo "04. Dump+Reset accumulator - see one notification"
 echo "================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -107,8 +107,8 @@ echo
 
 echo "06. Dump+Reset accumulator - see one notification"
 echo "================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -208,5 +208,5 @@ Ngsild-Attribute-Format: Normalized
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

@@ -27,7 +27,7 @@ No port in notification Host header
 dbInit CB
 dbInit CB openiot
 orionldStart CB -experimental -multiservice
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -49,7 +49,7 @@ payload='{
     "attributes": ["filling", "location"],
     "format": "normalized",
     "endpoint": {
-      "uri": "http://127.0.0.1:9997/notify",
+      "uri": "http://127.0.0.1:7701/notify",
       "accept": "application/json",
       "receiverInfo": [
         {
@@ -90,8 +90,8 @@ echo
 
 echo "03. Dump/Reset the accumulator, see Host header and the port"
 echo "============================================================"
-accumulatorDump 
-accumulatorReset
+ftClientDump 
+ftClientReset
 echo
 echo
 
@@ -122,10 +122,10 @@ NGSILD-Tenant: openiot
 
 03. Dump/Reset the accumulator, see Host header and the port
 ============================================================
-POST http://127.0.0.1:9997/notify?subscriptionId=urn:S1
+POST http://127.0.0.1:7701/notify?subscriptionId=urn:S1
 Content-Length: 378
 User-Agent: orionld/REGEX(.*)
-Host: 127.0.0.1:9997
+Host: 127.0.0.1:7701
 Accept: application/json
 Fiware-Service: openiot
 Ngsild-Tenant: openiot
@@ -162,4 +162,4 @@ Ngsild-Attribute-Format: Normalized
 brokerStop CB
 dbDrop CB
 dbDrop CB openiot
-accumulatorStop
+ftClientStop

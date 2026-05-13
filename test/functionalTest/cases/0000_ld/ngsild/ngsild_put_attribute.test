@@ -31,7 +31,7 @@ pgInit $CB_DB_NAME
 orionldStart CB  -experimental -forwarding -troe
 orionldStart CP1 -experimental
 orionldStart CP2 -experimental
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 #
@@ -178,7 +178,7 @@ payload='{
   "watchedAttributes": ["P0"],
   "notification": {
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify"
+      "uri": "http://localhost:'$FT_PORT'/notify"
     }
   }
 }'
@@ -201,7 +201,7 @@ payload='{
   "watchedAttributes": ["P1"],
   "notification": {
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify"
+      "uri": "http://localhost:'$FT_PORT'/notify"
     }
   }
 }'
@@ -223,8 +223,8 @@ echo
 
 echo "09. Dump/Reset accumulator, see notification on urn:S0"
 echo "======================================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -242,8 +242,8 @@ echo
 
 echo "11. Dump/Reset accumulator, see notification on urn:S1"
 echo "======================================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -861,4 +861,4 @@ brokerStop CP2
 dbDrop CB
 dbDrop CP1
 dbDrop CP2
-accumulatorStop
+ftClientStop

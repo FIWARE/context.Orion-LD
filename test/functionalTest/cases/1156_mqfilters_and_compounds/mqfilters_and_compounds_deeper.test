@@ -26,7 +26,7 @@ String filters for compound values of metadata: deeper level in compound
 --SHELL-INIT--
 dbInit CB
 brokerStart CB
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -188,7 +188,7 @@ payload='{
          }
     },
     "notification": {
-        "http": { "url": "http://localhost:'$LISTENER_PORT'/notify" },
+        "http": { "url": "http://localhost:'$FT_PORT'/notify" },
         "attrs": [ ]
     },
     "expires": "2050-04-05T14:00:00.00Z"
@@ -200,8 +200,8 @@ echo
 
 echo "16. Dump accumulator, see one notification"
 echo "=========================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -223,7 +223,7 @@ payload='{
          }
     },
     "notification": {
-        "http": { "url": "http://localhost:'$LISTENER_PORT'/notify" },
+        "http": { "url": "http://localhost:'$FT_PORT'/notify" },
         "attrs": [ ]
     },
     "expires": "2050-04-05T14:00:00.00Z"
@@ -235,7 +235,7 @@ echo
 
 echo "18. Dump accumulator, see nothing"
 echo "================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -751,5 +751,5 @@ Location: /v2/subscriptions/REGEX([0-9a-f]{24})
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

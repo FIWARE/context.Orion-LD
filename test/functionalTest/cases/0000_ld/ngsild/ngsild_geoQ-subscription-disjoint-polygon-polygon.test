@@ -224,118 +224,118 @@ HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
 Date: REGEX(.*)
 
-POST /notify?subscriptionId=urn:ngsi-ld:Subscription:S1
+POST http://REGEX(.*)/notify?subscriptionId=urn:ngsi-ld:Subscription:S1
 Content-Length: REGEX(\d+)
-Content-Type: application/json
 User-Agent: orionld/REGEX(.*)
 Host: REGEX(.*)
 Accept: application/json
-Ngsild-Attribute-Format: Normalized
+Content-Type: application/json
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+Ngsild-Attribute-Format: Normalized
 
 {
-  "id": "urn:ngsi-ld:Notification:REGEX(.*)",
-  "type": "Notification",
-  "subscriptionId": "urn:ngsi-ld:Subscription:S1",
-  "notifiedAt": "REGEX(.*)",
-  "data": [
-    {
-      "id": "urn:ngsi-ld:Region:E2",
-      "type": "Region",
-      "name": {
-        "type": "Property",
-        "value": "Scandinavia"
-      },
-      "location": {
-        "type": "GeoProperty",
-        "value": {
-          "type": "Polygon",
-          "coordinates": [
-            [
-              [
-                10,
-                55
-              ],
-              [
-                20,
-                55
-              ],
-              [
-                20,
-                65
-              ],
-              [
-                10,
-                65
-              ],
-              [
-                10,
-                55
-              ]
-            ]
-          ]
+    "data": [
+        {
+            "id": "urn:ngsi-ld:Region:E2",
+            "location": {
+                "type": "GeoProperty",
+                "value": {
+                    "coordinates": [
+                        [
+                            [
+                                10,
+                                55
+                            ],
+                            [
+                                20,
+                                55
+                            ],
+                            [
+                                20,
+                                65
+                            ],
+                            [
+                                10,
+                                65
+                            ],
+                            [
+                                10,
+                                55
+                            ]
+                        ]
+                    ],
+                    "type": "Polygon"
+                }
+            },
+            "name": {
+                "type": "Property",
+                "value": "Scandinavia"
+            },
+            "type": "Region"
         }
-      }
-    }
-  ]
+    ],
+    "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+    "notifiedAt": "REGEX(.*)",
+    "subscriptionId": "urn:ngsi-ld:Subscription:S1",
+    "type": "Notification"
 }
-================================================================================
-
-POST /notify?subscriptionId=urn:ngsi-ld:Subscription:S1
+=======================================
+POST http://REGEX(.*)/notify?subscriptionId=urn:ngsi-ld:Subscription:S1
 Content-Length: REGEX(\d+)
-Content-Type: application/json
 User-Agent: orionld/REGEX(.*)
 Host: REGEX(.*)
 Accept: application/json
-Ngsild-Attribute-Format: Normalized
+Content-Type: application/json
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+Ngsild-Attribute-Format: Normalized
 
 {
-  "id": "urn:ngsi-ld:Notification:REGEX(.*)",
-  "type": "Notification",
-  "subscriptionId": "urn:ngsi-ld:Subscription:S1",
-  "notifiedAt": "REGEX(.*)",
-  "data": [
-    {
-      "id": "urn:ngsi-ld:Region:E4",
-      "type": "Region",
-      "name": {
-        "type": "Property",
-        "value": "North Africa"
-      },
-      "location": {
-        "type": "GeoProperty",
-        "value": {
-          "type": "Polygon",
-          "coordinates": [
-            [
-              [
-                -5,
-                30
-              ],
-              [
-                5,
-                30
-              ],
-              [
-                5,
-                35
-              ],
-              [
-                -5,
-                35
-              ],
-              [
-                -5,
-                30
-              ]
-            ]
-          ]
+    "data": [
+        {
+            "id": "urn:ngsi-ld:Region:E4",
+            "location": {
+                "type": "GeoProperty",
+                "value": {
+                    "coordinates": [
+                        [
+                            [
+                                -5,
+                                30
+                            ],
+                            [
+                                5,
+                                30
+                            ],
+                            [
+                                5,
+                                35
+                            ],
+                            [
+                                -5,
+                                35
+                            ],
+                            [
+                                -5,
+                                30
+                            ]
+                        ]
+                    ],
+                    "type": "Polygon"
+                }
+            },
+            "name": {
+                "type": "Property",
+                "value": "North Africa"
+            },
+            "type": "Region"
         }
-      }
-    }
-  ]
+    ],
+    "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+    "notifiedAt": "REGEX(.*)",
+    "subscriptionId": "urn:ngsi-ld:Subscription:S1",
+    "type": "Notification"
 }
+=======================================
 
 
 

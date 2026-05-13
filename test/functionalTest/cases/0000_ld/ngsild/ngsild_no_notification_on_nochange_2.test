@@ -26,7 +26,7 @@ No notification if no real change
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -noNotifyFalseUpdate
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -55,7 +55,7 @@ payload='{
   "notification": {
     "format": "normalized",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -97,8 +97,8 @@ echo
 
 echo "03. Dump and reset accumulator and see one notification"
 echo "======================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -116,7 +116,7 @@ echo
 
 echo "05. Dump accumulator, see no notification"
 echo "========================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -135,7 +135,7 @@ echo
 
 echo "11. Dump accumulator, see no notification"
 echo "========================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -153,7 +153,7 @@ echo
 
 echo "13. Dump accumulator, see no notification"
 echo "========================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -179,7 +179,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1
 
 03. Dump and reset accumulator and see one notification
 =======================================================
-POST http://127.0.0.1:9997/notify?subscriptionId=urn:ngsi-ld:Subscription:01
+POST http://127.0.0.1:7701/notify?subscriptionId=urn:ngsi-ld:Subscription:01
 Fiware-Servicepath: /
 Content-Length: 493
 User-Agent: orion/REGEX(.*)
@@ -276,5 +276,5 @@ Date: REGEX(.*)
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

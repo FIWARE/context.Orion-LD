@@ -26,7 +26,7 @@ Pernot Subscription - periodic notifications
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -pernot -experimental
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -60,7 +60,7 @@ payload='{
   "timeInterval": 2,
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     },
     "attributes": [ "P1", "P2" ],
     "sysAttrs": false,
@@ -121,8 +121,8 @@ echo
 
 echo "06. Dump/Reset the accumulator - see one notification with urn:E1 and urn:E2"
 echo "============================================================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -217,4 +217,4 @@ Ngsild-Attribute-Format: Normalized
 --TEARDOWN--
 brokerStop CB
 dbDrop CB
-accumulatorStop
+ftClientStop

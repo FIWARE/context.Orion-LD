@@ -27,7 +27,7 @@ Error in notifications when TRoE is enabled
 dbInit CB
 pgInit $CB_DB_NAME
 orionldStart CB -mongocOnly -troe -brokerId Domain-NCSRD -wip entityMaps,distSubs -forwarding -noArrayReduction -socketService -ssPort 1027
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -70,7 +70,7 @@ payload='{
   "notification": {
     "attributes": [ "distanceCollision" ],
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
       "accept": "application/json"
     }
   }
@@ -335,8 +335,8 @@ echo
 
 echo "04. Dump+Reset the accumulator to see the notification"
 echo "======================================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -356,8 +356,8 @@ echo
 
 echo "06. Dump the accumulator to see the notification"
 echo "================================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -387,8 +387,8 @@ echo
 
 echo "09. Dump the accumulator to see the notification"
 echo "================================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -418,8 +418,8 @@ echo
 
 echo "12. Dump the accumulator to see the notification"
 echo "================================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -690,4 +690,4 @@ id,valuetype,entityid,attrinstanceid,unitcode,text,number,boolean,compound,obser
 brokerStop CB
 dbDrop CB
 pgInit $CB_DB_NAME
-accumulatorStop
+ftClientStop

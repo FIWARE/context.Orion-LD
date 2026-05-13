@@ -26,7 +26,7 @@ Compound values forwarded to context providers - exactly as issue 2237
 --SHELL-INIT--
 dbInit CB
 brokerStart CB 0
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -56,7 +56,7 @@ payload='{
           "isDomain": "false"
         }
       ],
-      "providingApplication": "http://localhost:'${LISTENER_PORT}'/v1"
+      "providingApplication": "http://localhost:'${FT_PORT}'/v1"
     }
   ],
   "duration": "P1M"
@@ -132,7 +132,7 @@ echo
 
 echo "04. Dump accumulator to see the forward message"
 echo "==============================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -258,5 +258,5 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

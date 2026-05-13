@@ -60,7 +60,7 @@ payload='{
   "timeInterval": 2,
   "notification": {
     "endpoint": {
-    "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+    "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -83,7 +83,7 @@ payload='{
   "timeInterval": 2,
   "notification": {
     "endpoint": {
-    "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+    "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -105,7 +105,7 @@ payload='{
   "timeInterval": "2",
   "notification": {
     "endpoint": {
-    "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+    "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -127,7 +127,7 @@ payload='{
   "timeInterval": 2,
   "notification": {
     "endpoint": {
-    "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+    "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   },
   "timeInterval": 5
@@ -159,7 +159,7 @@ payload='{
   "notification": {
     "attributes": [ "P1", "P2" ],
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -391,7 +391,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         ],
         "endpoint": {
             "accept": "application/json",
-            "uri": "http://127.0.0.1:9997/notify"
+            "uri": "http://127.0.0.1:7701/notify"
         },
         "format": "normalized",
         "lastNotification": "202REGEX(.*)Z",
@@ -438,7 +438,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         ],
         "endpoint": {
             "accept": "application/json",
-            "uri": "http://127.0.0.1:9997/notify"
+            "uri": "http://127.0.0.1:7701/notify"
         },
         "format": "normalized",
         "lastNotification": "202REGEX(.*)Z",
@@ -499,7 +499,7 @@ MongoDB server version: REGEX(.*)
 		"https://uri.etsi.org/ngsi-ld/default-context/P1",
 		"https://uri.etsi.org/ngsi-ld/default-context/P2"
 	],
-	"reference" : "http://127.0.0.1:9997/notify",
+	"reference" : "http://127.0.0.1:7701/notify",
 	"mimeType" : "application/json",
 	"format" : "normalized",
 	"conditions" : [ ],
@@ -550,7 +550,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         ],
         "endpoint": {
             "accept": "application/json",
-            "uri": "http://127.0.0.1:9997/notify"
+            "uri": "http://127.0.0.1:7701/notify"
         },
         "format": "normalized",
         "lastNotification": "202REGEX(.*)Z",
@@ -597,7 +597,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         ],
         "endpoint": {
             "accept": "application/json",
-            "uri": "http://127.0.0.1:9997/notify"
+            "uri": "http://127.0.0.1:7701/notify"
         },
         "format": "normalized",
         "lastNotification": "202REGEX(.*)Z",

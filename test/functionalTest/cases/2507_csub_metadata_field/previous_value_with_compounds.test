@@ -26,7 +26,7 @@ previousValue with compound cases
 --SHELL-INIT--
 dbInit CB
 brokerStart CB
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -58,7 +58,7 @@ payload='{
   },
   "notification": {
     "http": {
-      "url": "http://localhost:'$LISTENER_PORT'/notify"
+      "url": "http://localhost:'$FT_PORT'/notify"
     },
     "attrs": [ ],
     "metadata": [ "previousValue" ]
@@ -86,8 +86,8 @@ echo
 
 echo "03. Dump and reset: see notification A:1 and no previousValue"
 echo "============================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -107,8 +107,8 @@ echo
 
 echo "05. Dump and reset: see notification A: [1, {b: foo} ], previousValue: 1"
 echo "========================================================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -128,8 +128,8 @@ echo
 
 echo "07. Dump and reset: see notification A: {x: 1, y: [true: foo] }, previousValue: [1, {b: foo} ]"
 echo "=============================================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -148,8 +148,8 @@ echo
 
 echo "09. Dump and reset: see notification A: x, previousValue: {x: 1, y: [true, foo] }"
 echo "================================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -354,5 +354,5 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop $LISTENER_PORT
+ftClientStop
 dbDrop CB

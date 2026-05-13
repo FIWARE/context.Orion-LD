@@ -26,7 +26,7 @@ HTTP header test for forwarded requests - the accumulator is used as it can easi
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -experimental -forwarding
-accumulatorStart --pretty-print --url /ngsi-ld/v1/entities 127.0.0.1 ${LISTENER_PORT} 
+ftClientStart --pretty-print --port ${FT_PORT} 
 
 --SHELL--
 #
@@ -66,7 +66,7 @@ payload='{
       "value": "urn:ngsi-ld:request"
     }
   ],
-  "endpoint": "http://localhost:'$LISTENER_PORT'",
+  "endpoint": "http://localhost:'$FT_PORT'",
   "operations": [ "createEntity" ],
   "mode": "inclusive"
 }'
@@ -88,8 +88,8 @@ echo
 
 echo "03. Dump the accumulator to see all the HTTP headers of the forwarded request"
 echo "============================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -127,7 +127,7 @@ echo
 
 echo "06. Dump the accumulator to see all the HTTP headers of the forwarded request"
 echo "============================================================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -220,4 +220,4 @@ H1: Step 04
 --TEARDOWN--
 brokerStop CB
 dbDrop CB
-accumulatorStop
+ftClientStop

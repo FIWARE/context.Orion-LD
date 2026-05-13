@@ -27,7 +27,7 @@ Update an entity attribute using PATCH
 # Copied from ngsild_patch_entity_attr_with_subscription.test
 dbInit CB
 orionldStart CB -experimental
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 # 01. Create an entity E1 with properties A1 and A2
@@ -77,7 +77,7 @@ payload='{
   ],
 	"notification": {
 		"endpoint": {
-			"uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+			"uri": "http://127.0.0.1:'${FT_PORT}'/notify",
 			"accept": "application/json"
 		}
 	}  
@@ -116,8 +116,8 @@ echo
 
 echo "06. Dump the accumulator - see one notification - then reset the accumulator"
 echo "============================================================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -151,8 +151,8 @@ echo
 
 echo "10. Dump the accumulator - see NO notification"
 echo "=============================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 

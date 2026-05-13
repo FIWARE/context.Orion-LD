@@ -26,7 +26,7 @@ Notifications before killing and restarting broker - tmp?
 --SHELL-INIT--
 dbInit CB
 orionldStart CB
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT} -v
+ftClientStart --pretty-print --port ${FT_PORT} -v
 
 --SHELL--
 
@@ -74,7 +74,7 @@ payload='{
     "attributes": [ ],
     "format": "normalized",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
       "accept": "application/json"
     }
   },
@@ -107,8 +107,8 @@ echo
 
 echo "05. Dump accumulator to see one notification - NGSI-LD has no initial notifications"
 echo "==================================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -140,7 +140,7 @@ MongoDB server version: REGEX(.*)
 {
 	"_id" : "http://a.b.c/subs/sub01",
 	"expiration" : REGEX(.*),
-	"reference" : "http://127.0.0.1:9997/notify",
+	"reference" : "http://127.0.0.1:7701/notify",
 	"custom" : false,
 	"mimeType" : "application/json",
 	"throttling" : 0,
@@ -185,7 +185,7 @@ Date: REGEX(.*)
 
 05. Dump accumulator to see one notification - NGSI-LD has no initial notifications
 ===================================================================================
-POST http://REGEX(.*):9997/notify
+POST http://REGEX(.*):7701/notify
 Fiware-Servicepath: /
 Content-Length: 328
 User-Agent: orion/REGEX(.*)
@@ -224,5 +224,5 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

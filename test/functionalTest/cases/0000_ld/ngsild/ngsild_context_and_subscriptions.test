@@ -27,7 +27,7 @@ Subscription Context
 dbInit CB
 dbInit orionld
 orionldStart CB
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 

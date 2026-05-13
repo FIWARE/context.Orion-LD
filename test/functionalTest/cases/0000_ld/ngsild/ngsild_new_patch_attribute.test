@@ -26,7 +26,7 @@ PATCH an attribute, adding one sub-attribute
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -experimental
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 #
@@ -65,7 +65,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -93,7 +93,7 @@ echo
 
 echo "05. Dump accumulator, see one notification"
 echo "=========================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 

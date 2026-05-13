@@ -26,7 +26,7 @@ NGSI-LD Forward of GET /entities/{entityId}?attrs=<Only URI Parameter Attributes
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -forwarding
-accumulatorStart --url "/ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1"
+ftClientStart
 
 --SHELL--
 
@@ -70,7 +70,7 @@ payload='{
       ]
     }
   ],
-  "endpoint": "http://localhost:'$LISTENER_PORT'"
+  "endpoint": "http://localhost:'$FT_PORT'"
 }'
 orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload"
 echo
@@ -86,7 +86,7 @@ echo
 
 echo "04. Dump accumulator and see the Authorization HTTP header"
 echo "=========================================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -144,4 +144,4 @@ Accept: application/json
 --TEARDOWN---
 brokerStop CB
 dbDrop CB
-accumulatorStop
+ftClientStop

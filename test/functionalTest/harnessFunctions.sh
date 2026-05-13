@@ -591,9 +591,19 @@ function localBrokerStop
     then
       # If the broker refuses to stop politely, kill the process by brute force
       kill -9 $(ps -fe | grep $BROKER | grep $port | awk '{print $2}') 2> /dev/null
-      sleep .1
+      # Poll for the process to disappear. SIGKILL is instant but the kernel
+      # may still show the pid as <defunct> (zombie) briefly during cleanup —
+      # filter those out and wait up to 2s for the entry to drop.
+      typeset -i killWaitNo
+      killWaitNo=0
+      while [ $killWaitNo -lt 20 ]
+      do
+        sleep .1
+        brokerPidLines=$(ps -fe | grep $BROKER | grep $port | grep -v '<defunct>' | wc -l)
+        if [ $brokerPidLines = 0 ]; then break; fi
+        killWaitNo=$killWaitNo+1
+      done
       valgrindSleep .4
-      brokerPidLines=$(ps -fe | grep $BROKER | grep $port | wc -l)
       if [ $brokerPidLines != 0 ]
       then
         echo "Existing $BROKER is immortal, can not be killed!"
@@ -972,19 +982,26 @@ function ftClientStart()
   # instance to stop. An earlier unconditional call (defaulting to 7701) was
   # removed because it killed a sibling ftClient on 7701 when this call
   # targets a different port (tests with multiple ftClient instances).
-  _port=7701
+  _port=$FT_PORT
   _verbose=""
   _traceLevels=""
   _logDir=""
   _dds=""
   _ddsService=""
   _ddsAction=""
+  _prettyPrint=""
+  _httpsKey=""
+  _httpsCert=""
 
   while [ "$#" != 0 ]
   do
     if   [ "$1" == "--port" ];            then _port=$2; shift;
     elif [ "$1" == "--logDir" ];          then _logDir="--logDir $2"; shift;
     elif [ "$1" == "--verbose" ];         then _verbose="-v";
+    elif [ "$1" == "--pretty-print" ];    then _prettyPrint="--pretty-print";
+    elif [ "$1" == "--https" ];           then :;  # no-op: ftClient infers HTTPS from --httpsKey + --httpsCertificate
+    elif [ "$1" == "--httpsKey" ];        then _httpsKey="--httpsKey $2"; shift;
+    elif [ "$1" == "--httpsCertificate" ]; then _httpsCert="--httpsCertificate $2"; shift;
     elif [ "$1" == "--dds" ];             then _dds="--dds";
     elif [ "$1" == "--ddsService" ];      then _ddsService="--ddsService $2"; shift;
     elif [ "$1" == "--ddsAction" ];       then _ddsAction="--ddsAction $2"; shift;
@@ -1018,18 +1035,27 @@ function ftClientStart()
 
   logMsg "Starting the FT Client on port $_port ($_verbose $_traceLevels $_ddsService $_ddsAction)"
   which ftClient >> $LOG_FILE
-  ftClient --port $_port $_verbose $_traceLevels $_logDir $_dds $_ddsService $_ddsAction &
-
-  export FT_PORT=$_port
+  ftClient --port $_port $_prettyPrint $_httpsKey $_httpsCert $_verbose $_traceLevels $_logDir $_dds $_ddsService $_ddsAction > /tmp/ftClient_${_port}_stdout 2> /tmp/ftClient_${_port}_stderr &
+  echo $! > /tmp/ftClient.$_port.pid
 
   # DDS discovery sleep moved to orionldStart (both participants must be running)
 
-  _port=0
-  _verbose=""
-  _traceLevels=""
-  logDir=""
-  _ddsService=""
-  _ddsAction=""
+  # Wait until ftClient is listening (or MAXIMUM_WAIT expires)
+  port_not_ok=1
+  typeset -i time
+  time=0
+  until [ $port_not_ok -eq 0 ]
+  do
+    if [ "$time" -eq "$MAXIMUM_WAIT" ]
+    then
+      echo "Unable to start ftClient on port $_port after ${MAXIMUM_WAIT}s"
+      exit 1
+    fi
+    sleep .1
+    time=$time+1
+    nc -zv localhost $_port &>/dev/null </dev/null
+    port_not_ok=$?
+  done
 }
 
 
@@ -1064,169 +1090,9 @@ function ftClientStop()
     kill -9 $orphanPid 2>/dev/null
     sleep .05
   fi
+  rm -f /tmp/ftClient.$_port.pid
 
   return 0
-}
-
-
-
-# ------------------------------------------------------------------------------
-#
-# accumulatorStop -
-#
-function accumulatorStop()
-{
-  port=$1
-
-  # If port is missing, we use the default LISTENER_PORT
-  if [ -z "$port" ]
-  then
-    port=${LISTENER_PORT}
-  fi
-
-  pid=$(cat /tmp/accumulator.$port.pid 2> /dev/null)
-  if [ "$pid" != "" ]
-  then
-    kill -15 $pid 2> /dev/null
-    sleep .01
-    kill -2 $pid 2> /dev/null
-    sleep .01
-    kill -9 $pid 2> /dev/null
-    rm -f /tmp/accumulator.$port.pid
-  fi
-
-  # Also reap any orphan ftClient still bound to the port (pid file may be stale if
-  # a previous test died before its TEARDOWN). Without this, the next accumulatorStart
-  # finds the port already "open" and the new ftClient silently fails to bind.
-  orphans=$(fuser $port/tcp 2>/dev/null)
-  if [ "$orphans" != "" ]
-  then
-    kill -9 $orphans 2> /dev/null
-    sleep .05
-  fi
-}
-
-
-# ------------------------------------------------------------------------------
-#
-# accumulatorStart -
-#
-function accumulatorStart()
-{
-  # FIXME P6: note that due to the way argument processing work, the arguments have to be
-  # in a fixed order in the .test, i.e.: --pretty-print, --https, --key, --cert
-
-  echo accumulatorStart $* > /tmp/accumulatorStart
-  pwd >>  /tmp/accumulatorStart
-  echo REPO_HOME: $REPO_HOME >> /tmp/accumulatorStart
-  if [ "$1" = "--pretty-print" ]
-  then
-    pretty="$1"
-    shift
-  fi
-
-  if [ "$1" = "--https" ]
-  then
-    https="$1"
-    shift
-  fi
-
-  if [ "$1" = "--key" ]
-  then
-    key="$1 $2"
-    shift
-    shift
-  fi
-
-  if [ "$1" = "--cert" ]
-  then
-    cert="$1 $2"
-    shift
-    shift
-  fi
-
-  URL=/notify
-  if [ "$1" = "--url" ]
-  then
-    echo "accumulatorStart: --url: $1 $2" >> /tmp/accumulatorStart
-    URL="$2"
-    shift
-    shift
-    echo "accumulatorStart: rest: $*" >> /tmp/accumulatorStart
-  fi
-
-  echo accumulatorStart after shifts: $* >> /tmp/accumulatorStart
-  bindIp=$1
-  port=$2
-
-  # If port is missing, we use the default LISTENER_PORT
-  if [ -z "$port" ]
-  then
-    port=$LISTENER_PORT
-  fi
-
-  if [ -z "$bindIp" ]
-  then
-    bindIp='localhost'
-  fi
-
-  accumulatorStop $port
-
-  cd $REPO_HOME
-  # ftClient as accumulator. URL is unused (ftClient catches any unmatched route into the dump array).
-  # https/key/cert: --https is implied when both --httpsKey and --httpsCertificate are given.
-  httpsKeyArg=""
-  httpsCertArg=""
-  if [ "$key" != "" ]; then
-    keyFile=$(echo "$key" | awk '{print $2}')
-    httpsKeyArg="--httpsKey $keyFile"
-  fi
-  if [ "$cert" != "" ]; then
-    certFile=$(echo "$cert" | awk '{print $2}')
-    httpsCertArg="--httpsCertificate $certFile"
-  fi
-
-  prettyArg=""
-  if [ "$pretty" = "--pretty-print" ]; then
-    prettyArg="--pretty-print"
-  fi
-
-  ftLogDir="/tmp/ftAcc.$port"
-  mkdir -p "$ftLogDir"
-
-  # Belt-and-suspenders: ensure no other ftClient is bound to this port before launching.
-  # The pid-file kill in accumulatorStop only catches what we recorded; a previous test that
-  # died before TEARDOWN can leave an orphan that fuser-kills here.
-  orphanPid=$(fuser $port/tcp 2>/dev/null | tr -d ' ')
-  if [ -n "$orphanPid" ]; then
-    kill -9 $orphanPid 2>/dev/null
-    sleep .1
-  fi
-
-  echo ftClient --accFmt $prettyArg --port $port --logDir $ftLogDir $httpsKeyArg $httpsCertArg > /tmp/accumulatorStart
-  ftClient --accFmt $prettyArg --port $port --logDir $ftLogDir $httpsKeyArg $httpsCertArg > /tmp/accumulator_${port}_stdout 2> /tmp/accumulator_${port}_stderr &
-  ftPid=$!
-  echo "$ftPid" > /tmp/accumulator.$port.pid
-  echo accumulator running as PID $ftPid
-  cd - > /dev/null 2>&1
-  # Wait until accumulator has started or we have waited a given maximum time
-  port_not_ok=1
-  typeset -i time
-  time=0
-
-  until [ $port_not_ok -eq 0 ]
-  do
-   if [ "$time" -eq "$MAXIMUM_WAIT" ]
-   then
-      echo "Unable to start listening application after waiting ${MAXIMUM_WAIT}"
-      exit 1
-   fi 
-   sleep .1
-
-   time=$time+1
-   nc -zv $bindIp $port &>/dev/null </dev/null
-   port_not_ok=$?
-  done
 }
 
 
@@ -1300,26 +1166,47 @@ function mqttTestClientReset()
 
 # ------------------------------------------------------------------------------
 #
-# accumulatorDump
+# ftClientDump - GET /dump from ftClient
 #
-function accumulatorDump()
+# Usage: ftClientDump [--port N] [IPV6] [HTTPS]
+#
+function ftClientDump()
 {
+  _port=$FT_PORT
+  _ipv6=""
+  _https=""
+
+  while [ "$#" != 0 ]
+  do
+    if   [ "$1" == "--port" ]; then _port=$2; shift;
+    elif [ "$1" == "IPV6" ];   then _ipv6="IPV6";
+    elif [ "$1" == "IPV4" ];   then :;  # default
+    elif [ "$1" == "HTTPS" ];  then _https="HTTPS";
+    else
+      echo "Bad parameter for ftClientDump: $1"
+      return 1
+    fi
+    shift
+  done
+
   valgrindSleep 2
 
-  if [ "$1" == "IPV6" ]
+  if [ "$_ipv6" == "IPV6" ]
   then
-    url="[::1]:${LISTENER_PORT}/dump"
+    url="[::1]:${_port}/dump"
     g_flag="-g"
   else
-    url="localhost:${LISTENER_PORT}/dump"
+    url="localhost:${_port}/dump"
+    g_flag=""
   fi
 
-  if [ "$2" == "HTTPS" ]
+  if [ "$_https" == "HTTPS" ]
   then
     schema="https://"
     k_flag="-k"
   else
     schema="http://"
+    k_flag=""
   fi
 
   curl $k_flag $g_flag $schema$url -s -S 2> /dev/null
@@ -1328,143 +1215,65 @@ function accumulatorDump()
 
 # ------------------------------------------------------------------------------
 #
-# accumulator2Dump
+# ftClientCount - GET /dump?count=true from ftClient
 #
-function accumulator2Dump()
+# Usage: ftClientCount [--port N] [IPV6]
+#
+function ftClientCount()
 {
+  _port=$FT_PORT
+  _ipv6=""
+
+  while [ "$#" != 0 ]
+  do
+    if   [ "$1" == "--port" ]; then _port=$2; shift;
+    elif [ "$1" == "IPV6" ];   then _ipv6="IPV6";
+    elif [ "$1" == "IPV4" ];   then :;  # default
+    else
+      echo "Bad parameter for ftClientCount: $1"
+      return 1
+    fi
+    shift
+  done
+
   valgrindSleep 2
 
-  if [ "$1" == "IPV6" ]
+  if [ "$_ipv6" == "IPV6" ]
   then
-    url="[::1]:${LISTENER2_PORT}/dump"
-    g_flag="-g"
+    curl -g [::1]:${_port}/dump?count=true\&limit=0 -s -S 2> /dev/null
   else
-    url="localhost:${LISTENER2_PORT}/dump"
-  fi
-
-  if [ "$2" == "HTTPS" ]
-  then
-    schema="https://"
-    k_flag="-k"
-  else
-    schema="http://"
-  fi
-
-  curl $k_flag $g_flag $schema$url -s -S 2> /dev/null
-}
-
-
-# ------------------------------------------------------------------------------
-#
-# accumulator3Dump
-#
-function accumulator3Dump()
-{
-  valgrindSleep 2
-
-  if [ "$1" == "IPV6" ]
-  then
-    curl -g [::1]:${LISTENER3_PORT}/dump -s -S 2> /dev/null
-  else
-    curl localhost:${LISTENER3_PORT}/dump -s -S 2> /dev/null
+    curl localhost:${_port}/dump?count=true\&limit=0 -s -S 2> /dev/null
   fi
 }
 
 
 # ------------------------------------------------------------------------------
 #
-# accumulator4Dump
+# ftClientReset - DELETE /dump on ftClient
 #
-function accumulator4Dump()
+# Usage: ftClientReset [--port N] [HTTPS]
+#
+function ftClientReset()
 {
-  valgrindSleep 2
+  _port=$FT_PORT
+  _https=""
 
-  if [ "$1" == "IPV6" ]
+  while [ "$#" != 0 ]
+  do
+    if   [ "$1" == "--port" ]; then _port=$2; shift;
+    elif [ "$1" == "HTTPS" ];  then _https="HTTPS";
+    else
+      echo "Bad parameter for ftClientReset: $1"
+      return 1
+    fi
+    shift
+  done
+
+  if [ "$_https" == "HTTPS" ]
   then
-    curl -g [::1]:${LISTENER4_PORT}/dump -s -S 2> /dev/null
+    curl -k https://localhost:${_port}/dump -s -S -X DELETE
   else
-    curl localhost:${LISTENER4_PORT}/dump -s -S 2> /dev/null
-  fi
-}
-
-
-# ------------------------------------------------------------------------------
-#
-# accumulatorCount
-#
-function accumulatorCount()
-{
-  valgrindSleep 2
-
-  if [ "$1" == "IPV6" ]
-  then
-    curl -g [::1]:${LISTENER_PORT}/dump?count=true\&limit=0 -s -S 2> /dev/null
-  else
-    curl localhost:${LISTENER_PORT}/dump?count=true\&limit=0 -s -S 2> /dev/null
-  fi
-}
-
-
-# ------------------------------------------------------------------------------
-#
-# accumulator2Count
-#
-function accumulator2Count()
-{
-  valgrindSleep 2
-
-  if [ "$1" == "IPV6" ]
-  then
-    curl -g [::1]:${LISTENER2_PORT}/dump?count=true\&limit=0 -s -S 2> /dev/null
-  else
-    curl localhost:${LISTENER2_PORT}/dump?count=true\&limit=0 -s -S 2> /dev/null
-  fi
-}
-
-
-# ------------------------------------------------------------------------------
-#
-# accumulator3Count
-#
-function accumulator3Count()
-{
-  valgrindSleep 2
-
-  if [ "$1" == "IPV6" ]
-  then
-    curl -g [::1]:${LISTENER3_PORT}/dump?count=true\&limit=0 -s -S 2> /dev/null
-  else
-    curl localhost:${LISTENER3_PORT}/dump?count=true\&limit=0 -s -S 2> /dev/null
-  fi
-}
-
-
-# ------------------------------------------------------------------------------
-#
-# accumulatorReset -
-#
-function accumulatorReset()
-{
-  if [ "$1" == "HTTPS" ]
-  then
-    curl -k https://localhost:${LISTENER_PORT}/dump -s -S -X DELETE
-  else
-    curl localhost:${LISTENER_PORT}/dump -s -S -X DELETE
-  fi
-}
-
-
-# ------------------------------------------------------------------------------
-#
-# accumulator2Reset -
-#
-function accumulator2Reset()
-{
-  if [ "$1" == "HTTPS" ]
-  then
-    curl -k https://localhost:${LISTENER2_PORT}/dump -s -S -X DELETE
-  else
-    curl localhost:${LISTENER2_PORT}/dump -s -S -X DELETE
+    curl localhost:${_port}/dump -s -S -X DELETE
   fi
 }
 
@@ -2568,17 +2377,9 @@ export -f orionldStart
 export -f localBrokerStop
 export -f localBrokerStart
 export -f brokerStop
-export -f accumulatorStart
-export -f accumulatorStop
-export -f accumulatorDump
-export -f accumulator2Dump
-export -f accumulator3Dump
-export -f accumulator4Dump
-export -f accumulatorCount
-export -f accumulator2Count
-export -f accumulator3Count
-export -f accumulatorReset
-export -f accumulator2Reset
+export -f ftClientDump
+export -f ftClientCount
+export -f ftClientReset
 export -f orionCurl
 export -f dbInsertEntity
 export -f mongoCmd

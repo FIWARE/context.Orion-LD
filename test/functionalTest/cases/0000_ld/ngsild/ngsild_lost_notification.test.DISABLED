@@ -27,7 +27,7 @@ Thousands of notifications and some are lost
 export BROKER=orionld
 dbInit CB
 brokerStart CB 0
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -64,7 +64,7 @@ payload='{
     "attributes": [ ],
     "format": "normalized",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
       "accept": "application/ld+json"
     }
   },
@@ -107,7 +107,7 @@ echo
 
 echo "03. Ask accumulator for number of notifications - see 100"
 echo "========================================================="
-curl localhost:${LISTENER_PORT}/number 2> /dev/null
+curl localhost:${FT_PORT}/number 2> /dev/null
 echo
 echo
 
@@ -142,7 +142,7 @@ echo
 
 echo "05. Ask accumulator for number of notifications - see 10100"
 echo "==========================================================="
-curl localhost:${LISTENER_PORT}/number 2> /dev/null
+curl localhost:${FT_PORT}/number 2> /dev/null
 echo
 echo
 
@@ -40677,5 +40677,5 @@ Date: REGEX(.*)
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

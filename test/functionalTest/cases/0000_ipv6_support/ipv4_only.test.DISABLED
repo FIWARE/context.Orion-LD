@@ -26,8 +26,8 @@ IPv4 Only
 --SHELL-INIT--
 dbInit CB
 brokerStart CB 0-255 IPV4
-accumulatorStart 0.0.0.0 ${LISTENER_PORT}
-accumulatorStart :: ${LISTENER2_PORT}
+ftClientStart --port ${FT_PORT}
+ftClientStart --port ${FT2_PORT}
 
 --SHELL--
 echo "1: ++++++++++++++++++++"
@@ -48,7 +48,7 @@ payload='{
     "temperature",
     "lightstatus"
   ],
-  "reference": "http://::1:'${LISTENER2_PORT}'/notify",
+  "reference": "http://::1:'${FT2_PORT}'/notify",
   "duration": "PT1H",
   "notifyConditions": [
       {
@@ -90,11 +90,11 @@ orionCurl --url "$url" --payload "$payload" --json --host "127.0.0.1" 2> /dev/nu
 
 echo "4: ++++++++++++++++++++"
 # Get accumulated data
-accumulator2Count IPV6
+ftClientCount --port $FT2_PORT IPV6
 
 echo "5: ++++++++++++++++++++"
 # Get accumulated data
-accumulatorCount
+ftClientCount
 
 
 --REGEXPECT--
@@ -151,6 +151,6 @@ Date: REGEX(.*)
 0
 --TEARDOWN--
 brokerStop CB
-accumulatorStop $LISTENER_PORT
-accumulatorStop $LISTENER2_PORT
+ftClientStop
+ftClientStop --port $FT2_PORT
 dbDrop CB

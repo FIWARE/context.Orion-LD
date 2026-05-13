@@ -27,7 +27,7 @@ Crash with HTTPS Subscription - issue #1495
 ${SCRIPT_HOME}/httpsPrepare.sh --keyFileName /tmp/harnessTest.key --certFileName /tmp/harnessTest.pem
 dbInit CB
 orionldStart CB -mongocOnly
-accumulatorStart --pretty-print --https --key /tmp/harnessTest.key --cert /tmp/harnessTest.pem
+ftClientStart --pretty-print --https --httpsKey /tmp/harnessTest.key --httpsCertificate /tmp/harnessTest.pem
 
 --SHELL--
 
@@ -56,7 +56,7 @@ payload='{
   "notification": {
     "format": "keyValues",
     "endpoint": {
-      "uri": "https://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "uri": "https://127.0.0.1:'${FT_PORT}'/notify",
       "accept": "application/json"
     }
   }
@@ -129,8 +129,8 @@ echo
 
 echo "03. Dump/Reset the accumulator, see the entity"
 echo "=============================================="
-accumulatorDump IPV4 HTTPS
-accumulatorReset HTTPS
+ftClientDump IPV4 HTTPS
+ftClientReset HTTPS
 echo
 echo
 
@@ -197,8 +197,8 @@ echo
 
 echo "05. Dump/Reset the accumulator, see the modified entity"
 echo "======================================================="
-accumulatorDump IPV4 HTTPS
-accumulatorReset HTTPS
+ftClientDump IPV4 HTTPS
+ftClientReset HTTPS
 echo
 echo
 
@@ -344,4 +344,4 @@ Fiware-Correlator: REGEX(.*)
 --TEARDOWN--
 brokerStop CB
 dbDrop CB
-accumulatorStop
+ftClientStop

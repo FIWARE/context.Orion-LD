@@ -27,7 +27,7 @@ Subscription with notifications sent as GeoJSON
 # Copied from ngsild_geojson-format-in-notifications-with-keyValues.test
 dbInit CB
 orionldStart CB -experimental
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -55,7 +55,7 @@ payload='{
   "notification": {
     "format": "keyValues",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
       "accept": "application/geo+json"
     }
   },
@@ -94,8 +94,8 @@ echo
 
 echo "03. Dump accumulator to see one notification - in GeoJSON format"
 echo "================================================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -115,7 +115,7 @@ echo
 
 echo "05. Dump accumulator to see another GeoJSON format notification"
 echo "==============================================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -247,5 +247,5 @@ Ngsild-Attribute-Format: Simplified
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

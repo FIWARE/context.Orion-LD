@@ -97,7 +97,7 @@ payload='{
       "id": "EID"
     }
   ],
-  "reference": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+  "reference": "http://127.0.0.1:'${FT_PORT}'/notify",
   "duration": "PT5H"
 }'
 orionCurl --url /v1/subscribeContext --payload "${payload}"
@@ -435,7 +435,7 @@ payload='{
         "temperature",
         "lightstatus"
     ],
-    "reference": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+    "reference": "http://127.0.0.1:'${FT_PORT}'/notify",
     "duration": "PT5H",
     "notifyConditions": [
         {

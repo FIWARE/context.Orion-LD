@@ -28,7 +28,7 @@ dbInit CB
 dbInit CP1
 brokerStart CB 0-255
 brokerStart CP1 0-255
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -103,7 +103,7 @@ payload='{
   "attributes": [
     "A1"
   ],
-  "reference": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+  "reference": "http://127.0.0.1:'${FT_PORT}'/notify",
   "duration": "P1M",
   "throttling": "PT1S",
   "notifyConditions": [
@@ -124,7 +124,7 @@ echo
 
 echo "04. Check that the X-Auth-Token from the subscribe request was propagated to accumulator"
 echo "========================================================================================"
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -132,7 +132,7 @@ echo
 echo "05. Reset the accumulator"
 echo "========================="
 sleep 1
-curl localhost:${LISTENER_PORT}/reset -s -S -X POST
+curl localhost:${FT_PORT}/reset -s -S -X POST
 echo
 echo
 
@@ -162,7 +162,7 @@ echo "07. Make sure the accumulator receives the Update, with the correct X-Auth
 echo "================================================================================"
 # Include a small time interval to avoid glitches
 sleep 1s
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -353,7 +353,7 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 --TEARDOWN--
 brokerStop CB
 brokerStop CP1
-accumulatorStop
+ftClientStop
 
 dbDrop CB
 dbDrop CP1

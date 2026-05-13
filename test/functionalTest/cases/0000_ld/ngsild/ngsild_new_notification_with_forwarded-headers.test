@@ -27,7 +27,7 @@ Notification with forwarded header
 dbInit CB
 dbInit CB t1
 orionldStart CB -multiservice -experimental
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -52,7 +52,7 @@ payload='{
   "notification": {
     "format": "concise",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -86,8 +86,8 @@ echo
 
 echo "03. Dump accumulator to see one notification with the three headers Ngsild-Tenant, X-Auth-Token and Authorization"
 echo "================================================================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -151,6 +151,6 @@ Ngsild-Attribute-Format: Concise
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB
 dbDrop CB t1

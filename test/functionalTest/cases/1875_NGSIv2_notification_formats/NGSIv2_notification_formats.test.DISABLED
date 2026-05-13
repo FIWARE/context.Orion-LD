@@ -26,7 +26,7 @@ NGSIv2 notification formats
 --SHELL-INIT--
 dbInit CB
 brokerStart CB 0
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -73,7 +73,7 @@ payload='{
   "attributes": [
     "A1", "A2"
   ],
-  "reference": "http://localhost:'${LISTENER_PORT}'/notify",
+  "reference": "http://localhost:'${FT_PORT}'/notify",
   "duration": "P1M",
   "throttling": "PT1S",
   "notifyConditions": [
@@ -107,7 +107,7 @@ payload='
   },
   "notification": {
     "http": {
-      "url": "http://localhost:'$LISTENER_PORT'/notify"
+      "url": "http://localhost:'$FT_PORT'/notify"
     },
     "attrs": [ "A1", "A3", "sub2_without_attrsFormat" ]
   },
@@ -135,7 +135,7 @@ payload='
   },
   "notification": {
     "http": {
-      "url": "http://localhost:'$LISTENER_PORT'/notify"
+      "url": "http://localhost:'$FT_PORT'/notify"
     },
     "attrs": [ "A1", "A4", "sub3_with_normalized" ],
     "attrsFormat": "normalized"
@@ -164,7 +164,7 @@ payload='
   },
   "notification": {
     "http": {
-      "url": "http://localhost:'$LISTENER_PORT'/notify"
+      "url": "http://localhost:'$FT_PORT'/notify"
     },
     "attrs": [ "A1", "A5", "sub4_with_keyValues" ],
     "attrsFormat": "keyValues"
@@ -193,7 +193,7 @@ payload='
   },
   "notification": {
     "http": {
-      "url": "http://localhost:'$LISTENER_PORT'/notify"
+      "url": "http://localhost:'$FT_PORT'/notify"
     },
     "attrs": [ "A1", "A6", "sub5_with_values" ],
     "attrsFormat": "values"
@@ -208,15 +208,15 @@ echo
 
 echo "07. Dump accumulator to see 5 notifications"
 echo "==========================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
 
 echo "08. Reset accumulator"
 echo "====================="
-accumulatorReset
-accumulatorDump
+ftClientReset
+ftClientDump
 echo
 echo
 
@@ -226,7 +226,7 @@ echo "================================================="
 payload='{
   "notification": {
     "http": {
-      "url": "http://localhost:'$LISTENER_PORT'/notify"
+      "url": "http://localhost:'$FT_PORT'/notify"
     },
     "attrs": [ "A1", "A3", "sub2_without_attrsFormat" ],
     "attrsFormat": "keyValues"
@@ -249,7 +249,7 @@ echo
 
 echo "11. Dump accumulator to see notification of (A1, A3) with keyValues"
 echo "==================================================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 

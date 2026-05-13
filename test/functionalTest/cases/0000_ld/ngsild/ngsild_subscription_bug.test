@@ -28,7 +28,7 @@ dbInit CB
 dbInit CB openiot
 dbInit orionld
 orionldStart CB -multiservice
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -54,7 +54,7 @@ payload='{
   "notification": {
     "format": "keyValues",
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify"
+      "uri": "http://localhost:'$FT_PORT'/notify"
     }   
   },
   "@context": "https://fiware.github.io/data-models/context.jsonld"
@@ -82,7 +82,7 @@ echo
 
 echo "03. See the notification in the accumulator"
 echo "==========================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -139,6 +139,6 @@ Link: <https://fiware.github.io/data-models/context.jsonld>; rel="http://www.w3.
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB
 dbDrop CB openiot

@@ -27,7 +27,7 @@ NGSI-LD Subscription for NGSIv2 notifications
 # Copied from ngsild_subscription_ngsiv2_notification-compact.test
 dbInit CB
 orionldStart CB -experimental
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -87,7 +87,7 @@ payload='{
   "notification": {
     "format": "x-ngsiv2-normalized-compacted",
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify",
+      "uri": "http://localhost:'$FT_PORT'/notify",
       "accept": "application/json"
     }
   }
@@ -114,8 +114,8 @@ echo
 
 echo "03. Dump accumulator to see the notification"
 echo "============================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -144,7 +144,7 @@ payload='{
   "notification": {
     "format": "x-ngsiv2",
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify",
+      "uri": "http://localhost:'$FT_PORT'/notify",
       "accept": "application/json"
     }
   }
@@ -171,8 +171,8 @@ echo
 
 echo "07. Dump accumulator to see the notification (and reset the accumulator afterwards)"
 echo "==================================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -203,7 +203,7 @@ payload='{
     "attributes": [ "https://uri.etsi.org/ngsi-ld/default-context/P3" ],
     "format": "x-ngsiv2-normalized-compacted",
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify",
+      "uri": "http://localhost:'$FT_PORT'/notify",
       "accept": "application/json"
     }
   }
@@ -234,8 +234,8 @@ echo
 
 echo "11. Dump accumulator to see the notification with P3 only (and reset the accumulator afterwards)"
 echo "================================================================================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -265,13 +265,13 @@ payload='{
   "notification": {
     "format": "x-ngsiv2",
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify",
+      "uri": "http://localhost:'$FT_PORT'/notify",
       "accept": "application/json"
     }
   }
 }'
 orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload"
-accumulatorReset  # NGSIv2 supports initial notifications
+ftClientReset  # NGSIv2 supports initial notifications
 echo
 echo
 
@@ -297,8 +297,8 @@ echo
 echo "15. Dump accumulator to see location in the notification (and reset the accumulator afterwards)"
 echo "==============================================================================================="
 sleep 1
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -332,8 +332,8 @@ echo
 
 echo "18. Dump accumulator to see observationSpace in the notification (and reset the accumulator afterwards)"
 echo "======================================================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -360,8 +360,8 @@ echo
 
 echo "20. Dump accumulator to see operationSpace in the notification (and reset the accumulator afterwards)"
 echo "====================================================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -761,5 +761,5 @@ Date: REGEX(.*)
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

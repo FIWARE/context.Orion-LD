@@ -26,7 +26,7 @@ Notification caused by update in not covered attribute
 --SHELL-INIT--
 dbInit CB
 brokerStart CB
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -79,7 +79,7 @@ payload='{
      "attributes": [
          "sanity_status"
      ],
-     "reference": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+     "reference": "http://127.0.0.1:'${FT_PORT}'/notify",
      "duration": "P1M",
      "notifyConditions": [
          {
@@ -126,7 +126,7 @@ echo
 
 echo "04. Dump accumulator count (only one notification)"
 echo "=================================================="
-accumulatorCount
+ftClientCount
 echo
 echo
 
@@ -229,5 +229,5 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

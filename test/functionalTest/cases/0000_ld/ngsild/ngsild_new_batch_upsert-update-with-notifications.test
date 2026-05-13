@@ -27,10 +27,10 @@ New Batch Upsert - Update-UPDATE with notifications
 dbInit CB
 dbDrop orionld
 orionldStart CB -experimental
-accumulatorStart --pretty-print 127.0.0.1 $LISTENER_PORT
-accumulatorStart --pretty-print 127.0.0.1 $LISTENER2_PORT
-accumulatorStart --pretty-print 127.0.0.1 $LISTENER3_PORT
-accumulatorStart --pretty-print 127.0.0.1 $LISTENER4_PORT
+ftClientStart --pretty-print --port $FT_PORT
+ftClientStart --pretty-print --port $FT2_PORT
+ftClientStart --pretty-print --port $FT3_PORT
+ftClientStart --pretty-print --port $FT4_PORT
 
 --SHELL--
 
@@ -63,7 +63,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -84,7 +84,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER2_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT2_PORT}'/notify"
     }
   }
 }'
@@ -106,7 +106,7 @@ payload='{
   "watchedAttributes": [ "P0" ],
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER3_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT3_PORT}'/notify"
     }
   }
 }'
@@ -128,7 +128,7 @@ payload='{
   "q": "P1>=3",
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER4_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT4_PORT}'/notify"
     }
   }
 }'
@@ -219,29 +219,29 @@ echo
 
 echo "11. Dump Accumulator - see four notifications (one double)"
 echo "=========================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
 
 echo "12. Dump Accumulator2 - see four notifications (one double)"
 echo "==========================================================="
-accumulator2Dump
+ftClientDump --port $FT2_PORT
 echo
 echo
 
 
 echo "13. Dump Accumulator3 - see one notification (step 05)"
 echo "======================================================"
-accumulator3Dump
+ftClientDump --port $FT3_PORT
 echo
 echo
 
 
 echo "14. Dump Accumulator4 - see one notification (step 07)"
 echo "======================================================"
-accumulator4Dump
+ftClientDump --port $FT4_PORT
 echo
 echo
 
@@ -783,7 +783,7 @@ Ngsild-Attribute-Format: Normalized
 --TEARDOWN--
 brokerStop CB
 dbDrop CB
-accumulatorStop
-accumulatorStop $LISTENER2_PORT
-accumulatorStop $LISTENER3_PORT
-accumulatorStop $LISTENER4_PORT
+ftClientStop
+ftClientStop --port $FT2_PORT
+ftClientStop --port $FT3_PORT
+ftClientStop --port $FT4_PORT

@@ -26,7 +26,7 @@ Subscription with notifications sent as GeoJSON
 --SHELL-INIT--
 dbInit CB
 orionldStart CB
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -55,7 +55,7 @@ payload='{
     "attributes": [ ],
     "format": "keyValues",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify",
       "accept": "application/geo+json"
     }
   },
@@ -95,8 +95,8 @@ echo
 
 echo "03. Dump accumulator to see one notification - in GeoJSON format"
 echo "================================================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -116,7 +116,7 @@ echo
 
 echo "05. Dump accumulator to see another GeoJSON format notification"
 echo "==============================================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -248,5 +248,5 @@ Content-Type: application/geo+json
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

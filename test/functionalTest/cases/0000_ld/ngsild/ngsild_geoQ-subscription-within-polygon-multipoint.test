@@ -231,90 +231,90 @@ HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
 Date: REGEX(.*)
 
-POST /notify?subscriptionId=urn:ngsi-ld:Subscription:S1
+POST http://REGEX(.*)/notify?subscriptionId=urn:ngsi-ld:Subscription:S1
 Content-Length: REGEX(\d+)
-Content-Type: application/json
 User-Agent: orionld/REGEX(.*)
 Host: REGEX(.*)
 Accept: application/json
-Ngsild-Attribute-Format: Normalized
+Content-Type: application/json
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+Ngsild-Attribute-Format: Normalized
 
 {
-  "id": "urn:ngsi-ld:Notification:REGEX(.*)",
-  "type": "Notification",
-  "subscriptionId": "urn:ngsi-ld:Subscription:S1",
-  "notifiedAt": "REGEX(.*)",
-  "data": [
-    {
-      "id": "urn:ngsi-ld:CityGroup:E1",
-      "type": "CityGroup",
-      "name": {
-        "type": "Property",
-        "value": "Iberian Capitals"
-      },
-      "location": {
-        "type": "GeoProperty",
-        "value": {
-          "type": "MultiPoint",
-          "coordinates": [
-            [
-              -3.691944,
-              40.418889
-            ],
-            [
-              -9.139337,
-              38.722252
-            ]
-          ]
+    "data": [
+        {
+            "id": "urn:ngsi-ld:CityGroup:E1",
+            "location": {
+                "type": "GeoProperty",
+                "value": {
+                    "coordinates": [
+                        [
+                            -3.691944,
+                            40.418889
+                        ],
+                        [
+                            -9.139337,
+                            38.722252
+                        ]
+                    ],
+                    "type": "MultiPoint"
+                }
+            },
+            "name": {
+                "type": "Property",
+                "value": "Iberian Capitals"
+            },
+            "type": "CityGroup"
         }
-      }
-    }
-  ]
+    ],
+    "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+    "notifiedAt": "REGEX(.*)",
+    "subscriptionId": "urn:ngsi-ld:Subscription:S1",
+    "type": "Notification"
 }
-================================================================================
-
-POST /notify?subscriptionId=urn:ngsi-ld:Subscription:S1
+=======================================
+POST http://REGEX(.*)/notify?subscriptionId=urn:ngsi-ld:Subscription:S1
 Content-Length: REGEX(\d+)
-Content-Type: application/json
 User-Agent: orionld/REGEX(.*)
 Host: REGEX(.*)
 Accept: application/json
-Ngsild-Attribute-Format: Normalized
+Content-Type: application/json
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+Ngsild-Attribute-Format: Normalized
 
 {
-  "id": "urn:ngsi-ld:Notification:REGEX(.*)",
-  "type": "Notification",
-  "subscriptionId": "urn:ngsi-ld:Subscription:S1",
-  "notifiedAt": "REGEX(.*)",
-  "data": [
-    {
-      "id": "urn:ngsi-ld:CityGroup:E4",
-      "type": "CityGroup",
-      "name": {
-        "type": "Property",
-        "value": "Spanish Cities"
-      },
-      "location": {
-        "type": "GeoProperty",
-        "value": {
-          "type": "MultiPoint",
-          "coordinates": [
-            [
-              -4.035825,
-              39.867459
-            ],
-            [
-              -0.364853,
-              39.461008
-            ]
-          ]
+    "data": [
+        {
+            "id": "urn:ngsi-ld:CityGroup:E4",
+            "location": {
+                "type": "GeoProperty",
+                "value": {
+                    "coordinates": [
+                        [
+                            -4.035825,
+                            39.867459
+                        ],
+                        [
+                            -0.364853,
+                            39.461008
+                        ]
+                    ],
+                    "type": "MultiPoint"
+                }
+            },
+            "name": {
+                "type": "Property",
+                "value": "Spanish Cities"
+            },
+            "type": "CityGroup"
         }
-      }
-    }
-  ]
+    ],
+    "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+    "notifiedAt": "REGEX(.*)",
+    "subscriptionId": "urn:ngsi-ld:Subscription:S1",
+    "type": "Notification"
 }
+=======================================
 
 
 

@@ -24,11 +24,11 @@
 NGSIv2 notification formats (different from values)
 
 --SHELL-INIT--
-# Note that accumulatorStart doesn't use --pretty-print as the purpose of the
+# Note that ftClientStart doesn't use --pretty-print as the purpose of the
 # test is to check attribute ordering and the pretty print changes that order
 dbInit CB
 brokerStart CB 0
-accumulatorStart
+ftClientStart
 
 --SHELL--
 
@@ -70,7 +70,7 @@ payload='
   },
   "notification": {
     "http": {
-      "url": "http://localhost:'$LISTENER_PORT'/notify"
+      "url": "http://localhost:'$FT_PORT'/notify"
     },
     "attrs": [ "A3", "A1", "A2" ]
   }
@@ -96,7 +96,7 @@ payload='
   },
   "notification": {
     "http": {
-      "url": "http://localhost:'$LISTENER_PORT'/notify"
+      "url": "http://localhost:'$FT_PORT'/notify"
     },
     "attrs": [ "A3", "A1", "A2" ],
     "attrsFormat": "keyValues"
@@ -111,7 +111,7 @@ echo
 
 echo "04. Dump accumulator to see the notifications"
 echo "============================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -151,7 +151,7 @@ Location: /v2/subscriptions/REGEX([0-9a-f]{24})
 =============================================
 POST http://localhost:REGEX(\d+)/notify
 Fiware-Servicepath: /
-Content-Length: 221
+Content-Length: REGEX(\d+)
 User-Agent: orion/REGEX(\d+\.\d+\.\d+.*)
 Ngsiv2-Attrsformat: normalized
 Host: localhost:REGEX(\d+)
@@ -159,10 +159,34 @@ Accept: application/json
 Content-Type: application/json; charset=utf-8
 Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
-{"subscriptionId":"REGEX([0-9a-f]{24})","data":[{"id":"E1","type":"none","A3":{"type":"Number","value":3,"metadata":{}},"A1":{"type":"Number","value":1,"metadata":{}},"A2":{"type":"Number","value":2,"metadata":{}}}]}=======================================
+{
+    "data": [
+        {
+            "A1": {
+                "metadata": {},
+                "type": "Number",
+                "value": 1
+            },
+            "A2": {
+                "metadata": {},
+                "type": "Number",
+                "value": 2
+            },
+            "A3": {
+                "metadata": {},
+                "type": "Number",
+                "value": 3
+            },
+            "id": "E1",
+            "type": "none"
+        }
+    ],
+    "subscriptionId": "REGEX([0-9a-f]{24})"
+}
+=======================================
 POST http://localhost:REGEX(\d+)/notify
 Fiware-Servicepath: /
-Content-Length: 101
+Content-Length: REGEX(\d+)
 User-Agent: orion/REGEX(\d+\.\d+\.\d+.*)
 Ngsiv2-Attrsformat: keyValues
 Host: localhost:REGEX(\d+)
@@ -170,7 +194,19 @@ Accept: application/json
 Content-Type: application/json; charset=utf-8
 Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
-{"subscriptionId":"REGEX([0-9a-f]{24})","data":[{"id":"E1","type":"none","A3":3,"A1":1,"A2":2}]}=======================================
+{
+    "data": [
+        {
+            "A1": 1,
+            "A2": 2,
+            "A3": 3,
+            "id": "E1",
+            "type": "none"
+        }
+    ],
+    "subscriptionId": "REGEX([0-9a-f]{24})"
+}
+=======================================
 
 
 --TEARDOWN--

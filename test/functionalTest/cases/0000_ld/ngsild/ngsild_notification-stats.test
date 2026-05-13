@@ -29,7 +29,7 @@ dbInit CB
 dbInit CP1
 orionldStart CB  -experimental
 orionldStart CP1 -experimental
-accumulatorStart --pretty-print --https --key /tmp/harnessTest.key --cert /tmp/harnessTest.pem --url /notify
+ftClientStart --pretty-print --https --httpsKey /tmp/harnessTest.key --httpsCertificate /tmp/harnessTest.pem
 
 --SHELL--
 
@@ -62,7 +62,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "https://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "https://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -134,7 +134,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -159,8 +159,8 @@ echo "06. Dump accumulator - see one notification"
 echo "==========================================="
 sleep .1
 # valgrindSleep 1
-accumulatorDump IPv4 HTTPS
-accumulatorReset HTTPS
+ftClientDump IPV4 HTTPS
+ftClientReset HTTPS
 echo
 echo
 
@@ -316,7 +316,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "notification": {
         "endpoint": {
             "accept": "application/json",
-            "uri": "https://127.0.0.1:9997/notify"
+            "uri": "https://127.0.0.1:7701/notify"
         },
         "format": "normalized",
         "lastNotification": "202REGEX(.*)Z",
@@ -431,7 +431,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "consecutiveErrors": 1,
         "endpoint": {
             "accept": "application/json",
-            "uri": "http://127.0.0.1:9997/notify"
+            "uri": "http://127.0.0.1:7701/notify"
         },
         "format": "normalized",
         "lastErrorReason": "Unable to read from notification endpoint",
@@ -451,6 +451,6 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 --TEARDOWN--
 brokerStop CB
 brokerStop CP1
-accumulatorStop $LISTENER_PORT
+ftClientStop
 dbDrop CB
 dbDrop CP1

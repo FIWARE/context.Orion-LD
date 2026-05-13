@@ -26,7 +26,7 @@ ConvOp putSubscriptionConvOp: PUT /v1/contextSubscriptions/{subscriptionId}
 --SHELL-INIT--
 dbInit CB
 brokerStart CB  0
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -118,7 +118,7 @@ payload='{
     "A1",
     "A2"
   ],
-  "reference": "http://localhost:'${LISTENER_PORT}'/notify",
+  "reference": "http://localhost:'${FT_PORT}'/notify",
   "duration": "P1M",
   "throttling": "PT1S",
   "notifyConditions": [
@@ -166,7 +166,7 @@ echo
 
 echo "06. Dump accumulator, see E1/T1/A1+A2"
 echo "====================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -193,7 +193,7 @@ echo
 
 echo "08. Dump accumulator, see two notifications"
 echo "==========================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -223,7 +223,7 @@ echo
 
 echo "10. Dump accumulator, still the same two notifications"
 echo "======================================================"
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -256,7 +256,7 @@ echo
 
 echo "12. Dump accumulator, see three notifications"
 echo "============================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -786,5 +786,5 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB

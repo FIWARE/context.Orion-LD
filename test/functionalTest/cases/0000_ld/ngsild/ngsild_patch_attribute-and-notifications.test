@@ -26,7 +26,7 @@ PATCH an attribute of an entity and see a notification about the update
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -experimental
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -83,7 +83,7 @@ payload='{
   "watchedAttributes": ["P"],
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -148,7 +148,7 @@ echo
 
 echo "04. Dump accumulator, see one notification"
 echo "=========================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 

@@ -26,7 +26,7 @@ Subscription Cache Mixed wildcard and not and removes and updates
 --SHELL-INIT--
 dbInit CB
 brokerStart CB 38,101 IPv4 --cache
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -59,7 +59,7 @@ payload='{
       "id": "S1"
     }
   ],
-  "reference": "http://localhost:'${LISTENER_PORT}'/notify",
+  "reference": "http://localhost:'${FT_PORT}'/notify",
   "duration": "P1M",
   "throttling": "PT2S",
   "notifyConditions": [
@@ -110,7 +110,7 @@ payload='{
       "id": "s0.*"
     }
   ],
-  "reference": "http://localhost:'${LISTENER_PORT}'/notify",
+  "reference": "http://localhost:'${FT_PORT}'/notify",
   "duration": "PT5S",
   "throttling": "PT2S",
   "notifyConditions": [
@@ -142,7 +142,7 @@ payload='{
       "id": "S3"
     }
   ],
-  "reference": "http://localhost:'${LISTENER_PORT}'/notify",
+  "reference": "http://localhost:'${FT_PORT}'/notify",
   "duration": "P1M",
   "throttling": "PT2S",
   "notifyConditions": [

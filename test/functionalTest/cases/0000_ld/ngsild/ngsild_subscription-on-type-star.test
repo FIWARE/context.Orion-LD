@@ -26,7 +26,7 @@ Subscription with type: "*", and test of notifications
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -experimental
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -50,7 +50,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify"
+      "uri": "http://localhost:'$FT_PORT'/notify"
     }   
   }
 }'
@@ -73,7 +73,7 @@ echo
 
 echo "03. See the notification in the accumulator"
 echo "==========================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -129,6 +129,6 @@ Ngsild-Attribute-Format: Normalized
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB
 dbDrop CB openiot

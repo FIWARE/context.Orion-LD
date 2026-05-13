@@ -27,7 +27,7 @@ Entity Batch Upsert Basic Test
 # Copied from ngsild_batch_update.test
 dbInit CB
 orionldStart CB -experimental
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -57,7 +57,7 @@ payload='{
   "notification": {
     "format": "keyValues",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -137,8 +137,8 @@ echo
 
 echo "03. Dump and reset accumulator - see one notification with 3 entities"
 echo "====================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -199,8 +199,8 @@ echo
 
 echo "06. Dump and reset accumulator - see one notification with two entities"
 echo "======================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -261,8 +261,8 @@ echo
 
 echo "09. Dump and reset accumulator - see one notification with two entities"
 echo "======================================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 

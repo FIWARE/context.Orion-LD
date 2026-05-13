@@ -76,6 +76,13 @@
   - DDS publish for already existing attributes in BATCH Update operations
   - Graceful DDS shutdown
   - Synchronous DDS semantics for PATCH /entities/{id} (when -wip dds is set); opt out with ?ddsSync=false
+  - DDS Actions: feedback/result/status from action servers stored as envelope sub-Properties
+    (goalId + publishedAt, with optional instanceHandleId/participantId/ddsDataType) keyed by
+    datasetId="urn:goal:<uuid>", so multiple in-flight goals live as distinct attribute instances
+  - DDS Actions: ?goal=<uuid> URI param accepted as a synonym for ?datasetId=urn:goal:<uuid>
+    (under -wip dds)
+  - DDS Actions: DELETE /entities/{id}/attrs/<action_attr>?datasetId=urn:goal:<uuid> cancels the
+    goal upstream (enabler->cancel_action_goal) before removing the dataset instance
 
 ## Documentation
   - Added TRoE database schema and advanced optimization documentation

@@ -26,7 +26,7 @@ Notifications with subscription-id as URL parameter
 --SHELL-INIT--
 dbInit CB
 orionldStart CB
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -50,7 +50,7 @@ payload='{
   "notification": {
     "format": "normalized",
     "endpoint": {
-      "uri": "http://localhost:'$LISTENER_PORT'/notify",
+      "uri": "http://localhost:'$FT_PORT'/notify",
       "accept": "application/ld+json"
     }
   }
@@ -78,7 +78,7 @@ echo
 echo "03. Dump the accumulator to see the notification, and in particular, see the subscription id as a URL parameter"
 echo "==============================================================================================================="
 sleep .5
-accumulatorDump
+ftClientDump
 echo
 echo
 

@@ -138,8 +138,8 @@ function fileCleanup()
   rm -f $vtest.valgrindTestSuite.stderr
   rm -f $vtest.valgrindTestSuite.stdout
   rm -f $vtest.configManager.log
-  rm -f $vtest.accumulator_$LISTENER_PORT
-  rm -f $vtest.accumulator_$LISTENER2_PORT
+  rm -f $vtest.ftClient_$FT_PORT
+  rm -f $vtest.ftClient_$FT2_PORT
 }
 
 

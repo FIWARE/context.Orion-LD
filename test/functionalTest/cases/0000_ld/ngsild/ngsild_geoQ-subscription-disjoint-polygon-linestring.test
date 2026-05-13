@@ -224,90 +224,90 @@ HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
 Date: REGEX(.*)
 
-POST /notify?subscriptionId=urn:ngsi-ld:Subscription:S1
+POST http://REGEX(.*)/notify?subscriptionId=urn:ngsi-ld:Subscription:S1
 Content-Length: REGEX(\d+)
-Content-Type: application/json
 User-Agent: orionld/REGEX(.*)
 Host: REGEX(.*)
 Accept: application/json
-Ngsild-Attribute-Format: Normalized
+Content-Type: application/json
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+Ngsild-Attribute-Format: Normalized
 
 {
-  "id": "urn:ngsi-ld:Notification:REGEX(.*)",
-  "type": "Notification",
-  "subscriptionId": "urn:ngsi-ld:Subscription:S1",
-  "notifiedAt": "REGEX(.*)",
-  "data": [
-    {
-      "id": "urn:ngsi-ld:Route:E2",
-      "type": "Route",
-      "name": {
-        "type": "Property",
-        "value": "Hamburg-Stockholm"
-      },
-      "location": {
-        "type": "GeoProperty",
-        "value": {
-          "type": "LineString",
-          "coordinates": [
-            [
-              5,
-              50
-            ],
-            [
-              15,
-              55
-            ]
-          ]
+    "data": [
+        {
+            "id": "urn:ngsi-ld:Route:E2",
+            "location": {
+                "type": "GeoProperty",
+                "value": {
+                    "coordinates": [
+                        [
+                            5,
+                            50
+                        ],
+                        [
+                            15,
+                            55
+                        ]
+                    ],
+                    "type": "LineString"
+                }
+            },
+            "name": {
+                "type": "Property",
+                "value": "Hamburg-Stockholm"
+            },
+            "type": "Route"
         }
-      }
-    }
-  ]
+    ],
+    "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+    "notifiedAt": "REGEX(.*)",
+    "subscriptionId": "urn:ngsi-ld:Subscription:S1",
+    "type": "Notification"
 }
-================================================================================
-
-POST /notify?subscriptionId=urn:ngsi-ld:Subscription:S1
+=======================================
+POST http://REGEX(.*)/notify?subscriptionId=urn:ngsi-ld:Subscription:S1
 Content-Length: REGEX(\d+)
-Content-Type: application/json
 User-Agent: orionld/REGEX(.*)
 Host: REGEX(.*)
 Accept: application/json
-Ngsild-Attribute-Format: Normalized
+Content-Type: application/json
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+Ngsild-Attribute-Format: Normalized
 
 {
-  "id": "urn:ngsi-ld:Notification:REGEX(.*)",
-  "type": "Notification",
-  "subscriptionId": "urn:ngsi-ld:Subscription:S1",
-  "notifiedAt": "REGEX(.*)",
-  "data": [
-    {
-      "id": "urn:ngsi-ld:Route:E4",
-      "type": "Route",
-      "name": {
-        "type": "Property",
-        "value": "Casablanca-Algiers"
-      },
-      "location": {
-        "type": "GeoProperty",
-        "value": {
-          "type": "LineString",
-          "coordinates": [
-            [
-              -5,
-              32
-            ],
-            [
-              5,
-              33
-            ]
-          ]
+    "data": [
+        {
+            "id": "urn:ngsi-ld:Route:E4",
+            "location": {
+                "type": "GeoProperty",
+                "value": {
+                    "coordinates": [
+                        [
+                            -5,
+                            32
+                        ],
+                        [
+                            5,
+                            33
+                        ]
+                    ],
+                    "type": "LineString"
+                }
+            },
+            "name": {
+                "type": "Property",
+                "value": "Casablanca-Algiers"
+            },
+            "type": "Route"
         }
-      }
-    }
-  ]
+    ],
+    "id": "urn:ngsi-ld:Notification:REGEX(.*)",
+    "notifiedAt": "REGEX(.*)",
+    "subscriptionId": "urn:ngsi-ld:Subscription:S1",
+    "type": "Notification"
 }
+=======================================
 
 
 

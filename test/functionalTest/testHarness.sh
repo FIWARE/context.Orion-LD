@@ -327,21 +327,21 @@ function exitFunction()
               echo
           fi
 
-          if [ -f /tmp/accumulator_9997_stderr ]
+          if [ -f /tmp/ftClient_7701_stderr ]
           then
-              echo "/tmp/accumulator_9997_stderr:"
+              echo "/tmp/ftClient_7701_stderr:"
               echo "-------------------------------------------------"
-              cat /tmp/accumulator_9997_stderr
+              cat /tmp/ftClient_7701_stderr
               echo "-------------------------------------------------"
               echo
               echo
           fi
 
-          if [ -f /tmp/accumulator_9997_stdout ]
+          if [ -f /tmp/ftClient_7701_stdout ]
           then
-              echo "/tmp/accumulator_9997_stdout:"
+              echo "/tmp/ftClient_7701_stdout:"
               echo "-------------------------------------------------"
-              cat /tmp/accumulator_9997_stdout
+              cat /tmp/ftClient_7701_stdout
               echo "-------------------------------------------------"
               echo
               echo
@@ -436,21 +436,21 @@ function exitFunction()
               echo
           fi
 
-          if [ -f /tmp/accumulator_9997_stderr ]
+          if [ -f /tmp/ftClient_7701_stderr ]
           then
-              echo "/tmp/accumulator_9997_stderr:"
+              echo "/tmp/ftClient_7701_stderr:"
               echo "-------------------------------------------------"
-              cat /tmp/accumulator_9997_stderr
+              cat /tmp/ftClient_7701_stderr
               echo "-------------------------------------------------"
               echo
               echo
           fi
 
-          if [ -f /tmp/accumulator_9997_stdout ]
+          if [ -f /tmp/ftClient_7701_stdout ]
           then
-              echo "/tmp/accumulator_9997_stdout:"
+              echo "/tmp/ftClient_7701_stdout:"
               echo "-------------------------------------------------"
-              cat /tmp/accumulator_9997_stdout
+              cat /tmp/ftClient_7701_stdout
               echo "-------------------------------------------------"
               echo
               echo
@@ -1042,8 +1042,8 @@ function fileCleanup()
     rm $filename.$BROKER.log        2> /dev/null
 
     cd /tmp
-    \rm -f accumulator_*_stdout
-    \rm -f accumulator_*_stderr
+    \rm -f ftClient_*_stdout
+    \rm -f ftClient_*_stderr
     \rm -f contextBroker.pid
     cd $olddir
   fi

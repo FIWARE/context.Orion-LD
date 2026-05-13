@@ -40,7 +40,6 @@ extern "C"
 // noResponse - sleep 10 seconds, then return 200
 //
 // Purpose: exercise broker-side notification timeout handling.
-// Replaces scripts/accumulator-server.py's /noresponse route.
 //
 KjNode* noResponse(int* statusCodeP)
 {

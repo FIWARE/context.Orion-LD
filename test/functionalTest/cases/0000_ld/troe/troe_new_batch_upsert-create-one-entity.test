@@ -28,7 +28,7 @@ export BROKER=orionld
 dbInit CB
 pgInit $CB_DB_NAME
 brokerStart CB 0 IPv4 -troe -experimental
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -53,7 +53,7 @@ payload='{
   ],
   "notification": {
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -104,7 +104,7 @@ echo
 
 echo "03. Dump the accumulator to see one notification"
 echo "================================================"
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -229,6 +229,6 @@ https://uri.etsi.org/ngsi-ld/default-context/P1_R1,Relationship,urn:ngsi-ld:enti
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB
 pgDrop $CB_DB_NAME

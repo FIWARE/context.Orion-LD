@@ -93,8 +93,7 @@ char                 configFile[512];
 bool                 ddsSupport       = false;
 char*                ddsServiceName   = NULL;
 char*                ddsActionName    = NULL;
-bool                 prettyPrint      = false;
-bool                 accFmt           = false;  // /dump output style: accumulator (true) or legacy (false). Both buffers exist either way.
+bool                 prettyPrint      = true;
 
 
 
@@ -117,8 +116,7 @@ KArg kargs[] =
   { "--ddsService",       "-ddss",  KaString,  &ddsServiceName,       KaOpt, NULL,       KA_NL,    KA_NL,      "DDS Service to announce as server"                 },
   { "--ddsAction",        "-ddsa",  KaString,  &ddsActionName,        KaOpt, NULL,       KA_NL,    KA_NL,      "DDS Action to announce as server"                  },
 
-  { "--pretty-print",     "-pp",    KaBool,    &prettyPrint,          KaOpt, KFALSE,     KA_NL,    KA_NL,      "Pretty-print JSON bodies in /dump"                 },
-  { "--accFmt",           "-af",    KaBool,    &accFmt,               KaOpt, KFALSE,     KA_NL,    KA_NL,      "Render /dump in accumulator format"                },
+  { "--pretty-print",     "-pp",    KaBool,    &prettyPrint,          KaOpt, _vp 1,      KA_NL,    KA_NL,      "Pretty-print JSON bodies in /dump (default ON)"    },
 
   //
   // Broker options

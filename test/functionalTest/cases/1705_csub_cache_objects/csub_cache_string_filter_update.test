@@ -26,7 +26,7 @@ Sub cache string filter update
 --SHELL-INIT--
 dbInit CB
 brokerStart CB 0-255
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -60,7 +60,7 @@ payload='{
   },
   "notification": {
     "http": {
-      "url": "http://localhost:'$LISTENER_PORT'/notify"
+      "url": "http://localhost:'$FT_PORT'/notify"
     },
     "attrs": [ "A1" ]
   },
@@ -96,7 +96,7 @@ echo
 
 echo "04. See notification of E1 in accumulator"
 echo "========================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -136,7 +136,7 @@ echo
 
 echo "07. See no new notification in accumulator (only E1)"
 echo "===================================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -154,7 +154,7 @@ echo
 
 echo "09. See two notifications in accumulator (E1 and E4)"
 echo "===================================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -192,7 +192,7 @@ Location: /v2/entities/E2?type=Thing
 
 04. See notification of E1 in accumulator
 =========================================
-POST http://localhost:9997/notify
+POST http://localhost:7701/notify
 Fiware-Servicepath: /
 Content-Length: 128
 User-Agent: orion/REGEX(\d+\.\d+\.\d+.*)
@@ -239,7 +239,7 @@ Location: /v2/entities/E3?type=Thing
 
 07. See no new notification in accumulator (only E1)
 ====================================================
-POST http://localhost:9997/notify
+POST http://localhost:7701/notify
 Fiware-Servicepath: /
 Content-Length: 128
 User-Agent: orion/REGEX(\d+\.\d+\.\d+.*)
@@ -278,12 +278,12 @@ Location: /v2/entities/E4?type=Thing
 
 09. See two notifications in accumulator (E1 and E4)
 ====================================================
-POST http://localhost:9997/notify
+POST http://localhost:7701/notify
 Fiware-Servicepath: /
 Content-Length: 128
 User-Agent: orion/REGEX(\d+\.\d+\.\d+.*)
 Ngsiv2-Attrsformat: normalized
-Host: localhost:9997
+Host: localhost:7701
 Accept: application/json
 Content-Type: application/json; charset=utf-8
 Fiware-Correlator: REGEX([0-9a-f\-]{36})
@@ -303,12 +303,12 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
     "subscriptionId": "REGEX([0-9a-f]{24})"
 }
 =======================================
-POST http://localhost:9997/notify
+POST http://localhost:7701/notify
 Fiware-Servicepath: /
 Content-Length: 129
 User-Agent: orion/REGEX(\d+\.\d+\.\d+.*)
 Ngsiv2-Attrsformat: normalized
-Host: localhost:9997
+Host: localhost:7701
 Accept: application/json
 Content-Type: application/json; charset=utf-8
 Fiware-Correlator: REGEX([0-9a-f\-]{36})
@@ -333,4 +333,4 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 --TEARDOWN--
 brokerStop CB
 dbDrop CB
-accumulatorStop
+ftClientStop

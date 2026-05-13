@@ -26,7 +26,7 @@ Q filter in subscription for GTE of non-compatible-type metadata compound item
 --SHELL-INIT--
 dbInit CB
 brokerStart CB
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -55,7 +55,7 @@ payload='{
   },
   "notification": {
     "http": {
-      "url": "http://localhost:'$LISTENER_PORT'/notify"
+      "url": "http://localhost:'$FT_PORT'/notify"
     }
   }
 }'
@@ -87,8 +87,8 @@ echo
 
 echo "03. Make sure no notification has been sent"
 echo "==========================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -116,7 +116,7 @@ echo
 
 echo "05. Make sure ONE notification has been sent"
 echo "============================================"
-accumulatorDump
+ftClientDump
 echo
 echo
 

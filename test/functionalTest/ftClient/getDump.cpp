@@ -51,7 +51,6 @@ extern void             dumpLockOrAbort(const char* siteTag);
 extern __thread char*   responseText;
 extern __thread KjNode* uriParams;
 extern bool             prettyPrint;
-extern bool             accFmt;
 extern char*            httpsKey;
 extern char*            httpsCertificate;
 
@@ -59,13 +58,12 @@ extern char*            httpsCertificate;
 
 // -----------------------------------------------------------------------------
 //
-// accumulatorHeaderOrder -
+// dumpHeaderOrder -
 //
-// Header order matching scripts/accumulator-server.py's sort_headers().
-// Headers in this list come first in the listed order; remaining headers follow
-// in the order they were captured.
+// Headers listed here come first, in the listed order. Any remaining captured
+// headers follow in capture order.
 //
-static const char* accumulatorHeaderOrder[] =
+static const char* dumpHeaderOrder[] =
 {
   "Fiware-Servicepath",
   "Content-Length",
@@ -253,33 +251,30 @@ KjNode* getDump(int* statusCodeP)
     return NULL;
   }
 
-  // /dump output style. The accumulator wrapper passes --accFmt; the DDS-style
-  // ftClientStart wrapper does not, so its consumers see the legacy "VERB <path>"
-  // shape with an 80-char inter-item separator. accFmt true → accumulator shape:
-  // "VERB <scheme>://<Host><path>", title-cased headers, sorted JSON, 4-space
-  // indent (when prettyPrint), 39-char trailing separator. Both buffers
-  // (dumpArray, ddsDumpArray) exist regardless.
-  bool accumulatorMode = accFmt;
-
+  // /dump output is rendered in accumulator format:
+  //   "VERB <scheme>://<Host><path>"
+  //   <Title-Cased headers>
+  //   <blank>
+  //   <body, sorted keys, 4-space indent when prettyPrint, else compact>
+  //   =======================================
+  // ddsDumpArray is dumped separately via /dds/dump.
   KT_V("dumpArray at %p", dumpArray);
   if (dumpArray->value.firstChildP == NULL)
   {
-    if (accumulatorMode)
-    {
-      // Empty body for accumulator (matches scripts/accumulator-server.py)
-      responseText = (char*) "";
-      pthread_mutex_unlock(&dumpMutex);
-      return NULL;
-    }
-    // Legacy: return the empty array (renders as "[]")
+    // Empty dump → empty body, matching the Python accumulator. The caller
+    // (mhdRequest) bzero's responseText after MHD copies it; the kaAlloc'd
+    // 1-byte buffer is writable, so bzero of length 0 is safe either way.
+    char* emptyBuf = (char*) kaAlloc(&orionldState.kalloc, 1);
+    emptyBuf[0] = 0;
+    responseText = emptyBuf;
     pthread_mutex_unlock(&dumpMutex);
-    return dumpArray;
+    return NULL;
   }
   KT_V("dumpArray at %p", dumpArray);
 
   // Compute a buffer size that accounts for 4-space pretty-printing
   int savedIndentForSizing = orionldState.kjsonP->spacesPerIndent;
-  if (accumulatorMode)
+  if (prettyPrint)
     orionldState.kjsonP->spacesPerIndent = 4;
   int     bufSize      = kjRenderSize(orionldState.kjsonP, dumpArray) + 16 * 1024;
   orionldState.kjsonP->spacesPerIndent = savedIndentForSizing;
@@ -311,20 +306,9 @@ KjNode* getDump(int* statusCodeP)
     KjNode* headersP = kjLookup(inP, "headers");
     KjNode* bodyP    = kjLookup(inP, "body");
 
-    // Legacy mode: 80-char separator between items
-    if ((bufIx != 0) && !accumulatorMode)
-    {
-      memset(line, '=', 80);
-      line[80] = '\n';
-      line[81] = '\n';
-      line[82] = 0;
-      strcpy(&buf[bufIx], line);
-      bufIx += 82;
-    }
-
-    // Status Line
+    // Status Line: "VERB <scheme>://<Host><path>" — mirrors the old Python accumulator,
+    // which dumped the request-line that the broker (libcurl) sent verbatim.
     int         lineLen;
-    if (accumulatorMode)
     {
       KjNode*     hostP  = findHeader(headersP, "Host");
       const char* scheme = ((httpsKey != NULL) && (httpsCertificate != NULL)) ? "https" : "http";
@@ -333,10 +317,6 @@ KjNode* getDump(int* statusCodeP)
                          scheme,
                          (hostP != NULL) ? hostP->value.s : "",
                          urlP->value.s);
-    }
-    else
-    {
-      lineLen = snprintf(line, sizeof(line), "%s %s", verbP->value.s, urlP->value.s);
     }
     strcpy(&buf[bufIx], line);
     bufIx += lineLen;
@@ -358,56 +338,42 @@ KjNode* getDump(int* statusCodeP)
     buf[bufIx] = '\n';
     ++bufIx;
 
-    // HTTP Headers
+    // HTTP Headers: predefined order first (title-cased), then remaining in insertion order
     if (headersP != NULL)
     {
-      if (accumulatorMode)
+      int hCount = 0;
+      for (KjNode* h = headersP->value.firstChildP; h != NULL; h = h->next)
+        ++hCount;
+
+      bool* emitted = (bool*) kaAlloc(&orionldState.kalloc, sizeof(bool) * (hCount > 0 ? hCount : 1));
+      for (int i = 0; i < hCount; ++i)
+        emitted[i] = false;
+
+      char nameBuf[128];
+
+      for (int oi = 0; dumpHeaderOrder[oi] != NULL; ++oi)
       {
-        // Predefined order first (title-cased), then remaining in insertion order
-        int hCount = 0;
-        for (KjNode* h = headersP->value.firstChildP; h != NULL; h = h->next)
-          ++hCount;
-
-        bool* emitted = (bool*) kaAlloc(&orionldState.kalloc, sizeof(bool) * (hCount > 0 ? hCount : 1));
-        for (int i = 0; i < hCount; ++i)
-          emitted[i] = false;
-
-        char nameBuf[128];
-
-        for (int oi = 0; accumulatorHeaderOrder[oi] != NULL; ++oi)
-        {
-          int hi = 0;
-          for (KjNode* h = headersP->value.firstChildP; h != NULL; h = h->next, ++hi)
-          {
-            if ((emitted[hi] == false) && strcasecmpEq(h->name, accumulatorHeaderOrder[oi]))
-            {
-              lineLen = snprintf(line, sizeof(line), "%s: %s\n", accumulatorHeaderOrder[oi], h->value.s);
-              strcpy(&buf[bufIx], line);
-              bufIx += lineLen;
-              emitted[hi] = true;
-              break;
-            }
-          }
-        }
-
         int hi = 0;
         for (KjNode* h = headersP->value.firstChildP; h != NULL; h = h->next, ++hi)
         {
-          if (emitted[hi] == false)
+          if ((emitted[hi] == false) && strcasecmpEq(h->name, dumpHeaderOrder[oi]))
           {
-            titleCaseHeader(h->name, nameBuf, sizeof(nameBuf));
-            lineLen = snprintf(line, sizeof(line), "%s: %s\n", nameBuf, h->value.s);
+            lineLen = snprintf(line, sizeof(line), "%s: %s\n", dumpHeaderOrder[oi], h->value.s);
             strcpy(&buf[bufIx], line);
             bufIx += lineLen;
+            emitted[hi] = true;
+            break;
           }
         }
       }
-      else
+
+      int hi = 0;
+      for (KjNode* h = headersP->value.firstChildP; h != NULL; h = h->next, ++hi)
       {
-        // Legacy: insertion order, original case
-        for (KjNode* h = headersP->value.firstChildP; h != NULL; h = h->next)
+        if (emitted[hi] == false)
         {
-          lineLen = snprintf(line, sizeof(line), "%s: %s\n", h->name, h->value.s);
+          titleCaseHeader(h->name, nameBuf, sizeof(nameBuf));
+          lineLen = snprintf(line, sizeof(line), "%s: %s\n", nameBuf, h->value.s);
           strcpy(&buf[bufIx], line);
           bufIx += lineLen;
         }
@@ -415,9 +381,8 @@ KjNode* getDump(int* statusCodeP)
     }
 
     KT_T(StRequest, "bodyP at %p", bodyP);
-    if (accumulatorMode)
+    // Body: blank line, sorted+indented (pretty) or compact body, trailing 39-char separator
     {
-      // Accumulator: blank line, sorted+indented body, trailing 39-char separator
       if (bodyP != NULL)
       {
         buf[bufIx] = '\n';
@@ -475,21 +440,6 @@ KjNode* getDump(int* statusCodeP)
       bufIx += 39;
       buf[bufIx] = '\n';
       ++bufIx;
-    }
-    else
-    {
-      // Legacy: blank line then body (insertion order, default indent)
-      buf[bufIx] = '\n';
-      ++bufIx;
-
-      if (bodyP != NULL)
-      {
-        int   bodyLen = kjRenderSize(orionldState.kjsonP, bodyP) + 512;
-        char* body    = kaAlloc(orionldState.kjsonP->kallocP, bodyLen);
-        kjRender(orionldState.kjsonP, bodyP, body);
-        strcpy(&buf[bufIx], body);
-        bufIx += strlen(body);
-      }
     }
   }
   buf[bufIx] = 0;

@@ -26,7 +26,7 @@ Non-modifiable headers in custom notifications
 --SHELL-INIT--
 dbInit CB
 brokerStart CB
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -52,7 +52,7 @@ payload='{
   },
   "notification": {
     "httpCustom": {
-      "url": "http://127.0.0.1:'${LISTENER_PORT}'/notify",
+      "url": "http://127.0.0.1:'${FT_PORT}'/notify",
       "method": "PUT",
       "payload": "{ %22A1%22: %22${A1}%22, %22A2%22: %22${A2}%22, %22A3%22: %22${A3}%22 }",
       "headers":  { "Fiware-Correlator": "foo", "Ngsiv2-AttrsFormat": "bar" }
@@ -86,7 +86,7 @@ echo
 
 echo "03. Dump accumulator and see Fiware-Correlator and Ngsiv2-AttrsFormat were not modified"
 echo "======================================================================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -135,4 +135,4 @@ Fiware-Correlator: MyCorrelator
 --TEARDOWN--
 brokerStop CB
 dbDrop CB
-accumulatorStop
+ftClientStop

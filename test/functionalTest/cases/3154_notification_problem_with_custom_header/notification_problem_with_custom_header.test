@@ -26,7 +26,7 @@ Notification Templates, with refresh of the subscription cache
 --SHELL-INIT--
 dbInit CB
 brokerStart CB 0
-accumulatorStart --pretty-print
+ftClientStart --pretty-print
 
 --SHELL--
 
@@ -58,7 +58,7 @@ payload='{
     "attrs": [],
     "attrsFormat": "legacy",
     "httpCustom": {
-      "url":      "http://localhost:'${LISTENER_PORT}'/notify"
+      "url":      "http://localhost:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -82,8 +82,8 @@ echo
 
 echo "03. Dump accumulator to see the notification"
 echo "============================================"
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -114,7 +114,7 @@ payload='{
     "attrs": [],
     "attrsFormat": "legacy",
     "httpCustom": {
-      "url":      "http://localhost:'${LISTENER_PORT}'/notify",
+      "url":      "http://localhost:'${FT_PORT}'/notify",
       "payload": "{ %22A1%22: %22Value of A1: ${A1}%22 }"
     }
   }
@@ -126,7 +126,7 @@ echo
 
 echo "06. Dump accumulator to see the second notification, not in legacy mode, as custom payload overrides"
 echo "===================================================================================================="
-accumulatorDump
+ftClientDump
 echo
 echo
 
@@ -216,7 +216,7 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
             "attrs": [],
             "attrsFormat": "legacy",
             "httpCustom": {
-                "url": "http://localhost:9997/notify"
+                "url": "http://localhost:7701/notify"
             },
             "lastNotification": "REGEX(.*)",
             "lastSuccess": "REGEX(.*)",
@@ -268,4 +268,4 @@ Fiware-Correlator: REGEX([0-9a-f\-]{36})
 --TEARDOWN--
 brokerStop CB
 dbDrop CB
-accumulatorStop
+ftClientStop

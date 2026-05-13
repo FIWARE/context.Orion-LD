@@ -26,7 +26,7 @@ New subscription with q/qP and sub-cache-refresh
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -experimental -subCacheIval 2
-accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+ftClientStart --pretty-print --port ${FT_PORT}
 
 --SHELL--
 
@@ -56,7 +56,7 @@ payload='{
   "notification": {
     "format": "simplified",
     "endpoint": {
-      "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify"
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
     }
   }
 }'
@@ -132,8 +132,8 @@ echo
 
 echo "09. Dump accumulator and see the notification for E3 only"
 echo "========================================================="
-accumulatorDump
-accumulatorReset
+ftClientDump
+ftClientReset
 echo
 echo
 
@@ -176,7 +176,7 @@ MongoDB server version: REGEX(.*)
 		"mq" : "P.P;!P.P"
 	},
 	"format" : "simplified",
-	"reference" : "http://127.0.0.1:9997/notify",
+	"reference" : "http://127.0.0.1:7701/notify",
 	"mimeType" : "application/json",
 	"attrs" : [ ],
 	"conditions" : [ ],
@@ -209,7 +209,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "notification": {
         "endpoint": {
             "accept": "application/json",
-            "uri": "http://127.0.0.1:9997/notify"
+            "uri": "http://127.0.0.1:7701/notify"
         },
         "format": "keyValues",
         "status": "ok"
@@ -246,7 +246,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     "notification": {
         "endpoint": {
             "accept": "application/json",
-            "uri": "http://127.0.0.1:9997/notify"
+            "uri": "http://127.0.0.1:7701/notify"
         },
         "format": "keyValues",
         "status": "ok"
@@ -314,5 +314,5 @@ Ngsild-Attribute-Format: Simplified
 
 --TEARDOWN--
 brokerStop CB
-accumulatorStop
+ftClientStop
 dbDrop CB
