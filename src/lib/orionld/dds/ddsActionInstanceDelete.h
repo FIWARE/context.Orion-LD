@@ -32,16 +32,17 @@
 //
 // ddsActionInstanceDelete -
 //
-// Internal DDS cleanup: delete a per-goal datasetId instance of an
-// action-tied attribute. Sets orionldState.noNotify=true so subscription
-// dispatch is skipped AND the ddsActionGoalCancelIfMapped hook inside
-// orionldDeleteAttribute is bypassed (the goal has already terminated -
-// there's nothing to cancel). TRoE still records the deletion.
+// Internal DDS cleanup: pull a per-goal datasetId instance from an
+// action-tied attribute's @datasets array (direct mongo write, so no
+// orionldDeleteAttribute - which means the DDS goal-cancel hook in
+// that routine is naturally skipped, as it should be for a goal that
+// has already terminated). Subscription dispatch fires via
+// ddsActionLifecycleNotify so subscribers see the instance disappear.
 //
-// TODO: TRoE sees this lifecycle as create+delete of the per-goal instance,
-// which is correct but not ideal - semantically it's a Modify (final state
-// stamped onto an existing instance). Revisit when temporal sub-attribute
-// patches are prioritised.
+// TODO: TRoE sees this lifecycle as a series of attribute updates
+// followed by no record of the disappearance (pull doesn't emit a TRoE
+// entry today). Revisit when temporal sub-attribute patches are
+// prioritised.
 //
 extern void ddsActionInstanceDelete
 (

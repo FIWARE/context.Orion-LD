@@ -171,9 +171,10 @@ void ddsActionStatusNotification
   // Terminal handling:
   //   - succeeded: keep the per-goal instance (final envelope is the record
   //     of completion). Just free the goal tracker.
-  //   - any other terminal: delete the per-goal instance (won't grow the DB)
-  //     and free the tracker. Subscription dispatch and the DDS-cancel hook
-  //     are suppressed via orionldState.noNotify inside the delete helper.
+  //   - any other terminal: pull the per-goal instance (won't grow the DB)
+  //     and free the tracker. Subscription dispatch fires for the pull;
+  //     no DDS goal-cancel hook (we go direct to mongo - that path doesn't
+  //     run orionldDeleteAttribute).
   //
   if (isTerminal)
   {
