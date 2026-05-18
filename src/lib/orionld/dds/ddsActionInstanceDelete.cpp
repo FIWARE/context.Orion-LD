@@ -32,6 +32,7 @@ extern "C"
 #include "orionld/common/tenantList.h"                           // tenant0
 #include "orionld/context/orionldAttributeExpand.h"              // orionldAttributeExpand
 #include "orionld/mongoc/mongocDatasetInstanceOps.h"              // mongocDatasetInstancePull
+#include "orionld/dds/ddsActionLifecycleNotify.h"                // ddsActionLifecycleNotify
 #include "orionld/dds/ddsActionInstanceDelete.h"                 // Own interface
 
 
@@ -44,8 +45,6 @@ void ddsActionInstanceDelete
   const char* datasetIdStr
 )
 {
-  (void) entityType;  // unused in the direct-mongo path
-
   if (orionldState.tenantP == NULL)
     orionldState.tenantP = &tenant0;
 
@@ -54,5 +53,6 @@ void ddsActionInstanceDelete
   KT_T(StDdsAction, "Pulling per-goal instance from @datasets: entity '%s' attr '%s' datasetId '%s'",
        entityId, attributeName, datasetIdStr);
 
-  (void) mongocDatasetInstancePull(entityId, attrLongName, datasetIdStr);
+  if (mongocDatasetInstancePull(entityId, attrLongName, datasetIdStr) == true)
+    ddsActionLifecycleNotify(entityId, entityType, attrLongName, NULL);  // pull -> no TRoE payload, sub dispatch still fires
 }

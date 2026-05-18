@@ -36,6 +36,7 @@ extern "C"
 #include "orionld/context/orionldAttributeExpand.h"              // orionldAttributeExpand
 #include "orionld/mongoc/mongocDatasetInstanceOps.h"              // mongocDatasetInstancePush, mongocDatasetSubAttrSet
 #include "orionld/dds/ddsActionBuild.h"                          // ddsActionBuildSubAttribute, ddsActionGoalDatasetId
+#include "orionld/dds/ddsActionLifecycleNotify.h"                // ddsActionLifecycleNotify
 #include "orionld/dds/ddsActionSubAttributeUpdate.h"             // Own interface
 
 
@@ -148,7 +149,10 @@ void ddsActionSubAttributeUpdate
          entityId, attributeName, datasetIdStr, subAttributeName);
 
     if (mongocDatasetInstancePush(entityId, attrLongName, instance) == true)
+    {
       goalP->instanceCreated = true;
+      ddsActionLifecycleNotify(entityId, entityType, attrLongName, instance);
+    }
   }
   else
   {
@@ -158,6 +162,13 @@ void ddsActionSubAttributeUpdate
     KT_T(StDdsAction, "Surgical sub-attr set on entity '%s' attr '%s' (datasetId %s, sub '%s')",
          entityId, attributeName, datasetIdStr, subAttributeName);
 
-    (void) mongocDatasetSubAttrSet(entityId, attrLongName, datasetIdStr, subAttributeName, envelope);
+    if (mongocDatasetSubAttrSet(entityId, attrLongName, datasetIdStr, subAttributeName, envelope) == true)
+    {
+      // TRoE payload: an attribute fragment carrying just the changed sub-attr.
+      KjNode* troePayload = kjObject(orionldState.kjsonP, NULL);
+      kjChildAdd(troePayload, kjString(orionldState.kjsonP, "type", "Property"));
+      kjChildAdd(troePayload, envelope);  // envelope is the sub-attribute we set
+      ddsActionLifecycleNotify(entityId, entityType, attrLongName, troePayload);
+    }
   }
 }
