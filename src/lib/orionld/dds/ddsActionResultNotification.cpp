@@ -73,24 +73,6 @@ void ddsActionResultNotification
     return;
   }
 
-  //
-  // Remove the matching goal from the goals list
-  //
-  DdsActionGoal* prev = NULL;
-  for (DdsActionGoal* gP = actionP->goals; gP != NULL; gP = gP->next)
-  {
-    if (memcmp(gP->goalId, goalId.data(), 16) == 0)
-    {
-      if (prev != NULL)
-        prev->next = gP->next;
-      else
-        actionP->goals = gP->next;
-      free(gP);
-      break;
-    }
-    prev = gP;
-  }
-
   // publishTime arrives from the enabler in nanoseconds since epoch; reduce to
   // seconds so it matches request-side timestamps recorded with time(NULL).
   publishTime /= 1000000000LL;
@@ -116,12 +98,20 @@ void ddsActionResultNotification
   if (resultPayload == NULL)
     resultPayload = resultTree;  // no envelope — store the raw tree as value
 
+  //
+  // Look up the in-flight goal record (for lazy-create + instance tracking).
+  // Note: goal freeing has moved to ddsActionStatusNotification on terminal
+  // status, so we still find a valid goalP here.
+  //
+  DdsActionGoal* goalP = ddsActionGoalLookup(actionP, goalId.data());
+
   ddsActionSubAttributeUpdate(actionP->entityId,
                               actionP->entityType,
                               actionP->attributeName,
                               "ddsActionResult",
                               resultPayload,
                               goalId,
+                              goalP,
                               instanceHandleId,
                               participantId,
                               ddsDataType,

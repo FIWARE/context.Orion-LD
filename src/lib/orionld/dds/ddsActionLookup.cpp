@@ -22,7 +22,7 @@
 *
 * Author: Ken Zangelin
 */
-#include <string.h>                                              // strcmp
+#include <string.h>                                              // strcmp, memcmp
 
 #include "orionld/types/DdsAction.h"                             // DdsAction
 #include "orionld/common/orionldState.h"                         // ddsActions
@@ -57,6 +57,26 @@ DdsAction* ddsActionLookupByAttributeName(const char* attributeName)
   {
     if ((aP->attributeName != NULL) && (strcmp(aP->attributeName, attributeName) == 0))
       return aP;
+  }
+
+  return NULL;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// ddsActionGoalLookup -
+//
+DdsActionGoal* ddsActionGoalLookup(DdsAction* actionP, const uint8_t* goalId16)
+{
+  if (actionP == NULL || goalId16 == NULL)
+    return NULL;
+
+  for (DdsActionGoal* gP = actionP->goals; gP != NULL; gP = gP->next)
+  {
+    if (memcmp(gP->goalId, goalId16, 16) == 0)
+      return gP;
   }
 
   return NULL;

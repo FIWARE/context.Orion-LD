@@ -501,6 +501,7 @@ typedef struct OrionldConnectionState
   bool                    noDbUpdate;            // If nothing changed in DB - troe is not invoked
   bool                    troeError;              // Unused - TODO: remove
   bool                    noTroe;                 // Skip TRoE for this request (e.g. local insert failed in a 207 distOp)
+  bool                    noNotify;               // Skip NGSI-LD subscription dispatch (set by internal DDS callers; TRoE still runs)
   KjNode*                 duplicateArray;
   KjNode*                 troeIgnoreV[20];
   unsigned int            troeIgnoreIx;

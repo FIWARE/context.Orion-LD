@@ -285,7 +285,11 @@ bool orionldDeleteAttribute(void)
   // cancel the in-flight goal. The final cancellation state is communicated
   // separately by the action server via a status notification.
   //
-  if (orionldState.uriParams.datasetId != NULL)
+  // noNotify suppresses this hook too: it's set by internal DDS cleanup paths
+  // that are reacting to an already-terminated goal - there's nothing to
+  // cancel and firing cancel_action_goal would be both wrong and noisy.
+  //
+  if ((orionldState.uriParams.datasetId != NULL) && (orionldState.noNotify == false))
   {
     char* attrShortName = orionldContextItemAliasLookup(orionldState.contextP, attrName, NULL, NULL);
     (void) ddsActionGoalCancelIfMapped(attrShortName, orionldState.uriParams.datasetId);

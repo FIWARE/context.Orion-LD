@@ -83,12 +83,15 @@ void ddsActionFeedbackNotification
   if (feedbackPayload == NULL)
     feedbackPayload = feedbackTree;
 
+  DdsActionGoal* goalP = ddsActionGoalLookup(actionP, goalId.data());
+
   ddsActionSubAttributeUpdate(actionP->entityId,
                               actionP->entityType,
                               actionP->attributeName,
                               "ddsActionFeedback",
                               feedbackPayload,
                               goalId,
+                              goalP,
                               instanceHandleId,
                               participantId,
                               ddsDataType,

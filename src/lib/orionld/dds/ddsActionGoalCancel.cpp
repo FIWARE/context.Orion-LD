@@ -90,6 +90,7 @@ bool ddsActionGoalCancelIfMapped(const char* attrShortName, const char* datasetI
         prev->next = gP->next;
       else
         actionP->goals = gP->next;
+      free(gP->requestJson);
       free(gP);
       break;
     }

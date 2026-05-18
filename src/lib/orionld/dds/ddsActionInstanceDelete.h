@@ -1,5 +1,5 @@
-#ifndef SRC_LIB_ORIONLD_DDS_DDSACTIONLOOKUP_H_
-#define SRC_LIB_ORIONLD_DDS_DDSACTIONLOOKUP_H_
+#ifndef SRC_LIB_ORIONLD_DDS_DDSACTIONINSTANCEDELETE_H_
+#define SRC_LIB_ORIONLD_DDS_DDSACTIONINSTANCEDELETE_H_
 
 /*
 *
@@ -25,32 +25,30 @@
 *
 * Author: Ken Zangelin
 */
-#include <stdint.h>                                             // uint8_t
-
-#include "orionld/types/DdsAction.h"                            // DdsAction, DdsActionGoal
 
 
 
 // -----------------------------------------------------------------------------
 //
-// ddsActionLookup -
+// ddsActionInstanceDelete -
 //
-extern DdsAction* ddsActionLookup(const char* actionName);
-
-
-
-// -----------------------------------------------------------------------------
+// Internal DDS cleanup: delete a per-goal datasetId instance of an
+// action-tied attribute. Sets orionldState.noNotify=true so subscription
+// dispatch is skipped AND the ddsActionGoalCancelIfMapped hook inside
+// orionldDeleteAttribute is bypassed (the goal has already terminated -
+// there's nothing to cancel). TRoE still records the deletion.
 //
-// ddsActionLookupByAttributeName -
+// TODO: TRoE sees this lifecycle as create+delete of the per-goal instance,
+// which is correct but not ideal - semantically it's a Modify (final state
+// stamped onto an existing instance). Revisit when temporal sub-attribute
+// patches are prioritised.
 //
-extern DdsAction* ddsActionLookupByAttributeName(const char* attributeName);
+extern void ddsActionInstanceDelete
+(
+  const char* entityId,
+  const char* entityType,
+  const char* attributeName,
+  const char* datasetIdStr
+);
 
-
-
-// -----------------------------------------------------------------------------
-//
-// ddsActionGoalLookup - find a goal node by 16-byte UUID
-//
-extern DdsActionGoal* ddsActionGoalLookup(DdsAction* actionP, const uint8_t* goalId16);
-
-#endif  // SRC_LIB_ORIONLD_DDS_DDSACTIONLOOKUP_H_
+#endif  // SRC_LIB_ORIONLD_DDS_DDSACTIONINSTANCEDELETE_H_

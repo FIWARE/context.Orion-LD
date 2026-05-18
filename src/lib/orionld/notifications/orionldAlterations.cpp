@@ -70,8 +70,14 @@ static bool kjValuesDiffer(KjNode* leftAttr, KjNode* rightAttr)
   if (right == NULL) right = kjLookup(rightAttr, "object");
   if (right == NULL) right = kjLookup(rightAttr, "languageMap");
 
+  // Patch fragment doesn't touch the value/object/languageMap - the value
+  // isn't being changed by this patch (surgical sub-attribute updates, for
+  // example). Return false: no value diff.
   if (left == NULL)
-    KT_RE(true, "Internal Error (left KjNode has no value member)");
+    return false;
+
+  // The attribute exists in the DB (caller checked) but somehow has no
+  // value/object/languageMap - that's a DB integrity bug worth flagging.
   if (right == NULL)
     KT_RE(true, "Database Error (DB KjNode has no value member)");
 

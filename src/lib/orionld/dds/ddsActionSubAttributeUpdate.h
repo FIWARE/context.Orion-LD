@@ -34,6 +34,8 @@ extern "C"
 #include "kjson/KjNode.h"                                        // KjNode
 }
 
+#include "orionld/types/DdsAction.h"                             // DdsActionGoal
+
 
 
 // -----------------------------------------------------------------------------
@@ -62,6 +64,13 @@ extern "C"
 // by status notifications whose payload is split across statusCode/message
 // rendered inside the caller).
 //
+// goalP is the in-flight goal tracker. On the first call for a goal (with
+// goalP->instanceCreated == false), the attribute's "value" is initialised
+// from goalP->requestJson and goalP->instanceCreated is set to true. On
+// subsequent calls (or when goalP is NULL because the goal record has been
+// freed), the patch carries only the envelope sub-attribute - the per-goal
+// instance already exists.
+//
 extern void ddsActionSubAttributeUpdate
 (
   const char*                                       entityId,
@@ -70,6 +79,7 @@ extern void ddsActionSubAttributeUpdate
   const char*                                       subAttributeName,
   KjNode*                                           subAttributeValue,
   const eprosima::ddsenabler::participants::UUID&   goalId,
+  DdsActionGoal*                                    goalP,
   const char*                                       instanceHandleId,
   const char*                                       participantId,
   const char*                                       ddsDataType,

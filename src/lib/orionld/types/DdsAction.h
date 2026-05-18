@@ -25,6 +25,7 @@
 *
 * Author: Ken Zangelin
 */
+#include <stdbool.h>                                             // bool
 #include <stdint.h>                                              // types: uint8_t, ...
 
 
@@ -35,7 +36,9 @@
 //
 typedef struct DdsActionGoal
 {
-  uint8_t                   goalId[16];  // UUID
+  uint8_t                   goalId[16];      // UUID
+  char*                     requestJson;     // libc-strdup of the goal request payload (free when removing the goal)
+  bool                      instanceCreated; // true once the per-goal datasetId instance has been materialised
   struct DdsActionGoal*     next;
 } DdsActionGoal;
 

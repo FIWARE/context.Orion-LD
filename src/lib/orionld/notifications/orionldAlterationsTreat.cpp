@@ -469,6 +469,12 @@ static NotificationPending* notificationLookupByCurlHandle(NotificationPending* 
 //
 void orionldAlterationsTreat(OrionldAlteration* altList)
 {
+  if (orionldState.noNotify == true)
+  {
+    KT_T(KtAlt, "noNotify set - skipping subscription dispatch");
+    return;
+  }
+
   // <DEBUG>
   if (ktTraceLevelCheck(KtAlt))
   {

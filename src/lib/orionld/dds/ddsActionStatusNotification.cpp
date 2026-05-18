@@ -22,6 +22,8 @@
 *
 * Author: Ken Zangelin
 */
+#include <stdlib.h>                                              // free
+
 #include "ddsenabler_participants/rpc/RpcTypes.hpp"              // UUID, StatusCode
 
 extern "C"
@@ -36,8 +38,60 @@ extern "C"
 #include "orionld/common/traceLevels.h"                          // KT_T trace levels
 #include "orionld/dds/ddsActionLookup.h"                         // ddsActionLookup
 #include "orionld/dds/ddsActionSubAttributeUpdate.h"             // ddsActionSubAttributeUpdate
-#include "orionld/dds/ddsActionBuild.h"                          // ddsActionStatusCodeToString
+#include "orionld/dds/ddsActionInstanceDelete.h"                 // ddsActionInstanceDelete
+#include "orionld/dds/ddsActionBuild.h"                          // ddsActionStatusCodeToString, ddsActionGoalDatasetId
 #include "orionld/dds/ddsActionStatusNotification.h"             // Own interface
+
+
+
+// -----------------------------------------------------------------------------
+//
+// statusIsTerminal / statusIsSuccess
+//
+static bool statusIsTerminal(eprosima::ddsenabler::participants::StatusCode c)
+{
+  using SC = eprosima::ddsenabler::participants::StatusCode;
+  return (c == SC::SUCCEEDED) ||
+         (c == SC::CANCELED)  ||
+         (c == SC::ABORTED)   ||
+         (c == SC::REJECTED)  ||
+         (c == SC::TIMEOUT)   ||
+         (c == SC::FAILED)    ||
+         (c == SC::CANCEL_REQUEST_FAILED);
+}
+
+static bool statusIsSuccess(eprosima::ddsenabler::participants::StatusCode c)
+{
+  return c == eprosima::ddsenabler::participants::StatusCode::SUCCEEDED;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// goalUnlinkAndFree - remove goalP from actionP->goals and free it
+//
+static void goalUnlinkAndFree(DdsAction* actionP, DdsActionGoal* goalP)
+{
+  if ((actionP == NULL) || (goalP == NULL))
+    return;
+
+  DdsActionGoal* prev = NULL;
+  for (DdsActionGoal* gP = actionP->goals; gP != NULL; gP = gP->next)
+  {
+    if (gP == goalP)
+    {
+      if (prev != NULL)
+        prev->next = gP->next;
+      else
+        actionP->goals = gP->next;
+      free(gP->requestJson);
+      free(gP);
+      return;
+    }
+    prev = gP;
+  }
+}
 
 
 
@@ -82,14 +136,54 @@ void ddsActionStatusNotification
   kjChildAdd(statusTree, codeNode);
   kjChildAdd(statusTree, msgNode);
 
+  DdsActionGoal* goalP            = ddsActionGoalLookup(actionP, goalId.data());
+  bool           instanceCreated  = (goalP != NULL) ? goalP->instanceCreated : false;
+  bool           isTerminal       = statusIsTerminal(statusCode);
+  bool           isFailure        = isTerminal && !statusIsSuccess(statusCode);
+
+  //
+  // On a terminal failure that arrives before any instance has been
+  // materialised (e.g. immediate REJECTED): skip the envelope write
+  // altogether. Nothing was created, nothing to clean up beyond freeing the
+  // goal record.
+  //
+  if (isFailure && (instanceCreated == false))
+  {
+    KT_T(StDdsAction, "Terminal failure (%s) before lazy create - dropping goal without DB write",
+         ddsActionStatusCodeToString(statusCode));
+    goalUnlinkAndFree(actionP, goalP);
+    return;
+  }
+
   ddsActionSubAttributeUpdate(actionP->entityId,
                               actionP->entityType,
                               actionP->attributeName,
                               "ddsActionStatus",
                               statusTree,
                               goalId,
+                              goalP,
                               /*instanceHandleId*/ NULL,
                               /*participantId*/    NULL,
                               /*ddsDataType*/      NULL,
                               publishTime);
+
+  //
+  // Terminal handling:
+  //   - succeeded: keep the per-goal instance (final envelope is the record
+  //     of completion). Just free the goal tracker.
+  //   - any other terminal: delete the per-goal instance (won't grow the DB)
+  //     and free the tracker. Subscription dispatch and the DDS-cancel hook
+  //     are suppressed via orionldState.noNotify inside the delete helper.
+  //
+  if (isTerminal)
+  {
+    if (isFailure)
+    {
+      char datasetIdStr[48];
+      ddsActionGoalDatasetId(goalId, datasetIdStr);
+      ddsActionInstanceDelete(actionP->entityId, actionP->entityType, actionP->attributeName, datasetIdStr);
+    }
+
+    goalUnlinkAndFree(actionP, goalP);
+  }
 }
