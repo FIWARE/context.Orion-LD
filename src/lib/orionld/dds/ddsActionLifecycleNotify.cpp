@@ -34,6 +34,7 @@ extern "C"
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/traceLevels.h"                          // StDdsAction
 #include "orionld/common/dotForEq.h"                             // dotForEq
+#include "orionld/context/orionldContextItemExpand.h"            // orionldContextItemExpand
 #include "orionld/types/OrionldAlteration.h"                     // OrionldAlteration, AttributeValueChanged
 #include "orionld/notifications/orionldAlterationsTreat.h"       // orionldAlterationsTreat
 #include "orionld/mongoc/mongocEntityLookup.h"                   // mongocEntityLookup
@@ -76,11 +77,18 @@ void ddsActionLifecycleNotify
   //    (a new dataset instance, a modified envelope, or an instance pulled -
   //    all are value-level changes from a subscription standpoint).
   //
+  // Subscription cache stores entity types in their FQ (expanded) form. The
+  // entityType we get from the DDS action mapping is the short form (as it
+  // appears in the user-side configFile and as it was used for the original
+  // PATCH that triggered the goal) - expand it so the matcher's strcmp on
+  // the entity type succeeds.
+  char* expandedType = orionldContextItemExpand(orionldState.contextP, entityType, true, NULL);
+
   OrionldAlteration* altP = (OrionldAlteration*) kaAlloc(&orionldState.kalloc, sizeof(OrionldAlteration));
   bzero(altP, sizeof(OrionldAlteration));
 
   altP->entityId                    = (char*) entityId;
-  altP->entityType                  = (char*) entityType;
+  altP->entityType                  = expandedType;
   altP->finalApiEntityP             = apiEntityP;
   altP->finalApiEntityWithSysAttrsP = apiEntityP;  // notification body doesn't need sysAttrs by default
   altP->alteredAttributes           = 1;

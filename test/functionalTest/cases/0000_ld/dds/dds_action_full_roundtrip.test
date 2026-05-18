@@ -52,6 +52,8 @@ sleep 10
 dbInit CB
 orionldStart CB -mongocOnly -wip dds
 
+ftClientStart -v -t 200
+
 # Allow discovery between the broker and the action server, and for the
 # Fibonacci request/feedback/result types to propagate.
 sleep 7
@@ -60,10 +62,12 @@ sleep 7
 valgrindSleep 5
 
 #
-# 01. PATCH the 'fib' attribute  -> broker sends an action goal for Fibonacci(5)
-# 02. Wait for FibonacciServer to emit feedback (3 samples, 1s apart) + final result
-# 03. GET the entity - the per-goal datasetId instance must contain
+# 01. POST a subscription on Robot.fib pointing at ftClient
+# 02. PATCH the 'fib' attribute  -> broker sends an action goal for Fibonacci(5)
+# 03. Wait for FibonacciServer to emit feedback (3 samples, 1s apart) + final result
+# 04. GET the entity - the per-goal datasetId instance must contain
 #     ddsActionFeedback, ddsActionResult and ddsActionStatus envelope sub-attrs
+# 05. Count notifications ftClient received for the goal lifecycle
 #
 # NOTE: GET /entities/{id}/attrs/{attrName} (and the synonym ?goal=<uuid>) is
 # not exercised here - that path currently bails out on multi-instance
@@ -71,7 +75,27 @@ valgrindSleep 5
 # prove the full DDS goal lifecycle.
 #
 
-echo "01. PATCH 'fib' attribute (order=5)"
+echo "01. POST a subscription on Robot.fib pointing at ftClient"
+echo "=========================================================="
+payload='{
+  "id": "urn:S:fib",
+  "type": "Subscription",
+  "entities": [
+    { "type": "Robot" }
+  ],
+  "watchedAttributes": [ "fib" ],
+  "notification": {
+    "endpoint": {
+      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload"
+echo
+echo
+
+
+echo "02. PATCH 'fib' attribute (order=5)"
 echo "===================================="
 payload='{
   "fib": {
@@ -84,31 +108,56 @@ echo
 echo
 
 
-echo "02. Wait for FibonacciServer (3 feedback + 1 result + status transitions)"
+echo "03. Wait for FibonacciServer (3 feedback + 1 result + status transitions)"
 echo "=========================================================================="
 sleep 6
 echo
 
 
-echo "03. GET urn:ngsi-ld:robot:r1 - per-goal instance present with envelope sub-attrs"
+echo "04. GET urn:ngsi-ld:robot:r1 - per-goal instance present with envelope sub-attrs"
 echo "================================================================================="
 orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1
 echo
 echo
 
 
+echo "05. Count notifications ftClient received for the goal lifecycle"
+echo "================================================================="
+# Each lifecycle op (lazy create + each envelope update) emits one
+# notification. Count the POST request lines - exact bodies are large
+# (entity snapshot per notification) and vary by timing.
+notifCount=$(orionCurl --url /dump --port $FT_PORT --noPayloadCheck 2>&1 | grep -c '^POST /notify?subscriptionId=urn:S:fib')
+if [ "$notifCount" -ge 5 ]
+then
+  echo "Notifications received: OK (>=5)"
+else
+  echo "Notifications received: TOO FEW ($notifCount)"
+fi
+echo
+echo
+
+
 --REGEXPECT--
-01. PATCH 'fib' attribute (order=5)
+01. POST a subscription on Robot.fib pointing at ftClient
+==========================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/subscriptions/urn:S:fib
+
+
+
+02. PATCH 'fib' attribute (order=5)
 ====================================
 HTTP/1.1 204 No Content
 Date: REGEX(.*)
 
 
 
-02. Wait for FibonacciServer (3 feedback + 1 result + status transitions)
+03. Wait for FibonacciServer (3 feedback + 1 result + status transitions)
 ==========================================================================
 
-03. GET urn:ngsi-ld:robot:r1 - per-goal instance present with envelope sub-attrs
+04. GET urn:ngsi-ld:robot:r1 - per-goal instance present with envelope sub-attrs
 =================================================================================
 HTTP/1.1 200 OK
 Content-Length: REGEX(\d+)
@@ -211,9 +260,15 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 }
 
 
+05. Count notifications ftClient received for the goal lifecycle
+=================================================================
+Notifications received: OK (>=5)
+
+
 --TEARDOWN--
 ddsClean
 ros2ActionStop
 brokerStop CB
+ftClientStop
 dbDrop CB
-# rm -f $HOME/.orionld
+rm -f $HOME/.orionld
