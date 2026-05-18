@@ -22,9 +22,12 @@
 *
 * Author: Ken Zangelin
 */
+#include "microhttpd.h"                                          // MHD_RequestTerminationCode
+
 extern "C"
 {
 #include "ktrace/kTrace.h"                                       // trace messages - ktrace library
+#include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjObject, kjChildAdd, kjString
 #include "kjson/kjParse.h"                                       // kjParse
@@ -34,10 +37,13 @@ extern "C"
 #include "orionld/common/traceLevels.h"                          // KT_T trace levels
 #include "orionld/common/tenantList.h"                           // tenant0
 #include "orionld/context/orionldAttributeExpand.h"              // orionldAttributeExpand
-#include "orionld/mongoc/mongocDatasetInstanceOps.h"              // mongocDatasetInstancePush, mongocDatasetSubAttrSet
+#include "orionld/context/orionldContextItemExpand.h"            // orionldContextItemExpand
+#include "orionld/serviceRoutines/orionldPatchEntity2.h"         // orionldPatchEntity2
+#include "orionld/service/serviceLookupByServiceRoutine.h"       // serviceLookupByServiceRoutine
 #include "orionld/dds/ddsActionBuild.h"                          // ddsActionBuildSubAttribute, ddsActionGoalDatasetId
-#include "orionld/dds/ddsActionLifecycleNotify.h"                // ddsActionLifecycleNotify
 #include "orionld/dds/ddsActionSubAttributeUpdate.h"             // Own interface
+
+extern void requestCompleted(void* cls, MHD_Connection* connection, void** con_cls, MHD_RequestTerminationCode toe);
 
 
 
@@ -47,9 +53,10 @@ extern "C"
 //
 // Materialise an envelope-rich sub-attribute (ddsActionFeedback /
 // ddsActionResult / ddsActionStatus) onto the per-goal datasetId instance of
-// an action-tied attribute.
+// an action-tied attribute, by issuing a PATCH /entities/{id} through
+// orionldPatchEntity2.
 //
-// Storage shape inside the entity's @datasets array:
+// Resulting instance shape inside the entity's @datasets array:
 //
 //   "@datasets": {
 //     "<attrEqName>": [
@@ -57,21 +64,23 @@ extern "C"
 //         "type": "Property",
 //         "datasetId": "urn:goal:<uuid>",
 //         "value": <original goal request payload>,
-//         "<subAttributeName>": { ... envelope ... },
-//         "createdAt": ..., "modifiedAt": ...
+//         "ddsActionStatus":   { ... envelope ... },
+//         "ddsActionFeedback": { ... },
+//         "ddsActionResult":   { ... },
+//         ...
 //       }
 //     ]
 //   }
 //
-// Lazy create: when goalP->instanceCreated is false, write the full instance
-// via $push (single mongo round-trip). Subsequent notifications $set the
-// envelope sub-attr inside the existing instance via arrayFilters.
+// First call for a goal creates the instance (orionldPatchEntity2 +
+// dbModelFromApiAttributeDatasetArray + the @datasets-merge logic in
+// orionldPatchEntity2 upserts by datasetId per NGSI-LD merge semantics).
+// Subsequent calls patch the same datasetId - the merge code at the
+// PATCH level preserves sub-attributes the patch doesn't touch.
 //
-// Goes direct to mongo — bypasses orionldPatchEntity2 (its body-level
-// datasetId support is a PoC with several open issues). Consequence: no
-// NGSI-LD subscription dispatch (intentional for internal DDS plumbing),
-// no TRoE recording for these writes (the per-goal lifecycle would be
-// noisy in TRoE anyway).
+// Going through orionldPatchEntity2 means subscription dispatch and
+// (when -troe is on) TRoE recording happen automatically via the standard
+// pipeline - no per-call manual wiring needed.
 //
 void ddsActionSubAttributeUpdate
 (
@@ -90,15 +99,13 @@ void ddsActionSubAttributeUpdate
 {
   // The caller (status/feedback/result notification handler) has already
   // run orionldStateInit and built subAttributeValue in orionldState.kalloc.
-
-  // Mongo connection needs a tenant.
-  if (orionldState.tenantP == NULL)
-    orionldState.tenantP = &tenant0;
-
-  (void) entityType;  // not needed for direct mongo writes
+  // Do NOT call orionldStateInit here - it would invalidate that arena.
 
   char* attrLongName = orionldAttributeExpand(orionldState.contextP, attributeName, true, NULL);
 
+  //
+  // Envelope sub-attribute (type/value/goalId/publishedAt/...)
+  //
   KjNode* envelope = ddsActionBuildSubAttribute(subAttributeName,
                                                 subAttributeValue,
                                                 goalId,
@@ -107,62 +114,69 @@ void ddsActionSubAttributeUpdate
                                                 ddsDataType,
                                                 publishTime);
 
+  //
+  // datasetId for the action attribute instance — keyed by goalId
+  //
   char datasetIdStr[48];
   ddsActionGoalDatasetId(goalId, datasetIdStr);
 
-  bool isFirstPatch = (goalP != NULL) && (goalP->instanceCreated == false);
+  //
+  // Build the patch body:
+  //   { "<attrLongName>": { type, datasetId, value, "<subAttr>": <envelope> } }
+  //
+  // The value is the original goal request payload (re-parsed from
+  // goalP->requestJson). It's included on every patch so the
+  // PATCH-level merge code's "new instance" path has a value to write,
+  // and the "matching datasetId" path harmlessly re-asserts the same
+  // value (the merge preserves unmentioned sub-attrs).
+  //
+  KjNode* entityBody    = kjObject(orionldState.kjsonP, NULL);
+  KjNode* attrBody      = kjObject(orionldState.kjsonP, attrLongName);
+  KjNode* attrTypeNode  = kjString(orionldState.kjsonP, "type",      "Property");
+  KjNode* datasetIdNode = kjString(orionldState.kjsonP, "datasetId", datasetIdStr);
 
-  if (isFirstPatch)
+  kjChildAdd(attrBody, attrTypeNode);
+  kjChildAdd(attrBody, datasetIdNode);
+
+  if ((goalP != NULL) && (goalP->requestJson != NULL))
   {
-    //
-    // Lazy create: $push the full instance (type/datasetId/value/envelope).
-    //
-    KjNode* instance      = kjObject(orionldState.kjsonP, NULL);
-    KjNode* typeNode      = kjString(orionldState.kjsonP, "type",      "Property");
-    KjNode* datasetIdNode = kjString(orionldState.kjsonP, "datasetId", datasetIdStr);
-
-    kjChildAdd(instance, typeNode);
-    kjChildAdd(instance, datasetIdNode);
-
-    // Value from the original goal request (re-parsed). If parse fails we
-    // fall back to a placeholder string so the instance is still well-formed.
-    if (goalP->requestJson != NULL)
+    // kjParse mutates its input buffer (chops the JSON into tokens with NULs)
+    // so a long-lived requestJson would be destroyed on the first parse. Copy
+    // into the per-request kalloc arena before parsing.
+    char*   jsonCopy  = kaStrdup(&orionldState.kalloc, goalP->requestJson);
+    KjNode* valueTree = (jsonCopy != NULL) ? kjParse(orionldState.kjsonP, jsonCopy) : NULL;
+    if (valueTree != NULL)
     {
-      KjNode* valueTree = kjParse(orionldState.kjsonP, goalP->requestJson);
-      if (valueTree != NULL)
-      {
-        valueTree->name = (char*) "value";
-        kjChildAdd(instance, valueTree);
-      }
-      else
-      {
-        KT_W("Failed to re-parse goal request JSON for lazy create: '%s'", goalP->requestJson);
-        kjChildAdd(instance, kjString(orionldState.kjsonP, "value", goalP->requestJson));
-      }
+      valueTree->name = (char*) "value";
+      kjChildAdd(attrBody, valueTree);
     }
     else
-      kjChildAdd(instance, kjString(orionldState.kjsonP, "value", ""));
-
-    kjChildAdd(instance, envelope);
-
-    KT_T(StDdsAction, "Lazy create per-goal instance for entity '%s' attr '%s' (datasetId %s, sub '%s')",
-         entityId, attributeName, datasetIdStr, subAttributeName);
-
-    if (mongocDatasetInstancePush(entityId, attrLongName, instance) == true)
     {
-      goalP->instanceCreated = true;
-      ddsActionLifecycleNotify(entityId, entityType, attrLongName, NULL);
+      KT_W("Failed to re-parse goal request JSON: '%s'", goalP->requestJson);
+      kjChildAdd(attrBody, kjString(orionldState.kjsonP, "value", goalP->requestJson));
     }
   }
-  else
-  {
-    //
-    // Surgical: $set the envelope sub-attribute inside the existing instance.
-    //
-    KT_T(StDdsAction, "Surgical sub-attr set on entity '%s' attr '%s' (datasetId %s, sub '%s')",
-         entityId, attributeName, datasetIdStr, subAttributeName);
 
-    if (mongocDatasetSubAttrSet(entityId, attrLongName, datasetIdStr, subAttributeName, envelope) == true)
-      ddsActionLifecycleNotify(entityId, entityType, attrLongName, NULL);
-  }
+  kjChildAdd(attrBody, envelope);
+  kjChildAdd(entityBody, attrBody);
+
+  char* expandedType = orionldContextItemExpand(orionldState.contextP, entityType, true, NULL);
+
+  orionldState.requestTree         = entityBody;
+  orionldState.wildcard[0]         = (char*) entityId;
+  orionldState.tenantP             = &tenant0;
+  orionldState.ddsSample           = true;
+  orionldState.ddsPublishTime      = publishTime;
+  orionldState.apiVersion          = API_VERSION_NGSILD_V1;
+  orionldState.uriParams.type      = expandedType;
+  orionldState.serviceP            = serviceLookupByServiceRoutine(orionldPatchEntity2, HTTP_PATCH);
+
+  KT_T(StDdsAction, "PATCH /entities/%s with %s envelope for attr %s (datasetId %s)",
+       entityId, subAttributeName, attributeName, datasetIdStr);
+  (void) orionldPatchEntity2();
+
+  // Drives orionldAlterationsTreat (subscription dispatch) + the service
+  // routine's TRoE routine via the standard rest.cpp pipeline.
+  void* con_cls = NULL;
+  requestCompleted(NULL, NULL, &con_cls, MHD_REQUEST_TERMINATED_COMPLETED_OK);
 }

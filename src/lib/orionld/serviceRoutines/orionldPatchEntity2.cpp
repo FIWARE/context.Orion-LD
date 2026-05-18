@@ -742,6 +742,20 @@ bool orionldPatchEntity2(void)
     //        I extract the part that is to be forwarded from the tree before I destroy
     //        If non-exclusive, might be I both forward and do it locally - kjClone(attrP)
     //
+    //
+    // dbModelFromApiEntity rewrites dbEntityP - moves attrs/@datasets/etc.
+    // OUT of it into the request tree's DB form. We need @datasets later
+    // (for our merge with body-level datasetId instances), so clone it now
+    // before it gets shredded.
+    //
+    KjNode* preservedDatasetsP = NULL;
+    if (dbEntityP != NULL)
+    {
+      KjNode* origDatasetsP = kjLookup(dbEntityP, "@datasets");
+      if (origDatasetsP != NULL)
+        preservedDatasetsP = kjClone(orionldState.kjsonP, origDatasetsP);
+    }
+
     if (dbModelFromApiEntity(orionldState.requestTree, dbEntityP, false, NULL, NULL) == false)
     {
       KT_W("dbModelFromApiEntity: %s: %s", orionldState.pd.title, orionldState.pd.detail);
@@ -770,6 +784,112 @@ bool orionldPatchEntity2(void)
     orionldState.requestTree->name = NULL;
 
     orionldEntityPatchTree(dbAttrsObject, orionldState.requestTree, NULL, patchTree);
+
+    //
+    // Body-level datasetId instances: dbModelFromApiAttributeDatasetArray
+    // moves them into orionldState.datasets, keyed by the eq-form attribute
+    // name. POST/PUT routines consume orionldState.datasets directly when
+    // they write the entity, but PATCH /entities/{id} needs to emit one $set
+    // per attribute, merged with whatever already lives under
+    // @datasets.<attrEqName> in the DB.
+    //
+    // Merge rules (NGSI-LD merge semantics, per-instance):
+    //   - DB instance whose datasetId is NOT in the patch -> kept verbatim
+    //   - DB instance whose datasetId IS in the patch -> clone the DB
+    //     instance, then for each top-level field in the patch instance,
+    //     replace the corresponding field in the clone (or add it). Net
+    //     effect: sub-attributes the patch doesn't mention survive.
+    //   - Patch instance with a datasetId that's NOT in the DB -> new,
+    //     appended as-is.
+    //
+    // Result is $set on @datasets.<attrEqName> as a full array - atomic,
+    // and matches the storage shape that GET reads back.
+    //
+    if (orionldState.datasets != NULL)
+    {
+      KjNode* dbDatasetsP = preservedDatasetsP;
+
+      for (KjNode* attrDatasetP = orionldState.datasets->value.firstChildP; attrDatasetP != NULL; attrDatasetP = attrDatasetP->next)
+      {
+        KjNode* mergedArray    = kjArray(orionldState.kjsonP, NULL);
+        KjNode* dbAttrDatasetP = (dbDatasetsP != NULL) ? kjLookup(dbDatasetsP, attrDatasetP->name) : NULL;
+
+        // First pass: copy DB instances. If a DB instance's datasetId is in
+        // the patch, merge the patch's fields on top of the DB clone (so
+        // unmentioned sub-attrs survive). Otherwise keep the DB instance.
+        if ((dbAttrDatasetP != NULL) && (dbAttrDatasetP->type == KjArray))
+        {
+          for (KjNode* dbInstP = dbAttrDatasetP->value.firstChildP; dbInstP != NULL; dbInstP = dbInstP->next)
+          {
+            KjNode* dbDsIdP  = kjLookup(dbInstP, "datasetId");
+            KjNode* matchP   = NULL;
+
+            if (dbDsIdP != NULL)
+            {
+              for (KjNode* newInstP = attrDatasetP->value.firstChildP; newInstP != NULL; newInstP = newInstP->next)
+              {
+                KjNode* newDsIdP = kjLookup(newInstP, "datasetId");
+                if ((newDsIdP != NULL) && (strcmp(dbDsIdP->value.s, newDsIdP->value.s) == 0))
+                {
+                  matchP = newInstP;
+                  break;
+                }
+              }
+            }
+
+            if (matchP == NULL)
+            {
+              kjChildAdd(mergedArray, kjClone(orionldState.kjsonP, dbInstP));
+            }
+            else
+            {
+              KjNode* cloned = kjClone(orionldState.kjsonP, dbInstP);
+
+              for (KjNode* patchFieldP = matchP->value.firstChildP; patchFieldP != NULL; patchFieldP = patchFieldP->next)
+              {
+                KjNode* existingP = kjLookup(cloned, patchFieldP->name);
+                if (existingP != NULL)
+                  kjChildRemove(cloned, existingP);
+                kjChildAdd(cloned, kjClone(orionldState.kjsonP, patchFieldP));
+              }
+
+              kjChildAdd(mergedArray, cloned);
+            }
+          }
+        }
+
+        // Second pass: patch instances whose datasetId wasn't in the DB
+        // (i.e. truly new) -> append.
+        for (KjNode* newInstP = attrDatasetP->value.firstChildP; newInstP != NULL; newInstP = newInstP->next)
+        {
+          KjNode* newDsIdP = kjLookup(newInstP, "datasetId");
+          bool    wasInDb  = false;
+
+          if ((newDsIdP != NULL) && (dbAttrDatasetP != NULL) && (dbAttrDatasetP->type == KjArray))
+          {
+            for (KjNode* dbInstP = dbAttrDatasetP->value.firstChildP; dbInstP != NULL; dbInstP = dbInstP->next)
+            {
+              KjNode* dbDsIdP = kjLookup(dbInstP, "datasetId");
+              if ((dbDsIdP != NULL) && (strcmp(dbDsIdP->value.s, newDsIdP->value.s) == 0))
+              {
+                wasInDb = true;
+                break;
+              }
+            }
+          }
+
+          if (wasInDb == false)
+            kjChildAdd(mergedArray, kjClone(orionldState.kjsonP, newInstP));
+        }
+
+        // PATH = "@datasets.<attrEqName>"  (attrDatasetP->name is already eq-form)
+        int   pathLen = 10 /* "@datasets." */ + (int) strlen(attrDatasetP->name) + 1;
+        char* path    = (char*) kaAlloc(&orionldState.kalloc, pathLen);
+        snprintf(path, pathLen, "@datasets.%s", attrDatasetP->name);
+
+        patchTreeItemAdd(patchTree, path, mergedArray, NULL);
+      }
+    }
 
     orionldState.alterations->inEntityP       = patchTree;  // Not sure this is needed - alteredAttributeV should be used instead ... Right?
     orionldState.alterations->finalApiEntityP = NULL;

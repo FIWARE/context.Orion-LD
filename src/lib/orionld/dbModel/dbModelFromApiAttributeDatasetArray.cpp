@@ -98,10 +98,27 @@ bool dbModelFromApiAttributeDatasetArray
 
   if (dbDatasetArray != NULL)
   {
-    dbDatasetArrayP    = kjLookup(dbDatasetArray, attrNameEq);
-    dbDatasetInstanceP = (datasetArrayP != NULL)? datasetInstanceLookup(dbDatasetArrayP, orionldState.uriParams.datasetId) : NULL;  // lookup in $datasets.ATTR DB field
+    dbDatasetArrayP = kjLookup(dbDatasetArray, attrNameEq);
+
+    //
+    // datasetInstanceLookup targets the URL-param datasetId (used by
+    // endpoints like DELETE attr?datasetId=...). Body-level datasetId
+    // patches go through this function too but don't carry a URL param -
+    // calling the lookup with NULL crashes inside strcmp. The right
+    // gates are: there's a DB array to search AND a URL key to match.
+    //
+    if ((dbDatasetArrayP != NULL) && (orionldState.uriParams.datasetId != NULL))
+      dbDatasetInstanceP = datasetInstanceLookup(dbDatasetArrayP, orionldState.uriParams.datasetId);
   }
-  else
+
+  //
+  // datasetArrayP holds the new/updated instances for this attribute inside
+  // orionldState.datasets. Both the "no @datasets in DB yet" path and the
+  // "DB already has @datasets for some attrs but not necessarily this one"
+  // path may reach here with datasetArrayP still NULL - allocate it now so
+  // the per-instance loop below can safely move instances into it.
+  //
+  if (datasetArrayP == NULL)
   {
     datasetArrayP = kjArray(orionldState.kjsonP, attrNameEq);
 
