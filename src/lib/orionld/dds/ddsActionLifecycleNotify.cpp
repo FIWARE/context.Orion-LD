@@ -39,10 +39,7 @@ extern "C"
 #include "orionld/notifications/orionldAlterationsTreat.h"       // orionldAlterationsTreat
 #include "orionld/mongoc/mongocEntityLookup.h"                   // mongocEntityLookup
 #include "orionld/dbModel/dbModelToApiEntity.h"                  // dbModelToApiEntity
-#include "orionld/troe/troePatchAttribute.h"                     // troePatchAttribute
 #include "orionld/dds/ddsActionLifecycleNotify.h"                // Own interface
-
-extern bool troe;
 
 
 
@@ -106,30 +103,13 @@ void ddsActionLifecycleNotify
   KT_T(StDdsAction, "Dispatching subscription notifications for entity '%s' attr '%s'", entityId, attrLongName);
   orionldAlterationsTreat(altP);
 
-  //
-  // 3. TRoE - record an "Update" for the attribute, if --troe is on AND the
-  //    caller supplied an attribute payload to record. Pull-on-cleanup
-  //    doesn't pass a payload (no useful "what was written" tree); skip.
-  //
-  if (troe && (attributePayload != NULL))
-  {
-    KjNode* prevRequestTree   = orionldState.requestTree;
-    char*   prevWildcard      = orionldState.wildcard[0];
-    char*   prevEntityTypeT   = orionldState.entityTypeForTroe;
-
-    orionldState.wildcard[0]         = (char*) entityId;
-    orionldState.entityTypeForTroe   = (char*) entityType;
-
-    // troePatchAttribute reads orionldState.requestTree as the attribute
-    // payload (name = FQ attr name, children = type/value/sub-attrs).
-    attributePayload->name           = (char*) attrLongName;
-    orionldState.requestTree         = attributePayload;
-
-    KT_T(StDdsAction, "Recording TRoE Update for entity '%s' attr '%s'", entityId, attrLongName);
-    (void) troePatchAttribute();
-
-    orionldState.requestTree         = prevRequestTree;
-    orionldState.wildcard[0]         = prevWildcard;
-    orionldState.entityTypeForTroe   = prevEntityTypeT;
-  }
+  // TODO: TRoE.
+  //   A direct call to troePatchAttribute() with our attribute payload
+  //   crashes the broker on the second invocation (pgCommands path is
+  //   sensitive to the orionldState arena reset between DDS callbacks).
+  //   The TRoE pipeline as it stands isn't safe to drive from a non-MHD
+  //   thread with our dataset-instance shape. Coming back to this once
+  //   the TRoE layer learns about @datasets instances natively.
+  (void) entityType;
+  (void) attributePayload;
 }

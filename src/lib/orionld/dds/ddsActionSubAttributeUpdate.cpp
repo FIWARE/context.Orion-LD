@@ -151,7 +151,7 @@ void ddsActionSubAttributeUpdate
     if (mongocDatasetInstancePush(entityId, attrLongName, instance) == true)
     {
       goalP->instanceCreated = true;
-      ddsActionLifecycleNotify(entityId, entityType, attrLongName, instance);
+      ddsActionLifecycleNotify(entityId, entityType, attrLongName, NULL);
     }
   }
   else
@@ -163,12 +163,6 @@ void ddsActionSubAttributeUpdate
          entityId, attributeName, datasetIdStr, subAttributeName);
 
     if (mongocDatasetSubAttrSet(entityId, attrLongName, datasetIdStr, subAttributeName, envelope) == true)
-    {
-      // TRoE payload: an attribute fragment carrying just the changed sub-attr.
-      KjNode* troePayload = kjObject(orionldState.kjsonP, NULL);
-      kjChildAdd(troePayload, kjString(orionldState.kjsonP, "type", "Property"));
-      kjChildAdd(troePayload, envelope);  // envelope is the sub-attribute we set
-      ddsActionLifecycleNotify(entityId, entityType, attrLongName, troePayload);
-    }
+      ddsActionLifecycleNotify(entityId, entityType, attrLongName, NULL);
   }
 }
