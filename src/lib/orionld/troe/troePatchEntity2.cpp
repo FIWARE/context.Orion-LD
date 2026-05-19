@@ -35,6 +35,8 @@ extern "C"
 #include "kjson/kjBuilder.h"                                     // kjChildRemove
 }
 
+#include "orionld/common/eqForDot.h"                             // eqForDot
+
 #include "orionld/types/PgTableDefinitions.h"                    // PG_ATTRIBUTE_INSERT_START, PG_SUB_ATTRIBUTE_INSERT_START
 #include "orionld/types/PgAppendBuffer.h"                        // PgAppendBuffer
 #include "orionld/common/orionldState.h"                         // orionldState
@@ -136,6 +138,38 @@ bool troePatchEntity2(void)
       }
       else if (attrP->type == KjObject)
         pgAttributeBuild(&attributesBuffer, opMode, entityId, attrP, &subAttributesBuffer);
+    }
+  }
+
+  //
+  // Body-level datasetId instances live in orionldState.datasets (populated
+  // by dbModelFromApiAttributeDatasetArray), keyed by eq-form attribute
+  // name. patchBase doesn't carry them, so we emit a TRoE row per instance
+  // here. Each instance is an API-form Object with a top-level datasetId,
+  // exactly what pgAttributeBuild needs to tag the row.
+  //
+  if (orionldState.datasets != NULL)
+  {
+    for (KjNode* attrDatasetP = orionldState.datasets->value.firstChildP; attrDatasetP != NULL; attrDatasetP = attrDatasetP->next)
+    {
+      // attrDatasetP->name is eq-form. pgAttributeBuild stores the row's
+      // 'id' as the FQ URI, so dot-form the name before the call.
+      char* fqName = kaStrdup(&orionldState.kalloc, attrDatasetP->name);
+      eqForDot(fqName);
+
+      if (attrDatasetP->type == KjArray)
+      {
+        for (KjNode* instP = attrDatasetP->value.firstChildP; instP != NULL; instP = instP->next)
+        {
+          instP->name = fqName;
+          pgAttributeBuild(&attributesBuffer, "Update", entityId, instP, &subAttributesBuffer);
+        }
+      }
+      else if (attrDatasetP->type == KjObject)
+      {
+        attrDatasetP->name = fqName;
+        pgAttributeBuild(&attributesBuffer, "Update", entityId, attrDatasetP, &subAttributesBuffer);
+      }
     }
   }
 

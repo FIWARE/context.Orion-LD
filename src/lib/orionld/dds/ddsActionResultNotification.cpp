@@ -73,24 +73,6 @@ void ddsActionResultNotification
     return;
   }
 
-  //
-  // Remove the matching goal from the goals list
-  //
-  DdsActionGoal* prev = NULL;
-  for (DdsActionGoal* gP = actionP->goals; gP != NULL; gP = gP->next)
-  {
-    if (memcmp(gP->goalId, goalId.data(), 16) == 0)
-    {
-      if (prev != NULL)
-        prev->next = gP->next;
-      else
-        actionP->goals = gP->next;
-      free(gP);
-      break;
-    }
-    prev = gP;
-  }
-
   // publishTime arrives from the enabler in nanoseconds since epoch; reduce to
   // seconds so it matches request-side timestamps recorded with time(NULL).
   publishTime /= 1000000000LL;
@@ -116,14 +98,49 @@ void ddsActionResultNotification
   if (resultPayload == NULL)
     resultPayload = resultTree;  // no envelope — store the raw tree as value
 
+  //
+  // Look up the in-flight goal record. ddsActionStatusNotification keeps
+  // the tracker alive past the SUCCEEDED status precisely so this handler
+  // can still read goalP->requestJson and stamp the per-goal instance's
+  // "value" field on the final PATCH. On terminal failure the status
+  // handler frees + cleans up the instance, so for that path no result
+  // notification arrives.
+  //
+  DdsActionGoal* goalP = ddsActionGoalLookup(actionP, goalId.data());
+
   ddsActionSubAttributeUpdate(actionP->entityId,
                               actionP->entityType,
                               actionP->attributeName,
                               "ddsActionResult",
                               resultPayload,
                               goalId,
+                              goalP,
                               instanceHandleId,
                               participantId,
                               ddsDataType,
                               publishTime);
+
+  //
+  // Result is the final event of a successful action goal. Free the tracker
+  // now (the per-goal instance stays in @datasets as the record of
+  // completion - kept on succeeded per the lifecycle design).
+  //
+  if (goalP != NULL)
+  {
+    DdsActionGoal* prev = NULL;
+    for (DdsActionGoal* gP = actionP->goals; gP != NULL; gP = gP->next)
+    {
+      if (gP == goalP)
+      {
+        if (prev != NULL)
+          prev->next = gP->next;
+        else
+          actionP->goals = gP->next;
+        free(gP->requestJson);
+        free(gP);
+        break;
+      }
+      prev = gP;
+    }
+  }
 }

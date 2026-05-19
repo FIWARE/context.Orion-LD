@@ -77,6 +77,7 @@ SET (SOURCES
     mongocAttributeReplace.cpp
     mongocEntityFieldReplace.cpp
     mongocEntityFieldDelete.cpp
+    mongocDatasetInstanceOps.cpp
 )
 
 # Include directories

@@ -50,6 +50,8 @@ SET (SOURCES
   ddsActionFeedbackNotification.cpp
   ddsActionStatusNotification.cpp
   ddsActionSubAttributeUpdate.cpp
+  ddsActionInstanceDelete.cpp
+  ddsActionLifecycleNotify.cpp
   ddsActionBuild.cpp
   ddsActionGoalCancel.cpp
 )

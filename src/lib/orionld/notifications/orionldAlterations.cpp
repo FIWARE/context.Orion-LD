@@ -70,8 +70,14 @@ static bool kjValuesDiffer(KjNode* leftAttr, KjNode* rightAttr)
   if (right == NULL) right = kjLookup(rightAttr, "object");
   if (right == NULL) right = kjLookup(rightAttr, "languageMap");
 
+  // Patch fragment doesn't touch the value/object/languageMap - the value
+  // isn't being changed by this patch (surgical sub-attribute updates, for
+  // example). Return false: no value diff.
   if (left == NULL)
-    KT_RE(true, "Internal Error (left KjNode has no value member)");
+    return false;
+
+  // The attribute exists in the DB (caller checked) but somehow has no
+  // value/object/languageMap - that's a DB integrity bug worth flagging.
   if (right == NULL)
     KT_RE(true, "Database Error (DB KjNode has no value member)");
 
@@ -165,6 +171,29 @@ OrionldAlteration* orionldAlterations(char* entityId, char* entityType, KjNode* 
         continue;
       }
 
+      //
+      // Did this PATCH carry a dataset-instance change for this attribute?
+      // dbModelFromApiAttributeDatasetArray would have moved the instance
+      // out of attrsP into orionldState.datasets, leaving attrP empty here.
+      // Classify as AttributeValueChanged - a new/updated dataset instance
+      // is a value-level change from a subscriber's standpoint.
+      //
+      //
+      // Multi-instance via datasetId: the patch body carries the attribute
+      // either as { ..., datasetId: ..., ... } or as an Array of such
+      // instances. dbModelFromApiAttributeDatasetArray moves these out of
+      // attrsP into orionldState.datasets later in the pipeline - this
+      // function runs BEFORE that, so we detect from the patch tree
+      // directly. A new/updated dataset instance is a value-level change
+      // from a subscriber's standpoint, regardless of whether the
+      // top-level value field actually differs from the default instance.
+      //
+      if ((attrP->type == KjArray) || (kjLookup(attrP, "datasetId") != NULL))
+      {
+        ALTERATION(AttributeValueChanged);
+        continue;
+      }
+
       if (dbAttrsP != NULL)
       {
         KjNode* dbAttrP = kjLookup(dbAttrsP, attrNameEq);
@@ -183,6 +212,7 @@ OrionldAlteration* orionldAlterations(char* entityId, char* entityType, KjNode* 
           ALTERATION(AttributeModifiedAtChanged);  // Need to check all metadata - could also be AttributeMetadataChanged
       }
     }
+
   }
 
   aeP->next = NULL;

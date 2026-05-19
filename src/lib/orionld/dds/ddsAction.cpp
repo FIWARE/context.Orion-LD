@@ -62,17 +62,23 @@ void ddsActionGoalSend(DdsAction* actionP, KjNode* attributeValueP)
   // send_action_goal fills in the goalId (UUID)
   //
   eprosima::ddsenabler::participants::UUID goalId;
+
+  KT_T(StDdsAction, "action name: '%s', json: '%s'", actionP->name, json);
   bool result = ddsEnabler->send_action_goal(actionP->name, json, goalId);
 
   if (result)
   {
     //
-    // Track the goal
+    // Track the goal. requestJson is preserved (libc strdup of the rendered
+    // payload) for lazy creation of the per-goal datasetId instance once the
+    // first non-terminal status/feedback notification arrives - see
+    // ddsActionSubAttributeUpdate. calloc zero-inits instanceCreated.
     //
-    DdsActionGoal* gP = (DdsActionGoal*) malloc(sizeof(DdsActionGoal));
+    DdsActionGoal* gP = (DdsActionGoal*) calloc(1, sizeof(DdsActionGoal));
     memcpy(gP->goalId, goalId.data(), 16);
-    gP->next       = actionP->goals;
-    actionP->goals = gP;
+    gP->requestJson = strdup(json);
+    gP->next        = actionP->goals;
+    actionP->goals  = gP;
 
     KT_T(StDdsAction, "Sent action goal for '%s'", actionP->name);
   }
