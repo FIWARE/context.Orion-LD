@@ -50,7 +50,8 @@ ros2ActionStart --samples 1
 sleep 10
 
 dbInit CB
-orionldStart CB -mongocOnly -wip dds
+pgInit $CB_DB_NAME
+orionldStart CB -mongocOnly -wip dds -troe
 
 ftClientStart -v -t 200
 
@@ -124,6 +125,25 @@ echo
 echo "05. Notifications ftClient received for the goal lifecycle"
 echo "==========================================================="
 orionCurl --url /dump --port $FT_PORT --noPayloadCheck
+echo
+echo
+
+
+echo "06. Verify TRoE recorded the goal lifecycle"
+echo "============================================"
+# Each PatchEntity2 call drives the standard TRoE pipeline via
+# serviceP->troeRoutine(). For a fib PATCH with body-level datasetId,
+# pgAttributeBuild emits an INSERT into attributes with the datasetId
+# tagged. Count goal-tagged rows: 1 (user PATCH triggers entity creation
+# event recorded as 'Replace') + 7 DDS lifecycle PATCHes = 7 attribute
+# rows tagged with urn:goal:*.
+goalRows=$(postgresCmd -sql "SELECT COUNT(*) FROM attributes WHERE entityid='urn:ngsi-ld:robot:r1' AND datasetid LIKE 'urn:goal:%'" 2>&1 | tail -1 | tr -d ' \r\n')
+if [ "$goalRows" -ge 5 ]
+then
+  echo "TRoE goal rows: OK (>=5)"
+else
+  echo "TRoE goal rows: TOO FEW ($goalRows)"
+fi
 echo
 echo
 
@@ -553,10 +573,16 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 
 
+06. Verify TRoE recorded the goal lifecycle
+============================================
+TRoE goal rows: OK (>=5)
+
+
 --TEARDOWN--
 ddsClean
 ros2ActionStop
 brokerStop CB
 ftClientStop
 dbDrop CB
+pgDrop $CB_DB_NAME
 rm -f $HOME/.orionld

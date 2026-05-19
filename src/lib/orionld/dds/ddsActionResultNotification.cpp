@@ -99,9 +99,12 @@ void ddsActionResultNotification
     resultPayload = resultTree;  // no envelope — store the raw tree as value
 
   //
-  // Look up the in-flight goal record (for lazy-create + instance tracking).
-  // Note: goal freeing has moved to ddsActionStatusNotification on terminal
-  // status, so we still find a valid goalP here.
+  // Look up the in-flight goal record. ddsActionStatusNotification keeps
+  // the tracker alive past the SUCCEEDED status precisely so this handler
+  // can still read goalP->requestJson and stamp the per-goal instance's
+  // "value" field on the final PATCH. On terminal failure the status
+  // handler frees + cleans up the instance, so for that path no result
+  // notification arrives.
   //
   DdsActionGoal* goalP = ddsActionGoalLookup(actionP, goalId.data());
 
@@ -116,4 +119,28 @@ void ddsActionResultNotification
                               participantId,
                               ddsDataType,
                               publishTime);
+
+  //
+  // Result is the final event of a successful action goal. Free the tracker
+  // now (the per-goal instance stays in @datasets as the record of
+  // completion - kept on succeeded per the lifecycle design).
+  //
+  if (goalP != NULL)
+  {
+    DdsActionGoal* prev = NULL;
+    for (DdsActionGoal* gP = actionP->goals; gP != NULL; gP = gP->next)
+    {
+      if (gP == goalP)
+      {
+        if (prev != NULL)
+          prev->next = gP->next;
+        else
+          actionP->goals = gP->next;
+        free(gP->requestJson);
+        free(gP);
+        break;
+      }
+      prev = gP;
+    }
+  }
 }

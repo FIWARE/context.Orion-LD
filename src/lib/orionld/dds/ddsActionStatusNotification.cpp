@@ -170,21 +170,22 @@ void ddsActionStatusNotification
   //
   // Terminal handling:
   //   - succeeded: keep the per-goal instance (final envelope is the record
-  //     of completion). Just free the goal tracker.
-  //   - any other terminal: pull the per-goal instance (won't grow the DB)
-  //     and free the tracker. Subscription dispatch fires for the pull;
-  //     no DDS goal-cancel hook (we go direct to mongo - that path doesn't
-  //     run orionldDeleteAttribute).
+  //     of completion). DON'T free the goal tracker here - in ROS2 the
+  //     result notification typically arrives shortly AFTER the succeeded
+  //     status, and that handler still needs goalP->requestJson to stamp
+  //     the per-goal instance's "value" field. ddsActionResultNotification
+  //     will free the tracker.
+  //   - any other terminal (canceled/aborted/rejected/timeout/failed/...):
+  //     no result is expected. Pull the per-goal instance from the DB
+  //     (won't grow forever) and free the tracker here. Subscription
+  //     dispatch fires for the pull; no DDS goal-cancel hook (we go via
+  //     direct mongo, not orionldDeleteAttribute).
   //
-  if (isTerminal)
+  if (isTerminal && isFailure)
   {
-    if (isFailure)
-    {
-      char datasetIdStr[48];
-      ddsActionGoalDatasetId(goalId, datasetIdStr);
-      ddsActionInstanceDelete(actionP->entityId, actionP->entityType, actionP->attributeName, datasetIdStr);
-    }
-
+    char datasetIdStr[48];
+    ddsActionGoalDatasetId(goalId, datasetIdStr);
+    ddsActionInstanceDelete(actionP->entityId, actionP->entityType, actionP->attributeName, datasetIdStr);
     goalUnlinkAndFree(actionP, goalP);
   }
 }
