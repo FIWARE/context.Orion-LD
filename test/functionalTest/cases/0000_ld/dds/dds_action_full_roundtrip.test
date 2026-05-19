@@ -257,7 +257,300 @@ HTTP/1.1 200 OK
 Content-Length: REGEX(\d+)
 Date: REGEX(.*)
 
-REGEX(.*)
+POST /notify?subscriptionId=urn:S:fib
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+User-Agent: orionld/REGEX(.*)
+Host: REGEX(.*)
+Accept: application/json
+Ngsild-Attribute-Format: Normalized
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+  "id": "urn:ngsi-ld:Notification:REGEX([0-9a-f-]+)",
+  "type": "Notification",
+  "subscriptionId": "urn:S:fib",
+  "notifiedAt": "REGEX(.*)",
+  "data": [
+    {
+      "id": "urn:ngsi-ld:robot:r1",
+      "type": "Robot",
+      "fib": {
+        "type": "Property",
+        "value": "uninitialized"
+      },
+      "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+      }
+    }
+  ]
+}
+================================================================================
+
+POST /notify?subscriptionId=urn:S:fib
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+User-Agent: orionld/REGEX(.*)
+Host: REGEX(.*)
+Accept: application/json
+Ngsild-Attribute-Format: Normalized
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+  "id": "urn:ngsi-ld:Notification:REGEX([0-9a-f-]+)",
+  "type": "Notification",
+  "subscriptionId": "urn:S:fib",
+  "notifiedAt": "REGEX(.*)",
+  "data": [
+    {
+      "id": "urn:ngsi-ld:robot:r1",
+      "type": "Robot",
+      "fib": {
+        "type": "Property",
+        "value": {
+          "order": 5
+        }
+      },
+      "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+      }
+    }
+  ]
+}
+================================================================================
+
+POST /notify?subscriptionId=urn:S:fib
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+User-Agent: orionld/REGEX(.*)
+Host: REGEX(.*)
+Accept: application/json
+Ngsild-Attribute-Format: Normalized
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+  "id": "urn:ngsi-ld:Notification:REGEX([0-9a-f-]+)",
+  "type": "Notification",
+  "subscriptionId": "urn:S:fib",
+  "notifiedAt": "REGEX(.*)",
+  "data": [
+    {
+      "id": "urn:ngsi-ld:robot:r1",
+      "type": "Robot",
+      "fib": {
+        "type": "Property",
+        "value": {
+          "order": 5
+        }
+      },
+      "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+      }
+    }
+  ]
+}
+================================================================================
+
+POST /notify?subscriptionId=urn:S:fib
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+User-Agent: orionld/REGEX(.*)
+Host: REGEX(.*)
+Accept: application/json
+Ngsild-Attribute-Format: Normalized
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+  "id": "urn:ngsi-ld:Notification:REGEX([0-9a-f-]+)",
+  "type": "Notification",
+  "subscriptionId": "urn:S:fib",
+  "notifiedAt": "REGEX(.*)",
+  "data": [
+    {
+      "id": "urn:ngsi-ld:robot:r1",
+      "type": "Robot",
+      "fib": {
+        "type": "Property",
+        "value": {
+          "order": 5
+        }
+      },
+      "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+      }
+    }
+  ]
+}
+================================================================================
+
+POST /notify?subscriptionId=urn:S:fib
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+User-Agent: orionld/REGEX(.*)
+Host: REGEX(.*)
+Accept: application/json
+Ngsild-Attribute-Format: Normalized
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+  "id": "urn:ngsi-ld:Notification:REGEX([0-9a-f-]+)",
+  "type": "Notification",
+  "subscriptionId": "urn:S:fib",
+  "notifiedAt": "REGEX(.*)",
+  "data": [
+    {
+      "id": "urn:ngsi-ld:robot:r1",
+      "type": "Robot",
+      "fib": {
+        "type": "Property",
+        "value": {
+          "order": 5
+        }
+      },
+      "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+      }
+    }
+  ]
+}
+================================================================================
+
+POST /notify?subscriptionId=urn:S:fib
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+User-Agent: orionld/REGEX(.*)
+Host: REGEX(.*)
+Accept: application/json
+Ngsild-Attribute-Format: Normalized
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+  "id": "urn:ngsi-ld:Notification:REGEX([0-9a-f-]+)",
+  "type": "Notification",
+  "subscriptionId": "urn:S:fib",
+  "notifiedAt": "REGEX(.*)",
+  "data": [
+    {
+      "id": "urn:ngsi-ld:robot:r1",
+      "type": "Robot",
+      "fib": {
+        "type": "Property",
+        "value": {
+          "order": 5
+        }
+      },
+      "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+      }
+    }
+  ]
+}
+================================================================================
+
+POST /notify?subscriptionId=urn:S:fib
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+User-Agent: orionld/REGEX(.*)
+Host: REGEX(.*)
+Accept: application/json
+Ngsild-Attribute-Format: Normalized
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+  "id": "urn:ngsi-ld:Notification:REGEX([0-9a-f-]+)",
+  "type": "Notification",
+  "subscriptionId": "urn:S:fib",
+  "notifiedAt": "REGEX(.*)",
+  "data": [
+    {
+      "id": "urn:ngsi-ld:robot:r1",
+      "type": "Robot",
+      "fib": {
+        "type": "Property",
+        "value": {
+          "order": 5
+        }
+      },
+      "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+      }
+    }
+  ]
+}
+================================================================================
+
+POST /notify?subscriptionId=urn:S:fib
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+User-Agent: orionld/REGEX(.*)
+Host: REGEX(.*)
+Accept: application/json
+Ngsild-Attribute-Format: Normalized
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+  "id": "urn:ngsi-ld:Notification:REGEX([0-9a-f-]+)",
+  "type": "Notification",
+  "subscriptionId": "urn:S:fib",
+  "notifiedAt": "REGEX(.*)",
+  "data": [
+    {
+      "id": "urn:ngsi-ld:robot:r1",
+      "type": "Robot",
+      "fib": {
+        "type": "Property",
+        "value": {
+          "order": 5
+        }
+      },
+      "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+      }
+    }
+  ]
+}
+================================================================================
+
+POST /notify?subscriptionId=urn:S:fib
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+User-Agent: orionld/REGEX(.*)
+Host: REGEX(.*)
+Accept: application/json
+Ngsild-Attribute-Format: Normalized
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+  "id": "urn:ngsi-ld:Notification:REGEX([0-9a-f-]+)",
+  "type": "Notification",
+  "subscriptionId": "urn:S:fib",
+  "notifiedAt": "REGEX(.*)",
+  "data": [
+    {
+      "id": "urn:ngsi-ld:robot:r1",
+      "type": "Robot",
+      "fib": {
+        "type": "Property",
+        "value": {
+          "order": 5
+        }
+      },
+      "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+      }
+    }
+  ]
+}
+
 
 
 --TEARDOWN--

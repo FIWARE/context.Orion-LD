@@ -54,6 +54,68 @@ extern "C"
 
 // -----------------------------------------------------------------------------
 //
+// isReservedAttrField -
+//
+// True for fields that belong to the attribute's own shape (not
+// sub-attributes). Used by the dataset-instance compactor to know
+// which children to leave alone vs recurse into.
+//
+static bool isReservedAttrField(const char* n)
+{
+  return ((strcmp(n, "type")        == 0) ||
+          (strcmp(n, "value")       == 0) ||
+          (strcmp(n, "object")      == 0) ||
+          (strcmp(n, "languageMap") == 0) ||
+          (strcmp(n, "vocab")       == 0) ||
+          (strcmp(n, "json")        == 0) ||
+          (strcmp(n, "datasetId")   == 0) ||
+          (strcmp(n, "observedAt")  == 0) ||
+          (strcmp(n, "unitCode")    == 0) ||
+          (strcmp(n, "createdAt")   == 0) ||
+          (strcmp(n, "modifiedAt")  == 0));
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// datasetInstanceSubAttrsCompact -
+//
+// Inside a @datasets instance object, names of sub-attributes (and
+// their sub-sub-attributes, recursively) are stored with their FQ
+// URI as the key, because dbModelFromApiAttribute expanded them on
+// the way into the database. The outer attribute compaction loop
+// doesn't recurse into dataset instances, so we walk the tree here
+// and compact each sub-attribute name. Reserved attribute fields
+// (type, value, datasetId, ...) keep their names; value subtrees
+// are NOT entered (those are JSON values, not attribute names).
+//
+static void datasetInstanceSubAttrsCompact(KjNode* instanceP)
+{
+  if ((instanceP == NULL) || (instanceP->type != KjObject))
+    return;
+
+  for (KjNode* childP = instanceP->value.firstChildP; childP != NULL; childP = childP->next)
+  {
+    const char* n = childP->name;
+    if (n == NULL)
+      continue;
+
+    if (isReservedAttrField(n))
+      continue;
+
+    childP->name = orionldContextItemAliasLookup(orionldState.contextP, (char*) n, NULL, NULL);
+
+    // childP is a sub-attribute (a Property/Relationship object). Recurse
+    // so its own sub-attributes (goalId, publishedAt, ...) get compacted.
+    datasetInstanceSubAttrsCompact(childP);
+  }
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // dbModelToApiAttribute - produce an NGSI-LD API Attribute from its DB format
 //
 void dbModelToApiAttribute(KjNode* dbAttrP, bool sysAttrs, bool eqsForDots)
@@ -337,6 +399,9 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
     //
     if (datasetP->type == KjObject)  // just one
     {
+      if (compacted == true)
+        datasetInstanceSubAttrsCompact(datasetP);
+
       if (renderFormat == RF_CONCISE)
         kjAttributeNormalizedToConcise(datasetP, orionldState.uriParams.lang);
       else if (renderFormat == RF_SIMPLIFIED)
@@ -358,6 +423,9 @@ KjNode* dbModelToApiAttribute2(KjNode* dbAttrP, KjNode* datasetP, bool sysAttrs,
         next = dbAttrP->next;
         dbAttrP->name = datasetP->name;
         kjChildRemove(datasetP, dbAttrP);
+
+        if (compacted == true)
+          datasetInstanceSubAttrsCompact(dbAttrP);
 
         kjChildAdd(attrArray, dbAttrP);
 
