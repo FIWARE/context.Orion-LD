@@ -11,7 +11,7 @@ env:
   # Docker to the test container, so we skip it in CI only. Local runs
   # (CB_SKIP_FUNC_TESTS unset) execute the test normally - required for
   # merging DDS changes.
-  IGNORE_TEST: '0000_ld/dds/dds_service_reply_full_roundtrip.test 0000_ld/dds/dds_service_reply_ddsSync_explicit.test 0000_ld/dds/dds_service_reply_ddsSync_false_override.test 0000_ld/dds/dds_service_reply_attr_async_double.test'
+  IGNORE_TEST: '0000_ld/dds/dds_service_reply_full_roundtrip.test 0000_ld/dds/dds_service_reply_ddsSync_explicit.test 0000_ld/dds/dds_service_reply_ddsSync_false_override.test 0000_ld/dds/dds_service_reply_attr_async_double.test 0000_ld/dds/dds_action_full_roundtrip.test'
 
 ## Cancel running tests, get faster test-results for the latest commit
 concurrency:
