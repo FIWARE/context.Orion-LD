@@ -39,7 +39,7 @@ DDS Action: full goal roundtrip materialises feedback/result/status envelopes pe
 ddsClean
 
 $REPO_HOME/scripts/configFile.sh \
-  --ddsAction "fibonacci/_action/,Robot,urn:ngsi-ld:robot:r1,fib" \
+  --ddsAction "fibonacci,Robot,urn:ngsi-ld:robot:r1,fib" \
   --ddsTypesDirectory "$REPO_HOME/test/functionalTest/ddsTypes" \
   > $HOME/.orionld
 
