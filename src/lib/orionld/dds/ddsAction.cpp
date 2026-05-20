@@ -75,7 +75,9 @@ void ddsActionGoalSend(DdsAction* actionP, KjNode* attributeValueP)
     // ddsActionSubAttributeUpdate. calloc zero-inits instanceCreated.
     //
     DdsActionGoal* gP = (DdsActionGoal*) calloc(1, sizeof(DdsActionGoal));
+
     memcpy(gP->goalId, goalId.data(), 16);
+
     gP->requestJson = strdup(json);
     gP->next        = actionP->goals;
     actionP->goals  = gP;
