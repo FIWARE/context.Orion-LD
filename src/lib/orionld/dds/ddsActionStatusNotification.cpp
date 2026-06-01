@@ -40,6 +40,7 @@ extern "C"
 #include "orionld/dds/ddsActionSubAttributeUpdate.h"             // ddsActionSubAttributeUpdate
 #include "orionld/dds/ddsActionInstanceDelete.h"                 // ddsActionInstanceDelete
 #include "orionld/dds/ddsActionBuild.h"                          // ddsActionStatusCodeToString, ddsActionGoalDatasetId
+#include "orionld/dds/ddsActionSubscription.h"                   // ddsActionSubscriptionDelete
 #include "orionld/dds/ddsActionStatusNotification.h"             // Own interface
 
 
@@ -86,6 +87,8 @@ static void goalUnlinkAndFree(DdsAction* actionP, DdsActionGoal* goalP)
       else
         actionP->goals = gP->next;
       free(gP->requestJson);
+      if (gP->subscriptionId != NULL)
+        free(gP->subscriptionId);
       free(gP);
       return;
     }
@@ -151,6 +154,8 @@ void ddsActionStatusNotification
   {
     KT_T(StDdsAction, "Terminal failure (%s) before lazy create - dropping goal without DB write",
          ddsActionStatusCodeToString(statusCode));
+    if ((goalP != NULL) && (goalP->subscriptionId != NULL))
+      ddsActionSubscriptionDelete(goalP->subscriptionId);
     goalUnlinkAndFree(actionP, goalP);
     return;
   }
@@ -183,9 +188,20 @@ void ddsActionStatusNotification
   //
   if (isTerminal && isFailure)
   {
+    // Deliver-then-teardown: the status envelope PATCH above already fired the
+    // final notification to the temp subscription (if any). Remove the
+    // subscription BEFORE pulling the instance so the consumer doesn't also
+    // get a notification for the instance deletion.
+    if ((goalP != NULL) && (goalP->subscriptionId != NULL))
+      ddsActionSubscriptionDelete(goalP->subscriptionId);
+
+    // Sole in-flight goal -> its instance is the last datasetId instance, so the
+    // whole attribute is removed (re-created by the next goal-triggering PATCH).
+    bool lastInstance = (actionP->goals == goalP) && (goalP->next == NULL);
+
     char datasetIdStr[48];
     ddsActionGoalDatasetId(goalId, datasetIdStr);
-    ddsActionInstanceDelete(actionP->entityId, actionP->entityType, actionP->attributeName, datasetIdStr);
+    ddsActionInstanceDelete(actionP->entityId, actionP->entityType, actionP->attributeName, datasetIdStr, lastInstance);
     goalUnlinkAndFree(actionP, goalP);
   }
 }

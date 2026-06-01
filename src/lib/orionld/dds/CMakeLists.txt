@@ -54,6 +54,7 @@ SET (SOURCES
   ddsActionLifecycleNotify.cpp
   ddsActionBuild.cpp
   ddsActionGoalCancel.cpp
+  ddsActionSubscription.cpp
 )
 
 # Include directories

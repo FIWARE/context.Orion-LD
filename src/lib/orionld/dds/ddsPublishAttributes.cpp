@@ -28,6 +28,7 @@ extern "C"
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjClone.h"                                       // kjClone
+#include "kjson/kjLookup.h"                                      // kjLookup
 }
 
 #include "orionld/common/orionldState.h"                         // orionldState
@@ -67,11 +68,20 @@ void ddsPublishAttributes(const char* entityId, KjNode* incoming, KjNode* dbAttr
 
   for (KjNode* patchP = patchTree->value.firstChildP; patchP != NULL; patchP = patchP->next)
   {
+    //
+    // DDS publishes an attribute's "value" only - never its sub-attributes. Skip
+    // the metadata ("md") patches: besides being irrelevant to DDS, the
+    // whole-"md"-container patch ("attrs.<attr>.md") would otherwise collapse via
+    // pathComponentsFix to just "<attr>" and make orionldPatchApply *replace* the
+    // whole attribute with its md content - wiping value/type. (Attribute names are
+    // '='-encoded here, so a literal ".md" only ever marks the md component.)
+    //
+    KjNode* pathNode = kjLookup(patchP, "PATH");
+    if ((pathNode != NULL) && (pathNode->type == KjString) && (strstr(pathNode->value.s, ".md") != NULL))
+      continue;
+
     orionldPatchApply(patchBase, patchP, false);
   }
-
-  // patchBase is now fully merged
-  // KT_TREE(patchBase, "patchBase", StDds);
 
   for (KjNode* attrP = patchBase->value.firstChildP; attrP != NULL; attrP = attrP->next)
   {
@@ -85,6 +95,6 @@ void ddsPublishAttributes(const char* entityId, KjNode* incoming, KjNode* dbAttr
 
     char* shortName = orionldContextItemAliasLookup(orionldState.contextP, longName, NULL, NULL);
 
-    ddsPublishAttribute(entityId, shortName, attrP, false);
+    ddsPublishAttribute(entityId, shortName, attrP, false, incoming);
   }
 }

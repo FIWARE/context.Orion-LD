@@ -24,16 +24,18 @@
 # This test requires Docker and the eprosima/vulcanexus:jazzy-desktop image.
 # A real ROS2 FibonacciServer runs in a container and the broker is the DDS
 # action client - it discovers the action via DDS and, after the PATCH that
-# triggers a goal, receives feedback/result/status notifications which it
-# stores as envelope sub-attributes on the action-tied 'fib' attribute,
-# keyed by datasetId=urn:goal:<uuid>.
+# triggers a goal (carrying an 'endpoint' sub-attribute), receives
+# feedback/result/status notifications which it stores as envelope
+# sub-attributes on a per-goal datasetId instance of the action-tied 'fib'
+# attribute, while a temporary (cache-only) subscription created from the
+# 'endpoint' streams those changes to the initiator (ftClient).
 #
 # Skipped in GitHub Actions (the test container can't reach the docker
 # daemon).
 #
 
 --NAME--
-DDS Action: full goal roundtrip materialises feedback/result/status envelopes per goal (datasetId)
+DDS Action: full goal roundtrip with 'endpoint' temp subscription - feedback/result/status notifications, then instance + subscription torn down on completion
 
 --SHELL-INIT--
 ddsClean
@@ -63,12 +65,16 @@ sleep 7
 valgrindSleep 5
 
 #
-# 01. POST a subscription on Robot.fib pointing at ftClient
-# 02. PATCH the 'fib' attribute  -> broker sends an action goal for Fibonacci(5)
-# 03. Wait for FibonacciServer to emit feedback (3 samples, 1s apart) + final result
-# 04. GET the entity - the per-goal datasetId instance must contain
-#     ddsActionFeedback, ddsActionResult and ddsActionStatus envelope sub-attrs
-# 05. Count notifications ftClient received for the goal lifecycle
+# 01. PATCH the 'fib' attribute WITH an 'endpoint' sub-attribute -> broker sends
+#     an action goal for Fibonacci(5) AND auto-creates a temporary (cache-only)
+#     subscription that streams this goal's feedback/result/status to ftClient.
+# 02. Wait for FibonacciServer to emit feedback (3 samples, 1s apart) + result
+# 03. GET the entity - on completion the goal's datasetId instance was the last
+#     one, so the WHOLE 'fib' attribute is removed (the history lives on in TRoE).
+#     The temp subscription has been torn down too. A later goal-PATCH re-creates fib.
+# 04. Notifications ftClient received over the goal lifecycle (delivered by the
+#     temp subscription; no deletion notification - the sub is removed BEFORE
+#     the instance/attribute is removed).
 #
 # NOTE: GET /entities/{id}/attrs/{attrName} (and the synonym ?goal=<uuid>) is
 # not exercised here - that path currently bails out on multi-instance
@@ -76,32 +82,16 @@ valgrindSleep 5
 # prove the full DDS goal lifecycle.
 #
 
-echo "01. POST a subscription on Robot.fib pointing at ftClient"
-echo "=========================================================="
-payload='{
-  "id": "urn:S:fib",
-  "type": "Subscription",
-  "entities": [
-    { "type": "Robot" }
-  ],
-  "watchedAttributes": [ "fib" ],
-  "notification": {
-    "endpoint": {
-      "uri": "http://127.0.0.1:'${FT_PORT}'/notify"
-    }
-  }
-}'
-orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload"
-echo
-echo
-
-
-echo "02. PATCH 'fib' attribute (order=5)"
-echo "===================================="
+echo "01. PATCH 'fib' attribute (order=5) with notification 'endpoint' sub-attr"
+echo "========================================================================="
 payload='{
   "fib": {
     "type": "Property",
-    "value": { "order": 5 }
+    "value": { "order": 5 },
+    "endpoint": {
+      "type": "Property",
+      "value": "http://127.0.0.1:'${FT_PORT}'/notify"
+    }
   }
 }'
 orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1 -X PATCH --payload "$payload"
@@ -109,67 +99,70 @@ echo
 echo
 
 
-echo "03. Wait for FibonacciServer (3 feedback + 1 result + status transitions)"
+echo "02. Wait for FibonacciServer (3 feedback + 1 result + status transitions)"
 echo "=========================================================================="
 sleep 6
 echo
 
 
-echo "04. GET urn:ngsi-ld:robot:r1 - per-goal instance present with envelope sub-attrs"
-echo "================================================================================="
+echo "03. GET urn:ngsi-ld:robot:r1 - last goal instance done, so 'fib' attribute removed"
+echo "=================================================================================="
 orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1
 echo
 echo
 
 
-echo "05. Notifications ftClient received for the goal lifecycle"
-echo "==========================================================="
-orionCurl --url /dump --port $FT_PORT --noPayloadCheck
-echo
-echo
-
-
-echo "06. Verify TRoE recorded the goal lifecycle"
-echo "============================================"
-# Each PatchEntity2 call drives the standard TRoE pipeline via
-# serviceP->troeRoutine(). For a fib PATCH with body-level datasetId,
-# pgAttributeBuild emits an INSERT into attributes with the datasetId
-# tagged. Count goal-tagged rows: 1 (user PATCH triggers entity creation
-# event recorded as 'Replace') + 7 DDS lifecycle PATCHes = 7 attribute
-# rows tagged with urn:goal:*.
-goalRows=$(postgresCmd -sql "SELECT COUNT(*) FROM attributes WHERE entityid='urn:ngsi-ld:robot:r1' AND datasetid LIKE 'urn:goal:%'" 2>&1 | tail -1 | tr -d ' \r\n')
-if [ "$goalRows" -ge 5 ]
+echo "04. Count notifications ftClient received over the goal lifecycle (via temp sub)"
+echo "================================================================================="
+# The temp subscription fires on every change to the action attribute. Until the
+# datasetId-projection extension lands, the notification body carries the default
+# instance (not the per-goal feedback/result/status envelopes), so we assert
+# delivery by count rather than by (timing-dependent) content.
+notifs=$(orionCurl --url /dump --port $FT_PORT --noPayloadCheck | grep -c "POST /notify")
+if [ "$notifs" -ge 3 ]
 then
-  echo "TRoE goal rows: OK (>=5)"
+  echo "notifications received: OK (>=3)"
 else
-  echo "TRoE goal rows: TOO FEW ($goalRows)"
+  echo "notifications received: TOO FEW ($notifs)"
 fi
 echo
 echo
 
 
+echo "05. Verify TRoE recorded the goal lifecycle"
+echo "============================================"
+# Each PatchEntity2 call drives the standard TRoE pipeline via
+# serviceP->troeRoutine(). For a fib PATCH with body-level datasetId,
+# pgAttributeBuild emits an INSERT into attributes with the datasetId
+# tagged. Count goal-tagged rows.
+# (a) the per-goal lifecycle PATCHes were recorded (>=5 attribute rows tagged
+#     with the goal's datasetId), (b) exactly one goal was recorded, and
+#     (c) the terminal 'succeeded' status landed in TRoE as a sub-attribute -
+#     i.e. the history survives the attribute removal.
+goalRows=$(postgresCmd -sql "SELECT COUNT(*) FROM attributes WHERE entityid='urn:ngsi-ld:robot:r1' AND datasetid LIKE 'urn:goal:%'" 2>&1 | tail -1 | tr -d ' \r\n')
+goals=$(postgresCmd -sql "SELECT COUNT(DISTINCT datasetid) FROM attributes WHERE entityid='urn:ngsi-ld:robot:r1' AND datasetid LIKE 'urn:goal:%'" 2>&1 | tail -1 | tr -d ' \r\n')
+succ=$(postgresCmd -sql "SELECT COUNT(*) FROM subattributes WHERE entityid='urn:ngsi-ld:robot:r1' AND compound::text LIKE '%succeeded%'" 2>&1 | tail -1 | tr -d ' \r\n')
+
+if [ "$goalRows" -ge 5 ]; then echo "TRoE goal lifecycle rows: OK (>=5)"; else echo "TRoE goal lifecycle rows: TOO FEW ($goalRows)"; fi
+if [ "$goals" -eq 1 ];    then echo "TRoE distinct goals: OK (1)";        else echo "TRoE distinct goals: UNEXPECTED ($goals)"; fi
+if [ "$succ" -ge 1 ];     then echo "TRoE recorded terminal 'succeeded': OK"; else echo "TRoE recorded terminal 'succeeded': MISSING"; fi
+echo
+echo
+
+
 --REGEXPECT--
-01. POST a subscription on Robot.fib pointing at ftClient
-==========================================================
-HTTP/1.1 201 Created
-Content-Length: 0
-Date: REGEX(.*)
-Location: /ngsi-ld/v1/subscriptions/urn:S:fib
-
-
-
-02. PATCH 'fib' attribute (order=5)
-====================================
+01. PATCH 'fib' attribute (order=5) with notification 'endpoint' sub-attr
+=========================================================================
 HTTP/1.1 204 No Content
 Date: REGEX(.*)
 
 
 
-03. Wait for FibonacciServer (3 feedback + 1 result + status transitions)
+02. Wait for FibonacciServer (3 feedback + 1 result + status transitions)
 ==========================================================================
 
-04. GET urn:ngsi-ld:robot:r1 - per-goal instance present with envelope sub-attrs
-=================================================================================
+03. GET urn:ngsi-ld:robot:r1 - last goal instance done, so 'fib' attribute removed
+==================================================================================
 HTTP/1.1 200 OK
 Content-Length: REGEX(\d+)
 Content-Type: application/json
@@ -181,389 +174,21 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         "type": "Property",
         "value": "fastdds"
     },
-    "fib": [
-        {
-            "type": "Property",
-            "value": {
-                "order": 5
-            }
-        },
-        {
-            "datasetId": "urn:goal:REGEX([0-9a-f-]+)",
-            "ddsActionFeedback": {
-                "publishedAt": {
-                    "type": "Property",
-                    "value": REGEX(\d+)
-                },
-                "type": "Property",
-                "value": {
-                    "partial_sequence": [
-                        0,
-                        1,
-                        1,
-                        2,
-                        3
-                    ]
-                }
-            },
-            "ddsActionResult": {
-                "ddsDataType": {
-                    "type": "Property",
-                    "value": "REGEX(.*)"
-                },
-                "instanceHandleId": {
-                    "type": "Property",
-                    "value": "REGEX(.*)"
-                },
-                "participantId": {
-                    "type": "Property",
-                    "value": "REGEX(.*)"
-                },
-                "publishedAt": {
-                    "type": "Property",
-                    "value": REGEX(\d+)
-                },
-                "type": "Property",
-                "value": {
-                    "result": {
-                        "sequence": [
-                            0,
-                            1,
-                            1,
-                            2,
-                            3
-                        ]
-                    },
-                    "status": 4
-                }
-            },
-            "ddsActionStatus": {
-                "publishedAt": {
-                    "type": "Property",
-                    "value": REGEX(\d+)
-                },
-                "type": "Property",
-                "value": {
-                    "code": "succeeded",
-                    "message": "REGEX(.*)"
-                }
-            },
-            "type": "Property",
-            "value": {
-                "order": 5
-            }
-        }
-    ],
     "id": "urn:ngsi-ld:robot:r1",
     "type": "Robot"
 }
 
 
-05. Notifications ftClient received for the goal lifecycle
-===========================================================
-HTTP/1.1 200 OK
-Content-Length: REGEX(\d+)
-Date: REGEX(.*)
-
-POST /notify?subscriptionId=urn:S:fib
-Content-Length: REGEX(\d+)
-Content-Type: application/json
-User-Agent: orionld/REGEX(.*)
-Host: REGEX(.*)
-Accept: application/json
-Ngsild-Attribute-Format: Normalized
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
-
-{
-  "id": "urn:ngsi-ld:Notification:REGEX([0-9a-f-]+)",
-  "type": "Notification",
-  "subscriptionId": "urn:S:fib",
-  "notifiedAt": "REGEX(.*)",
-  "data": [
-    {
-      "id": "urn:ngsi-ld:robot:r1",
-      "type": "Robot",
-      "fib": {
-        "type": "Property",
-        "value": "uninitialized"
-      },
-      "ddsType": {
-        "type": "Property",
-        "value": "fastdds"
-      }
-    }
-  ]
-}
-================================================================================
-
-POST /notify?subscriptionId=urn:S:fib
-Content-Length: REGEX(\d+)
-Content-Type: application/json
-User-Agent: orionld/REGEX(.*)
-Host: REGEX(.*)
-Accept: application/json
-Ngsild-Attribute-Format: Normalized
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
-
-{
-  "id": "urn:ngsi-ld:Notification:REGEX([0-9a-f-]+)",
-  "type": "Notification",
-  "subscriptionId": "urn:S:fib",
-  "notifiedAt": "REGEX(.*)",
-  "data": [
-    {
-      "id": "urn:ngsi-ld:robot:r1",
-      "type": "Robot",
-      "fib": {
-        "type": "Property",
-        "value": {
-          "order": 5
-        }
-      },
-      "ddsType": {
-        "type": "Property",
-        "value": "fastdds"
-      }
-    }
-  ]
-}
-================================================================================
-
-POST /notify?subscriptionId=urn:S:fib
-Content-Length: REGEX(\d+)
-Content-Type: application/json
-User-Agent: orionld/REGEX(.*)
-Host: REGEX(.*)
-Accept: application/json
-Ngsild-Attribute-Format: Normalized
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
-
-{
-  "id": "urn:ngsi-ld:Notification:REGEX([0-9a-f-]+)",
-  "type": "Notification",
-  "subscriptionId": "urn:S:fib",
-  "notifiedAt": "REGEX(.*)",
-  "data": [
-    {
-      "id": "urn:ngsi-ld:robot:r1",
-      "type": "Robot",
-      "fib": {
-        "type": "Property",
-        "value": {
-          "order": 5
-        }
-      },
-      "ddsType": {
-        "type": "Property",
-        "value": "fastdds"
-      }
-    }
-  ]
-}
-================================================================================
-
-POST /notify?subscriptionId=urn:S:fib
-Content-Length: REGEX(\d+)
-Content-Type: application/json
-User-Agent: orionld/REGEX(.*)
-Host: REGEX(.*)
-Accept: application/json
-Ngsild-Attribute-Format: Normalized
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
-
-{
-  "id": "urn:ngsi-ld:Notification:REGEX([0-9a-f-]+)",
-  "type": "Notification",
-  "subscriptionId": "urn:S:fib",
-  "notifiedAt": "REGEX(.*)",
-  "data": [
-    {
-      "id": "urn:ngsi-ld:robot:r1",
-      "type": "Robot",
-      "fib": {
-        "type": "Property",
-        "value": {
-          "order": 5
-        }
-      },
-      "ddsType": {
-        "type": "Property",
-        "value": "fastdds"
-      }
-    }
-  ]
-}
-================================================================================
-
-POST /notify?subscriptionId=urn:S:fib
-Content-Length: REGEX(\d+)
-Content-Type: application/json
-User-Agent: orionld/REGEX(.*)
-Host: REGEX(.*)
-Accept: application/json
-Ngsild-Attribute-Format: Normalized
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
-
-{
-  "id": "urn:ngsi-ld:Notification:REGEX([0-9a-f-]+)",
-  "type": "Notification",
-  "subscriptionId": "urn:S:fib",
-  "notifiedAt": "REGEX(.*)",
-  "data": [
-    {
-      "id": "urn:ngsi-ld:robot:r1",
-      "type": "Robot",
-      "fib": {
-        "type": "Property",
-        "value": {
-          "order": 5
-        }
-      },
-      "ddsType": {
-        "type": "Property",
-        "value": "fastdds"
-      }
-    }
-  ]
-}
-================================================================================
-
-POST /notify?subscriptionId=urn:S:fib
-Content-Length: REGEX(\d+)
-Content-Type: application/json
-User-Agent: orionld/REGEX(.*)
-Host: REGEX(.*)
-Accept: application/json
-Ngsild-Attribute-Format: Normalized
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
-
-{
-  "id": "urn:ngsi-ld:Notification:REGEX([0-9a-f-]+)",
-  "type": "Notification",
-  "subscriptionId": "urn:S:fib",
-  "notifiedAt": "REGEX(.*)",
-  "data": [
-    {
-      "id": "urn:ngsi-ld:robot:r1",
-      "type": "Robot",
-      "fib": {
-        "type": "Property",
-        "value": {
-          "order": 5
-        }
-      },
-      "ddsType": {
-        "type": "Property",
-        "value": "fastdds"
-      }
-    }
-  ]
-}
-================================================================================
-
-POST /notify?subscriptionId=urn:S:fib
-Content-Length: REGEX(\d+)
-Content-Type: application/json
-User-Agent: orionld/REGEX(.*)
-Host: REGEX(.*)
-Accept: application/json
-Ngsild-Attribute-Format: Normalized
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
-
-{
-  "id": "urn:ngsi-ld:Notification:REGEX([0-9a-f-]+)",
-  "type": "Notification",
-  "subscriptionId": "urn:S:fib",
-  "notifiedAt": "REGEX(.*)",
-  "data": [
-    {
-      "id": "urn:ngsi-ld:robot:r1",
-      "type": "Robot",
-      "fib": {
-        "type": "Property",
-        "value": {
-          "order": 5
-        }
-      },
-      "ddsType": {
-        "type": "Property",
-        "value": "fastdds"
-      }
-    }
-  ]
-}
-================================================================================
-
-POST /notify?subscriptionId=urn:S:fib
-Content-Length: REGEX(\d+)
-Content-Type: application/json
-User-Agent: orionld/REGEX(.*)
-Host: REGEX(.*)
-Accept: application/json
-Ngsild-Attribute-Format: Normalized
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
-
-{
-  "id": "urn:ngsi-ld:Notification:REGEX([0-9a-f-]+)",
-  "type": "Notification",
-  "subscriptionId": "urn:S:fib",
-  "notifiedAt": "REGEX(.*)",
-  "data": [
-    {
-      "id": "urn:ngsi-ld:robot:r1",
-      "type": "Robot",
-      "fib": {
-        "type": "Property",
-        "value": {
-          "order": 5
-        }
-      },
-      "ddsType": {
-        "type": "Property",
-        "value": "fastdds"
-      }
-    }
-  ]
-}
-================================================================================
-
-POST /notify?subscriptionId=urn:S:fib
-Content-Length: REGEX(\d+)
-Content-Type: application/json
-User-Agent: orionld/REGEX(.*)
-Host: REGEX(.*)
-Accept: application/json
-Ngsild-Attribute-Format: Normalized
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
-
-{
-  "id": "urn:ngsi-ld:Notification:REGEX([0-9a-f-]+)",
-  "type": "Notification",
-  "subscriptionId": "urn:S:fib",
-  "notifiedAt": "REGEX(.*)",
-  "data": [
-    {
-      "id": "urn:ngsi-ld:robot:r1",
-      "type": "Robot",
-      "fib": {
-        "type": "Property",
-        "value": {
-          "order": 5
-        }
-      },
-      "ddsType": {
-        "type": "Property",
-        "value": "fastdds"
-      }
-    }
-  ]
-}
+04. Count notifications ftClient received over the goal lifecycle (via temp sub)
+=================================================================================
+notifications received: OK (>=3)
 
 
-
-06. Verify TRoE recorded the goal lifecycle
+05. Verify TRoE recorded the goal lifecycle
 ============================================
-TRoE goal rows: OK (>=5)
+TRoE goal lifecycle rows: OK (>=5)
+TRoE distinct goals: OK (1)
+TRoE recorded terminal 'succeeded': OK
 
 
 --TEARDOWN--
