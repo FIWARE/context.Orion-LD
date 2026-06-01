@@ -168,7 +168,6 @@ KjNode* ddsActionBuildSubAttribute
 (
   const char*                                       subName,
   KjNode*                                           payloadValue,
-  const eprosima::ddsenabler::participants::UUID&   goalId,
   const char*                                       instanceHandleId,
   const char*                                       participantId,
   const char*                                       ddsDataType,
@@ -185,9 +184,8 @@ KjNode* ddsActionBuildSubAttribute
   if (payloadValue != NULL)
     kjChildAdd(sub, payloadValue);
 
-  char goalIdStr[37];
-  ddsActionUuidToString(goalId, goalIdStr);
-  kjChildAdd(sub, ddsReplyStringPropertyNode("goalId", goalIdStr));
+  // The goal is already identified by the instance's datasetId ("urn:goal:<uuid>"),
+  // so no per-envelope goalId is stamped here — it would be pure duplication.
 
   if (instanceHandleId != NULL) kjChildAdd(sub, ddsReplyStringPropertyNode("instanceHandleId", instanceHandleId));
   if (participantId    != NULL) kjChildAdd(sub, ddsReplyStringPropertyNode("participantId",    participantId));

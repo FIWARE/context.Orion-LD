@@ -104,11 +104,10 @@ void ddsActionSubAttributeUpdate
   char* attrLongName = orionldAttributeExpand(orionldState.contextP, attributeName, true, NULL);
 
   //
-  // Envelope sub-attribute (type/value/goalId/publishedAt/...)
+  // Envelope sub-attribute (type/value/publishedAt/...)
   //
   KjNode* envelope = ddsActionBuildSubAttribute(subAttributeName,
                                                 subAttributeValue,
-                                                goalId,
                                                 instanceHandleId,
                                                 participantId,
                                                 ddsDataType,
