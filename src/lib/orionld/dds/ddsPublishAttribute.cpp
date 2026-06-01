@@ -159,9 +159,12 @@ static char* kjDdsType(KjNode* valueP, char* buf, int bufSize)
 // ddsPublishAttribute -
 //
 // What is published over DDS is the "value" field of the attribute.
-// For now, sub-attributes are not used in DDS.
+// Sub-attributes are not published over DDS - and the publish reconstruction in
+// ddsPublishAttributes deliberately drops them (the "md" patches). For an action
+// goal, the optional 'endpoint' sub-attribute is therefore read from 'incoming'
+// (the API-form clone of the request, which still has value + sub-attrs together).
 //
-void ddsPublishAttribute(const char* entityId, char* attrShortName, KjNode* attrP, bool isValue)
+void ddsPublishAttribute(const char* entityId, char* attrShortName, KjNode* attrP, bool isValue, KjNode* incoming)
 {
   //
   // If we are inside a DDS callback (a sample/reply that was just merge-patched
@@ -213,7 +216,42 @@ void ddsPublishAttribute(const char* entityId, char* attrShortName, KjNode* attr
       {
         KjNode* attributeValueP = kjLookup(attrP, "value");
         KT_T(StDds, "attributeValueP at %p", attributeValueP);
-        ddsActionGoalSend(aP, attributeValueP);
+
+        //
+        // Optional 'endpoint' sub-attribute: where to stream this goal's
+        // feedback/result/status. It's a sub-attribute, so it lives in
+        // 'incoming' (the API-form request), not in the value-only reconstruction
+        // (attrP). Match by short name, fall back to the '='-encoded name.
+        // Accept a plain string or the normalised Property form { "value": "<uri>" }.
+        //
+        const char* endpointUri = NULL;
+        KjNode*     subAttrSrc  = NULL;
+        if (incoming != NULL)  // PATCH path: attrP is a value-only reconstruction; sub-attrs live in 'incoming'
+        {
+          subAttrSrc = kjLookup(incoming, attrShortName);
+          if (subAttrSrc == NULL)
+            subAttrSrc = kjLookup(incoming, attrP->name);
+        }
+        else                   // other callers pass the real (full) attribute directly
+          subAttrSrc = attrP;
+
+        if (subAttrSrc != NULL)
+        {
+          KjNode* endpointP = kjLookup(subAttrSrc, "endpoint");
+          if (endpointP != NULL)
+          {
+            if (endpointP->type == KjString)
+              endpointUri = endpointP->value.s;
+            else
+            {
+              KjNode* endpointValueP = kjLookup(endpointP, "value");
+              if ((endpointValueP != NULL) && (endpointValueP->type == KjString))
+                endpointUri = endpointValueP->value.s;
+            }
+          }
+        }
+
+        ddsActionGoalSend(aP, attributeValueP, endpointUri);
       }
     }
     else

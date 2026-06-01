@@ -32,6 +32,7 @@ extern "C"
 #include "orionld/common/tenantList.h"                           // tenant0
 #include "orionld/context/orionldAttributeExpand.h"              // orionldAttributeExpand
 #include "orionld/mongoc/mongocDatasetInstanceOps.h"              // mongocDatasetInstancePull
+#include "orionld/mongoc/mongocAttributeDelete.h"                 // mongocAttributeDelete
 #include "orionld/dds/ddsActionLifecycleNotify.h"                // ddsActionLifecycleNotify
 #include "orionld/dds/ddsActionInstanceDelete.h"                 // Own interface
 
@@ -42,17 +43,33 @@ void ddsActionInstanceDelete
   const char* entityId,
   const char* entityType,
   const char* attributeName,
-  const char* datasetIdStr
+  const char* datasetIdStr,
+  bool        lastInstance
 )
 {
   if (orionldState.tenantP == NULL)
     orionldState.tenantP = &tenant0;
 
   char* attrLongName = orionldAttributeExpand(orionldState.contextP, attributeName, true, NULL);
+  bool  ok;
 
-  KT_T(StDdsAction, "Pulling per-goal instance from @datasets: entity '%s' attr '%s' datasetId '%s'",
-       entityId, attributeName, datasetIdStr);
+  if (lastInstance == true)
+  {
+    // Last datasetId instance -> remove the whole attribute. The goal instance
+    // lives in @datasets.<attr> (pull it) and the default instance lives in
+    // attrs.<attr> (mongocAttributeDelete - unsets attrs.<attr> + pulls attrNames).
+    // Both must go; the next goal-triggering PATCH re-creates the attribute.
+    KT_T(StDdsAction, "Removing whole action attribute (last goal done): entity '%s' attr '%s'", entityId, attributeName);
+    mongocDatasetAttrUnset(entityId, attrLongName);      // drop the whole @datasets.<attr> ($pull would leave [])
+    ok = mongocAttributeDelete(entityId, attrLongName);  // drop the default instance (attrs.<attr> + attrNames)
+  }
+  else
+  {
+    KT_T(StDdsAction, "Pulling per-goal instance from @datasets: entity '%s' attr '%s' datasetId '%s'",
+         entityId, attributeName, datasetIdStr);
+    ok = mongocDatasetInstancePull(entityId, attrLongName, datasetIdStr);
+  }
 
-  if (mongocDatasetInstancePull(entityId, attrLongName, datasetIdStr) == true)
-    ddsActionLifecycleNotify(entityId, entityType, attrLongName, NULL);  // pull -> no TRoE payload, sub dispatch still fires
+  if (ok == true)
+    ddsActionLifecycleNotify(entityId, entityType, attrLongName, NULL);  // direct mongo -> no TRoE payload, sub dispatch still fires
 }

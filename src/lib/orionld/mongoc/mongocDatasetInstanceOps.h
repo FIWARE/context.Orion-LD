@@ -94,4 +94,19 @@ extern bool mongocDatasetInstancePull
   const char* datasetIdStr
 );
 
+
+
+// -----------------------------------------------------------------------------
+//
+// mongocDatasetAttrUnset - $unset the whole "@datasets.<attr>" entry
+//
+// (A $pull of the last instance would leave an empty array; this removes the
+// entry entirely.)
+//
+extern bool mongocDatasetAttrUnset
+(
+  const char* entityId,
+  const char* attrLongName
+);
+
 #endif  // SRC_LIB_ORIONLD_MONGOC_MONGOCDATASETINSTANCEOPS_H_

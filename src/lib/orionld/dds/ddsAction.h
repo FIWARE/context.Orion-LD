@@ -41,6 +41,11 @@ extern "C"
 // Sends an action goal via DDS.
 // Called when the mapped attribute is updated (same pattern as ddsService for services).
 //
-extern void ddsActionGoalSend(DdsAction* actionP, KjNode* attributeValueP);
+// 'endpointUri' is the optional notification endpoint taken from the PATCH's
+// 'endpoint' sub-attribute. When non-NULL, a temporary per-goal subscription is
+// created so the initiator receives the goal's feedback / result / status, and
+// it is torn down when the goal reaches a terminal status. NULL => no subscription.
+//
+extern void ddsActionGoalSend(DdsAction* actionP, KjNode* attributeValueP, const char* endpointUri);
 
 #endif  // SRC_LIB_ORIONLD_DDS_DDSACTION_H_
