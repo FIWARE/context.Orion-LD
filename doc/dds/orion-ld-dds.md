@@ -399,19 +399,16 @@ a status, the broker stores each in the goal's attribute instance:
       "ddsActionFeedback": {             // updated each time a feedback sample arrives
         "type":  "Property",
         "value": { "partial_sequence": [0, 1, 1, 2, 3] },
-        "goalId":      { "type": "Property", "value": "9b…" },
         "publishedAt": { "type": "Property", "value": 1715617200.456 }
       },
       "ddsActionResult": {               // appears once the server returns the result
         "type":  "Property",
         "value": { "sequence": [0, 1, 1, 2, 3, 5] },
-        "goalId":      { "type": "Property", "value": "9b…" },
         "publishedAt": { "type": "Property", "value": 1715617200.789 }
       },
       "ddsActionStatus": {               // status transitions (succeeded, aborted, executing, …)
         "type":  "Property",
         "value": { "code": "succeeded", "message": "" },
-        "goalId":      { "type": "Property", "value": "9b…" },
         "publishedAt": { "type": "Property", "value": 1715617200.790 }
       }
     }
@@ -493,8 +490,9 @@ same point as a REST update, which means:
     attribute instance.
 
 - The notification payload is the standard NGSI-LD notification —
-  no DDS-specific framing. If the consumer needs the goal id, the publish
-  time, etc., those are available as sub-Properties of the attribute (see
+  no DDS-specific framing. The goal id is the instance's `datasetId`
+  (`urn:goal:<uuid>`); the publish time and other DDS envelope metadata are
+  available as sub-Properties of the attribute (see
   [§8.3](#83-feedback--result--status-arrive-as-envelope-sub-properties)).
 
 ### 10.1. Example: subscribing to Fibonacci goal status changes
