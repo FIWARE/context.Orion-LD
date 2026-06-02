@@ -401,12 +401,22 @@ curl -X PATCH http://localhost:9999/ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1 \
 `endpoint` is control metadata: it is not sent on the DDS wire (only `value`
 is) and it is removed together with the attribute when the goal completes.
 
-> **NOTE (current limitation).** Until datasetId-scoped notification
-> *projection* lands, the notification **body** carries the attribute's
-> default instance, not this goal's per-instance feedback/result/status
-> envelopes. The subscription still fires reliably on every change — it tells
-> the client "the goal progressed"; use `GET …?datasetId=urn:goal:<uuid>` (or
-> the temporal API) for the detail.
+The temporary subscription is **datasetId-scoped to this goal** in two
+independent ways:
+
+- its `watchedAttributes` entry is `"<attr>@<goalDatasetId>"`, so it is
+  *triggered* only by changes to **this** goal's instance; and
+- its top-level `datasetId` *projects* each notification body down to this
+  goal's own feedback / result / status envelope.
+
+So when several goals run on the same action attribute at the same time, each
+initiator receives **only its own goal's** updates — concurrent goals do not
+cross-talk.
+
+> **NOTE.** datasetId in `watchedAttributes` (syntax `"<attr>@<datasetId>"`,
+> with `"<attr>@@none"` for the default instance) is an Orion-LD extension —
+> not yet part of the ETSI NGSI-LD API; an addition has been proposed, so the
+> syntax may change.
 
 ### 8.3. Feedback / result / status arrive as envelope sub-Properties
 
