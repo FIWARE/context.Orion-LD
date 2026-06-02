@@ -1,0 +1,297 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+#
+# This test requires Docker and the eprosima/vulcanexus:jazzy-desktop image.
+# Skipped in GitHub Actions (the test container can't reach the docker daemon).
+#
+# ============================================================================
+# KNOWN LIMITATION documented by this test: concurrent-goal notification
+# cross-talk.
+#
+# Each DDS action goal that carries an 'endpoint' spawns a temporary
+# subscription with watchedAttributes:["fib"] and a top-level datasetId set to
+# that goal's per-goal datasetId. In NGSI-LD the subscription datasetId is a
+# PROJECTION of the notification body only - there is NO datasetId in
+# 'watchedAttributes', so the notification TRIGGER cannot be scoped to a single
+# datasetId instance. (A datasetId-aware 'watchedAttributes' is not in the ETSI
+# spec; an addition has been proposed.)
+#
+# Consequence with two goals in flight at once: every change to EITHER goal's
+# 'fib' instance fires BOTH temp subscriptions. The delivered DATA is always
+# correct - notificationSend's datasetFilter projects each body down to the
+# subscription's own goal instance (a single object, never the sibling goal) -
+# but it is OVER-DELIVERED:
+#   - duplicate snapshots: a goal's subscriber re-receives its own (unchanged)
+#     instance every time the sibling goal changes 'fib';
+#   - a few empty notifications (id+type only): a subscriber fires before its
+#     own goal's instance has materialised, so datasetFilter finds no matching
+#     instance and drops 'fib' from the body.
+# Both stem from the single missing feature; neither is a data-correctness bug.
+# This test asserts the lifecycle is correct (overlap, per-goal projection,
+# cleanup, TRoE) AND pins the cross-talk as the expected, documented behaviour.
+# ============================================================================
+#
+
+--NAME--
+DDS Action: two concurrent goals - overlapping instances/subs + KNOWN notification cross-talk limitation
+
+--SHELL-INIT--
+ddsClean
+
+$REPO_HOME/scripts/configFile.sh \
+  --ddsAction "fibonacci,Robot,urn:ngsi-ld:robot:r1,fib" \
+  --ddsTypesDirectory "$REPO_HOME/test/functionalTest/ddsTypes" \
+  > $HOME/.orionld
+
+# The server must handle two goals (here: two overlapping/concurrent goals).
+ros2ActionStart --samples 2
+sleep 10
+
+dbInit CB
+pgInit $CB_DB_NAME
+orionldStart CB -mongocOnly -wip dds -troe
+
+ftClientStart -v -t 200
+
+# Allow discovery + type propagation between broker and action server.
+sleep 7
+
+--SHELL--
+
+#
+# Fire TWO action goals back-to-back (each PATCH of 'fib' fires a fresh goal with
+# its own per-goal datasetId instance and its own temporary 'endpoint' subscription).
+# Then observe, WHILE both should be in flight:
+#   - how many per-goal datasetId instances 'fib' carries
+#   - how many temporary subscriptions exist
+# and after both complete:
+#   - 'fib' removed, subscriptions empty
+#   - the notifications ftClient received, grouped per goal (datasetId) and per
+#     subscription, which surfaces any cross-talk (each temp sub watches 'fib',
+#     and datasetId is only a PROJECTION, not a trigger filter - so a change to
+#     one goal's instance also fires the other goal's subscription).
+#
+# 01. Fire goal 1 (PATCH 'fib' order=5 with 'endpoint')
+# 02. Fire goal 2 (PATCH 'fib' order=5 with 'endpoint') - immediately, no wait
+# 03. Mid-flight: both goals' 'fib' datasetId instances are in flight (>=2)
+# 04. Mid-flight: both temp subscriptions are present (>=2)
+# 05. Wait for both goals to complete
+# 06. GET entity - both done, 'fib' removed
+# 07. GET /subscriptions - both temp subs gone
+# 08. Notifications: amplification + the KNOWN cross-talk limitation, AND
+#     per-goal projection is still correct (no body ever carries both instances)
+# 09. TRoE: two distinct goals recorded
+#
+
+echo "01. Fire goal 1: PATCH 'fib' (order=5) with 'endpoint'"
+echo "====================================================="
+payload='{
+  "fib": {
+    "type": "Property",
+    "value": { "order": 5 },
+    "endpoint": {
+      "type": "Property",
+      "value": "http://127.0.0.1:'${FT_PORT}'/notify"
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1 -X PATCH --payload "$payload"
+echo
+echo
+
+
+echo "02. Fire goal 2: PATCH 'fib' (order=5) with 'endpoint' - immediately"
+echo "==================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1 -X PATCH --payload "$payload"
+echo
+echo
+
+
+echo "03. Mid-flight: are both goals' 'fib' datasetId instances in flight?"
+echo "===================================================================="
+sleep 1
+ent=$(orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1 --noPayloadCheck 2>/dev/null)
+body=$(echo "$ent" | sed -n '/^{/,$p')
+inst=$(echo "$body" | jq '[.. | .datasetId? // empty] | map(select(startswith("urn:goal:"))) | length' 2>/dev/null)
+echo "in-flight fib goal datasetId instances: $inst"
+if [ "$inst" -ge 2 ]; then echo "VERDICT two goals concurrently in flight: YES"; else echo "VERDICT two goals concurrently in flight: NO ($inst)"; fi
+echo
+echo
+
+
+echo "04. Mid-flight: are both temporary subscriptions present?"
+echo "========================================================="
+subs=$(orionCurl --url /ngsi-ld/v1/subscriptions --noPayloadCheck 2>/dev/null)
+sbody=$(echo "$subs" | sed -n '/^\[/,$p')
+nsub=$(echo "$sbody" | jq 'length' 2>/dev/null)
+echo "temp subscriptions in flight: $nsub"
+if [ "$nsub" -ge 2 ]; then echo "VERDICT two temp subscriptions in flight: YES"; else echo "VERDICT two temp subscriptions in flight: NO ($nsub)"; fi
+echo
+echo
+
+
+echo "05. Wait for both goals to complete"
+echo "==================================="
+sleep 8
+echo
+
+
+echo "06. GET entity - both goals done, 'fib' removed"
+echo "==============================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1
+echo
+echo
+
+
+echo "07. GET /subscriptions - both temp subscriptions gone"
+echo "====================================================="
+orionCurl --url /ngsi-ld/v1/subscriptions
+echo
+echo
+
+
+echo "08. Notifications ftClient received - amplification + KNOWN cross-talk limitation"
+echo "================================================================================="
+# KNOWN LIMITATION (see the header NOTE): each goal's temp subscription watches
+# the 'fib' attribute, and a subscription's datasetId is a PROJECTION only - the
+# NGSI-LD spec has no datasetId in 'watchedAttributes', so the TRIGGER cannot be
+# scoped to one goal's instance. While both goals are in flight, every change to
+# EITHER goal's instance fires BOTH temp subscriptions. The data is always
+# correct (each body is projected to its own goal's single instance), but it is
+# over-delivered:
+#   - duplicate snapshots: a goal's sub re-fires its unchanged instance whenever
+#     the sibling goal changes 'fib';
+#   - a few "empty" notifications (id+type only): a sub fires before its own
+#     goal's instance exists, so datasetFilter finds nothing and drops 'fib'.
+# A single goal delivers ~9 notifications; two INDEPENDENT goals without
+# cross-talk would total ~18. Cross-talk pushes it well above that.
+dump=$(orionCurl --url /dump --port $FT_PORT --noPayloadCheck)
+bodies=$(echo "$dump" | grep -vE '^(POST |HTTP/|Content-|User-Agent|Host:|Accept:|Ngsild-|Link:|Date:|====)')
+
+total=$(echo "$dump" | grep -c 'POST /notify')
+dgoals=$(echo "$bodies"  | jq -r '.data[0].fib.datasetId // empty'              2>/dev/null | sort -u | grep -c 'urn:goal:')
+arrays=$(echo "$bodies"  | jq -r 'select((.data[0].fib|type)=="array")  | "x"'  2>/dev/null | wc -l | tr -d ' ')
+empties=$(echo "$bodies" | jq -r 'select(.data[0].fib == null)          | "x"'  2>/dev/null | wc -l | tr -d ' ')
+
+echo "Total notifications received: $total"
+echo "Distinct goal datasetIds carried in bodies: $dgoals"
+echo "Notifications carrying BOTH instances (fib as array - projection leak): $arrays"
+echo "Empty notifications - sub fired before its own goal instance existed: $empties"
+echo
+if [ "$total" -gt 18 ]; then echo "VERDICT cross-talk amplification (well above the ~18 no-cross-talk baseline): YES"; else echo "VERDICT cross-talk amplification: NO ($total)"; fi
+if [ "$dgoals" -eq 2 ]; then echo "VERDICT both goals' own data delivered (2 distinct goal datasetIds): YES"; else echo "VERDICT distinct goals: UNEXPECTED ($dgoals)"; fi
+if [ "$arrays" -eq 0 ]; then echo "VERDICT per-goal projection correct (no body ever carried both instances): YES"; else echo "VERDICT projection LEAK ($arrays bodies carried both instances)"; fi
+echo
+echo
+
+
+echo "09. TRoE: two distinct goals recorded"
+echo "====================================="
+goals=$(postgresCmd -sql "SELECT COUNT(DISTINCT datasetid) FROM attributes WHERE entityid='urn:ngsi-ld:robot:r1' AND datasetid LIKE 'urn:goal:%'" 2>&1 | tail -1 | tr -d ' \r\n')
+if [ "$goals" -eq 2 ]; then echo "TRoE distinct goals: OK (2)"; else echo "TRoE distinct goals: UNEXPECTED ($goals)"; fi
+echo
+echo
+
+
+--REGEXPECT--
+01. Fire goal 1: PATCH 'fib' (order=5) with 'endpoint'
+=====================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+02. Fire goal 2: PATCH 'fib' (order=5) with 'endpoint' - immediately
+===================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+03. Mid-flight: are both goals' 'fib' datasetId instances in flight?
+====================================================================
+in-flight fib goal datasetId instances: REGEX([0-9]+)
+VERDICT two goals concurrently in flight: YES
+
+
+04. Mid-flight: are both temporary subscriptions present?
+=========================================================
+temp subscriptions in flight: REGEX([0-9]+)
+VERDICT two temp subscriptions in flight: YES
+
+
+05. Wait for both goals to complete
+===================================
+
+06. GET entity - both goals done, 'fib' removed
+===============================================
+HTTP/1.1 200 OK
+Content-Length: 92
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+{
+    "ddsType": {
+        "type": "Property",
+        "value": "fastdds"
+    },
+    "id": "urn:ngsi-ld:robot:r1",
+    "type": "Robot"
+}
+
+
+07. GET /subscriptions - both temp subscriptions gone
+=====================================================
+HTTP/1.1 200 OK
+Content-Length: 2
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+[]
+
+
+08. Notifications ftClient received - amplification + KNOWN cross-talk limitation
+=================================================================================
+Total notifications received: REGEX([0-9]+)
+Distinct goal datasetIds carried in bodies: 2
+Notifications carrying BOTH instances (fib as array - projection leak): 0
+Empty notifications - sub fired before its own goal instance existed: REGEX([0-9]+)
+
+VERDICT cross-talk amplification (well above the ~18 no-cross-talk baseline): YES
+VERDICT both goals' own data delivered (2 distinct goal datasetIds): YES
+VERDICT per-goal projection correct (no body ever carried both instances): YES
+
+
+09. TRoE: two distinct goals recorded
+=====================================
+TRoE distinct goals: OK (2)
+
+
+--TEARDOWN--
+ddsClean
+ros2ActionStop
+brokerStop CB
+ftClientStop
+dbDrop CB
+pgDrop $CB_DB_NAME
+rm -f $HOME/.orionld
