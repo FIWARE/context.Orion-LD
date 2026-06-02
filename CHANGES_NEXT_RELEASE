@@ -30,6 +30,11 @@
           notification body to the matching dataset instance(s) of every attribute, per NGSI-LD spec
           clause 8.5 (non-matching attributes are dropped; '@none' selects the default instance).
           Persisted, survives broker restart, and rendered back on GET
+  #XXXX - Subscriptions support datasetId-scoped 'watchedAttributes' via the syntax "<attr>@<datasetId>"
+          (Orion-LD extension, proposed to ETSI): the subscription is TRIGGERED only when an instance with
+          that datasetId changes. The datasetId must be a URI; the token '@none' (i.e. "<attr>@@none") scopes
+          to the default no-datasetId instance; a plain "<attr>" still matches any instance. Persisted and
+          rendered back on GET
   #1905 - New CLI option -troeSslMode (env: ORIONLD_TROE_SSL_MODE) for TRoE Postgres SSL connections
   #XXXX - New CLI option -coreContextDir (env: ORIONLD_CORE_CONTEXT_DIR, default: /opt/orion/ldcontexts)
   #XXXX - Replaced prometheus-client-c with KPROM library for Prometheus metrics
@@ -80,6 +85,7 @@
   - Synchronous DDS semantics for PATCH /entities/{id} (when -wip dds is set); opt out with ?ddsSync=false
   - DDS Action goal lifecycle: an 'endpoint' sub-attribute spawns a temporary per-goal subscription that streams the goal's feedback/result/status to the initiator, torn down (instance + subscription) on goal completion
   - datasetId-aware notifications: a subscription's top-level 'datasetId' projects each notification body to the matching dataset instance(s) (NGSI-LD spec clause 8.5; '@none' selects the default instance) - so a goal's temp subscription delivers only that goal's instance
+  - Concurrent action goals no longer cross-talk: each goal's temporary subscription watches "<attr>@<goalDatasetId>" (datasetId-scoped watchedAttributes), so it is TRIGGERED only by its own goal's instance changes, not by sibling goals modifying the same attribute
   - Fixed HTTP 500 on a second consecutive PATCH/attr roundtrip (dotForEq nested-Property names so mongo $set doesn't fragment them across path-separator dots)
   - Renamed reply envelope field xId to instanceHandleId (matches FastDDS InstanceHandle_t terminology, requested by eProsima)
 
