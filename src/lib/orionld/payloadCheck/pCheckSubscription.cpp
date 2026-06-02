@@ -311,6 +311,29 @@ bool pCheckSubscription
       orionldError(OrionldOperationNotSupported, "Not Implemented", subItemP->name, 501);
       return false;
     }
+    else if (strcmp(subItemP->name, "datasetId") == 0)
+    {
+      // Projection filter: notifications include only the matching dataset
+      // instance(s). Accept a single String or an Array of Strings.
+      if (subItemP->type == KjString)
+      {}  // OK
+      else if (subItemP->type == KjArray)
+      {
+        for (KjNode* dsP = subItemP->value.firstChildP; dsP != NULL; dsP = dsP->next)
+        {
+          if (dsP->type != KjString)
+          {
+            orionldError(OrionldBadRequestData, "Invalid JSON type", "Subscription::datasetId array item must be a String", 400);
+            return false;
+          }
+        }
+      }
+      else
+      {
+        orionldError(OrionldBadRequestData, "Invalid JSON type", "Subscription::datasetId must be a String or an Array of Strings", 400);
+        return false;
+      }
+    }
     else
     {
       orionldError(OrionldBadRequestData, "Unknown field for subscription", subItemP->name, 400);

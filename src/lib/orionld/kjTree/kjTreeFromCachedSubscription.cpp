@@ -192,6 +192,24 @@ KjNode* kjTreeFromCachedSubscription(CachedSubscription* cSubP, bool sysAttrs, b
   }
 
   //
+  // datasetId - top-level dataset filter/projection (rendered as an Array of String)
+  //
+  if (cSubP->datasetIds.size() > 0)
+  {
+    KjNode* datasetIdP = kjArray(orionldState.kjsonP, "datasetId");
+    NULL_CHECK(datasetIdP);
+
+    for (unsigned int ix = 0; ix < cSubP->datasetIds.size(); ix++)
+    {
+      nodeP = kjString(orionldState.kjsonP, NULL, cSubP->datasetIds[ix].c_str());
+      NULL_CHECK(nodeP);
+      kjChildAdd(datasetIdP, nodeP);
+    }
+
+    kjChildAdd(sP, datasetIdP);
+  }
+
+  //
   // NGSI-LD q
   //
   if (cSubP->qText != NULL)

@@ -72,9 +72,12 @@ valgrindSleep 5
 # 03. GET the entity - on completion the goal's datasetId instance was the last
 #     one, so the WHOLE 'fib' attribute is removed (the history lives on in TRoE).
 #     The temp subscription has been torn down too. A later goal-PATCH re-creates fib.
-# 04. Notifications ftClient received over the goal lifecycle (delivered by the
-#     temp subscription; no deletion notification - the sub is removed BEFORE
-#     the instance/attribute is removed).
+# 04. Dump the actual notifications ftClient received over the goal lifecycle
+#     (delivered by the temp subscription; no deletion notification - the sub is
+#     removed BEFORE the instance/attribute is removed). Each body is projected
+#     by the goal's datasetId, so it carries that goal's feedback/result/status
+#     envelope. A follow-on count is printed for convenience.
+# 05. Verify TRoE recorded the goal lifecycle (history survives the attribute removal).
 #
 # NOTE: GET /entities/{id}/attrs/{attrName} (and the synonym ?goal=<uuid>) is
 # not exercised here - that path currently bails out on multi-instance
@@ -112,19 +115,29 @@ echo
 echo
 
 
-echo "04. Count notifications ftClient received over the goal lifecycle (via temp sub)"
-echo "================================================================================="
-# The temp subscription fires on every change to the action attribute. Until the
-# datasetId-projection extension lands, the notification body carries the default
-# instance (not the per-goal feedback/result/status envelopes), so we assert
-# delivery by count rather than by (timing-dependent) content.
-notifs=$(orionCurl --url /dump --port $FT_PORT --noPayloadCheck | grep -c "POST /notify")
-if [ "$notifs" -ge 3 ]
-then
-  echo "notifications received: OK (>=3)"
-else
-  echo "notifications received: TOO FEW ($notifs)"
-fi
+echo "04. Notifications ftClient received over the goal lifecycle (via temp sub)"
+echo "==========================================================================="
+# The temp subscription carries the goal's datasetId, so notificationSend projects
+# each notification body down to the matching per-goal dataset instance - i.e. each
+# body carries that goal's feedback/result/status envelope, not the default instance.
+#
+# The exact per-notification body is timing-dependent (each notification is a
+# cumulative snapshot of the 'fib' instance, and the feedback/status DDS callbacks
+# race), so we show the delivered content in a stable, canonical form: the distinct
+# status codes, the feedback partial_sequences, and the (stable) terminal body.
+dump=$(orionCurl --url /dump --port $FT_PORT --noPayloadCheck)
+bodies=$(echo "$dump" | grep -vE '^(POST |HTTP/|Content-|User-Agent|Host:|Accept:|Ngsild-|Link:|Date:|====)')
+
+echo "Total notifications received: $(echo "$dump" | grep -c 'POST /notify')"
+echo
+echo "ddsActionStatus codes delivered (sorted, unique):"
+echo "$bodies" | jq -r '.data[].fib.ddsActionStatus.value.code // empty' 2>/dev/null | sort -u | sed 's/^/  /'
+echo
+echo "ddsActionFeedback partial_sequence(s) delivered (sorted, unique):"
+echo "$bodies" | jq -rc '.data[].fib.ddsActionFeedback.value.partial_sequence // empty' 2>/dev/null | sort -u | sed 's/^/  /'
+echo
+echo "Terminal notification body (the final 'succeeded' snapshot, key-sorted):"
+echo "$bodies" | jq -s -S '.[-1]' 2>/dev/null
 echo
 echo
 
@@ -179,9 +192,67 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 }
 
 
-04. Count notifications ftClient received over the goal lifecycle (via temp sub)
-=================================================================================
-notifications received: OK (>=3)
+04. Notifications ftClient received over the goal lifecycle (via temp sub)
+===========================================================================
+Total notifications received: 9
+
+ddsActionStatus codes delivered (sorted, unique):
+  accepted
+  executing
+  succeeded
+
+ddsActionFeedback partial_sequence(s) delivered (sorted, unique):
+  [0,1,1,2,3]
+  [0,1,1,2]
+  [0,1,1]
+
+Terminal notification body (the final 'succeeded' snapshot, key-sorted):
+{
+  "data": [
+    {
+      "fib": {
+        "datasetId": "REGEX(urn:goal:.*)",
+        "ddsActionFeedback": {
+          "publishedAt": {
+            "type": "Property",
+            "value": REGEX(\d+)
+          },
+          "type": "Property",
+          "value": {
+            "partial_sequence": [
+              0,
+              1,
+              1,
+              2,
+              3
+            ]
+          }
+        },
+        "ddsActionStatus": {
+          "publishedAt": {
+            "type": "Property",
+            "value": REGEX(\d+)
+          },
+          "type": "Property",
+          "value": {
+            "code": "succeeded",
+            "message": "The goal was achieved successfully by the action server"
+          }
+        },
+        "type": "Property",
+        "value": {
+          "order": 5
+        }
+      },
+      "id": "urn:ngsi-ld:robot:r1",
+      "type": "Robot"
+    }
+  ],
+  "id": "REGEX(urn:ngsi-ld:Notification:.*)",
+  "notifiedAt": "REGEX(.*)",
+  "subscriptionId": "REGEX(urn:ngsi-ld:subscription:.*)",
+  "type": "Notification"
+}
 
 
 05. Verify TRoE recorded the goal lifecycle
