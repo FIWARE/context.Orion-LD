@@ -1,4 +1,5 @@
 ## Fixed Issues
+  #1951 - Fixed slow, half-broken batch upsert of more than 1000 entities: the legacy "which of these already exist" lookup (mongoCppLegacyEntityListLookupWithIdTypeCreDate) truncated its result at a hardcoded 1000, so on a re-upsert the surplus entities were misclassified as new and re-inserted (duplicate-key path) instead of updated. The lookup's $in query is already bounded by the batch (and thus by the max payload size), so the arbitrary 1000 cap was removed
   #1905 - TRoE: segfault (exit 139) connecting to TimescaleDB Cloud - added SSL support and fixed NULL pointer crash
   #XXXX - Fixed crash under concurrent notification delivery by replacing thread-unsafe gethostbyname with getaddrinfo in orionldServerConnect
   #XXXX - Fixed query of many large entities (cfreyfh - Carsten Freyh at Fraunhofer IKTS)
