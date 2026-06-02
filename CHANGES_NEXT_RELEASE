@@ -1,4 +1,5 @@
 ## Fixed Issues
+  #1943 - Fixed heap corruption / crash under concurrent load: the MHD request thread pool (enabled by reqPoolSize, recently turned on by default) runs MHD in epoll mode, multiplexing several connections onto each pool thread - but the in-progress request state (payload buffer, kalloc, requestTree) lives in the thread-local orionldState, so concurrent (large, multi-chunk) requests corrupted each other (heap use-after-free / "free(): invalid size"). The MHD thread pool is now disabled: the broker always runs thread-per-connection. The -reqPoolSize/TRQ_POOL_SIZE option is still accepted (so existing deployments start) but is ignored and logs a warning
   #1905 - TRoE: segfault (exit 139) connecting to TimescaleDB Cloud - added SSL support and fixed NULL pointer crash
   #XXXX - Fixed crash under concurrent notification delivery by replacing thread-unsafe gethostbyname with getaddrinfo in orionldServerConnect
   #XXXX - Fixed query of many large entities (cfreyfh - Carsten Freyh at Fraunhofer IKTS)
