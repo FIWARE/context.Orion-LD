@@ -144,9 +144,27 @@ Delete,urn:ngsi-ld:entities:E3,NULL,REGEX(202.*)
 
 04. Attempt to delete E2 twice
 ==============================
-HTTP/1.1 204 No Content
+HTTP/1.1 207 Multi-Status
+Content-Length: 295
+Content-Type: application/json
 Date: REGEX(.*)
 
+{
+    "errors": [
+        {
+            "entityId": "urn:ngsi-ld:entities:E2",
+            "error": {
+                "detail": "Duplicated Entity ID in the batch request - only the first occurrence is processed",
+                "status": 404,
+                "title": "Entity Not Found",
+                "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
+            }
+        }
+    ],
+    "success": [
+        "urn:ngsi-ld:entities:E2"
+    ]
+}
 
 
 05. See the entities in the temporal database - E2 should be deleted only once in TRoE
