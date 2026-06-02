@@ -284,7 +284,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="h
 
 05. Goal 1 notifications ftClient received over the goal lifecycle (via temp sub)
 =================================================================================
-Total notifications received: 9
+Total notifications received: 8
 
 ddsActionStatus codes delivered (sorted, unique):
   accepted
@@ -393,7 +393,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="h
 
 11. Goal 2 notifications - a full fresh roundtrip, independent of goal 1
 =======================================================================
-Total notifications received: 9
+Total notifications received: 8
 
 ddsActionStatus codes delivered (sorted, unique):
   accepted

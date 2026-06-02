@@ -45,13 +45,21 @@ extern "C"
 //
 // ALTERATION -
 //
-#define ALTERATION(altType)                                 \
-do                                                          \
-{                                                           \
-  aeP->alteredAttributeV[ix].alterationType = altType;      \
-  aeP->alteredAttributeV[ix].attrName       = attrP->name;  \
-  aeP->alteredAttributeV[ix].attrNameEq     = attrNameEq;   \
-  ++ix;                                                     \
+// datasetId of the changed instance, for datasetId-scoped watchedAttributes
+// (syntax "attr@datasetId"). A single-instance patch carries the attribute as
+// an object that still holds its 'datasetId' member at this point (it is moved
+// into orionldState.datasets later). NULL means the default (no-datasetId)
+// instance, or - for a multi-instance Array patch - "unknown" (we can't tell
+// which instances from one char*, so we leave it NULL).
+#define ALTERATION(altType)                                                                              \
+do                                                                                                       \
+{                                                                                                        \
+  KjNode* _dsNodeP = (attrP->type == KjObject)? kjLookup(attrP, "datasetId") : NULL;                     \
+  aeP->alteredAttributeV[ix].alterationType = altType;                                                   \
+  aeP->alteredAttributeV[ix].attrName       = attrP->name;                                               \
+  aeP->alteredAttributeV[ix].attrNameEq     = attrNameEq;                                                \
+  aeP->alteredAttributeV[ix].datasetId      = (_dsNodeP != NULL)? _dsNodeP->value.s : NULL;              \
+  ++ix;                                                                                                  \
 } while (0)
 
 

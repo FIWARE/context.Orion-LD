@@ -22,15 +22,20 @@
 *
 * Author: Ken Zangelin
 */
+#include <string.h>                                              // strchr, strlen, strcpy, strcat
+
 extern "C"
 {
 #include "kbase/kMacros.h"                                       // K_FT
 #include "ktrace/kTrace.h"                                       // KT_*
+#include "kalloc/kaAlloc.h"                                      // kaAlloc
+#include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjChildRemove
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
 
+#include "orionld/context/orionldAttributeExpand.h"              // orionldAttributeExpand
 #include "orionld/types/QNode.h"                                 // QNode
 #include "orionld/types/OrionldRenderFormat.h"                   // OrionldRenderFormat
 #include "orionld/q/qBuild.h"                                    // qBuild
@@ -217,9 +222,61 @@ bool pCheckSubscription
       PCHECK_ARRAY(watchedAttributesP, 0, NULL, SubscriptionWatchedAttributesPath, 400);
       PCHECK_ARRAY_EMPTY(watchedAttributesP, 0, NULL, SubscriptionWatchedAttributesPath, 400);
 
-      // pCheckStringArray expands (w/ orionldState.contextP) as well as checks validity
-      if (pCheckStringArray(watchedAttributesP, SubscriptionWatchedAttributesItemPath, true) == false)
-        return false;
+      //
+      // A watchedAttributes entry may be datasetId-scoped: "attrName@datasetId"
+      // (split on the FIRST '@'). The subscription is then triggered only when an
+      // instance with that datasetId changes (enforced in subCacheAlterationMatch).
+      // Only the attribute-name part is @context-expanded; the datasetId is a URN,
+      // kept verbatim. Plain entries (no '@') are expanded exactly as before.
+      //
+      for (KjNode* aP = watchedAttributesP->value.firstChildP; aP != NULL; aP = aP->next)
+      {
+        if (aP->type != KjString)
+        {
+          orionldError(OrionldBadRequestData, "Not a JSON String", SubscriptionWatchedAttributesItemPath, 400);
+          return false;
+        }
+
+        char* atP = strchr(aP->value.s, '@');
+
+        if (atP == NULL)
+          aP->value.s = orionldAttributeExpand(orionldState.contextP, aP->value.s, true, NULL);
+        else
+        {
+          char* dup     = kaStrdup(&orionldState.kalloc, aP->value.s);
+          char* dupAtP  = strchr(dup, '@');
+          *dupAtP       = 0;                 // split: dup = attribute name, dataset = datasetId
+          char* dataset = dupAtP + 1;
+
+          if (dup[0] == 0)
+          {
+            orionldError(OrionldBadRequestData, "Empty attribute name", "datasetId-scoped watchedAttributes entry (attr@datasetId)", 400);
+            return false;
+          }
+          if (dataset[0] == 0)
+          {
+            orionldError(OrionldBadRequestData, "Empty datasetId", "datasetId-scoped watchedAttributes entry (attr@datasetId)", 400);
+            return false;
+          }
+
+          // The datasetId must be a URI (NGSI-LD), except the special token "@none"
+          // (i.e. "attr@@none") which scopes to the default, no-datasetId instance.
+          if ((strcmp(dataset, "@none") != 0) && (strchr(dataset, ':') == NULL))
+          {
+            orionldError(OrionldBadRequestData, "Invalid datasetId - must be a URI", "datasetId-scoped watchedAttributes entry (attr@datasetId)", 400);
+            return false;
+          }
+
+          char* expanded = orionldAttributeExpand(orionldState.contextP, dup, true, NULL);
+          int   len      = strlen(expanded) + 1 + strlen(dataset) + 1;
+          char* combined = kaAlloc(&orionldState.kalloc, len);
+
+          strcpy(combined, expanded);
+          strcat(combined, "@");
+          strcat(combined, dataset);
+          aP->value.s = combined;
+        }
+      }
     }
     else if (strcmp(subItemP->name, "timeInterval") == 0)
       PCHECK_DUPLICATE(timeIntervalP, subItemP, 0, NULL, SubscriptionTimeIntervalPath, 400);

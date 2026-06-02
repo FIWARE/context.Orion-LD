@@ -23,11 +23,13 @@
 * Author: Ken Zangelin
 */
 #include <stdlib.h>                                              // strdup, free
+#include <string.h>                                              // strlen, strcpy, strcat
 #include <time.h>                                               // time, gmtime_r, strftime
 
 extern "C"
 {
 #include "ktrace/kTrace.h"                                       // trace messages - ktrace library
+#include "kalloc/kaAlloc.h"                                      // kaAlloc
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjObject, kjArray, kjString, kjChildAdd
 #include "kjson/kjChildPrepend.h"                                // kjChildPrepend
@@ -100,12 +102,31 @@ char* ddsActionSubscriptionCreate
   kjChildAdd(entitiesArr, entityObj);
   kjChildAdd(subP, entitiesArr);
 
+  //
+  // watchedAttributes entry. When the goal has a datasetId we scope the TRIGGER
+  // to it with the "attr@datasetId" syntax, so this temp subscription fires ONLY
+  // when THIS goal's instance changes - not when a sibling goal that happens to
+  // be in flight modifies the same attribute (avoids concurrent-goal cross-talk).
+  // attrLongName is already expanded; pCheckSubscription's expansion of the name
+  // part is idempotent.
+  //
+  char* watchedEntry = attrLongName;
+  if (datasetId != NULL)
+  {
+    int len = strlen(attrLongName) + 1 /* '@' */ + strlen(datasetId) + 1 /* '\0' */;
+    watchedEntry = kaAlloc(&orionldState.kalloc, len);
+    strcpy(watchedEntry, attrLongName);
+    strcat(watchedEntry, "@");
+    strcat(watchedEntry, datasetId);
+  }
+
   KjNode* watchedArr = kjArray(orionldState.kjsonP, "watchedAttributes");
-  kjChildAdd(watchedArr, kjString(orionldState.kjsonP, NULL, attrLongName));
+  kjChildAdd(watchedArr, kjString(orionldState.kjsonP, NULL, watchedEntry));
   kjChildAdd(subP, watchedArr);
 
-  // datasetId projection: notifications carry only THIS goal's instance (its
-  // feedback/result/status), not the default instance or sibling goals.
+  // datasetId PROJECTION: notifications carry only THIS goal's instance (its
+  // feedback/result/status), not the default instance or sibling goals. (The
+  // @-suffix above scopes the trigger; this top-level datasetId scopes the body.)
   if (datasetId != NULL)
     kjChildAdd(subP, kjString(orionldState.kjsonP, "datasetId", datasetId));
 

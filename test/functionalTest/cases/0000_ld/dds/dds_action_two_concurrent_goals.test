@@ -23,35 +23,34 @@
 # Skipped in GitHub Actions (the test container can't reach the docker daemon).
 #
 # ============================================================================
-# KNOWN LIMITATION documented by this test: concurrent-goal notification
-# cross-talk.
+# What this test verifies: concurrent-goal notification ISOLATION via
+# datasetId-scoped watchedAttributes.
 #
 # Each DDS action goal that carries an 'endpoint' spawns a temporary
-# subscription with watchedAttributes:["fib"] and a top-level datasetId set to
-# that goal's per-goal datasetId. In NGSI-LD the subscription datasetId is a
-# PROJECTION of the notification body only - there is NO datasetId in
-# 'watchedAttributes', so the notification TRIGGER cannot be scoped to a single
-# datasetId instance. (A datasetId-aware 'watchedAttributes' is not in the ETSI
-# spec; an addition has been proposed.)
+# subscription. The subscription's watchedAttributes entry is datasetId-scoped
+# using the "attr@datasetId" syntax - here "fib@<goal's datasetId>" - so the
+# notification TRIGGER is bound to that goal's own instance, and the top-level
+# datasetId still PROJECTS the body to that instance.
 #
-# Consequence with two goals in flight at once: every change to EITHER goal's
-# 'fib' instance fires BOTH temp subscriptions. The delivered DATA is always
-# correct - notificationSend's datasetFilter projects each body down to the
-# subscription's own goal instance (a single object, never the sibling goal) -
-# but it is OVER-DELIVERED:
-#   - duplicate snapshots: a goal's subscriber re-receives its own (unchanged)
-#     instance every time the sibling goal changes 'fib';
-#   - a few empty notifications (id+type only): a subscriber fires before its
-#     own goal's instance has materialised, so datasetFilter finds no matching
-#     instance and drops 'fib' from the body.
-# Both stem from the single missing feature; neither is a data-correctness bug.
-# This test asserts the lifecycle is correct (overlap, per-goal projection,
-# cleanup, TRoE) AND pins the cross-talk as the expected, documented behaviour.
+# Consequence with two goals in flight at once: a change to one goal's 'fib'
+# instance fires ONLY that goal's subscription; the sibling goal's subscriber is
+# not woken. Each subscriber therefore receives ~the notifications of a single
+# goal (~9), and the total stays near the two-independent-goals baseline (~18),
+# rather than ~doubling (~34) as it would if the trigger fired on every change
+# to 'fib' regardless of datasetId (the pre-fix cross-talk).
+#
+# NOTE: datasetId in 'watchedAttributes' ("attr@datasetId") is an Orion-LD
+# extension - not (yet) in the ETSI NGSI-LD spec; an addition has been proposed.
+# The syntax may change once ETSI decides.
+#
+# This test asserts: both goals overlap, per-goal trigger isolation (no
+# cross-talk amplification), correct per-goal body projection, full lifecycle
+# cleanup, and TRoE recording both goals.
 # ============================================================================
 #
 
 --NAME--
-DDS Action: two concurrent goals - overlapping instances/subs + KNOWN notification cross-talk limitation
+DDS Action: two concurrent goals - datasetId-scoped watchedAttributes isolates each goal's notifications (no cross-talk)
 
 --SHELL-INIT--
 ddsClean
@@ -96,8 +95,8 @@ sleep 7
 # 05. Wait for both goals to complete
 # 06. GET entity - both done, 'fib' removed
 # 07. GET /subscriptions - both temp subs gone
-# 08. Notifications: amplification + the KNOWN cross-talk limitation, AND
-#     per-goal projection is still correct (no body ever carries both instances)
+# 08. Notifications: per-goal trigger isolation (no cross-talk amplification),
+#     each goal got ~one goal's worth, projection correct (no body has both)
 # 09. TRoE: two distinct goals recorded
 #
 
@@ -168,37 +167,35 @@ echo
 echo
 
 
-echo "08. Notifications ftClient received - amplification + KNOWN cross-talk limitation"
-echo "================================================================================="
-# KNOWN LIMITATION (see the header NOTE): each goal's temp subscription watches
-# the 'fib' attribute, and a subscription's datasetId is a PROJECTION only - the
-# NGSI-LD spec has no datasetId in 'watchedAttributes', so the TRIGGER cannot be
-# scoped to one goal's instance. While both goals are in flight, every change to
-# EITHER goal's instance fires BOTH temp subscriptions. The data is always
-# correct (each body is projected to its own goal's single instance), but it is
-# over-delivered:
-#   - duplicate snapshots: a goal's sub re-fires its unchanged instance whenever
-#     the sibling goal changes 'fib';
-#   - a few "empty" notifications (id+type only): a sub fires before its own
-#     goal's instance exists, so datasetFilter finds nothing and drops 'fib'.
-# A single goal delivers ~9 notifications; two INDEPENDENT goals without
-# cross-talk would total ~18. Cross-talk pushes it well above that.
+echo "08. Notifications ftClient received - per-goal isolation (no cross-talk)"
+echo "========================================================================"
+# Each goal's temp subscription watches "fib@<its goal datasetId>" (datasetId-
+# scoped watchedAttributes), so the TRIGGER is bound to that goal's own instance.
+# While both goals are in flight, a change to one goal's instance fires ONLY that
+# goal's subscription - the sibling goal is not notified. So each subscriber
+# receives ~the same number of notifications a single goal produces (~9), and the
+# total stays near the 2-independent-goals baseline (~18) instead of doubling
+# (~34) as it would if the trigger fired on every 'fib' change. The body is also
+# projected (top-level datasetId) to that goal's single instance.
 dump=$(orionCurl --url /dump --port $FT_PORT --noPayloadCheck)
 bodies=$(echo "$dump" | grep -vE '^(POST |HTTP/|Content-|User-Agent|Host:|Accept:|Ngsild-|Link:|Date:|====)')
 
 total=$(echo "$dump" | grep -c 'POST /notify')
-dgoals=$(echo "$bodies"  | jq -r '.data[0].fib.datasetId // empty'              2>/dev/null | sort -u | grep -c 'urn:goal:')
-arrays=$(echo "$bodies"  | jq -r 'select((.data[0].fib|type)=="array")  | "x"'  2>/dev/null | wc -l | tr -d ' ')
-empties=$(echo "$bodies" | jq -r 'select(.data[0].fib == null)          | "x"'  2>/dev/null | wc -l | tr -d ' ')
+dgoals=$(echo "$bodies"  | jq -r '.data[0].fib.datasetId // empty'             2>/dev/null | sort -u | grep -c 'urn:goal:')
+arrays=$(echo "$bodies"  | jq -r 'select((.data[0].fib|type)=="array") | "x"'  2>/dev/null | wc -l | tr -d ' ')
+maxPer=$(echo "$bodies"  | jq -r '.data[0].fib.datasetId // empty'             2>/dev/null | sort | uniq -c | sort -rn | head -1 | awk '{print $1+0}')
 
 echo "Total notifications received: $total"
 echo "Distinct goal datasetIds carried in bodies: $dgoals"
 echo "Notifications carrying BOTH instances (fib as array - projection leak): $arrays"
-echo "Empty notifications - sub fired before its own goal instance existed: $empties"
+echo "Max notifications delivered for any single goal: $maxPer"
 echo
-if [ "$total" -gt 18 ]; then echo "VERDICT cross-talk amplification (well above the ~18 no-cross-talk baseline): YES"; else echo "VERDICT cross-talk amplification: NO ($total)"; fi
-if [ "$dgoals" -eq 2 ]; then echo "VERDICT both goals' own data delivered (2 distinct goal datasetIds): YES"; else echo "VERDICT distinct goals: UNEXPECTED ($dgoals)"; fi
-if [ "$arrays" -eq 0 ]; then echo "VERDICT per-goal projection correct (no body ever carried both instances): YES"; else echo "VERDICT projection LEAK ($arrays bodies carried both instances)"; fi
+# Clean (isolated) run: total ~18-20, max-per-goal ~9-10. Cross-talk would give
+# total ~34 and max-per-goal ~17. The thresholds below cleanly separate the two.
+if [ "$total" -lt 26 ];  then echo "VERDICT trigger scoped per goal - no cross-talk amplification: YES"; else echo "VERDICT cross-talk amplification still present: total=$total"; fi
+if [ "$maxPer" -lt 13 ]; then echo "VERDICT each goal got ~one goal's worth of notifications: YES"; else echo "VERDICT a goal over-notified (cross-talk): maxPer=$maxPer"; fi
+if [ "$dgoals" -eq 2 ];  then echo "VERDICT both goals' own data delivered (2 distinct goal datasetIds): YES"; else echo "VERDICT distinct goals: UNEXPECTED ($dgoals)"; fi
+if [ "$arrays" -eq 0 ];  then echo "VERDICT per-goal projection correct (no body ever carried both instances): YES"; else echo "VERDICT projection LEAK ($arrays bodies carried both instances)"; fi
 echo
 echo
 
@@ -270,14 +267,15 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="h
 []
 
 
-08. Notifications ftClient received - amplification + KNOWN cross-talk limitation
-=================================================================================
+08. Notifications ftClient received - per-goal isolation (no cross-talk)
+========================================================================
 Total notifications received: REGEX([0-9]+)
 Distinct goal datasetIds carried in bodies: 2
 Notifications carrying BOTH instances (fib as array - projection leak): 0
-Empty notifications - sub fired before its own goal instance existed: REGEX([0-9]+)
+Max notifications delivered for any single goal: REGEX([0-9]+)
 
-VERDICT cross-talk amplification (well above the ~18 no-cross-talk baseline): YES
+VERDICT trigger scoped per goal - no cross-talk amplification: YES
+VERDICT each goal got ~one goal's worth of notifications: YES
 VERDICT both goals' own data delivered (2 distinct goal datasetIds): YES
 VERDICT per-goal projection correct (no body ever carried both instances): YES
 
