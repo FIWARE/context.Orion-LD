@@ -36,10 +36,10 @@ accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
 #   - "@none" selects the default (no-datasetId) instance
 # The datasetId filter must also persist (mongo) and survive a broker restart.
 #
-# NOTE: a separate pre-existing bug corrupts an existing NON-default datasetId
-# instance if it is PATCHed (the DB row loses its 'type'), so this test PATCHes
-# each non-default instance at most once and uses the default instance for the
-# @none case (default-instance patches are safe).
+# NOTE: a non-default datasetId instance is updated via the merge endpoint
+# PATCH /entities/{id} (orionldPatchEntity2), which supports datasetId
+# instances. PATCH /entities/{id}/attrs does NOT implement datasetId instances
+# and rejects a body datasetId with 501, so it must not be used for that.
 #
 # 01. Create entity urn:ngsi-ld:E1 with multi-instance attr A (default + D1 + D2) and single-instance attr B
 # 02. Create subscription Sub1 with datasetId ["urn:ngsi-ld:dataset:D1"]
@@ -94,12 +94,12 @@ echo
 echo
 
 
-echo "04. PATCH A's D1 instance -> notification"
-echo "========================================="
+echo "04. PATCH A's D1 instance (merge endpoint) -> notification"
+echo "=========================================================="
 payload='{
   "A": { "type": "Property", "value": 11, "datasetId": "urn:ngsi-ld:dataset:D1" }
 }'
-orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:E1/attrs -X PATCH --payload "$payload"
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:E1 -X PATCH --payload "$payload"
 echo
 echo
 
@@ -230,8 +230,8 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="h
 }
 
 
-04. PATCH A's D1 instance -> notification
-=========================================
+04. PATCH A's D1 instance (merge endpoint) -> notification
+==========================================================
 HTTP/1.1 204 No Content
 Date: REGEX(.*)
 
