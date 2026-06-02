@@ -269,3 +269,59 @@ bool mongocDatasetInstancePull
 
   return ok;
 }
+
+
+
+// -----------------------------------------------------------------------------
+//
+// mongocDatasetAttrUnset - $unset the whole "@datasets.<attr>" entry
+//
+// $pull of the last instance leaves "@datasets.<attr>" as an empty array (which
+// renders as "<attr>": []), so when removing an action-tied attribute on
+// completion the entire entry is $unset instead.
+//
+bool mongocDatasetAttrUnset
+(
+  const char* entityId,
+  const char* attrLongName
+)
+{
+  char* path = attrEqPath(attrLongName);
+
+  mongocConnectionGet(orionldState.tenantP, DbEntities);
+
+  bson_t selector;
+  bson_init(&selector);
+  bson_append_utf8(&selector, "_id.id", 6, entityId, -1);
+
+  bson_t unsetDoc;
+  bson_t setDoc;
+  bson_t update;
+
+  bson_init(&unsetDoc);
+  bson_append_utf8(&unsetDoc, path, -1, "", 0);
+
+  bson_init(&setDoc);
+  bson_append_double(&setDoc, "modDate", 7, orionldState.requestTime);
+
+  bson_init(&update);
+  bson_append_document(&update, "$unset", 6, &unsetDoc);
+  bson_append_document(&update, "$set",   4, &setDoc);
+
+  bson_t reply;
+  bson_init(&reply);
+
+  KT_T(StMongoc, "Mongo $unset %s for entity '%s'", path, entityId);
+  bool ok = mongoc_collection_update_one(orionldState.mongoc.entitiesP, &selector, &update, NULL, &reply, &orionldState.mongoc.error);
+  if (ok == false)
+    KT_E("mongoc $unset @datasets failed for '%s': [%d.%d]: %s",
+         entityId, orionldState.mongoc.error.domain, orionldState.mongoc.error.code, orionldState.mongoc.error.message);
+
+  bson_destroy(&selector);
+  bson_destroy(&unsetDoc);
+  bson_destroy(&setDoc);
+  bson_destroy(&update);
+  bson_destroy(&reply);
+
+  return ok;
+}

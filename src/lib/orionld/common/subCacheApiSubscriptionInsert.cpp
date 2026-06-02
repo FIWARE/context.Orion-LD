@@ -105,6 +105,7 @@ static void subCacheItemFill
   KjNode* expiresAtP         = kjLookup(apiSubscriptionP, "expiresAt");
   KjNode* throttlingP        = kjLookup(apiSubscriptionP, "throttling");
   KjNode* langP              = kjLookup(apiSubscriptionP, "lang");
+  KjNode* datasetIdP         = kjLookup(apiSubscriptionP, "datasetId");
   KjNode* createdAtP         = kjLookup(apiSubscriptionP, "createdAt");
   KjNode* modifiedAtP        = kjLookup(apiSubscriptionP, "modifiedAt");
   KjNode* dbCountP           = kjLookup(notificationP,    "timesSent");
@@ -267,6 +268,17 @@ static void subCacheItemFill
     for (KjNode* watchedAttributeP = watchedAttributesP->value.firstChildP; watchedAttributeP != NULL; watchedAttributeP = watchedAttributeP->next)
     {
       cSubP->notifyConditionV.push_back(watchedAttributeP->value.s);
+    }
+  }
+
+  if (datasetIdP != NULL)
+  {
+    if (datasetIdP->type == KjString)
+      cSubP->datasetIds.push_back(datasetIdP->value.s);
+    else if (datasetIdP->type == KjArray)
+    {
+      for (KjNode* dsP = datasetIdP->value.firstChildP; dsP != NULL; dsP = dsP->next)
+        cSubP->datasetIds.push_back(dsP->value.s);
     }
   }
 

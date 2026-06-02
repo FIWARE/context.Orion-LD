@@ -39,6 +39,6 @@ extern "C"
 // What is published over DDS is the "value" field of the attribute.
 // For now, sub-attributes are not used in DDS.
 //
-extern void ddsPublishAttribute(const char* entityId, char* attrShortName, KjNode* attrP, bool isValue);
+extern void ddsPublishAttribute(const char* entityId, char* attrShortName, KjNode* attrP, bool isValue, KjNode* incoming = NULL);
 
 #endif  // SRC_LIB_ORIONLD_DDS_DDSPUBLISHATTRIBUTE_H_

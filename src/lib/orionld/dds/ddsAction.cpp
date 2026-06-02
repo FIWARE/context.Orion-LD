@@ -41,6 +41,8 @@ extern "C"
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/traceLevels.h"                          // KT_T trace levels
 #include "orionld/dds/ddsInit.h"                                 // ddsEnabler
+#include "orionld/dds/ddsActionBuild.h"                          // ddsActionGoalDatasetId
+#include "orionld/dds/ddsActionSubscription.h"                   // ddsActionSubscriptionCreate
 #include "orionld/dds/ddsAction.h"                               // Own interface
 
 
@@ -49,7 +51,7 @@ extern "C"
 //
 // ddsActionGoalSend -
 //
-void ddsActionGoalSend(DdsAction* actionP, KjNode* attributeValueP)
+void ddsActionGoalSend(DdsAction* actionP, KjNode* attributeValueP, const char* endpointUri)
 {
   int   jsonLen = kjFastRenderSize(attributeValueP);
   char* json    = kaAlloc(&orionldState.kalloc, jsonLen + 20);
@@ -81,6 +83,22 @@ void ddsActionGoalSend(DdsAction* actionP, KjNode* attributeValueP)
     gP->requestJson = strdup(json);
     gP->next        = actionP->goals;
     actionP->goals  = gP;
+
+    //
+    // If the PATCH carried an 'endpoint' sub-attribute, create a temporary
+    // (cache-only) subscription so the initiator gets this goal's feedback /
+    // result / status. Torn down on the goal's terminal status. A failure to
+    // create the subscription must NOT fail the goal - gP->subscriptionId
+    // simply stays NULL.
+    //
+    if (endpointUri != NULL)
+    {
+      // Scope the temp sub to THIS goal's datasetId so its notifications carry
+      // the goal's own feedback/result/status instance (not the default).
+      char goalDatasetId[48];
+      ddsActionGoalDatasetId(goalId, goalDatasetId);
+      gP->subscriptionId = ddsActionSubscriptionCreate(actionP->entityId, actionP->entityType, actionP->attributeName, endpointUri, goalDatasetId);
+    }
 
     KT_T(StDdsAction, "Sent action goal for '%s'", actionP->name);
   }
