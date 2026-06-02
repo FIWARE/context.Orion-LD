@@ -1,4 +1,5 @@
 ## Fixed Issues
+  #XXXX - Fixed entity corruption from PATCH /entities/{id}/attrs carrying a body datasetId: the datasetId instance was moved aside but never written, and the emptied attribute clobbered the stored default instance (the next read 500'd). PATCH /attrs does not implement datasetId instances - it is now rejected with 501 and the entity is left untouched
   #1905 - TRoE: segfault (exit 139) connecting to TimescaleDB Cloud - added SSL support and fixed NULL pointer crash
   #XXXX - Fixed crash under concurrent notification delivery by replacing thread-unsafe gethostbyname with getaddrinfo in orionldServerConnect
   #XXXX - DDS: fixed HTTP 500 on second consecutive PATCH/attr roundtrip - dotForEq nested-Property names so mongo $set doesn't fragment them across path-separator dots
