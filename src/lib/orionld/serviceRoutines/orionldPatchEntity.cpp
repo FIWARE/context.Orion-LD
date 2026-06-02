@@ -344,6 +344,22 @@ bool orionldPatchEntity(void)
   {
     next = attrP->next;
 
+    //
+    // PATCH /entities/{entityId}/attrs does not implement datasetId instances. Letting one
+    // through silently corrupts the attribute's default instance (the dataset instance is
+    // moved aside but never written, and the emptied attribute clobbers the stored default).
+    // Reject up front with 501 - this is done inside the existing attribute loop, so it adds
+    // no extra traversal of the body.
+    //
+    if ((attrP->type == KjArray) || (kjLookup(attrP, "datasetId") != NULL))
+    {
+      orionldError(OrionldOperationNotSupported,
+                   "Not Implemented",
+                   "datasetId instances are not supported by PATCH /entities/{entityId}/attrs",
+                   501);
+      return false;
+    }
+
     KT_T(KtShowChanges, "Modified attribute: '%s'", attrP->name);
     if (attributeLookup(dbAttrsP, attrP->name) == false)
     {

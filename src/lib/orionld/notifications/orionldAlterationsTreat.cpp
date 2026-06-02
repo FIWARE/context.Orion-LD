@@ -42,6 +42,7 @@ extern "C"
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/orionldPatchApply.h"                    // orionldPatchApply
+#include "orionld/common/datasetInstancesMerge.h"                // datasetInstancesMerge
 #include "orionld/types/OrionldAlteration.h"                     // OrionldAlteration, orionldAlterationType
 #include "orionld/dbModel/dbModelToApiEntity.h"                  // dbModelToApiEntity
 #include "orionld/notifications/subCacheAlterationMatch.h"       // subCacheAlterationMatch
@@ -563,12 +564,32 @@ void orionldAlterationsTreat(OrionldAlteration* altList)
     // so for the common no-datasetId case we must keep the original converter.
     if (orionldState.datasets != NULL)
     {
-      // CLONE - orionldState.datasets is consumed downstream (the @datasets mongo
-      // write in orionldPatchEntity2, plus TRoE). dbModelToApiEntity2 calls
-      // datasetExtract, which kjChildRemove's instances out of the @datasets tree
-      // it is given - so we hand it a clone, never the shared orionldState.datasets.
-      if (kjLookup(altList->dbEntityP, "@datasets") == NULL)
-        kjChildAdd(altList->dbEntityP, kjClone(orionldState.kjsonP, orionldState.datasets));
+      // Merge the patch's dataset instances into dbEntityP's @datasets so the rendered
+      // notification carries the PATCHED dataset values (not the stale DB values), using
+      // the same per-instance merge that orionldPatchEntity2 applies to the DB write.
+      // datasetInstancesMerge returns a fresh array and never touches its inputs - so the
+      // shared orionldState.datasets (consumed downstream by the @datasets mongo write and
+      // TRoE) is left intact, and dbModelToApiEntity2/datasetExtract is free to shred the
+      // merged copy we install here.
+      //
+      KjNode* dbDatasetsP = kjLookup(altList->dbEntityP, "@datasets");
+      if (dbDatasetsP == NULL)
+      {
+        dbDatasetsP = kjObject(orionldState.kjsonP, "@datasets");
+        kjChildAdd(altList->dbEntityP, dbDatasetsP);
+      }
+
+      for (KjNode* attrDatasetP = orionldState.datasets->value.firstChildP; attrDatasetP != NULL; attrDatasetP = attrDatasetP->next)
+      {
+        KjNode* dbAttrArrayP = kjLookup(dbDatasetsP, attrDatasetP->name);
+        KjNode* mergedP      = datasetInstancesMerge(dbAttrArrayP, attrDatasetP);
+
+        if (dbAttrArrayP != NULL)
+          kjChildRemove(dbDatasetsP, dbAttrArrayP);
+
+        mergedP->name = attrDatasetP->name;
+        kjChildAdd(dbDatasetsP, mergedP);
+      }
 
       altList->finalApiEntityP = dbModelToApiEntity2(altList->dbEntityP, false, RF_NORMALIZED, NULL, false, &orionldState.pd);
     }
