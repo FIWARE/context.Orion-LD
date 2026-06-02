@@ -1,4 +1,6 @@
 ## Fixed Issues
+  #XXXX - Fixed entity corruption from PATCH /entities/{id}/attrs carrying a body datasetId: the datasetId instance was moved aside but never written, and the emptied attribute clobbered the stored default instance (the next read 500'd). PATCH /attrs does not implement datasetId instances - it is now rejected with 501 and the entity is left untouched
+  #XXXX - Fixed stale value in notifications when PATCH /entities/{id} (merge) updates an EXISTING datasetId instance: the notification render only folded the patched dataset instances in when the attribute had no instances in the DB yet, so an update notified the old DB value (and a DDS action's terminal notification dropped its ddsActionResult entirely). The patched instances are now merged into the render entity in all cases
   #1905 - TRoE: segfault (exit 139) connecting to TimescaleDB Cloud - added SSL support and fixed NULL pointer crash
   #XXXX - Fixed crash under concurrent notification delivery by replacing thread-unsafe gethostbyname with getaddrinfo in orionldServerConnect
   #XXXX - Fixed query of many large entities (cfreyfh - Carsten Freyh at Fraunhofer IKTS)

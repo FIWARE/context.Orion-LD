@@ -39,12 +39,12 @@ accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
 # (Orion-LD extension - datasetId in watchedAttributes is not yet in the ETSI
 # NGSI-LD spec; an addition has been proposed. Syntax may change.)
 #
-# Ordering note: a separate PRE-EXISTING bug corrupts an attribute once a
-# datasetId instance is added (via PATCH) to an attribute that already has a
-# default instance - the NEXT operation that reads the entity then 500s. The
-# datasetId-creating PATCH (step 10) is therefore the LAST entity operation:
-# its own notification builds fine, and nothing reads the entity afterwards.
-# All the safe checks (default + control + reload) run before it.
+# Endpoint note: a datasetId instance is created/updated via the merge endpoint
+# PATCH /entities/{id} (orionldPatchEntity2), which supports datasetId instances.
+# PATCH /entities/{id}/attrs does NOT implement datasetId instances and rejects a
+# body datasetId with 501, so the datasetId-scoped trigger (step 10) uses the
+# merge endpoint. The plain default-instance updates (steps 08, 09) have no
+# datasetId and keep using /attrs.
 #
 # 01. Create entity E1 - attr A (default), attr B (default, a control attribute)
 # 02. Sub1 watchedAttributes ["A@urn:ngsi-ld:dataset:D1"]  (scoped to D1)
@@ -55,7 +55,7 @@ accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
 # 07. GET Sub1 - the datasetId-scoped watchedAttributes survived the reload
 # 08. PATCH B (control)         -> neither fires (B is not watched)
 # 09. PATCH A default instance  -> only Sub2 fires (Sub1 is scoped to D1)
-# 10. PATCH A, create D1        -> only Sub1 fires (Sub2 is scoped to default) [LAST entity op]
+# 10. PATCH A (merge), create D1 -> only Sub1 fires (Sub2 is scoped to default)
 # 11. A non-URI datasetId in watchedAttributes is rejected (400) - datasetId must be a URI
 #
 
@@ -159,14 +159,13 @@ echo
 echo
 
 
-echo "10. PATCH A - create the D1 instance -> only Sub1 (A@D1) fires"
-echo "=============================================================="
-# LAST entity operation (see the ordering note above): adding the D1 instance to
-# an attribute that already has a default instance corrupts the DB row, so any
-# subsequent read would 500 (pre-existing bug). This PATCH's own notification is
-# built before the corruption matters, so the trigger check below is valid.
+echo "10. PATCH A (merge endpoint) - create the D1 instance -> only Sub1 (A@D1) fires"
+echo "==============================================================================="
+# datasetId instances are created via the merge endpoint PATCH /entities/{id}
+# (see the endpoint note above); PATCH /entities/{id}/attrs rejects a body
+# datasetId with 501.
 payload='{ "A": { "type": "Property", "value": 2, "datasetId": "urn:ngsi-ld:dataset:D1" } }'
-orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:E1/attrs -X PATCH --payload "$payload"
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:E1 -X PATCH --payload "$payload"
 sleep .3
 dump=$(accumulatorDump)
 echo "notifications: $(echo "$dump" | grep -c '"subscriptionId"')"
@@ -345,8 +344,8 @@ notifications: 1
   from: urn:ngsi-ld:Sub2
 
 
-10. PATCH A - create the D1 instance -> only Sub1 (A@D1) fires
-==============================================================
+10. PATCH A (merge endpoint) - create the D1 instance -> only Sub1 (A@D1) fires
+===============================================================================
 HTTP/1.1 204 No Content
 Date: REGEX(.*)
 

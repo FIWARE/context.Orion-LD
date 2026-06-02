@@ -45,6 +45,7 @@ extern "C"
 #include "orionld/common/dotForEq.h"                             // dotForEq
 #include "orionld/common/eqForDot.h"                             // eqForDot
 #include "orionld/common/responseFix.h"                          // responseFix
+#include "orionld/common/datasetInstancesMerge.h"                // datasetInstancesMerge
 #include "orionld/context/orionldContextItemExpand.h"            // orionldContextItemExpand
 #include "orionld/types/OrionldHeader.h"                         // orionldHeaderAdd
 #include "orionld/types/OrionldAlteration.h"                     // OrionldAlteration, orionldAlterationType
@@ -811,76 +812,8 @@ bool orionldPatchEntity2(void)
 
       for (KjNode* attrDatasetP = orionldState.datasets->value.firstChildP; attrDatasetP != NULL; attrDatasetP = attrDatasetP->next)
       {
-        KjNode* mergedArray    = kjArray(orionldState.kjsonP, NULL);
         KjNode* dbAttrDatasetP = (dbDatasetsP != NULL) ? kjLookup(dbDatasetsP, attrDatasetP->name) : NULL;
-
-        // First pass: copy DB instances. If a DB instance's datasetId is in
-        // the patch, merge the patch's fields on top of the DB clone (so
-        // unmentioned sub-attrs survive). Otherwise keep the DB instance.
-        if ((dbAttrDatasetP != NULL) && (dbAttrDatasetP->type == KjArray))
-        {
-          for (KjNode* dbInstP = dbAttrDatasetP->value.firstChildP; dbInstP != NULL; dbInstP = dbInstP->next)
-          {
-            KjNode* dbDsIdP  = kjLookup(dbInstP, "datasetId");
-            KjNode* matchP   = NULL;
-
-            if (dbDsIdP != NULL)
-            {
-              for (KjNode* newInstP = attrDatasetP->value.firstChildP; newInstP != NULL; newInstP = newInstP->next)
-              {
-                KjNode* newDsIdP = kjLookup(newInstP, "datasetId");
-                if ((newDsIdP != NULL) && (strcmp(dbDsIdP->value.s, newDsIdP->value.s) == 0))
-                {
-                  matchP = newInstP;
-                  break;
-                }
-              }
-            }
-
-            if (matchP == NULL)
-            {
-              kjChildAdd(mergedArray, kjClone(orionldState.kjsonP, dbInstP));
-            }
-            else
-            {
-              KjNode* cloned = kjClone(orionldState.kjsonP, dbInstP);
-
-              for (KjNode* patchFieldP = matchP->value.firstChildP; patchFieldP != NULL; patchFieldP = patchFieldP->next)
-              {
-                KjNode* existingP = kjLookup(cloned, patchFieldP->name);
-                if (existingP != NULL)
-                  kjChildRemove(cloned, existingP);
-                kjChildAdd(cloned, kjClone(orionldState.kjsonP, patchFieldP));
-              }
-
-              kjChildAdd(mergedArray, cloned);
-            }
-          }
-        }
-
-        // Second pass: patch instances whose datasetId wasn't in the DB
-        // (i.e. truly new) -> append.
-        for (KjNode* newInstP = attrDatasetP->value.firstChildP; newInstP != NULL; newInstP = newInstP->next)
-        {
-          KjNode* newDsIdP = kjLookup(newInstP, "datasetId");
-          bool    wasInDb  = false;
-
-          if ((newDsIdP != NULL) && (dbAttrDatasetP != NULL) && (dbAttrDatasetP->type == KjArray))
-          {
-            for (KjNode* dbInstP = dbAttrDatasetP->value.firstChildP; dbInstP != NULL; dbInstP = dbInstP->next)
-            {
-              KjNode* dbDsIdP = kjLookup(dbInstP, "datasetId");
-              if ((dbDsIdP != NULL) && (strcmp(dbDsIdP->value.s, newDsIdP->value.s) == 0))
-              {
-                wasInDb = true;
-                break;
-              }
-            }
-          }
-
-          if (wasInDb == false)
-            kjChildAdd(mergedArray, kjClone(orionldState.kjsonP, newInstP));
-        }
+        KjNode* mergedArray    = datasetInstancesMerge(dbAttrDatasetP, attrDatasetP);
 
         // PATH = "@datasets.<attrEqName>"  (attrDatasetP->name is already eq-form)
         int   pathLen = 10 /* "@datasets." */ + (int) strlen(attrDatasetP->name) + 1;

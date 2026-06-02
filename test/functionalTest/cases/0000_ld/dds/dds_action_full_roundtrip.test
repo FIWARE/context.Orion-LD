@@ -318,6 +318,37 @@ Terminal notification body (the final 'succeeded' snapshot, key-sorted):
             ]
           }
         },
+        "ddsActionResult": {
+          "ddsDataType": {
+            "type": "Property",
+            "value": "action_tutorials_interfaces::action::dds_::Fibonacci_GetResult_Response_"
+          },
+          "instanceHandleId": {
+            "type": "Property",
+            "value": "REGEX(.*)"
+          },
+          "participantId": {
+            "type": "Property",
+            "value": "REGEX(.*)"
+          },
+          "publishedAt": {
+            "type": "Property",
+            "value": REGEX(\d+)
+          },
+          "type": "Property",
+          "value": {
+            "result": {
+              "sequence": [
+                0,
+                1,
+                1,
+                2,
+                3
+              ]
+            },
+            "status": 4
+          }
+        },
         "ddsActionStatus": {
           "publishedAt": {
             "type": "Property",
@@ -425,6 +456,37 @@ Terminal notification body (the final 'succeeded' snapshot, key-sorted):
               2,
               3
             ]
+          }
+        },
+        "ddsActionResult": {
+          "ddsDataType": {
+            "type": "Property",
+            "value": "action_tutorials_interfaces::action::dds_::Fibonacci_GetResult_Response_"
+          },
+          "instanceHandleId": {
+            "type": "Property",
+            "value": "REGEX(.*)"
+          },
+          "participantId": {
+            "type": "Property",
+            "value": "REGEX(.*)"
+          },
+          "publishedAt": {
+            "type": "Property",
+            "value": REGEX(\d+)
+          },
+          "type": "Property",
+          "value": {
+            "result": {
+              "sequence": [
+                0,
+                1,
+                1,
+                2,
+                3
+              ]
+            },
+            "status": 4
           }
         },
         "ddsActionStatus": {
