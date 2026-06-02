@@ -1,8 +1,6 @@
 ## Fixed Issues
   #1905 - TRoE: segfault (exit 139) connecting to TimescaleDB Cloud - added SSL support and fixed NULL pointer crash
   #XXXX - Fixed crash under concurrent notification delivery by replacing thread-unsafe gethostbyname with getaddrinfo in orionldServerConnect
-  #XXXX - DDS: fixed HTTP 500 on second consecutive PATCH/attr roundtrip - dotForEq nested-Property names so mongo $set doesn't fragment them across path-separator dots
-  #XXXX - DDS: renamed reply envelope field xId to instanceHandleId (matches FastDDS InstanceHandle_t terminology, requested by eProsima)
   #XXXX - Fixed query of many large entities (cfreyfh - Carsten Freyh at Fraunhofer IKTS)
   #XXXX - Wait for postgres instead of exiting after the first try - just like for mongo (1 try per second during 30 secs)
   #XXXX - Fixed crash in relationship endpoint when no relations found (cfreyfh)
@@ -28,6 +26,10 @@
           q-filter, geo-queries, aggregation, pick/omit, datasetId, and temporalValues
           — replacing previous Mintaka-based stubs
   #XXXX - Implemented PATCH for periodic notification (pernot) subscriptions
+  #XXXX - Subscriptions support a top-level 'datasetId' (String or Array of String) that projects each
+          notification body to the matching dataset instance(s) of every attribute, per NGSI-LD spec
+          clause 8.5 (non-matching attributes are dropped; '@none' selects the default instance).
+          Persisted, survives broker restart, and rendered back on GET
   #1905 - New CLI option -troeSslMode (env: ORIONLD_TROE_SSL_MODE) for TRoE Postgres SSL connections
   #XXXX - New CLI option -coreContextDir (env: ORIONLD_CORE_CONTEXT_DIR, default: /opt/orion/ldcontexts)
   #XXXX - Replaced prometheus-client-c with KPROM library for Prometheus metrics
@@ -76,6 +78,10 @@
   - DDS publish for already existing attributes in BATCH Update operations
   - Graceful DDS shutdown
   - Synchronous DDS semantics for PATCH /entities/{id} (when -wip dds is set); opt out with ?ddsSync=false
+  - DDS Action goal lifecycle: an 'endpoint' sub-attribute spawns a temporary per-goal subscription that streams the goal's feedback/result/status to the initiator, torn down (instance + subscription) on goal completion
+  - datasetId-aware notifications: a subscription's top-level 'datasetId' projects each notification body to the matching dataset instance(s) (NGSI-LD spec clause 8.5; '@none' selects the default instance) - so a goal's temp subscription delivers only that goal's instance
+  - Fixed HTTP 500 on a second consecutive PATCH/attr roundtrip (dotForEq nested-Property names so mongo $set doesn't fragment them across path-separator dots)
+  - Renamed reply envelope field xId to instanceHandleId (matches FastDDS InstanceHandle_t terminology, requested by eProsima)
 
 ## Documentation
   - Added TRoE database schema and advanced optimization documentation

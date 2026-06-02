@@ -54,7 +54,8 @@ extern char* ddsActionSubscriptionCreate
   const char*  entityId,
   const char*  entityType,
   const char*  attributeName,
-  const char*  endpointUri
+  const char*  endpointUri,
+  const char*  datasetId     // the goal's "urn:goal:<uuid>" - projects notifications to this goal's instance
 );
 
 

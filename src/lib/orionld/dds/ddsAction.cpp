@@ -41,6 +41,7 @@ extern "C"
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/traceLevels.h"                          // KT_T trace levels
 #include "orionld/dds/ddsInit.h"                                 // ddsEnabler
+#include "orionld/dds/ddsActionBuild.h"                          // ddsActionGoalDatasetId
 #include "orionld/dds/ddsActionSubscription.h"                   // ddsActionSubscriptionCreate
 #include "orionld/dds/ddsAction.h"                               // Own interface
 
@@ -91,7 +92,13 @@ void ddsActionGoalSend(DdsAction* actionP, KjNode* attributeValueP, const char* 
     // simply stays NULL.
     //
     if (endpointUri != NULL)
-      gP->subscriptionId = ddsActionSubscriptionCreate(actionP->entityId, actionP->entityType, actionP->attributeName, endpointUri);
+    {
+      // Scope the temp sub to THIS goal's datasetId so its notifications carry
+      // the goal's own feedback/result/status instance (not the default).
+      char goalDatasetId[48];
+      ddsActionGoalDatasetId(goalId, goalDatasetId);
+      gP->subscriptionId = ddsActionSubscriptionCreate(actionP->entityId, actionP->entityType, actionP->attributeName, endpointUri, goalDatasetId);
+    }
 
     KT_T(StDdsAction, "Sent action goal for '%s'", actionP->name);
   }

@@ -31,6 +31,9 @@ extern "C"
 #include "kbase/kTime.h"                                         // kTimeGet
 #include "kbase/kMacros.h"                                       // K_MAX
 #include "kjson/KjNode.h"                                        // KjNode
+#include "kjson/kjLookup.h"                                      // kjLookup
+#include "kjson/kjBuilder.h"                                     // kjChildAdd
+#include "kjson/kjClone.h"                                       // kjClone
 #include "kjson/kjRender.h"                                      // kjFastRender
 }
 
@@ -547,7 +550,30 @@ void orionldAlterationsTreat(OrionldAlteration* altList)
   //
   if ((altList->dbEntityP != NULL) && (altList->finalApiEntityP == NULL))
   {
-    altList->finalApiEntityP = dbModelToApiEntity(altList->dbEntityP, false, altList->entityId);  // No sysAttrs options for subscriptions?
+    // Body-level datasetId instances were moved out of the attributes into
+    // orionldState.datasets (dbModelFromApiAttributeDatasetArray). When such
+    // instances exist, fold them back into dbEntityP and use dbModelToApiEntity2
+    // - it (unlike the 3-arg dbModelToApiEntity) merges the @datasets instances
+    // back into their attribute, so a datasetId-scoped subscription has the
+    // changed dataset instance to project to.
+    //
+    // ONLY for requests that actually carry dataset instances: dbModelToApiEntity2
+    // renders attribute names differently from the 3-arg dbModelToApiEntity (which
+    // the rest of the notification pipeline depends on - e.g. the NGSIv2 formats),
+    // so for the common no-datasetId case we must keep the original converter.
+    if (orionldState.datasets != NULL)
+    {
+      // CLONE - orionldState.datasets is consumed downstream (the @datasets mongo
+      // write in orionldPatchEntity2, plus TRoE). dbModelToApiEntity2 calls
+      // datasetExtract, which kjChildRemove's instances out of the @datasets tree
+      // it is given - so we hand it a clone, never the shared orionldState.datasets.
+      if (kjLookup(altList->dbEntityP, "@datasets") == NULL)
+        kjChildAdd(altList->dbEntityP, kjClone(orionldState.kjsonP, orionldState.datasets));
+
+      altList->finalApiEntityP = dbModelToApiEntity2(altList->dbEntityP, false, RF_NORMALIZED, NULL, false, &orionldState.pd);
+    }
+    else
+      altList->finalApiEntityP = dbModelToApiEntity(altList->dbEntityP, false, altList->entityId);
 
     int patchNo = 0;
     for (KjNode* patchP = altList->inEntityP->value.firstChildP; patchP != NULL; patchP = patchP->next)

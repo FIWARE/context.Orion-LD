@@ -58,7 +58,8 @@ char* ddsActionSubscriptionCreate
   const char*  entityId,
   const char*  entityType,
   const char*  attributeName,
-  const char*  endpointUri
+  const char*  endpointUri,
+  const char*  datasetId
 )
 {
   if (endpointUri == NULL)
@@ -102,6 +103,11 @@ char* ddsActionSubscriptionCreate
   KjNode* watchedArr = kjArray(orionldState.kjsonP, "watchedAttributes");
   kjChildAdd(watchedArr, kjString(orionldState.kjsonP, NULL, attrLongName));
   kjChildAdd(subP, watchedArr);
+
+  // datasetId projection: notifications carry only THIS goal's instance (its
+  // feedback/result/status), not the default instance or sibling goals.
+  if (datasetId != NULL)
+    kjChildAdd(subP, kjString(orionldState.kjsonP, "datasetId", datasetId));
 
   KjNode* notificationP = kjObject(orionldState.kjsonP, "notification");
   KjNode* endpointObj   = kjObject(orionldState.kjsonP, "endpoint");

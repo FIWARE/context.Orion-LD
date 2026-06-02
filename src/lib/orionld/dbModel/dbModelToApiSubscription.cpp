@@ -207,6 +207,7 @@ KjNode* dbModelToApiSubscription
   KjNode* dbNotifierInfoP     = kjLookup(dbSubP, "notifierInfo");
   KjNode* dbAttrsP            = kjLookup(dbSubP, "attrs");       DB_ITEM_NOT_FOUND(dbSubIdP, "attrs",       tenant);
   KjNode* dbConditionsP       = kjLookup(dbSubP, "conditions");  DB_ITEM_NOT_FOUND(dbSubIdP, "conditions",  tenant);
+  KjNode* dbDatasetIdP        = kjLookup(dbSubP, "datasetId");
   KjNode* dbStatusP           = kjLookup(dbSubP, "status");
   KjNode* dbExpirationP       = kjLookup(dbSubP, "expiration");
   KjNode* dbLdContextP        = kjLookup(dbSubP, "ldContext");
@@ -346,6 +347,10 @@ KjNode* dbModelToApiSubscription
       }
     }
   }
+
+  // datasetId - top-level dataset filter/projection (String or Array of String)
+  if (dbDatasetIdP != NULL)
+    kjChildAdd(apiSubP, dbDatasetIdP);
 
   // timeInterval
   if (timeIntervalNodeP != NULL)

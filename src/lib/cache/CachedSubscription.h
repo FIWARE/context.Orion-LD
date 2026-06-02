@@ -99,6 +99,7 @@ struct CachedSubscription
   std::vector<std::string>    attributes;
   std::vector<std::string>    metadata;
   std::vector<std::string>    notifyConditionV;
+  std::vector<std::string>    datasetIds;       // top-level Subscription 'datasetId' filter - projects notified attrs to matching dataset instance(s)
   char*                       tenant;
   OrionldTenant*              tenantP;
   char*                       servicePath;

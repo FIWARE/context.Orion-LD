@@ -534,6 +534,93 @@ static KjNode* attributeFilter(KjNode* apiEntityP, OrionldAlterationMatch* mAltP
 
 // -----------------------------------------------------------------------------
 //
+// datasetIdInList - is 'datasetId' in the subscription's datasetId filter?
+//
+static bool datasetIdInList(const char* datasetId, const std::vector<std::string>& datasetIds)
+{
+  for (unsigned int ix = 0; ix < datasetIds.size(); ix++)
+  {
+    if (datasetIds[ix] == datasetId)
+      return true;
+  }
+
+  return false;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// datasetFilter -
+//
+// Project each attribute to only the dataset instance(s) whose 'datasetId' is in
+// the subscription's top-level 'datasetId' filter (so a goal-scoped subscription
+// notifies that goal's instance, not the default / other goals).
+//
+// Returns a CLONE - 'apiEntityP' (the alteration's finalApiEntityP) is shared
+// across subscriptions and must not be mutated in place.
+//
+static KjNode* datasetFilter(KjNode* apiEntityP, const std::vector<std::string>& datasetIds)
+{
+  KjNode* outP  = kjClone(orionldState.kjsonP, apiEntityP);
+  KjNode* attrP = outP->value.firstChildP;
+  KjNode* next;
+
+  while (attrP != NULL)
+  {
+    next = attrP->next;
+
+    if ((strcmp(attrP->name, "id") == 0) || (strcmp(attrP->name, "type") == 0))
+    {
+      attrP = next;
+      continue;
+    }
+
+    if (attrP->type == KjArray)
+    {
+      KjNode* instP = attrP->value.firstChildP;
+      KjNode* instNext;
+
+      while (instP != NULL)
+      {
+        instNext = instP->next;
+
+        KjNode*     dsP = kjLookup(instP, "datasetId");
+        const char* ds  = (dsP != NULL)? dsP->value.s : "@none";
+
+        if (datasetIdInList(ds, datasetIds) == false)
+          kjChildRemove(attrP, instP);
+
+        instP = instNext;
+      }
+
+      if (attrP->value.firstChildP == NULL)                      // no instance matched -> drop the attribute
+        kjChildRemove(outP, attrP);
+      else if (attrP->value.firstChildP->next == NULL)           // one instance left -> flatten to object
+      {
+        attrP->value = attrP->value.firstChildP->value;
+        attrP->type  = KjObject;
+      }
+    }
+    else if (attrP->type == KjObject)
+    {
+      KjNode*     dsP = kjLookup(attrP, "datasetId");
+      const char* ds  = (dsP != NULL)? dsP->value.s : "@none";
+
+      if (datasetIdInList(ds, datasetIds) == false)
+        kjChildRemove(outP, attrP);
+    }
+
+    attrP = next;
+  }
+
+  return outP;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // notificationTreeForNgsiV2 -
 //
 static KjNode* notificationTreeForNgsiV2(OrionldAlterationMatch* matchP)
@@ -629,6 +716,13 @@ static KjNode* notificationTree(OrionldAlterationMatch* matchList)
     //
     if (matchP->subP->attributes.size() > 0)
       apiEntityP = attributeFilter(apiEntityP, matchP);
+
+    //
+    // datasetId projection: if the Subscription has a top-level 'datasetId',
+    // keep only the matching dataset instance(s) of each attribute.
+    //
+    if (matchP->subP->datasetIds.size() > 0)
+      apiEntityP = datasetFilter(apiEntityP, matchP->subP->datasetIds);
 
     apiEntityP = entityFix(apiEntityP, subP);
     kjChildAdd(dataNodeP, apiEntityP);
