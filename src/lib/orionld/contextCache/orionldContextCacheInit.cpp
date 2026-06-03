@@ -115,7 +115,12 @@ void dbContextToCache(KjNode* dbContextP, KjNode* atContextP, bool keyValues, bo
   OrionldContext*       contextP     = orionldContextFromTree(url, origin, id, atContextP);
 
   if (contextP == NULL)
-    KT_RVE("Internal Error (unable to create context '%s' from DB - %s: %s)", url, orionldState.pd.title, orionldState.pd.detail);
+  {
+    // Non-fatal: a cached context that can't be re-built (e.g. cyclic, or its server is down)
+    // is skipped, not a startup failure. Warn so the operator knows which context was dropped.
+    KT_W("unable to load cached context '%s' from DB - skipping it (%s: %s)", url, orionldState.pd.title, orionldState.pd.detail);
+    return;
+  }
 
   contextP->createdAt   = createdAt;
   contextP->usedAt      = 0;
