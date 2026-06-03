@@ -1,0 +1,146 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+--NAME--
+Batch create with a duplicated Entity ID (spec clause 10.3.2: first created, subsequent -> AlreadyExists)
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -experimental
+
+--SHELL--
+
+#
+# NGSI-LD spec clause 10.3.2: when the same Entity ID appears more than once in a batch
+# create, the FIRST occurrence is created and every SUBSEQUENT occurrence gets an
+# AlreadyExists (409) error. The first occurrence's content wins - the later duplicate
+# is dropped, not merged.
+#
+# 01. Batch create [ E1(first), E2, E1(second) ] -> 207:
+#       success: E1 (first), E2
+#       errors:  E1 (duplicate -> AlreadyExists)
+# 02. GET E1 -> P == "first value" (proves the first occurrence won, second was dropped)
+# 03. GET E2 -> P == "e2 value"
+#
+
+echo "01. Batch create [ E1(first), E2, E1(second) ] - E1 duplicated"
+echo "=============================================================="
+payload='[
+  {
+    "id": "urn:ngsi-ld:E1",
+    "type": "T",
+    "P": { "type": "Property", "value": "first value" }
+  },
+  {
+    "id": "urn:ngsi-ld:E2",
+    "type": "T",
+    "P": { "type": "Property", "value": "e2 value" }
+  },
+  {
+    "id": "urn:ngsi-ld:E1",
+    "type": "T",
+    "P": { "type": "Property", "value": "SECOND value - must be ignored" }
+  }
+]'
+orionCurl --url /ngsi-ld/v1/entityOperations/create -X POST --payload "$payload"
+echo
+echo
+
+
+echo "02. GET E1 -> P == \"first value\" (first occurrence won)"
+echo "======================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:E1
+echo
+echo
+
+
+echo "03. GET E2 -> P == \"e2 value\""
+echo "============================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:E2
+echo
+echo
+
+
+--REGEXPECT--
+01. Batch create [ E1(first), E2, E1(second) ] - E1 duplicated
+==============================================================
+HTTP/1.1 207 Multi-Status
+Content-Length: 249
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "errors": [
+        {
+            "entityId": "urn:ngsi-ld:E1",
+            "error": {
+                "detail": "Created as part of the same request",
+                "status": 409,
+                "title": "Entity already exists",
+                "type": "https://uri.etsi.org/ngsi-ld/errors/AlreadyExists"
+            }
+        }
+    ],
+    "success": [
+        "urn:ngsi-ld:E1",
+        "urn:ngsi-ld:E2"
+    ]
+}
+
+
+02. GET E1 -> P == "first value" (first occurrence won)
+=======================================================
+HTTP/1.1 200 OK
+Content-Length: 80
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+{
+    "P": {
+        "type": "Property",
+        "value": "first value"
+    },
+    "id": "urn:ngsi-ld:E1",
+    "type": "T"
+}
+
+
+03. GET E2 -> P == "e2 value"
+=============================
+HTTP/1.1 200 OK
+Content-Length: 77
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+{
+    "P": {
+        "type": "Property",
+        "value": "e2 value"
+    },
+    "id": "urn:ngsi-ld:E2",
+    "type": "T"
+}
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
