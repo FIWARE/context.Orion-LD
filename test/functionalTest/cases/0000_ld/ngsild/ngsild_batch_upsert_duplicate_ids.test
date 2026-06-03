@@ -1,0 +1,202 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+--NAME--
+Batch upsert with a duplicated Entity ID (spec clause 10.3.3: instances processed in chronological order, no duplicate error)
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -experimental
+
+--SHELL--
+
+#
+# NGSI-LD spec clause 10.3.3: when the same Entity ID appears more than once in a batch
+# upsert, the instances are processed IN CHRONOLOGICAL ORDER (lower array index = earlier).
+# There is NO duplicate error (unlike batch Create, clause 10.3.2).
+#  - default mode is REPLACE: each later occurrence fully replaces the previous -> last wins
+#  - ?options=update: each later occurrence is MERGED onto the previous -> attributes
+#    accumulate, and for a repeated attribute the last (chronological) value wins
+#
+# 01. REPLACE (default) [ E1(P=first,X), E2, E1(P=SECOND) ] -> 201, created [E1,E2]
+# 02. GET E1 -> P="SECOND value", and X is GONE (replace dropped the first occurrence)
+# 03. GET E2 -> P="e2 value"
+# 04. UPDATE  [ E3(A=a1,C=c-first), E3(B=b1,C=c-second) ] ?options=update -> 201, created [E3]
+# 05. GET E3 -> A=a1, B=b1 (accumulated), C="c-second" (last chronological value wins)
+#
+
+echo "01. REPLACE upsert [ E1(first,X), E2, E1(SECOND) ] - E1 duplicated, last occurrence wins"
+echo "======================================================================================="
+payload='[
+  {
+    "id": "urn:ngsi-ld:E1",
+    "type": "T",
+    "P": { "type": "Property", "value": "first value" },
+    "X": { "type": "Property", "value": "only in first occurrence" }
+  },
+  {
+    "id": "urn:ngsi-ld:E2",
+    "type": "T",
+    "P": { "type": "Property", "value": "e2 value" }
+  },
+  {
+    "id": "urn:ngsi-ld:E1",
+    "type": "T",
+    "P": { "type": "Property", "value": "SECOND value" }
+  }
+]'
+orionCurl --url /ngsi-ld/v1/entityOperations/upsert -X POST --payload "$payload"
+echo
+echo
+
+
+echo "02. GET E1 -> P=\"SECOND value\", X gone (replace = last occurrence fully replaces)"
+echo "================================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:E1
+echo
+echo
+
+
+echo "03. GET E2 -> P=\"e2 value\""
+echo "=========================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:E2
+echo
+echo
+
+
+echo "04. UPDATE upsert [ E3(A=a1,C=c-first), E3(B=b1,C=c-second) ] ?options=update - merged in order"
+echo "==============================================================================================="
+payload='[
+  {
+    "id": "urn:ngsi-ld:E3",
+    "type": "T",
+    "A": { "type": "Property", "value": "a1" },
+    "C": { "type": "Property", "value": "c-first" }
+  },
+  {
+    "id": "urn:ngsi-ld:E3",
+    "type": "T",
+    "B": { "type": "Property", "value": "b1" },
+    "C": { "type": "Property", "value": "c-second" }
+  }
+]'
+orionCurl --url '/ngsi-ld/v1/entityOperations/upsert?options=update' -X POST --payload "$payload"
+echo
+echo
+
+
+echo "05. GET E3 -> A=a1, B=b1 (accumulated), C=\"c-second\" (last chronological value wins)"
+echo "===================================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:E3
+echo
+echo
+
+
+--REGEXPECT--
+01. REPLACE upsert [ E1(first,X), E2, E1(SECOND) ] - E1 duplicated, last occurrence wins
+=======================================================================================
+HTTP/1.1 201 Created
+Content-Length: 35
+Content-Type: application/json
+Date: REGEX(.*)
+
+[
+    "urn:ngsi-ld:E1",
+    "urn:ngsi-ld:E2"
+]
+
+
+02. GET E1 -> P="SECOND value", X gone (replace = last occurrence fully replaces)
+=================================================================================
+HTTP/1.1 200 OK
+Content-Length: 81
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+{
+    "P": {
+        "type": "Property",
+        "value": "SECOND value"
+    },
+    "id": "urn:ngsi-ld:E1",
+    "type": "T"
+}
+
+
+03. GET E2 -> P="e2 value"
+==========================
+HTTP/1.1 200 OK
+Content-Length: 77
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+{
+    "P": {
+        "type": "Property",
+        "value": "e2 value"
+    },
+    "id": "urn:ngsi-ld:E2",
+    "type": "T"
+}
+
+
+04. UPDATE upsert [ E3(A=a1,C=c-first), E3(B=b1,C=c-second) ] ?options=update - merged in order
+===============================================================================================
+HTTP/1.1 201 Created
+Content-Length: 18
+Content-Type: application/json
+Date: REGEX(.*)
+
+[
+    "urn:ngsi-ld:E3"
+]
+
+
+05. GET E3 -> A=a1, B=b1 (accumulated), C="c-second" (last chronological value wins)
+====================================================================================
+HTTP/1.1 200 OK
+Content-Length: 151
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+{
+    "A": {
+        "type": "Property",
+        "value": "a1"
+    },
+    "B": {
+        "type": "Property",
+        "value": "b1"
+    },
+    "C": {
+        "type": "Property",
+        "value": "c-second"
+    },
+    "id": "urn:ngsi-ld:E3",
+    "type": "T"
+}
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
