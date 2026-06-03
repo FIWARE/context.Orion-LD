@@ -1776,22 +1776,16 @@ static int restStart(IpVersion ipVersion, const char* httpsKey = NULL, const cha
     KT_X(1, "Fatal Error (please call restInit before starting the REST service)");
   }
 
-  if (threadPoolSize != 0)
-  {
-    //
-    // To use poll() instead of select(), MHD 0.9.48 has the define MHD_USE_EPOLL_LINUX_ONLY,
-    // while in MHD 0.9.51, the name of the define has changed to MHD_USE_EPOLL.
-    // So, to support both names, we need a ifdef/else cpp directive here.
-    //
-    // And, in some newer versions of microhttpd, MHD_USE_EPOLL is an enum and not a define,
-    // so, an additional check in needed
-    //
-#if defined(MHD_USE_EPOLL) || MHD_VERSION >= 0x00095100
-    serverMode = MHD_USE_SELECT_INTERNALLY | MHD_USE_EPOLL;
-#else
-    serverMode = MHD_USE_SELECT_INTERNALLY | MHD_USE_EPOLL_LINUX_ONLY;
-#endif
-  }
+  //
+  // NOTE: the MHD epoll thread pool (MHD_USE_SELECT_INTERNALLY | MHD_USE_EPOLL) is intentionally
+  // NOT used. It multiplexes many connections onto each pool thread, but the in-progress
+  // per-request state lives in the thread-local 'orionldState' (incoming payload buffer, kalloc,
+  // requestTree), so concurrent requests on the same pool thread corrupt each other -> heap
+  // use-after-free (issue #1943). The broker therefore always runs thread-per-connection
+  // (threadPoolSize is forced to 0 in orionRestServicesInit). A pool may only be re-introduced
+  // once the per-request state is moved out of the thread-local orionldState into per-connection
+  // storage (MHD con_cls).
+  //
 
   //
   // Adding logging for MHD
@@ -2029,7 +2023,8 @@ void restInit
   multitenant      = _multitenant;
   connMemory       = _connectionMemory;
   maxConns         = _maxConnections;
-  threadPoolSize   = _mhdThreadPoolSize;
+  threadPoolSize   = 0;  // epoll/thread-pool disabled - incompatible with thread-local per-request state (#1943); the requested pool size is ignored
+  (void) _mhdThreadPoolSize;
   corsMaxAge       = _corsMaxAge;
 
   mhdConnectionTimeout = _mhdTimeoutInSeconds;

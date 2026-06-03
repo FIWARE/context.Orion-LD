@@ -312,7 +312,7 @@ bool            kTraceInfo       = false;
 #define NO_CACHE               "disable subscription cache for lookups"
 #define CONN_MEMORY_DESC       "maximum memory size per connection (in kilobytes)"
 #define MAX_CONN_DESC          "maximum number of simultaneous connections"
-#define REQ_POOL_SIZE          "size of thread pool for incoming connections (-1: auto = CPU cores * 2, 0: thread-per-connection)"
+#define REQ_POOL_SIZE          "DEPRECATED and IGNORED - the broker always runs thread-per-connection (the MHD epoll thread pool is unsafe with thread-local request state, see #1943); option kept so existing deployments still start"
 #define IN_REQ_PAYLOAD_MAX_SIZE_DESC   "maximum size (in bytes) of the payload of incoming requests"
 #define OUT_REQ_MSG_MAX_SIZE_DESC      "maximum size (in bytes) of outgoing forward and notification request messages"
 #define SIMULATED_NOTIF_DESC   "simulate notifications instead of actual sending them (only for testing)"
@@ -436,7 +436,7 @@ PaArgument paArgs[] =
   { "-noCache",               &noCache,                 "NOCACHE",                   PaBool,    PaOpt,  false,            false,  true,             NO_CACHE                 },
   { "-connectionMemory",      &connectionMemory,        "CONN_MEMORY",               PaUInt,    PaOpt,  64,               0,      1024,             CONN_MEMORY_DESC         },
   { "-maxConnections",        &maxConnections,          "MAX_CONN",                  PaUInt,    PaOpt,  1020,             1,      PaNL,             MAX_CONN_DESC            },
-  { "-reqPoolSize",           &reqPoolSize,             "TRQ_POOL_SIZE",             PaInt,     PaOpt,  -1,               -1,     1024,             REQ_POOL_SIZE            },
+  { "-reqPoolSize",           &reqPoolSize,             "TRQ_POOL_SIZE",             PaUInt,    PaOpt,  0,                0,      1024,             REQ_POOL_SIZE            },
   { "-inReqPayloadMaxSize",   &inReqPayloadMaxSize,     "IN_REQ_PAYLOAD_MAX_SIZE",   PaULong,   PaOpt,  MB(1),            0,      PaNL,             IN_REQ_PAYLOAD_MAX_SIZE_DESC },
   { "-outReqMsgMaxSize",      &outReqMsgMaxSize,        "OUT_REQ_MSG_MAX_SIZE",      PaULong,   PaOpt,  MB(8),            0,      PaNL,             OUT_REQ_MSG_MAX_SIZE_DESC    },
   { "-notificationMode",      &notificationMode,        "NOTIF_MODE",                PaString,  PaOpt,  _i "transient",   PaNL,   PaNL,             NOTIFICATION_MODE_DESC   },
@@ -1390,18 +1390,14 @@ int main(int argC, char* argV[])
     distOpInit();
 
   //
-  // If reqPoolSize is -1 (auto), set it to number of CPU cores * 2
+  // -reqPoolSize (the MHD epoll thread pool) is accepted for backward compatibility but IGNORED:
+  // the pool multiplexes connections onto shared pool threads, which corrupts the thread-local
+  // per-request state (orionldState) and crashes the broker under concurrent load (issue #1943).
+  // The broker always runs thread-per-connection. Warn rather than silently drop the setting, and
+  // rather than rejecting the option (which would break existing deployments that pass it).
   //
-  if (reqPoolSize == -1)
-  {
-    long cores = sysconf(_SC_NPROCESSORS_ONLN);
-    if (cores > 0)
-      reqPoolSize = cores * 2;
-    else
-      reqPoolSize = 4;  // Fallback if sysconf fails
-
-    KT_I("Auto-configured reqPoolSize to %d (CPU cores: %ld)", reqPoolSize, cores);
-  }
+  if (reqPoolSize != 0)
+    KT_W("-reqPoolSize (%d) is ignored - the MHD thread pool is disabled due to issue #1943; the broker runs thread-per-connection", reqPoolSize);
 
   if (https)
   {

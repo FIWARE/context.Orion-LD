@@ -106,7 +106,6 @@ KjNode* mongoCppLegacyEntityListLookupWithIdTypeCreDate(KjNode* entityIdsArray, 
   }
 
   KjNode*  entitiesArray = NULL;
-  int      entities      = 0;
 
   while (moreSafe(cursorP))
   {
@@ -180,14 +179,6 @@ KjNode* mongoCppLegacyEntityListLookupWithIdTypeCreDate(KjNode* entityIdsArray, 
 
     // Add the Entity to the entity array
     kjChildAdd(entitiesArray, entityTree);
-
-    // A limit of 1000 entities has been established (KZ: where???)
-    ++entities;
-    if (entities >= 1000)
-    {
-      KT_W("Too many entities - breaking loop at 1000");
-      break;
-    }
   }
 
   releaseMongoConnection(connectionP);
