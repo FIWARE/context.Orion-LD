@@ -242,6 +242,42 @@ echo
 echo
 
 
+echo "13. Verify the entity itself was recorded in the TRoE 'entities' table"
+echo "====================================================================="
+# The per-goal attribute history above lives in 'attributes'/'subattributes', but the
+# entity itself belongs in the 'entities' table. The entity was pre-created at startup
+# from the DDS config file (with an "uninitialized" value); that pre-creation must mirror
+# into TRoE, not only MongoDB. If startup wrote MongoDB only and skipped TRoE, this row
+# is MISSING even though the attribute rows are present.
+entRows=$(postgresCmd -sql "SELECT COUNT(*) FROM entities WHERE id='urn:ngsi-ld:robot:r1'" 2>&1 | tail -1 | tr -d ' \r\n')
+if [ "$entRows" -ge 1 ]; then echo "TRoE entities-table row: OK (>=1)"; else echo "TRoE entities-table row: MISSING ($entRows)"; fi
+echo
+echo
+
+
+echo "14. Temporal query to the broker - the entity's history is retrievable via the API"
+echo "=================================================================================="
+# Better than reading Postgres directly: ask the broker for the temporal representation.
+# This exercises the full TRoE read path end-to-end. If the entity is missing from the
+# 'entities' table, the broker cannot reconstruct it and the temporal query comes back
+# empty/incomplete.
+#
+# timeproperty=modifiedAt: DDS attributes carry no observedAt, and the default temporal
+# timeproperty filters on the observedAt column - which would exclude every instance
+# (NULL <= timeAt is never true). modifiedAt filters on 'ts' instead, which is always set.
+#
+# The body is captured (not printed) so the per-instance volatile bits (instanceIds,
+# datasetIds, timestamps) don't make the test flaky - we only assert on stable substrings.
+# The raw captured body is compact JSON (no spaces after colons), hence "type":"Robot".
+tq=$(orionCurl --url '/ngsi-ld/v1/temporal/entities/urn:ngsi-ld:robot:r1?timerel=before&timeAt=2099-12-31T23:59:59Z&timeproperty=modifiedAt' --noPayloadCheck)
+if echo "$tq" | grep -q '200 OK';         then echo "Temporal query: OK (200)";                     else echo "Temporal query: FAILED";                          fi
+if echo "$tq" | grep -q '"type":"Robot"'; then echo "Temporal entity (type Robot): OK";              else echo "Temporal entity (type Robot): MISSING";            fi
+if echo "$tq" | grep -q '"fib"';          then echo "Temporal 'fib' history present: OK";            else echo "Temporal 'fib' history present: MISSING";          fi
+if echo "$tq" | grep -q 'uninitialized';  then echo "Startup 'uninitialized' default in TRoE: OK";   else echo "Startup 'uninitialized' default in TRoE: MISSING"; fi
+echo
+echo
+
+
 --REGEXPECT--
 01. Goal 1: PATCH 'fib' attribute (order=5) with notification 'endpoint' sub-attr
 =================================================================================
@@ -521,6 +557,19 @@ Terminal notification body (the final 'succeeded' snapshot, key-sorted):
 TRoE goal lifecycle rows: OK (>=10)
 TRoE distinct goals: OK (2)
 TRoE recorded terminal 'succeeded' for both goals: OK
+
+
+13. Verify the entity itself was recorded in the TRoE 'entities' table
+=====================================================================
+TRoE entities-table row: OK (>=1)
+
+
+14. Temporal query to the broker - the entity's history is retrievable via the API
+==================================================================================
+Temporal query: OK (200)
+Temporal entity (type Robot): OK
+Temporal 'fib' history present: OK
+Startup 'uninitialized' default in TRoE: OK
 
 
 --TEARDOWN--
