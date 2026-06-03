@@ -35,6 +35,7 @@ extern "C"
 #include "kjson/kjBuilder.h"                                // kjObject, kjArray, kjString, ...
 #include "kjson/kjNavigate.h"                               // kjNavigate
 #include "kjson/kjChildCount.h"                             // kjChildCount
+#include "kjson/kjClone.h"                                  // kjClone
 }
 
 #include "orionld/types/StringArray.h"                      // StringArray
@@ -52,12 +53,17 @@ extern "C"
 #include "orionld/mongoc/mongocEntitiesQuery.h"             // mongocEntitiesQuery
 #include "orionld/mongoc/mongocEntitiesUpsert.h"            // mongocEntitiesUpsert
 #include "orionld/mongoc/mongocAttributesAdd.h"             // mongocAttributesAdd
+#include "orionld/troe/troePostEntities.h"                  // troePostEntities
 #include "orionld/dds/ddsPrePopulateDb.h"                   // DdsConceptType, DdsPrePopulateInput
 #include "orionld/dds/ddsServiceLookup.h"                   // ddsServiceLookup
 #include "orionld/dds/ddsServiceCreate.h"                   // ddsServiceCreate
 #include "orionld/dds/ddsActionLookup.h"                    // ddsActionLookup
 #include "orionld/dds/ddsActionCreate.h"                    // ddsActionCreate
 #include "orionld/kjTree/kjTreeLog.h"                       // KT_TREE
+
+
+
+extern bool troe;  // Is TRoE enabled? (defined in orionld.cpp)
 
 
 
@@ -207,6 +213,13 @@ static void* ddsPrePopulateDbInThread(void* vP)
   //
   KjNode* dbCreateV = kjArray(orionldState.kjsonP, NULL);
 
+  //
+  // TRoE mirror: when TRoE is enabled, the entities/attributes we pre-create must also be
+  // recorded in Postgres - not only in MongoDB. troeCreateV keeps the API-form copies (id,
+  // type, attrs) that troePostEntities() needs; dbCreateV holds the DB-model copies for mongo.
+  //
+  KjNode* troeCreateV = (troe == true)? kjArray(orionldState.kjsonP, NULL) : NULL;
+
   for (KjNode* topic = topics->value.firstChildP; topic != NULL; topic = topic->next)
   {
     KjNode* entityTypeNode = kjLookup(topic, "entityType");
@@ -293,6 +306,10 @@ static void* ddsPrePopulateDbInThread(void* vP)
 
       kjChildAdd(entity, attribute);
 
+      // Keep an API-form copy for TRoE before dbModelFromApiEntity destructively rewrites 'entity'
+      if (troeCreateV != NULL)
+        kjChildAdd(troeCreateV, kjClone(orionldState.kjsonP, entity));
+
       dbModelFromApiEntity(entity, NULL, true, entityId, entityType);
       kjChildAdd(dbCreateV, entity);
       KT_T(StDdsPrePopulate, "Added entity '%s' to dbCreateV array", entityId);
@@ -333,6 +350,22 @@ static void* ddsPrePopulateDbInThread(void* vP)
         KjNode* attrsP = kjLookup(preEntityP, "attrs");
 
         kjChildAdd(attrsP, attribute);
+
+        // Mirror the attribute into the API-form TRoE copy of the same pre-entity
+        if (troeCreateV != NULL)
+        {
+          KjNode* troeEntityP = kjEntityIdLookupInEntityArray(troeCreateV, entityId);
+          if (troeEntityP != NULL)
+          {
+            KjNode* apiAttr  = kjObject(orionldState.kjsonP, longAttrName);
+            KjNode* apiAType = kjString(orionldState.kjsonP, "type", "Property");
+            KjNode* apiAVal  = kjString(orionldState.kjsonP, "value", "uninitialized");
+
+            kjChildAdd(apiAttr, apiAType);
+            kjChildAdd(apiAttr, apiAVal);
+            kjChildAdd(troeEntityP, apiAttr);
+          }
+        }
       }
     }
   }
@@ -341,6 +374,39 @@ static void* ddsPrePopulateDbInThread(void* vP)
   {
     // KT_TREE(dbCreateV, "dbCreateV", StDdsPrePopulate);
     mongocEntitiesUpsert(dbCreateV, NULL);
+  }
+
+  //
+  // Mirror the freshly pre-created entities into TRoE (Postgres). Without this, the entity
+  // has a row in MongoDB (current state) but none in the Postgres 'entities' table, so the
+  // broker can't reconstruct it for temporal queries even though later attribute updates do
+  // land in the 'attributes' table.
+  //
+  if ((troeCreateV != NULL) && (troeCreateV->value.firstChildP != NULL))
+  {
+    orionldState.troeOpMode = TROE_ENTITY_CREATE;
+
+    for (KjNode* troeEntityP = troeCreateV->value.firstChildP; troeEntityP != NULL; troeEntityP = troeEntityP->next)
+    {
+      KjNode* idP   = kjLookup(troeEntityP, "id");
+      KjNode* typeP = kjLookup(troeEntityP, "type");
+
+      if ((idP == NULL) || (typeP == NULL))
+        continue;
+
+      //
+      // troePostEntities expects requestTree to hold attributes ONLY (id/type removed), with
+      // payloadIdNode/payloadTypeNode pointing at the now-detached id/type nodes.
+      //
+      kjChildRemove(troeEntityP, idP);
+      kjChildRemove(troeEntityP, typeP);
+
+      orionldState.requestTree     = troeEntityP;
+      orionldState.payloadIdNode   = idP;
+      orionldState.payloadTypeNode = typeP;
+
+      troePostEntities();
+    }
   }
 
   free(entityIds.array);
