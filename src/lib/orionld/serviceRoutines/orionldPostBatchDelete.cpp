@@ -59,18 +59,37 @@ extern "C"
 
 // ----------------------------------------------------------------------------
 //
-// eidLookup - lookup an Entity Id in "the rest of the array"
+// eidErrorPush - add a ResourceNotFound (404) BatchEntityError for 'entityId'
 //
-static KjNode* eidLookup(KjNode* eidP, const char* entityId)
+// One BatchEntityError per Entity ID: if 'entityId' is already present in the
+// errors array, nothing is added.
+//
+static void eidErrorPush(KjNode* errorsArray, const char* entityId, const char* detail)
 {
-  while (eidP != NULL)
+  for (KjNode* errP = errorsArray->value.firstChildP; errP != NULL; errP = errP->next)
   {
-    if ((eidP->type == KjString) && (strcmp(eidP->value.s, entityId) == 0))
-      return eidP;
-    eidP = eidP->next;
+    KjNode* eidP = kjLookup(errP, "entityId");
+    if ((eidP != NULL) && (strcmp(eidP->value.s, entityId) == 0))
+      return;  // already reported
   }
 
-  return NULL;
+  KjNode* objectP       = kjObject(orionldState.kjsonP,  NULL);
+  KjNode* eidNodeP      = kjString(orionldState.kjsonP,  "entityId", entityId);
+  KjNode* pdNodeP       = kjObject(orionldState.kjsonP,  "error");
+  KjNode* pdTitleNodeP  = kjString(orionldState.kjsonP,  "title",  "Entity Not Found");
+  KjNode* pdDetailNodeP = kjString(orionldState.kjsonP,  "detail", detail);
+  KjNode* pdStatusNodeP = kjInteger(orionldState.kjsonP, "status", 404);
+  KjNode* pdTypeNodeP   = kjString(orionldState.kjsonP,  "type",   orionldResponseErrorType(OrionldResourceNotFound));
+
+  kjChildAdd(pdNodeP, pdTitleNodeP);
+  kjChildAdd(pdNodeP, pdDetailNodeP);
+  kjChildAdd(pdNodeP, pdTypeNodeP);
+  kjChildAdd(pdNodeP, pdStatusNodeP);
+
+  kjChildAdd(objectP, eidNodeP);
+  kjChildAdd(objectP, pdNodeP);
+
+  kjChildAdd(errorsArray, objectP);
 }
 
 
@@ -357,7 +376,15 @@ bool orionldPostBatchDelete(void)
   KjNode* responseErrors  = kjArray(orionldState.kjsonP, "errors");
   KjNode* responseSuccess = kjArray(orionldState.kjsonP, "success");
 
-  // Check children for String and valid URI
+  //
+  // Check children for String and valid URI, and handle duplicated Entity IDs.
+  //
+  // Per NGSI-LD spec clause 10.3.6, when the same Entity ID appears more than once in a
+  // batch delete, the FIRST occurrence is processed and every SUBSEQUENT occurrence gets a
+  // ResourceNotFound (404) error in the response (lower array index = earlier occurrence).
+  // 'seen' holds the Entity IDs already encountered in this request.
+  //
+  KjNode* seen     = kjArray(orionldState.kjsonP, NULL);
   KjNode* eidNodeP = orionldState.requestTree->value.firstChildP;
   KjNode* next;
   while (eidNodeP != NULL)
@@ -374,13 +401,13 @@ bool orionldPostBatchDelete(void)
       return false;
     }
 
-    KjNode* duplicatedP = eidLookup(next, eidNodeP->value.s);
-    if (duplicatedP != NULL)  // Duplicated entity id?
+    if (kjStringValueLookupInArray(seen, eidNodeP->value.s) != NULL)  // A later occurrence of an already-seen Entity ID
     {
-      if (duplicatedP == next)
-        next = duplicatedP->next;
-      kjChildRemove(orionldState.requestTree, duplicatedP);
+      eidErrorPush(responseErrors, eidNodeP->value.s, "Duplicated Entity ID in the batch request - only the first occurrence is processed");
+      kjChildRemove(orionldState.requestTree, eidNodeP);
     }
+    else
+      kjChildAdd(seen, kjString(orionldState.kjsonP, NULL, eidNodeP->value.s));
 
     eidNodeP = next;
   }
@@ -418,25 +445,7 @@ bool orionldPostBatchDelete(void)
   for (KjNode* eidP = orionldState.requestTree->value.firstChildP; eidP != NULL; eidP = eidP->next)
   {
     if (kjStringValueLookupInArray(responseSuccess, eidP->value.s) == NULL)
-    {
-      KjNode* objectP       = kjObject(orionldState.kjsonP,  NULL);
-      KjNode* eidNodeP      = kjString(orionldState.kjsonP,  "entityId", eidP->value.s);
-      KjNode* pdNodeP       = kjObject(orionldState.kjsonP,  "error");
-      KjNode* pdTitleNodeP  = kjString(orionldState.kjsonP,  "title", "Entity Not Found");
-      KjNode* pdDetailNodeP = kjString(orionldState.kjsonP,  "detail", "Cannot delete entities that do not exist");
-      KjNode* pdStatusNodeP = kjInteger(orionldState.kjsonP, "status", 404);
-      KjNode* pdTypeNodeP   = kjString(orionldState.kjsonP,  "type", orionldResponseErrorType(OrionldResourceNotFound));
-
-      kjChildAdd(pdNodeP, pdTitleNodeP);
-      kjChildAdd(pdNodeP, pdDetailNodeP);
-      kjChildAdd(pdNodeP, pdTypeNodeP);
-      kjChildAdd(pdNodeP, pdStatusNodeP);
-
-      kjChildAdd(objectP, eidNodeP);
-      kjChildAdd(objectP, pdNodeP);
-
-      kjChildAdd(responseErrors, objectP);
-    }
+      eidErrorPush(responseErrors, eidP->value.s, "Cannot delete entities that do not exist");
   }
 
   // Add any entity ids that were not found in the DB to entityIdAndTypeTable as "entityId": null, now that the entity type is unknown
