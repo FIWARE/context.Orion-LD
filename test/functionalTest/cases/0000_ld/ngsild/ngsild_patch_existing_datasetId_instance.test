@@ -1,0 +1,129 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+--NAME--
+PATCH /entities/{id}/attrs with a body datasetId is rejected (501) without corrupting the entity
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -experimental
+
+--SHELL--
+
+#
+# PATCH /entities/{entityId}/attrs does not implement datasetId instances. A
+# body-level datasetId must be rejected with 501 - and must NOT modify the
+# entity. (Before the fix it silently corrupted the attribute: the datasetId
+# instance was moved aside but never written, and the emptied attribute clobbered
+# the stored DEFAULT instance, leaving the entity unreadable on the next GET.)
+#
+# 01. POST E1 with A = [ default(0), D1(1), D2(2) ]
+# 02. PATCH A's D1 instance via /attrs -> 501 Not Implemented
+# 03. GET E1 -> 200, entity intact (default 0, D1 1, D2 2 all preserved)
+#
+
+echo "01. POST E1 (A: default + D1 + D2)"
+echo "=================================="
+payload='{
+  "id": "urn:ngsi-ld:E1",
+  "type": "T",
+  "A": [
+    { "type": "Property", "value": 0 },
+    { "type": "Property", "value": 1, "datasetId": "urn:ngsi-ld:dataset:D1" },
+    { "type": "Property", "value": 2, "datasetId": "urn:ngsi-ld:dataset:D2" }
+  ]
+}'
+orionCurl --url /ngsi-ld/v1/entities -X POST --payload "$payload"
+echo
+echo
+
+
+echo "02. PATCH A's D1 instance via /attrs -> 501 (datasetId not supported here)"
+echo "========================================================================="
+payload='{ "A": { "type": "Property", "value": 11, "datasetId": "urn:ngsi-ld:dataset:D1" } }'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:E1/attrs -X PATCH --payload "$payload"
+echo
+echo
+
+
+echo "03. GET E1 - 200, entity intact (no corruption of the default instance)"
+echo "======================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:E1
+echo
+echo
+
+
+--REGEXPECT--
+01. POST E1 (A: default + D1 + D2)
+==================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:E1
+
+
+
+02. PATCH A's D1 instance via /attrs -> 501 (datasetId not supported here)
+=========================================================================
+HTTP/1.1 501 Not Implemented
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "datasetId instances are not supported by PATCH /entities/{entityId}/attrs",
+    "title": "Not Implemented",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/OperationNotSupported"
+}
+
+
+03. GET E1 - 200, entity intact (no corruption of the default instance)
+=======================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+{
+    "A": [
+        {
+            "type": "Property",
+            "value": 0
+        },
+        {
+            "datasetId": "urn:ngsi-ld:dataset:D1",
+            "type": "Property",
+            "value": 1
+        },
+        {
+            "datasetId": "urn:ngsi-ld:dataset:D2",
+            "type": "Property",
+            "value": 2
+        }
+    ],
+    "id": "urn:ngsi-ld:E1",
+    "type": "T"
+}
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
