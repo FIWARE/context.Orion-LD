@@ -24,6 +24,7 @@
 */
 #include <unistd.h>                                              // usleep
 #include <semaphore.h>                                           // sem_init, sem_wait, sem_post
+#include <pthread.h>                                             // pthread_self, pthread_equal, pthread_t
 
 extern "C"
 {
@@ -49,6 +50,7 @@ extern "C"
 typedef struct StringListItem
 {
   char                    name[256];
+  pthread_t               owner;   // The thread that is downloading this URL - to detect cyclic @contexts (same-thread re-entry)
   struct StringListItem*  next;
 } StringListItem;
 
@@ -98,6 +100,32 @@ bool contextDownloadListLookup(const char* url)
 
 // -----------------------------------------------------------------------------
 //
+// contextDownloadListOwnedByMe - is 'url' being downloaded by the CURRENT thread?
+//
+// 'contextCacheWait' exists to let one thread wait for ANOTHER thread that is already
+// downloading the same @context (so we don't download it twice). But if the URL was put
+// in the download list by THIS very thread, then we have recursed back into a context that
+// references itself (directly or via a chain) - a cyclic @context. Waiting is pointless:
+// the download that would satisfy the wait is the frame that is now blocked here, so the
+// wait burns its full timeout and then fails anyway. This lets the caller detect that case.
+//
+static bool contextDownloadListOwnedByMe(const char* url)
+{
+  pthread_t me = pthread_self();
+
+  for (StringListItem* itemP = contextDownloadList; itemP != NULL; itemP = itemP->next)
+  {
+    if ((strcmp(itemP->name, url) == 0) && (pthread_equal(itemP->owner, me) != 0))
+      return true;
+  }
+
+  return false;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // contextDownloadListDebug -
 //
 static void contextDownloadListDebug(const char* what)
@@ -125,6 +153,7 @@ void contextDownloadListAdd(const char* url)
 
   KT_T(KtContextDownload, "Adding '%s' to contextDownloadList", url);
   strncpy(itemP->name, url, sizeof(itemP->name) - 1);
+  itemP->owner = pthread_self();
   itemP->next = contextDownloadList;
   contextDownloadList = itemP;
   contextDownloadListDebug("after item added");
@@ -244,6 +273,40 @@ static OrionldContext* contextCacheWait(char* url)
 
 // -----------------------------------------------------------------------------
 //
+// contextCacheWaitOrCycleBreak -
+//
+// Called when 'url' is already in the download list. If ANOTHER thread is downloading it,
+// wait for that download to finish (contextCacheWait). If THIS thread put it there, we have
+// recursed back into our own in-progress download = a cyclic @context; waiting would just
+// burn the full timeout and fail, so break the cycle immediately with a clear error.
+//
+static OrionldContext* contextCacheWaitOrCycleBreak(char* url)
+{
+  if (contextDownloadListOwnedByMe(url) == true)
+  {
+    // Cyclic @context - non-fatal: we reject this @context and carry on (the broker still
+    // starts / the request still gets an error response from the caller). So it's a WARNING,
+    // not an error - emitting an 'E:' here would make orionldStart consider startup failed.
+    KT_W("Cyclic @context detected - '%s' references itself (directly or via a chain) - rejecting it", url);
+
+    // Set the problem details DIRECTLY (orionldError() would log at 'E:', which orionldStart
+    // treats as a fatal startup error). This gives a request-time cycle a proper 400 response
+    // and, with status >= 300, suppresses the generic "Unable to download context" fallback.
+    orionldState.pd.type   = OrionldBadRequestData;
+    orionldState.pd.title  = (char*) "Cyclic @context";
+    orionldState.pd.detail = url;
+    orionldState.pd.status = 400;
+
+    return NULL;
+  }
+
+  return contextCacheWait(url);
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // orionldContextFromUrl -
 //
 OrionldContext* orionldContextFromUrl(char* url, char* id)
@@ -311,7 +374,7 @@ OrionldContext* orionldContextFromUrl(char* url, char* id)
     if (urlDownloading == true)  // If somebody has taken the semaphore before me and is downloading the context - I'll have to wait
     {
       KT_T(KtContextDownload, "The context '%s' is downloading by other - I wait until it's done", url);
-      return contextCacheWait(url);  // CASE 2 - another thread has downloaded the context
+      return contextCacheWaitOrCycleBreak(url);  // CASE 2 - another thread is downloading the context (or WE are - a cycle)
     }
 
     // CASE 1 - the context will be downloaded
@@ -319,7 +382,7 @@ OrionldContext* orionldContextFromUrl(char* url, char* id)
   else
   {
     KT_T(KtContextDownload, "The context '%s' is downloading by other - I wait until it's done", url);
-    return contextCacheWait(url);  // CASE 3 - another thread has downloaded the context
+    return contextCacheWaitOrCycleBreak(url);  // CASE 3 - another thread is downloading the context (or WE are - a cycle)
   }
 
   KT_T(KtContextDownload, "Downloading the context '%s' and adding it to the context cache", url);
@@ -331,13 +394,16 @@ OrionldContext* orionldContextFromUrl(char* url, char* id)
     contextP = orionldContextFromBuffer(url, OrionldContextDownloaded, id, buffer);
     if (contextP == NULL)
     {
-      KT_E("Context Error (%s: %s)", orionldState.pd.title, orionldState.pd.detail);
+      // Non-fatal: the @context could not be built (e.g. a cyclic reference rejected deeper
+      // down). Warn instead of error so startup isn't considered failed; request handling
+      // still turns the NULL return into an error response upstream.
+      KT_W("Context Warning (%s: %s)", orionldState.pd.title, orionldState.pd.detail);
       if (orionldState.pd.status < 300)  // Error not filled in
         orionldError(OrionldLdContextNotAvailable, "Unable to download context", url, 503);
     }
   }
   else
-    KT_E("Context Error (%s: %s)", orionldState.pd.title, orionldState.pd.detail);
+    KT_W("Context Warning (%s: %s)", orionldState.pd.title, orionldState.pd.detail);
 
   if (contextP != NULL)
   {
