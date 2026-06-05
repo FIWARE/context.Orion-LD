@@ -68,6 +68,7 @@ typedef struct OrionldAttributeAlteration
   OrionldAlterationType  alterationType;
   char*                  attrName;
   char*                  attrNameEq;
+  char*                  datasetId;       // datasetId of the changed instance (NULL = default/none, or unknown for multi-instance) - for datasetId-scoped watchedAttributes
 } OrionldAttributeAlteration;
 
 

@@ -1,0 +1,168 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+--NAME--
+Batch upsert of more than 1000 entities (issue #1951 - no hidden 1000-entity cap)
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB
+
+--SHELL--
+
+#
+# Issue #1951: a batch upsert of > 1000 entities was slow and half-broken. The
+# legacy "which of these entities already exist" lookup
+# (mongoCppLegacyEntityListLookupWithIdTypeCreDate) truncated its result at 1000,
+# so on a re-upsert of > 1000 existing entities the surplus were misclassified as
+# NEW and re-inserted (duplicate-key path) instead of updated. The $in lookup is
+# already bounded by the batch (which is bounded by the max payload size), so the
+# count cap was removed.
+#
+# 1101 entities are used (just over the old 1000 cap).
+#
+# 01. Upsert 1101 NEW entities (value v1)         -> 201 Created
+# 02. Count of type T                             -> 1101
+# 03. Re-upsert the SAME 1101 with value v2       -> 204 No Content (all updated, no error)
+# 04. Count of type T                             -> still 1101 (no duplicates)
+# 05. The boundary entity T:1101 was updated      -> value v2
+# 06. The first entity T:0001 was updated         -> value v2
+#
+
+# Build a JSON array of 1101 entities, all with attribute P set to $1
+buildPayload() {
+  local v=$1 i out
+  out='['
+  for ((i=1; i<=1101; i++)); do
+    [ $i -gt 1 ] && out+=','
+    out+=$(printf '{"id":"urn:ngsi-ld:T:%04d","type":"T","P":{"type":"Property","value":"%s"}}' $i "$v")
+  done
+  out+=']'
+  printf '%s' "$out"
+}
+
+echo "01. Upsert 1101 NEW entities (value v1)"
+echo "======================================="
+payload=$(buildPayload v1)
+out=$(orionCurl --url /ngsi-ld/v1/entityOperations/upsert -X POST --payload "$payload" --noPayloadCheck)
+echo "$out" | grep "^HTTP/"
+echo
+echo
+
+
+echo "02. Count of type T entities (expect 1101)"
+echo "=========================================="
+out=$(orionCurl --url '/ngsi-ld/v1/entities?type=T&limit=1&count=true')
+echo "$out" | grep -i "NGSILD-Results-Count"
+echo
+echo
+
+
+echo "03. Re-upsert the SAME 1101 entities with value v2 (all updates, no error)"
+echo "========================================================================="
+payload=$(buildPayload v2)
+out=$(orionCurl --url /ngsi-ld/v1/entityOperations/upsert -X POST --payload "$payload" --noPayloadCheck)
+echo "$out" | grep "^HTTP/"
+echo
+echo
+
+
+echo "04. Count of type T entities (still 1101 - no duplicates)"
+echo "========================================================="
+out=$(orionCurl --url '/ngsi-ld/v1/entities?type=T&limit=1&count=true')
+echo "$out" | grep -i "NGSILD-Results-Count"
+echo
+echo
+
+
+echo "05. Boundary entity urn:ngsi-ld:T:1101 was updated to v2"
+echo "======================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:T:1101
+echo
+echo
+
+
+echo "06. First entity urn:ngsi-ld:T:0001 was updated to v2"
+echo "===================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:T:0001
+echo
+echo
+
+
+--REGEXPECT--
+01. Upsert 1101 NEW entities (value v1)
+=======================================
+HTTP/1.1 201 Created
+
+
+02. Count of type T entities (expect 1101)
+==========================================
+NGSILD-Results-Count: 1101
+
+
+03. Re-upsert the SAME 1101 entities with value v2 (all updates, no error)
+=========================================================================
+HTTP/1.1 204 No Content
+
+
+04. Count of type T entities (still 1101 - no duplicates)
+=========================================================
+NGSILD-Results-Count: 1101
+
+
+05. Boundary entity urn:ngsi-ld:T:1101 was updated to v2
+=======================================================
+HTTP/1.1 200 OK
+Content-Length: 75
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+{
+    "P": {
+        "type": "Property",
+        "value": "v2"
+    },
+    "id": "urn:ngsi-ld:T:1101",
+    "type": "T"
+}
+
+
+06. First entity urn:ngsi-ld:T:0001 was updated to v2
+====================================================
+HTTP/1.1 200 OK
+Content-Length: 75
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+{
+    "P": {
+        "type": "Property",
+        "value": "v2"
+    },
+    "id": "urn:ngsi-ld:T:0001",
+    "type": "T"
+}
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB

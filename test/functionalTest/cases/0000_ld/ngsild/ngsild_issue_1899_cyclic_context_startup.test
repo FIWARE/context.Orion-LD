@@ -1,0 +1,95 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+--NAME--
+Issue #1899: broker startup must not hang when the persisted context cache contains cyclic array @contexts
+
+--SHELL-INIT--
+dbInit CB
+dbDrop orionld    # empty context cache
+dbDrop CB
+
+#
+# Issue #1899: after a custom @context has been cached, the broker hangs on the
+# NEXT startup (port 1026 never opens, no CPU). The custom context is re-loaded
+# from the 'orionld::contexts' collection and, when it is an array of URLs, the
+# loader re-downloads each referenced context recursively (orionldContextFromTree
+# -> orionldContextFromUrl -> orionldContextFromBuffer -> orionldContextFromTree).
+#
+# We simulate the "first run" (which would have cached the contexts) by seeding the
+# 'orionld::contexts' collection directly, then starting the broker - that startup
+# IS the restart that hangs in #1899. Two array @contexts reference each other
+# (cycle: A -> [B], B -> [A]); both are also served by the test context server so
+# the startup re-download actually runs.
+#
+# 'origin'/'kind'/'createdAt'/'value' mirror what orionldContextCachePersist writes
+# ('value' is the @context array WITHOUT the "@context" member).
+#
+CTXA='http://localhost:7080/jsonldContexts/issue1899_cycleA'
+CTXB='http://localhost:7080/jsonldContexts/issue1899_cycleB'
+
+# Remove any leftover served contexts from a previous (interrupted) run, then serve fresh
+cServerCurl --url /jsonldContexts/issue1899_cycleA --verb DELETE > /dev/null 2>&1 || true
+cServerCurl --url /jsonldContexts/issue1899_cycleB --verb DELETE > /dev/null 2>&1 || true
+
+# Serve the two cyclic array @contexts (downloaded form is wrapped in "@context")
+cServerCurl --url /jsonldContexts/issue1899_cycleA --payload '{ "@context": [ "'$CTXB'" ] }' --verb POST
+cServerCurl --url /jsonldContexts/issue1899_cycleB --payload '{ "@context": [ "'$CTXA'" ] }' --verb POST
+
+# Seed the persisted context cache with the same cycle
+mongoCmd2 orionld 'db.contexts.insert({ _id: "'$CTXA'", url: "'$CTXA'", origin: "Downloaded", kind: "Cached", createdAt: 1700000000.0, value: [ "'$CTXB'" ] })'
+mongoCmd2 orionld 'db.contexts.insert({ _id: "'$CTXB'", url: "'$CTXB'", origin: "Downloaded", kind: "Cached", createdAt: 1700000000.0, value: [ "'$CTXA'" ] })'
+
+# If the bug is present, this startup hangs and orionldStart times out (test fails).
+orionldStart CB -experimental
+
+--SHELL--
+
+#
+# Reaching the SHELL section at all already proves the broker came up: orionldStart
+# blocks until /version answers. This GET then confirms it actually serves requests
+# (no startup deadlock).
+#
+echo "01. GET /ping - broker is up and serving after loading the cyclic contexts"
+echo "=========================================================================="
+orionCurl --url /ngsi-ld/ex/v1/ping
+echo
+echo
+
+
+--REGEXPECT--
+01. GET /ping - broker is up and serving after loading the cyclic contexts
+==========================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "response": "pong"
+}
+
+
+--TEARDOWN--
+brokerStop CB
+cServerCurl --url /jsonldContexts/issue1899_cycleA --verb DELETE
+cServerCurl --url /jsonldContexts/issue1899_cycleB --verb DELETE
+dbDrop orionld
+dbDrop CB

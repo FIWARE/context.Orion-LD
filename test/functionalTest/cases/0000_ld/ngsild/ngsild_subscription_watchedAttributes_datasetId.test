@@ -1,0 +1,373 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+--NAME--
+Subscription datasetId-scoped watchedAttributes (attr@datasetId) - trigger isolation, @none, cache reload
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -experimental
+accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+
+--SHELL--
+
+#
+# A watchedAttributes entry may be datasetId-scoped using the syntax
+# "attrName@datasetId" (split on the FIRST '@'): the subscription is then
+# triggered ONLY when an instance with that datasetId actually changes. The
+# datasetId part is a URN, kept verbatim; only the attribute name is
+# @context-expanded. The token "@none" (entry "attr@@none") matches the default
+# (no-datasetId) instance. Plain "attr" entries keep the original behaviour.
+#
+# (Orion-LD extension - datasetId in watchedAttributes is not yet in the ETSI
+# NGSI-LD spec; an addition has been proposed. Syntax may change.)
+#
+# Endpoint note: a datasetId instance is created/updated via the merge endpoint
+# PATCH /entities/{id} (orionldPatchEntity2), which supports datasetId instances.
+# PATCH /entities/{id}/attrs does NOT implement datasetId instances and rejects a
+# body datasetId with 501, so the datasetId-scoped trigger (step 10) uses the
+# merge endpoint. The plain default-instance updates (steps 08, 09) have no
+# datasetId and keep using /attrs.
+#
+# 01. Create entity E1 - attr A (default), attr B (default, a control attribute)
+# 02. Sub1 watchedAttributes ["A@urn:ngsi-ld:dataset:D1"]  (scoped to D1)
+# 03. Sub2 watchedAttributes ["A@@none"]                   (scoped to the default instance)
+# 04. GET Sub1 - watchedAttributes rendered back as "A@urn:ngsi-ld:dataset:D1"
+# 05. GET Sub2 - watchedAttributes rendered back as "A@@none"
+# 06. Restart broker (cache reloads from mongo) - all trigger checks run reloaded
+# 07. GET Sub1 - the datasetId-scoped watchedAttributes survived the reload
+# 08. PATCH B (control)         -> neither fires (B is not watched)
+# 09. PATCH A default instance  -> only Sub2 fires (Sub1 is scoped to D1)
+# 10. PATCH A (merge), create D1 -> only Sub1 fires (Sub2 is scoped to default)
+# 11. A non-URI datasetId in watchedAttributes is rejected (400) - datasetId must be a URI
+#
+
+echo "01. Create entity urn:ngsi-ld:E1 (A default, B default control)"
+echo "==============================================================="
+payload='{
+  "id": "urn:ngsi-ld:E1",
+  "type": "T",
+  "A": { "type": "Property", "value": 0 },
+  "B": { "type": "Property", "value": "b" }
+}'
+orionCurl --url /ngsi-ld/v1/entities -X POST --payload "$payload"
+echo
+echo
+
+
+echo "02. Sub1 - watchedAttributes [A@urn:ngsi-ld:dataset:D1]"
+echo "======================================================="
+payload='{
+  "id": "urn:ngsi-ld:Sub1",
+  "type": "Subscription",
+  "entities": [ { "id": "urn:ngsi-ld:E1", "type": "T" } ],
+  "watchedAttributes": [ "A@urn:ngsi-ld:dataset:D1" ],
+  "notification": {
+    "endpoint": { "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify" }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload"
+echo
+echo
+
+
+echo "03. Sub2 - watchedAttributes [A@@none] (default instance)"
+echo "========================================================="
+payload='{
+  "id": "urn:ngsi-ld:Sub2",
+  "type": "Subscription",
+  "entities": [ { "id": "urn:ngsi-ld:E1", "type": "T" } ],
+  "watchedAttributes": [ "A@@none" ],
+  "notification": {
+    "endpoint": { "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify" }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload"
+echo
+echo
+
+
+echo "04. GET Sub1 - watchedAttributes rendered as A@urn:ngsi-ld:dataset:D1"
+echo "===================================================================="
+orionCurl --url /ngsi-ld/v1/subscriptions/urn:ngsi-ld:Sub1
+echo
+echo
+
+
+echo "05. GET Sub2 - watchedAttributes rendered as A@@none"
+echo "===================================================="
+orionCurl --url /ngsi-ld/v1/subscriptions/urn:ngsi-ld:Sub2
+echo
+echo
+
+
+echo "06. Restart broker (cache reloads from mongo)"
+echo "============================================="
+brokerStop CB
+orionldStart CB -experimental
+echo
+echo
+
+
+echo "07. GET Sub1 - datasetId-scoped watchedAttributes survived the reload"
+echo "====================================================================="
+orionCurl --url /ngsi-ld/v1/subscriptions/urn:ngsi-ld:Sub1
+echo
+echo
+
+
+echo "08. PATCH B (control - not watched) -> neither fires"
+echo "===================================================="
+accumulatorReset
+payload='{ "B": { "type": "Property", "value": "b2" } }'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:E1/attrs -X PATCH --payload "$payload"
+sleep .3
+dump=$(accumulatorDump)
+echo "notifications: $(echo "$dump" | grep -c '"subscriptionId"')"
+accumulatorReset
+echo
+echo
+
+
+echo "09. PATCH A default instance -> only Sub2 (A@@none) fires"
+echo "========================================================="
+payload='{ "A": { "type": "Property", "value": 1 } }'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:E1/attrs -X PATCH --payload "$payload"
+sleep .3
+dump=$(accumulatorDump)
+echo "notifications: $(echo "$dump" | grep -c '"subscriptionId"')"
+echo "$dump" | grep '"subscriptionId"' | sed 's/.*: *"//; s/".*//' | sort -u | sed 's/^/  from: /'
+accumulatorReset
+echo
+echo
+
+
+echo "10. PATCH A (merge endpoint) - create the D1 instance -> only Sub1 (A@D1) fires"
+echo "==============================================================================="
+# datasetId instances are created via the merge endpoint PATCH /entities/{id}
+# (see the endpoint note above); PATCH /entities/{id}/attrs rejects a body
+# datasetId with 501.
+payload='{ "A": { "type": "Property", "value": 2, "datasetId": "urn:ngsi-ld:dataset:D1" } }'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:E1 -X PATCH --payload "$payload"
+sleep .3
+dump=$(accumulatorDump)
+echo "notifications: $(echo "$dump" | grep -c '"subscriptionId"')"
+echo "$dump" | grep '"subscriptionId"' | sed 's/.*: *"//; s/".*//' | sort -u | sed 's/^/  from: /'
+echo
+echo
+
+
+echo "11. Reject a non-URI datasetId in watchedAttributes (datasetId must be a URI)"
+echo "============================================================================"
+payload='{
+  "id": "urn:ngsi-ld:Sub3",
+  "type": "Subscription",
+  "entities": [ { "id": "urn:ngsi-ld:E1", "type": "T" } ],
+  "watchedAttributes": [ "A@notAUri" ],
+  "notification": {
+    "endpoint": { "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify" }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload"
+echo
+echo
+
+
+--REGEXPECT--
+01. Create entity urn:ngsi-ld:E1 (A default, B default control)
+===============================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:E1
+
+
+
+02. Sub1 - watchedAttributes [A@urn:ngsi-ld:dataset:D1]
+=======================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/subscriptions/urn:ngsi-ld:Sub1
+
+
+
+03. Sub2 - watchedAttributes [A@@none] (default instance)
+=========================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/subscriptions/urn:ngsi-ld:Sub2
+
+
+
+04. GET Sub1 - watchedAttributes rendered as A@urn:ngsi-ld:dataset:D1
+====================================================================
+HTTP/1.1 200 OK
+Content-Length: 409
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+{
+    "entities": [
+        {
+            "id": "urn:ngsi-ld:E1",
+            "type": "T"
+        }
+    ],
+    "id": "urn:ngsi-ld:Sub1",
+    "isActive": true,
+    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld",
+    "notification": {
+        "endpoint": {
+            "accept": "application/json",
+            "uri": "http://127.0.0.1:9997/notify"
+        },
+        "format": "normalized",
+        "status": "ok"
+    },
+    "origin": "cache",
+    "status": "active",
+    "type": "Subscription",
+    "watchedAttributes": [
+        "A@urn:ngsi-ld:dataset:D1"
+    ]
+}
+
+
+05. GET Sub2 - watchedAttributes rendered as A@@none
+====================================================
+HTTP/1.1 200 OK
+Content-Length: 392
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+{
+    "entities": [
+        {
+            "id": "urn:ngsi-ld:E1",
+            "type": "T"
+        }
+    ],
+    "id": "urn:ngsi-ld:Sub2",
+    "isActive": true,
+    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld",
+    "notification": {
+        "endpoint": {
+            "accept": "application/json",
+            "uri": "http://127.0.0.1:9997/notify"
+        },
+        "format": "normalized",
+        "status": "ok"
+    },
+    "origin": "cache",
+    "status": "active",
+    "type": "Subscription",
+    "watchedAttributes": [
+        "A@@none"
+    ]
+}
+
+
+06. Restart broker (cache reloads from mongo)
+=============================================
+
+
+07. GET Sub1 - datasetId-scoped watchedAttributes survived the reload
+=====================================================================
+HTTP/1.1 200 OK
+Content-Length: 409
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+{
+    "entities": [
+        {
+            "id": "urn:ngsi-ld:E1",
+            "type": "T"
+        }
+    ],
+    "id": "urn:ngsi-ld:Sub1",
+    "isActive": true,
+    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld",
+    "notification": {
+        "endpoint": {
+            "accept": "application/json",
+            "uri": "http://127.0.0.1:9997/notify"
+        },
+        "format": "normalized",
+        "status": "ok"
+    },
+    "origin": "cache",
+    "status": "active",
+    "type": "Subscription",
+    "watchedAttributes": [
+        "A@urn:ngsi-ld:dataset:D1"
+    ]
+}
+
+
+08. PATCH B (control - not watched) -> neither fires
+====================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+notifications: 0
+
+
+09. PATCH A default instance -> only Sub2 (A@@none) fires
+=========================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+notifications: 1
+  from: urn:ngsi-ld:Sub2
+
+
+10. PATCH A (merge endpoint) - create the D1 instance -> only Sub1 (A@D1) fires
+===============================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+notifications: 1
+  from: urn:ngsi-ld:Sub1
+
+
+11. Reject a non-URI datasetId in watchedAttributes (datasetId must be a URI)
+============================================================================
+HTTP/1.1 400 Bad Request
+Content-Length: 174
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "datasetId-scoped watchedAttributes entry (attr@datasetId)",
+    "title": "Invalid datasetId - must be a URI",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/BadRequestData"
+}
+
+
+--TEARDOWN--
+brokerStop CB
+accumulatorStop
+dbDrop CB

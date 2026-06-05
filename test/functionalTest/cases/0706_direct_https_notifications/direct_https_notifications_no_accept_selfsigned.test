@@ -85,6 +85,8 @@ echo
 # - Older: "Peer certificate cannot be authenticated with known/given CA certificates"
 # - Newer: "SSL peer certificate or SSH remote key was not OK"
 
+sleep .5  # Give it some time
+
 echo "04. Look in the CB log for the warning about cert not accepted"
 echo "=============================================================="
 grep "curl_easy_perform failed:.*\(ertificate\|SSL peer\)" /tmp/Orion-LD.log | awk -F "curl_easy_perform" '{ print $2 }' | awk -F ")" '{ print $1 }'

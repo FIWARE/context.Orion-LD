@@ -31,6 +31,9 @@ extern "C"
 #include "kbase/kTime.h"                                         // kTimeGet
 #include "kbase/kMacros.h"                                       // K_MAX
 #include "kjson/KjNode.h"                                        // KjNode
+#include "kjson/kjLookup.h"                                      // kjLookup
+#include "kjson/kjBuilder.h"                                     // kjChildAdd
+#include "kjson/kjClone.h"                                       // kjClone
 #include "kjson/kjRender.h"                                      // kjFastRender
 }
 
@@ -39,6 +42,7 @@ extern "C"
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/orionldPatchApply.h"                    // orionldPatchApply
+#include "orionld/common/datasetInstancesMerge.h"                // datasetInstancesMerge
 #include "orionld/types/OrionldAlteration.h"                     // OrionldAlteration, orionldAlterationType
 #include "orionld/dbModel/dbModelToApiEntity.h"                  // dbModelToApiEntity
 #include "orionld/notifications/subCacheAlterationMatch.h"       // subCacheAlterationMatch
@@ -547,7 +551,50 @@ void orionldAlterationsTreat(OrionldAlteration* altList)
   //
   if ((altList->dbEntityP != NULL) && (altList->finalApiEntityP == NULL))
   {
-    altList->finalApiEntityP = dbModelToApiEntity(altList->dbEntityP, false, altList->entityId);  // No sysAttrs options for subscriptions?
+    // Body-level datasetId instances were moved out of the attributes into
+    // orionldState.datasets (dbModelFromApiAttributeDatasetArray). When such
+    // instances exist, fold them back into dbEntityP and use dbModelToApiEntity2
+    // - it (unlike the 3-arg dbModelToApiEntity) merges the @datasets instances
+    // back into their attribute, so a datasetId-scoped subscription has the
+    // changed dataset instance to project to.
+    //
+    // ONLY for requests that actually carry dataset instances: dbModelToApiEntity2
+    // renders attribute names differently from the 3-arg dbModelToApiEntity (which
+    // the rest of the notification pipeline depends on - e.g. the NGSIv2 formats),
+    // so for the common no-datasetId case we must keep the original converter.
+    if (orionldState.datasets != NULL)
+    {
+      // Merge the patch's dataset instances into dbEntityP's @datasets so the rendered
+      // notification carries the PATCHED dataset values (not the stale DB values), using
+      // the same per-instance merge that orionldPatchEntity2 applies to the DB write.
+      // datasetInstancesMerge returns a fresh array and never touches its inputs - so the
+      // shared orionldState.datasets (consumed downstream by the @datasets mongo write and
+      // TRoE) is left intact, and dbModelToApiEntity2/datasetExtract is free to shred the
+      // merged copy we install here.
+      //
+      KjNode* dbDatasetsP = kjLookup(altList->dbEntityP, "@datasets");
+      if (dbDatasetsP == NULL)
+      {
+        dbDatasetsP = kjObject(orionldState.kjsonP, "@datasets");
+        kjChildAdd(altList->dbEntityP, dbDatasetsP);
+      }
+
+      for (KjNode* attrDatasetP = orionldState.datasets->value.firstChildP; attrDatasetP != NULL; attrDatasetP = attrDatasetP->next)
+      {
+        KjNode* dbAttrArrayP = kjLookup(dbDatasetsP, attrDatasetP->name);
+        KjNode* mergedP      = datasetInstancesMerge(dbAttrArrayP, attrDatasetP);
+
+        if (dbAttrArrayP != NULL)
+          kjChildRemove(dbDatasetsP, dbAttrArrayP);
+
+        mergedP->name = attrDatasetP->name;
+        kjChildAdd(dbDatasetsP, mergedP);
+      }
+
+      altList->finalApiEntityP = dbModelToApiEntity2(altList->dbEntityP, false, RF_NORMALIZED, NULL, false, &orionldState.pd);
+    }
+    else
+      altList->finalApiEntityP = dbModelToApiEntity(altList->dbEntityP, false, altList->entityId);
 
     int patchNo = 0;
     for (KjNode* patchP = altList->inEntityP->value.firstChildP; patchP != NULL; patchP = patchP->next)

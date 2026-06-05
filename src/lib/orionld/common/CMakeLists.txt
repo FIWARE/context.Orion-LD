@@ -54,6 +54,7 @@ SET (SOURCES
     attributeTypeFromUriParam.cpp
     orionldError.cpp
     orionldPatchApply.cpp
+    datasetInstancesMerge.cpp
     langStringExtract.cpp
     pathComponentsSplit.cpp
     urlDecode.cpp

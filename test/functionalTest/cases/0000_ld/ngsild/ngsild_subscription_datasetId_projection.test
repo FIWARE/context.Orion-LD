@@ -1,0 +1,368 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+--NAME--
+Subscription datasetId projection in notifications (incl. @none + cache reload)
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -experimental
+accumulatorStart --pretty-print 127.0.0.1 ${LISTENER_PORT}
+
+--SHELL--
+
+#
+# A subscription with a top-level 'datasetId' projects each notification body down
+# to only the matching dataset instance(s) of each attribute (NGSI-LD spec clause 8.5):
+#   - only instances whose datasetId is in the list are kept
+#   - an attribute with NO matching instance is dropped entirely
+#   - "@none" selects the default (no-datasetId) instance
+# The datasetId filter must also persist (mongo) and survive a broker restart.
+#
+# NOTE: a non-default datasetId instance is updated via the merge endpoint
+# PATCH /entities/{id} (orionldPatchEntity2), which supports datasetId
+# instances. PATCH /entities/{id}/attrs does NOT implement datasetId instances
+# and rejects a body datasetId with 501, so it must not be used for that.
+#
+# 01. Create entity urn:ngsi-ld:E1 with multi-instance attr A (default + D1 + D2) and single-instance attr B
+# 02. Create subscription Sub1 with datasetId ["urn:ngsi-ld:dataset:D1"]
+# 03. GET Sub1 - datasetId rendered back
+# 04. PATCH A's D1 instance -> notification
+# 05. Dump: body carries only A{D1}; B (no D1 instance) is dropped
+# 06. Restart broker (cache reloads from mongo)
+# 07. GET Sub1 - datasetId survived the restart (persisted + reloaded into the cache)
+# 08. Create entity urn:ngsi-ld:E2 (A: default + D1) and subscription Sub2 with datasetId ["@none"]
+# 09. PATCH E2's default A instance -> notification
+# 10. Dump: @none projects to the default instance (A default); D1 is dropped
+#
+
+echo "01. Create entity urn:ngsi-ld:E1 (attr A: default+D1+D2, attr B: default only)"
+echo "=============================================================================="
+payload='{
+  "id": "urn:ngsi-ld:E1",
+  "type": "T",
+  "A": [
+    { "type": "Property", "value": 0 },
+    { "type": "Property", "value": 1, "datasetId": "urn:ngsi-ld:dataset:D1" },
+    { "type": "Property", "value": 2, "datasetId": "urn:ngsi-ld:dataset:D2" }
+  ],
+  "B": { "type": "Property", "value": "b-default" }
+}'
+orionCurl --url /ngsi-ld/v1/entities -X POST --payload "$payload"
+echo
+echo
+
+
+echo "02. Create subscription Sub1 with datasetId [urn:ngsi-ld:dataset:D1]"
+echo "==================================================================="
+payload='{
+  "id": "urn:ngsi-ld:Sub1",
+  "type": "Subscription",
+  "entities": [ { "id": "urn:ngsi-ld:E1", "type": "T" } ],
+  "watchedAttributes": [ "A", "B" ],
+  "datasetId": [ "urn:ngsi-ld:dataset:D1" ],
+  "notification": {
+    "endpoint": { "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify" }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload"
+echo
+echo
+
+
+echo "03. GET Sub1 - datasetId rendered back"
+echo "======================================"
+orionCurl --url /ngsi-ld/v1/subscriptions/urn:ngsi-ld:Sub1
+echo
+echo
+
+
+echo "04. PATCH A's D1 instance (merge endpoint) -> notification"
+echo "=========================================================="
+payload='{
+  "A": { "type": "Property", "value": 11, "datasetId": "urn:ngsi-ld:dataset:D1" }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:E1 -X PATCH --payload "$payload"
+echo
+echo
+
+
+echo "05. Dump: body carries only A{D1}; B is dropped (no D1 instance)"
+echo "==============================================================="
+sleep .2
+accumulatorDump
+accumulatorReset
+echo
+echo
+
+
+echo "06. Restart broker (cache reloads from mongo)"
+echo "============================================="
+brokerStop CB
+orionldStart CB -experimental
+echo
+echo
+
+
+echo "07. GET Sub1 - datasetId survived the restart (persisted + reloaded)"
+echo "==================================================================="
+orionCurl --url /ngsi-ld/v1/subscriptions/urn:ngsi-ld:Sub1
+echo
+echo
+
+
+echo "08. Create entity E2 (A: default + D1) and Sub2 with datasetId [@none]"
+echo "====================================================================="
+payload='{
+  "id": "urn:ngsi-ld:E2",
+  "type": "T",
+  "A": [
+    { "type": "Property", "value": 0 },
+    { "type": "Property", "value": 1, "datasetId": "urn:ngsi-ld:dataset:D1" }
+  ]
+}'
+orionCurl --url /ngsi-ld/v1/entities -X POST --payload "$payload"
+payload='{
+  "id": "urn:ngsi-ld:Sub2",
+  "type": "Subscription",
+  "entities": [ { "id": "urn:ngsi-ld:E2", "type": "T" } ],
+  "watchedAttributes": [ "A" ],
+  "datasetId": [ "@none" ],
+  "notification": {
+    "endpoint": { "uri": "http://127.0.0.1:'${LISTENER_PORT}'/notify" }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload"
+echo
+echo
+
+
+echo "09. PATCH E2's default A instance -> notification"
+echo "================================================"
+payload='{
+  "A": { "type": "Property", "value": 99 }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:E2/attrs -X PATCH --payload "$payload"
+echo
+echo
+
+
+echo "10. Dump: @none projects to the default A instance; D1 dropped"
+echo "============================================================="
+sleep .2
+accumulatorDump
+echo
+echo
+
+
+--REGEXPECT--
+01. Create entity urn:ngsi-ld:E1 (attr A: default+D1+D2, attr B: default only)
+==============================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:E1
+
+
+
+02. Create subscription Sub1 with datasetId [urn:ngsi-ld:dataset:D1]
+===================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/subscriptions/urn:ngsi-ld:Sub1
+
+
+
+03. GET Sub1 - datasetId rendered back
+======================================
+HTTP/1.1 200 OK
+Content-Length: 429
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+{
+    "datasetId": [
+        "urn:ngsi-ld:dataset:D1"
+    ],
+    "entities": [
+        {
+            "id": "urn:ngsi-ld:E1",
+            "type": "T"
+        }
+    ],
+    "id": "urn:ngsi-ld:Sub1",
+    "isActive": true,
+    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld",
+    "notification": {
+        "endpoint": {
+            "accept": "application/json",
+            "uri": "http://127.0.0.1:9997/notify"
+        },
+        "format": "normalized",
+        "status": "ok"
+    },
+    "origin": "cache",
+    "status": "active",
+    "type": "Subscription",
+    "watchedAttributes": [
+        "A",
+        "B"
+    ]
+}
+
+
+04. PATCH A's D1 instance (merge endpoint) -> notification
+==========================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+05. Dump: body carries only A{D1}; B is dropped (no D1 instance)
+===============================================================
+POST http://127.0.0.1:9997/notify?subscriptionId=urn:ngsi-ld:Sub1
+Content-Length: 284
+User-Agent: orionld/REGEX(.*)
+Host: 127.0.0.1:9997
+Accept: application/json
+Content-Type: application/json
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+Ngsild-Attribute-Format: Normalized
+
+{
+    "data": [
+        {
+            "A": {
+                "datasetId": "urn:ngsi-ld:dataset:D1",
+                "type": "Property",
+                "value": 11
+            },
+            "id": "urn:ngsi-ld:E1",
+            "type": "T"
+        }
+    ],
+    "id": "REGEX(urn:ngsi-ld:Notification:.*)",
+    "notifiedAt": "REGEX(.*)",
+    "subscriptionId": "urn:ngsi-ld:Sub1",
+    "type": "Notification"
+}
+=======================================
+
+
+06. Restart broker (cache reloads from mongo)
+=============================================
+
+
+07. GET Sub1 - datasetId survived the restart (persisted + reloaded)
+===================================================================
+HTTP/1.1 200 OK
+Content-Length: 429
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+{
+    "datasetId": [
+        "urn:ngsi-ld:dataset:D1"
+    ],
+    "entities": [
+        {
+            "id": "urn:ngsi-ld:E1",
+            "type": "T"
+        }
+    ],
+    "id": "urn:ngsi-ld:Sub1",
+    "isActive": true,
+    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld",
+    "notification": {
+        "endpoint": {
+            "accept": "application/json",
+            "uri": "http://127.0.0.1:9997/notify"
+        },
+        "format": "normalized",
+        "status": "ok"
+    },
+    "origin": "cache",
+    "status": "active",
+    "type": "Subscription",
+    "watchedAttributes": [
+        "A",
+        "B"
+    ]
+}
+
+
+08. Create entity E2 (A: default + D1) and Sub2 with datasetId [@none]
+=====================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:E2
+
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/subscriptions/urn:ngsi-ld:Sub2
+
+
+
+09. PATCH E2's default A instance -> notification
+================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+10. Dump: @none projects to the default A instance; D1 dropped
+=============================================================
+POST http://127.0.0.1:9997/notify?subscriptionId=urn:ngsi-ld:Sub2
+Content-Length: 247
+User-Agent: orionld/REGEX(.*)
+Host: 127.0.0.1:9997
+Accept: application/json
+Content-Type: application/json
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+Ngsild-Attribute-Format: Normalized
+
+{
+    "data": [
+        {
+            "A": {
+                "type": "Property",
+                "value": 99
+            },
+            "id": "urn:ngsi-ld:E2",
+            "type": "T"
+        }
+    ],
+    "id": "REGEX(urn:ngsi-ld:Notification:.*)",
+    "notifiedAt": "REGEX(.*)",
+    "subscriptionId": "urn:ngsi-ld:Sub2",
+    "type": "Notification"
+}
+=======================================
+
+
+--TEARDOWN--
+brokerStop CB
+accumulatorStop
+dbDrop CB

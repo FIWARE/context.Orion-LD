@@ -38,6 +38,9 @@ extern "C"
 #include "orionld/common/traceLevels.h"                          // KT_T trace levels
 #include "orionld/dds/ddsActionLookup.h"                         // ddsActionLookup
 #include "orionld/dds/ddsActionSubAttributeUpdate.h"             // ddsActionSubAttributeUpdate
+#include "orionld/dds/ddsActionInstanceDelete.h"                 // ddsActionInstanceDelete
+#include "orionld/dds/ddsActionBuild.h"                          // ddsActionGoalDatasetId
+#include "orionld/dds/ddsActionSubscription.h"                   // ddsActionSubscriptionDelete
 #include "orionld/dds/ddsReplyBuild.h"                           // ddsReplyExtractMetadata
 #include "orionld/dds/ddsActionResultNotification.h"             // Own interface
 
@@ -121,12 +124,28 @@ void ddsActionResultNotification
                               publishTime);
 
   //
-  // Result is the final event of a successful action goal. Free the tracker
-  // now (the per-goal instance stays in @datasets as the record of
-  // completion - kept on succeeded per the lifecycle design).
+  // Result is the final event of a successful action goal. Deliver-then-teardown
+  // (uniform lifecycle - the instance is removed on every terminal status, the
+  // record lives on in TRoE):
+  //   1. The result envelope PATCH above already fired the final notification
+  //      to the temp subscription (if any).
+  //   2. Remove the temp subscription BEFORE pulling the instance, so the
+  //      consumer doesn't also get a notification for the instance deletion.
+  //   3. Pull the per-goal datasetId instance.
+  //   4. Free the goal tracker.
   //
   if (goalP != NULL)
   {
+    if (goalP->subscriptionId != NULL)
+      ddsActionSubscriptionDelete(goalP->subscriptionId);
+
+    // Sole in-flight goal -> last datasetId instance -> remove the whole attribute.
+    bool lastInstance = (actionP->goals == goalP) && (goalP->next == NULL);
+
+    char datasetIdStr[48];
+    ddsActionGoalDatasetId(goalId, datasetIdStr);
+    ddsActionInstanceDelete(actionP->entityId, actionP->entityType, actionP->attributeName, datasetIdStr, lastInstance);
+
     DdsActionGoal* prev = NULL;
     for (DdsActionGoal* gP = actionP->goals; gP != NULL; gP = gP->next)
     {
@@ -137,6 +156,8 @@ void ddsActionResultNotification
         else
           actionP->goals = gP->next;
         free(gP->requestJson);
+        if (gP->subscriptionId != NULL)
+          free(gP->subscriptionId);
         free(gP);
         break;
       }

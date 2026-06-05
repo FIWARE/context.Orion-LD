@@ -97,6 +97,7 @@ void ddsActionLifecycleNotify
   altP->alteredAttributeV[0].alterationType = AttributeValueChanged;
   altP->alteredAttributeV[0].attrName       = (char*) attrLongName;
   altP->alteredAttributeV[0].attrNameEq     = attrNameEq;
+  altP->alteredAttributeV[0].datasetId      = NULL;  // lifecycle (instance-delete) notify - not datasetId-scoped
 
   orionldState.alterations = altP;
 

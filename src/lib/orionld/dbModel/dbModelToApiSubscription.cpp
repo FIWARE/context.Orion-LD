@@ -22,9 +22,13 @@
 *
 * Author: Ken Zangelin
 */
+#include <string.h>                                              // strchr, strlen, strcpy, strcat
+
 extern "C"
 {
 #include "ktrace/kTrace.h"                                       // KT_*
+#include "kalloc/kaAlloc.h"                                      // kaAlloc
+#include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjObject, kjString, kjChildAdd, ...
@@ -207,6 +211,7 @@ KjNode* dbModelToApiSubscription
   KjNode* dbNotifierInfoP     = kjLookup(dbSubP, "notifierInfo");
   KjNode* dbAttrsP            = kjLookup(dbSubP, "attrs");       DB_ITEM_NOT_FOUND(dbSubIdP, "attrs",       tenant);
   KjNode* dbConditionsP       = kjLookup(dbSubP, "conditions");  DB_ITEM_NOT_FOUND(dbSubIdP, "conditions",  tenant);
+  KjNode* dbDatasetIdP        = kjLookup(dbSubP, "datasetId");
   KjNode* dbStatusP           = kjLookup(dbSubP, "status");
   KjNode* dbExpirationP       = kjLookup(dbSubP, "expiration");
   KjNode* dbLdContextP        = kjLookup(dbSubP, "ldContext");
@@ -337,15 +342,35 @@ KjNode* dbModelToApiSubscription
     dbConditionsP->name = (char*) "watchedAttributes";
     kjChildAdd(apiSubP, dbConditionsP);
 
-    // Now we need to go over all watched attributes and find their alias according to the current @context
+    // Now we need to go over all watched attributes and find their alias according to the current @context.
+    // A datasetId-scoped entry "attr@datasetId" is aliased on the name part only - the datasetId is kept verbatim.
     if (forSubCache == false)
     {
       for (KjNode* attrNameNodeP = dbConditionsP->value.firstChildP; attrNameNodeP != NULL; attrNameNodeP = attrNameNodeP->next)
       {
-        attrNameNodeP->value.s = orionldContextItemAliasLookup(orionldState.contextP, attrNameNodeP->value.s, NULL, NULL);
+        char* atP = strchr(attrNameNodeP->value.s, '@');
+
+        if (atP == NULL)
+          attrNameNodeP->value.s = orionldContextItemAliasLookup(orionldState.contextP, attrNameNodeP->value.s, NULL, NULL);
+        else
+        {
+          char* dup     = kaStrdup(&orionldState.kalloc, attrNameNodeP->value.s);
+          char* dupAtP  = strchr(dup, '@');
+          *dupAtP       = 0;
+          char* nameAls = orionldContextItemAliasLookup(orionldState.contextP, dup, NULL, NULL);
+          int   len     = strlen(nameAls) + strlen(atP) + 1;   // atP starts at '@'
+          char* combined = kaAlloc(&orionldState.kalloc, len);
+          strcpy(combined, nameAls);
+          strcat(combined, atP);
+          attrNameNodeP->value.s = combined;
+        }
       }
     }
   }
+
+  // datasetId - top-level dataset filter/projection (String or Array of String)
+  if (dbDatasetIdP != NULL)
+    kjChildAdd(apiSubP, dbDatasetIdP);
 
   // timeInterval
   if (timeIntervalNodeP != NULL)

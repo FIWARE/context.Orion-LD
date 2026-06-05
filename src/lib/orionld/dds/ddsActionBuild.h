@@ -40,8 +40,10 @@ extern "C"
 //
 // Helpers for building the NGSI-LD sub-attribute Property tree that wraps a
 // DDS action callback (feedback / result / status). Same envelope idea as
-// ddsReplyBuild.cpp uses for services, but keyed by goalId (UUID) instead of
-// requestId (uint64).
+// ddsReplyBuild.cpp uses for services. The service reply carries a requestId
+// because it lives on the default instance; an action envelope needs no such
+// id — its goal is identified by the per-goal datasetId of the instance it
+// sits on.
 //
 // All constructed nodes live in orionldState.kjsonP — callers must have
 // orionldState initialized for the current thread.
@@ -100,10 +102,12 @@ extern const char* ddsActionStatusCodeToString(eprosima::ddsenabler::participant
 //   "<subName>": {
 //     "type": "Property",
 //     "value": <payloadValue>,
-//     "goalId":           { "type": "Property", "value": "<uuid>" },
 //     "publishedAt":      { "type": "Property", "value": <secs since epoch> }
 //     [+ optional: instanceHandleId / participantId / ddsDataType ]
 //   }
+//
+// The goal is identified by the enclosing instance's datasetId
+// ("urn:goal:<uuid>"), so no goalId sub-Property is stamped on the envelope.
 //
 // 'payloadValue' is renamed in-place to "value" — pass a node the caller
 // doesn't need elsewhere.
@@ -112,7 +116,6 @@ extern KjNode* ddsActionBuildSubAttribute
 (
   const char*                                       subName,
   KjNode*                                           payloadValue,
-  const eprosima::ddsenabler::participants::UUID&   goalId,
   const char*                                       instanceHandleId,
   const char*                                       participantId,
   const char*                                       ddsDataType,

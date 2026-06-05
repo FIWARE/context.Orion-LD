@@ -39,6 +39,7 @@ typedef struct DdsActionGoal
   uint8_t                   goalId[16];      // UUID
   char*                     requestJson;     // libc-strdup of the goal request payload (free when removing the goal)
   bool                      instanceCreated; // true once the per-goal datasetId instance has been materialised
+  char*                     subscriptionId;  // libc-strdup of the temp subscription's id, or NULL if no 'endpoint' was given (free when removing the goal)
   struct DdsActionGoal*     next;
 } DdsActionGoal;
 

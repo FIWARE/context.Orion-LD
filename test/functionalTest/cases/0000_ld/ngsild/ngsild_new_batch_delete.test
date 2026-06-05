@@ -402,9 +402,27 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entity:E2
 
 11. Attempt to batch delete E1 twice (E1 present twice in the entity id array of the payload body)
 ==================================================================================================
-HTTP/1.1 204 No Content
+HTTP/1.1 207 Multi-Status
+Content-Length: 291
+Content-Type: application/json
 Date: REGEX(.*)
 
+{
+    "errors": [
+        {
+            "entityId": "urn:ngsi-ld:entity:E1",
+            "error": {
+                "detail": "Duplicated Entity ID in the batch request - only the first occurrence is processed",
+                "status": 404,
+                "title": "Entity Not Found",
+                "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
+            }
+        }
+    ],
+    "success": [
+        "urn:ngsi-ld:entity:E1"
+    ]
+}
 
 
 --TEARDOWN--

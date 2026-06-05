@@ -21,7 +21,7 @@ Orion-LD can act as a peer of any DDS application, in three modes:
 |---|---|---|---|
 | **Topic** (pub/sub) | A DDS topic ↔ one *attribute* of one *entity*. Publishes/receives the `value` field of that attribute as the DDS sample. | Publisher and subscriber. | Bidirectional. A REST update of the attribute publishes to DDS. A DDS sample on the topic updates the attribute. |
 | **Service** (request/reply) | A DDS service ↔ one *attribute*. PATCHing the attribute issues a DDS service request whose payload is the attribute `value`. The reply is merged back into the same attribute. | **Client only.** | Outbound trigger via REST → reply lands back as a sub-Property. |
-| **Action** (long-running goal) | A DDS action ↔ one *attribute*. PATCHing the attribute issues a goal. Each goal is materialised as a separate attribute instance keyed by `datasetId="urn:goal:<uuid>"`; feedback / result / status arrive as envelope sub-Properties on that instance. | **Client only.** | Outbound trigger via REST → asynchronous feedback / result / status come back as envelope sub-Properties. |
+| **Action** (long-running goal) | A DDS action ↔ one *attribute*. PATCHing the attribute issues a goal; each goal is a separate instance keyed by `datasetId="urn:goal:<uuid>"`, with feedback / result / status as envelope sub-Properties. An optional `endpoint` sub-attribute auto-creates a temporary subscription streaming the goal's lifecycle to the initiator. On completion the instance is removed — and the whole attribute when it was the last in-flight goal (re-created by the next goal PATCH); history stays in TRoE. | **Client only.** | Outbound trigger via REST → async feedback / result / status; optional temp-subscription notifications. |
 
 In all three modes the **wire payload** on the DDS side is just the JSON
 serialization of `attribute.value`. Sub-attributes (metadata, `observedAt`,
@@ -381,6 +381,43 @@ The broker generates a `goalId` (UUID), sends the goal over DDS, and
 returns immediately. From that moment a new attribute instance exists on
 the entity, with `datasetId = "urn:goal:<goalId>"`.
 
+#### Streaming this goal's lifecycle — the `endpoint` sub-attribute
+
+Add an `endpoint` sub-attribute to the goal PATCH and the broker
+auto-creates a **temporary** subscription (cache-only, not persisted) scoped
+to the goal's entity: the feedback / result / status updates are delivered to
+that endpoint for the life of the goal, and the subscription is torn down
+automatically when the goal terminates. No separate `POST /subscriptions`
+needed.
+
+```bash
+curl -X PATCH http://localhost:9999/ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1 \
+    -H "Content-Type: application/json" \
+    -d '{ "fib": { "type": "Property",
+                   "value": { "order": 5 },
+                   "endpoint": { "type": "Property", "value": "http://my-app:7000/notify" } } }'
+```
+
+`endpoint` is control metadata: it is not sent on the DDS wire (only `value`
+is) and it is removed together with the attribute when the goal completes.
+
+The temporary subscription is **datasetId-scoped to this goal** in two
+independent ways:
+
+- its `watchedAttributes` entry is `"<attr>@<goalDatasetId>"`, so it is
+  *triggered* only by changes to **this** goal's instance; and
+- its top-level `datasetId` *projects* each notification body down to this
+  goal's own feedback / result / status envelope.
+
+So when several goals run on the same action attribute at the same time, each
+initiator receives **only its own goal's** updates — concurrent goals do not
+cross-talk.
+
+> **NOTE.** datasetId in `watchedAttributes` (syntax `"<attr>@<datasetId>"`,
+> with `"<attr>@@none"` for the default instance) is an Orion-LD extension —
+> not yet part of the ETSI NGSI-LD API; an addition has been proposed, so the
+> syntax may change.
+
 ### 8.3. Feedback / result / status arrive as envelope sub-Properties
 
 As the DDS action server emits feedback samples and finally a result with
@@ -399,19 +436,16 @@ a status, the broker stores each in the goal's attribute instance:
       "ddsActionFeedback": {             // updated each time a feedback sample arrives
         "type":  "Property",
         "value": { "partial_sequence": [0, 1, 1, 2, 3] },
-        "goalId":      { "type": "Property", "value": "9b…" },
         "publishedAt": { "type": "Property", "value": 1715617200.456 }
       },
       "ddsActionResult": {               // appears once the server returns the result
         "type":  "Property",
         "value": { "sequence": [0, 1, 1, 2, 3, 5] },
-        "goalId":      { "type": "Property", "value": "9b…" },
         "publishedAt": { "type": "Property", "value": 1715617200.789 }
       },
       "ddsActionStatus": {               // status transitions (succeeded, aborted, executing, …)
         "type":  "Property",
         "value": { "code": "succeeded", "message": "" },
-        "goalId":      { "type": "Property", "value": "9b…" },
         "publishedAt": { "type": "Property", "value": 1715617200.790 }
       }
     }
@@ -448,6 +482,25 @@ curl -X DELETE \
 curl -X DELETE \
     'http://localhost:9999/ngsi-ld/v1/entities/urn:ngsi-ld:robot:r1/attrs/fib?goal=9b…'
 ```
+
+### 8.6. Completion and cleanup
+
+When a goal reaches a terminal status (succeeded / canceled / aborted /
+rejected / timeout / failed), the broker:
+
+1. delivers the final notification (if a temporary `endpoint` subscription exists),
+2. tears down that temporary subscription,
+3. removes the goal's `datasetId` instance — and when it was the **last** instance,
+   removes the **whole attribute** (`fib` disappears from the entity).
+
+A subsequent goal PATCH re-creates the attribute, so the entity only carries
+`fib` while one or more goals are in flight. The goal's full history (every
+feedback / result / status update) remains in the **temporal (TRoE) database** —
+only the live representation is removed.
+
+> The instance/attribute removal is a direct DB write, so it does not itself
+> emit a TRoE record of the *disappearance* (the lifecycle leading up to it is
+> recorded). See §13.
 
 ---
 
@@ -493,8 +546,9 @@ same point as a REST update, which means:
     attribute instance.
 
 - The notification payload is the standard NGSI-LD notification —
-  no DDS-specific framing. If the consumer needs the goal id, the publish
-  time, etc., those are available as sub-Properties of the attribute (see
+  no DDS-specific framing. The goal id is the instance's `datasetId`
+  (`urn:goal:<uuid>`); the publish time and other DDS envelope metadata are
+  available as sub-Properties of the attribute (see
   [§8.3](#83-feedback--result--status-arrive-as-envelope-sub-properties)).
 
 ### 10.1. Example: subscribing to Fibonacci goal status changes
@@ -601,6 +655,15 @@ caller will see a 503 or 504.
   multiple entities, configure it multiple times under different topic
   names that share the same underlying DDS topic — there's no built-in
   fan-out.
+- **Action notifications are not yet goal-scoped.** A subscription on an
+  action attribute (including the temp `endpoint` one) fires on every change,
+  but the notification *body* carries the attribute's default instance, not
+  the changed goal's per-instance feedback/result/status. Datasetid-scoped
+  notification *projection* is planned; until then, read goal detail via
+  `GET …?datasetId=urn:goal:<uuid>` or the temporal API.
+- **Goal completion isn't recorded in TRoE.** The per-goal lifecycle
+  (feedback/result/status updates) is recorded, but the final removal of the
+  instance/attribute is a direct DB write and emits no TRoE "deletion" entry.
 - **`FibonacciServer.py` crashes on Jazzy.** The Python action server
   shipped with FIWARE-DDS-Enabler has a known `rclpy` issue on Jazzy that
   hits before any goal is sent — see

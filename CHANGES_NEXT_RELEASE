@@ -1,8 +1,12 @@
 ## Fixed Issues
+  #1899 - Fixed broker startup stall on a cyclic @context in the persisted context cache: at startup the cached @contexts are reloaded, and an array-@context re-downloads its referenced contexts recursively. A context that references itself (directly or via a chain) made the loader wait the full download timeout (3s) per cycle in contextCacheWait - which exists to let one thread wait for ANOTHER thread already downloading the same context, but during the single-threaded startup recursion the "other downloader" is the same thread, so the wait could never be satisfied (and with enough cross-referencing contexts the cumulative stall trips orchestrator startup probes -> CrashLoop). The recursion now detects same-thread re-entry and rejects the cyclic @context immediately. Such non-fatal context-load failures are now logged as warnings instead of errors, so they no longer look like a failed startup
+  #XXXX - Batch delete (non-legacy path): a duplicated Entity ID is now handled per NGSI-LD spec clause 10.3.6 - the first occurrence is deleted and each subsequent occurrence gets a ResourceNotFound (404) error in the 207 response (the duplicates were previously dropped silently)
+  #1951 - Fixed slow, half-broken batch upsert of more than 1000 entities: the legacy "which of these already exist" lookup (mongoCppLegacyEntityListLookupWithIdTypeCreDate) truncated its result at a hardcoded 1000, so on a re-upsert the surplus entities were misclassified as new and re-inserted (duplicate-key path) instead of updated. The lookup's $in query is already bounded by the batch (and thus by the max payload size), so the arbitrary 1000 cap was removed
+  #1943 - Fixed heap corruption / crash under concurrent load: the MHD request thread pool (enabled by reqPoolSize, recently turned on by default) runs MHD in epoll mode, multiplexing several connections onto each pool thread - but the in-progress request state (payload buffer, kalloc, requestTree) lives in the thread-local orionldState, so concurrent (large, multi-chunk) requests corrupted each other (heap use-after-free / "free(): invalid size"). The MHD thread pool is now disabled: the broker always runs thread-per-connection. The -reqPoolSize/TRQ_POOL_SIZE option is still accepted (so existing deployments start) but is ignored and logs a warning
+  #XXXX - Fixed entity corruption from PATCH /entities/{id}/attrs carrying a body datasetId: the datasetId instance was moved aside but never written, and the emptied attribute clobbered the stored default instance (the next read 500'd). PATCH /attrs does not implement datasetId instances - it is now rejected with 501 and the entity is left untouched
+  #XXXX - Fixed stale value in notifications when PATCH /entities/{id} (merge) updates an EXISTING datasetId instance: the notification render only folded the patched dataset instances in when the attribute had no instances in the DB yet, so an update notified the old DB value (and a DDS action's terminal notification dropped its ddsActionResult entirely). The patched instances are now merged into the render entity in all cases
   #1905 - TRoE: segfault (exit 139) connecting to TimescaleDB Cloud - added SSL support and fixed NULL pointer crash
   #XXXX - Fixed crash under concurrent notification delivery by replacing thread-unsafe gethostbyname with getaddrinfo in orionldServerConnect
-  #XXXX - DDS: fixed HTTP 500 on second consecutive PATCH/attr roundtrip - dotForEq nested-Property names so mongo $set doesn't fragment them across path-separator dots
-  #XXXX - DDS: renamed reply envelope field xId to instanceHandleId (matches FastDDS InstanceHandle_t terminology, requested by eProsima)
   #XXXX - Fixed query of many large entities (cfreyfh - Carsten Freyh at Fraunhofer IKTS)
   #XXXX - Wait for postgres instead of exiting after the first try - just like for mongo (1 try per second during 30 secs)
   #XXXX - Fixed crash in relationship endpoint when no relations found (cfreyfh)
@@ -28,6 +32,15 @@
           q-filter, geo-queries, aggregation, pick/omit, datasetId, and temporalValues
           — replacing previous Mintaka-based stubs
   #XXXX - Implemented PATCH for periodic notification (pernot) subscriptions
+  #XXXX - Subscriptions support a top-level 'datasetId' (String or Array of String) that projects each
+          notification body to the matching dataset instance(s) of every attribute, per NGSI-LD spec
+          clause 8.5 (non-matching attributes are dropped; '@none' selects the default instance).
+          Persisted, survives broker restart, and rendered back on GET
+  #XXXX - Subscriptions support datasetId-scoped 'watchedAttributes' via the syntax "<attr>@<datasetId>"
+          (Orion-LD extension, proposed to ETSI): the subscription is TRIGGERED only when an instance with
+          that datasetId changes. The datasetId must be a URI; the token '@none' (i.e. "<attr>@@none") scopes
+          to the default no-datasetId instance; a plain "<attr>" still matches any instance. Persisted and
+          rendered back on GET
   #1905 - New CLI option -troeSslMode (env: ORIONLD_TROE_SSL_MODE) for TRoE Postgres SSL connections
   #XXXX - New CLI option -coreContextDir (env: ORIONLD_CORE_CONTEXT_DIR, default: /opt/orion/ldcontexts)
   #XXXX - Replaced prometheus-client-c with KPROM library for Prometheus metrics
@@ -76,6 +89,11 @@
   - DDS publish for already existing attributes in BATCH Update operations
   - Graceful DDS shutdown
   - Synchronous DDS semantics for PATCH /entities/{id} (when -wip dds is set); opt out with ?ddsSync=false
+  - DDS Action goal lifecycle: an 'endpoint' sub-attribute spawns a temporary per-goal subscription that streams the goal's feedback/result/status to the initiator, torn down (instance + subscription) on goal completion
+  - datasetId-aware notifications: a subscription's top-level 'datasetId' projects each notification body to the matching dataset instance(s) (NGSI-LD spec clause 8.5; '@none' selects the default instance) - so a goal's temp subscription delivers only that goal's instance
+  - Concurrent action goals no longer cross-talk: each goal's temporary subscription watches "<attr>@<goalDatasetId>" (datasetId-scoped watchedAttributes), so it is TRIGGERED only by its own goal's instance changes, not by sibling goals modifying the same attribute
+  - Fixed HTTP 500 on a second consecutive PATCH/attr roundtrip (dotForEq nested-Property names so mongo $set doesn't fragment them across path-separator dots)
+  - Renamed reply envelope field xId to instanceHandleId (matches FastDDS InstanceHandle_t terminology, requested by eProsima)
 
 ## Documentation
   - Added TRoE database schema and advanced optimization documentation

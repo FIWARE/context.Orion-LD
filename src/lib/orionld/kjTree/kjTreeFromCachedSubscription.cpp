@@ -24,10 +24,13 @@
 */
 #include <map>                                                   // std::map (for httpInfo.headers)
 #include <string>                                                // std::string (for httpInfo.headers iterator)
+#include <string.h>                                              // strchr, strlen, strcpy, strcat
 
 extern "C"
 {
 #include "ktrace/kTrace.h"                                       // KT_*
+#include "kalloc/kaAlloc.h"                                      // kaAlloc
+#include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjParse.h"                                       // kjParse
 #include "kjson/kjBuilder.h"                                     // kjObject, kjString, ..., kjChildAdd
@@ -181,7 +184,24 @@ KjNode* kjTreeFromCachedSubscription(CachedSubscription* cSubP, bool sysAttrs, b
 
     for (int ix = 0; ix < watchedAttributes; ix++)
     {
-      char* alias = orionldContextItemAliasLookup(orionldState.contextP, cSubP->notifyConditionV[ix].c_str(), NULL, NULL);
+      const char* entry = cSubP->notifyConditionV[ix].c_str();
+      const char* atP   = strchr(entry, '@');
+      char*       alias;
+
+      if (atP == NULL)
+        alias = orionldContextItemAliasLookup(orionldState.contextP, (char*) entry, NULL, NULL);
+      else
+      {
+        // datasetId-scoped entry "attr@datasetId" - alias only the name part, keep the datasetId verbatim
+        char* dup     = kaStrdup(&orionldState.kalloc, entry);
+        char* dupAtP  = strchr(dup, '@');
+        *dupAtP       = 0;
+        char* nameAls = orionldContextItemAliasLookup(orionldState.contextP, dup, NULL, NULL);
+        int   len     = strlen(nameAls) + strlen(atP) + 1;   // atP starts at '@'
+        alias         = kaAlloc(&orionldState.kalloc, len);
+        strcpy(alias, nameAls);
+        strcat(alias, atP);
+      }
 
       nodeP = kjString(orionldState.kjsonP, NULL, alias);
       NULL_CHECK(nodeP);
@@ -189,6 +209,24 @@ KjNode* kjTreeFromCachedSubscription(CachedSubscription* cSubP, bool sysAttrs, b
     }
 
     kjChildAdd(sP, watchedAttributesP);
+  }
+
+  //
+  // datasetId - top-level dataset filter/projection (rendered as an Array of String)
+  //
+  if (cSubP->datasetIds.size() > 0)
+  {
+    KjNode* datasetIdP = kjArray(orionldState.kjsonP, "datasetId");
+    NULL_CHECK(datasetIdP);
+
+    for (unsigned int ix = 0; ix < cSubP->datasetIds.size(); ix++)
+    {
+      nodeP = kjString(orionldState.kjsonP, NULL, cSubP->datasetIds[ix].c_str());
+      NULL_CHECK(nodeP);
+      kjChildAdd(datasetIdP, nodeP);
+    }
+
+    kjChildAdd(sP, datasetIdP);
   }
 
   //

@@ -32,12 +32,18 @@
 //
 // ddsActionInstanceDelete -
 //
-// Internal DDS cleanup: pull a per-goal datasetId instance from an
-// action-tied attribute's @datasets array (direct mongo write, so no
-// orionldDeleteAttribute - which means the DDS goal-cancel hook in
-// that routine is naturally skipped, as it should be for a goal that
-// has already terminated). Subscription dispatch fires via
-// ddsActionLifecycleNotify so subscribers see the instance disappear.
+// Internal DDS cleanup on goal completion: remove the per-goal datasetId
+// instance from an action-tied attribute (direct mongo write, so no
+// orionldDeleteAttribute - which means the DDS goal-cancel hook in that
+// routine is naturally skipped, as it should be for a goal that has already
+// terminated). Subscription dispatch fires via ddsActionLifecycleNotify so
+// subscribers see the change.
+//
+// 'lastInstance' == true when the completing goal is the only in-flight goal,
+// i.e. its instance is the last datasetId instance: in that case the WHOLE
+// attribute is removed (mongocAttributeDelete) rather than just pulling the one
+// instance - the action-tied attribute is re-created by the next goal-triggering
+// PATCH. Otherwise (other goals still in flight) only this instance is pulled.
 //
 // TODO: TRoE sees this lifecycle as a series of attribute updates
 // followed by no record of the disappearance (pull doesn't emit a TRoE
@@ -49,7 +55,8 @@ extern void ddsActionInstanceDelete
   const char* entityId,
   const char* entityType,
   const char* attributeName,
-  const char* datasetIdStr
+  const char* datasetIdStr,
+  bool        lastInstance
 );
 
 #endif  // SRC_LIB_ORIONLD_DDS_DDSACTIONINSTANCEDELETE_H_

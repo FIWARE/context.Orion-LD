@@ -316,6 +316,45 @@ static bool falseUpdate(KjNode* attrP, KjNode* dbAttrsP)
 
 // -----------------------------------------------------------------------------
 //
+// watchedAttributeMatch - does a watchedAttributes entry match this changed attribute?
+//
+// A watchedAttributes entry may be datasetId-scoped using the syntax
+// "attrName@datasetId" (split on the FIRST '@'): the subscription is then only
+// triggered when an instance with that datasetId actually changed. The
+// datasetId part is a URN compared verbatim; the token "@none" (i.e. an entry
+// "attrName@@none") matches the default (no-datasetId) instance. Plain
+// "attrName" entries (no '@') keep the original behaviour - match any instance -
+// so existing subscriptions are completely unaffected.
+//
+// changedDatasetId is the datasetId of the changed instance (NULL = default/none,
+// or unknown for a multi-instance Array patch).
+//
+static bool watchedAttributeMatch(const char* watched, const char* attrName, const char* changedDatasetId)
+{
+  const char* at = strchr(watched, '@');
+
+  if (at == NULL)  // not datasetId-scoped - name-only match (original behaviour)
+    return (strcmp(watched, attrName) == 0);
+
+  size_t nameLen = at - watched;
+  if ((strncmp(watched, attrName, nameLen) != 0) || (attrName[nameLen] != 0))
+    return false;
+
+  const char* wantedDs = at + 1;  // datasetId this subscription is scoped to
+
+  if (strcmp(wantedDs, "@none") == 0)   // subscription wants the default (no-datasetId) instance
+    return (changedDatasetId == NULL);
+
+  if (changedDatasetId == NULL)         // a specific instance is wanted, but the default changed
+    return false;
+
+  return (strcmp(wantedDs, changedDatasetId) == 0);
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // attributeMatch -
 //
 static OrionldAlterationMatch* attributeMatch(OrionldAlterationMatch* matchList, CachedSubscription* subP, OrionldAlteration* altP, int* matchesP)
@@ -349,10 +388,13 @@ static OrionldAlterationMatch* attributeMatch(OrionldAlterationMatch* matchList,
         if (strcmp(attrP->name, "id")   == 0) continue;
         if (strcmp(attrP->name, "type") == 0) continue;
 
+        KjNode*     dsP       = kjLookup(attrP, "datasetId");
+        const char* changedDs = ((dsP != NULL) && (dsP->type == KjString))? dsP->value.s : NULL;
+
         for (int ix = 0; ix < watchAttrs; ix++)
         {
           KT_T(KtWatchedAttributes, "Comparing modified '%s' with watched '%s'", attrP->name, subP->notifyConditionV[ix].c_str());
-          if (strcmp(attrP->name, subP->notifyConditionV[ix].c_str()) == 0)
+          if (watchedAttributeMatch(subP->notifyConditionV[ix].c_str(), attrP->name, changedDs) == true)
           {
             if ((dbAttrsP == NULL) || (noNotifyFalseUpdate == false) || (falseUpdate(attrP, dbAttrsP) == false))
             {
@@ -409,7 +451,7 @@ static OrionldAlterationMatch* attributeMatch(OrionldAlterationMatch* matchList,
 
     while (nIx < watchAttrs)
     {
-      if (strcmp(aaP->attrName, subP->notifyConditionV[nIx].c_str()) == 0)
+      if (watchedAttributeMatch(subP->notifyConditionV[nIx].c_str(), aaP->attrName, aaP->datasetId) == true)
         break;
       ++nIx;
     }

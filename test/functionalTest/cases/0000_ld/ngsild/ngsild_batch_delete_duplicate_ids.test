@@ -1,0 +1,180 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+--NAME--
+Batch delete with a duplicated Entity ID (spec clause 10.3.6: first deleted, subsequent -> ResourceNotFound)
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -experimental
+
+--SHELL--
+
+#
+# NGSI-LD spec clause 10.3.6: when the same Entity ID appears more than once in a batch
+# delete, the FIRST occurrence is processed and every SUBSEQUENT occurrence gets a
+# ResourceNotFound (404) error. (The new/non-legacy path previously dropped the
+# duplicates silently.)
+#
+# 01. Create E1, E2, E3
+# 02. Batch delete [ E1, E1, E2, E4 ] -> 207:
+#       success: E1 (first), E2
+#       errors:  E1 (duplicate -> ResourceNotFound), E4 (does not exist -> ResourceNotFound)
+# 03. GET E1 -> 404 (deleted)
+# 04. GET E2 -> 404 (deleted)
+# 05. GET E3 -> 200 (untouched)
+#
+
+echo "01. Create E1, E2, E3"
+echo "====================="
+payload='[
+  { "id": "urn:ngsi-ld:E1", "type": "T" },
+  { "id": "urn:ngsi-ld:E2", "type": "T" },
+  { "id": "urn:ngsi-ld:E3", "type": "T" }
+]'
+orionCurl --url /ngsi-ld/v1/entityOperations/create -X POST --payload "$payload"
+echo
+echo
+
+
+echo "02. Batch delete [ E1, E1, E2, E4 ] - E1 duplicated, E4 nonexistent"
+echo "=================================================================="
+payload='[ "urn:ngsi-ld:E1", "urn:ngsi-ld:E1", "urn:ngsi-ld:E2", "urn:ngsi-ld:E4" ]'
+orionCurl --url /ngsi-ld/v1/entityOperations/delete -X POST --payload "$payload"
+echo
+echo
+
+
+echo "03. GET E1 -> 404 (deleted)"
+echo "==========================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:E1
+echo
+echo
+
+
+echo "04. GET E2 -> 404 (deleted)"
+echo "==========================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:E2
+echo
+echo
+
+
+echo "05. GET E3 -> 200 (untouched)"
+echo "============================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:E3
+echo
+echo
+
+
+--REGEXPECT--
+01. Create E1, E2, E3
+=====================
+HTTP/1.1 201 Created
+Content-Length: 52
+Content-Type: application/json
+Date: REGEX(.*)
+
+[
+    "urn:ngsi-ld:E1",
+    "urn:ngsi-ld:E2",
+    "urn:ngsi-ld:E3"
+]
+
+
+02. Batch delete [ E1, E1, E2, E4 ] - E1 duplicated, E4 nonexistent
+==================================================================
+HTTP/1.1 207 Multi-Status
+Content-Length: 488
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "errors": [
+        {
+            "entityId": "urn:ngsi-ld:E1",
+            "error": {
+                "detail": "Duplicated Entity ID in the batch request - only the first occurrence is processed",
+                "status": 404,
+                "title": "Entity Not Found",
+                "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
+            }
+        },
+        {
+            "entityId": "urn:ngsi-ld:E4",
+            "error": {
+                "detail": "Cannot delete entities that do not exist",
+                "status": 404,
+                "title": "Entity Not Found",
+                "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
+            }
+        }
+    ],
+    "success": [
+        "urn:ngsi-ld:E1",
+        "urn:ngsi-ld:E2"
+    ]
+}
+
+
+03. GET E1 -> 404 (deleted)
+===========================
+HTTP/1.1 404 Not Found
+Content-Length: 116
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "urn:ngsi-ld:E1",
+    "title": "Entity Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
+}
+
+
+04. GET E2 -> 404 (deleted)
+===========================
+HTTP/1.1 404 Not Found
+Content-Length: 116
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "urn:ngsi-ld:E2",
+    "title": "Entity Not Found",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
+}
+
+
+05. GET E3 -> 200 (untouched)
+=============================
+HTTP/1.1 200 OK
+Content-Length: 34
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+{
+    "id": "urn:ngsi-ld:E3",
+    "type": "T"
+}
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB

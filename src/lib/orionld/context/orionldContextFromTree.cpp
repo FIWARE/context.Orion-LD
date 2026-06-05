@@ -120,7 +120,9 @@ OrionldContext* orionldContextFromTree(char* url, OrionldContextOrigin origin, c
         {
           if (contextP->url != NULL)
             kjFree(contextP->tree);
-          KT_RE(NULL, "unable to download context '%s'", url);
+          // Non-fatal (e.g. a rejected cyclic @context) - warn and bail; don't fail startup
+          KT_W("unable to resolve context '%s'", url);
+          return NULL;
         }
       }
       else
@@ -153,7 +155,10 @@ OrionldContext* orionldContextFromTree(char* url, OrionldContextOrigin origin, c
         contextP->context.array.vector[0] = orionldContextFromUrl(contextTreeP->value.s, NULL);
 
         if (contextP->context.array.vector[0] == NULL)
-          KT_RE(NULL, "Context Error from orionldContextFromUrl");
+        {
+          KT_W("Context could not be resolved via orionldContextFromUrl");
+          return NULL;
+        }
       }
 
       if (contextP != NULL)
