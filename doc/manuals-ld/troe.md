@@ -71,6 +71,43 @@ The native temporal query reconstructs temporal entity representations from the 
 
 All value types are supported: String, Number, Boolean, Relationship, DateTime, Compound, GeoProperty (all geo types), and LanguageMap.
 
+## Write Correlator
+
+Every write carries a **correlator** that identifies the write operation. It is taken from the
+`NGSILD-Correlator` request header (falling back to `Fiware-Correlator`); if neither is present, a
+correlator is generated as `urn:ngsi-ld:correlator:<uuid>`. Any notification suffix (`; cbnotif=N`)
+is stripped, so only the root is kept.
+
+The same correlator is stored in two places for every write:
+
+- on the entity document in MongoDB, in the `lastCorrelator` field;
+- on **every** TRoE row (`entities`, `attributes`, `subAttributes`), in the `correlator` column.
+
+This gives a common key linking all attributes of a single write ("entity snapshot") — something the
+other TRoE columns cannot do reliably: `instanceId` is unique per attribute, `observedAt` is often
+NULL and not unique, and `ts` (request time) is not guaranteed unique across requests.
+
+By sending its own `NGSILD-Correlator`, a client can correlate the snapshot with its own operation
+(e.g. an OPC gateway write batch) across systems.
+
+> Uniqueness note: a generated correlator is unique per request. A client-supplied correlator is only
+> as unique as the client makes it — reusing the same value across several writes, or propagating one
+> through notification/federation chains, will group those writes together.
+
+### Example: attributes written together with a given attribute value
+
+To retrieve all attributes that were written in the same operation as `OriginSource = OPC_Server_01`:
+
+```sql
+SELECT a.*
+FROM   attributes a
+WHERE  a.correlator = (
+         SELECT correlator FROM attributes
+         WHERE  id = '<expanded OriginSource attribute name>'  -- TRoE stores 'id' expanded; '.' is replaced by '='
+         AND    text = 'OPC_Server_01'
+       );
+```
+
 ## Mintaka Compatibility
 
 [Mintaka](https://github.com/FIWARE/Mintaka) can still be used as an external temporal query handler on (default) port 8080. Note that Mintaka supports the NGSI-LD API up to version 1.3.1 and does not implement aggregation (which was introduced in API version 1.6.1). For aggregation support, use the native temporal query endpoints described above.
