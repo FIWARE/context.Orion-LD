@@ -1,0 +1,202 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Write correlator (NGSILD-Correlator) is persisted in MongoDB lastCorrelator for every write path
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -experimental
+
+--SHELL--
+
+#
+# This test verifies, WITHOUT TRoE, that the write correlator is stored in the
+# entity document in MongoDB (field 'lastCorrelator') and that it is updated by
+# every kind of write on the entity:
+#
+# 01. Create entity E1 (NGSILD-Correlator: urn:opc:write:create)
+# 02. MongoDB: E1 stores lastCorrelator = urn:opc:write:create
+# 03. Append an attribute to E1 (NGSILD-Correlator: urn:opc:write:append)
+# 04. MongoDB: lastCorrelator updated to urn:opc:write:append
+# 05. Patch an attribute of E1 (NGSILD-Correlator: urn:opc:write:patch)
+# 06. MongoDB: lastCorrelator updated to urn:opc:write:patch
+# 07. Delete an attribute of E1 (NGSILD-Correlator: urn:opc:write:delete)
+# 08. MongoDB: lastCorrelator updated to urn:opc:write:delete
+# 09. Create entity E2 with NO correlator header -> a correlator is generated
+# 10. MongoDB: E2 stores a generated correlator (prefix urn:ngsi-ld:correlator:)
+#
+
+echo "01. Create entity E1 (NGSILD-Correlator: urn:opc:write:create)"
+echo "=============================================================="
+payload='{
+  "id": "urn:ngsi-ld:entities:E1",
+  "type": "T",
+  "temperature": { "type": "Property", "value": 23.5 }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" -H "NGSILD-Correlator: urn:opc:write:create"
+echo
+echo
+
+
+echo "02. MongoDB: E1 stores lastCorrelator = urn:opc:write:create"
+echo "==========================================================="
+mongoCmd2 ftest 'db.entities.findOne({"_id.id":"urn:ngsi-ld:entities:E1"}).lastCorrelator'
+echo
+echo
+
+
+echo "03. Append an attribute to E1 (NGSILD-Correlator: urn:opc:write:append)"
+echo "======================================================================"
+payload='{
+  "pressure": { "type": "Property", "value": 1013 }
+}'
+orionCurl --url '/ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1/attrs' --payload "$payload" -H "NGSILD-Correlator: urn:opc:write:append"
+echo
+echo
+
+
+echo "04. MongoDB: lastCorrelator updated to urn:opc:write:append"
+echo "=========================================================="
+mongoCmd2 ftest 'db.entities.findOne({"_id.id":"urn:ngsi-ld:entities:E1"}).lastCorrelator'
+echo
+echo
+
+
+echo "05. Patch an attribute of E1 (NGSILD-Correlator: urn:opc:write:patch)"
+echo "===================================================================="
+payload='{
+  "value": 42
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1/attrs/temperature -X PATCH --payload "$payload" -H "NGSILD-Correlator: urn:opc:write:patch"
+echo
+echo
+
+
+echo "06. MongoDB: lastCorrelator updated to urn:opc:write:patch"
+echo "========================================================="
+mongoCmd2 ftest 'db.entities.findOne({"_id.id":"urn:ngsi-ld:entities:E1"}).lastCorrelator'
+echo
+echo
+
+
+echo "07. Delete an attribute of E1 (NGSILD-Correlator: urn:opc:write:delete)"
+echo "======================================================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1/attrs/pressure -X DELETE -H "NGSILD-Correlator: urn:opc:write:delete"
+echo
+echo
+
+
+echo "08. MongoDB: lastCorrelator updated to urn:opc:write:delete"
+echo "=========================================================="
+mongoCmd2 ftest 'db.entities.findOne({"_id.id":"urn:ngsi-ld:entities:E1"}).lastCorrelator'
+echo
+echo
+
+
+echo "09. Create entity E2 with NO correlator header -> a correlator is generated"
+echo "=========================================================================="
+payload='{
+  "id": "urn:ngsi-ld:entities:E2",
+  "type": "T",
+  "machineState": "running"
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "10. MongoDB: E2 stores a generated correlator (prefix urn:ngsi-ld:correlator:)"
+echo "=============================================================================="
+mongoCmd2 ftest 'db.entities.findOne({"_id.id":"urn:ngsi-ld:entities:E2"}).lastCorrelator.substring(0,23)'
+echo
+echo
+
+
+--REGEXPECT--
+01. Create entity E1 (NGSILD-Correlator: urn:opc:write:create)
+==============================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1
+
+
+
+02. MongoDB: E1 stores lastCorrelator = urn:opc:write:create
+===========================================================
+urn:opc:write:create
+
+
+03. Append an attribute to E1 (NGSILD-Correlator: urn:opc:write:append)
+======================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+04. MongoDB: lastCorrelator updated to urn:opc:write:append
+==========================================================
+urn:opc:write:append
+
+
+05. Patch an attribute of E1 (NGSILD-Correlator: urn:opc:write:patch)
+====================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+06. MongoDB: lastCorrelator updated to urn:opc:write:patch
+=========================================================
+urn:opc:write:patch
+
+
+07. Delete an attribute of E1 (NGSILD-Correlator: urn:opc:write:delete)
+======================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+08. MongoDB: lastCorrelator updated to urn:opc:write:delete
+==========================================================
+urn:opc:write:delete
+
+
+09. Create entity E2 with NO correlator header -> a correlator is generated
+==========================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E2
+
+
+
+10. MongoDB: E2 stores a generated correlator (prefix urn:ngsi-ld:correlator:)
+==============================================================================
+urn:ngsi-ld:correlator:
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
