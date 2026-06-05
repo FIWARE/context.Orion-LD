@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS entities (
      opMode OperationMode,
      id TEXT NOT NULL,
      type TEXT NOT NULL,
+     correlator TEXT,
      CONSTRAINT entities_pkey PRIMARY KEY (instanceId,ts));
 
 CREATE TABLE IF NOT EXISTS attributes (
@@ -50,6 +51,7 @@ CREATE TABLE IF NOT EXISTS attributes (
     geoLineString GEOGRAPHY(LINESTRINGZ, 4326),
     geoMultiLineString GEOGRAPHY(MULTILINESTRINGZ, 4326),
     ts TIMESTAMP NOT NULL,
+    correlator TEXT,
     CONSTRAINT attributes_pkey PRIMARY KEY (instanceId,datasetId,ts));
 
 CREATE TABLE IF NOT EXISTS subAttributes (
@@ -73,6 +75,8 @@ CREATE TABLE IF NOT EXISTS subAttributes (
     geoLineString GEOGRAPHY(LINESTRINGZ, 4326),
     geoMultiLineString GEOGRAPHY(MULTILINESTRINGZ, 4326),
     ts TIMESTAMP NOT NULL,
+    correlator TEXT,
     CONSTRAINT subattributes_pkey PRIMARY KEY (instanceId,ts));
 
 CREATE INDEX subattributes_attributeid_index ON subAttributes (attrInstanceId,attrDatasetId);
+CREATE INDEX attributes_correlator_index ON attributes (correlator);

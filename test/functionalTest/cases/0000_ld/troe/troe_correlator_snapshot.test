@@ -1,0 +1,186 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+TRoE/entity write correlator (NGSILD-Correlator) groups all attributes of a single write
+
+--SHELL-INIT--
+export BROKER=orionld
+dbInit CB
+pgInit $CB_DB_NAME
+brokerStart CB 0 IPv4 -troe -experimental
+
+--SHELL--
+
+#
+# 01. Create entity E1 in a single write with header NGSILD-Correlator: urn:opc:write:A
+# 02. Create entity E2 in a separate write with header NGSILD-Correlator: urn:opc:write:B
+# 03. TRoE: all attributes of the E1 write carry correlator 'urn:opc:write:A'
+# 04. TRoE: entities, attributes and subAttributes of the E1 write share one correlator
+# 05. TRoE: the two separate writes produced two different correlators
+# 06. MongoDB: the E1 entity stores the correlator in 'lastCorrelator'
+# 07. Use case: all attributes written together with OriginSource = OPC_Server_01
+# 08. Create entity E3 with NO correlator header -> a correlator is generated (urn:ngsi-ld:correlator:<uuid>)
+#
+
+echo "01. Create entity E1 in a single write (NGSILD-Correlator: urn:opc:write:A)"
+echo "=========================================================================="
+payload='{
+  "id": "urn:ngsi-ld:entities:E1",
+  "type": "T",
+  "OriginSource": "OPC_Server_01",
+  "temperature": { "type": "Property", "value": 23.5, "accuracy": { "type": "Property", "value": 0.5 } },
+  "machineState": "running"
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" -H "NGSILD-Correlator: urn:opc:write:A"
+echo
+echo
+
+
+echo "02. Create entity E2 in a separate write (NGSILD-Correlator: urn:opc:write:B)"
+echo "============================================================================"
+payload='{
+  "id": "urn:ngsi-ld:entities:E2",
+  "type": "T",
+  "OriginSource": "OPC_Server_02",
+  "pressure": 1013
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" -H "NGSILD-Correlator: urn:opc:write:B"
+echo
+echo
+
+
+echo "03. TRoE: all attributes of the E1 write carry correlator urn:opc:write:A"
+echo "========================================================================"
+postgresCmd -sql "SELECT DISTINCT correlator FROM attributes WHERE entityId = 'urn:ngsi-ld:entities:E1'"
+echo
+echo
+
+
+echo "04. TRoE: entities, attributes and subAttributes of the E1 write share one correlator"
+echo "====================================================================================="
+postgresCmd -sql "SELECT count(DISTINCT correlator) AS snapshot_keys FROM (SELECT correlator FROM entities WHERE id = 'urn:ngsi-ld:entities:E1' UNION ALL SELECT correlator FROM attributes WHERE entityId = 'urn:ngsi-ld:entities:E1' UNION ALL SELECT correlator FROM subAttributes WHERE entityId = 'urn:ngsi-ld:entities:E1') u"
+echo
+echo
+
+
+echo "05. TRoE: the two separate writes produced two different correlators"
+echo "==================================================================="
+postgresCmd -sql "SELECT count(DISTINCT correlator) AS distinct_correlators FROM attributes"
+echo
+echo
+
+
+echo "06. MongoDB: the E1 entity stores the correlator in lastCorrelator"
+echo "================================================================="
+mongoCmd2 ftest 'db.entities.findOne({"_id.id":"urn:ngsi-ld:entities:E1"}).lastCorrelator'
+echo
+echo
+
+
+echo "07. Use case: all attributes written together with OriginSource = OPC_Server_01"
+echo "==============================================================================="
+postgresCmd -sql "SELECT id FROM attributes WHERE correlator = (SELECT correlator FROM attributes WHERE id = 'https://uri.etsi.org/ngsi-ld/default-context/OriginSource' AND text = 'OPC_Server_01') ORDER BY id COLLATE \"C\""
+echo
+echo
+
+
+echo "08. Create entity E3 with NO correlator header -> a correlator is generated"
+echo "=========================================================================="
+payload='{
+  "id": "urn:ngsi-ld:entities:E3",
+  "type": "T",
+  "OriginSource": "OPC_Server_03"
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+postgresCmd -sql "SELECT DISTINCT substring(correlator from 1 for 23) AS prefix FROM attributes WHERE entityId = 'urn:ngsi-ld:entities:E3'"
+echo
+echo
+
+
+--REGEXPECT--
+01. Create entity E1 in a single write (NGSILD-Correlator: urn:opc:write:A)
+==========================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1
+
+
+
+02. Create entity E2 in a separate write (NGSILD-Correlator: urn:opc:write:B)
+============================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E2
+
+
+
+03. TRoE: all attributes of the E1 write carry correlator urn:opc:write:A
+========================================================================
+correlator
+urn:opc:write:A
+
+
+04. TRoE: entities, attributes and subAttributes of the E1 write share one correlator
+=====================================================================================
+snapshot_keys
+1
+
+
+05. TRoE: the two separate writes produced two different correlators
+===================================================================
+distinct_correlators
+2
+
+
+06. MongoDB: the E1 entity stores the correlator in lastCorrelator
+=================================================================
+urn:opc:write:A
+
+
+07. Use case: all attributes written together with OriginSource = OPC_Server_01
+===============================================================================
+id
+https://uri.etsi.org/ngsi-ld/default-context/OriginSource
+https://uri.etsi.org/ngsi-ld/default-context/machineState
+https://uri.etsi.org/ngsi-ld/default-context/temperature
+
+
+08. Create entity E3 with NO correlator header -> a correlator is generated
+==========================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E3
+
+
+prefix
+urn:ngsi-ld:correlator:
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
