@@ -33,7 +33,9 @@ extern "C"
 
 #include "orionld/types/PgAppendBuffer.h"                      // PgAppendBuffer
 #include "orionld/common/orionldState.h"                       // orionldState
+#include "orionld/common/correlatorGet.h"                      // correlatorGet
 #include "orionld/troe/pgAppend.h"                             // pgAppend
+#include "orionld/troe/pgQuotedString.h"                       // pgQuotedString
 #include "orionld/troe/pgEntityAppend.h"                       // pgEntityAppend
 
 
@@ -52,9 +54,12 @@ void pgEntityAppend(PgAppendBuffer* entitiesBufferP, const char* opMode, const c
 {
   const char*  comma = (entitiesBufferP->values != 0)? "," : "";
 
+  // The correlator is client-influenced - escape it (correlatorGet already strips any quote, pgQuotedString adds the quotes)
+  char* correlator = pgQuotedString(correlatorGet());
+
   // Calculate needed size: all string parameters + SQL syntax overhead
   int neededSize = strlen(instanceId) + strlen(orionldState.requestTimeString)
-                 + strlen(opMode) + strlen(entityId) + strlen(entityType) + 64;
+                 + strlen(opMode) + strlen(entityId) + strlen(entityType) + strlen(correlator) + 64;
 
   // Use stack buffer for common case, kaAlloc for long entity IDs/types
   char  localBuf[1024];
@@ -67,7 +72,7 @@ void pgEntityAppend(PgAppendBuffer* entitiesBufferP, const char* opMode, const c
     bufSize = neededSize;
   }
 
-  snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', '%s')", comma, instanceId, orionldState.requestTimeString, opMode, entityId, entityType);
+  snprintf(buf, bufSize, "%s('%s', '%s', '%s', '%s', '%s', %s)", comma, instanceId, orionldState.requestTimeString, opMode, entityId, entityType, correlator);
 
   pgAppend(entitiesBufferP, buf, 0);
   entitiesBufferP->values += 1;
