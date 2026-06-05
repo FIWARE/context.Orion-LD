@@ -144,7 +144,11 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1
 
 02. MongoDB: E1 stores lastCorrelator = urn:opc:write:create
 ===========================================================
+MongoDB shell version REGEX(.*)
+connecting to: REGEX(.*)
+MongoDB server version: REGEX(.*)
 urn:opc:write:create
+bye
 
 
 03. Append an attribute to E1 (NGSILD-Correlator: urn:opc:write:append)
@@ -156,7 +160,11 @@ Date: REGEX(.*)
 
 04. MongoDB: lastCorrelator updated to urn:opc:write:append
 ==========================================================
+MongoDB shell version REGEX(.*)
+connecting to: REGEX(.*)
+MongoDB server version: REGEX(.*)
 urn:opc:write:append
+bye
 
 
 05. Patch an attribute of E1 (NGSILD-Correlator: urn:opc:write:patch)
@@ -168,7 +176,11 @@ Date: REGEX(.*)
 
 06. MongoDB: lastCorrelator updated to urn:opc:write:patch
 =========================================================
+MongoDB shell version REGEX(.*)
+connecting to: REGEX(.*)
+MongoDB server version: REGEX(.*)
 urn:opc:write:patch
+bye
 
 
 07. Delete an attribute of E1 (NGSILD-Correlator: urn:opc:write:delete)
@@ -180,7 +192,11 @@ Date: REGEX(.*)
 
 08. MongoDB: lastCorrelator updated to urn:opc:write:delete
 ==========================================================
+MongoDB shell version REGEX(.*)
+connecting to: REGEX(.*)
+MongoDB server version: REGEX(.*)
 urn:opc:write:delete
+bye
 
 
 09. Create entity E2 with NO correlator header -> a correlator is generated
@@ -194,7 +210,11 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E2
 
 10. MongoDB: E2 stores a generated correlator (prefix urn:ngsi-ld:correlator:)
 ==============================================================================
+MongoDB shell version REGEX(.*)
+connecting to: REGEX(.*)
+MongoDB server version: REGEX(.*)
 urn:ngsi-ld:correlator:
+bye
 
 
 --TEARDOWN--

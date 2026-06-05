@@ -158,7 +158,11 @@ distinct_correlators
 
 06. MongoDB: the E1 entity stores the correlator in lastCorrelator
 =================================================================
+MongoDB shell version REGEX(.*)
+connecting to: REGEX(.*)
+MongoDB server version: REGEX(.*)
 urn:opc:write:A
+bye
 
 
 07. Use case: all attributes written together with OriginSource = OPC_Server_01
