@@ -64,7 +64,23 @@ void pgCommands(char* sql[], int commands)
     PGresult* res = PQexec(connectionP->connectionP, sql[ix]);
     if (res == NULL)
     {
-      KT_E("Database Error (%s)", PQresStatus(PQresultStatus(res)));
+      KT_E("Database Error (PQexec returned NULL for SQL: %s)", sql[ix]);
+      if (pgTransactionRollback(connectionP->connectionP) == false)
+        KT_E("Database Error (pgTransactionRollback failed too)");
+      pgConnectionRelease(connectionP);
+      return;
+    }
+
+    //
+    // PQexec returns a non-NULL result even when the SQL statement itself failed (e.g. a missing
+    // column because the TRoE schema has not been migrated). Check the result status explicitly,
+    // otherwise such errors are swallowed silently and the temporal write is lost without a trace.
+    //
+    ExecStatusType execStatus = PQresultStatus(res);
+    if ((execStatus != PGRES_COMMAND_OK) && (execStatus != PGRES_TUPLES_OK))
+    {
+      KT_E("Database Error (SQL command failed - status: %s, error: %s, SQL: %s)", PQresStatus(execStatus), PQresultErrorMessage(res), sql[ix]);
+      PQclear(res);
       if (pgTransactionRollback(connectionP->connectionP) == false)
         KT_E("Database Error (pgTransactionRollback failed too)");
       pgConnectionRelease(connectionP);
