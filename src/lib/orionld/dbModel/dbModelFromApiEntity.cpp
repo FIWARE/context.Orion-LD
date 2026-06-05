@@ -31,6 +31,7 @@ extern "C"
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
+#include "orionld/common/correlatorGet.h"                        // correlatorGet
 #include "orionld/kjTree/kjTimestampAdd.h"                       // kjTimestampAdd
 #include "orionld/kjTree/kjArrayAdd.h"                           // kjArrayAdd
 #include "orionld/dbModel/dbModelFromApiAttribute.h"             // dbModelFromApiAttribute
@@ -210,9 +211,10 @@ bool dbModelFromApiEntity(KjNode* entityP, KjNode* dbEntityP, bool creation, con
     kjChildRemove(entityP, dbAttrNamesP);
 
     //
-    // "lastCorrelator" ... not used in NGSI-LD, but, for NGSIv2 backwards compatibility, it should be present in DB
+    // "lastCorrelator" - the correlator of the last write on the entity (NGSILD-Correlator header,
+    // falling back to Fiware-Correlator, else generated). Shared with the TRoE rows of this write.
     //
-    KjNode* lastCorrelatorP = kjString(orionldState.kjsonP,  "lastCorrelator", "");
+    KjNode* lastCorrelatorP = kjString(orionldState.kjsonP,  "lastCorrelator", correlatorGet());
     kjChildAdd(entityP, lastCorrelatorP);
 
     //

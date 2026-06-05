@@ -29,6 +29,7 @@ SET (SOURCES
     numberToDate.cpp
     orionldState.cpp
     uuidGenerate.cpp
+    correlatorGet.cpp
     orionldServerConnect.cpp
     dotForEq.cpp
     eqForDot.cpp

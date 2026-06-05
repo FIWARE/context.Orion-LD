@@ -34,6 +34,7 @@ extern "C"
 }
 
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/correlatorGet.h"                        // correlatorGet
 #include "orionld/common/dotForEq.h"                             // dotForEq
 #include "orionld/common/traceLevels.h"                          // StMongoc
 #include "orionld/kjTree/kjTreeLog.h"                            // KT_TREE
@@ -295,6 +296,9 @@ bool mongocEntityUpdate(const char* entityId, KjNode* patchTree)
   bson_init(&push);
 
   patchApply(patchTree, &set, &unset, &unsets, &pull, &pulls, &push, &pushes);
+
+  // Store the correlator of this write on the entity
+  bson_append_utf8(&set, "lastCorrelator", 14, correlatorGet(), -1);
 
   bson_append_document(&request, "$set", 4, &set);
 

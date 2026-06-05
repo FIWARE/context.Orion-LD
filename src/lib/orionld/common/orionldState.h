@@ -536,8 +536,9 @@ typedef struct OrionldConnectionState
   // X-Auth-Token
   char* xAuthToken;
 
-  // FIWARE Correlator
+  // Correlator (from "NGSILD-Correlator" header, falling back to "Fiware-Correlator")
   char* correlator;
+  char* correlatorResolvedP;   // Lazily resolved correlator (root, generated if absent) - see correlatorGet()
 
   // Previous Values
   KjNode* previousValues;
