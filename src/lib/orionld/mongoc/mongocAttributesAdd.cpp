@@ -144,8 +144,9 @@ bool mongocAttributesAdd
   // Update the Entity's modDate
   bson_append_double(&set, "modDate", 7, orionldState.requestTime);
 
-  // Store the correlator of this write on the entity
-  bson_append_utf8(&set, "lastCorrelator", 14, correlatorGet(), -1);
+  // Store the correlator of this write on the entity - only client-supplied correlators are mirrored to MongoDB
+  if (correlatorClientProvided() == true)
+    bson_append_utf8(&set, "lastCorrelator", 14, correlatorGet(), -1);
 
   bson_append_document(&request, "$set", 4, &set);
   bson_destroy(&set);

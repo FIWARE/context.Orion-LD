@@ -82,3 +82,20 @@ char* correlatorGet(void)
 
   return orionldState.correlatorResolvedP;
 }
+
+
+
+// ----------------------------------------------------------------------------
+//
+// correlatorClientProvided -
+//
+// Returns true only if the client actually supplied a correlator (via the
+// NGSILD-Correlator or Fiware-Correlator header). When no correlator is
+// provided, correlatorGet() generates one for the TRoE rows, but the entity's
+// MongoDB 'lastCorrelator' field is left as it was (empty on creation) for
+// backwards compatibility.
+//
+bool correlatorClientProvided(void)
+{
+  return ((orionldState.correlator != NULL) && (orionldState.correlator[0] != 0));
+}

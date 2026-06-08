@@ -43,4 +43,16 @@
 //
 extern char* correlatorGet(void);
 
+
+
+// -----------------------------------------------------------------------------
+//
+// correlatorClientProvided - true if the client supplied a correlator header
+//
+// Used to decide whether to mirror the correlator into the entity's MongoDB
+// 'lastCorrelator' field (only client-supplied correlators are mirrored;
+// generated ones live only on the TRoE rows).
+//
+extern bool correlatorClientProvided(void);
+
 #endif  // SRC_LIB_ORIONLD_COMMON_CORRELATORGET_H_
