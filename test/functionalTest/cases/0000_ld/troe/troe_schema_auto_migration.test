@@ -1,0 +1,137 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+TRoE Postgres schema is auto-migrated on startup when an old database layout is detected
+
+--SHELL-INIT--
+export BROKER=orionld
+dbInit CB
+pgInit $CB_DB_NAME
+brokerStart CB 0 IPv4 -troe -experimental
+
+--SHELL--
+
+#
+# 01. Fresh DB: metadata.schemaVersion is the current version (2)
+# 02. Fresh DB: the 'correlator' column exists on 'attributes'
+# 03. Simulate an OLD database: stop broker, drop the correlator columns/index and the metadata table
+# 04. Verify the 'correlator' column is gone
+# 05. Restart the broker -> auto-migration runs
+# 06. metadata.schemaVersion is 2 again
+# 07. the 'correlator' column was re-created on all three tables
+#
+
+echo "01. Fresh DB: metadata.schemaVersion is the current version (2)"
+echo "=============================================================="
+postgresCmd -sql "SELECT value FROM metadata WHERE name = 'schemaVersion'"
+echo
+echo
+
+
+echo "02. Fresh DB: the correlator column exists on attributes"
+echo "======================================================="
+postgresCmd -sql "SELECT column_name FROM information_schema.columns WHERE table_name = 'attributes' AND column_name = 'correlator'"
+echo
+echo
+
+
+echo "03. Simulate an OLD database (drop correlator columns/index + metadata table)"
+echo "============================================================================"
+brokerStop CB
+postgresCmd -sql "DROP INDEX IF EXISTS attributes_correlator_index; ALTER TABLE entities DROP COLUMN IF EXISTS correlator; ALTER TABLE attributes DROP COLUMN IF EXISTS correlator; ALTER TABLE subAttributes DROP COLUMN IF EXISTS correlator; DROP TABLE IF EXISTS metadata"
+echo
+echo
+
+
+echo "04. Verify the correlator column is gone"
+echo "========================================"
+postgresCmd -sql "SELECT count(*) AS correlator_columns FROM information_schema.columns WHERE table_name = 'attributes' AND column_name = 'correlator'"
+echo
+echo
+
+
+echo "05. Restart the broker -> auto-migration runs"
+echo "============================================="
+brokerStart CB 0 IPv4 -troe -experimental
+echo
+echo
+
+
+echo "06. metadata.schemaVersion is 2 again"
+echo "====================================="
+postgresCmd -sql "SELECT value FROM metadata WHERE name = 'schemaVersion'"
+echo
+echo
+
+
+echo "07. the correlator column was re-created on all three tables"
+echo "==========================================================="
+postgresCmd -sql "SELECT table_name FROM information_schema.columns WHERE column_name = 'correlator' AND table_name IN ('entities','attributes','subattributes') ORDER BY table_name"
+echo
+echo
+
+
+--REGEXPECT--
+01. Fresh DB: metadata.schemaVersion is the current version (2)
+==============================================================
+value
+2
+
+
+02. Fresh DB: the correlator column exists on attributes
+=======================================================
+column_name
+correlator
+
+
+03. Simulate an OLD database (drop correlator columns/index + metadata table)
+============================================================================
+
+
+04. Verify the correlator column is gone
+========================================
+correlator_columns
+0
+
+
+05. Restart the broker -> auto-migration runs
+=============================================
+
+
+06. metadata.schemaVersion is 2 again
+=====================================
+value
+2
+
+
+07. the correlator column was re-created on all three tables
+===========================================================
+table_name
+attributes
+entities
+subattributes
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
