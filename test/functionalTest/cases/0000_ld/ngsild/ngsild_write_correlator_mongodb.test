@@ -200,7 +200,6 @@ bye
 
 
 09. Create entity E2 with NO correlator header -> MongoDB lastCorrelator stays empty
-===================================================================================
 HTTP/1.1 201 Created
 Content-Length: 0
 Date: REGEX(.*)
@@ -209,11 +208,6 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E2
 
 
 10. MongoDB: only client-supplied correlators are mirrored, so E2.lastCorrelator is empty
-========================================================================================
-MongoDB shell version REGEX(.*)
-connecting to: REGEX(.*)
-MongoDB server version: REGEX(.*)
-true
 bye
 
 
