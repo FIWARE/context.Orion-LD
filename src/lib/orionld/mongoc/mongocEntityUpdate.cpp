@@ -297,8 +297,9 @@ bool mongocEntityUpdate(const char* entityId, KjNode* patchTree)
 
   patchApply(patchTree, &set, &unset, &unsets, &pull, &pulls, &push, &pushes);
 
-  // Store the correlator of this write on the entity
-  bson_append_utf8(&set, "lastCorrelator", 14, correlatorGet(), -1);
+  // Store the correlator of this write on the entity - only client-supplied correlators are mirrored to MongoDB
+  if (correlatorClientProvided() == true)
+    bson_append_utf8(&set, "lastCorrelator", 14, correlatorGet(), -1);
 
   bson_append_document(&request, "$set", 4, &set);
 

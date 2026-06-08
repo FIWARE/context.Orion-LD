@@ -78,10 +78,13 @@ Every write carries a **correlator** that identifies the write operation. It is 
 correlator is generated as `urn:ngsi-ld:correlator:<uuid>`. Any notification suffix (`; cbnotif=N`)
 is stripped, so only the root is kept.
 
-The same correlator is stored in two places for every write:
+The correlator is stored on **every** TRoE row (`entities`, `attributes`, `subAttributes`), in the
+`correlator` column.
 
-- on the entity document in MongoDB, in the `lastCorrelator` field;
-- on **every** TRoE row (`entities`, `attributes`, `subAttributes`), in the `correlator` column.
+In addition, when the correlator is **client-supplied** (via `NGSILD-Correlator`/`Fiware-Correlator`),
+it is mirrored onto the entity document in MongoDB, in the `lastCorrelator` field. Generated
+correlators are not mirrored to MongoDB (the field stays empty), so existing NGSI-LD behaviour is
+unchanged when no correlator header is sent.
 
 This gives a common key linking all attributes of a single write ("entity snapshot") — something the
 other TRoE columns cannot do reliably: `instanceId` is unique per attribute, `observedAt` is often

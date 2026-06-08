@@ -42,8 +42,8 @@ orionldStart CB -experimental
 # 06. MongoDB: lastCorrelator updated to urn:opc:write:patch
 # 07. Delete an attribute of E1 (NGSILD-Correlator: urn:opc:write:delete)
 # 08. MongoDB: lastCorrelator updated to urn:opc:write:delete
-# 09. Create entity E2 with NO correlator header -> a correlator is generated
-# 10. MongoDB: E2 stores a generated correlator (prefix urn:ngsi-ld:correlator:)
+# 09. Create entity E2 with NO correlator header -> MongoDB lastCorrelator stays empty
+# 10. MongoDB: only client-supplied correlators are mirrored, so E2.lastCorrelator is empty
 #
 
 echo "01. Create entity E1 (NGSILD-Correlator: urn:opc:write:create)"
@@ -113,8 +113,8 @@ echo
 echo
 
 
-echo "09. Create entity E2 with NO correlator header -> a correlator is generated"
-echo "=========================================================================="
+echo "09. Create entity E2 with NO correlator header -> MongoDB lastCorrelator stays empty"
+echo "==================================================================================="
 payload='{
   "id": "urn:ngsi-ld:entities:E2",
   "type": "T",
@@ -125,9 +125,9 @@ echo
 echo
 
 
-echo "10. MongoDB: E2 stores a generated correlator (prefix urn:ngsi-ld:correlator:)"
-echo "=============================================================================="
-mongoCmd2 ftest 'db.entities.findOne({"_id.id":"urn:ngsi-ld:entities:E2"}).lastCorrelator.substring(0,23)'
+echo "10. MongoDB: only client-supplied correlators are mirrored, so E2.lastCorrelator is empty"
+echo "========================================================================================"
+mongoCmd2 ftest 'db.entities.findOne({"_id.id":"urn:ngsi-ld:entities:E2"}).lastCorrelator === ""'
 echo
 echo
 
@@ -199,8 +199,7 @@ urn:opc:write:delete
 bye
 
 
-09. Create entity E2 with NO correlator header -> a correlator is generated
-==========================================================================
+09. Create entity E2 with NO correlator header -> MongoDB lastCorrelator stays empty
 HTTP/1.1 201 Created
 Content-Length: 0
 Date: REGEX(.*)
@@ -208,12 +207,7 @@ Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E2
 
 
 
-10. MongoDB: E2 stores a generated correlator (prefix urn:ngsi-ld:correlator:)
-==============================================================================
-MongoDB shell version REGEX(.*)
-connecting to: REGEX(.*)
-MongoDB server version: REGEX(.*)
-urn:ngsi-ld:correlator:
+10. MongoDB: only client-supplied correlators are mirrored, so E2.lastCorrelator is empty
 bye
 
 
