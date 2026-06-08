@@ -211,10 +211,11 @@ bool dbModelFromApiEntity(KjNode* entityP, KjNode* dbEntityP, bool creation, con
     kjChildRemove(entityP, dbAttrNamesP);
 
     //
-    // "lastCorrelator" - the correlator of the last write on the entity (NGSILD-Correlator header,
-    // falling back to Fiware-Correlator, else generated). Shared with the TRoE rows of this write.
+    // "lastCorrelator" - the correlator of the last write on the entity. Only client-supplied
+    // correlators (NGSILD-Correlator, falling back to Fiware-Correlator) are stored here; when none
+    // is provided the field stays empty (as before), while the TRoE rows still get a generated one.
     //
-    KjNode* lastCorrelatorP = kjString(orionldState.kjsonP,  "lastCorrelator", correlatorGet());
+    KjNode* lastCorrelatorP = kjString(orionldState.kjsonP,  "lastCorrelator", correlatorClientProvided()? correlatorGet() : (char*) "");
     kjChildAdd(entityP, lastCorrelatorP);
 
     //

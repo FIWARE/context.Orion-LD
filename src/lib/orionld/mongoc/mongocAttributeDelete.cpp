@@ -80,8 +80,9 @@ bool mongocAttributeDelete(const char* entityId, const char* attrName)
   // UPDATE Entity::modDate
   bson_append_double(&set, "modDate", 7, orionldState.requestTime);
 
-  // Store the correlator of this write on the entity
-  bson_append_utf8(&set, "lastCorrelator", 14, correlatorGet(), -1);
+  // Store the correlator of this write on the entity - only client-supplied correlators are mirrored to MongoDB
+  if (correlatorClientProvided() == true)
+    bson_append_utf8(&set, "lastCorrelator", 14, correlatorGet(), -1);
 
   // PULL attrNames[$attrName]
   bson_append_utf8(&pull, "attrNames", 9, attrName, -1);
