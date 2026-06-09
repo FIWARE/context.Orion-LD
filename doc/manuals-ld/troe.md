@@ -254,6 +254,40 @@ docker run -e POSTGRES_USER=orion -e POSTGRES_PASSWORD=orion -e POSTGRES_HOST_AU
 ```
 
 ## Database Migration
+
+### Automatic schema migration on startup
+
+Orion-LD migrates the TRoE PostgreSQL layout **automatically**. On startup (and whenever a tenant
+database is first touched), the broker checks the database's schema version and applies any pending
+migration steps before serving requests. No external tooling or manual step is required, and it runs
+**per tenant database**.
+
+How it works:
+
+- Each TRoE database holds a `metadata` table with a `schemaVersion` row.
+- A database created **before** this mechanism existed has no such row and is treated as the baseline
+  version (`1`).
+- The broker carries an ordered, versioned list of migration steps in code (`pgSchemaMigrate`). Every
+  step is **idempotent** (`ALTER TABLE ... ADD COLUMN IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`, …)
+  and bumps `schemaVersion`. Freshly created databases already carry the latest layout, so the steps
+  run as no-ops on them.
+- A PostgreSQL **advisory lock** is taken around the migration, so multiple broker instances pointing
+  at the same database never migrate in parallel.
+
+Current step:
+
+| schemaVersion | Change |
+| --- | --- |
+| 1 | Baseline (released TRoE layout). |
+| 2 | Adds the write `correlator` column to `entities`, `attributes`, `subAttributes` (+ index). |
+
+To add a future layout change, bump `PG_SCHEMA_VERSION` and append an idempotent step in
+`src/lib/orionld/troe/pgSchemaMigrate.cpp`.
+
+> Note: `metadata.schemaVersion` is the broker's own internal counter for the automatic migration and
+> is independent from the historical Liquibase changelog versions listed below.
+
+### Migration (manual / Liquibase, legacy)
 A database migration scripts is found in the [database-folder](../../database)
 The file [initial.sql](../../database/sql/initial.sql) contains the SQL script for the timescale database. It holds the schema at the state of Orion-LD version 0.7.0.
 

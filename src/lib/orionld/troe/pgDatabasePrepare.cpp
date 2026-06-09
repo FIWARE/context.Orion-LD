@@ -32,6 +32,7 @@ extern "C"
 #include "orionld/troe/pgConnectionGet.h"                      // pgConnectionGet
 #include "orionld/troe/pgDatabaseCreate.h"                     // pgDatabaseCreate
 #include "orionld/troe/pgDatabaseTableCreateAll.h"             // pgDatabaseTableCreateAll
+#include "orionld/troe/pgSchemaMigrate.h"                      // pgSchemaMigrate
 #include "orionld/troe/pgConnectionRelease.h"                  // pgConnectionRelease
 #include "orionld/troe/pgDatabasePrepare.h"                    // Own interface
 
@@ -67,6 +68,9 @@ bool pgDatabasePrepare(const char* dbName)
   bool r;
   if ((r = pgDatabaseTableCreateAll(connectionP->connectionP)) == false)
     KT_E("Database Error (error creating postgres database tables)");
+  // Bring an existing database up to the current schema version (no-op for freshly created ones)
+  else if ((r = pgSchemaMigrate(connectionP->connectionP)) == false)
+    KT_E("Database Error (TRoE schema migration failed)");
 
   pgConnectionRelease(connectionP);
 
