@@ -38,6 +38,9 @@
 //
 QNode* qClone(QNode* original)
 {
+  if (original == NULL)  // Defensive - a NULL here means a malformed q slipped past qLexCheck (caller handles NULL)
+    return NULL;
+
   QNode* cloneP = qNode(original->type);
 
   if (orionldState.useMalloc == true)
