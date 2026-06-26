@@ -129,6 +129,40 @@ bool pgSchemaExists(PGconn* connectionP)
 
 // -----------------------------------------------------------------------------
 //
+// pgSchemaProbeVersion -
+//
+// For a pre-existing database that has no recorded version (created before this versioning
+// mechanism existed), determine the version that matches its ACTUAL layout by probing for the
+// features of each version. This way a database that already has the latest layout - e.g. one
+// upgraded from the release that introduced the 'correlator' column - is recognized as current
+// instead of being wrongly flagged as needing a migration.
+//
+// Returns the highest fully-present version (baseline 1 if nothing newer is detected).
+// When adding a new schema version, probe its marker here (highest first).
+//
+static int pgSchemaProbeVersion(PGconn* connectionP)
+{
+  // v2 marker: the write 'correlator' column on all three TRoE tables
+  PGresult* res = PQexec(connectionP,
+                         "SELECT count(*) FROM information_schema.columns "
+                         "WHERE column_name = 'correlator' AND table_name IN ('entities', 'attributes', 'subattributes')");
+
+  int correlatorColumns = 0;
+  if ((res != NULL) && (PQresultStatus(res) == PGRES_TUPLES_OK) && (PQntuples(res) > 0))
+    correlatorColumns = atoi(PQgetvalue(res, 0, 0));
+  if (res != NULL)
+    PQclear(res);
+
+  if (correlatorColumns >= 3)
+    return 2;
+
+  return 1;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // pgSchemaVersionGet - read the stored schema version from the 'metadata' table
 //
 // Returns 0 if the table or the row is absent (i.e. the version has never been recorded).
@@ -209,9 +243,9 @@ bool pgSchemaMigrate(PGconn* connectionP, const char* dbName, bool schemaPreExis
   int storedVersion = pgSchemaVersionGet(connectionP);
   int currentVersion;
 
-  if      (storedVersion > 0)        currentVersion = storedVersion;        // version already recorded
-  else if (schemaPreExisted == false) currentVersion = PG_SCHEMA_VERSION;   // brand-new DB, created at the latest layout
-  else                                currentVersion = 1;                   // pre-existing DB from before versioning
+  if      (storedVersion > 0)         currentVersion = storedVersion;                  // version already recorded
+  else if (schemaPreExisted == false) currentVersion = PG_SCHEMA_VERSION;              // brand-new DB, created at the latest layout
+  else                                currentVersion = pgSchemaProbeVersion(connectionP);  // pre-existing & unversioned: detect actual layout
 
   //
   // Already up to date (or brand-new): just make sure the version is recorded
