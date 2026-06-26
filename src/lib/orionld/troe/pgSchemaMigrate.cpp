@@ -31,6 +31,7 @@ extern "C"
 }
 
 #include "orionld/common/pqHeader.h"                           // Postgres header
+#include "orionld/common/orionldState.h"                       // migrate (CLI option)
 #include "orionld/troe/pgTransactionBegin.h"                   // pgTransactionBegin
 #include "orionld/troe/pgTransactionRollback.h"                // pgTransactionRollback
 #include "orionld/troe/pgTransactionCommit.h"                  // pgTransactionCommit
@@ -54,8 +55,6 @@ extern "C"
 // PgMigrationStep - one step that brings the schema from version (toVersion - 1) to toVersion
 //
 // IMPORTANT: 'sql' MUST be idempotent (ADD COLUMN IF NOT EXISTS, CREATE INDEX IF NOT EXISTS, ...).
-//            Freshly created databases already carry the latest table layout, so the steps run
-//            as no-ops on them - they only serve to upgrade pre-existing databases.
 //
 typedef struct PgMigrationStep
 {
@@ -112,10 +111,27 @@ static bool pgCommandRun(PGconn* connectionP, const char* sql)
 
 // -----------------------------------------------------------------------------
 //
+// pgSchemaExists -
+//
+bool pgSchemaExists(PGconn* connectionP)
+{
+  PGresult* res = PQexec(connectionP, "SELECT 1 FROM information_schema.tables WHERE table_name = 'entities'");
+
+  bool exists = (res != NULL) && (PQresultStatus(res) == PGRES_TUPLES_OK) && (PQntuples(res) > 0);
+
+  if (res != NULL)
+    PQclear(res);
+
+  return exists;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // pgSchemaVersionGet - read the stored schema version from the 'metadata' table
 //
-// Returns 1 (the first versioned layout) if the table or the row is absent - i.e. for
-// databases created before this versioning mechanism existed.
+// Returns 0 if the table or the row is absent (i.e. the version has never been recorded).
 //
 static int pgSchemaVersionGet(PGconn* connectionP)
 {
@@ -125,13 +141,13 @@ static int pgSchemaVersionGet(PGconn* connectionP)
   {
     if (res != NULL)
       PQclear(res);
-    return 1;
+    return 0;
   }
 
   int version = atoi(PQgetvalue(res, 0, 0));
   PQclear(res);
 
-  return (version < 1)? 1 : version;
+  return version;
 }
 
 
@@ -156,66 +172,102 @@ static bool pgSchemaVersionSet(PGconn* connectionP, int version)
 
 // -----------------------------------------------------------------------------
 //
+// pgSchemaUnlock - release the advisory lock
+//
+static void pgSchemaUnlock(PGconn* connectionP)
+{
+  char sql[64];
+  snprintf(sql, sizeof(sql), "SELECT pg_advisory_unlock(%d)", PG_SCHEMA_LOCK_KEY);
+  PGresult* res = PQexec(connectionP, sql);
+  if (res != NULL)
+    PQclear(res);
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // pgSchemaMigrate -
 //
-bool pgSchemaMigrate(PGconn* connectionP)
+bool pgSchemaMigrate(PGconn* connectionP, const char* dbName, bool schemaPreExisted)
 {
+  // Serialize across concurrent broker instances (taken first, so even the 'metadata' table
+  // creation below cannot race between two starting brokers).
   char lockSql[64];
-
-  // Serialize migrations across concurrent broker instances on the same database (taken first,
-  // so even the 'metadata' table creation below cannot race between two starting brokers).
   snprintf(lockSql, sizeof(lockSql), "SELECT pg_advisory_lock(%d)", PG_SCHEMA_LOCK_KEY);
   PGresult* lockRes = PQexec(connectionP, lockSql);
   if (lockRes != NULL)
     PQclear(lockRes);
 
-  bool ok = true;
-
   // The metadata table holds the schema version (and any future broker-managed metadata)
   if (pgCommandRun(connectionP, "CREATE TABLE IF NOT EXISTS metadata (name TEXT PRIMARY KEY, value TEXT)") == false)
   {
-    KT_E("Database Error (unable to create the TRoE 'metadata' table)");
-    ok = false;
+    pgSchemaUnlock(connectionP);
+    KT_RE(false, "Database Error (unable to create the TRoE 'metadata' table)");
   }
-  else
+
+  int storedVersion = pgSchemaVersionGet(connectionP);
+  int currentVersion;
+
+  if      (storedVersion > 0)        currentVersion = storedVersion;        // version already recorded
+  else if (schemaPreExisted == false) currentVersion = PG_SCHEMA_VERSION;   // brand-new DB, created at the latest layout
+  else                                currentVersion = 1;                   // pre-existing DB from before versioning
+
+  //
+  // Already up to date (or brand-new): just make sure the version is recorded
+  //
+  if (currentVersion >= PG_SCHEMA_VERSION)
   {
-    int currentVersion = pgSchemaVersionGet(connectionP);
-
-    for (int ix = 0; ix < pgMigrationStepsNo; ix++)
-    {
-      if (pgMigrationSteps[ix].toVersion <= currentVersion)
-        continue;
-
-      KT_I("TRoE schema migration: applying v%d (%s)", pgMigrationSteps[ix].toVersion, pgMigrationSteps[ix].description);
-
-      if (pgTransactionBegin(connectionP) == false)
-      {
-        KT_E("Database Error (pgTransactionBegin failed during schema migration)");
-        ok = false;
-        break;
-      }
-
-      if ((pgCommandRun(connectionP, pgMigrationSteps[ix].sql) == false) ||
-          (pgSchemaVersionSet(connectionP, pgMigrationSteps[ix].toVersion) == false))
-      {
-        pgTransactionRollback(connectionP);
-        KT_E("Database Error (TRoE schema migration to v%d failed - rolled back)", pgMigrationSteps[ix].toVersion);
-        ok = false;
-        break;
-      }
-
-      pgTransactionCommit(connectionP);
-      currentVersion = pgMigrationSteps[ix].toVersion;
-      KT_I("TRoE schema migration: now at v%d", currentVersion);
-    }
+    bool ok = true;
+    if (storedVersion != PG_SCHEMA_VERSION)
+      ok = pgSchemaVersionSet(connectionP, PG_SCHEMA_VERSION);
+    pgSchemaUnlock(connectionP);
+    return ok;
   }
 
-  // Release the advisory lock
-  char unlockSql[64];
-  snprintf(unlockSql, sizeof(unlockSql), "SELECT pg_advisory_unlock(%d)", PG_SCHEMA_LOCK_KEY);
-  PGresult* unlockRes = PQexec(connectionP, unlockSql);
-  if (unlockRes != NULL)
-    PQclear(unlockRes);
+  //
+  // Outdated schema - migrate only when the operator opted in via '-migrate'
+  //
+  if (migrate == false)
+  {
+    pgSchemaUnlock(connectionP);
+    KT_X(1, "TRoE database '%s' uses schema version %d but this broker requires version %d. "
+            "Back up your database and restart the broker with the '-migrate' option to upgrade it.",
+            dbName, currentVersion, PG_SCHEMA_VERSION);
+    return false;  // never reached - KT_X exits the process
+  }
 
+  KT_I("TRoE database '%s': migrating schema from v%d to v%d (-migrate given)", dbName, currentVersion, PG_SCHEMA_VERSION);
+
+  bool ok = true;
+  for (int ix = 0; ix < pgMigrationStepsNo; ix++)
+  {
+    if (pgMigrationSteps[ix].toVersion <= currentVersion)
+      continue;
+
+    KT_I("TRoE schema migration: applying v%d (%s)", pgMigrationSteps[ix].toVersion, pgMigrationSteps[ix].description);
+
+    if (pgTransactionBegin(connectionP) == false)
+    {
+      KT_E("Database Error (pgTransactionBegin failed during schema migration)");
+      ok = false;
+      break;
+    }
+
+    if ((pgCommandRun(connectionP, pgMigrationSteps[ix].sql) == false) ||
+        (pgSchemaVersionSet(connectionP, pgMigrationSteps[ix].toVersion) == false))
+    {
+      pgTransactionRollback(connectionP);
+      KT_E("Database Error (TRoE schema migration to v%d failed - rolled back)", pgMigrationSteps[ix].toVersion);
+      ok = false;
+      break;
+    }
+
+    pgTransactionCommit(connectionP);
+    currentVersion = pgMigrationSteps[ix].toVersion;
+    KT_I("TRoE schema migration: now at v%d", currentVersion);
+  }
+
+  pgSchemaUnlock(connectionP);
   return ok;
 }
