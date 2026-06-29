@@ -255,12 +255,22 @@ docker run -e POSTGRES_USER=orion -e POSTGRES_PASSWORD=orion -e POSTGRES_HOST_AU
 
 ## Database Migration
 
-### Automatic schema migration on startup
+### Schema versioning and the `-migrate` option
 
-Orion-LD migrates the TRoE PostgreSQL layout **automatically**. On startup (and whenever a tenant
-database is first touched), the broker checks the database's schema version and applies any pending
-migration steps before serving requests. No external tooling or manual step is required, and it runs
-**per tenant database**.
+Orion-LD tracks the TRoE PostgreSQL layout with a schema version and checks it on startup (and whenever
+a tenant database is prepared). The behaviour is:
+
+- **Brand-new database** — created at the latest layout, so it is simply stamped with the current
+  version and the broker starts normally (no `-migrate` needed).
+- **Up-to-date database** — nothing to do, the broker starts normally.
+- **Outdated database** — migrating changes the data layout and carries risk, so the broker does **not**
+  migrate silently. It **logs a message and exits**:
+
+  > `TRoE database '<db>' uses schema version 1 but this broker requires version 2. Back up your
+  > database and restart the broker with the '-migrate' option to upgrade it.`
+
+  After backing up, restart the broker **with the `-migrate` CLI option** and it applies the pending
+  migration steps and then runs normally.
 
 How it works:
 
@@ -269,12 +279,9 @@ How it works:
   version (`1`).
 - The broker carries an ordered, versioned list of migration steps in code (`pgSchemaMigrate`). Every
   step is **idempotent** (`ALTER TABLE ... ADD COLUMN IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`, …)
-  and bumps `schemaVersion`. Freshly created databases already carry the latest layout, so the steps
-  run as no-ops on them.
+  and bumps `schemaVersion`.
 - A PostgreSQL **advisory lock** is taken around the migration, so multiple broker instances pointing
   at the same database never migrate in parallel.
-
-Current step:
 
 | schemaVersion | Change |
 | --- | --- |
@@ -284,8 +291,8 @@ Current step:
 To add a future layout change, bump `PG_SCHEMA_VERSION` and append an idempotent step in
 `src/lib/orionld/troe/pgSchemaMigrate.cpp`.
 
-> Note: `metadata.schemaVersion` is the broker's own internal counter for the automatic migration and
-> is independent from the historical Liquibase changelog versions listed below.
+> Note: `metadata.schemaVersion` is the broker's own internal counter and is independent from the
+> historical Liquibase changelog versions listed below.
 
 ### Migration (manual / Liquibase, legacy)
 A database migration scripts is found in the [database-folder](../../database)

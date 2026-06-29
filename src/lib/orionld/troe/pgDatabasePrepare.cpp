@@ -65,11 +65,15 @@ bool pgDatabasePrepare(const char* dbName)
   // Release the connection for the "NULL" DB
   pgConnectionRelease(nullConnectionP);
 
+  // Whether the TRoE tables already exist must be sampled BEFORE (re-)creating them,
+  // so the migration logic can tell a brand-new database from a pre-existing one.
+  bool schemaPreExisted = pgSchemaExists(connectionP->connectionP);
+
   bool r;
   if ((r = pgDatabaseTableCreateAll(connectionP->connectionP)) == false)
     KT_E("Database Error (error creating postgres database tables)");
-  // Bring an existing database up to the current schema version (no-op for freshly created ones)
-  else if ((r = pgSchemaMigrate(connectionP->connectionP)) == false)
+  // Check/record the schema version - migrates a pre-existing database (only with -migrate)
+  else if ((r = pgSchemaMigrate(connectionP->connectionP, dbName, schemaPreExisted)) == false)
     KT_E("Database Error (TRoE schema migration failed)");
 
   pgConnectionRelease(connectionP);

@@ -227,6 +227,7 @@ bool            ngsiv1Autocast;
 int             contextDownloadAttempts;
 int             contextDownloadTimeout;
 bool            troe;
+bool            migrate;
 bool            pernot;
 bool            disableFileLog;
 bool            lmtmp;
@@ -332,6 +333,7 @@ bool            kTraceInfo       = false;
 #define INSECURE_NOTIF         "allow HTTPS notifications to peers which certificate cannot be authenticated with known CA certificates"
 #define NGSIV1_AUTOCAST        "automatic cast for number, booleans and dates in NGSIv1 update/create attribute operations"
 #define TROE_DESC              "enable TRoE - temporal representation of entities"
+#define MIGRATE_DESC           "migrate the TRoE database schema to the current layout - back up your database first"
 #define PERNOT_DESC            "enable Pernot - Periodic Notifications"
 #define DISABLE_FILE_LOG       "disable logging into file"
 #define TMPTRACES_DESC         "disable traces"
@@ -459,6 +461,7 @@ PaArgument paArgs[] =
   { "-coreContextDir",       coreContextDir,           "ORIONLD_CORE_CONTEXT_DIR",          PaString,  PaOpt,  _i "/opt/orion/ldcontexts",  PaNL, PaNL,        CTX_DIR_DESC             },
   { "-pernot",                &pernot,                  "PERNOT",                    PaBool,    PaOpt,  false,            false,  true,             PERNOT_DESC              },
   { "-troe",                  &troe,                    "TROE",                      PaBool,    PaOpt,  false,            false,  true,             TROE_DESC                },
+  { "-migrate",               &migrate,                 "MIGRATE",                   PaBool,    PaOpt,  false,            false,  true,             MIGRATE_DESC             },
   { "-troeHost",              troeHost,                 "TROE_HOST",                 PaString,  PaOpt,  _i "localhost",   PaNL,   PaNL,             TROE_HOST_DESC           },
   { "-troePort",              &troePort,                "TROE_PORT",                 PaInt,     PaOpt,  5432,             PaNL,   PaNL,             TROE_PORT_DESC           },
   { "-troeUser",              troeUser,                 "TROE_USER",                 PaString,  PaOpt,  _i "postgres",    PaNL,   PaNL,             TROE_HOST_USER           },
