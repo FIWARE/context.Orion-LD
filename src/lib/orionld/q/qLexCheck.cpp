@@ -231,8 +231,34 @@ bool qLexCheck(QNode* qLexP, char** titleP, char** detailsP)
         if (qNodeVariableChars(qnP->value.v, titleP, detailsP) == false)
           return false;
       }
-      else if ((qnP->type == QNodeFloatValue) || (qnP->type == QNodeIntegerValue))
+      else if ((qnP->type == QNodeFloatValue)   ||
+               (qnP->type == QNodeIntegerValue) ||
+               (qnP->type == QNodeStringValue)  ||
+               (qnP->type == QNodeTrueValue)    ||
+               (qnP->type == QNodeFalseValue))
       {
+        //
+        // After a value, only these tokens are valid:
+        // - QNodeClose  ')'  - end of a parenthesized expression
+        // - QNodeAnd    ';'  - AND operator
+        // - QNodeOr     '|'  - OR operator
+        // - QNodeRange  '..' - the value was the lower limit of a range
+        // - QNodeComma  ','  - the value was an item in a comma-list
+        //
+        // Without this check a value directly followed by e.g. a Variable
+        // (a missing ';'/'|' separator, as in q=a=="x"b=="y") slipped through
+        // and crashed qParse with a NULL dereference (issue #1943).
+        //
+        if ((nextType != QNodeClose) &&
+            (nextType != QNodeAnd)   &&
+            (nextType != QNodeOr)    &&
+            (nextType != QNodeRange) &&
+            (nextType != QNodeComma))
+        {
+          *titleP   = (char*) "ngsi-ld query language: invalid token after value (missing ';' or '|' ?)";
+          *detailsP = (char*) qNodeType(nextType);
+          return false;
+        }
       }
     }
     else  // qnP->next == NULL)

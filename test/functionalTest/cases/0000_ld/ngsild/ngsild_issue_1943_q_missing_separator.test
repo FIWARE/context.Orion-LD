@@ -1,0 +1,130 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Issue 1943: a q-filter with a missing AND/OR separator must give 400, not crash
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB
+
+--SHELL--
+
+#
+# A q-filter with two comparison expressions but no ';' (AND) or '|' (OR)
+# separator between them used to crash the broker (NULL deref in qParse).
+# It must instead be rejected with a 400 Bad Request.
+#
+# 01. GET entities with q=category=="office"category!="inactive" (reporter's exact case) - see 400
+# 02. GET entities with q=A==12B==13 (integer values, missing ';')           - see 400
+# 03. POST Query with q="a"=="office"category!="inactive" missing separator  - see 400
+# 04. GET entities with a well-formed q=category=="office";category!="inactive" - see 200 (broker alive)
+#
+
+echo '01. GET entities with q=category=="office"category!="inactive" (reporter case) - see 400'
+echo '======================================================================================='
+orionCurl --url '/ngsi-ld/v1/entities?type=Site&q=category==%22office%22category!=%22inactive%22'
+echo
+echo
+
+
+echo '02. GET entities with q=A==12B==13 (integer values, missing ;) - see 400'
+echo '========================================================================'
+orionCurl --url '/ngsi-ld/v1/entities?type=T&q=A==12B==13'
+echo
+echo
+
+
+echo '03. POST Query with q missing separator - see 400'
+echo '================================================='
+payload='{
+  "type": "Query",
+  "q": "category==\"office\"category!=\"inactive\""
+}'
+orionCurl --url /ngsi-ld/v1/entityOperations/query -X POST --payload "$payload"
+echo
+echo
+
+
+echo '04. GET entities with a well-formed q=category=="office";category!="inactive" - see 200 (broker alive)'
+echo '====================================================================================================='
+orionCurl --url '/ngsi-ld/v1/entities?type=Site&q=category==%22office%22;category!=%22inactive%22'
+echo
+echo
+
+
+--REGEXPECT--
+01. GET entities with q=category=="office"category!="inactive" (reporter case) - see 400
+=======================================================================================
+HTTP/1.1 400 Bad Request
+Content-Length: 158
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "NE",
+    "title": "ngsi-ld query language: invalid token after value (missing ';' or '|' ?)",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/BadRequestData"
+}
+
+
+02. GET entities with q=A==12B==13 (integer values, missing ;) - see 400
+========================================================================
+HTTP/1.1 400 Bad Request
+Content-Length: 181
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "Variable",
+    "title": "ngsi-ld query language: after non-regexp comparison operator must come a non-regexp Value",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/BadRequestData"
+}
+
+
+03. POST Query with q missing separator - see 400
+=================================================
+HTTP/1.1 400 Bad Request
+Content-Length: 158
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "NE",
+    "title": "ngsi-ld query language: invalid token after value (missing ';' or '|' ?)",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/BadRequestData"
+}
+
+
+04. GET entities with a well-formed q=category=="office";category!="inactive" - see 200 (broker alive)
+=====================================================================================================
+HTTP/1.1 200 OK
+Content-Length: 2
+Content-Type: application/json
+Date: REGEX(.*)
+
+[]
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
