@@ -179,40 +179,59 @@ void* kafkaConsumerLoop(void* vP)
     }
 
     //
-    // Process the batch if we have entities
+    // Process the batch if we have entities.
     //
+    // NOTE: kafkaBatchProcess() only performs the MongoDB (current state) upsert. The TRoE
+    // (temporal/Postgres) write is done later, by requestCompleted() below, via
+    // orionldState.serviceP->troeRoutine(). So 'mongoOk' reflects MongoDB durability only.
+    //
+    bool mongoOk = false;
+
     if (entityCount > 0)
     {
       KT_T(KtKafka, "Processing Kafka batch of %d entities", entityCount);
 
-      bool ok = kafkaBatchProcess(entityArray);
+      mongoOk = kafkaBatchProcess(entityArray);
 
-      if (ok)
+      if (mongoOk)
+        KT_T(KtKafka, "Kafka batch of %d entities written to MongoDB", entityCount);
+      else
+        KT_W("Kafka batch processing failed (MongoDB) for %d entities, offsets not committed", entityCount);
+    }
+
+    //
+    // Cleanup thread-local state (frees kalloc arena, etc.).
+    //
+    // IMPORTANT: requestCompleted() also performs the TRoE (temporal/Postgres) write. It must
+    // run BEFORE the Kafka offset is committed, so that a failed TRoE write prevents the commit
+    // and the batch gets redelivered. Committing the offset before the TRoE write (the previous
+    // behaviour) meant a Postgres failure left MongoDB with a newer value than the temporal
+    // history, with no chance of recovery. pgCommands() flags such failures in
+    // orionldState.troeError, which we check below before committing.
+    //
+    void* con_cls = NULL;
+    requestCompleted(NULL, NULL, &con_cls, MHD_REQUEST_TERMINATED_COMPLETED_OK);
+
+    //
+    // Commit offsets only after BOTH the MongoDB upsert AND the TRoE write succeeded.
+    //
+    if (entityCount > 0)
+    {
+      if (mongoOk && (orionldState.troeError == false))
       {
-        KT_T(KtKafka, "Kafka batch of %d entities written to MongoDB successfully", entityCount);
-
-        // Commit offsets after successful processing.
         // RD_KAFKA_RESP_ERR__NO_OFFSET is benign: another consumer thread already committed
         // the stored offsets via the shared kafkaConsumerHandle.
         rd_kafka_resp_err_t err = rd_kafka_commit(kafkaConsumerHandle, NULL, 0);
         if (err == RD_KAFKA_RESP_ERR_NO_ERROR)
-          KT_T(KtKafka, "Kafka offsets committed");
+          KT_T(KtKafka, "Kafka offsets committed (%d entities durable in MongoDB and TRoE)", entityCount);
         else if (err == RD_KAFKA_RESP_ERR__NO_OFFSET)
           KT_T(KtKafka, "Kafka offset commit skipped (already committed by another thread)");
         else
           KT_W("Kafka offset commit failed: %s", rd_kafka_err2str(err));
       }
-      else
-      {
-        KT_W("Kafka batch processing failed for %d entities, offsets not committed", entityCount);
-      }
+      else if (mongoOk)  // MongoDB ok but TRoE write failed (orionldState.troeError == true)
+        KT_W("Kafka batch of %d entities: TRoE write failed, offsets NOT committed (batch will be redelivered)", entityCount);
     }
-
-    //
-    // Cleanup thread-local state (frees kalloc arena, etc.)
-    //
-    void* con_cls = NULL;
-    requestCompleted(NULL, NULL, &con_cls, MHD_REQUEST_TERMINATED_COMPLETED_OK);
   }
 
   KT_I("Kafka consumer loop exiting");

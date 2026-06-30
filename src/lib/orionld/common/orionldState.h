@@ -499,7 +499,7 @@ typedef struct OrionldConnectionState
   // TRoE
   //
   bool                    noDbUpdate;            // If nothing changed in DB - troe is not invoked
-  bool                    troeError;              // Unused - TODO: remove
+  bool                    troeError;              // Set by pgCommands() when a TRoE (Postgres) write fails
   bool                    noTroe;                 // Skip TRoE for this request (e.g. local insert failed in a 207 distOp)
   KjNode*                 duplicateArray;
   KjNode*                 troeIgnoreV[20];
