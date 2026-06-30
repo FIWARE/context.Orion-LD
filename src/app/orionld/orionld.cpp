@@ -227,7 +227,6 @@ bool            ngsiv1Autocast;
 int             contextDownloadAttempts;
 int             contextDownloadTimeout;
 bool            troe;
-bool            migrate;
 bool            pernot;
 bool            disableFileLog;
 bool            lmtmp;
