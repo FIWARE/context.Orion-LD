@@ -106,6 +106,7 @@ SET (DYNAMIC_LIBS
   ddsenabler_participants
   ddsenabler_yaml
   tinyxml2
+  uuid
   crypto.so
   ssl.so
   pthread.so

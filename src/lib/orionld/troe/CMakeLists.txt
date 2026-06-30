@@ -42,6 +42,7 @@ SET (SOURCES
     pgDatabaseCreate.cpp
     pgDatabasePrepare.cpp
     pgDatabaseTableCreateAll.cpp
+    pgSchemaMigrate.cpp
     pgTransactionBegin.cpp
     pgTransactionCommit.cpp
     pgTransactionRollback.cpp

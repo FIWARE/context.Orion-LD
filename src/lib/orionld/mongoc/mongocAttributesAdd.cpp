@@ -32,6 +32,7 @@ extern "C"
 }
 
 #include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/common/correlatorGet.h"                        // correlatorGet
 #include "orionld/common/traceLevels.h"                          // trace levels
 #include "orionld/mongoc/mongocConnectionGet.h"                  // mongocConnectionGet
 #include "orionld/mongoc/mongocWriteLog.h"                       // mongocWriteLog
@@ -142,6 +143,10 @@ bool mongocAttributesAdd
 
   // Update the Entity's modDate
   bson_append_double(&set, "modDate", 7, orionldState.requestTime);
+
+  // Store the correlator of this write on the entity - only client-supplied correlators are mirrored to MongoDB
+  if (correlatorClientProvided() == true)
+    bson_append_utf8(&set, "lastCorrelator", 14, correlatorGet(), -1);
 
   bson_append_document(&request, "$set", 4, &set);
   bson_destroy(&set);

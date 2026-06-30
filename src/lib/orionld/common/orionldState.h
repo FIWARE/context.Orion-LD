@@ -536,8 +536,9 @@ typedef struct OrionldConnectionState
   // X-Auth-Token
   char* xAuthToken;
 
-  // FIWARE Correlator
+  // Correlator (from "NGSILD-Correlator" header, falling back to "Fiware-Correlator")
   char* correlator;
+  char* correlatorResolvedP;   // Lazily resolved correlator (root, generated if absent) - see correlatorGet()
 
   // Previous Values
   KjNode* previousValues;
@@ -642,6 +643,7 @@ extern int               distOpTimeout;            // From orionld.cpp
 extern int               subCacheInterval;         // From orionld.cpp
 extern int               subCacheFlushInterval;    // From orionld.cpp
 extern bool              troe;                     // From orionld.cpp
+extern bool              migrate;                  // From orionldState.cpp
 extern char              troeHost[256];            // From orionld.cpp
 extern int               troePort;                 // From orionld.cpp
 extern char              troeUser[256];            // From orionld.cpp
