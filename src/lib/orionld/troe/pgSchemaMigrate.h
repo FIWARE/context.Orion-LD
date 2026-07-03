@@ -42,13 +42,30 @@
 
 // -----------------------------------------------------------------------------
 //
+// pgSchemaExists - true if the TRoE tables already exist in the connected database
+//
+// Must be called BEFORE the tables are (re-)created, so pgSchemaMigrate can tell a
+// brand-new database (latest layout) from a pre-existing one (possibly outdated).
+//
+extern bool pgSchemaExists(PGconn* connectionP);
+
+
+
+// -----------------------------------------------------------------------------
+//
 // pgSchemaMigrate -
 //
-// Brings a single TRoE PostgreSQL database up to PG_SCHEMA_VERSION by applying any
-// pending migration steps. Safe to call on every startup and for every tenant DB:
-// it is idempotent, records the applied version in the 'metadata' table, and takes
-// a PostgreSQL advisory lock so concurrent broker instances don't migrate in parallel.
+// Checks a single TRoE PostgreSQL database's schema version against PG_SCHEMA_VERSION.
 //
-extern bool pgSchemaMigrate(PGconn* connectionP);
+//   - brand-new database (schemaPreExisted == false)  -> stamp it at the current version
+//   - already at the current version                  -> nothing to do
+//   - outdated, and the broker was started with -migrate (the 'migrate' CLI option)
+//                                                     -> apply the pending, idempotent steps
+//   - outdated, and -migrate was NOT given            -> log how to migrate and EXIT the broker
+//
+// A PostgreSQL advisory lock serializes concurrent broker instances. The applied version is
+// recorded in the 'metadata' table.
+//
+extern bool pgSchemaMigrate(PGconn* connectionP, const char* dbName, bool schemaPreExisted);
 
 #endif  // SRC_LIB_ORIONLD_TROE_PGSCHEMAMIGRATE_H_
