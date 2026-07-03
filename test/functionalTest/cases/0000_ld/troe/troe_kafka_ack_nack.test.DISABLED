@@ -28,9 +28,13 @@
 #
 # Covers a durable batch (-> ACK) and a poison message (-> NACK carrying the raw bytes). The NACK on a
 # TRoE (Postgres) write failure travels the identical kafkaAckSend() path (only the trigger and the
-# payload source differ - the failed entities instead of the raw bytes) and is not reproduced here
-# because reliably forcing a live TRoE failure mid-run is environment-dependent (pgDrop cannot drop a
-# db the broker still holds a connection to).
+# payload source differ) and is not reproduced here because reliably forcing a live TRoE failure mid-run
+# is environment-dependent (pgDrop cannot drop a db the broker still holds a connection to).
+#
+# NOTE on timing: the Kafka consumer uses auto.offset.reset=latest, so a message produced before the
+# consumer has joined the group + been assigned its partitions is skipped. The valid entity is therefore
+# produced in a retry loop until it actually lands (produceUntilPersisted); the malformed message comes
+# later, when the consumer is long ready.
 
 # VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
 
@@ -46,24 +50,25 @@ brokerStart CB 100 IPv4 -troe -experimental -kafka -kafkaBrokerList localhost:90
 --SHELL--
 
 #
-# Helper: poll GET until entity exists (HTTP 200) or timeout
+# Helper: produce a valid entity repeatedly until it is persisted (HTTP 200) or the deadline passes.
+# Beats the consumer's auto.offset.reset=latest join race - a message produced before the consumer is
+# assigned its partitions is silently skipped, so a single up-front produce is not reliable.
 #
-waitForEntity()
+produceUntilPersisted()
 {
   local entityId=$1
-  local maxWait=${2:-60}
-  local elapsed=0
+  local payload=$2
+  local deadline=$(( $(date +%s) + 90 ))
 
-  while [ $elapsed -lt $maxWait ]
+  while [ $(date +%s) -lt $deadline ]
   do
-    httpCode=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:$CB_PORT/ngsi-ld/v1/entities/$entityId)
-    if [ "$httpCode" = "200" ]; then
+    echo "$payload" | docker exec -i kafka kafka-console-producer --broker-list localhost:9092 --topic orionld-test 2>/dev/null
+    sleep 2
+    if [ "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:$CB_PORT/ngsi-ld/v1/entities/$entityId)" = "200" ]; then
       return 0
     fi
-    sleep 1
-    elapsed=$((elapsed + 1))
   done
-  echo "WARNING: entity $entityId not found after ${maxWait}s"
+  echo "WARNING: entity $entityId not persisted before deadline"
   return 1
 }
 
@@ -76,51 +81,41 @@ ackDump()
 }
 
 #
-# Helper: poll the ACK/NACK topic until a record matching a (fixed-string) pattern appears, or timeout
+# Helper: poll the ACK/NACK topic until a record matching a (fixed-string) pattern appears, or the
+# wall-clock deadline passes. Each ackDump call already blocks ~4s, so no extra sleep is needed - and the
+# deadline is real seconds (not iterations), so the timeout is honoured regardless of ackDump's duration.
 #
 waitForAck()
 {
   local pattern=$1
-  local maxWait=${2:-30}
-  local elapsed=0
+  local deadline=$(( $(date +%s) + ${2:-40} ))
 
-  while [ $elapsed -lt $maxWait ]
+  while [ $(date +%s) -lt $deadline ]
   do
     if ackDump | grep -q -F -- "$pattern"; then
       return 0
     fi
-    sleep 1
-    elapsed=$((elapsed + 1))
   done
-  echo "WARNING: no ACK/NACK record matching '$pattern' after ${maxWait}s"
+  echo "WARNING: no ACK/NACK record matching '$pattern' before deadline"
   return 1
 }
 
 #
-# 01. Produce a valid entity to the ingest topic
-# 02. Wait for it to be persisted (MongoDB)
-# 03. An ACK for the durable batch appears on the ACK topic
-# 04. Produce a malformed (unparseable) message to the ingest topic
-# 05. A parse-fail NACK appears on the ACK topic - carrying the raw bytes
+# 01. Produce a valid entity (retry past the 'latest' join race) until it is persisted in MongoDB
+# 02. An ACK for the durable batch appears on the ACK topic
+# 03. Produce a malformed (unparseable) message to the ingest topic
+# 04. A parse-fail NACK appears on the ACK topic - carrying the raw bytes
 #
 
-echo "01. Produce a valid entity to the ingest topic"
-echo "==============================================="
-echo '{"id":"urn:ngsi-ld:Sensor:A1","type":"Sensor","temperature":{"type":"Property","value":23.5}}' | docker exec -i kafka kafka-console-producer --broker-list localhost:9092 --topic orionld-test
-echo "Message produced"
+echo "01. Produce a valid entity until it is persisted"
+echo "================================================="
+produceUntilPersisted urn:ngsi-ld:Sensor:A1 '{"id":"urn:ngsi-ld:Sensor:A1","type":"Sensor","temperature":{"type":"Property","value":23.5}}'
+echo "Entity persisted"
 echo
 echo
 
 
-echo "02. Wait for the entity to be persisted"
-echo "========================================"
-waitForEntity urn:ngsi-ld:Sensor:A1
-echo "Done waiting"
-echo
-echo
-
-
-echo "03. An ACK for the durable batch appears on the ACK topic"
+echo "02. An ACK for the durable batch appears on the ACK topic"
 echo "=========================================================="
 waitForAck '"status":"ack"'
 ackDump | grep -o '"status":"ack"' | head -1
@@ -128,7 +123,7 @@ echo
 echo
 
 
-echo "04. Produce a malformed (unparseable) message to the ingest topic"
+echo "03. Produce a malformed (unparseable) message to the ingest topic"
 echo "=================================================================="
 echo 'THIS-IS-NOT-JSON' | docker exec -i kafka kafka-console-producer --broker-list localhost:9092 --topic orionld-test
 echo "Message produced"
@@ -136,7 +131,7 @@ echo
 echo
 
 
-echo "05. A parse-fail NACK appears on the ACK topic (carrying the raw bytes)"
+echo "04. A parse-fail NACK appears on the ACK topic (carrying the raw bytes)"
 echo "======================================================================="
 waitForAck 'Kafka message parse failed'
 ackDump | grep -o '"status":"nack"' | head -1
@@ -147,27 +142,22 @@ echo
 
 
 --REGEXPECT--
-01. Produce a valid entity to the ingest topic
-===============================================
-Message produced
+01. Produce a valid entity until it is persisted
+=================================================
+Entity persisted
 
 
-02. Wait for the entity to be persisted
-========================================
-Done waiting
-
-
-03. An ACK for the durable batch appears on the ACK topic
+02. An ACK for the durable batch appears on the ACK topic
 ==========================================================
 "status":"ack"
 
 
-04. Produce a malformed (unparseable) message to the ingest topic
+03. Produce a malformed (unparseable) message to the ingest topic
 ==================================================================
 Message produced
 
 
-05. A parse-fail NACK appears on the ACK topic (carrying the raw bytes)
+04. A parse-fail NACK appears on the ACK topic (carrying the raw bytes)
 =======================================================================
 "status":"nack"
 Kafka message parse failed
