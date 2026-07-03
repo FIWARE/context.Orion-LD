@@ -49,10 +49,14 @@ void pgCommands(char* sql[], int commands)
   PgConnection* connectionP = pgConnectionGet(orionldState.tenantP->troeDbName);
 
   if ((connectionP == NULL) || (connectionP->connectionP == NULL))
+  {
+    orionldState.troeError = true;  // make the TRoE write failure observable to the caller
     KT_RVE("no connection to postgres");
+  }
 
   if (pgTransactionBegin(connectionP->connectionP) != true)
   {
+    orionldState.troeError = true;  // make the TRoE write failure observable to the caller
     pgConnectionRelease(connectionP);
     KT_RVE("pgTransactionBegin failed");
   }
@@ -64,6 +68,7 @@ void pgCommands(char* sql[], int commands)
     PGresult* res = PQexec(connectionP->connectionP, sql[ix]);
     if (res == NULL)
     {
+      orionldState.troeError = true;  // no result - connection failure / OOM
       KT_E("Database Error (PQexec returned NULL for SQL: %s)", sql[ix]);
       if (pgTransactionRollback(connectionP->connectionP) == false)
         KT_E("Database Error (pgTransactionRollback failed too)");
@@ -72,13 +77,16 @@ void pgCommands(char* sql[], int commands)
     }
 
     //
-    // PQexec returns a non-NULL result even when the SQL statement itself failed (e.g. a missing
-    // column because the TRoE schema has not been migrated). Check the result status explicitly,
-    // otherwise such errors are swallowed silently and the temporal write is lost without a trace.
+    // PQexec returns a non-NULL result even when the SQL statement itself failed (constraint
+    // violation, deadlock, "current transaction is aborted", or a missing column because the TRoE
+    // schema has not been migrated). Such failures leave the connection CONNECTION_OK, so they must
+    // be caught here via the result status - otherwise the batch is silently lost and (for the Kafka
+    // path) the offset committed regardless of the failure.
     //
     ExecStatusType execStatus = PQresultStatus(res);
     if ((execStatus != PGRES_COMMAND_OK) && (execStatus != PGRES_TUPLES_OK))
     {
+      orionldState.troeError = true;
       KT_E("Database Error (SQL command failed - status: %s, error: %s, SQL: %s)", PQresStatus(execStatus), PQresultErrorMessage(res), sql[ix]);
       PQclear(res);
       if (pgTransactionRollback(connectionP->connectionP) == false)
@@ -90,6 +98,7 @@ void pgCommands(char* sql[], int commands)
 
     if (PQstatus(connectionP->connectionP) != CONNECTION_OK)
     {
+      orionldState.troeError = true;  // connection dropped mid-batch
       KT_E("SQL[%p]: bad connection: %d", connectionP->connectionP, PQstatus(connectionP->connectionP));  // FIXME: string! (last error?)
       if (pgTransactionRollback(connectionP->connectionP) == false)
         KT_E("Database Error (pgTransactionRollback failed too)");
@@ -99,7 +108,10 @@ void pgCommands(char* sql[], int commands)
   }
 
   if (pgTransactionCommit(connectionP->connectionP) != true)
+  {
+    orionldState.troeError = true;  // the COMMIT itself failed - the batch is not durable
     KT_E("pgTransactionCommit failed");
+  }
 
   pgConnectionRelease(connectionP);
 }

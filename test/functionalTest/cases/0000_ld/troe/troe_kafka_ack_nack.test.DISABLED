@@ -1,0 +1,180 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# DISABLED: This test requires a running Kafka broker (localhost:9092), like
+# troe_kafka_consumer_ingestion.test. To enable: remove the .DISABLED suffix and
+# start Kafka (see that test's header for the KRaft docker command), then create
+# both the ingest and the ACK/NACK topics:
+#
+#   docker exec kafka kafka-topics --create --topic orionld-test --bootstrap-server localhost:9092 --partitions 2
+#   docker exec kafka kafka-topics --create --topic orionld-ack  --bootstrap-server localhost:9092 --partitions 1
+#
+# Covers a durable batch (-> ACK) and a poison message (-> NACK carrying the raw bytes). The NACK on a
+# TRoE (Postgres) write failure travels the identical kafkaAckSend() path (only the trigger and the
+# payload source differ - the failed entities instead of the raw bytes) and is not reproduced here
+# because reliably forcing a live TRoE failure mid-run is environment-dependent (pgDrop cannot drop a
+# db the broker still holds a connection to).
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Kafka ACK/NACK feedback - a durable batch ACKs, a parse-failed batch NACKs (with the raw bytes)
+
+--SHELL-INIT--
+export BROKER=orionld
+dbInit CB
+pgInit $CB_DB_NAME
+brokerStart CB 100 IPv4 -troe -experimental -kafka -kafkaBrokerList localhost:9092 -kafkaTopic orionld-test -kafkaAckTopic orionld-ack -kafkaGroupId orionld-functest -kafkaBatchSize 10 -kafkaBatchLingerMs 500
+
+--SHELL--
+
+#
+# Helper: poll GET until entity exists (HTTP 200) or timeout
+#
+waitForEntity()
+{
+  local entityId=$1
+  local maxWait=${2:-60}
+  local elapsed=0
+
+  while [ $elapsed -lt $maxWait ]
+  do
+    httpCode=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:$CB_PORT/ngsi-ld/v1/entities/$entityId)
+    if [ "$httpCode" = "200" ]; then
+      return 0
+    fi
+    sleep 1
+    elapsed=$((elapsed + 1))
+  done
+  echo "WARNING: entity $entityId not found after ${maxWait}s"
+  return 1
+}
+
+#
+# Helper: dump the whole ACK/NACK topic (fresh random consumer group -> reads from the beginning)
+#
+ackDump()
+{
+  docker exec kafka kafka-console-consumer --bootstrap-server localhost:9092 --topic orionld-ack --from-beginning --timeout-ms 4000 2>/dev/null
+}
+
+#
+# Helper: poll the ACK/NACK topic until a record matching a (fixed-string) pattern appears, or timeout
+#
+waitForAck()
+{
+  local pattern=$1
+  local maxWait=${2:-30}
+  local elapsed=0
+
+  while [ $elapsed -lt $maxWait ]
+  do
+    if ackDump | grep -q -F -- "$pattern"; then
+      return 0
+    fi
+    sleep 1
+    elapsed=$((elapsed + 1))
+  done
+  echo "WARNING: no ACK/NACK record matching '$pattern' after ${maxWait}s"
+  return 1
+}
+
+#
+# 01. Produce a valid entity to the ingest topic
+# 02. Wait for it to be persisted (MongoDB)
+# 03. An ACK for the durable batch appears on the ACK topic
+# 04. Produce a malformed (unparseable) message to the ingest topic
+# 05. A parse-fail NACK appears on the ACK topic - carrying the raw bytes
+#
+
+echo "01. Produce a valid entity to the ingest topic"
+echo "==============================================="
+echo '{"id":"urn:ngsi-ld:Sensor:A1","type":"Sensor","temperature":{"type":"Property","value":23.5}}' | docker exec -i kafka kafka-console-producer --broker-list localhost:9092 --topic orionld-test
+echo "Message produced"
+echo
+echo
+
+
+echo "02. Wait for the entity to be persisted"
+echo "========================================"
+waitForEntity urn:ngsi-ld:Sensor:A1
+echo "Done waiting"
+echo
+echo
+
+
+echo "03. An ACK for the durable batch appears on the ACK topic"
+echo "=========================================================="
+waitForAck '"status":"ack"'
+ackDump | grep -o '"status":"ack"' | head -1
+echo
+echo
+
+
+echo "04. Produce a malformed (unparseable) message to the ingest topic"
+echo "=================================================================="
+echo 'THIS-IS-NOT-JSON' | docker exec -i kafka kafka-console-producer --broker-list localhost:9092 --topic orionld-test
+echo "Message produced"
+echo
+echo
+
+
+echo "05. A parse-fail NACK appears on the ACK topic (carrying the raw bytes)"
+echo "======================================================================="
+waitForAck 'Kafka message parse failed'
+ackDump | grep -o '"status":"nack"' | head -1
+ackDump | grep -o 'Kafka message parse failed' | head -1
+ackDump | grep -o 'THIS-IS-NOT-JSON' | head -1
+echo
+echo
+
+
+--REGEXPECT--
+01. Produce a valid entity to the ingest topic
+===============================================
+Message produced
+
+
+02. Wait for the entity to be persisted
+========================================
+Done waiting
+
+
+03. An ACK for the durable batch appears on the ACK topic
+==========================================================
+"status":"ack"
+
+
+04. Produce a malformed (unparseable) message to the ingest topic
+==================================================================
+Message produced
+
+
+05. A parse-fail NACK appears on the ACK topic (carrying the raw bytes)
+=======================================================================
+"status":"nack"
+Kafka message parse failed
+THIS-IS-NOT-JSON
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
+pgDrop $CB_DB_NAME

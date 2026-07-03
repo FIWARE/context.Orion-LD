@@ -25,6 +25,7 @@ SET (SOURCES
     kafkaConsumerLoop.cpp
     kafkaBatchProcess.cpp
     kafkaMessageParse.cpp
+    kafkaAckProducer.cpp
     kafkaRelease.cpp
 )
 
