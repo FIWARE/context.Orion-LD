@@ -260,6 +260,7 @@ bool            kafkaSupport        = false;
 char            kafkaBrokerList[512];
 char            kafkaTopic[256];
 char            kafkaGroupId[256];
+char            kafkaAckTopic[256];
 int             kafkaBatchSize       = 100;
 int             kafkaBatchLingerMs   = 50;
 int             kafkaConsumerThreads = 2;
@@ -375,6 +376,7 @@ bool            kTraceInfo       = false;
 #define KAFKA_BROKER_DESC      "comma-separated list of Kafka broker addresses"
 #define KAFKA_TOPIC_DESC       "Kafka topic to consume NGSI-LD entities from"
 #define KAFKA_GROUP_DESC       "Kafka consumer group ID"
+#define KAFKA_ACK_TOPIC_DESC   "Kafka topic for TRoE ingest ACK/NACK feedback (empty = disabled)"
 #define KAFKA_BATCH_SIZE_DESC  "max entities per micro-batch before flush to database"
 #define KAFKA_LINGER_DESC      "max milliseconds to wait for a micro-batch to fill"
 #define KAFKA_THREADS_DESC     "number of Kafka consumer threads"
@@ -470,6 +472,7 @@ PaArgument paArgs[] =
   { "-kafkaBrokerList",       kafkaBrokerList,          "KAFKA_BROKER_LIST",         PaString,  PaOpt,  _i "localhost:9092", PaNL, PaNL,            KAFKA_BROKER_DESC            },
   { "-kafkaTopic",            kafkaTopic,               "KAFKA_TOPIC",               PaString,  PaOpt,  _i "orionld-entities", PaNL, PaNL,          KAFKA_TOPIC_DESC             },
   { "-kafkaGroupId",          kafkaGroupId,             "KAFKA_GROUP_ID",            PaString,  PaOpt,  _i "orionld-consumer", PaNL, PaNL,           KAFKA_GROUP_DESC             },
+  { "-kafkaAckTopic",         kafkaAckTopic,            "KAFKA_ACK_TOPIC",           PaString,  PaOpt,  _i "",               PaNL, PaNL,            KAFKA_ACK_TOPIC_DESC         },
   { "-kafkaBatchSize",        &kafkaBatchSize,          "KAFKA_BATCH_SIZE",          PaInt,     PaOpt,  100,              1,      10000,            KAFKA_BATCH_SIZE_DESC        },
   { "-kafkaBatchLingerMs",    &kafkaBatchLingerMs,      "KAFKA_BATCH_LINGER_MS",     PaInt,     PaOpt,  50,               1,      5000,             KAFKA_LINGER_DESC            },
   { "-kafkaConsumerThreads",  &kafkaConsumerThreads,    "KAFKA_CONSUMER_THREADS",    PaInt,     PaOpt,  2,                1,      32,               KAFKA_THREADS_DESC           },

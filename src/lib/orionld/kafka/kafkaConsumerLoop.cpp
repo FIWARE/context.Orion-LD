@@ -23,6 +23,9 @@
 * Author: Carsten Frey
 */
 #include <sys/time.h>                                          // gettimeofday
+#include <stdlib.h>                                            // malloc, free
+#include <stdio.h>                                             // snprintf
+#include <string.h>                                            // strstr
 #include <librdkafka/rdkafka.h>                                // rd_kafka_*
 
 extern "C"
@@ -30,12 +33,15 @@ extern "C"
 #include "ktrace/kTrace.h"                                     // KT_*
 #include "kjson/KjNode.h"                                      // KjNode
 #include "kjson/kjBuilder.h"                                   // kjArray, kjChildAdd
+#include "kjson/kjRenderSize.h"                                // kjFastRenderSize
+#include "kjson/kjRender.h"                                    // kjFastRender
 }
 
 #include "orionld/common/traceLevels.h"                        // StKafka
-#include "orionld/common/orionldState.h"                       // orionldState
+#include "orionld/common/orionldState.h"                       // orionldState, kafkaAckTopic
 #include "orionld/kafka/kafkaMessageParse.h"                   // kafkaMessageParse
 #include "orionld/kafka/kafkaBatchProcess.h"                   // kafkaBatchProcess
+#include "orionld/kafka/kafkaAckProducer.h"                    // kafkaAckSend, kafkaAckSendParseFail
 #include "rest/mhd.h"                                          // MHD_Connection, MHD_RequestTerminationCode
 #include "orionld/kafka/kafkaConsumerLoop.h"                   // Own interface
 
@@ -75,6 +81,66 @@ static double currentTimeMs(void)
 
 // -----------------------------------------------------------------------------
 //
+// ackOffsetAppend - append this message's {partition, offset} to the (comma-joined) offset buffer.
+// Best-effort and bounded: if the fixed buffer is nearly full the entry is dropped (the offsets are
+// a reference, not the durability record).
+//
+static void ackOffsetAppend(char* buf, int bufSize, int* posP, rd_kafka_message_t* msg)
+{
+  int pos = *posP;
+
+  if (pos >= bufSize - 64)   // leave room; best-effort
+    return;
+
+  int remaining = bufSize - pos;
+  int n = snprintf(&buf[pos], remaining, "%s{\"partition\":%d,\"offset\":%lld}",
+                   (pos > 0) ? "," : "", (int) msg->partition, (long long) msg->offset);
+
+  if ((n > 0) && (n < remaining))
+    *posP = pos + n;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// ackBatchIdAppend - collect the producer-supplied 'x-batch-id' header (deduplicated), if present.
+//
+static void ackBatchIdAppend(char* buf, int bufSize, int* posP, rd_kafka_message_t* msg)
+{
+  rd_kafka_headers_t* hdrs = NULL;
+
+  if (rd_kafka_message_headers(msg, &hdrs) != RD_KAFKA_RESP_ERR_NO_ERROR)
+    return;
+
+  const void* val  = NULL;
+  size_t      size = 0;
+
+  if (rd_kafka_header_get_last(hdrs, "x-batch-id", &val, &size) != RD_KAFKA_RESP_ERR_NO_ERROR)
+    return;
+  if ((val == NULL) || (size == 0))
+    return;
+
+  char token[256];
+  int  tlen = snprintf(token, sizeof(token), "\"%.*s\"", (int) size, (const char*) val);
+  if ((tlen <= 0) || (tlen >= (int) sizeof(token)))
+    return;
+
+  if (strstr(buf, token) != NULL)   // dedup - one id repeats across a batch's messages
+    return;
+
+  int pos       = *posP;
+  int remaining = bufSize - pos;
+  int n = snprintf(&buf[pos], remaining, "%s%s", (pos > 0) ? "," : "", token);
+
+  if ((n > 0) && (n < remaining))
+    *posP = pos + n;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // kafkaConsumerLoop - main loop for a Kafka consumer thread
 //
 // Polls messages from Kafka, accumulates them into micro-batches,
@@ -96,6 +162,13 @@ void* kafkaConsumerLoop(void* vP)
     int      entityCount     = 0;
     double   batchStartTime  = 0;
     bool     batchStarted    = false;
+
+    // Kafka ACK/NACK feedback (only when -kafkaAckTopic is set). Fixed C buffers (comma-joined inner
+    // content, wrapped in [] at send time). Best-effort/bounded: a huge batch may truncate the offset
+    // list - fine, it is a reference, not the durability record.
+    const bool  ackEnabled     = (kafkaAckTopic[0] != 0);
+    char        ackOffsets[2048];   int ackOffsetsPos  = 0;   ackOffsets[0]  = 0;
+    char        ackBatchIds[1024];  int ackBatchIdsPos = 0;   ackBatchIds[0] = 0;
 
     //
     // Accumulate messages into a micro-batch
@@ -147,11 +220,26 @@ void* kafkaConsumerLoop(void* vP)
               batchStartTime = currentTimeMs();
               batchStarted   = true;
             }
+
+            if (ackEnabled)
+            {
+              ackOffsetAppend(ackOffsets, sizeof(ackOffsets), &ackOffsetsPos, msg);
+              ackBatchIdAppend(ackBatchIds, sizeof(ackBatchIds), &ackBatchIdsPos, msg);
+            }
           }
           else
           {
             KT_W("Kafka message discarded (parse failed), %d bytes from partition %d, offset %ld",
                  (int) msg->len, msg->partition, (long) msg->offset);
+
+            // A message that cannot even be parsed is the clearest poison - capture the raw bytes so
+            // it is not silently lost (its offset gets committed by a later successful batch).
+            if (ackEnabled)
+            {
+              char off[80];
+              snprintf(off, sizeof(off), "[{\"partition\":%d,\"offset\":%lld}]", (int) msg->partition, (long long) msg->offset);
+              kafkaAckSendParseFail(off, "[]", (const char*) msg->payload, (int) msg->len);
+            }
           }
         }
         else if (msg->err != RD_KAFKA_RESP_ERR__PARTITION_EOF)
@@ -209,6 +297,18 @@ void* kafkaConsumerLoop(void* vP)
     // history, with no chance of recovery. pgCommands() flags such failures in
     // orionldState.troeError, which we check below before committing.
     //
+    // Render the batch entities to a HEAP buffer NOW - requestCompleted() below frees the kalloc
+    // arena that entityArray lives in, so a NACK afterwards could no longer serialize them. Only when
+    // feedback is enabled (opt-in) and there is something to render.
+    char* ackEntities = NULL;
+    if (ackEnabled && (entityCount > 0))
+    {
+      int renderSize = kjFastRenderSize(entityArray);
+      ackEntities = (char*) malloc(renderSize);
+      if (ackEntities != NULL)
+        kjFastRender(entityArray, ackEntities);
+    }
+
     void* con_cls = NULL;
     requestCompleted(NULL, NULL, &con_cls, MHD_REQUEST_TERMINATED_COMPLETED_OK);
 
@@ -231,7 +331,29 @@ void* kafkaConsumerLoop(void* vP)
       }
       else if (mongoOk)  // MongoDB ok but TRoE write failed (orionldState.troeError == true)
         KT_W("Kafka batch of %d entities: TRoE write failed, offsets NOT committed (batch will be redelivered)", entityCount);
+
+      //
+      // Kafka feedback (Kafka path only): ACK a fully-durable batch, NACK otherwise - carrying the
+      // failed entities so a poison batch is not lost even when a later batch's commit skips its offset.
+      //
+      if (ackEnabled)
+      {
+        char offsetsJson[2100];
+        char batchIdsJson[1100];
+        snprintf(offsetsJson,  sizeof(offsetsJson),  "[%s]", ackOffsets);
+        snprintf(batchIdsJson, sizeof(batchIdsJson), "[%s]", ackBatchIds);
+
+        if (mongoOk && (orionldState.troeError == false))
+          kafkaAckSend(true, entityCount, offsetsJson, batchIdsJson, NULL, NULL);
+        else
+          kafkaAckSend(false, entityCount, offsetsJson, batchIdsJson,
+                       mongoOk ? "TRoE (Postgres) write failed" : "MongoDB upsert failed",
+                       ackEntities);
+      }
     }
+
+    if (ackEntities != NULL)
+      free(ackEntities);
   }
 
   KT_I("Kafka consumer loop exiting");

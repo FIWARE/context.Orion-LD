@@ -645,6 +645,7 @@ extern int               subCacheFlushInterval;    // From orionld.cpp
 extern bool              troe;                     // From orionld.cpp
 extern char              troeHost[256];            // From orionld.cpp
 extern int               troePort;                 // From orionld.cpp
+extern char              kafkaAckTopic[256];       // From orionld.cpp - Kafka ACK/NACK feedback topic (empty = disabled)
 extern char              troeUser[256];            // From orionld.cpp
 extern char              troePwd[256];             // From orionld.cpp
 extern char              troeSslMode[64];          // From orionld.cpp
