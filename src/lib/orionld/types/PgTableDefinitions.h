@@ -37,7 +37,8 @@
   "ts,"                                                     \
   "opMode,"                                                 \
   "id,"                                                     \
-  "type) VALUES "                                           \
+  "type,"                                                   \
+  "correlator) VALUES "                                     \
 
 
 
@@ -66,7 +67,8 @@
   "geoMultiPolygon,"                                        \
   "geoLineString,"                                          \
   "geoMultiLineString,"                                     \
-  "ts) VALUES "
+  "ts,"                                                     \
+  "correlator) VALUES "
 
 
 
@@ -94,6 +96,7 @@
   "geoMultiPolygon,"                                               \
   "geoLineString,"                                                 \
   "geoMultiLineString,"                                            \
-  "ts) VALUES "
+  "ts,"                                                            \
+  "correlator) VALUES "
 
 #endif  // SRC_LIB_ORIONLD_TYPES_PGTABLEDEFINITIONS_H_

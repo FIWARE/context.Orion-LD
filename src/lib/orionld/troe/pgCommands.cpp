@@ -69,7 +69,7 @@ void pgCommands(char* sql[], int commands)
     if (res == NULL)
     {
       orionldState.troeError = true;  // no result - connection failure / OOM
-      KT_E("Database Error (no result from PQexec)");
+      KT_E("Database Error (PQexec returned NULL for SQL: %s)", sql[ix]);
       if (pgTransactionRollback(connectionP->connectionP) == false)
         KT_E("Database Error (pgTransactionRollback failed too)");
       pgConnectionRelease(connectionP);
@@ -77,16 +77,17 @@ void pgCommands(char* sql[], int commands)
     }
 
     //
-    // PQexec returns a non-NULL result also on a failed SQL command (constraint violation,
-    // deadlock, "current transaction is aborted", ...). Such failures leave the connection
-    // CONNECTION_OK, so they must be caught here via the result status - otherwise the batch
-    // would be silently lost and (for the Kafka path) the offset committed regardless.
+    // PQexec returns a non-NULL result even when the SQL statement itself failed (constraint
+    // violation, deadlock, "current transaction is aborted", or a missing column because the TRoE
+    // schema has not been migrated). Such failures leave the connection CONNECTION_OK, so they must
+    // be caught here via the result status - otherwise the batch is silently lost and (for the Kafka
+    // path) the offset committed regardless of the failure.
     //
-    ExecStatusType pgStatus = PQresultStatus(res);
-    if ((pgStatus != PGRES_COMMAND_OK) && (pgStatus != PGRES_TUPLES_OK))
+    ExecStatusType execStatus = PQresultStatus(res);
+    if ((execStatus != PGRES_COMMAND_OK) && (execStatus != PGRES_TUPLES_OK))
     {
       orionldState.troeError = true;
-      KT_E("Database Error (%s): %s", PQresStatus(pgStatus), PQerrorMessage(connectionP->connectionP));
+      KT_E("Database Error (SQL command failed - status: %s, error: %s, SQL: %s)", PQresStatus(execStatus), PQresultErrorMessage(res), sql[ix]);
       PQclear(res);
       if (pgTransactionRollback(connectionP->connectionP) == false)
         KT_E("Database Error (pgTransactionRollback failed too)");
