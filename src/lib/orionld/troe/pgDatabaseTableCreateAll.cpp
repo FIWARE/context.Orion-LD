@@ -54,7 +54,19 @@ bool pgDatabaseTableCreateAll(PGconn* connectionP)
   if (res == NULL)
   {
     pgTransactionRollback(connectionP);
-    KT_RE(false, "Database Error (PQexec(%s): %s)", dbCreationCommand, PQresStatus(PQresultStatus(res)));
+    KT_RE(false, "Database Error (PQexec returned NULL for the TRoE schema creation)");
+  }
+
+  // A failed statement in the multi-command schema (e.g. a GEOGRAPHY column with no postgis extension)
+  // aborts the transaction but leaves a non-NULL result - checked here so it is not swallowed (which left
+  // the broker running with NO TRoE tables and no error logged).
+  ExecStatusType execStatus = PQresultStatus(res);
+  if ((execStatus != PGRES_COMMAND_OK) && (execStatus != PGRES_TUPLES_OK))
+  {
+    KT_E("Database Error (TRoE schema creation failed - status: %s, error: %s)", PQresStatus(execStatus), PQresultErrorMessage(res));
+    PQclear(res);
+    pgTransactionRollback(connectionP);
+    return false;
   }
   PQclear(res);
 
