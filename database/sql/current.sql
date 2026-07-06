@@ -79,4 +79,4 @@ CREATE TABLE IF NOT EXISTS subAttributes (
     CONSTRAINT subattributes_pkey PRIMARY KEY (instanceId,ts));
 
 CREATE INDEX subattributes_attributeid_index ON subAttributes (attrInstanceId,attrDatasetId);
-CREATE INDEX attributes_correlator_index ON attributes (correlator);
+CREATE INDEX attributes_correlator_index ON attributes (correlator) WHERE correlator IS NOT NULL;
