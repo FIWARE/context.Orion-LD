@@ -500,6 +500,7 @@ typedef struct OrionldConnectionState
   //
   bool                    noDbUpdate;            // If nothing changed in DB - troe is not invoked
   bool                    troeError;              // Set by pgCommands() when a TRoE (Postgres) write fails
+  char                    troeErrorString[512];   // The underlying Postgres error text for that failure (surfaced in the Kafka NACK)
   bool                    noTroe;                 // Skip TRoE for this request (e.g. local insert failed in a 207 distOp)
   KjNode*                 duplicateArray;
   KjNode*                 troeIgnoreV[20];

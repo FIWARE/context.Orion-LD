@@ -346,9 +346,28 @@ void* kafkaConsumerLoop(void* vP)
         if (mongoOk && (orionldState.troeError == false))
           kafkaAckSend(true, entityCount, offsetsJson, batchIdsJson, NULL, NULL);
         else
-          kafkaAckSend(false, entityCount, offsetsJson, batchIdsJson,
-                       mongoOk ? "TRoE (Postgres) write failed" : "MongoDB upsert failed",
-                       ackEntities);
+        {
+          // Carry the underlying broker error (the Postgres text captured by pgCommands, or the Mongo
+          // ProblemDetails) so the NACK is actionable instead of a bare category.
+          char nackError[600];
+
+          if (mongoOk)  // MongoDB ok, TRoE (Postgres) write failed
+          {
+            if (orionldState.troeErrorString[0] != 0)
+              snprintf(nackError, sizeof(nackError), "TRoE (Postgres) write failed: %s", orionldState.troeErrorString);
+            else
+              snprintf(nackError, sizeof(nackError), "TRoE (Postgres) write failed");
+          }
+          else  // MongoDB upsert failed
+          {
+            if ((orionldState.pd.detail != NULL) && (orionldState.pd.detail[0] != 0))
+              snprintf(nackError, sizeof(nackError), "MongoDB upsert failed: %s", orionldState.pd.detail);
+            else
+              snprintf(nackError, sizeof(nackError), "MongoDB upsert failed");
+          }
+
+          kafkaAckSend(false, entityCount, offsetsJson, batchIdsJson, nackError, ackEntities);
+        }
       }
     }
 

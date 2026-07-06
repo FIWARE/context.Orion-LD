@@ -38,6 +38,28 @@ extern "C"
 #include "orionld/troe/pgTransactionCommit.h"                  // pgTransactionCommit
 #include "orionld/troe/pgCommands.h"                           // Own interface
 
+#include <stdio.h>                                             // snprintf
+#include <string.h>                                            // strlen
+
+
+
+// -----------------------------------------------------------------------------
+//
+// troeErrorStringSet - stash the underlying Postgres error text (trimmed) so the Kafka NACK can carry it
+//
+static void troeErrorStringSet(const char* text)
+{
+  if ((text == NULL) || (text[0] == 0))
+    return;
+
+  snprintf(orionldState.troeErrorString, sizeof(orionldState.troeErrorString), "%s", text);
+
+  // libpq error strings end in a newline; trim trailing whitespace so the NACK reads cleanly
+  int last = (int) strlen(orionldState.troeErrorString) - 1;
+  while ((last >= 0) && ((orionldState.troeErrorString[last] == '\n') || (orionldState.troeErrorString[last] == '\r') || (orionldState.troeErrorString[last] == ' ')))
+    orionldState.troeErrorString[last--] = 0;
+}
+
 
 
 // -----------------------------------------------------------------------------
@@ -51,12 +73,14 @@ void pgCommands(char* sql[], int commands)
   if ((connectionP == NULL) || (connectionP->connectionP == NULL))
   {
     orionldState.troeError = true;  // make the TRoE write failure observable to the caller
+    troeErrorStringSet("no connection to Postgres");
     KT_RVE("no connection to postgres");
   }
 
   if (pgTransactionBegin(connectionP->connectionP) != true)
   {
     orionldState.troeError = true;  // make the TRoE write failure observable to the caller
+    troeErrorStringSet("could not begin the transaction");
     pgConnectionRelease(connectionP);
     KT_RVE("pgTransactionBegin failed");
   }
@@ -69,6 +93,7 @@ void pgCommands(char* sql[], int commands)
     if (res == NULL)
     {
       orionldState.troeError = true;  // no result - connection failure / OOM
+      troeErrorStringSet(PQerrorMessage(connectionP->connectionP));
       KT_E("Database Error (PQexec returned NULL for SQL: %s)", sql[ix]);
       if (pgTransactionRollback(connectionP->connectionP) == false)
         KT_E("Database Error (pgTransactionRollback failed too)");
@@ -87,6 +112,7 @@ void pgCommands(char* sql[], int commands)
     if ((execStatus != PGRES_COMMAND_OK) && (execStatus != PGRES_TUPLES_OK))
     {
       orionldState.troeError = true;
+      troeErrorStringSet(PQresultErrorMessage(res));
       KT_E("Database Error (SQL command failed - status: %s, error: %s, SQL: %s)", PQresStatus(execStatus), PQresultErrorMessage(res), sql[ix]);
       PQclear(res);
       if (pgTransactionRollback(connectionP->connectionP) == false)
@@ -99,7 +125,8 @@ void pgCommands(char* sql[], int commands)
     if (PQstatus(connectionP->connectionP) != CONNECTION_OK)
     {
       orionldState.troeError = true;  // connection dropped mid-batch
-      KT_E("SQL[%p]: bad connection: %d", connectionP->connectionP, PQstatus(connectionP->connectionP));  // FIXME: string! (last error?)
+      troeErrorStringSet(PQerrorMessage(connectionP->connectionP));
+      KT_E("SQL[%p]: bad connection: %d (%s)", connectionP->connectionP, PQstatus(connectionP->connectionP), PQerrorMessage(connectionP->connectionP));
       if (pgTransactionRollback(connectionP->connectionP) == false)
         KT_E("Database Error (pgTransactionRollback failed too)");
       pgConnectionRelease(connectionP);
@@ -110,6 +137,7 @@ void pgCommands(char* sql[], int commands)
   if (pgTransactionCommit(connectionP->connectionP) != true)
   {
     orionldState.troeError = true;  // the COMMIT itself failed - the batch is not durable
+    troeErrorStringSet("the transaction commit failed");
     KT_E("pgTransactionCommit failed");
   }
 
