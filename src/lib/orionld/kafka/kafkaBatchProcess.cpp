@@ -54,6 +54,7 @@ extern "C"
 #include "orionld/notifications/previousValues.h"              // previousValues
 #include "orionld/service/serviceLookupByServiceRoutine.h"     // serviceLookupByServiceRoutine
 #include "orionld/serviceRoutines/orionldPostBatchUpsert.h"    // orionldPostBatchUpsert
+#include "orionld/types/OrionldMimeType.h"                     // MT_JSONLD, MT_JSON
 #include "orionld/kafka/kafkaBatchProcess.h"                   // Own interface
 
 
@@ -84,6 +85,17 @@ bool kafkaBatchProcess(KjNode* entityArray)
 
   // Use update semantics (append attributes to existing entities)
   orionldState.uriParamOptions.update = true;
+
+  // Content-Type: NGSI-LD over Kafka carries its @context inline in each entity (application/ld+json).
+  // The REST path sets orionldState.in.contentType from the HTTP Content-Type, which makes
+  // batchEntitiesFinalCheck() resolve every entity's @context and expand its terms against it. The Kafka
+  // path never set it, so contentType stayed at the core-context default and the inline @context was
+  // ignored (terms expanded against the core/default context). Mirror REST: when the batch carries an
+  // inline @context, flag it as JSON-LD so the existing per-entity @context handling kicks in.
+  KjNode* firstEntityP       = (entityArray != NULL) ? entityArray->value.firstChildP : NULL;
+  orionldState.in.contentType = ((firstEntityP != NULL) && (kjLookup(firstEntityP, "@context") != NULL))
+                                ? MT_JSONLD
+                                : MT_JSON;
 
   // Look up the batch upsert service to link TRoE routine
   orionldState.serviceP = serviceLookupByServiceRoutine(orionldPostBatchUpsert, HTTP_POST);
