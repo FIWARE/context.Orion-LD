@@ -112,6 +112,9 @@ PgConnection* pgConnectionGet(const char* db)
         // if still no connection
         if (pgStatus != CONNECTION_OK)
         {
+          // Close the libpq connection before freeing the wrapper: PQreset leaves the PGconn
+          // allocated on failure, so free()ing the wrapper alone leaked the socket + memory.
+          PQfinish(cP->connectionP);
           // we free this pointer that it can be used in the next call of pgConnectionGet
           free(poolP->connectionV[ix]);
           poolP->connectionV[ix] = NULL;

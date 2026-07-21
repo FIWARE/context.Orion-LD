@@ -64,6 +64,30 @@ static void troeErrorStringSet(const char* text)
 
 // -----------------------------------------------------------------------------
 //
+// pgConnectionInvalidate - drop a dead PGconn so the pool reconnects fresh next time
+//
+// A *connection* failure (PQexec returned NULL, or PQstatus != CONNECTION_OK) leaves a dead PGconn in
+// the pool that PQstatus may still report as CONNECTION_OK on the next borrow - so it is handed out
+// again and fails again. Finish it and NULL the slot's connection here; the next pgConnectionGet then
+// reconnects via pgConnect's retry loop. Without this a transient Postgres outage becomes a PERMANENT
+// stall (the redelivered Kafka batch keeps hitting the same dead connection) until the broker restarts.
+//
+// NOT called for a rejected SQL statement (constraint violation, aborted transaction, missing column):
+// there the connection is still healthy and must be kept.
+//
+static void pgConnectionInvalidate(PgConnection* connectionP)
+{
+  if (connectionP->connectionP != NULL)
+  {
+    PQfinish(connectionP->connectionP);
+    connectionP->connectionP = NULL;
+  }
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // pgCommands -
 //
 void pgCommands(char* sql[], int commands)
@@ -97,6 +121,7 @@ void pgCommands(char* sql[], int commands)
       KT_E("Database Error (PQexec returned NULL for SQL: %s)", sql[ix]);
       if (pgTransactionRollback(connectionP->connectionP) == false)
         KT_E("Database Error (pgTransactionRollback failed too)");
+      pgConnectionInvalidate(connectionP);  // dead connection - drop it so the next borrow reconnects
       pgConnectionRelease(connectionP);
       return;
     }
@@ -129,6 +154,7 @@ void pgCommands(char* sql[], int commands)
       KT_E("SQL[%p]: bad connection: %d (%s)", connectionP->connectionP, PQstatus(connectionP->connectionP), PQerrorMessage(connectionP->connectionP));
       if (pgTransactionRollback(connectionP->connectionP) == false)
         KT_E("Database Error (pgTransactionRollback failed too)");
+      pgConnectionInvalidate(connectionP);  // dead connection - drop it so the next borrow reconnects
       pgConnectionRelease(connectionP);
       return;
     }
