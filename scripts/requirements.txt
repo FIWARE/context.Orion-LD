@@ -21,7 +21,18 @@
 
 # python3.8 scripts, use virtualenv -ppython3.8 .env
 # and activate the virtual environment
-Flask==2.0.3
-Werkzeug>=2.0,<3.0
-pyOpenSSL==22.0.0
+# Flask 2.0.3 does not run on Python 3.12+: it calls pkgutil.get_loader(), which
+# was deprecated in 3.12 and REMOVED in 3.14, so Flask(__name__) raises and
+# accumulator-server.py cannot start at all.
+Flask>=3.0
+# Werkzeug <3.0 cannot be combined with Flask 3.
+Werkzeug>=3.0
+# pyOpenSSL removed: nothing imports it. The only reference in the tree is a
+# commented-out SSL.Context() in accumulator-server.py - the live TLS path hands
+# Flask an ssl_context=(cert, key) tuple, which uses the stdlib ssl module.
+# It was also the only thing pulling in 'cryptography', and pyOpenSSL 22.0.0
+# against a current cryptography fails on import with
+# "module 'lib' has no attribute 'GEN_EMAIL'" - which made the whole
+# 'pip install -r' fail and left new venvs EMPTY. That is why a fresh clone lost
+# every MQTT test: no paho.
 paho-mqtt==1.5.1
