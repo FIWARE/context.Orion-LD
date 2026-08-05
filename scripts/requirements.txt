@@ -23,10 +23,15 @@
 # and activate the virtual environment
 # Flask 2.0.3 does not run on Python 3.12+: it calls pkgutil.get_loader(), which
 # was deprecated in 3.12 and REMOVED in 3.14, so Flask(__name__) raises and
-# accumulator-server.py cannot start at all.
-Flask>=3.0
-# Werkzeug <3.0 cannot be combined with Flask 3.
-Werkzeug>=3.0
+# accumulator-server.py cannot start at all. 2.3 is the first release without
+# that call.
+#
+# A FLOOR, not a pin, on purpose: the functional tests run both locally (current
+# Python) and inside the CI test image (older Python), so let pip resolve the
+# newest Flask each interpreter supports instead of forcing one version onto
+# both. On Python 3.14 this resolves to 3.1.x.
+Flask>=2.3
+Werkzeug>=2.3
 # pyOpenSSL removed: nothing imports it. The only reference in the tree is a
 # commented-out SSL.Context() in accumulator-server.py - the live TLS path hands
 # Flask an ssl_context=(cert, key) tuple, which uses the stdlib ssl module.
