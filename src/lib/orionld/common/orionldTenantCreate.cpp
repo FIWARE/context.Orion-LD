@@ -34,6 +34,7 @@ extern "C"
 #include "orionld/mongoc/mongocIdIndexCreate.h"                // mongocIdIndexCreate
 #include "orionld/troe/pgDatabasePrepare.h"                    // pgDatabasePrepare
 #include "orionld/regCache/regCacheCreate.h"                   // regCacheCreate
+#include "orionld/subCache/subCacheCreate.h"                   // subCacheCreate
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/common/tenantList.h"                         // tenantList
 #include "orionld/common/orionldTenantCreate.h"                // Own interface
@@ -83,7 +84,15 @@ OrionldTenant* orionldTenantCreate(const char* tenantName, bool scanRegs, bool r
   }
 
   if (regCache == true)
+  {
     tenantP->regCache = regCacheCreate(tenantP, scanRegs);
+
+    //
+    // The subscription cache is created for the same tenants, and populated
+    // under the same condition, as the registration cache.
+    //
+    tenantP->subCache = subCacheCreate(tenantP, scanRegs);
+  }
 
   return tenantP;
 }

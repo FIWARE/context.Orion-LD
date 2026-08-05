@@ -29,6 +29,8 @@ extern "C"
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
 
+#include "orionld/types/QNode.h"                                 // QNode
+#include "orionld/types/OrionldRenderFormat.h"                   // OrionldRenderFormat
 #include "orionld/types/OrionldTenant.h"                         // OrionldTenant
 #include "orionld/types/SubCache.h"                              // SubCache
 #include "orionld/common/orionldState.h"                         // orionldState
@@ -36,29 +38,58 @@ extern "C"
 #include "orionld/mongoc/mongocSubscriptionsIter.h"              // mongocSubscriptionsIter
 #include "orionld/dbModel/dbModelToApiSubscription.h"            // dbModelToApiSubscription
 #include "orionld/subCache/subCacheItemAdd.h"                    // subCacheItemAdd
+#include "orionld/subCache/apiModelToCacheSubscription.h"        // apiModelToCacheSubscription
 #include "orionld/subCache/subCacheCreate.h"                     // Own interface
 
 
 
-extern void apiModelToCacheSubscription(KjNode* apiSubscriptionP);
 // -----------------------------------------------------------------------------
 //
 // subIterFunc -
 //
 int subIterFunc(SubCache* scP, KjNode* dbSubP)
 {
-  // Convert DB Sub to API Sub
-  if (dbModelToApiSubscription(dbSubP, true, true) == false)
-    KT_RE(-1, "dbModelToApiSubscription failed");
+  //
+  // Convert DB Sub to API Sub.
+  //
+  // dbModelToApiSubscription hands back the pre-parsed pieces it had to look at
+  // anyway - the q tree, the geo coordinates, the render format, ... Those are
+  // exactly the "compiled" state the cache item wants, but SubCacheItem has no
+  // home for them yet, so for now they are taken and dropped.
+  // TODO: store these in the SubCacheItem (see apiModelToCacheSubscription).
+  //
+  QNode*               qNodeP       = NULL;
+  KjNode*              coordinatesP = NULL;
+  KjNode*              contextNodeP = NULL;
+  KjNode*              showChangesP = NULL;
+  KjNode*              sysAttrsP    = NULL;
+  OrionldRenderFormat  renderFormat = RF_NORMALIZED;
+  double               timeInterval = 0;
 
-  // The DB Subscription 'dbSubP' is now in API Subscription format (after calling dbModelToApiSubscription)
-  KjNode* apiSubP = dbSubP;
+  KjNode* apiSubP = dbModelToApiSubscription(dbSubP,
+                                             scP->tenantP->tenant,
+                                             true,
+                                             &qNodeP,
+                                             &coordinatesP,
+                                             &contextNodeP,
+                                             &showChangesP,
+                                             &sysAttrsP,
+                                             &renderFormat,
+                                             &timeInterval);
+  if (apiSubP == NULL)
+    KT_RE(-1, "dbModelToApiSubscription failed");
 
   // If a jsonldContext is given for the subscription, make sure it's valid
   OrionldContext* jsonldContextP = NULL;
-  KjNode*         jsonldContextNodeP = kjLookup(apiSubscriptionP, "jsonldContext");
+  KjNode*         jsonldContextNodeP = kjLookup(apiSubP, "jsonldContext");
   if (jsonldContextNodeP != NULL)
   {
+    //
+    // The @context was downloaded and persisted when the subscription was
+    // created (a subscription whose context cannot be fetched is never
+    // created), and the context cache is loaded from the database before this
+    // runs - so this resolves from the cache and does not go to the network.
+    //
     jsonldContextP = orionldContextFromUrl(jsonldContextNodeP->value.s, NULL);
 
     if (jsonldContextP == NULL)

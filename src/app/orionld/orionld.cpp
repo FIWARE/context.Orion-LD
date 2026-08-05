@@ -119,6 +119,7 @@ extern "C"
 #include "orionld/db/dbInit.h"                                // dbInit
 #include "orionld/mqtt/mqttRelease.h"                         // mqttRelease
 #include "orionld/regCache/regCacheInit.h"                    // regCacheInit
+#include "orionld/subCache/subCachesInit.h"                // subCachesInit
 #include "orionld/regCache/regCacheCreate.h"                  // regCacheCreate
 #include "orionld/regCache/regCacheRelease.h"                 // regCacheRelease
 #include "orionld/pernot/pernotSubCacheInit.h"                // pernotSubCacheInit
@@ -1338,6 +1339,18 @@ int main(int argC, char* argV[])
     pernotSubCacheInit();
 
   orionldServiceInit(restServiceVV, 9);
+
+  //
+  // The new per-tenant subscription cache. AFTER orionldServiceInit, which is
+  // where the @context cache is loaded from the database: caching a
+  // subscription resolves its @context, and a miss would DOWNLOAD, blocking
+  // startup before the port is open.
+  //
+  // Populated but not yet consulted - the legacy sub cache is still in use.
+  //
+  subCachesInit();
+
+
 
   if (mongocOnly == false)
   {

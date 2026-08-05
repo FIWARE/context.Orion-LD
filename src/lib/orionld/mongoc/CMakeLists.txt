@@ -70,6 +70,7 @@ SET (SOURCES
     mongocRegistrationDelete.cpp
     mongocRegistrationReplace.cpp
     mongocRegistrationsIter.cpp
+    mongocSubscriptionsIter.cpp
     mongocAuxAttributesFilter.cpp
     mongocWriteLog.cpp
     mongocAttributeReplace.cpp
