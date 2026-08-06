@@ -220,6 +220,7 @@ SET (ORION_LIBS
     orionld_context
     orionld_contextCache
     orionld_regCache
+    orionld_subCache
     orionld_notifications
     orionld_db
     orionld_mongoc
@@ -403,6 +404,7 @@ if (error EQUAL 0)
   ADD_SUBDIRECTORY(src/lib/orionld/context)
   ADD_SUBDIRECTORY(src/lib/orionld/contextCache)
   ADD_SUBDIRECTORY(src/lib/orionld/regCache)
+  ADD_SUBDIRECTORY(src/lib/orionld/subCache)
   ADD_SUBDIRECTORY(src/lib/orionld/kjTree)
   ADD_SUBDIRECTORY(src/lib/orionld/db)
   ADD_SUBDIRECTORY(src/lib/orionld/dbModel)
