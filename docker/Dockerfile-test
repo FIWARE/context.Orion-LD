@@ -10,6 +10,21 @@ WORKDIR ${PATH_TO_SRC}
 
 ENV LD_LIBRARY_PATH=/opt/paho.mqtt.c/build/output:/usr/local/lib64:/opt/prometheus-client-c/prom/build:/opt/prometheus-client-c/promhttp/build:/usr/local/lib
 # RUN echo LD_LIBRARY_PATH: $LD_LIBRARY_PATH
+
+#
+# The interpreter the functional test suite builds its virtual environment with.
+# ubi8's own python3 is 3.6.8 (end-of-life since December 2021), too old for a
+# current Flask, so the suite is pointed at the python3.12 from the AppStream.
+# testHarness.sh falls back to python3 when PYTHON is unset, which is what a
+# developer machine wants.
+#
+# Note that python2 is still installed below, and that bare 'python' still
+# refers to it: gmock 1.5.0 builds itself with gtest/scripts/fuse_gtest_files.py,
+# which is python2 source and dies with a SyntaxError on anything newer. That
+# is the only remaining python2 user in the image - the test suite no longer
+# has any.
+#
+ENV PYTHON=python3.12
 COPY docker/mongo.repo /etc/yum.repos.d/mongo.repo
 
 RUN  dnf config-manager --disable pgdg13 || true && \
@@ -22,14 +37,9 @@ RUN  dnf config-manager --disable pgdg13 || true && \
      yum install -y mongodb-database-tools mongodb-org-database-tools-extra \
                  mongodb-org-tools mongodb-org-shell mongodb-org-server \
                  mongodb-org-mongos mongodb-org && \
-     yum install -y python3 python2 virtualenv && \
+     yum install -y python3 python3.12 python3.12-pip python2 && \
      ln --force -s /usr/bin/python2 /usr/bin/python && \
      yum install -y openssl-devel libffi-devel netcat bc diffutils hostname procps gmock-devel gtest && \
-     wget https://bootstrap.pypa.io/pip/2.7/get-pip.py && \
-     python2.7 get-pip.py && \
-     pip2.7 install Flask && \
-     pip2.7 install paho-mqtt && \
-     pip2.7 install pyopenssl && \
      wget https://src.fedoraproject.org/repo/pkgs/gmock/gmock-1.5.0.tar.bz2/d738cfee341ad10ce0d7a0cc4209dd5e/gmock-1.5.0.tar.bz2 && \
      tar xfvj gmock-1.5.0.tar.bz2 && \
      cd gmock-1.5.0 && \

@@ -1,0 +1,19 @@
+#
+# The docker images are built with "COPY . /opt/orion", so anything left in a
+# working copy ends up inside the image unless it is listed here.
+#
+# .venv is the one that actually breaks things: the functional test suite
+# creates it on the host, with bin/python symlinked to the HOST interpreter.
+# Copied into the image those symlinks point at a completely different Python,
+# and testHarness.sh - which only checks whether the directory exists - then
+# skips creating a working one. The result is a virtual environment whose pip
+# and python disagree, and every Flask/paho test fails on ModuleNotFoundError.
+#
+.venv
+
+#
+# Build output. Never useful inside the image, and copying it in is slow.
+#
+BUILD_DEBUG
+BUILD_RELEASE
+BUILD_COVERAGE
