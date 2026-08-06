@@ -1,27 +1,30 @@
+# Requirements for the functional test suite.
 #
-# Copyright 2022 FIWARE Foundation e.V.
-# 
-# This file is part of Orion-LD Context Broker.
-#   
-# Orion-LD Context Broker is free software: you can redistribute it and/or
-# modify it under the terms of the GNU Affero General Public License as
-# published by the Free Software Foundation, either version 3 of the 
-# License, or (at your option) any later version.
+# These have to install on TWO very different interpreters:
 #
-# Orion-LD Context Broker is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
-# General Public License for more details.
-# 
-# You should have received a copy of the GNU Affero General Public License
-# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
-# 
-# For those usages not covered by this license please contact with
-# orionld at fiware dot org
+#   - the CI test image (fiware/orion-ld-base), which ships Python 3.6.8
+#   - a developer machine, which today means Python 3.12 / 3.13 / 3.14
+#
+# so the Flask/Werkzeug lines are split with environment markers rather than
+# pinned to one version. A single pin cannot satisfy both: Flask 2.0.3 calls
+# pkgutil.get_loader(), deprecated in Python 3.12 and REMOVED in 3.14, so
+# Flask(__name__) raises and accumulator-server.py cannot start at all; while
+# Flask 2.3+ requires Python 3.8+ and simply does not exist for 3.6.
+#
+# NOTE: Python 3.6 went end-of-life in December 2021. Refreshing the base image
+#       to a supported Python would let all of this collapse back to one line.
+#
+Flask==2.0.3;   python_version <  "3.8"
+Flask>=2.3;     python_version >= "3.8"
+Werkzeug<3.0;   python_version <  "3.8"
+Werkzeug>=2.3;  python_version >= "3.8"
 
-# python3.8 scripts, use virtualenv -ppython3.8 .env
-# and activate the virtual environment
-Flask==2.0.3
-Werkzeug>=2.0,<3.0
-pyOpenSSL==22.0.0
+# pyOpenSSL is NOT here on purpose: nothing imports it. The only reference in
+# the tree is a commented-out SSL.Context() in accumulator-server.py - the live
+# TLS path hands Flask an ssl_context=(cert, key) tuple, which uses the stdlib
+# ssl module. It was also the only thing pulling in 'cryptography', and
+# pyOpenSSL 22.0.0 against a current cryptography fails on import with
+# "module 'lib' has no attribute 'GEN_EMAIL'" - which failed the whole
+# 'pip install -r' and left new venvs EMPTY, taking every MQTT test with it.
+
 paho-mqtt==1.5.1
