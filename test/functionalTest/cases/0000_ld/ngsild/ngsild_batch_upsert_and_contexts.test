@@ -740,13 +740,13 @@ Date: REGEX(.*)
       "type": "hash-table",
       "origin": "REGEX((Downloaded|FileCached))",
       "compactions": 5,
-      "expansions": 352,
+      "expansions": 410,
       "hash-table": {
         "instanceId": "https://uri.etsi.org/ngsi-ld/instanceId",
+        "aggrParams": "https://uri.etsi.org/ngsi-ld/aggrParams",
         "notifiedAt": "https://uri.etsi.org/ngsi-ld/notifiedAt",
         "linkedMaps": "https://uri.etsi.org/ngsi-ld/linkedMaps",
-        "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt",
-        "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList"
+        "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
       }
     }
   },
@@ -1010,13 +1010,13 @@ Date: REGEX(.*)
       "type": "hash-table",
       "origin": "REGEX((Downloaded|FileCached))",
       "compactions": 10,
-      "expansions": 357,
+      "expansions": 415,
       "hash-table": {
         "instanceId": "https://uri.etsi.org/ngsi-ld/instanceId",
+        "aggrParams": "https://uri.etsi.org/ngsi-ld/aggrParams",
         "notifiedAt": "https://uri.etsi.org/ngsi-ld/notifiedAt",
         "linkedMaps": "https://uri.etsi.org/ngsi-ld/linkedMaps",
-        "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt",
-        "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList"
+        "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
       }
     }
   },

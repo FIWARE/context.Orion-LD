@@ -46,7 +46,8 @@ extern "C"
 #define ORIONLD_CORE_CONTEXT_URL_V1_6       (char*) "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.6.jsonld"
 #define ORIONLD_CORE_CONTEXT_URL_V1_7       (char*) "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.7.jsonld"
 #define ORIONLD_CORE_CONTEXT_URL_V1_8       (char*) "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld"
-#define ORIONLD_CORE_CONTEXT_URL_DEFAULT    (char*) "v1.8"
+#define ORIONLD_CORE_CONTEXT_URL_V1_9       (char*) "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld"
+#define ORIONLD_CORE_CONTEXT_URL_DEFAULT    (char*) "v1.9"
 
 
 
