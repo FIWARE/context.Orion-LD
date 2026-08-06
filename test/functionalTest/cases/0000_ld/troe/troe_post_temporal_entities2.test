@@ -77,7 +77,7 @@ payload='{
       "datasetId": "urn:ngsi-ld:Vehicle:12345-fuel"
     }
   ],
-  "@context": [ "https://forge.etsi.org/rep/cim/ngsi-ld-test-suite/-/raw/develop/resources/jsonld-contexts/ngsi-ld-test-suite-compound.jsonld" ]
+  "@context": [ "http://localhost:7080/jsonldContexts/ngsi-ld-test-suite-compound.jsonld" ]
 }'
 orionCurl --url /ngsi-ld/v1/temporal/entities --payload "$payload" --in jsonld
 echo
