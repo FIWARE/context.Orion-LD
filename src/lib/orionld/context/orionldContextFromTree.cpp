@@ -222,8 +222,16 @@ OrionldContext* orionldContextFromTree(char* url, OrionldContextOrigin origin, c
         // later cached - the very same relative reference under two different base URLs points at
         // two different @contexts
         //
-        itemUrl        = contextRefResolve(baseUrl, ctxItemP->value.s);
-        cachedContextP = orionldContextCacheLookup(itemUrl);
+        itemUrl = contextRefResolve(baseUrl, ctxItemP->value.s);
+
+        //
+        // The resolved form replaces the reference in the tree, so that everything downstream - the
+        // recursive call below and the download it ends up doing - sees the absolute URL.
+        // Only ever a change when there IS a base, i.e. for a @context of our own that was downloaded
+        // or is hosted here; an inline @context in a request payload has no base and is left alone.
+        //
+        ctxItemP->value.s = itemUrl;
+        cachedContextP    = orionldContextCacheLookup(itemUrl);
       }
       else if ((ctxItemP->type != KjObject) && (ctxItemP->type != KjArray))
       {
@@ -285,10 +293,10 @@ OrionldContext* orionldContextFromTree(char* url, OrionldContextOrigin origin, c
         contextP->context.array.items     = 1;
         contextP->context.array.vector    = (OrionldContext**) kaAlloc(&kalloc, 1 * sizeof(OrionldContext*));
         //
-        // 'url' is used, not contextTreeP->value.s - they are the same string, except when the caller
-        // resolved a relative reference, and then it is the resolved one that must be downloaded
+        // NOT 'url' - 'url' is the URL of THIS @context, while contextTreeP->value.s is the reference
+        // it points to, and for a @context that is a plain string those two are different things
         //
-        contextP->context.array.vector[0] = orionldContextFromUrl(url, NULL);
+        contextP->context.array.vector[0] = orionldContextFromUrl(contextTreeP->value.s, NULL);
 
         if (contextP->context.array.vector[0] == NULL)
         {
