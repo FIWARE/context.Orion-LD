@@ -74,7 +74,7 @@ payload='{
     }
   ],
   "@context": [
-    "https://forge.etsi.org/rep/cim/ngsi-ld-test-suite/-/raw/develop/resources/jsonld-contexts/ngsi-ld-test-suite-compound.jsonld"
+    "http://localhost:7080/jsonldContexts/ngsi-ld-test-suite-compound.jsonld"
   ]
 }'
 orionCurl --url /ngsi-ld/v1/entities --payload "$payload" --in application/ld+json
@@ -94,7 +94,7 @@ payload='{
     }
   },
   "@context": [
-    "https://forge.etsi.org/rep/cim/ngsi-ld-test-suite/-/raw/develop/resources/jsonld-contexts/ngsi-ld-test-suite-compound.jsonld"
+    "http://localhost:7080/jsonldContexts/ngsi-ld-test-suite-compound.jsonld"
   ]
 }'
 orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:Vehicle:4577314217839414/attrs -X PATCH --payload "$payload" --in application/ld+json
