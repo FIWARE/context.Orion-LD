@@ -1,0 +1,20 @@
+{
+    "@context": {
+        "Building": "https://ngsi-ld-test-suite/context#Building",
+        "Vehicle": "https://ngsi-ld-test-suite/context#Vehicle",
+        "OffStreetParking": "https://ngsi-ld-test-suite/context#OffStreetParking",
+        "airQualityLevel": "https://ngsi-ld-test-suite/context#airQualityLevel",
+        "almostFull": "https://ngsi-ld-test-suite/context#almostFull",
+        "availableSpotsNumber": "https://ngsi-ld-test-suite/context#availableSpotsNumber",
+        "brandName": "https://ngsi-ld-test-suite/context#brandName",
+        "fuelLevel": "https://ngsi-ld-test-suite/context#fuelLevel",
+        "isParked": "https://ngsi-ld-test-suite/context#isParked",
+        "name": "https://ngsi-ld-test-suite/context#name",
+        "reliability": "https://ngsi-ld-test-suite/context#reliability",
+        "source": "https://ngsi-ld-test-suite/context#source",
+        "speed": "https://ngsi-ld-test-suite/context#speed",
+        "totalSpotsNumber": "https://ngsi-ld-test-suite/context#totalSpotsNumber",
+        "subCategory": "https://ngsi-ld-test-suite/context#subCategory"
+    }
+}
+

@@ -22,6 +22,9 @@
 *
 * Author: Ken Zangelin
 */
+#include <string.h>                                              // strstr, strrchr, strlen, memcpy
+#include <ctype.h>                                               // isalpha, isalnum
+
 extern "C"
 {
 #include "ktrace/kTrace.h"                                       // KT_*
@@ -42,6 +45,123 @@ extern "C"
 #include "orionld/contextCache/orionldContextCacheLookup.h"      // orionldContextCacheLookup
 #include "orionld/contextCache/orionldContextCacheInsert.h"      // orionldContextCacheInsert
 #include "orionld/context/orionldContextFromTree.h"              // Own interface
+
+
+
+// -----------------------------------------------------------------------------
+//
+// urlIsAbsolute - does the IRI reference start with a scheme?
+//
+// RFC 3986 § 3.1: scheme = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." ) ":"
+//
+static bool urlIsAbsolute(const char* ref)
+{
+  if (isalpha(*ref) == 0)
+    return false;
+
+  for (const char* sP = &ref[1]; *sP != 0; sP++)
+  {
+    if (*sP == ':')
+      return true;
+
+    if ((isalnum(*sP) == 0) && (*sP != '+') && (*sP != '-') && (*sP != '.'))
+      return false;
+  }
+
+  return false;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// contextRefResolve - resolve a relative @context reference against its base URL
+//
+// A string inside an @context array is an IRI REFERENCE, not necessarily an absolute URL, and
+// JSON-LD 1.1 resolves it against the base IRI (RFC 3986 § 5). For a downloaded @context the base
+// is the URL that very @context was downloaded from, so:
+//
+//   base:   https://a.b/x/y/compound.jsonld
+//   ref:    sub.jsonld
+//   result: https://a.b/x/y/sub.jsonld
+//
+// 'ref' is returned untouched if it is already absolute, or if there is no base to resolve against
+// (an inline @context in a request payload has no URL of its own).
+//
+static char* contextRefResolve(const char* base, char* ref)
+{
+  if ((base == NULL) || (ref == NULL) || (*ref == 0) || (urlIsAbsolute(ref) == true))
+    return ref;
+
+  const char* authorityP = strstr(base, "://");
+
+  if (authorityP == NULL)  // Not a URL we know how to take apart - leave the reference alone
+    return ref;
+
+  authorityP = &authorityP[3];
+
+  const char* pathP = strchr(authorityP, '/');   // Start of the path inside 'base'
+  const char* endP;                              // What to keep of 'base'
+
+  if (ref[0] == '/')
+  {
+    if (ref[1] == '/')                           // "//host/path" - keep only "scheme:"
+      endP = &strstr(base, "://")[1];
+    else                                         // "/path" - keep "scheme://authority"
+      endP = (pathP != NULL)? pathP : &base[strlen(base)];
+  }
+  else                                           // Relative path - keep everything up to the last '/'
+  {
+    const char* slashP = (pathP != NULL)? strrchr(pathP, '/') : NULL;
+
+    if (slashP == NULL)                          // No path at all in base - "scheme://authority" + "/"
+      endP = &base[strlen(base)];
+    else
+      endP = &slashP[1];
+
+    //
+    // Collapse the dot-segments of the reference (RFC 3986 § 5.2.4), the only two that occur in
+    // practice: "./" is simply dropped, "../" drops one directory off the base.
+    //
+    while (true)
+    {
+      if (strncmp(ref, "./", 2) == 0)
+        ref = &ref[2];
+      else if (strncmp(ref, "../", 3) == 0)
+      {
+        if ((slashP == NULL) || (endP <= &pathP[1]))  // Cannot climb above the root
+          break;
+
+        const char* upP = endP - 1;                   // Step onto the trailing '/' ...
+
+        while ((upP > pathP) && (upP[-1] != '/'))     // ... and back to the one before it
+          upP -= 1;
+
+        endP = upP;
+        ref  = &ref[3];
+      }
+      else
+        break;
+    }
+  }
+
+  int   baseLen = endP - base;
+  int   refLen  = strlen(ref);
+  char* urlP    = (char*) kaAlloc(&kalloc, baseLen + refLen + 2);
+
+  if (urlP == NULL)
+    return ref;
+
+  memcpy(urlP, base, baseLen);
+
+  if ((baseLen > 0) && (urlP[baseLen - 1] != '/') && (ref[0] != '/'))
+    urlP[baseLen++] = '/';
+
+  memcpy(&urlP[baseLen], ref, refLen);
+  urlP[baseLen + refLen] = 0;
+
+  return urlP;
+}
 
 
 
@@ -75,7 +195,10 @@ OrionldContext* orionldContextFromTree(char* url, OrionldContextOrigin origin, c
 
     //
     // Once created, the parameter 'url' needs to be "invalidated", as it's already been used - to avoid to use the same URL for children of the context
+    // It is kept as 'baseUrl' though - not as an identity for the children, but as the base that RELATIVE references among them resolve against
     //
+    char* baseUrl = url;
+
     url = NULL;
     id  = NULL;
 
@@ -90,9 +213,18 @@ OrionldContext* orionldContextFromTree(char* url, OrionldContextOrigin origin, c
     for (KjNode* ctxItemP = contextTreeP->value.firstChildP; ctxItemP != NULL; ctxItemP = ctxItemP->next)
     {
       OrionldContext* cachedContextP = NULL;
+      char*           itemUrl        = NULL;
 
       if (ctxItemP->type == KjString)
-        cachedContextP = orionldContextCacheLookup(ctxItemP->value.s);
+      {
+        //
+        // Resolved BEFORE the cache lookup, so that it is the absolute form that is looked up and
+        // later cached - the very same relative reference under two different base URLs points at
+        // two different @contexts
+        //
+        itemUrl        = contextRefResolve(baseUrl, ctxItemP->value.s);
+        cachedContextP = orionldContextCacheLookup(itemUrl);
+      }
       else if ((ctxItemP->type != KjObject) && (ctxItemP->type != KjArray))
       {
         orionldError(OrionldBadRequestData, "Invalid @context - invalid type for @context array item", kjValueType(ctxItemP->type), 400);
@@ -107,7 +239,7 @@ OrionldContext* orionldContextFromTree(char* url, OrionldContextOrigin origin, c
       {
         if (ctxItemP->type == KjString)
         {
-          url = ctxItemP->value.s;
+          url = itemUrl;               // The reference, resolved against baseUrl if it was relative
           id  = (char*) "downloaded";  // FIXME: perhaps NULL is a better value ...
         }
         else if (origin == OrionldContextUserCreated)
@@ -152,7 +284,11 @@ OrionldContext* orionldContextFromTree(char* url, OrionldContextOrigin origin, c
 
         contextP->context.array.items     = 1;
         contextP->context.array.vector    = (OrionldContext**) kaAlloc(&kalloc, 1 * sizeof(OrionldContext*));
-        contextP->context.array.vector[0] = orionldContextFromUrl(contextTreeP->value.s, NULL);
+        //
+        // 'url' is used, not contextTreeP->value.s - they are the same string, except when the caller
+        // resolved a relative reference, and then it is the resolved one that must be downloaded
+        //
+        contextP->context.array.vector[0] = orionldContextFromUrl(url, NULL);
 
         if (contextP->context.array.vector[0] == NULL)
         {
