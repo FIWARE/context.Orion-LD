@@ -1,4 +1,7 @@
 ## Fixed Issues
+  #XXXX - Fixed relative references inside an "@context" array: per RFC 3986 clause 5 a String inside an "@context" array is an IRI *reference* and is resolved against the URL of the document that carries it. Previously such an entry was taken as-is, so a served or remote @context using relative references (e.g. "user-context.jsonld") failed to load
+  #XXXX - Fixed an @context's own URL being confused with the reference it points to, which made a later lookup of that @context resolve to the wrong document
+  #XXXX - TRoE: a failing SQL statement was silently dropped - no log entry, the transaction aborted, and COMMIT acted as ROLLBACK, so the temporal write was lost without a trace. Such errors are now logged (status, Postgres message and the offending statement) and the transaction is rolled back explicitly
   #1943 - Fixed crash on a malformed q-filter with a missing AND/OR separator between two expressions (e.g. q=category=="office"category!="inactive" - missing ';'): qLexCheck did not validate the token following a String/Boolean/Integer/Float value, so the malformed token stream reached qParse and triggered a NULL dereference. Such input is now rejected with 400 Bad Request
   #1899 - Fixed broker startup stall on a cyclic @context in the persisted context cache: at startup the cached @contexts are reloaded, and an array-@context re-downloads its referenced contexts recursively. A context that references itself (directly or via a chain) made the loader wait the full download timeout (3s) per cycle in contextCacheWait - which exists to let one thread wait for ANOTHER thread already downloading the same context, but during the single-threaded startup recursion the "other downloader" is the same thread, so the wait could never be satisfied (and with enough cross-referencing contexts the cumulative stall trips orchestrator startup probes -> CrashLoop). The recursion now detects same-thread re-entry and rejects the cyclic @context immediately. Such non-fatal context-load failures are now logged as warnings instead of errors, so they no longer look like a failed startup
   #XXXX - Batch delete (non-legacy path): a duplicated Entity ID is now handled per NGSI-LD spec clause 10.3.6 - the first occurrence is deleted and each subsequent occurrence gets a ResourceNotFound (404) error in the 207 response (the duplicates were previously dropped silently)
@@ -29,6 +32,9 @@
   #XXXX - Fixed broker abort on requests that allocate more than 1000 buffers needing delayed free (e.g. large TRoE batch operations)
 
 ## New Features
+  #XXXX - The default core @context is now v1.9 (was v1.8), which is what the current ETSI TTF targets. Both versions remain selectable with -coreContext (v1.9 could not be selected at all before). Two terms are affected by the version change: "geometryProperty" is gone from the core @context (it is a URL parameter, never a payload member, and URL parameters are not @context-expanded), and "objectsLists" was renamed to "objectLists" - a breaking change only for the simplified temporal representation of a ListRelationship. The everyday singular "objectList" is unchanged
+  #XXXX - New CLI option -migrate for the TRoE Postgres schema. The broker no longer migrates an existing database silently: at startup it checks the schema version, and an outdated database makes it log "back up your DB and restart with -migrate" and exit. A brand-new database is stamped at the current version and starts normally (Carsten Frey, Fraunhofer IKTS)
+  #XXXX - Write correlator: every write now carries a correlator identifying the operation, taken from the new "NGSILD-Correlator" request header (falling back to "Fiware-Correlator"), or generated as "urn:ngsi-ld:correlator:<uuid>" if neither is present. It is stored on every TRoE row (entities, attributes, subAttributes) in a new "correlator" column, linking all attributes written by one operation - something instanceId, observedAt and ts cannot provide. The entity's "lastCorrelator" in MongoDB is only set when the client actually supplied a correlator, so behaviour without the header is unchanged (Carsten Frey, Fraunhofer IKTS)
   #XXXX - Native NGSI-LD temporal query support: GET/POST for temporal entities with:
           q-filter, geo-queries, aggregation, pick/omit, datasetId, and temporalValues
           — replacing previous Mintaka-based stubs
@@ -103,6 +109,7 @@
   - Fixed all README.md for the k-libs
   - Documented geo-fencing for subscriptions (georel types, geometry combinations, custom geoproperty, lifecycle)
   - Added GEOS to external-libraries.md and installation guide dependency list
+  - Added a High Availability guide, and a roadmap that reflects reality
 
 ## Temporal API (TRoE) - replacing Mintaka
   - Native temporal query implementation, no longer delegating to Mintaka (cfreyfh)
