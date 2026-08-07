@@ -51,6 +51,7 @@ extern "C"
 #include "orionld/common/traceLevels.h"                        // KTrace level
 #include "orionld/common/uuidGenerate.h"                       // uuidGenerate
 #include "orionld/common/subCacheApiSubscriptionInsert.h"      // subCacheApiSubscriptionInsert
+#include "orionld/subCache/subCacheItemAdd.h"                  // subCacheItemAdd
 #include "orionld/http/httpHeaderLocationAdd.h"                // httpHeaderLocationAdd
 #include "orionld/http/httpRequestHeaderAdd.h"                 // httpRequestHeaderAdd
 #include "orionld/legacyDriver/legacyPostSubscriptions.h"      // legacyPostSubscriptions
@@ -424,6 +425,14 @@ bool orionldPostSubscriptions(void)
                                           showChangesP,
                                           sysAttrsP,
                                           renderFormat);
+
+    //
+    // ... and into the new sub cache, which clones 'subP' and compiles its own
+    // matching state from the clone. Nothing consults it yet - the legacy cache
+    // above is still the one in use - but it has to be kept current from here on,
+    // or it would only ever know the subscriptions that existed at startup.
+    //
+    subCacheItemAdd(orionldState.tenantP->subCache, subscriptionId, subP, false, orionldState.contextP);
   }
   else
   {

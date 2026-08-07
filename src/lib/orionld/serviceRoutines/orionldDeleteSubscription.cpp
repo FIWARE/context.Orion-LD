@@ -37,6 +37,7 @@ extern "C"
 #include "orionld/mqtt/mqttDisconnect.h"                         // mqttDisconnect
 #include "orionld/mongoc/mongocSubscriptionLookup.h"             // mongocSubscriptionLookup
 #include "orionld/mongoc/mongocSubscriptionDelete.h"             // mongocSubscriptionDelete
+#include "orionld/subCache/subCacheItemRemove.h"                 // subCacheItemRemove (the new sub cache)
 #include "orionld/legacyDriver/legacyDeleteSubscription.h"       // legacyDeleteSubscription
 #include "orionld/regCache/regCacheItemLookup.h"                 // regCacheItemLookup
 #include "orionld/kjTree/kjTreeLog.h"                            // KT_TREE
@@ -63,6 +64,9 @@ bool orionldDeleteSubscription(void)
 
   if (mongocSubscriptionDelete(orionldState.wildcard[0]) == false)
     return false;  // mongocSubscriptionDelete calls orionldError, setting status code to 500
+
+  // Out of the new sub cache. Not consulted yet, but it must not keep a subscription the DB no longer has
+  subCacheItemRemove(orionldState.tenantP->subCache, orionldState.wildcard[0]);
 
   CachedSubscription* cSubP = subCacheItemLookup(orionldState.tenantP->tenant, orionldState.wildcard[0]);
 

@@ -31,6 +31,8 @@ extern "C"
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjClone.h"                                       // kjClone
+#include "kjson/kjFree.h"                                        // kjFree
+#include "kjson/kjBuilder.h"                                     // kjChildRemove, kjChildAdd
 #include "kjson/kjRender.h"                                      // kjFastRender
 }
 
@@ -72,11 +74,22 @@ void subCacheItemGeoCompile(SubCacheItem* sciP, KjNode* geoqP)
 
   //
   // If the coordinates came as a String, pcheckGeoQ parsed them into request-scoped
-  // memory - the cache needs its own copy.
+  // memory. Take a persistent copy and put it INTO geoQP, replacing the string, so
+  // that geoQP stays the single owner of everything geoInfo points at - that is what
+  // makes subCacheItemRelease a plain kjFree.
   //
-  KjNode* clonedCoordinatesP = kjLookup(sciP->geoQP, "coordinates");
-  if ((clonedCoordinatesP != NULL) && (clonedCoordinatesP->type == KjString))
-    sciP->geoInfo->coordinates = kjClone(NULL, sciP->geoInfo->coordinates);
+  KjNode* stringCoordinatesP = kjLookup(sciP->geoQP, "coordinates");
+  if ((stringCoordinatesP != NULL) && (stringCoordinatesP->type == KjString))
+  {
+    KjNode* arrayP = kjClone(NULL, sciP->geoInfo->coordinates);
+
+    arrayP->name = (char*) "coordinates";
+    kjChildRemove(sciP->geoQP, stringCoordinatesP);
+    kjChildAdd(sciP->geoQP, arrayP);
+    kjFree(stringCoordinatesP);
+
+    sciP->geoInfo->coordinates = arrayP;
+  }
 
   KjNode* geometryP    = kjLookup(sciP->geoQP, "geometry");
   KjNode* coordinatesP = sciP->geoInfo->coordinates;

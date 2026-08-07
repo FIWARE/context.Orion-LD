@@ -59,6 +59,10 @@ extern "C"
 #include "orionld/q/qRelease.h"                                // qRelease
 #include "orionld/mongoc/mongocSubscriptionLookup.h"           // mongocSubscriptionLookup
 #include "orionld/mongoc/mongocSubscriptionReplace.h"          // mongocSubscriptionReplace
+#include "orionld/dbModel/dbModelToApiSubscription.h"          // dbModelToApiSubscription
+#include "orionld/context/orionldContextFromUrl.h"             // orionldContextFromUrl
+#include "orionld/subCache/subCacheItemLookup.h"               // subCacheItemLookup   (the new sub cache)
+#include "orionld/subCache/subCacheItemUpdate.h"               // subCacheItemUpdate   (the new sub cache)
 #include "orionld/dbModel/dbModelFromApiSubscription.h"        // dbModelFromApiSubscription
 #include "orionld/common/eqForDot.h"                           // eqForDot
 #include "orionld/common/geosInit.h"                           // geosHandle
@@ -865,6 +869,60 @@ static void mqttDisconnectFromInfo(MqttInfo* miP)
 // 6. Call mongocSubscriptionReplace(char* subscriptionId, KjNode* subscriptionTree) to replace the old sub with the new
 //    Or, dbSubscriptionUpdate(char* subscriptionId, KjNode* toAddP, KjNode* toRemoveP, KjNode* toUpdate)
 //
+// -----------------------------------------------------------------------------
+//
+// newSubCacheItemUpdate - refresh the item in the NEW sub cache after a PATCH
+//
+// The patched DB-model tree is run through the very same dbModelToApiSubscription
+// that populates the cache at startup, so the cached tree can not drift in shape
+// from the one built there. It is handed a clone, as that function rewrites the
+// tree it is given.
+//
+// The new cache is not consulted yet, so a failure here is logged, not fatal.
+//
+static void newSubCacheItemUpdate(const char* subscriptionId, KjNode* dbSubscriptionP)
+{
+  SubCacheItem* sciP = subCacheItemLookup(orionldState.tenantP->subCache, subscriptionId);
+
+  if (sciP == NULL)
+    return;  // Nothing cached (a subscription created before the new cache was wired in, or another tenant)
+
+  QNode*               qNodeP       = NULL;
+  KjNode*              coordinatesP = NULL;
+  KjNode*              contextNodeP = NULL;
+  KjNode*              showChangesP = NULL;
+  KjNode*              sysAttrsP    = NULL;
+  OrionldRenderFormat  renderFormat = RF_NORMALIZED;
+  double               timeInterval = 0;
+
+  KjNode* apiSubP = dbModelToApiSubscription(kjClone(orionldState.kjsonP, dbSubscriptionP),
+                                             orionldState.tenantP->tenant,
+                                             true,
+                                             &qNodeP,
+                                             &coordinatesP,
+                                             &contextNodeP,
+                                             &showChangesP,
+                                             &sysAttrsP,
+                                             &renderFormat,
+                                             &timeInterval);
+  if (apiSubP == NULL)
+    KT_RVE("Sub '%s': unable to refresh the new sub cache after a PATCH", subscriptionId);
+
+  //
+  // A PATCH can change "jsonldContext". It was downloaded and validated earlier in
+  // this same request, so this resolves from the context cache.
+  //
+  OrionldContext* jsonldContextP     = NULL;
+  KjNode*         jsonldContextNodeP = kjLookup(apiSubP, "jsonldContext");
+
+  if (jsonldContextNodeP != NULL)
+    jsonldContextP = orionldContextFromUrl(jsonldContextNodeP->value.s, NULL);
+
+  subCacheItemUpdate(sciP, apiSubP, jsonldContextP);
+}
+
+
+
 bool orionldPatchSubscription(void)
 {
   PCHECK_URI(orionldState.wildcard[0], true, 0, "Subscription ID must be a valid URI", orionldState.wildcard[0], 400);
@@ -1137,6 +1195,8 @@ bool orionldPatchSubscription(void)
   {
     if (subCacheItemUpdate(orionldState.tenantP, subscriptionId, patchBody, geoCoordinatesP, qNodeP, qRenderedForDb, showChangesP) == false)
       KT_E("Internal Error (unable to update the cached subscription '%s' after a PATCH)", subscriptionId);
+
+    newSubCacheItemUpdate(subscriptionId, dbSubscriptionP);
   }
   else
   {

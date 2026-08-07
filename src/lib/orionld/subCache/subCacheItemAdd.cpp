@@ -92,6 +92,9 @@ SubCacheItem* subCacheItemAdd
   OrionldContext*  jsonldContextP
 )
 {
+  if (scP == NULL)
+    KT_RE(NULL, "No subscription cache for the tenant - the sub '%s' will not be cached", subscriptionId);
+
   SubCacheItem* sciP = (SubCacheItem*) calloc(1, sizeof(SubCacheItem));
 
   if (sciP == NULL)

@@ -83,6 +83,15 @@ OrionldTenant* orionldTenantCreate(const char* tenantName, bool scanRegs, bool r
       KT_E("Database Error (unable to prepare a new TRoE database for tenant '%s')", orionldState.tenantP->troeDbName);
   }
 
+  //
+  // 'tenantP' comes from malloc, so both cache pointers are garbage until set.
+  // The callers that pass regCache==false (mongocTenantsGet, at startup) rely on
+  // regCacheInit/subCachesInit to fill them in later - between those two moments
+  // the pointers must at least be readable as "no cache yet".
+  //
+  tenantP->regCache = NULL;
+  tenantP->subCache = NULL;
+
   if (regCache == true)
   {
     tenantP->regCache = regCacheCreate(tenantP, scanRegs);

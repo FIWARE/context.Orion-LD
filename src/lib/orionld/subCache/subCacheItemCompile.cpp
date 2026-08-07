@@ -143,6 +143,20 @@ void subCacheItemCompile(SubCacheItem* sciP)
   //
   KjNode* qP = kjLookup(sciP->subTree, "ldQ");
 
+  //
+  // Every scalar is given its default FIRST, unconditionally. subCacheItemUpdate
+  // recompiles an existing item, and a PATCH that drops a member (an 'expiresAt',
+  // a 'throttling', ...) must not leave the old value behind.
+  //
+  sciP->expiresAt    = 0;
+  sciP->throttling   = 0;
+  sciP->renderFormat = RF_DEFAULT;
+  sciP->showChanges  = false;
+  sciP->sysAttrs     = false;
+  sciP->mimeType     = MT_JSON;
+  sciP->protocol     = NO_PROTOCOL;
+  sciP->port         = 0;
+
   sciP->isActive = (isActiveP != NULL)? isActiveP->value.b : true;
 
   //
