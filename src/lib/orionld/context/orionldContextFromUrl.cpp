@@ -399,7 +399,7 @@ OrionldContext* orionldContextFromUrl(char* url, char* id)
       // still turns the NULL return into an error response upstream.
       KT_W("Context Warning (%s: %s)", orionldState.pd.title, orionldState.pd.detail);
       if (orionldState.pd.status < 300)  // Error not filled in
-        orionldError(OrionldLdContextNotAvailable, "Unable to download context", url, 503);
+        orionldError(OrionldLdContextNotAvailable, "Unable to download context", url, 504);
     }
   }
   else

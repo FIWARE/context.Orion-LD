@@ -273,7 +273,7 @@ connection: keep-alive
 
 09. Attempt to DELETE and RELOAD the context in the broker's context cache - fails as the context server is dead
 ================================================================================================================
-HTTP/1.1 503 Service Unavailable
+HTTP/1.1 504 Gateway Timeout
 Content-Length: 166
 Content-Type: application/json
 Date: REGEX(.*)

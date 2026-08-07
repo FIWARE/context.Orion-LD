@@ -90,7 +90,7 @@ echo
 --REGEXPECT--
 01. Create a subscription with an @context that doesn't exist
 =============================================================
-HTTP/1.1 503 Service Unavailable
+HTTP/1.1 504 Gateway Timeout
 Content-Length: 189
 Content-Type: application/json
 Date: REGEX(.*)

@@ -34,10 +34,10 @@ cServerCurl --url /jsonldContexts/badArray --verb DELETE
 
 #
 # 01. Create an "invalid" context in the context server, an array with the core context and a URL that points to nowhere
-# 02. Attempt to create an entity using the context from step 01 - only to see it fail with 503
+# 02. Attempt to create an entity using the context from step 01 - only to see it fail with 504
 # 03. GET all entities, make sure there are NONE
 # 04. Query the context cache for all contexts, see core context only - the others failed!
-# 05. Another attempt to create an entity using the context from step 01 - only to see it fail with 503 again
+# 05. Another attempt to create an entity using the context from step 01 - only to see it fail with 504 again
 #
 
 echo '01. Create an "invalid" context in the context server, an array with the core context and a URL that points to nowhere'
@@ -82,7 +82,7 @@ echo
 echo
 
 
-echo '05. Another attempt to create an entity using the context from step 01 - only to see it fail with 503 again'
+echo '05. Another attempt to create an entity using the context from step 01 - only to see it fail with 504 again'
 echo '==========================================================================================================='
 payload='{
   "id": "urn:ngsi-ld:entities:E2",
@@ -110,7 +110,7 @@ transfer-encoding: chunked
 
 02. Attempt to create an entity using the context from step 01 - only to see it fail with 504
 =============================================================================================
-HTTP/1.1 503 Service Unavailable
+HTTP/1.1 504 Gateway Timeout
 Content-Length: 160
 Content-Type: application/json
 Date: REGEX(.*)
@@ -144,9 +144,9 @@ Date: REGEX(.*)
 ]
 
 
-05. Another attempt to create an entity using the context from step 01 - only to see it fail with 503 again
+05. Another attempt to create an entity using the context from step 01 - only to see it fail with 504 again
 ===========================================================================================================
-HTTP/1.1 503 Service Unavailable
+HTTP/1.1 504 Gateway Timeout
 Content-Length: 160
 Content-Type: application/json
 Date: REGEX(.*)
