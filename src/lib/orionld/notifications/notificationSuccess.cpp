@@ -30,9 +30,11 @@ extern "C"
 
 #include "cache/CachedSubscription.h"                               // CachedSubscription
 
+#include "orionld/types/SubCacheItem.h"                             // SubCacheItem
 #include "orionld/common/orionldState.h"                            // promNotifications
 #include "orionld/common/traceLevels.h"                             // KTrace levels
 #include "orionld/mongoc/mongocSubCountersUpdate.h"                 // mongocSubCountersUpdate
+#include "orionld/subCache/subCacheItemLookup.h"                    // subCacheItemLookup (the new sub cache)
 #include "orionld/notifications/notificationSuccess.h"              // Own interface
 
 
@@ -50,6 +52,21 @@ void notificationSuccess(CachedSubscription* subP, const double timestamp)
   subP->consecutiveErrors     = 0;
   subP->count                += 1;
   subP->dirty                += 1;
+
+  //
+  // TRANSITIONAL: it is the NEW subscription cache that decides whether a
+  // subscription matches, so it is the new cache's item that must know when this
+  // subscription last notified - or throttling would never kick in.
+  // Goes away with the old cache: the notification path will then have the
+  // SubCacheItem in its hand already, and the counters live there as well.
+  //
+  // The subscription belongs to the tenant of the request - the matcher only ever
+  // looks in the cache of that one tenant.
+  //
+  SubCacheItem* sciP = subCacheItemLookup(orionldState.tenantP->subCache, subP->subscriptionId);
+
+  if (sciP != NULL)
+    sciP->lastNotificationTime = timestamp;
 
   kpromCounterInc(promNotifications);
 

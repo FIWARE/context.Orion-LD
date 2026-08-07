@@ -32,9 +32,12 @@ extern "C"
 
 #include "cache/CachedSubscription.h"                               // CachedSubscription
 
+#include "orionld/types/SubCacheItem.h"                             // SubCacheItem
 #include "orionld/common/orionldState.h"                            // promNotifications, promNotificationsFailed
 #include "orionld/common/traceLevels.h"                             // KTrace levels
 #include "orionld/mongoc/mongocSubCountersUpdate.h"                 // mongocSubCountersUpdate
+#include "orionld/subCache/subCacheItemLookup.h"                    // subCacheItemLookup (the new sub cache)
+#include "orionld/subCache/subCacheItemStatusSet.h"                 // subCacheItemStatusSet
 #include "orionld/notifications/notificationFailure.h"              // Own interface
 
 
@@ -64,6 +67,21 @@ void notificationFailure(CachedSubscription* subP, const char* errorReason, doub
     subP->isActive = false;
     subP->status   = "paused";
     forcedToPause  = true;
+  }
+
+  //
+  // TRANSITIONAL: it is the NEW subscription cache that decides whether a
+  // subscription matches, so both the throttling timestamp and the pause must
+  // reach the new cache's item as well - see notificationSuccess.
+  //
+  SubCacheItem* sciP = subCacheItemLookup(orionldState.tenantP->subCache, subP->subscriptionId);
+
+  if (sciP != NULL)
+  {
+    sciP->lastNotificationTime = notificationTime;
+
+    if (forcedToPause == true)
+      subCacheItemStatusSet(sciP, "paused");
   }
 
   kpromCounterInc(promNotifications);

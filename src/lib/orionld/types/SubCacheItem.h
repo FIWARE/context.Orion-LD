@@ -78,6 +78,7 @@ typedef struct SubCacheItem
   char*                 subId;              // Set when creating subscription - points inside subTree
   KjNode*               subTree;
   SubDeltas             deltas;
+  double                lastNotificationTime;  // Timestamp of the last notification attempt - seeded from the DB, read by throttling
   bool                  dirty;              // The subscription has been patched - not only counters differ from copy in DB
   OrionldContext*       contextP;           // Set when creating/patching registration
   char*                 hostAlias;          // Broker identity - for the Via header

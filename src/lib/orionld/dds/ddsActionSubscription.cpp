@@ -47,6 +47,8 @@ extern "C"
 #include "orionld/context/orionldAttributeExpand.h"              // orionldAttributeExpand
 #include "orionld/context/orionldContextItemExpand.h"            // orionldContextItemExpand
 #include "orionld/payloadCheck/pCheckSubscription.h"             // pCheckSubscription
+#include "orionld/subCache/subCacheItemAdd.h"                    // subCacheItemAdd    (the new sub cache)
+#include "orionld/subCache/subCacheItemRemove.h"                 // subCacheItemRemove (the new sub cache)
 #include "orionld/dds/ddsActionSubscription.h"                   // Own interface
 
 
@@ -213,6 +215,13 @@ char* ddsActionSubscriptionCreate
     return NULL;
   }
 
+  //
+  // ... and into the new subscription cache, which is the one that decides what
+  // matches an alteration. A temp subscription that only made it into the legacy
+  // cache would never notify.
+  //
+  subCacheItemAdd(tenant0.subCache, subId, subP, false, orionldState.contextP);
+
   KT_T(StDdsAction, "Created temp action subscription '%s' on attr '%s' -> '%s'", subId, attrLongName, endpointUri);
 
   return strdup(subId);
@@ -228,6 +237,8 @@ void ddsActionSubscriptionDelete(const char* subscriptionId)
 {
   if (subscriptionId == NULL)
     return;
+
+  subCacheItemRemove(tenant0.subCache, subscriptionId);
 
   CachedSubscription* cSubP = subCacheItemLookup(tenant0.tenant, subscriptionId);
   if (cSubP == NULL)

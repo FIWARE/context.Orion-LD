@@ -40,7 +40,7 @@ extern "C"
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/common/traceLevels.h"                        // KTrace levels
 #include "orionld/common/geosInit.h"                           // geosHandle
-#include "cache/CachedSubscription.h"                          // CachedSubscription
+#include "orionld/types/SubCacheItem.h"                        // SubCacheItem
 #include "orionld/notifications/geoMatch.h"                    // Own interface
 
 
@@ -167,32 +167,32 @@ static bool subCoordsGet(KjNode* coordsP, double* lonP, double* latP)
 //
 // nearMatch - handle the 'near' georel using haversine distance
 //
-static bool nearMatch(CachedSubscription* subP, KjNode* entityP)
+static bool nearMatch(SubCacheItem* sciP, KjNode* entityP)
 {
   double entityLon, entityLat;
   double subLon, subLat;
 
-  if (entityCoordsGet(entityP, subP->geoInfo->geoProperty, &entityLon, &entityLat) == false)
+  if (entityCoordsGet(entityP, sciP->geoInfo->geoProperty, &entityLon, &entityLat) == false)
   {
     KT_T(KtSubCacheMatch, "nearMatch: entityCoordsGet failed");
     return false;
   }
 
-  if (subCoordsGet(subP->geoInfo->coordinates, &subLon, &subLat) == false)
+  if (subCoordsGet(sciP->geoInfo->coordinates, &subLon, &subLat) == false)
   {
-    KT_T(KtSubCacheMatch, "nearMatch: subCoordsGet failed (coords type=%d)", subP->geoInfo->coordinates ? subP->geoInfo->coordinates->type : -1);
+    KT_T(KtSubCacheMatch, "nearMatch: subCoordsGet failed (coords type=%d)", sciP->geoInfo->coordinates ? sciP->geoInfo->coordinates->type : -1);
     return false;
   }
 
   double distance = haversineDistance(entityLon, entityLat, subLon, subLat);
 
   KT_T(KtSubCacheMatch, "near: distance=%f, maxDistance=%d, minDistance=%d",
-       distance, subP->geoInfo->maxDistance, subP->geoInfo->minDistance);
+       distance, sciP->geoInfo->maxDistance, sciP->geoInfo->minDistance);
 
-  if (subP->geoInfo->maxDistance > 0 && distance > subP->geoInfo->maxDistance)
+  if (sciP->geoInfo->maxDistance > 0 && distance > sciP->geoInfo->maxDistance)
     return false;
 
-  if (subP->geoInfo->minDistance > 0 && distance < subP->geoInfo->minDistance)
+  if (sciP->geoInfo->minDistance > 0 && distance < sciP->geoInfo->minDistance)
     return false;
 
   return true;
@@ -204,9 +204,9 @@ static bool nearMatch(CachedSubscription* subP, KjNode* entityP)
 //
 // geosPredicateMatch - handle topological georel predicates using GEOS
 //
-static bool geosPredicateMatch(CachedSubscription* subP, KjNode* entityP)
+static bool geosPredicateMatch(SubCacheItem* sciP, KjNode* entityP)
 {
-  KjNode* geoJsonP = entityGeoJsonGet(entityP, subP->geoInfo->geoProperty);
+  KjNode* geoJsonP = entityGeoJsonGet(entityP, sciP->geoInfo->geoProperty);
   if (geoJsonP == NULL)
     return false;
 
@@ -228,38 +228,38 @@ static bool geosPredicateMatch(CachedSubscription* subP, KjNode* entityP)
 
   char result = 0;
 
-  switch (subP->geoInfo->georel)
+  switch (sciP->geoInfo->georel)
   {
   case GeorelWithin:
     // "within" = entity is within subscription's reference geometry
     // PreparedContains(subGeom, entityGeom) == true means the sub polygon contains the entity
-    result = GEOSPreparedContains_r(geosHandle, subP->geosPrepared, entityGeom);
+    result = GEOSPreparedContains_r(geosHandle, sciP->geosPrepared, entityGeom);
     break;
 
   case GeorelContains:
     // "contains" = entity's geometry contains the subscription's reference geometry
     // PreparedWithin(subGeom, entityGeom) == true means the sub geometry is within the entity
-    result = GEOSPreparedWithin_r(geosHandle, subP->geosPrepared, entityGeom);
+    result = GEOSPreparedWithin_r(geosHandle, sciP->geosPrepared, entityGeom);
     break;
 
   case GeorelIntersects:
-    result = GEOSPreparedIntersects_r(geosHandle, subP->geosPrepared, entityGeom);
+    result = GEOSPreparedIntersects_r(geosHandle, sciP->geosPrepared, entityGeom);
     break;
 
   case GeorelEquals:
-    result = GEOSEquals_r(geosHandle, subP->geosGeometry, entityGeom);
+    result = GEOSEquals_r(geosHandle, sciP->geosGeometry, entityGeom);
     break;
 
   case GeorelDisjoint:
-    result = GEOSPreparedDisjoint_r(geosHandle, subP->geosPrepared, entityGeom);
+    result = GEOSPreparedDisjoint_r(geosHandle, sciP->geosPrepared, entityGeom);
     break;
 
   case GeorelOverlaps:
-    result = GEOSPreparedOverlaps_r(geosHandle, subP->geosPrepared, entityGeom);
+    result = GEOSPreparedOverlaps_r(geosHandle, sciP->geosPrepared, entityGeom);
     break;
 
   default:
-    KT_W("Unexpected georel %d in geosPredicateMatch", subP->geoInfo->georel);
+    KT_W("Unexpected georel %d in geosPredicateMatch", sciP->geoInfo->georel);
     break;
   }
 
@@ -276,16 +276,16 @@ static bool geosPredicateMatch(CachedSubscription* subP, KjNode* entityP)
 //
 // Returns true if the entity matches (or if the subscription has no geoQ)
 //
-bool geoMatch(CachedSubscription* subP, KjNode* finalApiEntityP)
+bool geoMatch(SubCacheItem* sciP, KjNode* finalApiEntityP)
 {
-  if (subP->geoInfo == NULL)
+  if (sciP->geoInfo == NULL)
   {
-    KT_T(KtSubCacheMatch, "Sub '%s': no geoInfo - geoMatch returns true", subP->subscriptionId);
+    KT_T(KtSubCacheMatch, "Sub '%s': no geoInfo - geoMatch returns true", sciP->subId);
     return true;
   }
 
   KT_T(KtSubCacheMatch, "Sub '%s': geoMatch - georel=%d, geoProperty='%s'",
-       subP->subscriptionId, subP->geoInfo->georel, subP->geoInfo->geoProperty ? subP->geoInfo->geoProperty : "NULL");
+       sciP->subId, sciP->geoInfo->georel, sciP->geoInfo->geoProperty ? sciP->geoInfo->geoProperty : "NULL");
 
   // Trace entity attribute names to understand the format
   if (finalApiEntityP != NULL)
@@ -294,20 +294,20 @@ bool geoMatch(CachedSubscription* subP, KjNode* finalApiEntityP)
       KT_T(KtSubCacheMatch, "  entity attr: '%s'", attrP->name);
   }
 
-  if (subP->geoInfo->georel == GeorelNear)
+  if (sciP->geoInfo->georel == GeorelNear)
   {
-    bool r = nearMatch(subP, finalApiEntityP);
-    KT_T(KtSubCacheMatch, "Sub '%s': nearMatch returns %s", subP->subscriptionId, r ? "true" : "false");
+    bool r = nearMatch(sciP, finalApiEntityP);
+    KT_T(KtSubCacheMatch, "Sub '%s': nearMatch returns %s", sciP->subId, r ? "true" : "false");
     return r;
   }
 
-  if (subP->geosPrepared == NULL && subP->geoInfo->georel != GeorelEquals)
+  if (sciP->geosPrepared == NULL && sciP->geoInfo->georel != GeorelEquals)
   {
-    KT_W("No prepared GEOS geometry for subscription %s", subP->subscriptionId);
+    KT_W("No prepared GEOS geometry for subscription %s", sciP->subId);
     return false;
   }
 
-  bool r = geosPredicateMatch(subP, finalApiEntityP);
-  KT_T(KtSubCacheMatch, "Sub '%s': geosPredicateMatch returns %s", subP->subscriptionId, r ? "true" : "false");
+  bool r = geosPredicateMatch(sciP, finalApiEntityP);
+  KT_T(KtSubCacheMatch, "Sub '%s': geosPredicateMatch returns %s", sciP->subId, r ? "true" : "false");
   return r;
 }

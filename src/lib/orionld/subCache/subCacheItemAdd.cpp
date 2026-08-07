@@ -135,14 +135,36 @@ SubCacheItem* subCacheItemAdd
   //
   // A subscription that arrives from an API request has none of the bookkeeping
   // members yet - one coming from the database has them already.
+  // The counters go where dbModelToApiSubscription puts them - inside
+  // "notification" - while "status" is a top level member of a Subscription.
   //
+  KjNode* notificationP = kjLookup(sciP->subTree, "notification");
+
   if (fromDb == false)
   {
-    subCounterAdd(sciP->subTree,   "timesSent");
-    subCounterAdd(sciP->subTree,   "timesFailed");
-    subTimestampAdd(sciP->subTree, "lastSuccess");
-    subTimestampAdd(sciP->subTree, "lastFailure");
-    subStringAdd(sciP->subTree,    "status", "active");
+    if (notificationP != NULL)
+    {
+      subCounterAdd(notificationP,   "timesSent");
+      subCounterAdd(notificationP,   "timesFailed");
+      subTimestampAdd(notificationP, "lastSuccess");
+      subTimestampAdd(notificationP, "lastFailure");
+    }
+
+    subStringAdd(sciP->subTree, "status", "active");
+  }
+
+  //
+  // 'lastNotification' is the one piece of notification bookkeeping that is read
+  // on every single match (throttling), so it is lifted out of the tree.
+  // It comes from the database - a broker that restarts must not notify a
+  // throttled subscription before its throttling has passed.
+  //
+  if (notificationP != NULL)
+  {
+    KjNode* lastNotificationP = kjLookup(notificationP, "lastNotification");
+
+    if (lastNotificationP != NULL)
+      sciP->lastNotificationTime = (lastNotificationP->type == KjFloat)? lastNotificationP->value.f : lastNotificationP->value.i;
   }
 
   KjNode* modifiedAtP = kjLookup(sciP->subTree, "modifiedAt");

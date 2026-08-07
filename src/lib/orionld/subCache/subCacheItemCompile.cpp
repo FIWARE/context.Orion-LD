@@ -39,6 +39,7 @@ extern "C"
 #include "orionld/subCache/subCacheItemEndpointCompile.h"        // subCacheItemEndpointCompile
 #include "orionld/subCache/subCacheItemEntitiesCompile.h"        // subCacheItemEntitiesCompile
 #include "orionld/subCache/subCacheItemGeoCompile.h"             // subCacheItemGeoCompile
+#include "orionld/subCache/subCacheItemStatusSet.h"              // subCacheItemStatusSet
 #include "orionld/subCache/subCacheItemCompile.h"                // Own interface
 
 
@@ -84,12 +85,7 @@ static void expirationCompile(SubCacheItem* sciP, KjNode* expiresAtP)
   // The subscription outlived its expiration - it stays in the cache (a PATCH can
   // give it a new 'expiresAt') but it neither matches nor notifies.
   //
-  sciP->isActive = false;
-
-  KjNode* statusP = kjLookup(sciP->subTree, "status");
-
-  if (statusP != NULL)
-    statusP->value.s = (char*) "expired";  // kjFree doesn't free a KjString's value - a literal is safe here
+  subCacheItemStatusSet(sciP, "expired");
 
   KT_T(KtSubCache, "Sub '%s': expired (expiresAt: %f)", sciP->subId, sciP->expiresAt);
 }

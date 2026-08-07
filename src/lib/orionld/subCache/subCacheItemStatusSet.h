@@ -1,3 +1,6 @@
+#ifndef SRC_LIB_ORIONLD_SUBCACHE_SUBCACHEITEMSTATUSSET_H_
+#define SRC_LIB_ORIONLD_SUBCACHE_SUBCACHEITEMSTATUSSET_H_
+
 /*
 *
 * Copyright 2026 FIWARE Foundation e.V.
@@ -22,11 +25,14 @@
 *
 * Author: Ken Zangelin
 */
-extern "C"
-{
-#include "kjson/KjNode.h"                                    // KjNode
-}
+#include "orionld/types/SubCacheItem.h"                          // SubCacheItem
 
-#include "orionld/types/SubCacheItem.h"                      // SubCacheItem
 
-extern bool geoMatch(SubCacheItem* sciP, KjNode* finalApiEntityP);
+
+// -----------------------------------------------------------------------------
+//
+// subCacheItemStatusSet - set the status of a cached subscription
+//
+extern void subCacheItemStatusSet(SubCacheItem* sciP, const char* status);
+
+#endif  // SRC_LIB_ORIONLD_SUBCACHE_SUBCACHEITEMSTATUSSET_H_
