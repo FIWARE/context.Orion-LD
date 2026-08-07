@@ -1,3 +1,6 @@
+#ifndef SRC_LIB_ORIONLD_SUBCACHE_SUBCACHEITEMENTITIESCOMPILE_H_
+#define SRC_LIB_ORIONLD_SUBCACHE_SUBCACHEITEMENTITIESCOMPILE_H_
+
 /*
 *
 * Copyright 2026 FIWARE Foundation e.V.
@@ -27,24 +30,17 @@ extern "C"
 #include "kjson/KjNode.h"                                        // KjNode
 }
 
-#include "orionld/subCache/apiModelToCacheSubscription.h"        // Own interface
+#include "orionld/types/SubCacheItem.h"                          // SubCacheItem
 
 
 
 // -----------------------------------------------------------------------------
 //
-// apiModelToCacheSubscription -
+// subCacheItemEntitiesCompile - compile a Subscription's "entities" array
 //
-// Adapts an API-model Subscription into the shape the cache wants, in place,
-// right before subCacheItemAdd clones it into the cache item.
+// The list is built in the same order as the array, and every idPattern is
+// compiled into a regex. Twin of regCacheIdPatternRegexCompile.
 //
-// Nothing to adapt yet - the tree goes into the cache as it comes out of the API
-// model. TREE SHAPE ONLY: the compiled matching state ('q' as a QNode tree, the
-// GEOS geometry, the idPattern regexes, the split endpoint, ...) is NOT built
-// here - it is built by subCacheItemCompile, which runs after subCacheItemAdd
-// has cloned the tree. It has to: this tree is request-scoped.
-//
-void apiModelToCacheSubscription(KjNode* apiSubscriptionP)
-{
-  // Intentionally empty for now - see the comment above.
-}
+extern void subCacheItemEntitiesCompile(SubCacheItem* sciP, KjNode* entitiesP);
+
+#endif  // SRC_LIB_ORIONLD_SUBCACHE_SUBCACHEITEMENTITIESCOMPILE_H_

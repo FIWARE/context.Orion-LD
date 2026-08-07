@@ -26,6 +26,7 @@
 * Author: Ken Zangelin
 */
 #include <stdint.h>                                              // types: uint32_t, ...
+#include <geos_c.h>                                              // GEOSGeometry, GEOSPreparedGeometry
 
 extern "C"
 {
@@ -33,6 +34,24 @@ extern "C"
 }
 
 #include "orionld/types/OrionldContext.h"                        // OrionldContext
+#include "orionld/types/OrionldGeoInfo.h"                        // OrionldGeoInfo
+#include "orionld/types/OrionldMimeType.h"                       // MimeType
+#include "orionld/types/OrionldRenderFormat.h"                   // OrionldRenderFormat
+#include "orionld/types/Protocol.h"                              // Protocol
+#include "orionld/types/QNode.h"                                 // QNode
+#include "orionld/types/SubEntitySelector.h"                     // SubEntitySelector
+
+
+
+// -----------------------------------------------------------------------------
+//
+// SUB_TRIGGER - bit in SubCacheItem::triggers for an OrionldAlterationType
+//
+// The alteration types start at 1, so bit 0 is unused and SUB_TRIGGERS_ALL
+// covers bits 1 .. OrionldAlterationTypes.
+//
+#define SUB_TRIGGER(altType)  (1 << (altType))
+#define SUB_TRIGGERS_ALL      0xFFFFFFFE
 
 
 
@@ -63,8 +82,44 @@ typedef struct SubCacheItem
   OrionldContext*       contextP;           // Set when creating/patching registration
   char*                 hostAlias;          // Broker identity - for the Via header
 
-  // "Shortcuts" and transformations
-  double                modifiedAt;         // Copied from inside the subTree
+  //
+  // "Shortcuts" and compiled state - all of it built from subTree, at cache time,
+  // so that matching an entity alteration never has to parse anything.
+  //
+  // Only what needs TRANSFORMING (a regex, a QNode tree, a GEOS geometry, an
+  // enum, a split URL) or what is read on every single alteration lives here.
+  // Everything else - name, description, watchedAttributes, notified attributes,
+  // datasetId, the counters, ... - is read from the subTree, which is the source
+  // of truth.
+  //
+  double                      modifiedAt;      // Copied from inside the subTree
+  bool                        isActive;
+  double                      expiresAt;       // 0: never expires
+  double                      throttling;      // 0: no throttling
+  char*                       lang;            // Points inside subTree
+  uint32_t                    triggers;        // Bitmask of SUB_TRIGGER(OrionldAlterationType)
+  OrionldRenderFormat         renderFormat;
+  bool                        showChanges;
+  bool                        sysAttrs;
+
+  SubEntitySelector*          entitySelectors; // The "entities" array, compiled (idPattern -> regex)
+
+  char*                       qText;           // Points inside subTree - the expanded 'q' (DB name: "ldQ")
+  QNode*                      qP;              // 'qText', parsed
+
+  KjNode*                     geoQP;           // Clone of "geoQ" - owns the memory 'geoInfo' points into
+  OrionldGeoInfo*             geoInfo;
+  GEOSGeometry*               geosGeometry;
+  const GEOSPreparedGeometry* geosPrepared;
+
+  // notification::endpoint::uri, split up
+  char*                       url;             // Own copy - urlParse destroys its input
+  char*                       protocolString;  // Points inside 'url' - or at the literal "none" if the URI has no scheme
+  char*                       ip;              // Points inside 'url'
+  uint16_t                    port;
+  char*                       rest;            // Points inside 'url'
+  Protocol                    protocol;
+  MimeType                    mimeType;        // notification::endpoint::accept
 
   struct SubCacheItem*  next;
 } SubCacheItem;

@@ -52,11 +52,10 @@ int subIterFunc(SubCache* scP, KjNode* dbSubP)
   //
   // Convert DB Sub to API Sub.
   //
-  // dbModelToApiSubscription hands back the pre-parsed pieces it had to look at
-  // anyway - the q tree, the geo coordinates, the render format, ... Those are
-  // exactly the "compiled" state the cache item wants, but SubCacheItem has no
-  // home for them yet, so for now they are taken and dropped.
-  // TODO: store these in the SubCacheItem (see apiModelToCacheSubscription).
+  // dbModelToApiSubscription hands back some of the pieces it had to look at
+  // anyway - the geo coordinates, the render format, ... They are taken and
+  // dropped: they all point into request-scoped memory, and subCacheItemCompile
+  // builds the same state from the cache item's own clone of the tree instead.
   //
   QNode*               qNodeP       = NULL;
   KjNode*              coordinatesP = NULL;

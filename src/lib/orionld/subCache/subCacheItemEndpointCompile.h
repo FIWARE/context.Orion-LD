@@ -1,3 +1,6 @@
+#ifndef SRC_LIB_ORIONLD_SUBCACHE_SUBCACHEITEMENDPOINTCOMPILE_H_
+#define SRC_LIB_ORIONLD_SUBCACHE_SUBCACHEITEMENDPOINTCOMPILE_H_
+
 /*
 *
 * Copyright 2026 FIWARE Foundation e.V.
@@ -27,24 +30,17 @@ extern "C"
 #include "kjson/KjNode.h"                                        // KjNode
 }
 
-#include "orionld/subCache/apiModelToCacheSubscription.h"        // Own interface
+#include "orionld/types/SubCacheItem.h"                          // SubCacheItem
 
 
 
 // -----------------------------------------------------------------------------
 //
-// apiModelToCacheSubscription -
+// subCacheItemEndpointCompile - split a Subscription's notification endpoint
 //
-// Adapts an API-model Subscription into the shape the cache wants, in place,
-// right before subCacheItemAdd clones it into the cache item.
+// 'endpointP' is the "notification::endpoint" object. Its "uri" is split into
+// protocol, ip, port and rest, and its "accept" into a MimeType.
 //
-// Nothing to adapt yet - the tree goes into the cache as it comes out of the API
-// model. TREE SHAPE ONLY: the compiled matching state ('q' as a QNode tree, the
-// GEOS geometry, the idPattern regexes, the split endpoint, ...) is NOT built
-// here - it is built by subCacheItemCompile, which runs after subCacheItemAdd
-// has cloned the tree. It has to: this tree is request-scoped.
-//
-void apiModelToCacheSubscription(KjNode* apiSubscriptionP)
-{
-  // Intentionally empty for now - see the comment above.
-}
+extern void subCacheItemEndpointCompile(SubCacheItem* sciP, KjNode* endpointP);
+
+#endif  // SRC_LIB_ORIONLD_SUBCACHE_SUBCACHEITEMENDPOINTCOMPILE_H_

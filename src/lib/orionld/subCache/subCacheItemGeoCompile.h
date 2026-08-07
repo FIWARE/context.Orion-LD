@@ -1,3 +1,6 @@
+#ifndef SRC_LIB_ORIONLD_SUBCACHE_SUBCACHEITEMGEOCOMPILE_H_
+#define SRC_LIB_ORIONLD_SUBCACHE_SUBCACHEITEMGEOCOMPILE_H_
+
 /*
 *
 * Copyright 2026 FIWARE Foundation e.V.
@@ -27,24 +30,16 @@ extern "C"
 #include "kjson/KjNode.h"                                        // KjNode
 }
 
-#include "orionld/subCache/apiModelToCacheSubscription.h"        // Own interface
+#include "orionld/types/SubCacheItem.h"                          // SubCacheItem
 
 
 
 // -----------------------------------------------------------------------------
 //
-// apiModelToCacheSubscription -
+// subCacheItemGeoCompile - compile a Subscription's "geoQ" for in-process matching
 //
-// Adapts an API-model Subscription into the shape the cache wants, in place,
-// right before subCacheItemAdd clones it into the cache item.
+// Fills in 'geoQP', 'geoInfo', 'geosGeometry' and 'geosPrepared' of the cache item.
 //
-// Nothing to adapt yet - the tree goes into the cache as it comes out of the API
-// model. TREE SHAPE ONLY: the compiled matching state ('q' as a QNode tree, the
-// GEOS geometry, the idPattern regexes, the split endpoint, ...) is NOT built
-// here - it is built by subCacheItemCompile, which runs after subCacheItemAdd
-// has cloned the tree. It has to: this tree is request-scoped.
-//
-void apiModelToCacheSubscription(KjNode* apiSubscriptionP)
-{
-  // Intentionally empty for now - see the comment above.
-}
+extern void subCacheItemGeoCompile(SubCacheItem* sciP, KjNode* geoqP);
+
+#endif  // SRC_LIB_ORIONLD_SUBCACHE_SUBCACHEITEMGEOCOMPILE_H_

@@ -38,6 +38,7 @@ extern "C"
 #include "orionld/types/SubCache.h"                              // SubCache
 #include "orionld/types/SubCacheItem.h"                          // SubCacheItem
 #include "orionld/common/traceLevels.h"                          // KTrace levels
+#include "orionld/subCache/subCacheItemCompile.h"                // subCacheItemCompile
 #include "orionld/subCache/subCacheItemAdd.h"                    // Own interface
 
 
@@ -144,6 +145,13 @@ SubCacheItem* subCacheItemAdd
   KjNode* modifiedAtP = kjLookup(sciP->subTree, "modifiedAt");
   if (modifiedAtP != NULL)
     sciP->modifiedAt = (modifiedAtP->type == KjFloat)? modifiedAtP->value.f : modifiedAtP->value.i;
+
+  //
+  // The compiled matching state comes LAST, and it is built from sciP->subTree -
+  // the item's own clone. The caller's tree is request-scoped, so regexes, QNode
+  // trees and GEOS geometries built from it would dangle after the request.
+  //
+  subCacheItemCompile(sciP);
 
   return sciP;
 }

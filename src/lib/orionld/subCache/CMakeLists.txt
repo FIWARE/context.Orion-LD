@@ -24,6 +24,10 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
 SET (SOURCES
     subCacheCreate.cpp
     subCacheItemAdd.cpp
+    subCacheItemCompile.cpp
+    subCacheItemEntitiesCompile.cpp
+    subCacheItemGeoCompile.cpp
+    subCacheItemEndpointCompile.cpp
     subCachesInit.cpp
     apiModelToCacheSubscription.cpp
 )

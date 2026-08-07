@@ -1340,18 +1340,6 @@ int main(int argC, char* argV[])
 
   orionldServiceInit(restServiceVV, 9);
 
-  //
-  // The new per-tenant subscription cache. AFTER orionldServiceInit, which is
-  // where the @context cache is loaded from the database: caching a
-  // subscription resolves its @context, and a miss would DOWNLOAD, blocking
-  // startup before the port is open.
-  //
-  // Populated but not yet consulted - the legacy sub cache is still in use.
-  //
-  subCachesInit();
-
-
-
   if (mongocOnly == false)
   {
     // Initialize Mongo Legacy C++ driver
@@ -1360,6 +1348,20 @@ int main(int argC, char* argV[])
 
   // Initialize GEOS for geofencing in subscription matching
   geosInit();
+
+  //
+  // The new per-tenant subscription cache.
+  //
+  // AFTER orionldServiceInit, which is where the @context cache is loaded from
+  // the database: caching a subscription resolves its @context, and a miss
+  // would DOWNLOAD, blocking startup before the port is open.
+  // AFTER geosInit as well - a subscription with a "geoQ" compiles its geometry
+  // as it enters the cache, and that needs the GEOS handle.
+  //
+  // Populated but not yet consulted - the legacy sub cache is still in use.
+  //
+  subCachesInit();
+
 
   // Initialize libs
   alarmMgr.init(relogAlarms);

@@ -1,3 +1,6 @@
+#ifndef SRC_LIB_ORIONLD_SUBCACHE_SUBCACHEITEMCOMPILE_H_
+#define SRC_LIB_ORIONLD_SUBCACHE_SUBCACHEITEMCOMPILE_H_
+
 /*
 *
 * Copyright 2026 FIWARE Foundation e.V.
@@ -22,29 +25,24 @@
 *
 * Author: Ken Zangelin
 */
-extern "C"
-{
-#include "kjson/KjNode.h"                                        // KjNode
-}
-
-#include "orionld/subCache/apiModelToCacheSubscription.h"        // Own interface
+#include "orionld/types/SubCacheItem.h"                          // SubCacheItem
 
 
 
 // -----------------------------------------------------------------------------
 //
-// apiModelToCacheSubscription -
+// subCacheItemCompile - build the matching state of a cached Subscription
 //
-// Adapts an API-model Subscription into the shape the cache wants, in place,
-// right before subCacheItemAdd clones it into the cache item.
+// Everything that matching an entity alteration would otherwise have to parse -
+// the 'q' filter, the geo query, the entity id patterns, the notification
+// endpoint - is built here, ONCE, when the subscription enters the cache.
 //
-// Nothing to adapt yet - the tree goes into the cache as it comes out of the API
-// model. TREE SHAPE ONLY: the compiled matching state ('q' as a QNode tree, the
-// GEOS geometry, the idPattern regexes, the split endpoint, ...) is NOT built
-// here - it is built by subCacheItemCompile, which runs after subCacheItemAdd
-// has cloned the tree. It has to: this tree is request-scoped.
+// IMPORTANT
+//   This works on sciP->subTree, which is the cache item's OWN clone of the
+//   subscription. It must be so: the tree that subCacheItemAdd is handed is
+//   request-scoped (kalloc), and regexes/QNodes/GEOS geometries built from it
+//   would point at memory that is reset once the request is over.
 //
-void apiModelToCacheSubscription(KjNode* apiSubscriptionP)
-{
-  // Intentionally empty for now - see the comment above.
-}
+extern void subCacheItemCompile(SubCacheItem* sciP);
+
+#endif  // SRC_LIB_ORIONLD_SUBCACHE_SUBCACHEITEMCOMPILE_H_
