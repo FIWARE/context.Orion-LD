@@ -28,6 +28,7 @@
 
 extern "C"
 {
+#include "kbase/kMacros.h"                                     // K_VEC_SIZE
 #include "ktrace/kTrace.h"                                     // KT_*
 #include "kalloc/kaAlloc.h"                                    // kaAlloc
 #include "kalloc/kaStrdup.h"                                   // kaStrdup
@@ -78,16 +79,115 @@ extern "C"
 
 // ----------------------------------------------------------------------------
 //
-// okToRemove -
+// okToRemove - may this Subscription member be removed by an NGSI-LD Null?
+//
+// Only the MANDATORY members are refused here - TS 104-175 clause 5: 'type' and
+// 'notification', plus 'id', which identifies the subscription.
+//
+// The read-only members ('status', 'createdAt', 'modifiedAt') never get this far:
+// the spec says they "shall be ignored" when provided, so pCheckSubscription drops
+// them from the payload whatever their value.
 //
 static bool okToRemove(const char* fieldName)
 {
-  if ((strcmp(fieldName, "id") == 0) || (strcmp(fieldName, "@id") == 0))
+  if ((strcmp(fieldName, "id")   == 0) || (strcmp(fieldName, "@id")   == 0))
+    return false;
+  else if ((strcmp(fieldName, "type") == 0) || (strcmp(fieldName, "@type") == 0))
     return false;
   else if (strcmp(fieldName, "notification") == 0)
     return false;
-  else if (strcmp(fieldName, "status") == 0)
+
+  return true;
+}
+
+
+
+// ----------------------------------------------------------------------------
+//
+// dbSubscriptionMemberRemove - remove an API member from the DB-model subscription
+//
+// The removal is driven from the API name, not the database name, because the two
+// models do not line up: 'watchedAttributes' is stored as "conditions", the NGSI-LD
+// 'q' as "ldQ" (with the NGSIv2 rendering beside it in "expression"), 'geoQ' is
+// spread over four members of "expression", and so on.
+//
+// Anything not in this table is refused rather than silently ignored - looking up a
+// name that the database model does not use would just quietly do nothing.
+//
+static bool dbSubscriptionMemberRemove(KjNode* dbSubP, const char* apiMember)
+{
+  const char* dbMember = NULL;
+
+  if      ((strcmp(apiMember, "subscriptionName") == 0) || (strcmp(apiMember, "name") == 0))  dbMember = "name";
+  else if (strcmp(apiMember, "description")       == 0)                                       dbMember = "description";
+  else if (strcmp(apiMember, "entities")          == 0)                                       dbMember = "entities";
+  else if (strcmp(apiMember, "watchedAttributes") == 0)                                       dbMember = "conditions";
+  else if (strcmp(apiMember, "throttling")        == 0)                                       dbMember = "throttling";
+  else if (strcmp(apiMember, "lang")              == 0)                                       dbMember = "lang";
+  else if (strcmp(apiMember, "timeInterval")      == 0)                                       dbMember = "timeInterval";
+  else if (strcmp(apiMember, "datasetId")         == 0)                                       dbMember = "datasetId";
+  else if (strcmp(apiMember, "jsonldContext")     == 0)                                       dbMember = "ldContext";
+  else if (strcmp(apiMember, "isActive")          == 0)                                       dbMember = "status";  // absent => "true by default"
+  else if ((strcmp(apiMember, "expiresAt") == 0) || (strcmp(apiMember, "expires") == 0))      dbMember = "expiration";
+  else if (strcmp(apiMember, "q") == 0)
+  {
+    //
+    // The NGSI-LD 'q' lives in "ldQ"; "expression.q"/"expression.mq" are the NGSIv2
+    // rendering of the same filter and have to go with it.
+    //
+    KjNode* ldqP        = kjLookup(dbSubP, "ldQ");
+    KjNode* expressionP = kjLookup(dbSubP, "expression");
+
+    if (ldqP != NULL)
+      kjChildRemove(dbSubP, ldqP);
+
+    if (expressionP != NULL)
+    {
+      KjNode* v2qP  = kjLookup(expressionP, "q");
+      KjNode* v2mqP = kjLookup(expressionP, "mq");
+
+      if (v2qP  != NULL) v2qP->value.s  = (char*) "";
+      if (v2mqP != NULL) v2mqP->value.s = (char*) "";
+    }
+
+    return true;
+  }
+  else if (strcmp(apiMember, "geoQ") == 0)
+  {
+    //
+    // "geoQ" is the four geo members of "expression". They are always present in the
+    // database model, empty when not in use - so they are emptied, not removed.
+    //
+    KjNode* expressionP = kjLookup(dbSubP, "expression");
+
+    if (expressionP != NULL)
+    {
+      const char* geoFields[] = { "geometry", "coords", "georel", "geoproperty" };
+
+      for (unsigned int ix = 0; ix < K_VEC_SIZE(geoFields); ix++)
+      {
+        KjNode* nodeP = kjLookup(expressionP, geoFields[ix]);
+
+        if (nodeP != NULL)
+        {
+          nodeP->type    = KjString;
+          nodeP->value.s = (char*) "";
+        }
+      }
+    }
+
+    return true;
+  }
+  else
+  {
+    orionldError(OrionldBadRequestData, "Invalid Subscription Fragment - this member cannot be removed", apiMember, 400);
     return false;
+  }
+
+  KjNode* toRemove = kjLookup(dbSubP, dbMember);
+
+  if (toRemove != NULL)
+    kjChildRemove(dbSubP, toRemove);
 
   return true;
 }
@@ -139,18 +239,21 @@ static bool ngsildSubscriptionPatch(KjNode* dbSubscriptionP, CachedSubscription*
 
     if (fragmentP->type == KjNull)
     {
-      KjNode* toRemove = kjLookup(dbSubscriptionP, fragmentP->name);
-
-      if (toRemove != NULL)
+      //
+      // The NGSI-LD Null - remove the member (clause 8.4.2).
+      //
+      // The check comes BEFORE the removal, and not - as it used to - only once the
+      // member has been found in the database tree: the database model uses different
+      // names, so "is it there?" answers nothing about "may it go?".
+      //
+      if (okToRemove(fragmentP->name) == false)
       {
-        if (okToRemove(fragmentP->name) == false)
-        {
-          orionldError(OrionldBadRequestData, "Invalid Subscription Fragment - attempt to remove a mandatory field", fragmentP->name, 400);
-          return false;
-        }
-
-        kjChildRemove(dbSubscriptionP, toRemove);
+        orionldError(OrionldBadRequestData, "Invalid Subscription Fragment - attempt to remove a mandatory field", fragmentP->name, 400);
+        return false;
       }
+
+      if (dbSubscriptionMemberRemove(dbSubscriptionP, fragmentP->name) == false)
+        return false;  // dbSubscriptionMemberRemove calls orionldError
     }
     else
     {
@@ -636,6 +739,98 @@ static bool subCacheItemUpdateNotification(CachedSubscription* cSubP, KjNode* it
 
 // -----------------------------------------------------------------------------
 //
+// subCacheItemMemberRemove - reflect an NGSI-LD Null (a removal) in the cached item
+//
+// The patch loop below copies values OUT of the fragment and into the cached
+// subscription. A member set to the NGSI-LD Null carries no value at all - it asks
+// for the member to be REMOVED - so it needs its own, opposite handling. The
+// structural members simply reuse the "free the old one" half of their updaters.
+//
+// This goes away together with src/lib/cache: the new sub cache needs none of it,
+// as it handles a removal by recompiling the item from the patched subscription.
+//
+static void subCacheItemMemberRemove(CachedSubscription* cSubP, const char* member)
+{
+  if ((strcmp(member, "subscriptionName") == 0) || (strcmp(member, "name") == 0))
+    cSubP->name = "";
+  else if (strcmp(member, "description") == 0)
+  {
+    if (cSubP->description != NULL)
+      free(cSubP->description);
+    cSubP->description = NULL;
+  }
+  else if (strcmp(member, "lang") == 0)
+    cSubP->lang = "";
+  else if ((strcmp(member, "expiresAt") == 0) || (strcmp(member, "expires") == 0))
+    cSubP->expirationTime = -1;  // -1: "no expiration", the NGSIv1 database model's own convention
+  else if (strcmp(member, "throttling") == 0)
+    cSubP->throttling = 0;
+  else if (strcmp(member, "isActive") == 0)
+  {
+    cSubP->isActive = true;      // "true by default" - TS 104-175, clause 5, Subscription
+    cSubP->status   = "active";
+  }
+  else if (strcmp(member, "q") == 0)
+  {
+    if (cSubP->qP != NULL)
+    {
+      qRelease(cSubP->qP);
+      cSubP->qP = NULL;
+    }
+
+    if (cSubP->qText != NULL)
+    {
+      free(cSubP->qText);
+      cSubP->qText = NULL;
+    }
+
+    cSubP->expression.q = "";
+  }
+  else if (strcmp(member, "geoQ") == 0)
+  {
+    if (cSubP->geosPrepared != NULL)
+    {
+      GEOSPreparedGeom_destroy_r(geosHandle, cSubP->geosPrepared);
+      cSubP->geosPrepared = NULL;
+    }
+
+    if (cSubP->geosGeometry != NULL)
+    {
+      GEOSGeom_destroy_r(geosHandle, cSubP->geosGeometry);
+      cSubP->geosGeometry = NULL;
+    }
+
+    if (cSubP->geoInfo != NULL)
+    {
+      free(cSubP->geoInfo->geoProperty);
+      free(cSubP->geoInfo);
+      cSubP->geoInfo = NULL;
+    }
+
+    cSubP->expression.geometry    = "";
+    cSubP->expression.coords      = "";
+    cSubP->expression.georel      = "";
+    cSubP->expression.geoproperty = "";
+  }
+  else if (strcmp(member, "entities") == 0)
+  {
+    for (long unsigned int ix = 0; ix < cSubP->entityIdInfos.size(); ix++)
+    {
+      cSubP->entityIdInfos[ix]->release();
+      delete cSubP->entityIdInfos[ix];
+    }
+    cSubP->entityIdInfos.clear();
+  }
+  else if (strcmp(member, "watchedAttributes") == 0)
+    cSubP->notifyConditionV.clear();
+  else
+    KT_W("Removal of the Subscription member '%s' is not reflected in the subscription cache", member);
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // subCacheItemUpdate -
 //
 static bool subCacheItemUpdate
@@ -684,6 +879,12 @@ static bool subCacheItemUpdate
   for (KjNode* itemP = subscriptionTree->value.firstChildP; itemP != NULL; itemP = itemP->next)
   {
     KT_T(KtSR, "Patching subscription fragment '%s' for sub-cache", itemP->name);
+
+    if (itemP->type == KjNull)  // The NGSI-LD Null - the member is being REMOVED, there is no value to copy
+    {
+      subCacheItemMemberRemove(cSubP, itemP->name);
+      continue;
+    }
 
     if ((strcmp(itemP->name, "subscriptionName") == 0) || (strcmp(itemP->name, "name") == 0))
       cSubP->name = itemP->value.s;
@@ -976,6 +1177,16 @@ bool orionldPatchSubscription(void)
 
   if (qRenderedForDb != NULL)
     KT_T(KtSR, "qRenderedForDb: '%s'", qRenderedForDb);
+
+  //
+  // 'geoqP' was picked up before pCheckSubscription, when an NGSI-LD Null was still a
+  // String. pCheckSubscription has turned it into a JSON Null since - and a Null has
+  // no children, so everything downstream that walks "geoQ" as an object has to be
+  // told there is no geoQ here. The removal itself is done by the KjNull branch of
+  // ngsildSubscriptionPatch.
+  //
+  if ((geoqP != NULL) && (geoqP->type == KjNull))
+    geoqP = NULL;
 
   KjNode* dbSubscriptionP = mongocSubscriptionLookup(subscriptionId);
 
