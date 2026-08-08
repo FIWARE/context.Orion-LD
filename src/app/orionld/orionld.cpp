@@ -1329,16 +1329,23 @@ int main(int argC, char* argV[])
   // mongocInit calls mongocTenantsGet => it gets total number of tenants from there and can change dbPoolSize
   mongocInit(dbURI, dbHost, dbUser, dbPwd, dbAuthDb, rplSet, dbAuthMechanism, dbSSL, dbCertFile);
 
-  //
-  // Now that the DB is ready to be used, we can populate the regCache for the different tenants
-  // Note that regCacheInit uses the tenantList, so orionldTenantInit must be called before regCacheInit
-  //
-  regCacheInit();
-
   if (pernot == true)
     pernotSubCacheInit();
 
   orionldServiceInit(restServiceVV, 9);
+
+  //
+  // Now that the DB is ready to be used, we can populate the regCache for the different tenants
+  // Note that regCacheInit uses the tenantList, so orionldTenantInit must be called before regCacheInit
+  //
+  // It must also come AFTER orionldServiceInit, which is where the @context cache is loaded from the
+  // database (orionldContextInit): a registration with a "jsonldContext" in its "contextSourceInfo"
+  // resolves that @context as it enters the cache, and a cache MISS makes orionldContextFromUrl()
+  // DOWNLOAD it - contextDownloadAttempts tries, contextDownloadTimeout each, all of it before the
+  // broker opens its port. A broker with no route to the @context server therefore never started
+  // listening at all (issue #1977).
+  //
+  regCacheInit();
 
   if (mongocOnly == false)
   {
