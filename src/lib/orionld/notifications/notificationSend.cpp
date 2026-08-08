@@ -950,7 +950,14 @@ int notificationSend(OrionldAlterationMatch* mAltP, double timestamp, CURL** cur
   char          hostHeader[512];
   size_t        hostHeaderLen;
 
-  hostHeaderLen = snprintf(hostHeader, sizeof(hostHeader), "Host: %s:%d\r\n", subP->ip, subP->port);
+  //
+  // A WS endpoint has no host:port - its URI names the WebSocket the subscription
+  // was created on, and that is what the receiver is told.
+  //
+  if ((subP->protocol == WS) || (subP->protocol == WSS))
+    hostHeaderLen = snprintf(hostHeader, sizeof(hostHeader), "Host: %s\r\n", subP->url);
+  else
+    hostHeaderLen = snprintf(hostHeader, sizeof(hostHeader), "Host: %s:%d\r\n", subP->ip, subP->port);
 
   int           ioVecLen   = headers + 3;  // Request line + X headers + empty line + payload body
   int           headerIx   = 7;

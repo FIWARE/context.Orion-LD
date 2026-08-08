@@ -1,4 +1,5 @@
 ## Fixed Issues
+  #XXXX - A Subscription created over a WebSocket now names its connection in 'notification::endpoint::uri' - "urn:ngsi-ld:ws:<file descriptor>" instead of the "ws://ws-placeholder:0" it used to be given, which read like a field somebody forgot to fill in. The file descriptor is what tells two WS subscriptions apart, and it is also carried in the Host header of the notifications sent over that WebSocket
   #XXXX - Fixed a Subscription created WITHOUT an 'id' in the payload: the generated id was written to a shadowed local buffer, so the subscription entered the subscription cache under an uninitialized id (and could then not be looked up by id)
   #XXXX - Fixed a Periodic Notification Subscription (with 'timeInterval') showing up TWICE in GET /subscriptions after a broker restart: the startup reload put it in the periodic-notification cache AND in the on-change subscription cache
   #XXXX - GET /subscriptions now renders 'notification::timesFailed' (NGSI-LD spec clause 5, NotificationParams). It was only rendered when the subscription was read with options=fromDb

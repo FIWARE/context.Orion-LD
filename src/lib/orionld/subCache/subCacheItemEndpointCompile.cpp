@@ -40,6 +40,7 @@ extern "C"
 #include "orionld/common/urlParse.h"                             // urlParse
 #include "orionld/mqtt/mqttParse.h"                              // mqttParse
 #include "orionld/subCache/subCacheItemStatusSet.h"              // subCacheItemStatusSet
+#include "orionld/ws/wsEndpointUri.h"                            // WS_ENDPOINT_URI_PREFIX
 #include "orionld/subCache/subCacheItemEndpointCompile.h"        // Own interface
 
 
@@ -143,6 +144,24 @@ void subCacheItemEndpointCompile(SubCacheItem* sciP, KjNode* endpointP)
   // copy of the URI that the cache item owns.
   //
   sciP->url = strdup(uriP->value.s);
+
+  //
+  // A WS subscription's URI is a URN, not a URL - it names the WebSocket the
+  // subscription was created on (urn:ngsi-ld:ws:<fd>) instead of locating a host
+  // to connect to. There is nothing for urlParse to split, and the notification
+  // is delivered by looking the connection up by subscription id.
+  //
+  if (strncmp(sciP->url, WS_ENDPOINT_URI_PREFIX, WS_ENDPOINT_URI_PREFIX_LEN) == 0)
+  {
+    sciP->protocol       = WS;
+    sciP->protocolString = (char*) "ws";
+    sciP->ip             = sciP->url;   // No host - the URN is the best answer there is
+    sciP->rest           = (char*) "";
+    sciP->port           = atoi(&sciP->url[WS_ENDPOINT_URI_PREFIX_LEN]);  // The file descriptor
+
+    KT_T(KtSubCache, "Sub '%s': WS endpoint '%s' (fd: %d)", sciP->subId, sciP->url, sciP->port);
+    return;
+  }
 
   if (urlParse(sciP->url, &sciP->protocolString, &sciP->ip, &sciP->port, &sciP->rest) == false)
     KT_RVE("Sub '%s': invalid 'notification::endpoint::uri' ('%s')", sciP->subId, uriP->value.s);

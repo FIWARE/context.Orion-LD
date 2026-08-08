@@ -22,7 +22,7 @@
 *
 * Author: Ken Zangelin
 */
-#include <string.h>                                              // strstr
+#include <string.h>                                              // strncmp
 #include <mongoc/mongoc.h>                                       // MongoDB C Client Driver
 
 extern "C"
@@ -47,6 +47,7 @@ extern "C"
 #include "orionld/subCache/subCacheItemLookup.h"                 // subCacheItemLookup (the new sub cache)
 #include "orionld/subCache/subCacheItemRemove.h"                 // subCacheItemRemove (the new sub cache)
 #include "orionld/subCache/subCacheItemUpdate.h"                 // subCacheItemUpdate (the new sub cache)
+#include "orionld/ws/wsEndpointUri.h"                            // WS_ENDPOINT_URI_PREFIX
 #include "orionld/mongoc/mongocSubCachePopulateByTenant.h"       // Own interface
 
 
@@ -130,15 +131,16 @@ bool mongocSubCachePopulateByTenant(OrionldTenant* tenantP, bool refresh)
 
     //
     // Stale WS subscriptions: on startup, no WS connections exist, so any subscription
-    // with a ws-placeholder endpoint is leftover from a previous crash.  Delete it from DB and skip.
+    // whose endpoint URI names one (urn:ngsi-ld:ws:<fd>) is leftover from a previous
+    // crash.  Delete it from DB and skip.
     //
     KjNode* referenceP = kjLookup(dbSubP, "reference");
-    if ((referenceP != NULL) && (referenceP->type == KjString) && (strstr(referenceP->value.s, "ws-placeholder") != NULL))
+    if ((referenceP != NULL) && (referenceP->type == KjString) && (strncmp(referenceP->value.s, WS_ENDPOINT_URI_PREFIX, WS_ENDPOINT_URI_PREFIX_LEN) == 0))
     {
       KjNode* subIdP = kjLookup(dbSubP, "_id");
       const char* subId = (subIdP != NULL) ? subIdP->value.s : "unknown";
 
-      KT_W("Removing stale WS subscription '%s' (ws-placeholder endpoint)", subId);
+      KT_W("Removing stale WS subscription '%s' (no WS connection can have survived a restart)", subId);
 
       // Delete from DB using the collection we already have open
       bson_t selector;

@@ -1,0 +1,190 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+A WS subscription left behind by a crashed broker is not resurrected
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -mongocOnly -wip ws
+ftClientStart -v -t 200
+
+--SHELL--
+
+#
+# A WS subscription lives and dies with its WebSocket, and wsClose takes it out
+# of the caches and the database. A broker that is KILLED never gets to do that,
+# so the subscription is still in the database when it starts again - naming a
+# connection (urn:ngsi-ld:ws:<fd>) that cannot possibly exist any more.
+#
+# It must not come back: not in GET /subscriptions, and not in the database.
+#
+# 01. Connect via WebSocket and subscribe for entity type T
+# 02. GET /subscriptions - the WS subscription is there
+# 03. Kill the broker (SIGKILL) - wsClose never runs, the subscription survives in the DB
+# 04. See the leftover WS subscription in the database
+# 05. Start the broker again
+# 06. GET /subscriptions - the stale WS subscription is NOT cached
+# 07. See that it has been deleted from the database too
+#
+
+echo "01. Connect via WebSocket and subscribe for entity type T"
+echo "========================================================="
+payload='{
+  "metadata": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "type": "Subscription",
+    "entities": [
+      {
+        "type": "T"
+      }
+    ],
+    "notification": {
+      "format": "normalized"
+    }
+  }
+}'
+wsConnect --port $FT_PORT --payload "$payload"
+echo
+echo
+
+
+echo "02. GET /subscriptions - the WS subscription is there"
+echo "====================================================="
+orionCurl --url '/ngsi-ld/v1/subscriptions?count=true'
+echo
+echo
+
+
+echo "03. Kill the broker (SIGKILL) - wsClose never runs, the subscription survives in the DB"
+echo "======================================================================================="
+kill -9 $(ps -fe | grep $BROKER | grep $CB_PORT | awk '{print $2}') 2> /dev/null
+sleep 1
+echo "Broker killed"
+echo
+echo
+
+
+echo "04. See the leftover WS subscription in the database"
+echo "==================================================="
+mongoCmd ftest 'db.csubs.find({}, {_id: 0, reference: 1})'
+echo
+echo
+
+
+echo "05. Start the broker again"
+echo "=========================="
+orionldStart CB -mongocOnly -wip ws
+echo
+echo
+
+
+echo "06. GET /subscriptions - the stale WS subscription is NOT cached"
+echo "==============================================================="
+orionCurl --url '/ngsi-ld/v1/subscriptions?count=true'
+echo
+echo
+
+
+echo "07. See that it has been deleted from the database too"
+echo "====================================================="
+mongoCmd ftest 'db.csubs.count()'
+echo
+echo
+
+
+--REGEXPECT--
+01. Connect via WebSocket and subscribe for entity type T
+=========================================================
+
+
+02. GET /subscriptions - the WS subscription is there
+=====================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+NGSILD-Results-Count: 1
+
+[
+    {
+        "entities": [
+            {
+                "type": "T"
+            }
+        ],
+        "id": "REGEX(urn:ngsi-ld:subscription:.*)",
+        "isActive": true,
+        "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld",
+        "notification": {
+            "endpoint": {
+                "accept": "application/json",
+                "uri": "REGEX(urn:ngsi-ld:ws:\d+)"
+            },
+            "format": "normalized",
+            "status": "ok"
+        },
+        "origin": "cache",
+        "status": "active",
+        "type": "Subscription"
+    }
+]
+
+
+03. Kill the broker (SIGKILL) - wsClose never runs, the subscription survives in the DB
+=======================================================================================
+Broker killed
+
+
+04. See the leftover WS subscription in the database
+===================================================
+{ "reference" : "REGEX(urn:ngsi-ld:ws:\d+)" }
+
+
+05. Start the broker again
+==========================
+
+
+06. GET /subscriptions - the stale WS subscription is NOT cached
+===============================================================
+HTTP/1.1 200 OK
+Content-Length: 2
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+NGSILD-Results-Count: 0
+
+[]
+
+
+07. See that it has been deleted from the database too
+=====================================================
+0
+
+
+--TEARDOWN--
+brokerStop CB
+ftClientStop
+dbDrop CB

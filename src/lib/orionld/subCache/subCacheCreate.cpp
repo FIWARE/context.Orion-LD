@@ -22,11 +22,15 @@
 *
 * Author: Ken Zangelin
 */
+#include <stdlib.h>                                              // malloc
+#include <string.h>                                              // strncmp
+
 extern "C"
 {
 #include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjLookup.h"                                      // kjLookup
+#include "kjson/kjNavigate.h"                                    // kjNavigate
 }
 
 #include "orionld/types/QNode.h"                                 // QNode
@@ -37,6 +41,7 @@ extern "C"
 #include "orionld/context/orionldContextFromUrl.h"               // orionldContextFromUrl
 #include "orionld/mongoc/mongocSubscriptionsIter.h"              // mongocSubscriptionsIter
 #include "orionld/dbModel/dbModelToApiSubscription.h"            // dbModelToApiSubscription
+#include "orionld/ws/wsEndpointUri.h"                            // WS_ENDPOINT_URI_PREFIX
 #include "orionld/subCache/subCacheItemAdd.h"                    // subCacheItemAdd
 #include "orionld/subCache/subCacheCreate.h"                     // Own interface
 
@@ -77,6 +82,26 @@ int subIterFunc(SubCache* scP, KjNode* dbSubP)
   if (apiSubP == NULL)
     KT_RE(-1, "dbModelToApiSubscription failed");
 
+  KjNode* subIdNodeP = kjLookup(apiSubP, "id");
+
+  //
+  // A subscription created over a WebSocket cannot outlive the broker - its
+  // endpoint URI names a connection (urn:ngsi-ld:ws:<fd>) and no connection
+  // survives a restart. One found here is leftover from a crash; the legacy
+  // loader deletes it from the database, but that runs AFTER this one, so it
+  // would be cached (and answered by GET) in the meantime.
+  //
+  const char* uriPath[] = { "notification", "endpoint", "uri", NULL };
+  KjNode*     uriNodeP  = kjNavigate(apiSubP, uriPath, NULL, NULL);
+
+  if ((uriNodeP != NULL) && (uriNodeP->type == KjString) &&
+      (strncmp(uriNodeP->value.s, WS_ENDPOINT_URI_PREFIX, WS_ENDPOINT_URI_PREFIX_LEN) == 0))
+  {
+    KT_W("Not caching stale WS subscription '%s' (no WS connection can have survived a restart)",
+         (subIdNodeP != NULL)? subIdNodeP->value.s : "unknown");
+    return 0;
+  }
+
   //
   // A Periodic Notification subscription ('timeInterval') is not driven by
   // alterations and it has a cache of its own - it belongs there, and only there.
@@ -107,9 +132,7 @@ int subIterFunc(SubCache* scP, KjNode* dbSubP)
     }
   }
 
-  // Subscription Id
-  KjNode* subIdNodeP = kjLookup(apiSubP, "id");
-  char*   subId      = (subIdNodeP != NULL)? subIdNodeP->value.s : (char*) "no:sub:id";
+  char* subId = (subIdNodeP != NULL)? subIdNodeP->value.s : (char*) "no:sub:id";
 
   // Insert cacheSubP in tenantP->subCache - it brings the tree into the cache shape itself
   subCacheItemAdd(scP, subId, apiSubP, true, jsonldContextP);
