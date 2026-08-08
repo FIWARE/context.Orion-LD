@@ -25,6 +25,7 @@
 extern "C"
 {
 #include "ktrace/kTrace.h"                                       // KT_*
+#include "kjson/kjLookup.h"                                       // KT_*
 }
 
 #include "cache/subCache.h"                                      // CachedSubscription, subCacheItemLookup, ...
@@ -37,6 +38,8 @@ extern "C"
 #include "orionld/mqtt/mqttDisconnect.h"                         // mqttDisconnect
 #include "orionld/mongoc/mongocSubscriptionLookup.h"             // mongocSubscriptionLookup
 #include "orionld/mongoc/mongocSubscriptionDelete.h"             // mongocSubscriptionDelete
+#include "orionld/types/SubCacheItem.h"                          // SubCacheItem
+#include "orionld/subCache/subCacheItemLookup.h"                 // subCacheItemLookup (the new sub cache)
 #include "orionld/subCache/subCacheItemRemove.h"                 // subCacheItemRemove (the new sub cache)
 #include "orionld/legacyDriver/legacyDeleteSubscription.h"       // legacyDeleteSubscription
 #include "orionld/regCache/regCacheItemLookup.h"                 // regCacheItemLookup
@@ -65,43 +68,65 @@ bool orionldDeleteSubscription(void)
   if (mongocSubscriptionDelete(orionldState.wildcard[0]) == false)
     return false;  // mongocSubscriptionDelete calls orionldError, setting status code to 500
 
-  // Out of the new sub cache. Not consulted yet, but it must not keep a subscription the DB no longer has
-  subCacheItemRemove(orionldState.tenantP->subCache, orionldState.wildcard[0]);
+  //
+  // The cache item is needed BEFORE it is removed: it is what says whether there
+  // is an MQTT connection to close and which subordinate subscriptions to take
+  // down with it.
+  //
+  SubCacheItem* sciP = subCacheItemLookup(orionldState.tenantP->subCache, orionldState.wildcard[0]);
 
-  CachedSubscription* cSubP = subCacheItemLookup(orionldState.tenantP->tenant, orionldState.wildcard[0]);
-
-  if (cSubP == NULL)
+  if (sciP == NULL)
   {
     if (noCache == false)
       KT_W("The subscription '%s' was successfully removed from DB but does not exist in sub-cache ... (sub-cache is enabled)", orionldState.wildcard[0]);
-
-    //
-    // FIXME: If mqtt, we need to disconnect from MQTT broker
-    //        BUT, not until Orion-LD is able to run without sub-cache
-    //
   }
   else
   {
     // If MQTT subscription - disconnect from mqtt broker
-    if (cSubP->protocol == MQTT || cSubP->protocol == MQTTS)
+    if (((sciP->protocol == MQTT) || (sciP->protocol == MQTTS)) && (sciP->mqttP != NULL))
     {
-      MqttInfo* mqttP = &cSubP->httpInfo.mqtt;
+      MqttInfo* mqttP = sciP->mqttP;
       mqttDisconnect(mqttP->mqtts, mqttP->host, mqttP->port, mqttP->username, mqttP->password, mqttP->version);
     }
 
-    // Any subordinate subscriptions?
-    for (SubordinateSubscription* subordinateP = cSubP->subordinateP; subordinateP != NULL; subordinateP = subordinateP->next)
+    //
+    // Any subordinate subscriptions? They live in the subTree, which is the
+    // source of truth - each one names the registration it was created behind.
+    //
+    KjNode* subordinateArrayP = kjLookup(sciP->subTree, "subordinate");
+
+    for (KjNode* subordinateP = (subordinateArrayP != NULL)? subordinateArrayP->value.firstChildP : NULL;
+         subordinateP != NULL;
+         subordinateP = subordinateP->next)
     {
+      KjNode* regIdP = kjLookup(subordinateP, "registrationId");
+      KjNode* subIdP = kjLookup(subordinateP, "subscriptionId");
+
+      if ((regIdP == NULL) || (subIdP == NULL))
+        continue;
+
+      RegCacheItem* rciP = regCacheItemLookup(orionldState.tenantP->regCache, regIdP->value.s);
+
+      //
+      // The registration may be gone - it can be deleted independently of the
+      // subscription that was created behind it. Nothing to send the DELETE to.
+      //
+      if (rciP == NULL)
+      {
+        KT_W("Subordinate subscription '%s': its registration '%s' is gone - cannot delete it remotely", subIdP->value.s, regIdP->value.s);
+        continue;
+      }
+
       char  url[256];
       char  ip[128];
-      RegCacheItem* rciP = regCacheItemLookup(orionldState.tenantP->regCache, subordinateP->registrationId);
 
       strncpy(ip, rciP->ipAndPort, sizeof(ip) - 1);
+      ip[sizeof(ip) - 1] = 0;
       char* colon = strchr(ip, ':');
       if (colon != NULL)
         *colon = 0;
 
-      snprintf(url, sizeof(url) - 1, "http://%s/ngsi-ld/v1/subscriptions/%s", rciP->ipAndPort, subordinateP->subscriptionId);
+      snprintf(url, sizeof(url) - 1, "http://%s/ngsi-ld/v1/subscriptions/%s", rciP->ipAndPort, subIdP->value.s);
 
       KjNode*                responseTree = NULL;
       OrionldProblemDetails  pd;
@@ -111,13 +136,18 @@ bool orionldDeleteSubscription(void)
       r = httpRequest(ip, "DELETE", url, NULL, NULL, NULL, 5000, &responseTree, &pd);
       if (r != 204)
       {
-        KT_W("Unable to DELETE subordinate subscription '%s': status code %d, %s: %s", subordinateP->subscriptionId, r, pd.title, pd.detail);
+        KT_W("Unable to DELETE subordinate subscription '%s': status code %d, %s: %s", subIdP->value.s, r, pd.title, pd.detail);
         KT_TREE(responseTree, "Error response payload body", KtSR);
       }
     }
 
-    subCacheItemRemove(cSubP);
+    subCacheItemRemove(orionldState.tenantP->subCache, orionldState.wildcard[0]);
   }
+
+  // Out of the legacy cache too - it still serves the NGSIv2 matching path
+  CachedSubscription* cSubP = subCacheItemLookup(orionldState.tenantP->tenant, orionldState.wildcard[0]);
+  if (cSubP != NULL)
+    subCacheItemRemove(cSubP);
 
   orionldState.httpStatusCode = 204;
 

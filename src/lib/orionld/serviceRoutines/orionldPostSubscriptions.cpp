@@ -468,8 +468,8 @@ bool orionldPostSubscriptions(void)
     {
       char* entityTypeP;
 
-      KT_T(KtSubordinate, "Checking reg '%s' for match to subscription '%s'", rciP->regId, cSubP->subscriptionId);
-      if (regMatchSubscription(rciP, cSubP, &entityTypeP) == true)
+      KT_T(KtSubordinate, "Checking reg '%s' for match to subscription '%s'", rciP->regId, subscriptionId);
+      if (regMatchSubscription(rciP, kjLookup(subP, "entities"), &entityTypeP) == true)
       {
         KT_T(KtSubordinate, "Reg '%s' is a match - creating subordinate subscription", rciP->regId);
 
