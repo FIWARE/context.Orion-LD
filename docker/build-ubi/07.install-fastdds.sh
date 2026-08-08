@@ -147,7 +147,25 @@ yum -y install lz4-devel libzstd-devel json-devel
 cd /opt/Fast-DDS
 git clone https://github.com/eProsima/FIWARE-DDS-Enabler.git
 cd FIWARE-DDS-Enabler
-git checkout append_action_infix
+
+#
+# Pinned by COMMIT, not by branch: this used to check out 'append_action_infix',
+# a branch eProsima asked us to use and has since deleted -
+#
+#   error: pathspec 'append_action_infix' did not match any file(s) known to git
+#
+# The work was merged to main as ad19575 "Append action infix to action topics"
+# (#29), which is what this commit is - the same code the branch gave us. It is
+# NOT in any release tag: v1.2.0 (2026-05-05) predates it, and main carries only
+# it plus three cosmetic commits.
+#
+# The infix is what builds the action topic names (ACTION_INFIX "/_action/" in
+# ddsenabler_participants/include/ddsenabler_participants/Constants.hpp), so a
+# tag would quietly break DDS actions rather than fail to build.
+#
+# Move this to a release tag once eProsima cuts one that contains ad19575.
+#
+git checkout ad19575
 
 # ./install_dds_module.sh
 
