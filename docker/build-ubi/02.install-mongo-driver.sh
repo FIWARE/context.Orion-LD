@@ -22,9 +22,33 @@
 
 set -e
 
-yum -y install --nogpgcheck http://repo.okay.com.mx/centos/8/x86_64/release/okay-release-1-5.el8.noarch.rpm
-yum -y install --nogpgcheck boost-devel
-yum -y install --nogpgcheck scons
+#
+# boost-devel and scons are needed to build the (legacy) mongo cxx driver.
+#
+# They used to come from a third-party mirror - one 'okay-release' RPM off
+# repo.okay.com.mx, added here and removed again at the end of this script. That
+# made every base-image build depend on a single host staying reachable, and it
+# times out (Curl error 28) often enough to matter.
+#
+# boost-devel is in AlmaLinux AppStream, which docker/other-places.repo already
+# enables, and scons comes from PyPI.
+#
+# It has to be a PYTHON 2 scons: mongo-cxx-driver's SConstruct is Python 2 source
+# (it uses backtick-repr), and scons runs SConstruct under whichever Python runs
+# scons. 3.1.2 is the last release that still supports Python 2. That is why
+# 01.install-build-dependencies.sh installs python2 alongside python3.
+#
+yum -y install --nogpgcheck boost-devel python2-pip
+python2 -m pip install --no-cache-dir "scons==3.1.2"
+
+#
+# scons ships with a '#!/usr/bin/env python' shebang and RHEL8 has no unversioned
+# 'python' on PATH - only python2 and python3 - so it must be pointed at python2.
+# The scons RPM this replaced pulled that in as a dependency, which is why the
+# problem never showed before.
+#
+alternatives --set python /usr/bin/python2 2>/dev/null || ln -sf /usr/bin/python2 /usr/bin/python
+python --version
 
 echo -e "\e[1;32m Builder: installing mongo cxx driver \e[0m"
 git clone https://github.com/FIWARE-Ops/mongo-cxx-driver ${ROOT_FOLDER}/mongo-cxx-driver
@@ -32,6 +56,4 @@ cd ${ROOT_FOLDER}/mongo-cxx-driver
 scons --disable-warnings-as-errors --use-sasl-client --ssl
 scons install --disable-warnings-as-errors --prefix=/usr/local --use-sasl-client --ssl
 cd ${ROOT_FOLDER} && rm -Rf mongo-cxx-driver
-
-yum remove -y okay-release  || true
 
