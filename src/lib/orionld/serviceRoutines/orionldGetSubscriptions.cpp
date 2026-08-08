@@ -27,9 +27,8 @@ extern "C"
 #include "ktrace/kTrace.h"                                       // KT_*
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjObject, kjArray
+#include "kjson/kjClone.h"                                       // kjClone
 }
-
-#include "cache/subCache.h"                                      // CachedSubscription, subCacheHeadGet, subCacheItemLookup
 
 #include "orionld/types/OrionldHeader.h"                         // orionldHeaderAdd, HttpResultsCount
 #include "orionld/types/QNode.h"                                 // QNode
@@ -39,34 +38,14 @@ extern "C"
 #include "orionld/common/tenantList.h"                           // tenant0
 #include "orionld/kjTree/kjTreeFromPernotSubscription.h"         // kjTreeFromPernotSubscription
 #include "orionld/legacyDriver/legacyGetSubscriptions.h"         // legacyGetSubscriptions
+#include "orionld/types/SubCache.h"                              // SubCache
 #include "orionld/types/SubCacheItem.h"                          // SubCacheItem
-#include "orionld/kjTree/kjTreeFromCachedSubscription.h"         // kjTreeFromCachedSubscription
+#include "orionld/subCache/apiModelFromCacheSubscription.h"      // apiModelFromCacheSubscription
 #include "orionld/mongoc/mongocSubscriptionsGet.h"               // mongocSubscriptionsGet
 #include "orionld/dbModel/dbModelToApiSubscription.h"            // dbModelToApiSubscription
 #include "orionld/context/orionldContextFromUrl.h"               // orionldContextFromUrl
 #include "orionld/serviceRoutines/orionldGetSubscriptions.h"     // Own Interface
 
-
-
-// ----------------------------------------------------------------------------
-//
-// tenantMatch -
-//
-static bool tenantMatch(OrionldTenant* requestTenantP, const char* subscriptionTenant)
-{
-  if (requestTenantP == &tenant0)
-  {
-    if (subscriptionTenant == NULL)
-      return true;
-  }
-  else
-  {
-    if ((subscriptionTenant != NULL) && (strcmp(requestTenantP->tenant, subscriptionTenant) == 0))
-      return true;
-  }
-
-  return false;
-}
 
 
 extern void orionldSubCounters(KjNode* apiSubP, SubCacheItem* sciP, PernotSubscription* pSubP);
@@ -154,15 +133,19 @@ static bool orionldGetSubscriptionsFromDb(void)
 
 // ----------------------------------------------------------------------------
 //
-// subCacheCount - move to subCache.cpp
+// subCacheCount - the cache is per tenant, so this is just its length
 //
 int subCacheCount(void)
 {
-  int count = 0;
-  for (CachedSubscription* cSubP = subCacheHeadGet(); cSubP != NULL; cSubP = cSubP->next)
+  SubCache* scP   = orionldState.tenantP->subCache;
+  int       count = 0;
+
+  if (scP == NULL)
+    return 0;
+
+  for (SubCacheItem* sciP = scP->subList; sciP != NULL; sciP = sciP->next)
   {
-    if (tenantMatch(orionldState.tenantP, cSubP->tenant) == true)
-      ++count;
+    ++count;
   }
 
   return count;
@@ -244,27 +227,24 @@ bool orionldGetSubscriptions(void)
       }
     }
 
-    if (subs < limit)
-    {
-      for (CachedSubscription* cSubP = subCacheHeadGet(); cSubP != NULL; cSubP = cSubP->next)
-      {
-        if (tenantMatch(orionldState.tenantP, cSubP->tenant) == false)
-          continue;
+    SubCache* scP = orionldState.tenantP->subCache;
 
+    if ((subs < limit) && (scP != NULL))
+    {
+      for (SubCacheItem* sciP = scP->subList; sciP != NULL; sciP = sciP->next)
+      {
         if (ix < offset)
         {
           ++ix;
           continue;
         }
 
-        KjNode* subP = kjTreeFromCachedSubscription(cSubP, orionldState.uriParamOptions.sysAttrs, orionldState.out.contentType == MT_JSONLD);
+        KjNode* subP = kjClone(orionldState.kjsonP, sciP->subTree);  // Work on a cloned copy from the sub-cache
 
-        if (subP == NULL)
-        {
-          KT_E("Internal Error (kjTreeFromCachedSubscription failed for subscription '%s')", cSubP->subscriptionId);
-          ++ix;
-          continue;
-        }
+        apiModelFromCacheSubscription(subP,
+                                      sciP,
+                                      orionldState.uriParamOptions.sysAttrs,
+                                      orionldState.out.contentType == MT_JSONLD);
 
         kjChildAdd(subArray, subP);
         ++ix;

@@ -1194,7 +1194,7 @@ bye
 20. GET subscription and see the new 'geoQ'
 ===========================================
 HTTP/1.1 200 OK
-Content-Length: 873
+Content-Length: 892
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -1219,7 +1219,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
   "geoQ": {
     "geometry": "Point",
     "georel": "near;maxDistance==18",
-    "coordinates": "0,0",
+    "coordinates": [
+      0,
+      0
+    ],
     "geoproperty": "geo1"
   },
   "status": "active",
@@ -1311,7 +1314,7 @@ bye
 25. GET subscription and see the new 'isActive'
 ===============================================
 HTTP/1.1 200 OK
-Content-Length: 874
+Content-Length: 893
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -1336,7 +1339,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
   "geoQ": {
     "geometry": "Point",
     "georel": "near;maxDistance==18",
-    "coordinates": "0,0",
+    "coordinates": [
+      0,
+      0
+    ],
     "geoproperty": "geo1"
   },
   "status": "paused",
@@ -1428,7 +1434,7 @@ bye
 28. GET subscription and see the new 'notification'
 ===================================================
 HTTP/1.1 200 OK
-Content-Length: 873
+Content-Length: 892
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -1453,7 +1459,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
   "geoQ": {
     "geometry": "Point",
     "georel": "near;maxDistance==18",
-    "coordinates": "0,0",
+    "coordinates": [
+      0,
+      0
+    ],
     "geoproperty": "geo1"
   },
   "status": "paused",
@@ -1489,7 +1498,7 @@ Date: REGEX(.*)
 30. GET subscription and see the new 'expiresAt'
 ================================================
 HTTP/1.1 200 OK
-Content-Length: 873
+Content-Length: 892
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -1514,7 +1523,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
   "geoQ": {
     "geometry": "Point",
     "georel": "near;maxDistance==18",
-    "coordinates": "0,0",
+    "coordinates": [
+      0,
+      0
+    ],
     "geoproperty": "geo1"
   },
   "status": "paused",
@@ -1550,7 +1562,7 @@ Date: REGEX(.*)
 32. GET subscription and see the new 'throttling'
 =================================================
 HTTP/1.1 200 OK
-Content-Length: 874
+Content-Length: 893
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -1575,7 +1587,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
   "geoQ": {
     "geometry": "Point",
     "georel": "near;maxDistance==18",
-    "coordinates": "0,0",
+    "coordinates": [
+      0,
+      0
+    ],
     "geoproperty": "geo1"
   },
   "status": "paused",
@@ -1667,7 +1682,7 @@ Date: REGEX(.*)
 35. GET subscription and see all the fields
 ===========================================
 HTTP/1.1 200 OK
-Content-Length: 939
+Content-Length: 958
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -1694,7 +1709,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
   "geoQ": {
     "geometry": "Point",
     "georel": "near;maxDistance==34",
-    "coordinates": "34,34",
+    "coordinates": [
+      34,
+      34
+    ],
     "geoproperty": "geo34"
   },
   "status": "active",
@@ -1845,7 +1863,7 @@ bye
 39. GET subscription and see A=1 in receiverInfo
 ================================================
 HTTP/1.1 200 OK
-Content-Length: 1037
+Content-Length: 1056
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -1872,7 +1890,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
   "geoQ": {
     "geometry": "Point",
     "georel": "near;maxDistance==34",
-    "coordinates": "34,34",
+    "coordinates": [
+      34,
+      34
+    ],
     "geoproperty": "geo34"
   },
   "status": "active",
@@ -1914,7 +1935,7 @@ Date: REGEX(.*)
 41. GET subscription and see A=2 in receiverInfo
 ================================================
 HTTP/1.1 200 OK
-Content-Length: 1037
+Content-Length: 1056
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
@@ -1941,7 +1962,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
   "geoQ": {
     "geometry": "Point",
     "georel": "near;maxDistance==34",
-    "coordinates": "34,34",
+    "coordinates": [
+      34,
+      34
+    ],
     "geoproperty": "geo34"
   },
   "status": "active",

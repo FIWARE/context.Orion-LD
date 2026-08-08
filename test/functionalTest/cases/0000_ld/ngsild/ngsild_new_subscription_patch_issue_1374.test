@@ -403,7 +403,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         }
     ],
     "geoQ": {
-        "coordinates": "0,0",
+        "coordinates": [
+            0,
+            0
+        ],
         "geometry": "Point",
         "geoproperty": "geo1",
         "georel": "near;maxDistance==18"

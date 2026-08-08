@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_KJTREE_KJTREEFROMCACHEDSUBSCRIPTION_H_
-#define SRC_LIB_ORIONLD_KJTREE_KJTREEFROMCACHEDSUBSCRIPTION_H_
+#ifndef SRC_LIB_ORIONLD_SUBCACHE_APIMODELFROMCACHESUBSCRIPTION_H_
+#define SRC_LIB_ORIONLD_SUBCACHE_APIMODELFROMCACHESUBSCRIPTION_H_
 
 /*
 *
-* Copyright 2022 FIWARE Foundation e.V.
+* Copyright 2026 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -30,14 +30,16 @@ extern "C"
 #include "kjson/KjNode.h"                                        // KjNode
 }
 
-#include "cache/subCache.h"                                      // CachedSubscription
+#include "orionld/types/SubCacheItem.h"                          // SubCacheItem
 
 
 
 // -----------------------------------------------------------------------------
 //
-// kjTreeFromCachedSubscription - in NGSI-LD API format
+// apiModelFromCacheSubscription - render a cached Subscription in API format
 //
-extern KjNode* kjTreeFromCachedSubscription(CachedSubscription* cSubP, bool sysAttrs, bool contextInBody);
+// 'apiSubP' must be a CLONE of sciP->subTree - it is modified in place.
+//
+extern void apiModelFromCacheSubscription(KjNode* apiSubP, SubCacheItem* sciP, bool sysAttrs, bool contextInBody);
 
-#endif  // SRC_LIB_ORIONLD_KJTREE_KJTREEFROMCACHEDSUBSCRIPTION_H_
+#endif  // SRC_LIB_ORIONLD_SUBCACHE_APIMODELFROMCACHESUBSCRIPTION_H_

@@ -37,6 +37,7 @@ extern "C"
 #include "orionld/types/OrionldContext.h"                        // OrionldContext
 #include "orionld/types/SubCacheItem.h"                          // SubCacheItem
 #include "orionld/common/traceLevels.h"                          // KTrace levels
+#include "orionld/subCache/apiModelToCacheSubscription.h"        // apiModelToCacheSubscription
 #include "orionld/subCache/subCacheItemCompile.h"                // subCacheItemCompile
 #include "orionld/subCache/subCacheItemRelease.h"                // subCacheItemCompiledStateRelease
 #include "orionld/subCache/subCacheItemUpdate.h"                 // Own interface
@@ -63,6 +64,8 @@ void subCacheItemUpdate(SubCacheItem* sciP, KjNode* subP, OrionldContext* jsonld
 
   if (jsonldContextP != NULL)
     sciP->contextP = jsonldContextP;
+
+  apiModelToCacheSubscription(sciP->subTree, sciP->contextP);
 
   if (sciP->hostAlias != NULL)
   {

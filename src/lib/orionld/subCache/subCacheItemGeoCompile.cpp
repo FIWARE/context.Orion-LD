@@ -89,6 +89,22 @@ void subCacheItemGeoCompile(SubCacheItem* sciP, KjNode* geoqP)
     kjFree(stringCoordinatesP);
 
     sciP->geoInfo->coordinates = arrayP;
+
+    //
+    // The subTree is the API model, and the API renders the coordinates as an
+    // Array however they came in - so the parsed Array goes there too.
+    //
+    KjNode* treeCoordinatesP = kjLookup(geoqP, "coordinates");
+
+    if ((treeCoordinatesP != NULL) && (treeCoordinatesP->type == KjString))
+    {
+      KjNode* treeArrayP = kjClone(NULL, arrayP);
+
+      treeArrayP->name = (char*) "coordinates";
+      kjChildRemove(geoqP, treeCoordinatesP);
+      kjChildAdd(geoqP, treeArrayP);
+      kjFree(treeCoordinatesP);
+    }
   }
 
   KjNode* geometryP    = kjLookup(sciP->geoQP, "geometry");

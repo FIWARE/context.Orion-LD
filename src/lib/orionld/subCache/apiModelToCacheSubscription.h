@@ -30,15 +30,17 @@ extern "C"
 #include "kjson/KjNode.h"                                        // KjNode
 }
 
+#include "orionld/types/OrionldContext.h"                        // OrionldContext
+
 
 
 // -----------------------------------------------------------------------------
 //
 // apiModelToCacheSubscription - adapt an API Subscription for use in the cache
 //
-// Twin of apiModelToCacheRegistration. Called on the API-model tree just before
-// it is handed to subCacheItemAdd.
+// Called by subCacheItemAdd and subCacheItemUpdate on the cache item's OWN clone
+// of the tree - never on a request-scoped tree: it frees what it takes out.
 //
-extern void apiModelToCacheSubscription(KjNode* apiSubscriptionP);
+extern void apiModelToCacheSubscription(KjNode* apiSubscriptionP, OrionldContext* jsonldContextP);
 
 #endif  // SRC_LIB_ORIONLD_SUBCACHE_APIMODELTOCACHESUBSCRIPTION_H_

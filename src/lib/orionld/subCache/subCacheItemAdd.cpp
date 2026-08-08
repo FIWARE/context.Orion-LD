@@ -38,6 +38,7 @@ extern "C"
 #include "orionld/types/SubCache.h"                              // SubCache
 #include "orionld/types/SubCacheItem.h"                          // SubCacheItem
 #include "orionld/common/traceLevels.h"                          // KTrace levels
+#include "orionld/subCache/apiModelToCacheSubscription.h"        // apiModelToCacheSubscription
 #include "orionld/subCache/subCacheItemCompile.h"                // subCacheItemCompile
 #include "orionld/subCache/subCacheItemAdd.h"                    // Own interface
 
@@ -132,6 +133,12 @@ SubCacheItem* subCacheItemAdd
   sciP->contextP = jsonldContextP;
   sciP->dirty    = false;
   sciP->next     = NULL;
+
+  //
+  // Three write paths feed the cache and they do not agree on the details - the
+  // clone is brought into the ONE shape the cache holds before anything reads it.
+  //
+  apiModelToCacheSubscription(sciP->subTree, jsonldContextP);
 
   //
   // An NGSI-LD Subscription id is a URI (and thus has a colon) and is stored as

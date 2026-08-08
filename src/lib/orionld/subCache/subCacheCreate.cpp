@@ -38,7 +38,6 @@ extern "C"
 #include "orionld/mongoc/mongocSubscriptionsIter.h"              // mongocSubscriptionsIter
 #include "orionld/dbModel/dbModelToApiSubscription.h"            // dbModelToApiSubscription
 #include "orionld/subCache/subCacheItemAdd.h"                    // subCacheItemAdd
-#include "orionld/subCache/apiModelToCacheSubscription.h"        // apiModelToCacheSubscription
 #include "orionld/subCache/subCacheCreate.h"                     // Own interface
 
 
@@ -78,6 +77,16 @@ int subIterFunc(SubCache* scP, KjNode* dbSubP)
   if (apiSubP == NULL)
     KT_RE(-1, "dbModelToApiSubscription failed");
 
+  //
+  // A Periodic Notification subscription ('timeInterval') is not driven by
+  // alterations and it has a cache of its own - it belongs there, and only there.
+  // The API-request path already makes that distinction; so does the sub-cache
+  // refresh (mongocSubCachePopulateByTenant) - this one has to as well, or a
+  // restart would put every pernot subscription in BOTH caches.
+  //
+  if (timeInterval != 0)
+    return 0;
+
   // If a jsonldContext is given for the subscription, make sure it's valid
   OrionldContext* jsonldContextP = NULL;
   KjNode*         jsonldContextNodeP = kjLookup(apiSubP, "jsonldContext");
@@ -102,10 +111,7 @@ int subIterFunc(SubCache* scP, KjNode* dbSubP)
   KjNode* subIdNodeP = kjLookup(apiSubP, "id");
   char*   subId      = (subIdNodeP != NULL)? subIdNodeP->value.s : (char*) "no:sub:id";
 
-  // Convert API Sub to Cache Sub
-  apiModelToCacheSubscription(apiSubP);
-
-  // Insert cacheSubP in tenantP->subCache
+  // Insert cacheSubP in tenantP->subCache - it brings the tree into the cache shape itself
   subCacheItemAdd(scP, subId, apiSubP, true, jsonldContextP);
 
   return 0;

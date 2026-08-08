@@ -38,6 +38,7 @@ extern "C"
 #include "orionld/common/orionldState.h"                         // orionldState, orionldStateInit
 #include "orionld/common/tenantList.h"                           // tenant0
 #include "orionld/common/traceLevels.h"                          // KTrace levels
+#include "orionld/subCache/subCacheItemRemove.h"                 // subCacheItemRemove (the new sub cache)
 #include "orionld/mongoc/mongocSubscriptionDelete.h"             // mongocSubscriptionDelete
 #include "orionld/mongoc/mongocConnectionRelease.h"              // mongocConnectionRelease
 #include "orionld/ws/WsConnection.h"                             // WsConnection
@@ -91,8 +92,9 @@ void wsClose(WsConnection* wsP)
       else
         KT_T(StWs, "Deleted subscription '%s' from DB on WS close", wsP->subscriptionId);
 
-      // Remove from sub-cache
+      // Remove from both sub-caches - the legacy one still notifies, the new one is what GET renders
       subCacheItemRemove(cSubP);
+      subCacheItemRemove(orionldState.tenantP->subCache, wsP->subscriptionId);
 
       // Release mongoc connection back to the pool
       if (orionldState.mongoc.subscriptionsP != NULL)

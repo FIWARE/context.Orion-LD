@@ -30,10 +30,9 @@ extern "C"
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjString, kjInteger, kjChildAdd
+#include "kjson/kjClone.h"                                       // kjClone
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
-
-#include "cache/subCache.h"                                      // CachedSubscription, subCacheItemLookup
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
@@ -42,8 +41,8 @@ extern "C"
 #include "orionld/pernot/pernotSubCacheLookup.h"                 // pernotSubCacheLookup
 #include "orionld/legacyDriver/legacyGetSubscription.h"          // legacyGetSubscription
 #include "orionld/types/SubCacheItem.h"                          // SubCacheItem
-#include "orionld/subCache/subCacheItemLookup.h"                  // subCacheItemLookup (the new sub cache)
-#include "orionld/kjTree/kjTreeFromCachedSubscription.h"         // kjTreeFromCachedSubscription
+#include "orionld/subCache/subCacheItemLookup.h"                 // subCacheItemLookup
+#include "orionld/subCache/apiModelFromCacheSubscription.h"      // apiModelFromCacheSubscription
 #include "orionld/kjTree/kjTreeFromPernotSubscription.h"         // kjTreeFromPernotSubscription
 #include "orionld/payloadCheck/PCHECK.h"                         // PCHECK_URI
 #include "orionld/dbModel/dbModelToApiSubscription.h"            // dbModelToApiSubscription
@@ -279,13 +278,16 @@ bool orionldGetSubscription(void)
   char* subscriptionId = orionldState.wildcard[0];
 
   // "Normal" (onchange) subscription?
-  CachedSubscription* cSubP = subCacheItemLookup(orionldState.tenantP->tenant, subscriptionId);
-  if (cSubP != NULL)
+  SubCacheItem* sciP = subCacheItemLookup(orionldState.tenantP->subCache, subscriptionId);
+  if (sciP != NULL)
   {
     orionldState.httpStatusCode = 200;
+    orionldState.responseTree   = kjClone(orionldState.kjsonP, sciP->subTree);  // Work on a cloned copy from the sub-cache
 
-    orionldState.responseTree   = kjTreeFromCachedSubscription(cSubP, orionldState.uriParamOptions.sysAttrs, orionldState.out.contentType == MT_JSONLD);
-    orionldSubCounters(orionldState.responseTree, subCacheItemLookup(orionldState.tenantP->subCache, subscriptionId), NULL);
+    apiModelFromCacheSubscription(orionldState.responseTree,
+                                  sciP,
+                                  orionldState.uriParamOptions.sysAttrs,
+                                  orionldState.out.contentType == MT_JSONLD);
 
     return true;
   }
