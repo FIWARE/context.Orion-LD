@@ -29,6 +29,8 @@ SET (SOURCES
     subCacheItemRemove.cpp
     subCacheItemRelease.cpp
     subCacheItemStatusSet.cpp
+    subCacheItemCountersFlush.cpp
+    subCachesCountersFlush.cpp
     subCacheItemCompile.cpp
     subCacheItemEntitiesCompile.cpp
     subCacheItemGeoCompile.cpp

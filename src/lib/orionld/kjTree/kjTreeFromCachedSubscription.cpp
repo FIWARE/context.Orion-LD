@@ -35,10 +35,12 @@ extern "C"
 #include "kjson/kjParse.h"                                       // kjParse
 #include "kjson/kjBuilder.h"                                     // kjObject, kjString, ..., kjChildAdd
 #include "kjson/kjClone.h"                                       // kjClone
+#include "kjson/kjLookup.h"                                      // kjLookup
 }
 
 #include "cache/subCache.h"                                      // CachedSubscription
 
+#include "orionld/types/SubCacheItem.h"                          // SubCacheItem
 #include "orionld/types/SubordinateSubscription.h"               // SubordinateSubscription
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/traceLevels.h"                          // KTrace levels
@@ -48,6 +50,7 @@ extern "C"
 #include "orionld/dbModel/dbModelToApiCoordinates.h"             // dbModelToApiCoordinates
 #include "orionld/dbModel/dbModelValueStrip.h"                   // dbModelValueStrip
 #include "orionld/q/qAliasCompact.h"                             // qAliasCompact
+#include "orionld/subCache/subCacheItemLookup.h"                  // subCacheItemLookup (the new sub cache)
 #include "orionld/kjTree/kjTreeFromCachedSubscription.h"         // Own interface
 
 
@@ -80,6 +83,39 @@ KjNode* kjTreeFromCachedSubscription(CachedSubscription* cSubP, bool sysAttrs, b
 {
   KjNode* nodeP;
   char    dateTime[64];
+
+  //
+  // TRANSITIONAL: the notification path runs on the NEW subscription cache, so the
+  // new cache item is the owner of everything a notification changes - the counters,
+  // the timestamps, 'status'. The old cache item still holds the rest, and renders
+  // it below. All of this goes away when GET /subscriptions renders straight from
+  // SubCacheItem::subTree, which IS the API model.
+  //
+  SubCacheItem* sciP              = subCacheItemLookup(orionldState.tenantP->subCache, cSubP->subscriptionId);
+  const char*   subStatus         = "active";
+  bool          isActive          = true;
+  int           consecutiveErrors = 0;
+  const char*   lastErrorReason   = NULL;
+  int64_t       timesSent         = 0;
+  double        lastNotification  = 0;
+  double        lastSuccess       = 0;
+  double        lastFailure       = 0;
+
+  if (sciP != NULL)
+  {
+    KjNode* statusP       = kjLookup(sciP->subTree, "status");
+    KjNode* notificationP = kjLookup(sciP->subTree, "notification");
+    KjNode* timesSentP    = (notificationP != NULL)? kjLookup(notificationP, "timesSent") : NULL;
+
+    subStatus         = (statusP != NULL)? statusP->value.s : "active";
+    isActive          = sciP->isActive;
+    consecutiveErrors = sciP->consecutiveErrors;
+    lastErrorReason   = (sciP->lastErrorReason[0] != 0)? sciP->lastErrorReason : NULL;
+    timesSent         = ((timesSentP != NULL)? timesSentP->value.i : 0) + sciP->deltas.timesSent;
+    lastNotification  = sciP->lastNotificationTime;
+    lastSuccess       = sciP->lastSuccess;
+    lastFailure       = sciP->lastFailure;
+  }
 
   //
   // Top level object - the Subscription
@@ -280,24 +316,14 @@ KjNode* kjTreeFromCachedSubscription(CachedSubscription* cSubP, bool sysAttrs, b
   //
   // status
   //
-  if (cSubP->status == "active")
-    nodeP = kjString(orionldState.kjsonP, "status", "active");
-  else if (cSubP->status == "expired")
-    nodeP = kjString(orionldState.kjsonP, "status", "expired");
-  else
-    nodeP = kjString(orionldState.kjsonP, "status", "paused");
+  nodeP = kjString(orionldState.kjsonP, "status", subStatus);
   NULL_CHECK(nodeP);
   kjChildAdd(sP, nodeP);
 
   //
-  // isActive - possibly setting it
+  // isActive
   //
-  if ((cSubP->expirationTime > 0) && (cSubP->expirationTime < orionldState.requestTime))
-  {
-    cSubP->isActive = false;
-    cSubP->status   = "expired";
-  }
-  nodeP = kjBoolean(orionldState.kjsonP, "isActive", cSubP->isActive);
+  nodeP = kjBoolean(orionldState.kjsonP, "isActive", isActive);
   NULL_CHECK(nodeP);
   kjChildAdd(sP, nodeP);
 
@@ -411,7 +437,7 @@ KjNode* kjTreeFromCachedSubscription(CachedSubscription* cSubP, bool sysAttrs, b
   //
   // notification::status
   //
-  if (cSubP->consecutiveErrors == 0)
+  if (consecutiveErrors == 0)
     nodeP = kjString(orionldState.kjsonP, "status", "ok");
   else
     nodeP = kjString(orionldState.kjsonP, "status", "failed");
@@ -421,12 +447,9 @@ KjNode* kjTreeFromCachedSubscription(CachedSubscription* cSubP, bool sysAttrs, b
   //
   // notification::timesSent
   //
-  if (cSubP->count + cSubP->dbCount > 0)
+  if (timesSent > 0)
   {
-    KT_T(KtSubCacheStats, "count:   %d", cSubP->count);
-    KT_T(KtSubCacheStats, "dbCount: %d", cSubP->dbCount);
-
-    nodeP = kjInteger(orionldState.kjsonP, "timesSent", cSubP->count + cSubP->dbCount);
+    nodeP = kjInteger(orionldState.kjsonP, "timesSent", timesSent);
     NULL_CHECK(nodeP);
     kjChildAdd(notificationNodeP, nodeP);
   }
@@ -434,9 +457,9 @@ KjNode* kjTreeFromCachedSubscription(CachedSubscription* cSubP, bool sysAttrs, b
   //
   // notification::lastNotification
   //
-  if (cSubP->lastNotificationTime > 0.1)
+  if (lastNotification > 0.1)
   {
-    numberToDate(cSubP->lastNotificationTime, dateTime, sizeof(dateTime));
+    numberToDate(lastNotification, dateTime, sizeof(dateTime));
     nodeP = kjString(orionldState.kjsonP, "lastNotification", dateTime);
     NULL_CHECK(nodeP);
     kjChildAdd(notificationNodeP, nodeP);
@@ -445,9 +468,9 @@ KjNode* kjTreeFromCachedSubscription(CachedSubscription* cSubP, bool sysAttrs, b
   //
   // notification::lastFailure
   //
-  if (cSubP->lastFailure > 0.1)
+  if (lastFailure > 0.1)
   {
-    numberToDate(cSubP->lastFailure, dateTime, sizeof(dateTime));
+    numberToDate(lastFailure, dateTime, sizeof(dateTime));
     nodeP = kjString(orionldState.kjsonP, "lastFailure", dateTime);
     NULL_CHECK(nodeP);
     kjChildAdd(notificationNodeP, nodeP);
@@ -456,9 +479,9 @@ KjNode* kjTreeFromCachedSubscription(CachedSubscription* cSubP, bool sysAttrs, b
   //
   // notification::lastSuccess
   //
-  if (cSubP->lastSuccess > 0.1)
+  if (lastSuccess > 0.1)
   {
-    numberToDate(cSubP->lastSuccess, dateTime, sizeof(dateTime));
+    numberToDate(lastSuccess, dateTime, sizeof(dateTime));
     nodeP = kjString(orionldState.kjsonP, "lastSuccess", dateTime);
     NULL_CHECK(nodeP);
     kjChildAdd(notificationNodeP, nodeP);
@@ -467,9 +490,9 @@ KjNode* kjTreeFromCachedSubscription(CachedSubscription* cSubP, bool sysAttrs, b
   //
   // notification::consecutiveErrors
   //
-  if (cSubP->consecutiveErrors > 0)
+  if (consecutiveErrors > 0)
   {
-    nodeP = kjInteger(orionldState.kjsonP, "consecutiveErrors", cSubP->consecutiveErrors);
+    nodeP = kjInteger(orionldState.kjsonP, "consecutiveErrors", consecutiveErrors);
     NULL_CHECK(nodeP);
     kjChildAdd(notificationNodeP, nodeP);
   }
@@ -477,9 +500,9 @@ KjNode* kjTreeFromCachedSubscription(CachedSubscription* cSubP, bool sysAttrs, b
   //
   // notification::lastErrorReason
   //
-  if (cSubP->lastErrorReason[0] != 0)
+  if (lastErrorReason != NULL)
   {
-    nodeP = kjString(orionldState.kjsonP, "lastErrorReason", cSubP->lastErrorReason);
+    nodeP = kjString(orionldState.kjsonP, "lastErrorReason", lastErrorReason);
     NULL_CHECK(nodeP);
     kjChildAdd(notificationNodeP, nodeP);
   }

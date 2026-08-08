@@ -27,7 +27,7 @@
 */
 #include <sys/uio.h>                                           // struct iovec
 
-#include "cache/subCache.h"                                    // CachedSubscription
+#include "orionld/types/SubCacheItem.h"                        // SubCacheItem
 
 
 
@@ -35,6 +35,6 @@
 //
 // mqttNotify -
 //
-extern int mqttNotify(CachedSubscription* cSubP, struct iovec* ioVec, int ioVecSize, double timestamp);
+extern int mqttNotify(SubCacheItem* cSubP, struct iovec* ioVec, int ioVecSize, double timestamp);
 
 #endif  // SRC_LIB_ORIONLD_MQTT_MQTTNOTIFY_H_

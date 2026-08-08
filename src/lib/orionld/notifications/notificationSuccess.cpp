@@ -28,13 +28,10 @@ extern "C"
 #include "kprom/kprom.h"                                            // kpromCounterInc
 }
 
-#include "cache/CachedSubscription.h"                               // CachedSubscription
-
 #include "orionld/types/SubCacheItem.h"                             // SubCacheItem
-#include "orionld/common/orionldState.h"                            // promNotifications
+#include "orionld/common/orionldState.h"                            // promNotifications, cSubCounters
 #include "orionld/common/traceLevels.h"                             // KTrace levels
-#include "orionld/mongoc/mongocSubCountersUpdate.h"                 // mongocSubCountersUpdate
-#include "orionld/subCache/subCacheItemLookup.h"                    // subCacheItemLookup (the new sub cache)
+#include "orionld/subCache/subCacheItemCountersFlush.h"             // subCacheItemCountersFlush
 #include "orionld/notifications/notificationSuccess.h"              // Own interface
 
 
@@ -43,54 +40,24 @@ extern "C"
 //
 // notificationSuccess -
 //
-void notificationSuccess(CachedSubscription* subP, const double timestamp)
+void notificationSuccess(SubCacheItem* subP, const double timestamp)
 {
-  KT_T(KtNotificationStats, "%s: notification success (sub at %p)", subP->subscriptionId, subP);
+  KT_T(KtNotificationStats, "%s: notification success (sub at %p)", subP->subId, subP);
 
-  subP->lastSuccess           = timestamp;
-  subP->lastNotificationTime  = timestamp;
-  subP->consecutiveErrors     = 0;
-  subP->count                += 1;
-  subP->dirty                += 1;
-
-  //
-  // TRANSITIONAL: it is the NEW subscription cache that decides whether a
-  // subscription matches, so it is the new cache's item that must know when this
-  // subscription last notified - or throttling would never kick in.
-  // Goes away with the old cache: the notification path will then have the
-  // SubCacheItem in its hand already, and the counters live there as well.
-  //
-  // The subscription belongs to the tenant of the request - the matcher only ever
-  // looks in the cache of that one tenant.
-  //
-  SubCacheItem* sciP = subCacheItemLookup(orionldState.tenantP->subCache, subP->subscriptionId);
-
-  if (sciP != NULL)
-    sciP->lastNotificationTime = timestamp;
+  subP->lastSuccess          = timestamp;
+  subP->lastNotificationTime = timestamp;
+  subP->consecutiveErrors    = 0;
+  subP->deltas.timesSent    += 1;
 
   kpromCounterInc(promNotifications);
 
   //
-  // Flush to DB?
-  // - If subP->dirty (number of counter updates since last flush) >= cSubCounters
-  //   - AND cSubCounters != 0
+  // Flush to the database? 'deltas.timesSent' counts every attempt since the last
+  // flush, successful or not - that is the number cSubCounters is compared against.
+  // cSubCounters == 0 turns the flushing off altogether.
   //
-  KT_T(KtNotificationStats, "%s: dirty: %d AND cSubCounters=%d", subP->subscriptionId, subP->dirty, cSubCounters);
-
-  if ((cSubCounters != 0) && (subP->dirty >= cSubCounters))
-  {
-    KT_T(KtNotificationStats, "%s: Calling mongocSubCountersUpdate", subP->subscriptionId);
-
-    mongocSubCountersUpdate(subP->tenantP, subP->subscriptionId, (subP->ldContext != ""), subP->count, subP->failures, 0, subP->lastNotificationTime, subP->lastSuccess, subP->lastFailure, false);
-    subP->dirty       = 0;
-    subP->dbCount    += subP->count;
-    subP->count       = 0;
-    subP->dbFailures += subP->failures;
-    subP->failures    = 0;
-  }
+  if ((cSubCounters != 0) && (subP->deltas.timesSent >= cSubCounters))
+    subCacheItemCountersFlush(orionldState.tenantP, subP, false);
   else
-    KT_T(KtNotificationStats, "%s: Not calling mongocSubCountersUpdate (cSubCounters: %d, dirty: %d)",
-         subP->subscriptionId,
-         cSubCounters,
-         subP->dirty);
+    KT_T(KtNotificationStats, "%s: no counter flush (cSubCounters: %d, timesSent: %d)", subP->subId, cSubCounters, subP->deltas.timesSent);
 }

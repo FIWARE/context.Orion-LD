@@ -33,7 +33,6 @@ extern "C"
 }
 
 #include "common/sem.h"                                        // cacheSemTake, cacheSemGive
-#include "cache/subCache.h"                                    // CachedSubscription, subCacheItemLookup
 
 #include "orionld/types/QNode.h"                               // QNode, qNodeType
 #include "orionld/types/OrionldAlteration.h"                   // OrionldAlteration, OrionldAlterationMatch, orionldAlterationType
@@ -120,15 +119,15 @@ static bool matchLookup(OrionldAlterationMatch* matchP, OrionldAlterationMatch* 
   for (OrionldAlterationMatch* mP = matchP; mP != NULL; mP = mP->next)
   {
     if (matchP->altAttrP)
-      KT_T(KtSubCacheMatch, "o %p: %s %s", mP, mP->subP->subscriptionId, mP->altAttrP->alterationType);
+      KT_T(KtSubCacheMatch, "o %p: %s %s", mP, mP->subP->subId, mP->altAttrP->alterationType);
     else
-      KT_T(KtSubCacheMatch, "o %p: %s (no attr)", mP, mP->subP->subscriptionId);
+      KT_T(KtSubCacheMatch, "o %p: %s (no attr)", mP, mP->subP->subId);
   }
   KT_T(KtSubCacheMatch, "Compare with:");
   if (itemP->altAttrP)
-    KT_T(KtSubCacheMatch, "o %p: %s %s", itemP, itemP->subP->subscriptionId, itemP->altAttrP->alterationType);
+    KT_T(KtSubCacheMatch, "o %p: %s %s", itemP, itemP->subP->subId, itemP->altAttrP->alterationType);
   else
-    KT_T(KtSubCacheMatch, "o %p: %s (no attr)", itemP, itemP->subP->subscriptionId);
+    KT_T(KtSubCacheMatch, "o %p: %s (no attr)", itemP, itemP->subP->subId);
   // </DEBUG>
 #endif
 
@@ -144,7 +143,7 @@ static bool matchLookup(OrionldAlterationMatch* matchP, OrionldAlterationMatch* 
         // If the altered entity is different, then itemP's entity needs to be added to the datas array of matchP ...
         //
         if (strcmp(itemP->altP->entityId, matchP->altP->entityId) != 0)
-          KT_W("Different entity (%s vs %s) - need to add it to the notification for sub %s", itemP->altP->entityId, matchP->altP->entityId, matchP->subP->subscriptionId);
+          KT_W("Different entity (%s vs %s) - need to add it to the notification for sub %s", itemP->altP->entityId, matchP->altP->entityId, matchP->subP->subId);
         // return true;
       }
       else if ((matchP->altAttrP != NULL) && (itemP->altAttrP != NULL))
@@ -220,7 +219,7 @@ static OrionldAlterationMatch* matchListInsert(OrionldAlterationMatch* matchList
 static OrionldAlterationMatch* matchToMatchList
 (
   OrionldAlterationMatch*      matchList,
-  CachedSubscription*          subP,
+  SubCacheItem*                subP,
   OrionldAlteration*           altP,
   OrionldAttributeAlteration*  aaP,
   int*                         matchesP
@@ -368,14 +367,10 @@ static bool watchedListMatch(KjNode* watchedP, const char* attrName, const char*
 //
 // attributeMatch -
 //
-// 'sciP' decides - 'cSubP' is only what the match carries onwards, for the
-// notification path, which still lives on the old subscription cache.
-//
 static OrionldAlterationMatch* attributeMatch
 (
   OrionldAlterationMatch*  matchList,
   SubCacheItem*            sciP,
-  CachedSubscription*      cSubP,
   OrionldAlteration*       altP,
   int*                     matchesP
 )
@@ -452,7 +447,7 @@ static OrionldAlterationMatch* attributeMatch
     if (match == true)
     {
       if ((sciP->triggers & SUB_TRIGGER(EntityModified)) != 0)
-        matchList = matchToMatchList(matchList, cSubP, altP, NULL, &matches);
+        matchList = matchToMatchList(matchList, sciP, altP, NULL, &matches);
     }
     else
       KT_T(KtSubCacheMatch, "Sub '%s' - no match due to Watched Attributes", sciP->subId);
@@ -475,7 +470,7 @@ static OrionldAlterationMatch* attributeMatch
       continue;
     }
 
-    matchList = matchToMatchList(matchList, cSubP, altP, aaP, &matches);
+    matchList = matchToMatchList(matchList, sciP, altP, aaP, &matches);
   }
 
   if (matches == 0)
@@ -566,22 +561,7 @@ OrionldAlterationMatch* subCacheAlterationMatch(OrionldAlteration* alterationLis
         continue;
       }
 
-      //
-      // TRANSITIONAL: the entire notification path still runs on the old cache, so
-      // that is the item the match carries. Goes away once 'notifications/' has been
-      // migrated - OrionldAlterationMatch::subP then becomes the SubCacheItem.
-      // A subscription that isn't in the old cache is a periodic-notification
-      // subscription - it notifies from its own loop, never from an alteration.
-      //
-      CachedSubscription* cSubP = subCacheItemLookup(tenantP->tenant, sciP->subId);
-
-      if (cSubP == NULL)
-      {
-        KT_T(KtSubCacheMatch, "Sub '%s' - not in the old subscription cache - no match", sciP->subId);
-        continue;
-      }
-
-      matchList = attributeMatch(matchList, sciP, cSubP, altP, &matches);  // Each call adds to matchList AND matches
+      matchList = attributeMatch(matchList, sciP, altP, &matches);  // Each call adds to matchList AND matches
     }
   }
   cacheSemGive(__FUNCTION__, "Looping over sub-cache");

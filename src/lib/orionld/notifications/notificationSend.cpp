@@ -27,9 +27,6 @@
 #include <sys/select.h>                                          // select
 #include <curl/curl.h>                                           // curl
 
-#include <string>                                                // std::string (all because of receiverInfo!!!)
-#include <map>                                                   // std::map    (all because of receiverInfo!!!)
-
 extern "C"
 {
 #include "ktrace/kTrace.h"                                       // KT_*
@@ -42,10 +39,9 @@ extern "C"
 #include "kjson/kjClone.h"                                       // kjClone
 }
 
-#include "cache/CachedSubscription.h"                            // CachedSubscription
-
 #include "orionld/types/OrionldAlteration.h"                     // OrionldAlterationMatch, OrionldAlteration, orionldAlterationType
 #include "orionld/types/OrionLdRestService.h"                    // OrionLdRestService
+#include "orionld/types/SubCacheItem.h"                          // SubCacheItem
 #include "orionld/common/orionldState.h"                         // orionldState, coreContextUrl, userAgentHeader
 #include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/numberToDate.h"                         // numberToDate
@@ -84,6 +80,76 @@ const char* keyValuesHeaderNgsiV2    = (char*) "Ngsiv2-Attrsformat: keyValues\r\
 
 char    userAgentHeader[64];     // "User-Agent: orionld/" + ORIONLD_VERSION + \r\n" - initialized in orionldServiceInit()
 size_t  userAgentHeaderLen = 0;  // Set in orionldServiceInit()
+
+
+
+// -----------------------------------------------------------------------------
+//
+// subNotificationMember - a member of the Subscription's "notification" object
+//
+// The subscription tree is the source of truth for everything the notification
+// path needs but the matcher doesn't - the notified attributes, the datasetId
+// filter, receiverInfo, notifierInfo. Only NON-EMPTY arrays are handed back:
+// "no such member" and "an empty array" mean the same thing to every caller.
+//
+static KjNode* subNotificationMember(SubCacheItem* sciP, const char* member)
+{
+  KjNode* notificationP = kjLookup(sciP->subTree, "notification");
+
+  if (notificationP == NULL)
+    return NULL;
+
+  KjNode* memberP = kjLookup(notificationP, member);
+
+  if ((memberP != NULL) && (memberP->type == KjArray) && (memberP->value.firstChildP == NULL))
+    return NULL;
+
+  return memberP;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// subEndpointMember - a member of "notification::endpoint" (receiverInfo, notifierInfo)
+//
+static KjNode* subEndpointMember(SubCacheItem* sciP, const char* member)
+{
+  KjNode* endpointP = subNotificationMember(sciP, "endpoint");
+
+  if (endpointP == NULL)
+    return NULL;
+
+  KjNode* memberP = kjLookup(endpointP, member);
+
+  if ((memberP != NULL) && (memberP->value.firstChildP == NULL))
+    return NULL;
+
+  return memberP;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// keyValueLookup - the value of a { "key": ..., "value": ... } item in an array
+//
+static char* keyValueLookup(KjNode* arrayP, const char* key)
+{
+  if (arrayP == NULL)
+    return NULL;
+
+  for (KjNode* itemP = arrayP->value.firstChildP; itemP != NULL; itemP = itemP->next)
+  {
+    KjNode* keyP   = kjLookup(itemP, "key");
+    KjNode* valueP = kjLookup(itemP, "value");
+
+    if ((keyP != NULL) && (valueP != NULL) && (valueP->type == KjString) && (strcmp(keyP->value.s, key) == 0))
+      return valueP->value.s;
+  }
+
+  return NULL;
+}
 
 
 
@@ -226,10 +292,11 @@ static void attributeToNormalized(KjNode* attrP, const char* lang)
 //
 // attributeFix - compaction and format (concise, simplified, normalized)
 //
-static void attributeFix(KjNode* attrP, CachedSubscription* subP)
+static void attributeFix(KjNode* attrP, SubCacheItem* subP)
 {
-  bool simplified = (subP->renderFormat == RF_SIMPLIFIED);
-  bool concise    = (subP->renderFormat == RF_CONCISE);
+  bool        simplified = (subP->renderFormat == RF_SIMPLIFIED);
+  bool        concise    = (subP->renderFormat == RF_CONCISE);
+  const char* lang       = (subP->lang != NULL)? subP->lang : "";
 
   // Never mind "location", "observationSpace", and "operationSpace"
   // It is probably faster to lookup their alias (and get the same back) as it is to
@@ -275,9 +342,9 @@ static void attributeFix(KjNode* attrP, CachedSubscription* subP)
   bool asSimplified = false;
   if (attrP->type == KjObject)
   {
-    if      (simplified)  attributeToSimplified(attrP, subP->lang.c_str());
-    else if (concise)     attributeToConcise(attrP, &asSimplified, subP->lang.c_str());
-    else                  attributeToNormalized(attrP, subP->lang.c_str());
+    if      (simplified)  attributeToSimplified(attrP, lang);
+    else if (concise)     attributeToConcise(attrP, &asSimplified, lang);
+    else                  attributeToNormalized(attrP, lang);
   }
 
   if ((asSimplified == false) && (simplified == false))
@@ -307,9 +374,9 @@ static void attributeFix(KjNode* attrP, CachedSubscription* subP)
       if (saP->type == KjObject)
       {
         if (subP->renderFormat == RF_SIMPLIFIED)
-          attributeToSimplified(saP, subP->lang.c_str());
+          attributeToSimplified(saP, lang);
         else if (subP->renderFormat == RF_CONCISE)
-          attributeToConcise(saP, &asSimplified, subP->lang.c_str());  // asSimplified is not used down here
+          attributeToConcise(saP, &asSimplified, lang);  // asSimplified is not used down here
 
         // Sub-sub-attrs (only if still an object after simplification/concise)
         if (saP->type != KjObject)
@@ -331,9 +398,9 @@ static void attributeFix(KjNode* attrP, CachedSubscription* subP)
           if (ssaP->type == KjObject)
           {
             if (subP->renderFormat == RF_SIMPLIFIED)
-              attributeToSimplified(ssaP, subP->lang.c_str());
+              attributeToSimplified(ssaP, lang);
             else if (subP->renderFormat == RF_CONCISE)
-              attributeToConcise(ssaP, &asSimplified, subP->lang.c_str());  // asSimplified is not used down here
+              attributeToConcise(ssaP, &asSimplified, lang);  // asSimplified is not used down here
           }
         }
       }
@@ -347,7 +414,7 @@ static void attributeFix(KjNode* attrP, CachedSubscription* subP)
 //
 // entityFix - compaction and format (concise, simplified, normalized)
 //
-KjNode* entityFix(KjNode* originalEntityP, CachedSubscription* subP)
+KjNode* entityFix(KjNode* originalEntityP, SubCacheItem* subP)
 {
   KjNode* entityP   = kjClone(orionldState.kjsonP, originalEntityP);
 
@@ -486,7 +553,7 @@ KjNode* orionldEntityToNgsiV2(OrionldContext* contextP, KjNode* entityP, bool ke
 //
 // attributeFilter -
 //
-static KjNode* attributeFilter(KjNode* apiEntityP, OrionldAlterationMatch* mAltP)
+static KjNode* attributeFilter(KjNode* apiEntityP, KjNode* attributesP)
 {
   KjNode* filteredEntityP = kjObject(orionldState.kjsonP, NULL);
   KjNode* attrP           = apiEntityP->value.firstChildP;
@@ -505,14 +572,12 @@ static KjNode* attributeFilter(KjNode* apiEntityP, OrionldAlterationMatch* mAltP
       strncpy(dotName, attrP->name, sizeof(dotName) - 1);
       eqForDot(dotName);
 
-      for (int ix = 0; ix < (int) mAltP->subP->attributes.size(); ix++)
+      for (KjNode* wantedP = attributesP->value.firstChildP; wantedP != NULL; wantedP = wantedP->next)
       {
-        const char* attrName = mAltP->subP->attributes[ix].c_str();
-
-        if (strcmp(dotName, attrName) == 0)
+        if (strcmp(dotName, wantedP->value.s) == 0)
         {
           clone = true;
-          KT_T(KtShowChanges, "Adding the attribute '%s' to a notification entity - add also the previousValue!", attrName);
+          KT_T(KtShowChanges, "Adding the attribute '%s' to a notification entity - add also the previousValue!", wantedP->value.s);
           break;
         }
       }
@@ -536,11 +601,14 @@ static KjNode* attributeFilter(KjNode* apiEntityP, OrionldAlterationMatch* mAltP
 //
 // datasetIdInList - is 'datasetId' in the subscription's datasetId filter?
 //
-static bool datasetIdInList(const char* datasetId, const std::vector<std::string>& datasetIds)
+static bool datasetIdInList(const char* datasetId, KjNode* datasetIdP)
 {
-  for (unsigned int ix = 0; ix < datasetIds.size(); ix++)
+  if (datasetIdP->type == KjString)
+    return (strcmp(datasetIdP->value.s, datasetId) == 0);
+
+  for (KjNode* dsP = datasetIdP->value.firstChildP; dsP != NULL; dsP = dsP->next)
   {
-    if (datasetIds[ix] == datasetId)
+    if ((dsP->type == KjString) && (strcmp(dsP->value.s, datasetId) == 0))
       return true;
   }
 
@@ -560,7 +628,7 @@ static bool datasetIdInList(const char* datasetId, const std::vector<std::string
 // Returns a CLONE - 'apiEntityP' (the alteration's finalApiEntityP) is shared
 // across subscriptions and must not be mutated in place.
 //
-static KjNode* datasetFilter(KjNode* apiEntityP, const std::vector<std::string>& datasetIds)
+static KjNode* datasetFilter(KjNode* apiEntityP, KjNode* datasetIdP)
 {
   KjNode* outP  = kjClone(orionldState.kjsonP, apiEntityP);
   KjNode* attrP = outP->value.firstChildP;
@@ -588,7 +656,7 @@ static KjNode* datasetFilter(KjNode* apiEntityP, const std::vector<std::string>&
         KjNode*     dsP = kjLookup(instP, "datasetId");
         const char* ds  = (dsP != NULL)? dsP->value.s : "@none";
 
-        if (datasetIdInList(ds, datasetIds) == false)
+        if (datasetIdInList(ds, datasetIdP) == false)
           kjChildRemove(attrP, instP);
 
         instP = instNext;
@@ -607,7 +675,7 @@ static KjNode* datasetFilter(KjNode* apiEntityP, const std::vector<std::string>&
       KjNode*     dsP = kjLookup(attrP, "datasetId");
       const char* ds  = (dsP != NULL)? dsP->value.s : "@none";
 
-      if (datasetIdInList(ds, datasetIds) == false)
+      if (datasetIdInList(ds, datasetIdP) == false)
         kjChildRemove(outP, attrP);
     }
 
@@ -625,20 +693,21 @@ static KjNode* datasetFilter(KjNode* apiEntityP, const std::vector<std::string>&
 //
 static KjNode* notificationTreeForNgsiV2(OrionldAlterationMatch* matchP)
 {
-  CachedSubscription* subP                 = matchP->subP;
-  KjNode*             notificationP        = kjObject(orionldState.kjsonP, NULL);
-  KjNode*             subscriptionIdNodeP  = kjString(orionldState.kjsonP, "subscriptionId", subP->subscriptionId);
-  KjNode*             dataNodeP            = kjArray(orionldState.kjsonP,  "data");
-  bool                keyValues            = false;
-  bool                compact              = false;
+  SubCacheItem*  subP                 = matchP->subP;
+  KjNode*        notificationP        = kjObject(orionldState.kjsonP, NULL);
+  KjNode*        subscriptionIdNodeP  = kjString(orionldState.kjsonP, "subscriptionId", subP->subId);
+  KjNode*        dataNodeP            = kjArray(orionldState.kjsonP,  "data");
+  KjNode*        attributesP          = subNotificationMember(subP, "attributes");
+  bool           keyValues            = false;
+  bool           compact              = false;
 
   //
   // Filter out unwanted attributes, if so requested (by the Subscription)
   //
   KjNode* apiEntityP = matchP->altP->finalApiEntityP;  // This is not correct - can be more than one entity
 
-  if (subP->attributes.size() > 0)
-    apiEntityP = attributeFilter(apiEntityP, matchP);
+  if (attributesP != NULL)
+    apiEntityP = attributeFilter(apiEntityP, attributesP);
 
   if ((subP->renderFormat == RF_CROSS_APIS_SIMPLIFIED) || (subP->renderFormat == RF_CROSS_APIS_SIMPLIFIED_COMPACT))
     keyValues = true;
@@ -663,15 +732,17 @@ static KjNode* notificationTreeForNgsiV2(OrionldAlterationMatch* matchP)
 //
 static KjNode* notificationTree(OrionldAlterationMatch* matchList)
 {
-  CachedSubscription* subP          = matchList->subP;
-  KjNode*             notificationP = kjObject(orionldState.kjsonP, NULL);
-  char                notificationId[80];
+  SubCacheItem* subP          = matchList->subP;
+  KjNode*       notificationP = kjObject(orionldState.kjsonP, NULL);
+  KjNode*       attributesP   = subNotificationMember(subP, "attributes");
+  KjNode*       datasetIdP    = kjLookup(subP->subTree, "datasetId");
+  char          notificationId[80];
 
   uuidGenerate(notificationId, sizeof(notificationId), "urn:ngsi-ld:Notification:");  // notificationId could be a thread variable ...
 
   KjNode* idNodeP              = kjString(orionldState.kjsonP, "id", notificationId);
   KjNode* typeNodeP            = kjString(orionldState.kjsonP, "type", "Notification");
-  KjNode* subscriptionIdNodeP  = kjString(orionldState.kjsonP, "subscriptionId", subP->subscriptionId);
+  KjNode* subscriptionIdNodeP  = kjString(orionldState.kjsonP, "subscriptionId", subP->subId);
   KjNode* notifiedAtNodeP      = kjString(orionldState.kjsonP, "notifiedAt", orionldState.requestTimeString);
   KjNode* dataNodeP            = kjArray(orionldState.kjsonP,  "data");
 
@@ -714,23 +785,23 @@ static KjNode* notificationTree(OrionldAlterationMatch* matchList)
     //
     // Filter out unwanted attributes, if so requested (by the Subscription)
     //
-    if (matchP->subP->attributes.size() > 0)
-      apiEntityP = attributeFilter(apiEntityP, matchP);
+    if (attributesP != NULL)
+      apiEntityP = attributeFilter(apiEntityP, attributesP);
 
     //
     // datasetId projection: if the Subscription has a top-level 'datasetId',
     // keep only the matching dataset instance(s) of each attribute.
     //
-    if (matchP->subP->datasetIds.size() > 0)
-      apiEntityP = datasetFilter(apiEntityP, matchP->subP->datasetIds);
+    if (datasetIdP != NULL)
+      apiEntityP = datasetFilter(apiEntityP, datasetIdP);
 
     apiEntityP = entityFix(apiEntityP, subP);
     kjChildAdd(dataNodeP, apiEntityP);
   }
 
-  if (subP->httpInfo.mimeType == MT_JSONLD)  // Add @context to the entity
+  if (subP->mimeType == MT_JSONLD)  // Add @context to the entity
   {
-    char*   contextUrl   = (subP->contextP->url != NULL)? subP->contextP->url : (char*) "http://localhost:80/no/thing";
+    char*   contextUrl   = ((subP->contextP != NULL) && (subP->contextP->url != NULL))? subP->contextP->url : (char*) "http://localhost:80/no/thing";
     KjNode* contextNodeP = kjString(orionldState.kjsonP, "@context", contextUrl);
 
     kjChildAdd(notificationP, contextNodeP);
@@ -757,22 +828,23 @@ static KjNode* notificationTree(OrionldAlterationMatch* matchList)
 //   size_t iov_len;     /* Number of bytes to transfer */
 // };
 //
-// To adapt notificationSend to pernot, I need:
-// - mAltP->subP->renderFormat   (easy)
-// - mAltP->subP->subscriptionId (notificationTreeForNgsiV2 - easy)
-// - finalApiEntityP             (notificationTreeForNgsiV2 - easy - that's the output of the query for Pernot)
-// - subP->attributes            (notificationTreeForNgsiV2 - easy)
-// - subP->contextP              (notificationTreeForNgsiV2 - easy)
-// - finalApiEntityWithSysAttrsP (notificationTree - no probs, must add sysAttrs to the query if Pern ot sub has sysAttrs set)
-// - subP->httpInfo.mimeType     (notificationTree - easy)
-// - subP->ldContext             (notificationSend)
-// - subP->httpInfo.notifierInfo (notificationSend)
-// - mAltP->subP->rest
-//
+// To adapt notificationSend to pernot, I need, from the subscription:
+// - renderFormat, subId, contextP, mimeType, rest      (all of it in the SubCacheItem)
+// - notification::attributes, endpoint::notifierInfo   (in the subscription tree)
+// - finalApiEntityP             (notificationTreeForNgsiV2 - that's the output of the query for Pernot)
+// - finalApiEntityWithSysAttrsP (notificationTree - must add sysAttrs to the query if the Pernot sub has sysAttrs set)
 //
 int notificationSend(OrionldAlterationMatch* mAltP, double timestamp, CURL** curlHandlePP)
 {
-  bool ngsiv2 = (mAltP->subP->renderFormat >= RF_CROSS_APIS_NORMALIZED);
+  SubCacheItem* subP       = mAltP->subP;
+  bool          ngsiv2     = (subP->renderFormat >= RF_CROSS_APIS_NORMALIZED);
+  KjNode*       receiverP  = subEndpointMember(subP, "receiverInfo");
+
+  //
+  // The Subscription's own @context, for the Link header and for GeoJSON. A
+  // subscription without a "jsonldContext" has none - the core context is used.
+  //
+  const char* subContext = ((subP->contextP != NULL) && (subP->contextP->url != NULL))? subP->contextP->url : NULL;
 
   // <DEBUG>
   if (ktTraceLevelCheck(KtAlt) == true)
@@ -780,7 +852,7 @@ int notificationSend(OrionldAlterationMatch* mAltP, double timestamp, CURL** cur
     for (OrionldAlterationMatch* mP = mAltP; mP != NULL; mP = mP->next)
     {
       KT_T(KtAlt, "AlterationMatch %p", mP);
-      KT_T(KtAlt, "  Subscription     %s", mP->subP->subscriptionId);
+      KT_T(KtAlt, "  Subscription     %s", mP->subP->subId);
       KT_T(KtAlt, "  Entity:          %s", mP->altP->entityId);
       KT_T(KtAlt, "  inEntityP:       %p", mP->altP->inEntityP);
       KT_T(KtAlt, "  finalApiEntityP: %p", mP->altP->finalApiEntityP);
@@ -795,25 +867,20 @@ int notificationSend(OrionldAlterationMatch* mAltP, double timestamp, CURL** cur
   KjNode* notificationP = (ngsiv2 == false)? notificationTree(mAltP) : notificationTreeForNgsiV2(mAltP);
   char*   preferHeader  = NULL;
 
-  if ((ngsiv2 == false) && (mAltP->subP->httpInfo.mimeType == MT_GEOJSON))
+  if ((ngsiv2 == false) && (subP->mimeType == MT_GEOJSON))
   {
-    char*       geometryProperty = (char*) mAltP->subP->expression.geoproperty.c_str();
-    char*       attrs            = NULL;
-    bool        concise          = mAltP->subP->renderFormat == RF_CONCISE;
-    const char* context          = mAltP->subP->ldContext.c_str();
+    KjNode* geoqP            = kjLookup(subP->subTree, "geoQ");
+    KjNode* geopropertyP     = (geoqP != NULL)? kjLookup(geoqP, "geoproperty") : NULL;
+    char*   geometryProperty = (geopropertyP != NULL)? geopropertyP->value.s : NULL;
+    char*   attrs            = NULL;
+    bool    concise          = (subP->renderFormat == RF_CONCISE);
 
-    if (geometryProperty[0] == 0)
+    if ((geometryProperty == NULL) || (geometryProperty[0] == 0))
       geometryProperty = (char*) "location";
 
-    // Extract attrs from (mAltP->subP->attributes
-    for (unsigned int ix = 0; ix < mAltP->subP->httpInfo.notifierInfo.size(); ix++)
-    {
-      KeyValue* kvP = mAltP->subP->httpInfo.notifierInfo[ix];
-      if (strcmp(kvP->key, "Prefer") == 0)
-        preferHeader = kvP->value;
-    }
+    preferHeader = keyValueLookup(subEndpointMember(subP, "notifierInfo"), "Prefer");
 
-    notificationDataToGeoJson(notificationP, attrs, geometryProperty, preferHeader, concise, context);
+    notificationDataToGeoJson(notificationP, attrs, geometryProperty, preferHeader, concise, subContext);
   }
 
   long unsigned int  payloadBodySize  = kjFastRenderSize(notificationP);
@@ -833,17 +900,15 @@ int notificationSend(OrionldAlterationMatch* mAltP, double timestamp, CURL** cur
   char    requestHeader[512];
   size_t  requestHeaderLen = 0;
 
-  if (mAltP->subP->protocol == HTTP)
+  if (subP->protocol == HTTP)
   {
     // The slash before the URL (rest) is needed as it was removed in "urlParse" in orionld/common/urlParse.cpp
-    if (mAltP->subP->renderFormat < RF_CROSS_APIS_NORMALIZED)
-      requestHeaderLen = snprintf(requestHeader, sizeof(requestHeader), "POST /%s?subscriptionId=%s HTTP/1.1\r\n",
-                                  mAltP->subP->rest,
-                                  mAltP->subP->subscriptionId);
+    if (subP->renderFormat < RF_CROSS_APIS_NORMALIZED)
+      requestHeaderLen = snprintf(requestHeader, sizeof(requestHeader), "POST /%s?subscriptionId=%s HTTP/1.1\r\n", subP->rest, subP->subId);
     else
-      requestHeaderLen = snprintf(requestHeader, sizeof(requestHeader), "POST /%s HTTP/1.1\r\n", mAltP->subP->rest);
+      requestHeaderLen = snprintf(requestHeader, sizeof(requestHeader), "POST /%s HTTP/1.1\r\n", subP->rest);
 
-    KT_T(KtNotificationSend, "%s: URL PATH for notification == '%s'", mAltP->subP->subscriptionId, mAltP->subP->rest);
+    KT_T(KtNotificationSend, "%s: URL PATH for notification == '%s'", subP->subId, subP->rest);
   }
 
   //
@@ -871,7 +936,11 @@ int notificationSend(OrionldAlterationMatch* mAltP, double timestamp, CURL** cur
   //
   // Headers from Subscription::notification::endpoint::receiverInfo+headers (or custom notification in NGSIv2 ...)
   //
-  headers += mAltP->subP->httpInfo.headers.size();
+  if (receiverP != NULL)
+  {
+    for (KjNode* kvP = receiverP->value.firstChildP; kvP != NULL; kvP = kvP->next)
+      ++headers;
+  }
 
 
   // Let's limit the number of headers to 50
@@ -881,7 +950,7 @@ int notificationSend(OrionldAlterationMatch* mAltP, double timestamp, CURL** cur
   char          hostHeader[512];
   size_t        hostHeaderLen;
 
-  hostHeaderLen = snprintf(hostHeader, sizeof(hostHeader), "Host: %s:%d\r\n", mAltP->subP->ip, mAltP->subP->port);
+  hostHeaderLen = snprintf(hostHeader, sizeof(hostHeader), "Host: %s:%d\r\n", subP->ip, subP->port);
 
   int           ioVecLen   = headers + 3;  // Request line + X headers + empty line + payload body
   int           headerIx   = 7;
@@ -906,13 +975,13 @@ int notificationSend(OrionldAlterationMatch* mAltP, double timestamp, CURL** cur
       addLinkHeader = false;
   }
 
-  if (mAltP->subP->httpInfo.mimeType == MT_JSONLD)  // If Content-Type is application/ld+json, modify slot 2 of ioVec
+  if (subP->mimeType == MT_JSONLD)  // If Content-Type is application/ld+json, modify slot 2 of ioVec
   {
     ioVec[2].iov_base = (void*) contentTypeHeaderJsonLd;  // REPLACE "application/json" with "application/ld+json"
     ioVec[2].iov_len  = 35;
     addLinkHeader     = false;
   }
-  else if (mAltP->subP->httpInfo.mimeType == MT_GEOJSON)
+  else if (subP->mimeType == MT_GEOJSON)
   {
     ioVec[2].iov_base = (void*) contentTypeHeaderGeoJson;  // REPLACE "application/json" with "application/geo+json"
     ioVec[2].iov_len  = 36;
@@ -921,7 +990,7 @@ int notificationSend(OrionldAlterationMatch* mAltP, double timestamp, CURL** cur
   if ((addLinkHeader == true) && (ngsiv2 == false))  // Add Link header - but not if NGSIv2 Cross Notification
   {
     char         linkHeader[512];
-    const char*  link = (mAltP->subP->ldContext == "")? orionldCoreContextP->url : mAltP->subP->ldContext.c_str();
+    const char*  link = (subContext == NULL)? orionldCoreContextP->url : subContext;
 
     snprintf(linkHeader, sizeof(linkHeader), "Link: <%s>; rel=\"http://www.w3.org/ns/json-ld#context\"; type=\"application/ld+json\"\r\n", link);
 
@@ -933,22 +1002,22 @@ int notificationSend(OrionldAlterationMatch* mAltP, double timestamp, CURL** cur
   //
   // Ngsild-Attribute-Format / Ngsiv1-Attrsformat
   //
-  if (mAltP->subP->renderFormat == RF_CONCISE)
+  if (subP->renderFormat == RF_CONCISE)
   {
     ioVec[6].iov_base = (void*) conciseHeader;
     ioVec[6].iov_len  = 34;
   }
-  else if (mAltP->subP->renderFormat == RF_SIMPLIFIED)
+  else if (subP->renderFormat == RF_SIMPLIFIED)
   {
     ioVec[6].iov_base = (void*) simplifiedHeader;
     ioVec[6].iov_len  = 37;
   }
-  else if ((mAltP->subP->renderFormat == RF_CROSS_APIS_NORMALIZED) || (mAltP->subP->renderFormat == RF_CROSS_APIS_NORMALIZED_COMPACT))
+  else if ((subP->renderFormat == RF_CROSS_APIS_NORMALIZED) || (subP->renderFormat == RF_CROSS_APIS_NORMALIZED_COMPACT))
   {
     ioVec[6].iov_base = (void*) normalizedHeaderNgsiV2;
     ioVec[6].iov_len  = 32;
   }
-  else if ((mAltP->subP->renderFormat == RF_CROSS_APIS_SIMPLIFIED) || (mAltP->subP->renderFormat == RF_CROSS_APIS_SIMPLIFIED_COMPACT))
+  else if ((subP->renderFormat == RF_CROSS_APIS_SIMPLIFIED) || (subP->renderFormat == RF_CROSS_APIS_SIMPLIFIED_COMPACT))
   {
     ioVec[6].iov_base = (void*) keyValuesHeaderNgsiV2;
     ioVec[6].iov_len  = 31;
@@ -975,10 +1044,16 @@ int notificationSend(OrionldAlterationMatch* mAltP, double timestamp, CURL** cur
   bool authorizationHeaderPresent = false;
   bool xAuthTokenPresent          = false;
 
-  for (std::map<std::string, std::string>::const_iterator it = mAltP->subP->httpInfo.headers.begin(); it != mAltP->subP->httpInfo.headers.end(); ++it)
+  for (KjNode* kvP = (receiverP != NULL)? receiverP->value.firstChildP : NULL; kvP != NULL; kvP = kvP->next)
   {
-    const char* key    = it->first.c_str();
-    char*       value  = (char*) it->second.c_str();
+    KjNode* keyNodeP   = kjLookup(kvP, "key");
+    KjNode* valueNodeP = kjLookup(kvP, "value");
+
+    if ((keyNodeP == NULL) || (valueNodeP == NULL) || (valueNodeP->type != KjString))
+      continue;
+
+    const char* key    = keyNodeP->value.s;
+    char*       value  = valueNodeP->value.s;
 
     if (strcmp(value, "urn:ngsi-ld:request") == 0)
     {
@@ -1050,21 +1125,13 @@ int notificationSend(OrionldAlterationMatch* mAltP, double timestamp, CURL** cur
   //
   // The message is ready - just need to be sent
   //
-  if (mAltP->subP->protocol == HTTP)
-    return httpNotify(mAltP->subP,
-                      NULL,
-                      mAltP->subP->subscriptionId,
-                      mAltP->subP->ip,
-                      mAltP->subP->port,
-                      mAltP->subP->rest,
-                      ioVec,
-                      ioVecLen,
-                      timestamp);
-  else if (mAltP->subP->protocol == HTTPS)   return httpsNotify(mAltP->subP, ioVec, ioVecLen, timestamp, curlHandlePP);
-  else if (mAltP->subP->protocol == MQTT)    return mqttNotify(mAltP->subP,  ioVec, ioVecLen, timestamp);
-  else if (mAltP->subP->protocol == MQTTS)   return mqttNotify(mAltP->subP,  ioVec, ioVecLen, timestamp);
-  else if (mAltP->subP->protocol == WS)      return wsNotify(mAltP->subP,   ioVec, ioVecLen, timestamp);
+  if (subP->protocol == HTTP)
+    return httpNotify(subP, NULL, subP->subId, subP->ip, subP->port, subP->rest, ioVec, ioVecLen, timestamp);
+  else if (subP->protocol == HTTPS)   return httpsNotify(subP, ioVec, ioVecLen, timestamp, curlHandlePP);
+  else if (subP->protocol == MQTT)    return mqttNotify(subP,  ioVec, ioVecLen, timestamp);
+  else if (subP->protocol == MQTTS)   return mqttNotify(subP,  ioVec, ioVecLen, timestamp);
+  else if (subP->protocol == WS)      return wsNotify(subP,    ioVec, ioVecLen, timestamp);
 
-  KT_W("%s: Unsupported protocol for notifications: '%s'", mAltP->subP->subscriptionId, mAltP->subP->protocol);
+  KT_W("%s: Unsupported protocol for notifications: '%s'", subP->subId, subP->protocolString);
   return -1;
 }

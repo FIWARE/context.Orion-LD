@@ -43,6 +43,10 @@ extern "C"
 #include "orionld/kjTree/kjTreeLog.h"                            // KT_TREE
 #include "orionld/mongoc/mongocWriteLog.h"                       // MONGOC_RLOG
 #include "orionld/mongoc/mongocKjTreeFromBson.h"                 // mongocKjTreeFromBson
+#include "orionld/subCache/subCacheItemAdd.h"                    // subCacheItemAdd    (the new sub cache)
+#include "orionld/subCache/subCacheItemLookup.h"                 // subCacheItemLookup (the new sub cache)
+#include "orionld/subCache/subCacheItemRemove.h"                 // subCacheItemRemove (the new sub cache)
+#include "orionld/subCache/subCacheItemUpdate.h"                 // subCacheItemUpdate (the new sub cache)
 #include "orionld/mongoc/mongocSubCachePopulateByTenant.h"       // Own interface
 
 
@@ -176,6 +180,36 @@ bool mongocSubCachePopulateByTenant(OrionldTenant* tenantP, bool refresh)
 
     if (timeInterval == 0)
     {
+      //
+      // The NEW subscription cache first - subCacheApiSubscriptionInsert steals nodes
+      // out of 'apiSubP', and what goes into the new cache must be the whole tree.
+      //
+      // TRANSITIONAL: this is the OLD sync mechanism (the -subCacheIval refresh), and
+      // it is on its way out - but as long as it is what a second broker instance
+      // learns from, it has to keep BOTH caches current, not just the old one.
+      //
+      KjNode*       subIdNodeP = kjLookup(apiSubP, "id");
+      const char*   subId      = (subIdNodeP != NULL)? subIdNodeP->value.s : NULL;
+      SubCacheItem* sciP       = (subId != NULL)? subCacheItemLookup(tenantP->subCache, subId) : NULL;
+
+      if (subId != NULL)
+      {
+        if (sciP == NULL)
+          subCacheItemAdd(tenantP->subCache, subId, apiSubP, true, contextP);
+        else
+        {
+          //
+          // Only if the database copy is NEWER - recompiling regexes, QNode trees and
+          // GEOS geometries on every refresh tick, for every subscription, for nothing.
+          //
+          KjNode* modifiedAtP = kjLookup(apiSubP, "modifiedAt");
+          double  modifiedAt  = (modifiedAtP != NULL)? ((modifiedAtP->type == KjFloat)? modifiedAtP->value.f : modifiedAtP->value.i) : 0;
+
+          if (modifiedAt > sciP->modifiedAt)
+            subCacheItemUpdate(sciP, apiSubP, contextP);
+        }
+      }
+
       CachedSubscription* cSubP = subCacheApiSubscriptionInsert(apiSubP, qTree, coordinatesP, contextP, tenantP->tenant, showChangesP, sysAttrsP, renderFormat);
       cSubP->inDB = true;
     }
@@ -196,6 +230,7 @@ bool mongocSubCachePopulateByTenant(OrionldTenant* tenantP, bool refresh)
 
       if ((cSubP->inDB == false) && (tenantMatch(tenantName, cSubP->tenant) == true))
       {
+        subCacheItemRemove(tenantP->subCache, cSubP->subscriptionId);  // TRANSITIONAL - see above
         subCacheItemRemove(cSubP);
       }
 

@@ -61,6 +61,7 @@ extern "C"
 #include "orionld/mongoc/mongocSubCountersUpdate.h"         // mongocSubCountersUpdate
 #include "orionld/context/orionldContextFromUrl.h"          // orionldContextFromUrl
 
+#include "orionld/subCache/subCachesCountersFlush.h"          // subCachesCountersFlush
 #include "cache/subCache.h"
 #include "orionld/common/geosInit.h"                             // geosHandle
 
@@ -1362,6 +1363,14 @@ typedef struct CachedSubSaved
 void subCacheSync(void)
 {
   std::map<std::string, CachedSubSaved*> savedSubV;
+
+  //
+  // TRANSITIONAL: the notification counters live in the NEW subscription cache.
+  // They must reach the database BEFORE the reload below, which overwrites every
+  // cached subscription with its database copy. Goes away with this whole
+  // "use mongo as a communication channel" mechanism.
+  //
+  subCachesCountersFlush();
 
   cacheSemTake(__FUNCTION__, "Synchronizing subscription cache");
   subCacheState = ScsSynchronizing;

@@ -256,6 +256,7 @@ SET (ORION_LIBS
     orionld_mqtt
     orionld_ws
     orionld_q
+    orionld_subCache     # repeated: orionld_notifications, further up, notifies from the subscription cache
     orionld_mongoc       # subCache needs mongoc
     orionld_entityMaps
     orionld_dbModel

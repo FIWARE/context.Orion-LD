@@ -32,7 +32,7 @@ extern "C"
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 }
 
-#include "cache/CachedSubscription.h"                            // CachedSubscription
+#include "orionld/types/SubCacheItem.h"                           // SubCacheItem
 
 #include "orionld/types/OrionldAlteration.h"                     // OrionldAlterationMatch
 #include "orionld/common/orionldState.h"                         // orionldState
@@ -130,12 +130,12 @@ static int notificationResponseBody(void* chunk, size_t size, size_t members, vo
 //
 // httpsNotify -
 //
-int httpsNotify(CachedSubscription* cSubP, struct iovec* ioVec, int ioVecLen, double timestamp, CURL** curlHandlePP)
+int httpsNotify(SubCacheItem* cSubP, struct iovec* ioVec, int ioVecLen, double timestamp, CURL** curlHandlePP)
 {
-  KT_T(KtNotificationSend, "%s: Protocol for HTTPS notification: %s (%d)", cSubP->subscriptionId, cSubP->protocolString, cSubP->protocol);
-  KT_T(KtNotificationSend, "%s: IP for HTTPS notification: %s", cSubP->subscriptionId, cSubP->ip);
-  KT_T(KtNotificationSend, "%s: Port for HTTPS notification: %d", cSubP->subscriptionId, cSubP->port);
-  KT_T(KtNotificationSend, "%s: Rest for HTTPS notification: %s", cSubP->subscriptionId, cSubP->rest);
+  KT_T(KtNotificationSend, "%s: Protocol for HTTPS notification: %s (%d)", cSubP->subId, cSubP->protocolString, cSubP->protocol);
+  KT_T(KtNotificationSend, "%s: IP for HTTPS notification: %s", cSubP->subId, cSubP->ip);
+  KT_T(KtNotificationSend, "%s: Port for HTTPS notification: %d", cSubP->subId, cSubP->port);
+  KT_T(KtNotificationSend, "%s: Rest for HTTPS notification: %s", cSubP->subId, cSubP->rest);
 
   char  url[512];  // FIXME: DON'T Create the URL over and over - store it in the CachedSubscription
   char* rest = cSubP->rest;
@@ -153,7 +153,7 @@ int httpsNotify(CachedSubscription* cSubP, struct iovec* ioVec, int ioVecLen, do
     orionldState.multiP = curl_multi_init();
     if (orionldState.multiP == NULL)
     {
-      KT_E("%s: Internal Error: curl_multi_init failed", cSubP->subscriptionId);
+      KT_E("%s: Internal Error: curl_multi_init failed", cSubP->subId);
       return -1;
     }
   }
@@ -161,14 +161,14 @@ int httpsNotify(CachedSubscription* cSubP, struct iovec* ioVec, int ioVecLen, do
   CURL* curlHandleP = curl_easy_init();
   if (curlHandleP == NULL)
   {
-    KT_E("%s: Internal Error: curl_easy_init failed", cSubP->subscriptionId);
+    KT_E("%s: Internal Error: curl_easy_init failed", cSubP->subId);
     return -1;
   }
 
   //
   // URL, Verb, ...
   //
-  KT_T(KtNotificationSend, "%s: URL: %s", cSubP->subscriptionId, url);
+  KT_T(KtNotificationSend, "%s: URL: %s", cSubP->subId, url);
   curl_easy_setopt(curlHandleP, CURLOPT_URL, url);
   curl_easy_setopt(curlHandleP, CURLOPT_CUSTOMREQUEST, "POST");
   curl_easy_setopt(curlHandleP, CURLOPT_TIMEOUT_MS, 5000);                     // Timeout - hard-coded to 5 seconds for now ...
@@ -189,7 +189,7 @@ int httpsNotify(CachedSubscription* cSubP, struct iovec* ioVec, int ioVecLen, do
     // must not be CRLF-terminated - have to remove last 2 chars
     item[ioVec[ix].iov_len - 2] = 0;
 
-    KT_T(KtNotificationHeaders, "%s: Notification Request Header: '%s'", cSubP->subscriptionId, item);
+    KT_T(KtNotificationHeaders, "%s: Notification Request Header: '%s'", cSubP->subId, item);
     headers = curl_slist_append(headers, item);
   }
   curl_easy_setopt(curlHandleP, CURLOPT_HTTPHEADER, headers);
@@ -200,7 +200,7 @@ int httpsNotify(CachedSubscription* cSubP, struct iovec* ioVec, int ioVecLen, do
   //
   // Payload Body
   //
-  KT_T(KtNotificationBody, "%s: Notification Request Body: %s", cSubP->subscriptionId, ioVec[ioVecLen - 1].iov_base);
+  KT_T(KtNotificationBody, "%s: Notification Request Body: %s", cSubP->subId, ioVec[ioVecLen - 1].iov_base);
   curl_easy_setopt(curlHandleP, CURLOPT_POSTFIELDS, (u_int8_t*) ioVec[ioVecLen - 1].iov_base);
 
   //
@@ -215,7 +215,7 @@ int httpsNotify(CachedSubscription* cSubP, struct iovec* ioVec, int ioVecLen, do
   // Debug Incoming HTTP Headers?
   if (ktTraceLevelCheck(KtNotificationHeaders) == true)
   {
-    curl_easy_setopt(curlHandleP, CURLOPT_HEADERDATA,     cSubP->subscriptionId);
+    curl_easy_setopt(curlHandleP, CURLOPT_HEADERDATA,     cSubP->subId);
     curl_easy_setopt(curlHandleP, CURLOPT_HEADERFUNCTION, responseHeaderDebug);   // Callback for received headers
   }
 

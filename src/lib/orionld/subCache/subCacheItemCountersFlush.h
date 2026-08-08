@@ -1,5 +1,5 @@
-#ifndef SRC_LIB_ORIONLD_WS_WSNOTIFY_H_
-#define SRC_LIB_ORIONLD_WS_WSNOTIFY_H_
+#ifndef SRC_LIB_ORIONLD_SUBCACHE_SUBCACHEITEMCOUNTERSFLUSH_H_
+#define SRC_LIB_ORIONLD_SUBCACHE_SUBCACHEITEMCOUNTERSFLUSH_H_
 
 /*
 *
@@ -25,16 +25,18 @@
 *
 * Author: Ken Zangelin
 */
-#include <sys/uio.h>                                  // struct iovec
-
-#include "orionld/types/SubCacheItem.h"                // SubCacheItem
+#include "orionld/types/OrionldTenant.h"                         // OrionldTenant
+#include "orionld/types/SubCacheItem.h"                          // SubCacheItem
 
 
 
 // -----------------------------------------------------------------------------
 //
-// wsNotify - send an NGSI-LD notification over a WebSocket connection
+// subCacheItemCountersFlush - push the notification counters to the database
 //
-extern int wsNotify(SubCacheItem* cSubP, struct iovec* ioVec, int ioVecSize, double notificationTime);
+// The tenant is a parameter and not taken from orionldState: the sub-cache
+// refresher is a thread of its own, with no request and thus no tenant.
+//
+extern void subCacheItemCountersFlush(OrionldTenant* tenantP, SubCacheItem* sciP, bool forcedToPause);
 
-#endif  // SRC_LIB_ORIONLD_WS_WSNOTIFY_H_
+#endif  // SRC_LIB_ORIONLD_SUBCACHE_SUBCACHEITEMCOUNTERSFLUSH_H_

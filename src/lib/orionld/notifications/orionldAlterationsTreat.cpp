@@ -37,7 +37,7 @@ extern "C"
 #include "kjson/kjRender.h"                                      // kjFastRender
 }
 
-#include "cache/CachedSubscription.h"                            // CachedSubscription
+#include "orionld/types/SubCacheItem.h"                           // SubCacheItem
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/traceLevels.h"                          // KTrace levels
@@ -59,7 +59,7 @@ extern "C"
 //
 typedef struct NotificationPending
 {
-  CachedSubscription*          subP;
+  SubCacheItem*                subP;
   int                          fd;
   CURL*                        curlHandleP;
   bool                         used;
@@ -160,7 +160,7 @@ bool notificationResponseRead
   if (bytesRead <= 0)
   {
     notificationFailure(npP->subP, "Unable to read from notification endpoint", notificationTime);
-    KT_E("Internal Error (%s: unable to read response for notification on fd %d)", npP->subP->subscriptionId, npP->fd);
+    KT_E("Internal Error (%s: unable to read response for notification on fd %d)", npP->subP->subId, npP->fd);
     return false;
   }
   buf[bytesRead] = 0;
@@ -180,7 +180,7 @@ bool notificationResponseRead
     int nb = readWithTimeout(npP->fd, &buf[bytesRead], bufLen - bytesRead, 0, 100000);  // 100 millisecond timeout
     if (nb == 0)
     {
-      KT_W("%s: the read of notification response timed out", npP->subP->subscriptionId);
+      KT_W("%s: the read of notification response timed out", npP->subP->subId);
       notificationFailure(npP->subP, "timeout reading the notification response", notificationTime);
       return false;
     }
@@ -188,7 +188,7 @@ bool notificationResponseRead
     {
       char errorString[512];
       snprintf(errorString, sizeof(errorString), "error reading notification response: %s", strerror(errno));
-      KT_E("%s: %s", npP->subP->subscriptionId, errorString);
+      KT_E("%s: %s", npP->subP->subId, errorString);
       notificationFailure(npP->subP, errorString, notificationTime);
       return false;
     }
@@ -243,14 +243,14 @@ bool notificationResponseRead
 
   if (cP == NULL)
   {
-    KT_W("%s: Can't find the end of the Start-Line", npP->subP->subscriptionId);
+    KT_W("%s: Can't find the end of the Start-Line", npP->subP->subId);
     notificationFailure(npP->subP, "Can't find the end of the Start-Line", notificationTime);
     return false;
   }
 
   headers = cP;
-  KT_T(KtNotificationMsg, "%s: notification response Start-Line:   '%s'", npP->subP->subscriptionId, buf);
-  KT_T(KtNotificationMsg, "%s: notification response HTTP Headers: '%s'", npP->subP->subscriptionId, headers);
+  KT_T(KtNotificationMsg, "%s: notification response Start-Line:   '%s'", npP->subP->subId, buf);
+  KT_T(KtNotificationMsg, "%s: notification response HTTP Headers: '%s'", npP->subP->subId, headers);
   KT_T(KtNotificationMsg, "%s: notification response body so far: '%s'", body);
 
 
@@ -275,7 +275,7 @@ bool notificationResponseRead
   else
     contentLen = atoi(&contentLenP[16]);
 
-  KT_T(KtNotificationMsg, "%s: Content-Length: %d", npP->subP->subscriptionId, contentLen);
+  KT_T(KtNotificationMsg, "%s: Content-Length: %d", npP->subP->subId, contentLen);
 
 
   //
@@ -284,8 +284,8 @@ bool notificationResponseRead
   ssize_t headersLen    = (ssize_t) headerBodyDelimiterP - (ssize_t) buf;  // Including the Start-Line
   ssize_t bodyBytesRead = bytesRead - headersLen;
 
-  KT_T(KtNotificationMsg, "%s: total no of bytes read: %d", npP->subP->subscriptionId, bytesRead);
-  KT_T(KtNotificationMsg, "%s: no of bytes of body read: %d", npP->subP->subscriptionId, bodyBytesRead);
+  KT_T(KtNotificationMsg, "%s: total no of bytes read: %d", npP->subP->subId, bytesRead);
+  KT_T(KtNotificationMsg, "%s: no of bytes of body read: %d", npP->subP->subId, bodyBytesRead);
 
   if (bodyBytesRead < contentLen)
   {
@@ -299,7 +299,7 @@ bool notificationResponseRead
     if (bytesRead + bodyBytesStillToRead >= bufLen)
     {
       KT_T(KtNotificationMsg, "%s: must reallocate for the response body (we have %d bytes left in buffer, need %d)",
-           npP->subP->subscriptionId,
+           npP->subP->subId,
            bufLen - bytesRead,
            bodyBytesStillToRead);
 
@@ -340,7 +340,7 @@ bool notificationResponseRead
     }
   }
 
-  KT_T(KtNotificationMsg, "%s: entire message read", npP->subP->subscriptionId);
+  KT_T(KtNotificationMsg, "%s: entire message read", npP->subP->subId);
   *headersP        = headers;
   *bodyP           = body;
   *httpStatusCodeP = httpStatus;
@@ -361,7 +361,7 @@ static void notificationResponseTreat(NotificationPending* npP, double notificat
   int   httpStatusCode = -1;
   char* body           = NULL;
   char* headers        = NULL;
-  char* subId          = npP->subP->subscriptionId;
+  char* subId          = npP->subP->subId;
 
   bzero(buf, sizeof(buf));
 
@@ -460,7 +460,7 @@ static NotificationPending* notificationLookupByCurlHandle(NotificationPending* 
 //
 // IMPLEMENTATION DETAILS
 //   I will need a new subCacheMatch function (subCacheAlterationMatch) - that accepts altList as input and gives back a list of
-//   [ { CachedSubscription*, OrionldAttributeAlteration* }, {} ]
+//   [ { SubCacheItem*, OrionldAttributeAlteration* }, {} ]
 //
 //   Cause, OrionldAttributeAlteration has the OrionldAlterationType, and we need it
 //
@@ -524,10 +524,10 @@ void orionldAlterationsTreat(OrionldAlteration* altList)
         KT_T(KtAlt, "o %d/%d Subscription '%s', due to '%s'",
              ix,
              matches,
-             matchP->subP->subscriptionId,
+             matchP->subP->subId,
              orionldAlterationName(matchP->altAttrP->alterationType));
       else
-        KT_T(KtAlt, "o %d/%d Subscription '%s'", ix, matches, matchP->subP->subscriptionId);
+        KT_T(KtAlt, "o %d/%d Subscription '%s'", ix, matches, matchP->subP->subId);
 
       ++ix;
     }
@@ -823,16 +823,16 @@ void orionldAlterationsTreat(OrionldAlteration* altList)
         continue;
       }
 
-      KT_T(KtNotificationSend, "%s: Notification Host: '%s'", npP->subP->subscriptionId, npP->subP->ip);
-      KT_T(KtNotificationSend, "%s: Notification Result: CURLcode %d (%s)", npP->subP->subscriptionId, msgP->data.result, curl_easy_strerror(msgP->data.result));
-      KT_T(KtNotificationSend, "%s: Update Counters", npP->subP->subscriptionId);
+      KT_T(KtNotificationSend, "%s: Notification Host: '%s'", npP->subP->subId, npP->subP->ip);
+      KT_T(KtNotificationSend, "%s: Notification Result: CURLcode %d (%s)", npP->subP->subId, msgP->data.result, curl_easy_strerror(msgP->data.result));
+      KT_T(KtNotificationSend, "%s: Update Counters", npP->subP->subId);
 
       if (msgP->data.result == 0)
       {
         uint64_t  httpResponseCode = 500;
         curl_easy_getinfo(npP->curlHandleP, CURLINFO_RESPONSE_CODE, &httpResponseCode);
 
-        KT_T(KtNotificationSend, "%s: Notification Response HTTP Status: %d", npP->subP->subscriptionId, (int) httpResponseCode);
+        KT_T(KtNotificationSend, "%s: Notification Response HTTP Status: %d", npP->subP->subId, (int) httpResponseCode);
 
         if ((httpResponseCode >= 200) && (httpResponseCode < 300))
           notificationSuccess(npP->subP, notificationTime);

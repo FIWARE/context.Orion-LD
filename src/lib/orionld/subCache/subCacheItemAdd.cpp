@@ -69,6 +69,22 @@ static void subTimestampAdd(KjNode* subP, const char* name)
 
 // -----------------------------------------------------------------------------
 //
+// subTimestampGet - a timestamp in the subscription tree is a Float, or absent
+//
+static double subTimestampGet(KjNode* containerP, const char* name)
+{
+  KjNode* nodeP = kjLookup(containerP, name);
+
+  if (nodeP == NULL)
+    return 0;
+
+  return (nodeP->type == KjFloat)? nodeP->value.f : nodeP->value.i;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // subStringAdd - seed a string in the subscription tree, if not already there
 //
 static void subStringAdd(KjNode* subP, const char* name, const char* value)
@@ -118,6 +134,14 @@ SubCacheItem* subCacheItemAdd
   sciP->next     = NULL;
 
   //
+  // An NGSI-LD Subscription id is a URI (and thus has a colon) and is stored as
+  // the database _id verbatim; an NGSIv2 subscription has a mongo OID for _id,
+  // rendered as a 24-character hex string. Whoever writes to the database needs
+  // to know which of the two it is.
+  //
+  sciP->ngsild = (strchr(subscriptionId, ':') != NULL);
+
+  //
   // The deltas are what keeps mongo out of the notification path: every
   // notification bumps them in RAM and they are flushed (added, not written)
   // now and then. They always start at zero for a freshly cached item - what
@@ -125,8 +149,6 @@ SubCacheItem* subCacheItemAdd
   //
   sciP->deltas.timesSent   = 0;
   sciP->deltas.timesFailed = 0;
-  sciP->deltas.lastSuccess = 0;
-  sciP->deltas.lastFailure = 0;
 
   KjNode* hostAliasP = kjLookup(sciP->subTree, "hostAlias");
   if (hostAliasP != NULL)
@@ -150,21 +172,30 @@ SubCacheItem* subCacheItemAdd
       subTimestampAdd(notificationP, "lastFailure");
     }
 
-    subStringAdd(sciP->subTree, "status", "active");
+    //
+    // 'status' is the broker's own view of the subscription and the API has only
+    // three words for it (TS 104-175 clause 5.2.6.5.2): active, paused, expired.
+    // A subscription created with "isActive": false starts out paused - the two
+    // must never disagree, see subCacheItemStatusSet.
+    //
+    KjNode* isActiveP = kjLookup(sciP->subTree, "isActive");
+    bool    active    = (isActiveP != NULL)? isActiveP->value.b : true;
+
+    subStringAdd(sciP->subTree, "status", (active == true)? "active" : "paused");
   }
 
   //
-  // 'lastNotification' is the one piece of notification bookkeeping that is read
-  // on every single match (throttling), so it is lifted out of the tree.
-  // It comes from the database - a broker that restarts must not notify a
-  // throttled subscription before its throttling has passed.
+  // The notification timestamps are lifted out of the tree - 'lastNotification' is
+  // read on every single match (throttling), and all three are written on every
+  // notification. They come from the database: a broker that restarts must not
+  // notify a throttled subscription before its throttling has passed, nor forget
+  // when the subscription last succeeded.
   //
   if (notificationP != NULL)
   {
-    KjNode* lastNotificationP = kjLookup(notificationP, "lastNotification");
-
-    if (lastNotificationP != NULL)
-      sciP->lastNotificationTime = (lastNotificationP->type == KjFloat)? lastNotificationP->value.f : lastNotificationP->value.i;
+    sciP->lastNotificationTime = subTimestampGet(notificationP, "lastNotification");
+    sciP->lastSuccess          = subTimestampGet(notificationP, "lastSuccess");
+    sciP->lastFailure          = subTimestampGet(notificationP, "lastFailure");
   }
 
   KjNode* modifiedAtP = kjLookup(sciP->subTree, "modifiedAt");

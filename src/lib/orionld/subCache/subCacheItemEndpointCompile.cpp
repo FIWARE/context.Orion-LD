@@ -22,6 +22,7 @@
 *
 * Author: Ken Zangelin
 */
+#include <stdlib.h>                                              // calloc, atoi
 #include <string.h>                                              // strdup
 
 extern "C"
@@ -31,12 +32,76 @@ extern "C"
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
 
+#include "orionld/types/MqttInfo.h"                              // MqttInfo
 #include "orionld/types/OrionldMimeType.h"                       // MimeType, mimeTypeFromString
 #include "orionld/types/Protocol.h"                              // Protocol, protocolFromString
 #include "orionld/types/SubCacheItem.h"                          // SubCacheItem
 #include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/urlParse.h"                             // urlParse
+#include "orionld/mqtt/mqttParse.h"                              // mqttParse
+#include "orionld/subCache/subCacheItemStatusSet.h"              // subCacheItemStatusSet
 #include "orionld/subCache/subCacheItemEndpointCompile.h"        // Own interface
+
+
+
+// -----------------------------------------------------------------------------
+//
+// mqttCompile - an MQTT endpoint URI, split the way the MQTT client needs it
+//
+// The URI carries user, password, host, port and topic; the QoS and the protocol
+// version are not part of it - they come from "notifierInfo".
+//
+static void mqttCompile(SubCacheItem* sciP, const char* uri, KjNode* notifierInfoP)
+{
+  char   url[512];
+  char*  user     = NULL;
+  char*  password = NULL;
+  char*  host     = NULL;
+  char*  topic    = NULL;
+  char*  detail   = NULL;
+  bool   mqtts    = false;
+  uint16_t port   = 0;
+
+  strncpy(url, uri, sizeof(url) - 1);
+  url[sizeof(url) - 1] = 0;
+
+  if (mqttParse(url, &mqtts, &user, &password, &host, &port, &topic, &detail) == false)
+  {
+    subCacheItemStatusSet(sciP, "paused");
+    KT_RVE("Sub '%s': invalid MQTT endpoint URI ('%s'): %s", sciP->subId, uri, (detail != NULL)? detail : "no detail");
+  }
+
+  sciP->mqttP = (MqttInfo*) calloc(1, sizeof(MqttInfo));
+
+  if (sciP->mqttP == NULL)
+    KT_X(1, "Out of memory attempting to allocate the MQTT info of a Subscription (%d bytes)", sizeof(MqttInfo));
+
+  sciP->mqttP->mqtts = mqtts;
+  sciP->mqttP->port  = port;
+
+  if (user     != NULL) strncpy(sciP->mqttP->username, user,     sizeof(sciP->mqttP->username) - 1);
+  if (password != NULL) strncpy(sciP->mqttP->password, password, sizeof(sciP->mqttP->password) - 1);
+  if (host     != NULL) strncpy(sciP->mqttP->host,     host,     sizeof(sciP->mqttP->host)     - 1);
+  if (topic    != NULL) strncpy(sciP->mqttP->topic,    topic,    sizeof(sciP->mqttP->topic)    - 1);
+
+  if (notifierInfoP != NULL)
+  {
+    for (KjNode* niP = notifierInfoP->value.firstChildP; niP != NULL; niP = niP->next)
+    {
+      KjNode* keyP   = kjLookup(niP, "key");
+      KjNode* valueP = kjLookup(niP, "value");
+
+      if ((keyP == NULL) || (valueP == NULL))
+        continue;
+
+      if      (strcmp(keyP->value.s, "MQTT-QoS")     == 0) sciP->mqttP->qos = atoi(valueP->value.s);
+      else if (strcmp(keyP->value.s, "MQTT-Version") == 0) strncpy(sciP->mqttP->version, valueP->value.s, sizeof(sciP->mqttP->version) - 1);
+    }
+  }
+
+  KT_T(KtSubCache, "Sub '%s': MQTT endpoint (host: '%s', port: %d, topic: '%s', qos: %d)",
+       sciP->subId, sciP->mqttP->host, sciP->mqttP->port, sciP->mqttP->topic, sciP->mqttP->qos);
+}
 
 
 
@@ -86,4 +151,7 @@ void subCacheItemEndpointCompile(SubCacheItem* sciP, KjNode* endpointP)
 
   KT_T(KtSubCache, "Sub '%s': endpoint protocol: '%s', IP: '%s', port: %d, rest: '%s'",
        sciP->subId, sciP->protocolString, sciP->ip, sciP->port, sciP->rest);
+
+  if ((sciP->protocol == MQTT) || (sciP->protocol == MQTTS))
+    mqttCompile(sciP, uriP->value.s, kjLookup(endpointP, "notifierInfo"));
 }

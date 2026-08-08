@@ -113,6 +113,12 @@ void subCacheItemCompiledStateRelease(SubCacheItem* sciP)
   sciP->ip             = NULL;
   sciP->rest           = NULL;
 
+  if (sciP->mqttP != NULL)
+  {
+    free(sciP->mqttP);
+    sciP->mqttP = NULL;
+  }
+
   // 'lang' points into subTree
   sciP->lang = NULL;
 }

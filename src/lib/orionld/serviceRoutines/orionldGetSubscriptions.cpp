@@ -39,6 +39,7 @@ extern "C"
 #include "orionld/common/tenantList.h"                           // tenant0
 #include "orionld/kjTree/kjTreeFromPernotSubscription.h"         // kjTreeFromPernotSubscription
 #include "orionld/legacyDriver/legacyGetSubscriptions.h"         // legacyGetSubscriptions
+#include "orionld/types/SubCacheItem.h"                          // SubCacheItem
 #include "orionld/kjTree/kjTreeFromCachedSubscription.h"         // kjTreeFromCachedSubscription
 #include "orionld/mongoc/mongocSubscriptionsGet.h"               // mongocSubscriptionsGet
 #include "orionld/dbModel/dbModelToApiSubscription.h"            // dbModelToApiSubscription
@@ -68,7 +69,7 @@ static bool tenantMatch(OrionldTenant* requestTenantP, const char* subscriptionT
 }
 
 
-extern void orionldSubCounters(KjNode* apiSubP, CachedSubscription* cSubP, PernotSubscription* pSubP);
+extern void orionldSubCounters(KjNode* apiSubP, SubCacheItem* sciP, PernotSubscription* pSubP);
 // -----------------------------------------------------------------------------
 //
 // orionldGetSubscriptionsFromDb -

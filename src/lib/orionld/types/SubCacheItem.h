@@ -36,6 +36,7 @@ extern "C"
 #include "orionld/types/OrionldContext.h"                        // OrionldContext
 #include "orionld/types/OrionldGeoInfo.h"                        // OrionldGeoInfo
 #include "orionld/types/OrionldMimeType.h"                       // MimeType
+#include "orionld/types/MqttInfo.h"                              // MqttInfo
 #include "orionld/types/OrionldRenderFormat.h"                   // OrionldRenderFormat
 #include "orionld/types/Protocol.h"                              // Protocol
 #include "orionld/types/QNode.h"                                 // QNode
@@ -57,14 +58,18 @@ extern "C"
 
 // -----------------------------------------------------------------------------
 //
-// SubDeltas -
+// SubDeltas - notification counters not yet flushed to the database
+//
+// Only the counters - they are what the flush $inc's. The timestamps that go
+// with them are absolute, not deltas, and live in the SubCacheItem itself.
+//
+// 'timesSent' counts every notification ATTEMPT, successful or not (that is what
+// the API renders), so it doubles as "counter updates since the last flush".
 //
 typedef struct SubDeltas
 {
   uint32_t timesSent;
   uint32_t timesFailed;
-  double   lastSuccess;
-  double   lastFailure;
 } SubDeltas;
 
 
@@ -77,11 +82,22 @@ typedef struct SubCacheItem
 {
   char*                 subId;              // Set when creating subscription - points inside subTree
   KjNode*               subTree;
-  SubDeltas             deltas;
-  double                lastNotificationTime;  // Timestamp of the last notification attempt - seeded from the DB, read by throttling
+  bool                  ngsild;             // false for an NGSIv2 subscription, whose database _id is an OID, not a string
   bool                  dirty;              // The subscription has been patched - not only counters differ from copy in DB
   OrionldContext*       contextP;           // Set when creating/patching registration
   char*                 hostAlias;          // Broker identity - for the Via header
+
+  //
+  // Notification bookkeeping. The counters in the subTree are what the database
+  // holds; 'deltas' is what has happened since and is not yet flushed. What the
+  // API renders is the sum. The timestamps are absolute and always the latest.
+  //
+  SubDeltas             deltas;
+  double                lastNotificationTime;  // Last notification ATTEMPT - seeded from the DB, read by throttling
+  double                lastSuccess;
+  double                lastFailure;
+  int                   consecutiveErrors;     // Three in a row and the subscription is paused. Not in the DB
+  char                  lastErrorReason[128];  // Not in the DB
 
   //
   // "Shortcuts" and compiled state - all of it built from subTree, at cache time,
@@ -121,6 +137,7 @@ typedef struct SubCacheItem
   char*                       rest;            // Points inside 'url'
   Protocol                    protocol;
   MimeType                    mimeType;        // notification::endpoint::accept
+  MqttInfo*                   mqttP;           // Only for an MQTT/MQTTS endpoint - the URI split up MQTT-style, + notifierInfo
 
   struct SubCacheItem*  next;
 } SubCacheItem;

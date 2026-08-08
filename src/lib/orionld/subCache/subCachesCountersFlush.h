@@ -1,5 +1,5 @@
-#ifndef SRC_LIB_ORIONLD_WS_WSNOTIFY_H_
-#define SRC_LIB_ORIONLD_WS_WSNOTIFY_H_
+#ifndef SRC_LIB_ORIONLD_SUBCACHE_SUBCACHESCOUNTERSFLUSH_H_
+#define SRC_LIB_ORIONLD_SUBCACHE_SUBCACHESCOUNTERSFLUSH_H_
 
 /*
 *
@@ -25,16 +25,10 @@
 *
 * Author: Ken Zangelin
 */
-#include <sys/uio.h>                                  // struct iovec
-
-#include "orionld/types/SubCacheItem.h"                // SubCacheItem
-
-
-
 // -----------------------------------------------------------------------------
 //
-// wsNotify - send an NGSI-LD notification over a WebSocket connection
+// subCachesCountersFlush - flush the notification counters of every tenant
 //
-extern int wsNotify(SubCacheItem* cSubP, struct iovec* ioVec, int ioVecSize, double notificationTime);
+extern void subCachesCountersFlush(void);
 
-#endif  // SRC_LIB_ORIONLD_WS_WSNOTIFY_H_
+#endif  // SRC_LIB_ORIONLD_SUBCACHE_SUBCACHESCOUNTERSFLUSH_H_

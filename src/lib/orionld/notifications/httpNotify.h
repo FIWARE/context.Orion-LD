@@ -27,7 +27,7 @@
 */
 #include <sys/uio.h>                                             // iovec
 
-#include "cache/CachedSubscription.h"                            // CachedSubscription
+#include "orionld/types/SubCacheItem.h"                           // SubCacheItem
 
 #include "orionld/types/PernotSubscription.h"                    // PernotSubscription
 
@@ -39,7 +39,7 @@
 //
 extern int httpNotify
 (
-  CachedSubscription*  cSubP,
+  SubCacheItem*        cSubP,
   PernotSubscription*  pSubP,
   const char*          subscriptionId,
   const char*          ip,
