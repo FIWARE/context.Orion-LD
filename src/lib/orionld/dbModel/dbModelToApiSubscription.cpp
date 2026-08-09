@@ -239,6 +239,45 @@ KjNode* dbModelToApiSubscription
 
   KjNode* apiSubP = kjObject(orionldState.kjsonP, NULL);
 
+  //
+  // "v2" - the NGSIv2-only members, gathered in ONE place.
+  //
+  // They are not part of an NGSI-LD Subscription and never go out in a response
+  // (apiModelFromCacheSubscription drops the whole member), but the cache needs
+  // them: they are what subCacheItemV2Compile builds the NGSIv2 matching state
+  // and the custom-notification HttpInfo out of. Keeping them in one sub-object
+  // means the renderer drops one member instead of a list that grows every time
+  // the cache learns to hold something new.
+  //
+  KjNode* v2P = (forSubCache == true)? kjObject(orionldState.kjsonP, "v2") : NULL;
+
+  //
+  // Gathered HERE, at the top, and not at the end: everything below moves nodes
+  // out of 'dbSubP' into 'apiSubP' with kjChildAdd WITHOUT unlinking them first,
+  // which splices away the rest of dbSubP's child list. By the end of this
+  // function there is very little left of it to look things up in.
+  //
+  // 'headers' and 'mimeType' are deliberately NOT taken - they are already in the
+  // API model, as receiverInfo and endpoint::accept.
+  //
+  if (v2P != NULL)
+  {
+    static const char* v2MemberV[] = { "custom", "method", "payload", "qs", "blacklist", "metadata", "servicePath" };
+
+    for (unsigned int ix = 0; ix < sizeof(v2MemberV) / sizeof(v2MemberV[0]); ix++)
+    {
+      KjNode* nodeP = kjLookup(dbSubP, v2MemberV[ix]);
+
+      if (nodeP != NULL)
+      {
+        kjChildRemove(dbSubP, nodeP);
+        kjChildAdd(v2P, nodeP);
+      }
+    }
+
+    kjChildAdd(apiSubP, v2P);
+  }
+
   // id
   dbSubIdP->name = (char*) "id";
   kjChildAdd(apiSubP, dbSubIdP);
@@ -434,19 +473,27 @@ KjNode* dbModelToApiSubscription
 
     //
     // The NGSIv2 renderings of 'q'/'mq' are not part of an NGSI-LD Subscription,
-    // so an NGSI-LD request does not get them - but the CACHE does, whichever
-    // API asked: subCacheItemV2Compile builds the NGSIv2 StringFilters out of
-    // them, and that is what lets an entity updated over NGSIv2 match this
-    // subscription. Without 'forSubCache' here, a PATCH would recompile the item
-    // from a tree with no 'q' and the subscription would quietly stop matching.
+    // so an NGSI-LD request does not get them.
     //
-    if ((forSubCache == true) || (orionldState.apiVersion != API_VERSION_NGSILD_V1))
+    if (orionldState.apiVersion != API_VERSION_NGSILD_V1)
     {
       if ((v2qP != NULL) && (v2qP->value.s[0] != 0))
         kjChildAdd(apiSubP, v2qP);
 
       if ((v2mqP != NULL) && (v2mqP->value.s[0] != 0))
         kjChildAdd(apiSubP, v2mqP);
+    }
+    else if (forSubCache == true)
+    {
+      //
+      // ... but the CACHE needs them, whichever API asked: subCacheItemV2Compile
+      // compiles the NGSIv2 StringFilters out of them, and that is what lets an
+      // entity updated over NGSIv2 match this subscription. Without this, a PATCH
+      // would recompile the item from a tree with no 'q' and the subscription
+      // would quietly stop matching.
+      //
+      if ((v2qP  != NULL) && (v2qP->value.s[0]  != 0))  kjChildAdd(v2P, v2qP);
+      if ((v2mqP != NULL) && (v2mqP->value.s[0] != 0))  kjChildAdd(v2P, v2mqP);
     }
 
     bool empty = false;

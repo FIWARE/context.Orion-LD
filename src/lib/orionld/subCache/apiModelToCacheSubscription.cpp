@@ -28,7 +28,7 @@
 extern "C"
 {
 #include "kjson/KjNode.h"                                        // KjNode
-#include "kjson/kjBuilder.h"                                     // kjArray, kjFloat, kjString, kjChildAdd, kjChildRemove
+#include "kjson/kjBuilder.h"                                     // kjArray, kjObject, kjFloat, kjString, kjChildAdd, kjChildRemove
 #include "kjson/kjFree.h"                                        // kjFree
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
@@ -146,17 +146,44 @@ void apiModelToCacheSubscription(KjNode* apiSubscriptionP, OrionldContext* jsonl
   memberRename(apiSubscriptionP, "name",    "subscriptionName");
 
   //
-  // "q" and "mq" are the NGSIv2 renderings of the very same filter, and they STAY:
-  // subCacheItemV2Compile builds the NGSIv2 StringFilters out of them, which is
-  // what lets an entity updated through the NGSIv2 API match this subscription.
-  // They are not part of the API model, so the rendering drops them instead
-  // (apiModelFromCacheSubscription).
-  //
   // "tenant" is meaningless in a per-tenant cache, and "origin" belongs to a
   // response, not to a subscription.
   //
   memberDrop(apiSubscriptionP, "tenant");
   memberDrop(apiSubscriptionP, "origin");
+
+  //
+  // The NGSIv2-only members live under "v2".
+  //
+  // The database road (dbModelToApiSubscription, forSubCache) already puts them
+  // there. The API road hands over the request tree, where the NGSIv2 renderings
+  // of 'q'/'mq' sit at the top level - orionldPostSubscriptions puts them there
+  // for the database. Moving them means both roads leave the cache holding the
+  // same shape, which is the whole point of this function.
+  //
+  KjNode* v2P = kjLookup(apiSubscriptionP, "v2");
+
+  for (int ix = 0; ix < 2; ix++)
+  {
+    const char* member = (ix == 0)? "q" : "mq";
+    KjNode*     nodeP  = kjLookup(apiSubscriptionP, member);
+
+    if ((nodeP == NULL) || (nodeP->type != KjString))
+      continue;
+
+    if (v2P == NULL)
+    {
+      v2P = kjObject(NULL, "v2");
+      kjChildAdd(apiSubscriptionP, v2P);
+    }
+
+    kjChildRemove(apiSubscriptionP, nodeP);
+
+    if (kjLookup(v2P, member) == NULL)
+      kjChildAdd(v2P, nodeP);
+    else
+      kjFree(nodeP);
+  }
 
   timestampToFloat(apiSubscriptionP, "expiresAt");
   timestampToFloat(apiSubscriptionP, "createdAt");

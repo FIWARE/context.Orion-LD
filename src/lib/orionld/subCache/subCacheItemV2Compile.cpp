@@ -34,6 +34,9 @@ extern "C"
 
 #include "orionld/types/SubCacheItem.h"                          // SubCacheItem
 #include "orionld/types/SubV2Info.h"                             // SubV2Info
+#include "orionld/types/Verb.h"                                  // verbFromString, verbToString
+
+#include "common/MimeType.h"                                     // mimeTypeFromString
 #include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/subCache/subCacheItemV2Compile.h"              // Own interface
 
@@ -93,20 +96,25 @@ void subCacheItemV2Compile(SubCacheItem* sciP)
   SubV2Info* v2P = sciP->v2P;
 
   //
+  // Everything NGSIv2-only lives under "v2" - see dbModelToApiSubscription and
+  // apiModelToCacheSubscription, which both put it there.
+  //
+  KjNode* v2TreeP = kjLookup(sciP->subTree, "v2");
+
+  //
   // NGSI-LD has no equivalent of the NGSIv2 service path (its "Scope" is not
   // implemented yet), and the NGSI-LD create path has always used "/#" - match
   // any service path. A subscription that came in over NGSIv2 carries its own.
   //
-  KjNode* servicePathP = kjLookup(sciP->subTree, "servicePath");
+  KjNode* servicePathP = (v2TreeP != NULL)? kjLookup(v2TreeP, "servicePath") : NULL;
 
   v2P->servicePath = (servicePathP != NULL)? servicePathP->value.s : (char*) "/#";
 
   //
-  // 'q' and 'mq' - the NGSIv2 renderings. They are kept in the subTree by
-  // apiModelToCacheSubscription for exactly this.
+  // 'q' and 'mq' - the NGSIv2 renderings of the filter
   //
-  KjNode* qP  = kjLookup(sciP->subTree, "q");
-  KjNode* mqP = kjLookup(sciP->subTree, "mq");
+  KjNode* qP  = (v2TreeP != NULL)? kjLookup(v2TreeP, "q")  : NULL;
+  KjNode* mqP = (v2TreeP != NULL)? kjLookup(v2TreeP, "mq") : NULL;
 
   v2P->expression.q  = (qP  != NULL)? qP->value.s  : "";
   v2P->expression.mq = (mqP != NULL)? mqP->value.s : "";
@@ -150,16 +158,77 @@ void subCacheItemV2Compile(SubCacheItem* sciP)
   if (notificationP != NULL)
     stringArrayFill(&v2P->attributes, kjLookup(notificationP, "attributes"));
 
-  stringArrayFill(&v2P->metadata, kjLookup(sciP->subTree, "metadata"));
+  stringArrayFill(&v2P->metadata, (v2TreeP != NULL)? kjLookup(v2TreeP, "metadata") : NULL);
 
-  KjNode* blacklistP = kjLookup(sciP->subTree, "blacklist");
+  KjNode* blacklistP = (v2TreeP != NULL)? kjLookup(v2TreeP, "blacklist") : NULL;
 
-  v2P->blacklist = (blacklistP != NULL)? blacklistP->value.b : false;
+  v2P->blacklist = ((blacklistP != NULL) && (blacklistP->type == KjBoolean))? blacklistP->value.b : false;
 
-  KT_T(KtSubCache, "Sub '%s': NGSIv2 state compiled (servicePath: '%s', q: '%s', mq: '%s', blacklist: %s)",
+  //
+  // The endpoint, as NGSIv2 wants it.
+  //
+  // url, accept and receiverInfo are ordinary API members - they are read from
+  // "notification::endpoint". The custom-notification members are NGSIv2-only
+  // and come from "v2": with 'custom' set, the notification is built from a
+  // template (method, payload, qs) instead of the standard body.
+  //
+  KjNode* endpointP = (notificationP != NULL)? kjLookup(notificationP, "endpoint") : NULL;
+
+  if (endpointP != NULL)
+  {
+    KjNode* uriP    = kjLookup(endpointP, "uri");
+    KjNode* acceptP = kjLookup(endpointP, "accept");
+
+    if (uriP    != NULL)  v2P->httpInfo.url      = uriP->value.s;
+    if (acceptP != NULL)  v2P->httpInfo.mimeType = mimeTypeFromString(acceptP->value.s, NULL, true, false, NULL);
+
+    KjNode* receiverInfoP = kjLookup(endpointP, "receiverInfo");
+
+    if (receiverInfoP != NULL)
+    {
+      for (KjNode* kvP = receiverInfoP->value.firstChildP; kvP != NULL; kvP = kvP->next)
+      {
+        KjNode* keyP   = kjLookup(kvP, "key");
+        KjNode* valueP = kjLookup(kvP, "value");
+
+        if ((keyP != NULL) && (valueP != NULL))
+          v2P->httpInfo.headers[keyP->value.s] = valueP->value.s;
+      }
+    }
+  }
+
+  if (v2TreeP != NULL)
+  {
+    KjNode* customP  = kjLookup(v2TreeP, "custom");
+    KjNode* methodP  = kjLookup(v2TreeP, "method");
+    KjNode* payloadP = kjLookup(v2TreeP, "payload");
+    KjNode* qsP      = kjLookup(v2TreeP, "qs");
+
+    v2P->httpInfo.custom = ((customP != NULL) && (customP->type == KjBoolean))? customP->value.b : false;
+
+    if (methodP  != NULL)  v2P->httpInfo.verb    = verbFromString(methodP->value.s);
+    if (payloadP != NULL)  v2P->httpInfo.payload = payloadP->value.s;
+
+    if (qsP != NULL)
+    {
+      for (KjNode* kvP = qsP->value.firstChildP; kvP != NULL; kvP = kvP->next)
+      {
+        if (kvP->type == KjString)
+          v2P->httpInfo.qs[kvP->name] = kvP->value.s;
+      }
+    }
+  }
+
+  KT_T(KtSubCache, "Sub '%s': NGSIv2 state compiled (servicePath: '%s', q: '%s', mq: '%s', blacklist: %s, custom: %s, verb: '%s', payload: '%s', qs: %d, headers: %d, metadata: %d)",
        sciP->subId,
        v2P->servicePath,
        v2P->expression.q.c_str(),
        v2P->expression.mq.c_str(),
-       (v2P->blacklist == true)? "true" : "false");
+       (v2P->blacklist == true)? "true" : "false",
+       (v2P->httpInfo.custom == true)? "true" : "false",
+       verbToString(v2P->httpInfo.verb),
+       v2P->httpInfo.payload.c_str(),
+       (int) v2P->httpInfo.qs.size(),
+       (int) v2P->httpInfo.headers.size(),
+       (int) v2P->metadata.size());
 }
