@@ -1,0 +1,235 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+A Registration's jsonldContext is not downloaded at startup (issue #1977)
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -mongocOnly
+
+--SHELL--
+
+#
+# A registration whose 'contextSourceInfo' carries a 'jsonldContext' resolves that
+# @context as it enters the registration cache - at STARTUP, for every
+# registration, before the broker opens its port. If that lookup misses, the
+# broker goes to the network right there.
+#
+# Issue #1977: regCacheInit() ran BEFORE orionldServiceInit(), which is where the
+# @context cache is loaded from the database, so the lookup always missed and a
+# download was always attempted. A broker with no route to the @context server
+# never got as far as listening on its port.
+#
+# The @context used here is one the BROKER ITSELF serves: POST /jsonldContexts
+# stores it and hands back a URL of the form
+#
+#   http://<host>:<port>/ngsi-ld/v1/jsonldContexts/<uuid>
+#
+# which is reachable while the broker runs - so the registration is created
+# normally - and NOT reachable while the broker is starting up, because the port
+# is not open yet. That is what makes this test discriminating: it does not need
+# an unreachable host, it needs the broker to not go to the network at startup.
+#
+# Without the fix, step 05 answers 404: regCacheCreate cannot resolve the
+# @context, warns, and silently drops the registration from the cache.
+#
+# 01. POST a @context - the broker stores it and serves it itself
+# 02. Create a registration whose contextSourceInfo::jsonldContext is that @context
+# 03. GET the registration - it is in the registration cache
+# 04. Restart the broker
+# 05. GET the registration - it is STILL in the cache (it was not re-downloaded)
+#
+
+echo "01. POST a @context - the broker stores it and serves it itself"
+echo "==============================================================="
+payload='{
+  "@context": {
+    "setDimmer": "urn:ngsi-ld:test:setDimmer"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/jsonldContexts --payload "$payload" -H "Content-Type: application/ld+json"
+ctxUrl=$(echo "$_responseHeaders" | grep Location: | awk -F'Location: ' '{ print $2 }' | tr -d "\r\n")
+ctxUrl="http://localhost:${CB_PORT}${ctxUrl}"
+echo
+echo
+
+
+echo "02. Create a registration whose contextSourceInfo::jsonldContext is that @context"
+echo "================================================================================="
+payload='{
+  "id": "urn:ngsi-ld:ContextSourceRegistration:R1",
+  "type": "ContextSourceRegistration",
+  "information": [
+    {
+      "entities": [
+        {
+          "id": "urn:ngsi-ld:Device:lum-ip-001",
+          "type": "Device"
+        }
+      ],
+      "propertyNames": [ "setDimmer" ]
+    }
+  ],
+  "mode": "exclusive",
+  "operations": [ "updateOps" ],
+  "contextSourceInfo": [
+    {
+      "key": "jsonldContext",
+      "value": "'$ctxUrl'"
+    }
+  ],
+  "endpoint": "http://localhost:'$LISTENER_PORT'"
+}'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload"
+echo
+echo
+
+
+echo "03. GET the registration - it is in the registration cache"
+echo "=========================================================="
+orionCurl --url /ngsi-ld/v1/csourceRegistrations/urn:ngsi-ld:ContextSourceRegistration:R1
+echo
+echo
+
+
+echo "04. Restart the broker"
+echo "======================"
+brokerStop CB
+orionldStart CB -mongocOnly
+echo
+echo
+
+
+echo "05. GET the registration - it is STILL in the cache (it was not re-downloaded)"
+echo "=============================================================================="
+orionCurl --url /ngsi-ld/v1/csourceRegistrations/urn:ngsi-ld:ContextSourceRegistration:R1
+echo
+echo
+
+
+--REGEXPECT--
+01. POST a @context - the broker stores it and serves it itself
+===============================================================
+HTTP/1.1 201 Created
+Content-Length: REGEX(.*)
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/jsonldContexts/REGEX(.*)
+
+
+
+02. Create a registration whose contextSourceInfo::jsonldContext is that @context
+=================================================================================
+HTTP/1.1 201 Created
+Content-Length: REGEX(.*)
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/csourceRegistrations/urn:ngsi-ld:ContextSourceRegistration:R1
+
+
+
+03. GET the registration - it is in the registration cache
+==========================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "contextSourceInfo": [
+        {
+            "key": "jsonldContext",
+            "value": "REGEX(http://localhost:\d+/ngsi-ld/v1/jsonldContexts/.*)"
+        }
+    ],
+    "endpoint": "http://localhost:9997",
+    "id": "urn:ngsi-ld:ContextSourceRegistration:R1",
+    "information": [
+        {
+            "entities": [
+                {
+                    "id": "urn:ngsi-ld:Device:lum-ip-001",
+                    "type": "Device"
+                }
+            ],
+            "propertyNames": [
+                "setDimmer"
+            ]
+        }
+    ],
+    "mode": "exclusive",
+    "operations": [
+        "updateOps"
+    ],
+    "origin": "cache",
+    "status": "active",
+    "type": "ContextSourceRegistration"
+}
+
+
+04. Restart the broker
+======================
+
+
+05. GET the registration - it is STILL in the cache (it was not re-downloaded)
+==============================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "contextSourceInfo": [
+        {
+            "key": "jsonldContext",
+            "value": "REGEX(http://localhost:\d+/ngsi-ld/v1/jsonldContexts/.*)"
+        }
+    ],
+    "endpoint": "http://localhost:9997",
+    "id": "urn:ngsi-ld:ContextSourceRegistration:R1",
+    "information": [
+        {
+            "entities": [
+                {
+                    "id": "urn:ngsi-ld:Device:lum-ip-001",
+                    "type": "Device"
+                }
+            ],
+            "propertyNames": [
+                "setDimmer"
+            ]
+        }
+    ],
+    "mode": "exclusive",
+    "operations": [
+        "updateOps"
+    ],
+    "origin": "cache",
+    "status": "active",
+    "type": "ContextSourceRegistration"
+}
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
