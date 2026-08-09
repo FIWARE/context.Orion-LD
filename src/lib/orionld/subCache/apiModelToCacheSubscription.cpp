@@ -146,13 +146,15 @@ void apiModelToCacheSubscription(KjNode* apiSubscriptionP, OrionldContext* jsonl
   memberRename(apiSubscriptionP, "name",    "subscriptionName");
 
   //
-  // "q" and "mq" are the NGSIv2 renderings of the very same filter and they exist
-  // for the database only - "ldQ" is the one that matches NGSI-LD entities.
+  // "q" and "mq" are the NGSIv2 renderings of the very same filter, and they STAY:
+  // subCacheItemV2Compile builds the NGSIv2 StringFilters out of them, which is
+  // what lets an entity updated through the NGSIv2 API match this subscription.
+  // They are not part of the API model, so the rendering drops them instead
+  // (apiModelFromCacheSubscription).
+  //
   // "tenant" is meaningless in a per-tenant cache, and "origin" belongs to a
   // response, not to a subscription.
   //
-  memberDrop(apiSubscriptionP, "q");
-  memberDrop(apiSubscriptionP, "mq");
   memberDrop(apiSubscriptionP, "tenant");
   memberDrop(apiSubscriptionP, "origin");
 

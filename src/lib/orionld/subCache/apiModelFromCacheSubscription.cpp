@@ -389,6 +389,15 @@ void apiModelFromCacheSubscription(KjNode* apiSubP, SubCacheItem* sciP, bool sys
   memberDrop(apiSubP, "hostAlias");
 
   //
+  // "q" and "mq" are the NGSIv2 renderings of 'q'. The cache keeps them - the
+  // NGSIv2 StringFilters are compiled from them - but they are not part of an
+  // NGSI-LD Subscription, so they do not go out in the response. The NGSI-LD 'q'
+  // is "ldQ", handled below.
+  //
+  memberDrop(apiSubP, "q");
+  memberDrop(apiSubP, "mq");
+
+  //
   // entities - the entity type is stored expanded
   //
   KjNode* entitiesP = kjLookup(apiSubP, "entities");

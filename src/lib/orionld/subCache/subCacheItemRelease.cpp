@@ -33,6 +33,7 @@ extern "C"
 }
 
 #include "orionld/types/SubCacheItem.h"                          // SubCacheItem
+#include "orionld/types/SubV2Info.h"                             // SubV2Info                          // SubCacheItem
 #include "orionld/types/SubEntitySelector.h"                     // SubEntitySelector
 #include "orionld/common/geosInit.h"                             // geosHandle
 #include "orionld/q/qRelease.h"                                  // qRelease
@@ -117,6 +118,15 @@ void subCacheItemCompiledStateRelease(SubCacheItem* sciP)
   {
     free(sciP->mqttP);
     sciP->mqttP = NULL;
+  }
+
+  //
+  // The NGSIv2 state - C++, so 'delete', not 'free'
+  //
+  if (sciP->v2P != NULL)
+  {
+    delete sciP->v2P;
+    sciP->v2P = NULL;
   }
 
   // 'lang' points into subTree

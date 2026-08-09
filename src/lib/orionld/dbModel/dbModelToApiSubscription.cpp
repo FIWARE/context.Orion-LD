@@ -417,7 +417,15 @@ KjNode* dbModelToApiSubscription
     if (v2mqP)
       kjChildRemove(dbExpressionP, v2mqP);
 
-    if (orionldState.apiVersion != API_VERSION_NGSILD_V1)  // FIXME: When taking from DB at startup, this won't work ...
+    //
+    // The NGSIv2 renderings of 'q'/'mq' are not part of an NGSI-LD Subscription,
+    // so an NGSI-LD request does not get them - but the CACHE does, whichever
+    // API asked: subCacheItemV2Compile builds the NGSIv2 StringFilters out of
+    // them, and that is what lets an entity updated over NGSIv2 match this
+    // subscription. Without 'forSubCache' here, a PATCH would recompile the item
+    // from a tree with no 'q' and the subscription would quietly stop matching.
+    //
+    if ((forSubCache == true) || (orionldState.apiVersion != API_VERSION_NGSILD_V1))
     {
       if ((v2qP != NULL) && (v2qP->value.s[0] != 0))
         kjChildAdd(apiSubP, v2qP);

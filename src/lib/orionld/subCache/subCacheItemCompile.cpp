@@ -40,6 +40,7 @@ extern "C"
 #include "orionld/subCache/subCacheItemEntitiesCompile.h"        // subCacheItemEntitiesCompile
 #include "orionld/subCache/subCacheItemGeoCompile.h"             // subCacheItemGeoCompile
 #include "orionld/subCache/subCacheItemStatusSet.h"              // subCacheItemStatusSet
+#include "orionld/subCache/subCacheItemV2Compile.h"              // subCacheItemV2Compile
 #include "orionld/subCache/subCacheItemCompile.h"                // Own interface
 
 
@@ -187,6 +188,12 @@ void subCacheItemCompile(SubCacheItem* sciP)
 
   if (notificationP != NULL)
     notificationCompile(sciP, notificationP);
+
+  //
+  // And the NGSIv2 matching state - every subscription has one, see
+  // subCacheItemV2Compile for why.
+  //
+  subCacheItemV2Compile(sciP);
 
   KT_T(KtSubCache, "Sub '%s': compiled (isActive: %s, q: %s, geoQ: %s, renderFormat: '%s')",
        sciP->subId,

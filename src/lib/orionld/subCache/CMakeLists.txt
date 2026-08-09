@@ -38,6 +38,7 @@ SET (SOURCES
     subCachesInit.cpp
     apiModelToCacheSubscription.cpp
     apiModelFromCacheSubscription.cpp
+    subCacheItemV2Compile.cpp
 )
 
 include_directories("${PROJECT_SOURCE_DIR}/src/lib")

@@ -78,6 +78,18 @@ typedef struct SubDeltas
 //
 // SubCacheItem -
 //
+//
+// SubV2Info - forward declared on purpose
+//
+// It is C++ (std::string, StringFilter, ngsiv2::HttpInfo), and SubCacheItem is
+// included all over the C-ish parts of the broker. By keeping it a pointer and
+// declaring it here, only the few modules that actually touch the NGSIv2 state
+// pull in orionld/types/SubV2Info.h.
+//
+struct SubV2Info;
+
+
+
 typedef struct SubCacheItem
 {
   char*                 subId;              // Set when creating subscription - points inside subTree
@@ -138,6 +150,18 @@ typedef struct SubCacheItem
   Protocol                    protocol;
   MimeType                    mimeType;        // notification::endpoint::accept
   MqttInfo*                   mqttP;           // Only for an MQTT/MQTTS endpoint - the URI split up MQTT-style, + notifierInfo
+
+  //
+  // The NGSIv2 matching state.
+  //
+  // Allocated for EVERY subscription, not only the v2-created ones: an entity
+  // updated through the NGSIv2 API matches subscriptions through subCacheMatch,
+  // and that has always included the NGSI-LD ones (the LD create path writes an
+  // NGSIv2 rendering of 'q'/'mq' and a servicePath of "/#" for exactly that).
+  // Dropping it for LD subscriptions would silently stop notifying them on a v2
+  // entity update.
+  //
+  struct SubV2Info*     v2P;
 
   struct SubCacheItem*  next;
 } SubCacheItem;
