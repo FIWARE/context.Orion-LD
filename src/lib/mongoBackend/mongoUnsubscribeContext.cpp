@@ -38,6 +38,7 @@ extern "C"
 #include "alarmMgr/alarmMgr.h"
 #include "mongoBackend/MongoGlobal.h"
 #include "mongoBackend/connectionOperations.h"
+#include "orionld/subCache/subCacheItemRemove.h"             // subCacheItemRemove (the new sub cache)
 #include "mongoBackend/mongoUnsubscribeContext.h"
 #include "mongoBackend/safeMongo.h"
 #include "cache/subCache.h"
@@ -164,6 +165,8 @@ HttpStatusCode mongoUnsubscribeContext
   if (cSubP != NULL)
   {
     subCacheItemRemove(cSubP);
+    // Out of the new cache as well
+    subCacheItemRemove(tenantP->subCache, requestP->subscriptionId.get().c_str());
   }
 
   cacheSemGive(__FUNCTION__, "Removing subscription from cache");
@@ -241,6 +244,9 @@ bool mongoDeleteLdSubscription
   CachedSubscription* cSubP = subCacheItemLookup(tenantP->tenant, subId);
   if (cSubP != NULL)
     subCacheItemRemove(cSubP);
+
+  // Out of the new cache as well
+  subCacheItemRemove(tenantP->subCache, subId);
 
   cacheSemGive(__FUNCTION__, "Removing subscription from cache");
 

@@ -47,6 +47,7 @@ extern "C"
 #include "mongoBackend/dbConstants.h"
 #include "mongoBackend/safeMongo.h"
 #include "mongoBackend/mongoSubCache.h"
+#include "orionld/subCache/subCacheItemFromDb.h"             // subCacheItemFromDb (the new sub cache)
 #include "mongoBackend/mongoUpdateSubscription.h"
 
 
@@ -994,6 +995,12 @@ std::string mongoUpdateSubscription
   }
 
   reqSemGive(__FUNCTION__, "ngsiv2 update subscription request", reqSemTaken);
+
+  //
+  // ... and the new subscription cache, rebuilt from what is now in the database.
+  // See subCacheItemFromDb.
+  //
+  subCacheItemFromDb(tenantP, subUp.id.c_str());
 
   return subUp.id;
 }

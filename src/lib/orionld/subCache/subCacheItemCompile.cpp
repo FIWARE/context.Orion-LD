@@ -33,6 +33,7 @@ extern "C"
 
 #include "orionld/types/OrionldRenderFormat.h"                   // OrionldRenderFormat, renderFormat
 #include "orionld/types/SubCacheItem.h"                          // SubCacheItem
+#include "orionld/common/orionldState.h"                         // orionldState                          // SubCacheItem
 #include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/dateTime.h"                             // dateTimeFromString
 #include "orionld/q/qBuild.h"                                    // qBuild
@@ -124,6 +125,22 @@ static void notificationCompile(SubCacheItem* sciP, KjNode* notificationP)
 //
 void subCacheItemCompile(SubCacheItem* sciP)
 {
+  //
+  // Compiling a cached subscription must never change the RESPONSE of the request
+  // that happens to be in flight.
+  //
+  // The compile re-runs payload checks (pcheckGeoQ, qBuild, ...) and those report
+  // by calling orionldError, which sets orionldState's status code and problem
+  // details. Those checks are stricter than the ones a create/update went through
+  // - pcheckGeoQ rejects a 'georel' of "near" without a distance, which the API
+  // accepts - so an already-created subscription could turn its own 201 into a
+  // 400, with the Location header still on it.
+  //
+  // A subscription that is in the database is not made invalid by this broker
+  // failing to compile it: the compile warns, the API answer stands.
+  //
+  int                   savedStatusCode = orionldState.httpStatusCode;
+  OrionldProblemDetails savedPd         = orionldState.pd;
   KjNode* isActiveP     = kjLookup(sciP->subTree, "isActive");
   KjNode* expiresAtP    = kjLookup(sciP->subTree, "expiresAt");
   KjNode* throttlingP   = kjLookup(sciP->subTree, "throttling");
@@ -201,4 +218,7 @@ void subCacheItemCompile(SubCacheItem* sciP)
        K_FT(sciP->qP      != NULL),
        K_FT(sciP->geoInfo != NULL),
        renderFormat(sciP->renderFormat));
+
+  orionldState.httpStatusCode = savedStatusCode;
+  orionldState.pd             = savedPd;
 }

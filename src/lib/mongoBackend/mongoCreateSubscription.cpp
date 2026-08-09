@@ -40,6 +40,7 @@
 #include "mongoBackend/MongoGlobal.h"
 #include "mongoBackend/MongoCommonSubscription.h"
 #include "mongoBackend/dbConstants.h"
+#include "orionld/subCache/subCacheItemFromDb.h"             // subCacheItemFromDb (the new sub cache)
 #include "mongoBackend/mongoCreateSubscription.h"
 
 
@@ -273,6 +274,13 @@ std::string mongoCreateSubscription
   }
 
   reqSemGive(__FUNCTION__, "ngsiv2 create subscription request", reqSemTaken);
+
+  //
+  // ... and into the new subscription cache, by reading the subscription back and
+  // running it through the same dbModelToApiSubscription the startup loader uses.
+  // See subCacheItemFromDb.
+  //
+  subCacheItemFromDb(tenantP, subId.c_str());
 
   return subId;
 }

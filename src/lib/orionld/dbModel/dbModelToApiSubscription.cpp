@@ -313,25 +313,40 @@ KjNode* dbModelToApiSubscription
     KjNode* typeP          = kjLookup(entityP, "type");
     KjNode* isTypePatternP = kjLookup(entityP, "isTypePattern");
 
+    //
+    // NONE of these four is guaranteed to be there.
+    //
+    // An NGSI-LD entity selector always has a type, and the NGSI-LD write path
+    // always stores 'isPattern'/'isTypePattern' - but an NGSIv2 one does not: a
+    // subscription created with only an "idPattern" and no "type" has neither a
+    // 'type' nor an 'isTypePattern' in the database. This function was never
+    // called for an NGSIv2 subscription until the subscription cache started
+    // being filled from the database, so all four dereferences below were
+    // latent. kjChildRemove(container, NULL) walks off the end of the list and
+    // segfaults.
+    //
+
     // There is no "Type Pattern" in NGSI-LD
-    kjChildRemove(entityP, isTypePatternP);
+    if (isTypePatternP != NULL)
+      kjChildRemove(entityP, isTypePatternP);
 
-    // There is no "isPattern" in NGSI-LD
-    kjChildRemove(entityP, isPatternP);
-
-    if (strcmp(isPatternP->value.s, "true") == 0)
+    // There is no "isPattern" in NGSI-LD - the id becomes "idPattern" instead
+    if (isPatternP != NULL)
     {
-      if (strcmp(idP->value.s, ".*") == 0)
-        kjChildRemove(entityP, idP);
-      else
-        idP->name = (char*) "idPattern";
-    }
+      kjChildRemove(entityP, isPatternP);
 
-    kjChildRemove(entityP, isPatternP);
+      if ((idP != NULL) && (strcmp(isPatternP->value.s, "true") == 0))
+      {
+        if (strcmp(idP->value.s, ".*") == 0)
+          kjChildRemove(entityP, idP);
+        else
+          idP->name = (char*) "idPattern";
+      }
+    }
 
     // type must be compacted
     // However, for sub-cache we need the long names
-    if (forSubCache == false)
+    if ((forSubCache == false) && (typeP != NULL))
       typeP->value.s = orionldContextItemAliasLookup(orionldState.contextP, typeP->value.s, NULL, NULL);
   }
   kjChildAdd(apiSubP, dbEntitiesP);
