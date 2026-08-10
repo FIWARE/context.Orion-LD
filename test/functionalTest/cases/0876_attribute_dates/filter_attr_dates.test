@@ -51,6 +51,13 @@ brokerStart CB
 #
 #  So, for t_4, the milliseconds are set to 999 instead of 0.
 #
+#  And each timestamp is taken on the side of its own entity that keeps it a valid bound:
+#    - t_3 is the START of a second (.00) and the LOWER bound, so it is taken BEFORE creating E3  => t_3 <= E3
+#    - t_4 is the END of a second (.999) and the UPPER bound, so it is taken AFTER creating E4    => t_4 >= E4
+#  Taking t_4 before the creation is what it used to do, and .999 only buys margin INSIDE a second:
+#  when the creation landed in the NEXT second - which happens now and then on a loaded machine -
+#  E4 fell outside t_3..t_4 and the two range queries came back one entity short.
+#
 
 echo "01. Create entity E1 at t_1"
 echo "==========================="
@@ -101,8 +108,8 @@ payload='{
   "type": "T",
   "A": "entity 4"
 }'
-T_4=$(TZ=GMT date +"%Y-%m-%dT%H:%M:%S.999Z")
 orionCurl --url '/v2/entities?options=keyValues' --payload "$payload"
+T_4=$(TZ=GMT date +"%Y-%m-%dT%H:%M:%S.999Z")
 sleep 1s
 echo
 echo
