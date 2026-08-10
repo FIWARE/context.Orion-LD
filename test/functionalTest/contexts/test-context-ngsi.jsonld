@@ -1,0 +1,13 @@
+{
+    "@context": {
+        "type": "@type",
+        "id": "@id",
+        "ngsi-ld": "https://uri.etsi.org/ngsi-ld/",
+        "fiware": "https://uri.fiware.org/ns/data-models#",
+        "schema": "http://schema.org/",
+        "test-context": "https://[***********Path************]/testcontext.jsonld#",
+        "Camera": "test-context:Camera",
+        "location": "ngsi-ld:location",
+        "location1": "test-context:location"
+    }
+}
