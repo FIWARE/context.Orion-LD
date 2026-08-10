@@ -1,4 +1,5 @@
 ## Fixed Issues
+  #XXXX - The 'notUpdated' array of a 207 Multi-Status response is now in a deterministic order. Both arrays of that response are sets - the order of their items carries no meaning - and with a distributed operation the order was simply the order in which the registrants answered, so two identical requests gave two different responses. 'updated' was already sorted; 'notUpdated' now is too
   #XXXX - Fixed relative references inside an "@context" array: per RFC 3986 clause 5 a String inside an "@context" array is an IRI *reference* and is resolved against the URL of the document that carries it. Previously such an entry was taken as-is, so a served or remote @context using relative references (e.g. "user-context.jsonld") failed to load
   #XXXX - Fixed an @context's own URL being confused with the reference it points to, which made a later lookup of that @context resolve to the wrong document
   #XXXX - TRoE: a failing SQL statement was silently dropped - no log entry, the transaction aborted, and COMMIT acted as ROLLBACK, so the temporal write was lost without a trace. Such errors are now logged (status, Postgres message and the offending statement) and the transaction is rolled back explicitly
@@ -128,6 +129,7 @@
   - Converted /v1/admin/* routes to /admin/* (dropped the v1 prefix)
 
 ## Library version updates
+  - Bumped kjson from 0.11.2 to 0.12.0 (new function kjArraySort, to order the elements of a JSON Array)
   - Replaced prometheus-client-c with kprom
   - Bumped PostgreSQL client packages from v13 to v17
   - Bumped PostgreSQL in installation guides from v12 to v17

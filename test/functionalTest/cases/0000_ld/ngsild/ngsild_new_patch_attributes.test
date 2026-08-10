@@ -589,7 +589,7 @@ Link: <https://raw.githubusercontent.com/FIWARE/tutorials.NGSI-LD/master/app/pub
     "notUpdated": [
         {
             "attributes": [
-                "weight"
+                "noSuchAttr"
             ],
             "statusCode": 404,
             "title": "Attribute Not Found"
@@ -603,7 +603,7 @@ Link: <https://raw.githubusercontent.com/FIWARE/tutorials.NGSI-LD/master/app/pub
         },
         {
             "attributes": [
-                "noSuchAttr"
+                "weight"
             ],
             "statusCode": 404,
             "title": "Attribute Not Found"
@@ -782,7 +782,7 @@ Link: REGEX(.*)
     "notUpdated": [
         {
             "attributes": [
-                "weight"
+                "noSuchAttr"
             ],
             "statusCode": 404,
             "title": "Attribute Not Found"
@@ -796,7 +796,7 @@ Link: REGEX(.*)
         },
         {
             "attributes": [
-                "noSuchAttr"
+                "weight"
             ],
             "statusCode": 404,
             "title": "Attribute Not Found"

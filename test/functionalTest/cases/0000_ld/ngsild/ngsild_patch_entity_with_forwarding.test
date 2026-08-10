@@ -442,7 +442,6 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
     "notUpdated": [
-#SORT_START
         {
             "attributes": [
                 "P3"
@@ -453,22 +452,6 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         },
         {
             "attributes": [
-                "P6"
-            ],
-            "registrationId": "urn:ngsi-ld:registration:R4",
-            "statusCode": 404,
-            "title": "Attribute Not Found"
-        },
-        {
-            "attributes": [
-                "P7"
-            ],
-            "registrationId": "urn:ngsi-ld:registration:R4",
-            "statusCode": 404,
-            "title": "Attribute Not Found"
-        },
-        {
-            "attributes": [
                 "P3"
             ],
             "statusCode": 404,
@@ -478,6 +461,22 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             "attributes": [
                 "P6"
             ],
+            "registrationId": "urn:ngsi-ld:registration:R4",
+            "statusCode": 404,
+            "title": "Attribute Not Found"
+        },
+        {
+            "attributes": [
+                "P6"
+            ],
+            "statusCode": 404,
+            "title": "Attribute Not Found"
+        },
+        {
+            "attributes": [
+                "P7"
+            ],
+            "registrationId": "urn:ngsi-ld:registration:R4",
             "statusCode": 404,
             "title": "Attribute Not Found"
         },
@@ -488,7 +487,6 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             "statusCode": 404,
             "title": "Attribute Not Found"
         }
-#SORT_END
     ],
     "updated": [
         "P1",
