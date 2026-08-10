@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_LEGACYDRIVER_KJTREEFROMSUBSCRIPTION_H_
-#define SRC_LIB_ORIONLD_LEGACYDRIVER_KJTREEFROMSUBSCRIPTION_H_
+#ifndef SRC_LIB_ORIONLD_SUBCACHE_SUBCACHEV2MATCH_H_
+#define SRC_LIB_ORIONLD_SUBCACHE_SUBCACHEV2MATCH_H_
 
 /*
 *
-* Copyright 2018 FIWARE Foundation e.V.
+* Copyright 2026 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,17 +25,26 @@
 *
 * Author: Ken Zangelin
 */
-#include "apiTypesV2/Subscription.h"                             // Subscription
-#include "orionld/types/SubCacheItem.h"                          // SubCacheItem
+#include <string>                                                // std::string
+#include <vector>                                                // std::vector
 
-#include "orionld/types/OrionldContext.h"                        // OrionldContext
+#include "orionld/types/OrionldTenant.h"                         // OrionldTenant
+#include "orionld/types/SubCacheItem.h"                           // SubCacheItem
 
 
 
 // -----------------------------------------------------------------------------
 //
-// kjTreeFromSubscription -
+// subCacheV2Match - the NGSIv2 matching, over the new subscription cache
 //
-extern KjNode* kjTreeFromSubscription(ngsiv2::Subscription* subscriptionP, SubCacheItem* sciP, OrionldContext* contextP);
+extern int subCacheV2Match
+(
+  OrionldTenant*                  tenantP,
+  const char*                     servicePath,
+  const char*                     entityId,
+  const char*                     entityType,
+  const std::vector<std::string>& attrV,
+  std::vector<SubCacheItem*>*     subVecP
+);
 
-#endif  // SRC_LIB_ORIONLD_LEGACYDRIVER_KJTREEFROMSUBSCRIPTION_H_
+#endif  // SRC_LIB_ORIONLD_SUBCACHE_SUBCACHEV2MATCH_H_

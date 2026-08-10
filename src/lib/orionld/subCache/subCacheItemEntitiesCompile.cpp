@@ -49,24 +49,31 @@ void subCacheItemEntitiesCompile(SubCacheItem* sciP, KjNode* entitiesP)
 
   for (KjNode* eSelectorP = entitiesP->value.firstChildP; eSelectorP != NULL; eSelectorP = eSelectorP->next)
   {
-    KjNode* idP        = kjLookup(eSelectorP, "id");
-    KjNode* idPatternP = kjLookup(eSelectorP, "idPattern");
-    KjNode* typeP      = kjLookup(eSelectorP, "type");
+    KjNode* idP            = kjLookup(eSelectorP, "id");
+    KjNode* idPatternP     = kjLookup(eSelectorP, "idPattern");
+    KjNode* typeP          = kjLookup(eSelectorP, "type");
+    KjNode* isTypePatternP = kjLookup(eSelectorP, "isTypePattern");
 
     SubEntitySelector* sesP = (SubEntitySelector*) calloc(1, sizeof(SubEntitySelector));
 
     if (sesP == NULL)
       KT_X(1, "Out of memory attempting to allocate a Subscription Entity Selector (%d bytes)", sizeof(SubEntitySelector));
 
+    //
+    // An EMPTY string is not a selector, it is the absence of one - the database
+    // model of an NGSIv2 subscription (and of an NGSI-LD one created over the
+    // legacy driver) spells "any entity id" as "id": "" and "any type" as
+    // "type": "". Compiled as a literal, "" would match nothing at all.
+    //
     sesP->owner = eSelectorP;
-    sesP->id    = (idP   != NULL)? idP->value.s   : NULL;
-    sesP->type  = (typeP != NULL)? typeP->value.s : NULL;
+    sesP->id    = ((idP   != NULL) && (idP->value.s[0]   != 0))? idP->value.s   : NULL;
+    sesP->type  = ((typeP != NULL) && (typeP->value.s[0] != 0))? typeP->value.s : NULL;
 
     //
     // An "id" and an "idPattern" are mutually exclusive - "id" wins, exactly as
     // the old cache had it. Neither of them means "any entity id".
     //
-    if ((idP == NULL) && (idPatternP != NULL))
+    if ((sesP->id == NULL) && (idPatternP != NULL) && (idPatternP->value.s[0] != 0))
     {
       sesP->idPattern = idPatternP->value.s;
 
@@ -76,8 +83,20 @@ void subCacheItemEntitiesCompile(SubCacheItem* sciP, KjNode* entitiesP)
         KT_E("Sub '%s': error compiling the regex for idPattern '%s' - the pattern will match nothing", sciP->subId, sesP->idPattern);
     }
 
-    KT_T(KtSubCache, "Sub '%s': entity selector (id: '%s', idPattern: '%s', type: '%s')",
-         sciP->subId, sesP->id, sesP->idPattern, sesP->type);
+    //
+    // NGSIv2's "typePattern" - the type is a regex, not a name. dbModelToApiSubscription
+    // only leaves 'isTypePattern' in the tree when it is set, and never for NGSI-LD.
+    //
+    if ((sesP->type != NULL) && (isTypePatternP != NULL) && (isTypePatternP->type == KjBoolean) && (isTypePatternP->value.b == true))
+    {
+      if (regcomp(&sesP->typeRegex, sesP->type, REG_EXTENDED) == 0)
+        sesP->typeRegexP = &sesP->typeRegex;
+      else
+        KT_E("Sub '%s': error compiling the regex for typePattern '%s' - the pattern will match nothing", sciP->subId, sesP->type);
+    }
+
+    KT_T(KtSubCache, "Sub '%s': entity selector (id: '%s', idPattern: '%s', type: '%s'%s)",
+         sciP->subId, sesP->id, sesP->idPattern, sesP->type, (sesP->typeRegexP != NULL)? " (a pattern)" : "");
 
     // Append - keep the order of the "entities" array
     if (last == NULL)

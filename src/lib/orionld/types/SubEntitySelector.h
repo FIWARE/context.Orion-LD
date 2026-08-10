@@ -40,8 +40,12 @@ extern "C"
 //
 // 'id', 'idPattern' and 'type' all point INSIDE the owning SubCacheItem's
 // subTree - the tree is the source of truth, this is just the compiled form of
-// it. Only 'idPattern' needs compiling (into 'idRegex'); 'id' and 'type' are
-// plain string comparisons and are kept here to save a kjLookup per alteration.
+// it. Only the patterns need compiling (into 'idRegex'/'typeRegex'); 'id' and a
+// plain 'type' are string comparisons and are kept here to save a kjLookup per
+// alteration.
+//
+// NGSI-LD has no "type pattern" - 'typeRegexP' is only ever set for a
+// subscription that came in over NGSIv2, where "typePattern" is part of the API.
 //
 typedef struct SubEntitySelector
 {
@@ -51,6 +55,8 @@ typedef struct SubEntitySelector
   regex_t                    idRegex;      // Compiled 'idPattern' - only valid if idRegexP != NULL
   regex_t*                   idRegexP;     // &idRegex, or NULL if the idPattern didn't compile (matches nothing)
   char*                      type;         // NULL: any type matches
+  regex_t                    typeRegex;    // Compiled 'type' as a pattern - only valid if typeRegexP != NULL
+  regex_t*                   typeRegexP;   // &typeRegex, or NULL if 'type' is not a pattern (NGSI-LD: always NULL)
   struct SubEntitySelector*  next;
 } SubEntitySelector;
 

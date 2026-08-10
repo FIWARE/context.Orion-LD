@@ -36,6 +36,7 @@ extern "C"
 #include "common/limits.h"
 #include "alarmMgr/alarmMgr.h"
 #include "cache/subCache.h"
+#include "orionld/subCache/subCacheItemStatsUpdate.h"                 // subCacheItemStatsUpdate
 #include "ngsi10/NotifyContextRequest.h"
 #include "rest/httpRequestSend.h"
 #include "ngsiNotify/QueueStatistics.h"
@@ -207,7 +208,7 @@ static void* workerFunc(void* pSyncQ)
           alarmMgr.notificationErrorReset(url);
 
           if (params->registration == false)
-            subCacheItemNotificationErrorStatus(params->tenant, params->subscriptionId, 0, ngsildSubscription);
+            subCacheItemStatsUpdate(params->tenant.c_str(), params->subscriptionId.c_str(), ngsildSubscription, false);
         }
         else
         {
@@ -215,7 +216,7 @@ static void* workerFunc(void* pSyncQ)
           alarmMgr.notificationError(url, "notification failure for queue worker");
 
           if (params->registration == false)
-            subCacheItemNotificationErrorStatus(params->tenant, params->subscriptionId, 1, ngsildSubscription);
+            subCacheItemStatsUpdate(params->tenant.c_str(), params->subscriptionId.c_str(), ngsildSubscription, true);
         }
       }
 

@@ -155,7 +155,7 @@ typedef struct SubCacheItem
   // The NGSIv2 matching state.
   //
   // Allocated for EVERY subscription, not only the v2-created ones: an entity
-  // updated through the NGSIv2 API matches subscriptions through subCacheMatch,
+  // updated through the NGSIv2 API matches subscriptions through subCacheV2Match,
   // and that has always included the NGSI-LD ones (the LD create path writes an
   // NGSIv2 rendering of 'q'/'mq' and a servicePath of "/#" for exactly that).
   // Dropping it for LD subscriptions would silently stop notifying them on a v2

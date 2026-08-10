@@ -2306,7 +2306,8 @@ static BSONArray processConditionVector
   const std::string&               status,
   const std::string&               fiwareCorrelator,
   const std::vector<std::string>&  attrsOrder,
-  bool                             blacklist
+  bool                             blacklist,
+  bool                             notify
 )
 {
   BSONArrayBuilder conds;
@@ -2324,7 +2325,13 @@ static BSONArray processConditionVector
         conds.append(nc->condValueList[jx]);
       }
 
-      if (status == STATUS_ACTIVE)
+      //
+      // The initial notification is sent only when the caller asks for it. The
+      // subscription create path builds the conditions FIRST, without notifying,
+      // so that the subscription is in the database and in the caches before any
+      // notification goes out - otherwise there is nowhere to record how it went.
+      //
+      if ((status == STATUS_ACTIVE) && (notify == true))
       {
         if (processOnChangeConditionForSubscription(enV,
                                                     attrL,
@@ -2380,7 +2387,8 @@ BSONArray processConditionVector
   const std::string&               status,
   const std::string&               fiwareCorrelator,
   const std::vector<std::string>&  attrsOrder,
-  bool                             blacklist
+  bool                             blacklist,
+  bool                             notify
 )
 {
   NotifyConditionVector ncV;
@@ -2407,7 +2415,8 @@ BSONArray processConditionVector
                                          status,
                                          fiwareCorrelator,
                                          attrsOrder,
-                                         blacklist);
+                                         blacklist,
+                                         notify);
 
   enV.release();
   ncV.release();

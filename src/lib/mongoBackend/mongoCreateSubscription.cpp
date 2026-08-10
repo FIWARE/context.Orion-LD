@@ -40,7 +40,10 @@
 #include "mongoBackend/MongoGlobal.h"
 #include "mongoBackend/MongoCommonSubscription.h"
 #include "mongoBackend/dbConstants.h"
+#include "orionld/mongoc/mongocSubCountersUpdate.h"          // mongocSubCountersUpdate
 #include "orionld/subCache/subCacheItemFromDb.h"             // subCacheItemFromDb (the new sub cache)
+#include "orionld/subCache/subCacheItemLookup.h"             // subCacheItemLookup
+#include "orionld/types/SubCacheItem.h"                      // SubCacheItem
 #include "mongoBackend/mongoCreateSubscription.h"
 
 
@@ -227,6 +230,14 @@ std::string mongoCreateSubscription
       return "";
   }
 
+  //
+  // The CONDITIONS only - no notification yet.
+  //
+  // The initial notification is sent further down, once the subscription is in the
+  // database AND in both caches. Sending it from here, as this used to, means it can
+  // finish before the subscription cache has an item to record the outcome in - and
+  // then whether that first notification succeeded or failed is simply lost.
+  //
   setCondsAndInitialNotify(sub,
                            subId,
                            status,
@@ -240,22 +251,8 @@ std::string mongoCreateSubscription
                            xauthToken,
                            fiwareCorrelator,
                            &b,
-                           &notificationDone);
-
-  if (notificationDone)
-  {
-    double lastNotification = orionldState.requestTime;
-
-    setLastNotification(lastNotification, &b);
-    setCount(1, &b);
-  }
-#if 0
-  else
-  {
-    setLastNotification(0, &b);
-    setCount(0, &b);
-  }
-#endif
+                           &notificationDone,
+                           false);  // notify
 
   setExpression(sub, &b);
   setFormat(sub, &b);
@@ -281,6 +278,52 @@ std::string mongoCreateSubscription
   // See subCacheItemFromDb.
   //
   subCacheItemFromDb(tenantP, subId.c_str());
+
+  //
+  // The cross-API render formats ("x-ngsiv2-normalized", ...) do NOT survive the
+  // database - it stores plain "normalized" for all of them - so the item that
+  // was just built from the database has lost that distinction. The request still
+  // has it, and the request is the authority, so it is put back.
+  //
+  // (The old sub-cache never noticed: it was filled from the request, not from the
+  // database. It lost the distinction too, but only on a broker restart.)
+  //
+  SubCacheItem* sciP = subCacheItemLookup(tenantP->subCache, subId.c_str());
+
+  if (sciP != NULL)
+    sciP->renderFormat = sub.attrsFormat;
+
+  //
+  // ... and NOW the initial notification.
+  //
+  // Everything it needs is in place: the subscription is in the database, in the old
+  // cache and in the new one - so whatever the notification thread has to say about
+  // how it went, there is an item to say it to.
+  //
+  setCondsAndInitialNotify(sub,
+                           subId,
+                           status,
+                           sub.notification.attributes,
+                           sub.notification.metadata,
+                           sub.notification.httpInfo,
+                           sub.notification.blacklist,
+                           sub.attrsFormat,
+                           tenantP,
+                           servicePathV,
+                           xauthToken,
+                           fiwareCorrelator,
+                           NULL,  // the conditions are already stored - only notify
+                           &notificationDone,
+                           true);  // notify
+
+  //
+  // The counters of that first notification. They used to be part of the document
+  // being inserted, which is no longer possible - the document is written before the
+  // notification is sent. So they are written on top, exactly as every later
+  // notification's counters are.
+  //
+  if (notificationDone == true)
+    mongocSubCountersUpdate(tenantP, subId.c_str(), (sub.ldContext != ""), 1, 0, 0, orionldState.requestTime, -1, -1, false);
 
   return subId;
 }

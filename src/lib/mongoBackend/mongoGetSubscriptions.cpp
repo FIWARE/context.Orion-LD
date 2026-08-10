@@ -41,6 +41,8 @@ extern "C"
 #include "common/errorMessages.h"
 #include "rest/ConnectionInfo.h"
 #include "cache/subCache.h"
+#include "orionld/types/SubCacheItem.h"                        // SubCacheItem
+#include "orionld/subCache/subCacheItemLookup.h"              // subCacheItemLookup
 #include "apiTypesV2/Subscription.h"
 #include "orionld/common/orionldState.h"             // orionldState
 #include "mongoBackend/MongoGlobal.h"
@@ -203,21 +205,25 @@ static void extractNotification(Subscription* subP, const BSONObj* rP, OrionldTe
   // NOTE: only 'lastNotificationTime' and 'count'
   //
   cacheSemTake(__FUNCTION__, "get lastNotification and count");
-  CachedSubscription* cSubP = subCacheItemLookup(tenantP->tenant, subP->id.c_str());
-  if (cSubP != NULL)
+  SubCacheItem* sciP = subCacheItemLookup(tenantP->subCache, subP->id.c_str());
+  if (sciP != NULL)
   {
-    if (cSubP->lastNotificationTime > subP->notification.lastNotification)
+    if (sciP->lastNotificationTime > subP->notification.lastNotification)
     {
-      subP->notification.lastNotification = cSubP->lastNotificationTime;
+      subP->notification.lastNotification = sciP->lastNotificationTime;
     }
 
-    subP->notification.timesSent += cSubP->count;
+    //
+    // 'deltas.timesSent' is what the cache has counted since the last flush to the
+    // database - the stored counter plus the delta is the true number.
+    //
+    subP->notification.timesSent += sciP->deltas.timesSent;
 
-    if (cSubP->lastFailure > subP->notification.lastFailure)
-      subP->notification.lastFailure = cSubP->lastFailure;
+    if (sciP->lastFailure > subP->notification.lastFailure)
+      subP->notification.lastFailure = sciP->lastFailure;
 
-    if (cSubP->lastSuccess > subP->notification.lastSuccess)
-      subP->notification.lastSuccess = cSubP->lastSuccess;
+    if (sciP->lastSuccess > subP->notification.lastSuccess)
+      subP->notification.lastSuccess = sciP->lastSuccess;
   }
 
   cacheSemGive(__FUNCTION__, "get lastNotification and count");

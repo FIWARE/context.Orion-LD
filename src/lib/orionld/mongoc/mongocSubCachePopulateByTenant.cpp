@@ -201,19 +201,45 @@ bool mongocSubCachePopulateByTenant(OrionldTenant* tenantP, bool refresh)
         else
         {
           //
-          // Only if the database copy is NEWER - recompiling regexes, QNode trees and
-          // GEOS geometries on every refresh tick, for every subscription, for nothing.
+          // Unconditionally - NOT "only if 'modifiedAt' is newer".
           //
-          KjNode* modifiedAtP = kjLookup(apiSubP, "modifiedAt");
-          double  modifiedAt  = (modifiedAtP != NULL)? ((modifiedAtP->type == KjFloat)? modifiedAtP->value.f : modifiedAtP->value.i) : 0;
-
-          if (modifiedAt > sciP->modifiedAt)
-            subCacheItemUpdate(sciP, apiSubP, contextP);
+          // This refresh is how a broker learns what ANOTHER broker did, and it is
+          // also how a subscription edited straight in the database (which is a
+          // thing people do, and a thing the test suite does) reaches the cache.
+          // Neither of those necessarily moves 'modifiedAt', so comparing it means
+          // quietly serving a stale subscription forever. The old cache has never
+          // taken that shortcut - it destroys and rebuilds itself on every tick.
+          //
+          // It does mean recompiling regexes, QNode trees and GEOS geometries once
+          // per tick per subscription. That is the price of this mechanism, and it
+          // is one more reason it is on its way out.
+          //
+          subCacheItemUpdate(sciP, apiSubP, contextP);
         }
       }
 
-      CachedSubscription* cSubP = subCacheApiSubscriptionInsert(apiSubP, qTree, coordinatesP, contextP, tenantP->tenant, showChangesP, sysAttrsP, renderFormat);
-      cSubP->inDB = true;
+      //
+      // The OLD cache is filled here only when this function is what fills it.
+      // Without -experimental that is mongoSubCacheRefresh's job and this function
+      // is called only for the new cache - inserting here as well would give the
+      // old cache two copies of every subscription.
+      //
+      // The 'inDB' mark is set either way: the refresh epilogue below removes every
+      // cached subscription that is NOT marked - from BOTH caches - so leaving the
+      // mark unset would empty the new cache on every refresh tick.
+      //
+      if (experimental == true)
+      {
+        CachedSubscription* cSubP = subCacheApiSubscriptionInsert(apiSubP, qTree, coordinatesP, contextP, tenantP->tenant, showChangesP, sysAttrsP, renderFormat);
+        cSubP->inDB = true;
+      }
+      else if (subId != NULL)
+      {
+        CachedSubscription* cSubP = subCacheItemLookup(tenantP->tenant, subId);
+
+        if (cSubP != NULL)
+          cSubP->inDB = true;
+      }
     }
     else
       pernotSubCacheAdd(NULL, apiSubP, NULL, qTree, coordinatesP, contextP, tenantP, showChangesP, sysAttrsP, renderFormat, timeInterval);

@@ -36,6 +36,7 @@ extern "C"
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/types/OrionldHeader.h"                         // orionldHeaderAdd, HttpResultsCount
+#include "orionld/subCache/subCacheItemLookup.h"                 // subCacheItemLookup
 #include "orionld/legacyDriver/kjTreeFromSubscription.h"         // kjTreeFromSubscription
 #include "orionld/legacyDriver/legacyGetSubscriptions.h"         // Own interface
 
@@ -60,11 +61,17 @@ bool legacyGetSubscriptions(void)
 
   for (unsigned int ix = 0; ix < subVec.size(); ix++)
   {
-    CachedSubscription* cSubP = subCacheItemLookup(orionldState.tenantP->tenant, subVec[ix].id.c_str());
+    SubCacheItem* sciP = subCacheItemLookup(orionldState.tenantP->subCache, subVec[ix].id.c_str());
 
-    if (cSubP != NULL)
+    //
+    // Only what this broker has in its cache is answered - NOT everything the
+    // database holds. With several brokers on one database, the subscriptions of
+    // the OTHER broker are in there too, and they are not this broker's to report
+    // until they have propagated into its cache.
+    //
+    if (sciP != NULL)
     {
-      KjNode* subscriptionNodeP = kjTreeFromSubscription(&subVec[ix], cSubP, orionldState.contextP);
+      KjNode* subscriptionNodeP = kjTreeFromSubscription(&subVec[ix], sciP, orionldState.contextP);
       kjChildAdd(orionldState.responseTree, subscriptionNodeP);
     }
   }

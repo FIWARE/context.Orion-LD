@@ -60,6 +60,9 @@ void subCacheItemCompiledStateRelease(SubCacheItem* sciP)
     if (sesP->idRegexP != NULL)
       regfree(sesP->idRegexP);
 
+    if (sesP->typeRegexP != NULL)
+      regfree(sesP->typeRegexP);
+
     free(sesP);
     sesP = next;
   }

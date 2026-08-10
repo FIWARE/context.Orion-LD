@@ -1296,6 +1296,13 @@ void subCacheRefresh(bool refresh)
     // Empty the cache
     subCacheDestroy();
     mongoSubCacheRefresh(tenant0.mongoDbName);
+
+    //
+    // The NEW cache has to learn about the other broker's subscriptions too - it is
+    // what answers GET and what the matching runs on. mongoSubCacheRefresh above
+    // only knows the old one.
+    //
+    mongocSubCachePopulateByTenant(&tenant0, refresh);
   }
 
   // Recreate the subCache for each and every tenant
@@ -1305,7 +1312,10 @@ void subCacheRefresh(bool refresh)
     if (experimental)
       mongocSubCachePopulateByTenant(tenantP, refresh);
     else
+    {
       mongoSubCacheRefresh(tenantP->mongoDbName);
+      mongocSubCachePopulateByTenant(tenantP, refresh);  // ... and the new cache - see above
+    }
 
     tenantP = tenantP->next;
   }

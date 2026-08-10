@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_LEGACYDRIVER_KJTREEFROMSUBSCRIPTION_H_
-#define SRC_LIB_ORIONLD_LEGACYDRIVER_KJTREEFROMSUBSCRIPTION_H_
+#ifndef SRC_LIB_ORIONLD_SUBCACHE_SUBCACHEITEMSTATSUPDATE_H_
+#define SRC_LIB_ORIONLD_SUBCACHE_SUBCACHEITEMSTATSUPDATE_H_
 
 /*
 *
-* Copyright 2018 FIWARE Foundation e.V.
+* Copyright 2026 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,17 +25,13 @@
 *
 * Author: Ken Zangelin
 */
-#include "apiTypesV2/Subscription.h"                             // Subscription
-#include "orionld/types/SubCacheItem.h"                          // SubCacheItem
-
-#include "orionld/types/OrionldContext.h"                        // OrionldContext
 
 
 
 // -----------------------------------------------------------------------------
 //
-// kjTreeFromSubscription -
+// subCacheItemStatsUpdate - record the outcome of a notification attempt
 //
-extern KjNode* kjTreeFromSubscription(ngsiv2::Subscription* subscriptionP, SubCacheItem* sciP, OrionldContext* contextP);
+extern void subCacheItemStatsUpdate(const char* tenantName, const char* subscriptionId, bool ngsild, bool failure);
 
-#endif  // SRC_LIB_ORIONLD_LEGACYDRIVER_KJTREEFROMSUBSCRIPTION_H_
+#endif  // SRC_LIB_ORIONLD_SUBCACHE_SUBCACHEITEMSTATSUPDATE_H_

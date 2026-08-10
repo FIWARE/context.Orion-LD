@@ -409,6 +409,13 @@ void apiModelFromCacheSubscription(KjNode* apiSubP, SubCacheItem* sciP, bool sys
       if (typeP != NULL)
         typeP->value.s = orionldContextItemAliasLookup(orionldState.contextP, typeP->value.s, NULL, NULL);
 
+      //
+      // The cache keeps NGSIv2's "isTypePattern" so that the NGSIv2 matcher can
+      // do its job - but there is no type pattern in NGSI-LD, so it is not part
+      // of an NGSI-LD Subscription.
+      //
+      memberDrop(entityP, "isTypePattern");
+
       MEMBER_ORDER(entityP, entityMemberOrderV);
     }
   }

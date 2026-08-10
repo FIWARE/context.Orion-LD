@@ -365,9 +365,20 @@ KjNode* dbModelToApiSubscription
     // segfaults.
     //
 
-    // There is no "Type Pattern" in NGSI-LD
+    //
+    // There is no "Type Pattern" in NGSI-LD - but there IS in NGSIv2, and the
+    // subscription cache is matched by the NGSIv2 write path as well, so the flag
+    // is kept for the cache. Only when set: "isTypePattern": false is the default
+    // and says nothing, and leaving it out keeps the cached tree the same shape
+    // for the subscriptions (the vast majority) that don't use the feature.
+    //
     if (isTypePatternP != NULL)
-      kjChildRemove(entityP, isTypePatternP);
+    {
+      bool isTypePattern = (isTypePatternP->type == KjBoolean)? isTypePatternP->value.b : false;
+
+      if ((forSubCache == false) || (isTypePattern == false))
+        kjChildRemove(entityP, isTypePatternP);
+    }
 
     // There is no "isPattern" in NGSI-LD - the id becomes "idPattern" instead
     if (isPatternP != NULL)
@@ -496,6 +507,29 @@ KjNode* dbModelToApiSubscription
       if ((v2mqP != NULL) && (v2mqP->value.s[0] != 0))  kjChildAdd(v2P, v2mqP);
     }
 
+    //
+    // NGSIv2 wants the geo expression exactly as the database has it, and
+    // dbModelToApiGeoQ is about to rewrite all of it into NGSI-LD's spelling:
+    // the coordinates become an Array instead of the String "1,2", "point"
+    // becomes "Point", and "near;maxDistance:1" becomes "near;maxDistance==1".
+    // None of those three is what the NGSIv2 geo filter can read.
+    //
+    // So copies are taken first - copies and not moves, as the conversion needs
+    // the nodes to still be there.
+    //
+    if (forSubCache == true)
+    {
+      static const char* geoMemberV[] = { "coords", "geometry", "georel" };
+
+      for (unsigned int ix = 0; ix < sizeof(geoMemberV) / sizeof(geoMemberV[0]); ix++)
+      {
+        KjNode* dbNodeP = kjLookup(dbExpressionP, geoMemberV[ix]);
+
+        if ((dbNodeP != NULL) && (dbNodeP->type == KjString) && (dbNodeP->value.s[0] != 0))
+          kjChildAdd(v2P, kjString(orionldState.kjsonP, geoMemberV[ix], dbNodeP->value.s));
+      }
+    }
+
     bool empty = false;
     if (dbModelToApiGeoQ(dbExpressionP, coordinatesPP, &empty) == false)
     {
@@ -517,8 +551,15 @@ KjNode* dbModelToApiSubscription
     isActiveP = dbStatusP;
     isActiveP->name = (char*) "isActive";
 
-    // In NGSIv2, "status" can take 2 values: "active", "inactive"
-    if (strcmp(isActiveP->value.s, "inactive") == 0)
+    //
+    // The stored word depends on the API that wrote the subscription: NGSIv2 says
+    // "inactive", NGSI-LD says "paused" (TS 104-175 clause 5.2.6.5.2). Both mean
+    // the same thing, and the database holds whichever the creating request used -
+    // so both must be understood here. Anything else ("active", "expired", ...)
+    // leaves the subscription active; "expired" is decided by 'expiresAt', not by
+    // this flag.
+    //
+    if ((strcmp(isActiveP->value.s, "inactive") == 0) || (strcmp(isActiveP->value.s, "paused") == 0))
       isActiveP->value.b = false;
     else
       isActiveP->value.b = true;

@@ -22,13 +22,16 @@
 *
 * Author: Ken Zangelin
 */
+#include <string.h>                                              // strchr
 #include <string>                                                // std::string
 #include <vector>                                                // std::vector
 
 extern "C"
 {
 #include "ktrace/kTrace.h"                                       // KT_*
+#include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
+#include "kjson/kjBuilder.h"                                     // kjString
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
 
@@ -36,7 +39,10 @@ extern "C"
 #include "orionld/types/SubV2Info.h"                             // SubV2Info
 #include "orionld/types/Verb.h"                                  // verbFromString, verbToString
 
+#include "rest/StringFilter.h"                                    // StringFilter
 #include "common/MimeType.h"                                     // mimeTypeFromString
+#include "orionld/common/orionldState.h"                         // orionldState
+#include "orionld/q/qAliasCompact.h"                             // qAliasCompact
 #include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/subCache/subCacheItemV2Compile.h"              // Own interface
 
@@ -64,11 +70,82 @@ static void stringArrayFill(std::vector<std::string>* vecP, KjNode* arrayP)
 
 // -----------------------------------------------------------------------------
 //
+// stringFilterBuild - parse a 'q'/'mq' from the database into a StringFilter
+//
+// StringFilter::parse wants the 'q' exactly as an NGSIv2 API request spells it -
+// SHORT attribute names. It expands them itself (with the current @context) and
+// encodes the dots of the expanded IRI as '=', which is how mongo stores them.
+//
+// What the database holds is the far end of that road: expanded AND '='-encoded.
+// Handing it straight back to the parser does not work, in either direction:
+//
+//   "https://uri=etsi=org/...temperature>20"  - '=' is an NGSIv2 operator, so the
+//                                               name ends at the first one
+//   "https://uri.etsi.org/...temperature>20"  - '.' is the compound-path separator,
+//                                               so the name ends at the first dot
+//
+// Both leave a filter looking for an attribute called "https://uri", which no
+// entity has - so the filter rejects EVERY entity and the subscription silently
+// stops notifying. So the road is walked backwards first: qAliasCompact turns the
+// '=' back into dots and the expanded IRIs back into their short names.
+//
+// It edits the string it is given and answers in memory of its own, so it is fed
+// a copy - the subTree keeps the subscription as the database has it.
+//
+static void stringFilterBuild(SubCacheItem* sciP, StringFilter* stringFilterP, const char* member, char* dbQ)
+{
+  std::string  errorString;
+
+  //
+  // A 'q' with an OR in it has no NGSIv2 equivalent - NGSIv2 only knows AND. The
+  // write path already deals with that: it stores the never-matching "P;!P"
+  // ("P Exists AND P Does Not Exist") so that the NGSIv2 side stays out of the way
+  // and the subscription is decided by the NGSI-LD 'q' (the QNode tree) alone.
+  //
+  // Both spellings are taken as-is: "P;!P" holds no attribute name to translate,
+  // and running it through the compaction below would turn it into a filter that
+  // matches EVERYTHING - the exact opposite of what it is there for.
+  //
+  if ((strcmp(dbQ, "P;!P") == 0) || (strchr(dbQ, '|') != NULL))
+  {
+    if (stringFilterP->parse((char*) "P;!P", &errorString) == false)
+      KT_E("Sub '%s': unable to build the never-matching NGSIv2 '%s': %s", sciP->subId, member, errorString.c_str());
+
+    KT_T(KtSubCache, "Sub '%s': NGSIv2 '%s' is the never-matching filter ('%s') - the NGSI-LD 'q' decides", sciP->subId, member, dbQ);
+    return;
+  }
+
+  //
+  // Only an NGSI-LD subscription has been down that road - NGSIv2 does not expand
+  // anything, so the 'q' of an NGSIv2 subscription is already exactly what the
+  // parser wants and is handed over untouched, as the old sub-cache did.
+  //
+  char* q = dbQ;
+
+  if (sciP->ngsild == true)
+  {
+    KjNode* qNodeP = kjString(orionldState.kjsonP, member, kaStrdup(&orionldState.kalloc, dbQ));
+
+    if (qAliasCompact(qNodeP, true) == false)
+      KT_E("Sub '%s': unable to compact the NGSIv2 '%s' ('%s')", sciP->subId, member, dbQ);
+
+    q = qNodeP->value.s;
+    KT_T(KtSubCache, "Sub '%s': NGSIv2 '%s' '%s' compacted to '%s'", sciP->subId, member, dbQ, q);
+  }
+
+  if (stringFilterP->parse(q, &errorString) == false)
+    KT_E("Sub '%s': invalid NGSIv2 '%s' ('%s'): %s", sciP->subId, member, q, errorString.c_str());
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // subCacheItemV2Compile - build the NGSIv2 matching state of a cached Subscription
 //
 // EVERY subscription gets one, not only the NGSIv2-created ones. An entity
 // updated through the NGSIv2 API is matched against the subscription cache by
-// subCacheMatch, and that has always included the NGSI-LD subscriptions: the
+// subCacheV2Match, and that has always included the NGSI-LD subscriptions: the
 // NGSI-LD create path writes an NGSIv2 rendering of 'q'/'mq' into the database
 // and a servicePath of "/#" precisely so that they can be matched that way.
 // Building this only for v2 subscriptions would silently stop notifying NGSI-LD
@@ -119,34 +196,38 @@ void subCacheItemV2Compile(SubCacheItem* sciP)
   v2P->expression.q  = (qP  != NULL)? qP->value.s  : "";
   v2P->expression.mq = (mqP != NULL)? mqP->value.s : "";
 
-  std::string errorString;
-
   if ((qP != NULL) && (qP->value.s[0] != 0))
-  {
-    if (v2P->expression.stringFilter.parse(qP->value.s, &errorString) == false)
-      KT_E("Sub '%s': invalid NGSIv2 'q' ('%s'): %s", sciP->subId, qP->value.s, errorString.c_str());
-  }
+    stringFilterBuild(sciP, &v2P->expression.stringFilter, "q", qP->value.s);
 
   if ((mqP != NULL) && (mqP->value.s[0] != 0))
-  {
-    if (v2P->expression.mdStringFilter.parse(mqP->value.s, &errorString) == false)
-      KT_E("Sub '%s': invalid NGSIv2 'mq' ('%s'): %s", sciP->subId, mqP->value.s, errorString.c_str());
-  }
+    stringFilterBuild(sciP, &v2P->expression.mdStringFilter, "mq", mqP->value.s);
 
   //
   // The geo expression, as NGSIv2 wants it - strings, not the GEOS geometry that
   // subCacheItemGeoCompile builds for NGSI-LD.
   //
+  //
+  // 'geometry', 'georel' and 'coords' come from "v2" - the database's own spelling,
+  // which is what the NGSIv2 geo filter reads. "geoQ" holds the NGSI-LD rewriting
+  // of the very same thing ("Point" for "point", an Array of coordinates, ...) and
+  // the NGSIv2 side cannot read a word of it. See dbModelToApiSubscription.
+  //
+  // 'geoproperty' is spelled the same either way, so "geoQ" will do for it.
+  //
+  KjNode* geometryP = (v2TreeP != NULL)? kjLookup(v2TreeP, "geometry") : NULL;
+  KjNode* georelP   = (v2TreeP != NULL)? kjLookup(v2TreeP, "georel")   : NULL;
+  KjNode* coordsP   = (v2TreeP != NULL)? kjLookup(v2TreeP, "coords")   : NULL;
+
+  v2P->expression.geometry = (geometryP != NULL)? geometryP->value.s : "";
+  v2P->expression.georel   = (georelP   != NULL)? georelP->value.s   : "";
+  v2P->expression.coords   = (coordsP   != NULL)? coordsP->value.s   : "";
+
   KjNode* geoqP = kjLookup(sciP->subTree, "geoQ");
 
   if (geoqP != NULL)
   {
-    KjNode* geometryP    = kjLookup(geoqP, "geometry");
-    KjNode* georelP      = kjLookup(geoqP, "georel");
     KjNode* geopropertyP = kjLookup(geoqP, "geoproperty");
 
-    v2P->expression.geometry    = (geometryP    != NULL)? geometryP->value.s    : "";
-    v2P->expression.georel      = (georelP      != NULL)? georelP->value.s      : "";
     v2P->expression.geoproperty = (geopropertyP != NULL)? geopropertyP->value.s : "";
   }
 

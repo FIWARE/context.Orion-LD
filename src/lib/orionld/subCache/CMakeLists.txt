@@ -40,6 +40,8 @@ SET (SOURCES
     apiModelFromCacheSubscription.cpp
     subCacheItemV2Compile.cpp
     subCacheItemFromDb.cpp
+    subCacheV2Match.cpp
+    subCacheItemStatsUpdate.cpp
 )
 
 include_directories("${PROJECT_SOURCE_DIR}/src/lib")

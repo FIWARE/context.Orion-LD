@@ -62,6 +62,10 @@ extern "C"
 #include "ngsi/Scope.h"
 
 #include "orionld/types/OrionldTenant.h"                           // OrionldTenant
+#include "orionld/types/SubCacheItem.h"                            // SubCacheItem
+#include "orionld/types/SubV2Info.h"                               // SubV2Info
+#include "orionld/subCache/subCacheV2Match.h"                      // subCacheV2Match
+#include "orionld/subCache/subCacheItemLookup.h"                   // subCacheItemLookup
 #include "orionld/types/AttributeType.h"                           // AttributeType
 #include "orionld/common/orionldState.h"                           // orionldState
 #include "orionld/common/isSpecialSubAttribute.h"                  // isSpecialSubAttribute
@@ -1280,24 +1284,37 @@ static bool addTriggeredSubscriptions_withCache
   const std::vector<std::string>&                servicePathV
 )
 {
-  std::string                       servicePath = (servicePathV.size() > 0)? servicePathV[0] : "";
-  std::vector<CachedSubscription*>  subVec;
+  std::string                  servicePath = (servicePathV.size() > 0)? servicePathV[0] : "";
+  std::vector<SubCacheItem*>   subVec;
 
   cacheSemTake(__FUNCTION__, "match subs for notifications");
-  subCacheMatch(tenantP->tenant, servicePath.c_str(), entityId.c_str(), entityType.c_str(), modifiedAttrs, &subVec);
+  subCacheV2Match(tenantP, servicePath.c_str(), entityId.c_str(), entityType.c_str(), modifiedAttrs, &subVec);
 
   for (unsigned int ix = 0; ix < subVec.size(); ++ix)
   {
-    CachedSubscription* cSubP = subVec[ix];
+    SubCacheItem* sciP = subVec[ix];
+
+    //
+    // The NGSIv2 state of a cached subscription is built by subCacheItemV2Compile,
+    // for every subscription and right after the tree is set - if it isn't there,
+    // the item is not usable from here.
+    //
+    if (sciP->v2P == NULL)
+    {
+      KT_E("Sub '%s': matched, but without its NGSIv2 state - not notified", sciP->subId);
+      continue;
+    }
+
+    SubV2Info* v2P = sciP->v2P;
 
     // Outdated subscriptions are skipped (0 == no expiration time)
-    if ((cSubP->expirationTime > 0) && (cSubP->expirationTime < orionldState.requestTime))
+    if ((sciP->expiresAt > 0) && (sciP->expiresAt < orionldState.requestTime))
     {
       continue;
     }
 
     // Status is inactive
-    if (cSubP->status == STATUS_INACTIVE)
+    if (sciP->isActive == false)
     {
       continue;
     }
@@ -1305,51 +1322,54 @@ static bool addTriggeredSubscriptions_withCache
 
     //
     // FIXME P4: See issue #2076.
-    //           aList is just a copy of cSubP->attributes - would be good to avoid
-    //           as a reference to the CachedSubscription is already in TriggeredSubscription
-    //           cSubP->attributes is of type    std::vector<std::string>
+    //           aList is just a copy of v2P->attributes - would be good to avoid
+    //           as a reference to the subscription is already in TriggeredSubscription
+    //           v2P->attributes is of type      std::vector<std::string>
     //           while AttributeList contains a  std::vector<std::string>
     //           Practically the same, except for the methods that AttributeList offers.
-    //           Perhaps CachedSubscription should include an AttributeList (cSubP->attributes)
-    //           instead of its std::vector<std::string> ... ?
     //
     StringList aList;
 
-    aList.fill(cSubP->attributes);
+    aList.fill(v2P->attributes);
 
     // Throttling
-    KT_T(KtLegacySubMatch, "Subscription:         %s", cSubP->subscriptionId);
+    KT_T(KtLegacySubMatch, "Subscription:         %s", sciP->subId);
     KT_T(KtLegacySubMatch, "NOW:                  %f", orionldState.requestTime);
-    KT_T(KtLegacySubMatch, "lastNotificationTime: %f", cSubP->lastNotificationTime);
-    KT_T(KtLegacySubMatch, "DIFF:                 %f", orionldState.requestTime - cSubP->lastNotificationTime);
-    KT_T(KtLegacySubMatch, "throttling:           %f", cSubP->throttling);
-    KT_T(KtLegacySubMatch, "lastSuccess:          %f", cSubP->lastSuccess);
-    KT_T(KtLegacySubMatch, "lastFailure:          %f", cSubP->lastFailure);
-    if ((cSubP->throttling != -1) && (cSubP->lastNotificationTime != 0))
+    KT_T(KtLegacySubMatch, "lastNotificationTime: %f", sciP->lastNotificationTime);
+    KT_T(KtLegacySubMatch, "DIFF:                 %f", orionldState.requestTime - sciP->lastNotificationTime);
+    KT_T(KtLegacySubMatch, "throttling:           %f", sciP->throttling);
+    KT_T(KtLegacySubMatch, "lastSuccess:          %f", sciP->lastSuccess);
+    KT_T(KtLegacySubMatch, "lastFailure:          %f", sciP->lastFailure);
+
+    //
+    // "No throttling" is 0 in this cache, where the legacy one used -1 - so the
+    // comparison is against a positive throttling, not against the sentinel.
+    //
+    if ((sciP->throttling > 0) && (sciP->lastNotificationTime != 0))
     {
-      if ((orionldState.requestTime - cSubP->lastNotificationTime) < cSubP->throttling)
+      if ((orionldState.requestTime - sciP->lastNotificationTime) < sciP->throttling)
       {
-        KT_T(KtLegacySubMatch, "No notification due to throttling (last: %f vs now: %f)", orionldState.requestTime, cSubP->lastNotificationTime);
+        KT_T(KtLegacySubMatch, "No notification due to throttling (last: %f vs now: %f)", orionldState.requestTime, sciP->lastNotificationTime);
         continue;
       }
     }
 
-    TriggeredSubscription* subP = new TriggeredSubscription(cSubP->throttling,
-                                                           cSubP->lastNotificationTime,
-                                                           cSubP->renderFormat,
-                                                           cSubP->httpInfo,
+    TriggeredSubscription* subP = new TriggeredSubscription(sciP->throttling,
+                                                           sciP->lastNotificationTime,
+                                                           sciP->renderFormat,
+                                                           v2P->httpInfo,
                                                            aList,
-                                                           cSubP->subscriptionId,
+                                                           sciP->subId,
                                                            orionldState.tenantP);
-    subP->blacklist = cSubP->blacklist;
-    subP->metadata  = cSubP->metadata;
+    subP->blacklist = v2P->blacklist;
+    subP->metadata  = v2P->metadata;
     subP->tenantP   = tenantP;
 
-    subP->fillExpression(cSubP->expression.georel, cSubP->expression.geometry, cSubP->expression.coords);
+    subP->fillExpression(v2P->expression.georel, v2P->expression.geometry, v2P->expression.coords);
 
     std::string errorString;
 
-    if (!subP->stringFilterSet(&cSubP->expression.stringFilter, &errorString))
+    if (!subP->stringFilterSet(&v2P->expression.stringFilter, &errorString))
     {
       KT_E("Runtime Error (error setting string filter: %s)", errorString.c_str());
       delete subP;
@@ -1357,7 +1377,7 @@ static bool addTriggeredSubscriptions_withCache
       return false;
     }
 
-    if (!subP->mdStringFilterSet(&cSubP->expression.mdStringFilter, &errorString))
+    if (!subP->mdStringFilterSet(&v2P->expression.mdStringFilter, &errorString))
     {
       KT_E("Runtime Error (error setting metadata string filter: %s)", errorString.c_str());
       delete subP;
@@ -1365,7 +1385,7 @@ static bool addTriggeredSubscriptions_withCache
       return false;
     }
 
-    subs.insert(std::pair<std::string, TriggeredSubscription*>(cSubP->subscriptionId, subP));
+    subs.insert(std::pair<std::string, TriggeredSubscription*>(sciP->subId, subP));
   }
 
   cacheSemGive(__FUNCTION__, "match subs for notifications");
@@ -2318,18 +2338,22 @@ static bool processSubscriptions
 
 
       //
-      // Saving lastNotificationTime and count for cached subscription
+      // Saving lastNotificationTime and the sent-counter for the cached subscription
+      //
+      // 'deltas.timesSent' is what has NOT yet been written to the database - a GET
+      // adds it to the stored counter, and a counter flush writes it and zeroes it.
+      // Same bookkeeping the NGSI-LD notification path uses (notificationSuccess).
       //
       if (tSubP->cacheSubId != "")
       {
         cacheSemTake(__FUNCTION__, "update lastNotificationTime for cached subscription");
 
-        CachedSubscription*  cSubP = subCacheItemLookup(tSubP->tenantP->tenant, tSubP->cacheSubId.c_str());
+        SubCacheItem* sciP = subCacheItemLookup(tSubP->tenantP->subCache, tSubP->cacheSubId.c_str());
 
-        if (cSubP != NULL)
+        if (sciP != NULL)
         {
-          cSubP->lastNotificationTime = orionldState.requestTime;
-          cSubP->count               += 1;
+          sciP->lastNotificationTime = orionldState.requestTime;
+          sciP->deltas.timesSent    += 1;
         }
         else
         {

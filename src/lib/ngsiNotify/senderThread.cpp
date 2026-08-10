@@ -33,6 +33,7 @@ extern "C"
 #include "rest/httpRequestSend.h"
 #include "ngsiNotify/senderThread.h"
 #include "cache/subCache.h"
+#include "orionld/subCache/subCacheItemStatsUpdate.h"                 // subCacheItemStatsUpdate
 #include "orionld/common/orionldState.h"
 #include "orionld/mqtt/mqttNotification.h"
 
@@ -130,12 +131,12 @@ void* startSenderThread(void* p)
         alarmMgr.notificationErrorReset(url);
 
         if (params->registration == false)
-          subCacheItemNotificationErrorStatus(params->tenant, params->subscriptionId, 0, ngsildSubscription);
+          subCacheItemStatsUpdate(params->tenant.c_str(), params->subscriptionId.c_str(), ngsildSubscription, false);
       }
       else
       {
         if (params->registration == false)
-          subCacheItemNotificationErrorStatus(params->tenant, params->subscriptionId, 1, ngsildSubscription);
+          subCacheItemStatsUpdate(params->tenant.c_str(), params->subscriptionId.c_str(), ngsildSubscription, true);
       }
     }
     else

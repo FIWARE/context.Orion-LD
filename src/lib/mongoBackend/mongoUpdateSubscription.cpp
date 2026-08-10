@@ -48,6 +48,8 @@ extern "C"
 #include "mongoBackend/safeMongo.h"
 #include "mongoBackend/mongoSubCache.h"
 #include "orionld/subCache/subCacheItemFromDb.h"             // subCacheItemFromDb (the new sub cache)
+#include "orionld/subCache/subCacheItemLookup.h"             // subCacheItemLookup
+#include "orionld/types/SubCacheItem.h"                      // SubCacheItem
 #include "mongoBackend/mongoUpdateSubscription.h"
 
 
@@ -357,7 +359,8 @@ static void setCondsAndInitialNotifyNgsiv1
                                             status,
                                             fiwareCorrelator,
                                             sub.notification.attributes,
-                                            sub.notification.blacklist);
+                                            sub.notification.blacklist,
+                                            true);  // notify - unchanged for the update path
 
   b->append(CSUB_CONDITIONS, conds);
   KT_T(KtLegacy, "Subscription conditions: %s", conds.toString().c_str());
@@ -468,7 +471,8 @@ static void setCondsAndInitialNotify
                                xauthToken,
                                fiwareCorrelator,
                                b,
-                               notificationDone);
+                               notificationDone,
+                               true);  // notify - unchanged for the update path
     }
   }
   else
@@ -1001,6 +1005,19 @@ std::string mongoUpdateSubscription
   // See subCacheItemFromDb.
   //
   subCacheItemFromDb(tenantP, subUp.id.c_str());
+
+  //
+  // The cross-API render formats ("x-ngsiv2-normalized", ...) do not survive the
+  // database - it stores plain "normalized" for all of them - so it is put back
+  // from the request, which is the authority. See mongoCreateSubscription.
+  //
+  if (subUp.attrsFormatProvided == true)
+  {
+    SubCacheItem* sciP = subCacheItemLookup(tenantP->subCache, subUp.id.c_str());
+
+    if (sciP != NULL)
+      sciP->renderFormat = subUp.attrsFormat;
+  }
 
   return subUp.id;
 }
