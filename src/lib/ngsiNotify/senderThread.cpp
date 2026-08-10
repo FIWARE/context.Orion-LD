@@ -32,7 +32,8 @@ extern "C"
 #include "alarmMgr/alarmMgr.h"
 #include "rest/httpRequestSend.h"
 #include "ngsiNotify/senderThread.h"
-#include "cache/subCache.h"
+#include "orionld/types/SubCacheItem.h"                               // SubCacheItem
+#include "orionld/subCache/subCacheItemLookup.h"                      // subCacheItemLookupByTenantName
 #include "orionld/subCache/subCacheItemStatsUpdate.h"                 // subCacheItemStatsUpdate
 #include "orionld/common/orionldState.h"
 #include "orionld/mqtt/mqttNotification.h"
@@ -122,8 +123,8 @@ void* startSenderThread(void* p)
         params->toFree = NULL;
       }
 
-      CachedSubscription*  subP               = subCacheItemLookup(params->tenant.c_str(), params->subscriptionId.c_str());
-      bool                 ngsildSubscription = ((subP != NULL) && (subP->ldContext != ""))? true : false;
+      SubCacheItem*        subP               = subCacheItemLookupByTenantName(params->tenant.c_str(), params->subscriptionId.c_str());
+      bool                 ngsildSubscription = ((subP != NULL) && (subP->ngsild == true))? true : false;
 
       if (r == 0)
       {

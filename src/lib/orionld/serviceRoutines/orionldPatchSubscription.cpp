@@ -22,38 +22,26 @@
 *
 * Author: Ken Zangelin
 */
-#include <geos_c.h>                                            // GEOSGeoJSONReader, GEOSPrepare
-#include <string>                                              // std::string
-#include <vector>                                              // std::vector
+#include <string.h>                                            // strcmp
 
 extern "C"
 {
 #include "kbase/kMacros.h"                                     // K_VEC_SIZE
 #include "ktrace/kTrace.h"                                     // KT_*
-#include "kalloc/kaAlloc.h"                                    // kaAlloc
 #include "kalloc/kaStrdup.h"                                   // kaStrdup
 #include "kjson/kjLookup.h"                                    // kjLookup
 #include "kjson/kjBuilder.h"                                   // kjChildAdd, ...
 #include "kjson/kjClone.h"                                     // kjClone
-#include "kjson/kjFree.h"                                      // kjFree
-#include "kjson/kjRenderSize.h"                                // kjFastRenderSize
-#include "kjson/kjRender.h"                                    // kjFastRender
 #include "kjson/kjNavigate.h"                                  // kjNavigate
 #include "kjson/kjChildAddOrReplace.h"                         // kjChildAddOrReplace
 }
 
-#include "cache/subCache.h"                                    // CachedSubscription, subCacheItemLookup
-
-#include "orionld/types/PernotSubscription.h"                   // PernotSubscription
-#include "orionld/types/OrionldMimeType.h"                     // mimeTypeFromString
-#include "orionld/types/KeyValue.h"                            // KeyValue, keyValueLookup, keyValueAdd
+#include "orionld/types/PernotSubscription.h"                  // PernotSubscription
+#include "orionld/types/SubCacheItem.h"                        // SubCacheItem
 #include "orionld/types/MqttInfo.h"                            // MqttInfo
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/common/orionldError.h"                       // orionldError
 #include "orionld/common/traceLevels.h"                        // KTrace level
-#include "orionld/common/urlParse.h"                           // urlParse
-#include "orionld/common/dateTime.h"                           // dateTimeFromString
-#include "orionld/context/orionldAttributeExpand.h"            // orionldAttributeExpand
 #include "orionld/payloadCheck/PCHECK.h"                       // PCHECK_URI
 #include "orionld/payloadCheck/pCheckSubscription.h"           // pCheckSubscription
 #include "orionld/q/qBuild.h"                                  // qBuild
@@ -62,12 +50,9 @@ extern "C"
 #include "orionld/mongoc/mongocSubscriptionReplace.h"          // mongocSubscriptionReplace
 #include "orionld/dbModel/dbModelToApiSubscription.h"          // dbModelToApiSubscription
 #include "orionld/context/orionldContextFromUrl.h"             // orionldContextFromUrl
-#include "orionld/subCache/subCacheItemLookup.h"               // subCacheItemLookup   (the new sub cache)
-#include "orionld/subCache/subCacheItemUpdate.h"               // subCacheItemUpdate   (the new sub cache)
+#include "orionld/subCache/subCacheItemLookup.h"               // subCacheItemLookup
+#include "orionld/subCache/subCacheItemUpdate.h"               // subCacheItemUpdate
 #include "orionld/dbModel/dbModelFromApiSubscription.h"        // dbModelFromApiSubscription
-#include "orionld/common/eqForDot.h"                           // eqForDot
-#include "orionld/common/geosInit.h"                           // geosHandle
-#include "orionld/payloadCheck/pcheckGeoQ.h"                   // pcheckGeoQ
 #include "orionld/mqtt/mqttConnectionEstablish.h"              // mqttConnectionEstablish
 #include "orionld/mqtt/mqttDisconnect.h"                       // mqttDisconnect
 #include "orionld/mqtt/mqttParse.h"                            // mqttParse
@@ -223,13 +208,10 @@ static bool dbSubscriptionMemberRemove(KjNode* dbSubP, const char* apiMember)
 // If "geoQ" replaces "expression", then we may need to maintain the "q" inside the old "expression".
 // OR, if "q" is also in the patch tree, then we'll simply move it inside "expression" (former "geoQ").
 //
-static bool ngsildSubscriptionPatch(KjNode* dbSubscriptionP, CachedSubscription* cSubP, KjNode* patchTree, KjNode* qP, KjNode* expressionP, char* qRenderedForDb)
+static bool ngsildSubscriptionPatch(KjNode* dbSubscriptionP, KjNode* patchTree, KjNode* qP, KjNode* expressionP, char* qRenderedForDb)
 {
   KjNode* fragmentP = patchTree->value.firstChildP;
   KjNode* next;
-
-  if (cSubP != NULL)
-    cSubP->modifiedAt = orionldState.requestTime;
 
   while (fragmentP != NULL)
   {
@@ -259,22 +241,6 @@ static bool ngsildSubscriptionPatch(KjNode* dbSubscriptionP, CachedSubscription*
     {
       if ((fragmentP != qP) && (fragmentP != expressionP))
         kjChildAddOrReplace(dbSubscriptionP, fragmentP->name, fragmentP);
-
-      if ((cSubP != NULL) && (strcmp(fragmentP->name, "status") == 0))
-      {
-        if (strcmp(fragmentP->value.s, "active") == 0)
-        {
-          KT_T(KtSR, "Setting subscription to ACTIVE in cache");
-          cSubP->isActive = true;
-          cSubP->status   = "active";
-        }
-        else
-        {
-          KT_T(KtSR, "Setting subscription to INACTIVE/PAUSED in cache");
-          cSubP->isActive = false;
-          cSubP->status   = "paused";
-        }
-      }
     }
 
     fragmentP = next;
@@ -434,556 +400,6 @@ static void fixDbSubscription(KjNode* dbSubscriptionP, char* qRenderedForDb)
 
 // -----------------------------------------------------------------------------
 //
-// subCacheItemUpdateEntities -
-//
-static bool subCacheItemUpdateEntities(CachedSubscription* cSubP, KjNode* entityArray)
-{
-  //
-  // To replace "entities", we first need to frre up the old "entities"
-  //
-  for (long unsigned int ix = 0; ix < cSubP->entityIdInfos.size(); ix++)
-  {
-    cSubP->entityIdInfos[ix]->release();
-    delete cSubP->entityIdInfos[ix];
-  }
-  cSubP->entityIdInfos.clear();
-
-  for (KjNode* entityP = entityArray->value.firstChildP; entityP != NULL; entityP = entityP->next)
-  {
-    KjNode*      idP          = kjLookup(entityP, "id");
-    KjNode*      idPatternP   = kjLookup(entityP, "idPattern");
-    KjNode*      typeP        = kjLookup(entityP, "type");
-    EntityInfo*  entityInfoP;
-
-    if ((idP == NULL) && (idPatternP == NULL))
-      entityInfoP = new EntityInfo(".*", std::string(typeP->value.s), "true", false);
-    else if (idP != NULL)
-      entityInfoP = new EntityInfo(std::string(idP->value.s), std::string(typeP->value.s), "false", false);
-    else
-      entityInfoP = new EntityInfo(std::string(idPatternP->value.s), std::string(typeP->value.s), "true", false);
-
-    cSubP->entityIdInfos.push_back(entityInfoP);
-  }
-
-  return true;
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
-// subCacheItemUpdateWatchedAttributes -
-//
-static bool subCacheItemUpdateWatchedAttributes(CachedSubscription* cSubP, KjNode* itemP)
-{
-  cSubP->notifyConditionV.clear();
-
-  int  attrs = 0;
-  for (KjNode* attrNodeP = itemP->value.firstChildP; attrNodeP != NULL; attrNodeP = attrNodeP->next)
-  {
-    char* longName = orionldAttributeExpand(orionldState.contextP, attrNodeP->value.s, true, NULL);
-
-    cSubP->notifyConditionV.push_back(longName);
-    ++attrs;
-  }
-
-  if ((int) cSubP->notifyConditionV.size() != attrs)
-    KT_RE(false, "Expected %d items in watchedAttributes list - there are %d !!!", attrs, cSubP->notifyConditionV.size());
-
-  return true;
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
-// subCacheItemUpdateGeoQ -
-//
-static bool subCacheItemUpdateGeoQ(CachedSubscription* cSubP, KjNode* itemP)
-{
-  KjNode* geometryP     = kjLookup(itemP, "geometry");
-  KjNode* coordinatesP  = kjLookup(itemP, "coordinates");
-  KjNode* georelP       = kjLookup(itemP, "georel");
-  KjNode* geopropertyP  = kjLookup(itemP, "geoproperty");
-
-  if (geometryP    != NULL) cSubP->expression.geometry    = geometryP->value.s;
-  if (georelP      != NULL) cSubP->expression.georel      = georelP->value.s;
-  if (geopropertyP != NULL) cSubP->expression.geoproperty = geopropertyP->value.s;
-
-  if (coordinatesP != NULL)
-  {
-    int   coordsSize = kjFastRenderSize(coordinatesP) + 100;
-    char* coords     = kaAlloc(&orionldState.kalloc, coordsSize);
-
-    kjFastRender(coordinatesP, coords);
-    cSubP->expression.coords = coords;
-  }
-
-  //
-  // Rebuild GEOS in-memory geometry
-  //
-
-  // Free old GEOS objects
-  if (cSubP->geosPrepared != NULL)
-  {
-    GEOSPreparedGeom_destroy_r(geosHandle, cSubP->geosPrepared);
-    cSubP->geosPrepared = NULL;
-  }
-
-  if (cSubP->geosGeometry != NULL)
-  {
-    GEOSGeom_destroy_r(geosHandle, cSubP->geosGeometry);
-    cSubP->geosGeometry = NULL;
-  }
-
-  if (cSubP->geoInfo != NULL)
-  {
-    free(cSubP->geoInfo->geoProperty);
-    free(cSubP->geoInfo);
-    cSubP->geoInfo = NULL;
-  }
-
-  // Build new geoInfo from the geoQ tree
-  cSubP->geoInfo = pcheckGeoQ(NULL, itemP, true);
-
-  if (cSubP->geoInfo != NULL && cSubP->geoInfo->geoProperty != NULL)
-    eqForDot(cSubP->geoInfo->geoProperty);
-
-  if (cSubP->geoInfo != NULL && coordinatesP != NULL && geosHandle != NULL)
-  {
-    char geoJson[2048];
-    char coordsBuf[1536];
-    kjFastRender(coordinatesP, coordsBuf);
-    int len = snprintf(geoJson, sizeof(geoJson), "{\"type\":\"%s\",\"coordinates\":%s}",
-                       geometryP->value.s, coordsBuf);
-
-    if (len > 0 && len < (int) sizeof(geoJson))
-    {
-      GEOSGeoJSONReader* reader = GEOSGeoJSONReader_create_r(geosHandle);
-      cSubP->geosGeometry = GEOSGeoJSONReader_readGeometry_r(geosHandle, reader, geoJson);
-      GEOSGeoJSONReader_destroy_r(geosHandle, reader);
-
-      if (cSubP->geosGeometry != NULL && cSubP->geoInfo->georel != GeorelNear)
-        cSubP->geosPrepared = GEOSPrepare_r(geosHandle, cSubP->geosGeometry);
-    }
-  }
-
-  return true;
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
-// subCacheItemUpdateNotificationEndpoint -
-//
-static bool subCacheItemUpdateNotificationEndpoint(CachedSubscription* cSubP, KjNode* endpointP)
-{
-  KjNode* uriP           = kjLookup(endpointP, "uri");
-  KjNode* acceptP        = kjLookup(endpointP, "accept");
-  KjNode* receiverInfoP  = kjLookup(endpointP, "receiverInfo");
-  KjNode* notifierInfoP  = kjLookup(endpointP, "notifierInfo");
-
-  if (uriP != NULL)
-  {
-    char*           protocol;
-    char*           ip;
-    unsigned short  port;
-    char*           rest;
-    char*           url = strdup(uriP->value.s);
-    char            urlCopy[1024];
-
-    strncpy(urlCopy, url, sizeof(urlCopy) - 1);
-
-    if (strncmp(uriP->value.s, "mqtt", 4) == 0)
-    {
-      char            mqttUrl[512];
-      bool            mqtts         = false;
-      char*           mqttUser      = NULL;
-      char*           mqttPassword  = NULL;
-      char*           mqttHost      = NULL;
-      unsigned short  mqttPort      = 0;
-      char*           mqttTopic     = NULL;
-      char*           detail        = NULL;
-
-      strncpy(mqttUrl, uriP->value.s, sizeof(mqttUrl) - 1);
-      if (mqttParse(mqttUrl, &mqtts, &mqttUser, &mqttPassword, &mqttHost, &mqttPort, &mqttTopic, &detail) == false)
-      {
-        free(url);
-        KT_E("Internal Error (unable to parse mqtt URL)");
-        return false;
-      }
-
-      if (mqttUser     != NULL) strncpy(cSubP->httpInfo.mqtt.username, mqttUser,     sizeof(cSubP->httpInfo.mqtt.username) - 1);
-      if (mqttPassword != NULL) strncpy(cSubP->httpInfo.mqtt.password, mqttPassword, sizeof(cSubP->httpInfo.mqtt.password) - 1);
-      if (mqttHost     != NULL) strncpy(cSubP->httpInfo.mqtt.host,     mqttHost,     sizeof(cSubP->httpInfo.mqtt.host) - 1);
-      if (mqttTopic    != NULL) strncpy(cSubP->httpInfo.mqtt.topic,    mqttTopic,    sizeof(cSubP->httpInfo.mqtt.topic) - 1);
-
-      cSubP->httpInfo.mqtt.mqtts = mqtts;
-      cSubP->httpInfo.mqtt.port  = mqttPort;
-    }
-
-    //
-    // FIXME: if mqtt, I parse the URL twice, and save IP, port + rest (topic) twice as well
-    //        I should remove the MQTT info from HttpInfo and save directly in CachedSubscription - next to protocol, ip, port, rest
-    //
-    if (urlParse(urlCopy, &protocol, &ip, &port, &rest) == true)
-    {
-      if (cSubP->url != NULL)
-        free(cSubP->url);
-      cSubP->url = url;
-      cSubP->httpInfo.url = url;
-
-      if (cSubP->protocolString != NULL)
-        free(cSubP->protocolString);
-      cSubP->protocolString = strdup(protocol);
-
-      if (cSubP->ip != NULL)
-        free(cSubP->ip);
-      cSubP->ip = strdup(ip);
-
-      if (cSubP->rest != NULL)
-        free(cSubP->rest);
-      cSubP->rest = strdup(rest);
-
-      cSubP->port           = port;
-      cSubP->protocol       = protocolFromString(cSubP->protocolString);
-    }
-    else
-    {
-      KT_W("Invalid url '%s'", uriP->value.s);
-      free(url);
-      return false;
-    }
-  }
-
-  if (acceptP != NULL)
-  {
-    uint32_t acceptMask;
-    cSubP->httpInfo.mimeType = mimeTypeFromString(acceptP->value.s, NULL, true, false, &acceptMask);
-  }
-
-  if (receiverInfoP != NULL)
-  {
-    //
-    // receiverInfo is stored in cSubP->httpInfo.headers
-    // - just set it (in the std::map)
-    //
-    for (KjNode* riP = receiverInfoP->value.firstChildP; riP != NULL; riP = riP->next)
-    {
-      KjNode*   keyP   = kjLookup(riP, "key");
-      KjNode*   valueP = kjLookup(riP, "value");
-
-      cSubP->httpInfo.headers[keyP->value.s] = valueP->value.s;
-    }
-  }
-
-  if (notifierInfoP != NULL)
-  {
-    //
-    // For each key-value pair in "notifierInfo":
-    //   - lookup the key in cSubP->httpInfo.notifierInfo
-    //   - replace the value if present, add it if not
-    //
-    for (KjNode* riP = notifierInfoP->value.firstChildP; riP != NULL; riP = riP->next)
-    {
-      KjNode*   keyP   = kjLookup(riP, "key");
-      KjNode*   valueP = kjLookup(riP, "value");
-      KeyValue* kvP    = keyValueLookup(cSubP->httpInfo.notifierInfo, keyP->value.s);
-
-      if (kvP != NULL)
-        strncpy(kvP->value, valueP->value.s, sizeof(kvP->value) - 1);
-      else
-        keyValueAdd(&cSubP->httpInfo.notifierInfo, keyP->value.s, valueP->value.s);
-    }
-  }
-
-  return true;
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
-// subCacheItemUpdateNotification -
-//
-static bool subCacheItemUpdateNotification(CachedSubscription* cSubP, KjNode* itemP, KjNode* showChangesP)
-{
-  KjNode* attributesP = kjLookup(itemP, "attributes");
-  KjNode* formatP     = kjLookup(itemP, "format");
-  KjNode* endpointP   = kjLookup(itemP, "endpoint");
-
-  if (attributesP != NULL)  // Those present in the notification
-  {
-    cSubP->attributes.clear();
-    for (KjNode* attrNodeP = attributesP->value.firstChildP; attrNodeP != NULL; attrNodeP = attrNodeP->next)
-    {
-      char* longName = orionldAttributeExpand(orionldState.contextP, attrNodeP->value.s, true, NULL);
-      cSubP->attributes.push_back(longName);
-    }
-  }
-
-  if (formatP != NULL)
-    cSubP->renderFormat = stringToRenderFormat(formatP->value.s);
-
-  if (endpointP != NULL)
-    return subCacheItemUpdateNotificationEndpoint(cSubP, endpointP);
-
-  if (showChangesP != NULL)
-    cSubP->showChanges = showChangesP->value.b;
-
-  return true;
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
-// subCacheItemMemberRemove - reflect an NGSI-LD Null (a removal) in the cached item
-//
-// The patch loop below copies values OUT of the fragment and into the cached
-// subscription. A member set to the NGSI-LD Null carries no value at all - it asks
-// for the member to be REMOVED - so it needs its own, opposite handling. The
-// structural members simply reuse the "free the old one" half of their updaters.
-//
-// This goes away together with src/lib/cache: the new sub cache needs none of it,
-// as it handles a removal by recompiling the item from the patched subscription.
-//
-static void subCacheItemMemberRemove(CachedSubscription* cSubP, const char* member)
-{
-  if ((strcmp(member, "subscriptionName") == 0) || (strcmp(member, "name") == 0))
-    cSubP->name = "";
-  else if (strcmp(member, "description") == 0)
-  {
-    if (cSubP->description != NULL)
-      free(cSubP->description);
-    cSubP->description = NULL;
-  }
-  else if (strcmp(member, "lang") == 0)
-    cSubP->lang = "";
-  else if ((strcmp(member, "expiresAt") == 0) || (strcmp(member, "expires") == 0))
-    cSubP->expirationTime = -1;  // -1: "no expiration", the NGSIv1 database model's own convention
-  else if (strcmp(member, "throttling") == 0)
-    cSubP->throttling = 0;
-  else if (strcmp(member, "isActive") == 0)
-  {
-    cSubP->isActive = true;      // "true by default" - TS 104-175, clause 5, Subscription
-    cSubP->status   = "active";
-  }
-  else if (strcmp(member, "q") == 0)
-  {
-    if (cSubP->qP != NULL)
-    {
-      qRelease(cSubP->qP);
-      cSubP->qP = NULL;
-    }
-
-    if (cSubP->qText != NULL)
-    {
-      free(cSubP->qText);
-      cSubP->qText = NULL;
-    }
-
-    cSubP->expression.q = "";
-  }
-  else if (strcmp(member, "geoQ") == 0)
-  {
-    if (cSubP->geosPrepared != NULL)
-    {
-      GEOSPreparedGeom_destroy_r(geosHandle, cSubP->geosPrepared);
-      cSubP->geosPrepared = NULL;
-    }
-
-    if (cSubP->geosGeometry != NULL)
-    {
-      GEOSGeom_destroy_r(geosHandle, cSubP->geosGeometry);
-      cSubP->geosGeometry = NULL;
-    }
-
-    if (cSubP->geoInfo != NULL)
-    {
-      free(cSubP->geoInfo->geoProperty);
-      free(cSubP->geoInfo);
-      cSubP->geoInfo = NULL;
-    }
-
-    cSubP->expression.geometry    = "";
-    cSubP->expression.coords      = "";
-    cSubP->expression.georel      = "";
-    cSubP->expression.geoproperty = "";
-  }
-  else if (strcmp(member, "entities") == 0)
-  {
-    for (long unsigned int ix = 0; ix < cSubP->entityIdInfos.size(); ix++)
-    {
-      cSubP->entityIdInfos[ix]->release();
-      delete cSubP->entityIdInfos[ix];
-    }
-    cSubP->entityIdInfos.clear();
-  }
-  else if (strcmp(member, "watchedAttributes") == 0)
-    cSubP->notifyConditionV.clear();
-  else
-    KT_W("Removal of the Subscription member '%s' is not reflected in the subscription cache", member);
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
-// subCacheItemUpdate -
-//
-static bool subCacheItemUpdate
-(
-  OrionldTenant* tenantP,
-  const char*    subscriptionId,
-  KjNode*        subscriptionTree,
-  KjNode*        geoCoordinatesP,
-  QNode*         qNodeP,
-  char*          qText,
-  KjNode*        showChangesP
-)
-{
-  CachedSubscription* cSubP = subCacheItemLookup(tenantP->tenant, subscriptionId);
-  bool                r     = true;
-
-  if (cSubP == NULL)
-    KT_RE(false, "Internal Error (can't find the subscription '%s' in the subscription cache)", subscriptionId);
-
-  cacheSemTake(__FUNCTION__, "Updating a cached subscription");
-  subCacheState = ScsSynchronizing;
-
-  if (geoCoordinatesP != NULL)
-  {
-    if (cSubP->geoCoordinatesP != NULL)
-      kjFree(cSubP->geoCoordinatesP);
-    cSubP->geoCoordinatesP = kjClone(NULL, geoCoordinatesP);
-  }
-
-  if (qNodeP != NULL)
-  {
-    if (cSubP->qText != NULL)
-      free(cSubP->qText);
-
-    cSubP->qText = strdup(qText);
-  }
-
-  if (qNodeP != NULL)
-  {
-    if (cSubP->qP != NULL)
-      qRelease(cSubP->qP);
-
-    cSubP->qP = qNodeP;
-  }
-
-  for (KjNode* itemP = subscriptionTree->value.firstChildP; itemP != NULL; itemP = itemP->next)
-  {
-    KT_T(KtSR, "Patching subscription fragment '%s' for sub-cache", itemP->name);
-
-    if (itemP->type == KjNull)  // The NGSI-LD Null - the member is being REMOVED, there is no value to copy
-    {
-      subCacheItemMemberRemove(cSubP, itemP->name);
-      continue;
-    }
-
-    if ((strcmp(itemP->name, "subscriptionName") == 0) || (strcmp(itemP->name, "name") == 0))
-      cSubP->name = itemP->value.s;
-    else if (strcmp(itemP->name, "description") == 0)
-    {
-      if (cSubP->description != NULL)
-        free(cSubP->description);
-      cSubP->description = strdup(itemP->value.s);
-    }
-    else if (strcmp(itemP->name, "entities") == 0)
-      subCacheItemUpdateEntities(cSubP, itemP);
-    else if (strcmp(itemP->name, "watchedAttributes") == 0)
-      subCacheItemUpdateWatchedAttributes(cSubP, itemP);
-    else if (strcmp(itemP->name, "timeInterval") == 0)
-      KT_W("Not Implemented (Orion-LD doesn't implement periodical notifications");
-    else if (strcmp(itemP->name, "lang") == 0)
-    {
-      cSubP->lang = itemP->value.s;
-    }
-    else if (strcmp(itemP->name, "q") == 0)
-    {
-      KT_T(KtSR, "Change in 'q' (%s)", itemP->value.s);
-      cSubP->expression.q = itemP->value.s;
-    }
-    else if (strcmp(itemP->name, "geoQ") == 0)
-    {
-      subCacheItemUpdateGeoQ(cSubP, itemP);
-    }
-    else if (strcmp(itemP->name, "csf") == 0)
-    {
-      //
-      // csf is not implemented (only used for Subscriptions on Context Source Registrations)
-      //
-      // cSubP->csf = itemP->value.s;
-    }
-    else if (strcmp(itemP->name, "isActive") == 0)
-    {
-      if (itemP->value.b == true)
-      {
-        KT_T(KtSR, "Setting subscription to ACTIVE in cache");
-        cSubP->isActive = true;
-        cSubP->status   = "active";
-      }
-      else
-      {
-        KT_T(KtSR, "Setting subscription to INACTIVE/PAUSED in cache");
-        cSubP->isActive = false;
-        cSubP->status   = "paused";
-      }
-    }
-    else if (strcmp(itemP->name, "notification") == 0)
-    {
-      subCacheItemUpdateNotification(cSubP, itemP, showChangesP);
-    }
-    else if ((strcmp(itemP->name, "expires") == 0) || (strcmp(itemP->name, "expiresAt") == 0))
-    {
-      char errorString[256];
-
-      // Give error for expires/expiresAt and version of NGSI-LD ?
-      double expiresAt = dateTimeFromString(itemP->value.s, errorString, sizeof(errorString));
-
-      if (expiresAt > 0)
-        cSubP->expirationTime = expiresAt;
-      else
-      {
-        orionldError(OrionldBadRequestData, "Invalid ISO8601 for 'expiresAt'", errorString, 400);
-        r = false;
-      }
-    }
-    else if (strcmp(itemP->name, "throttling") == 0)
-    {
-      if (itemP->type == KjInt)
-        cSubP->throttling = (double) itemP->value.i;
-      else if (itemP->type == KjFloat)
-        cSubP->throttling = itemP->value.f;
-      else
-        KT_W("Invalid type for 'throttling'");
-    }
-    else if (strcmp(itemP->name, "scopeQ") == 0)
-      KT_W("Not Implemented (Orion-LD doesn't support Multi-Type (yet)");
-    else if (strcmp(itemP->name, "lang") == 0)
-      KT_W("Not Implemented (Orion-LD doesn't support LanguageProperty just yet");
-    else
-    {
-      orionldError(OrionldBadRequestData, "Invalid field for subscription patch", itemP->name, 400);
-      r = false;
-    }
-  }
-
-  subCacheState = ScsIdle;
-
-  cacheSemGive(__FUNCTION__, "Updated a cached subscription");
-  return r;
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
 // mqttInfoFromDbTree -
 //
 static bool mqttInfoFromDbTree(KjNode* dbSubscriptionP, KjNode* uriP, MqttInfo* miP)
@@ -1072,22 +488,18 @@ static void mqttDisconnectFromInfo(MqttInfo* miP)
 //
 // -----------------------------------------------------------------------------
 //
-// newSubCacheItemUpdate - refresh the item in the NEW sub cache after a PATCH
+// cachedSubscriptionRefresh - refresh the cached item after a PATCH
 //
 // The patched DB-model tree is run through the very same dbModelToApiSubscription
 // that populates the cache at startup, so the cached tree can not drift in shape
 // from the one built there. It is handed a clone, as that function rewrites the
 // tree it is given.
 //
-// The new cache is not consulted yet, so a failure here is logged, not fatal.
+// This is ALL the cache maintenance a PATCH needs - a removal included: the item is
+// rebuilt from the patched subscription, so there is nothing to undo member by member.
 //
-static void newSubCacheItemUpdate(const char* subscriptionId, KjNode* dbSubscriptionP)
+static void cachedSubscriptionRefresh(SubCacheItem* sciP, const char* subscriptionId, KjNode* dbSubscriptionP)
 {
-  SubCacheItem* sciP = subCacheItemLookup(orionldState.tenantP->subCache, subscriptionId);
-
-  if (sciP == NULL)
-    return;  // Nothing cached (a subscription created before the new cache was wired in, or another tenant)
-
   QNode*               qNodeP       = NULL;
   KjNode*              coordinatesP = NULL;
   KjNode*              contextNodeP = NULL;
@@ -1309,13 +721,13 @@ bool orionldPatchSubscription(void)
   // modified.
   // ngsildSubscriptionPatch() performs that modification.
   //
-  CachedSubscription*  cSubP = NULL;
+  SubCacheItem*        sciP  = NULL;
   PernotSubscription*  pSubP = NULL;
 
   if (subWasPernot == false)
   {
-    cSubP = subCacheItemLookup(orionldState.tenantP->tenant, subscriptionId);
-    if (cSubP == NULL)
+    sciP = subCacheItemLookup(orionldState.tenantP->subCache, subscriptionId);
+    if (sciP == NULL)
     {
       orionldError(OrionldResourceNotFound, "Subscription not found", subscriptionId, 404);
       return false;
@@ -1331,7 +743,7 @@ bool orionldPatchSubscription(void)
     }
   }
 
-  if (ngsildSubscriptionPatch(dbSubscriptionP, cSubP, orionldState.requestTree, qP, geoqP, qRenderedForDb) == false)
+  if (ngsildSubscriptionPatch(dbSubscriptionP, orionldState.requestTree, qP, geoqP, qRenderedForDb) == false)
   {
     if (qNodeP != NULL)
       qRelease(qNodeP);
@@ -1404,10 +816,15 @@ bool orionldPatchSubscription(void)
   // Modify the subscription in the subscription cache
   if (subWasPernot == false)
   {
-    if (subCacheItemUpdate(orionldState.tenantP, subscriptionId, patchBody, geoCoordinatesP, qNodeP, qRenderedForDb, showChangesP) == false)
-      KT_E("Internal Error (unable to update the cached subscription '%s' after a PATCH)", subscriptionId);
+    //
+    // The cached item is rebuilt from the patched DB tree, so the QNode that
+    // pCheckSubscription built for this request has no owner - the cache compiles
+    // its own from "ldQ".
+    //
+    if (qNodeP != NULL)
+      qRelease(qNodeP);
 
-    newSubCacheItemUpdate(subscriptionId, dbSubscriptionP);
+    cachedSubscriptionRefresh(sciP, subscriptionId, dbSubscriptionP);
   }
   else
   {

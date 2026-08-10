@@ -35,7 +35,8 @@ extern "C"
 #include "common/statistics.h"
 #include "common/limits.h"
 #include "alarmMgr/alarmMgr.h"
-#include "cache/subCache.h"
+#include "orionld/types/SubCacheItem.h"                               // SubCacheItem
+#include "orionld/subCache/subCacheItemLookup.h"                      // subCacheItemLookupByTenantName
 #include "orionld/subCache/subCacheItemStatsUpdate.h"                 // subCacheItemStatsUpdate
 #include "ngsi10/NotifyContextRequest.h"
 #include "rest/httpRequestSend.h"
@@ -114,9 +115,9 @@ static void* workerFunc(void* pSyncQ)
       char*                subscriptionId     = (char*) params->subscriptionId.c_str();
       const char*          tenant             = params->tenant.c_str();
       bool                 ngsildSubscription = false;
-      CachedSubscription*  subP               = subCacheItemLookup(tenant, subscriptionId);
+      SubCacheItem*        subP               = subCacheItemLookupByTenantName(tenant, subscriptionId);
 
-      if ((subP != NULL) && (subP->ldContext != ""))
+      if ((subP != NULL) && (subP->ngsild == true))
         ngsildSubscription = true;
 
       QueueStatistics::incOut();
