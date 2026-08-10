@@ -384,22 +384,21 @@ Location: /ngsi-ld/v1/entities/urn:E1
 {
     "entityId": "urn:E1",
     "notUpdated": [
-#SORT_START
-        {
-            "attributes": [
-                "P6"
-            ],
-            "detail": "Unable to connect to registrant",
-            "registrationId": "urn:R3",
-            "statusCode": 504,
-            "title": "Unable to send distributed request"
-        },
         {
             "attributes": [
                 "P3"
             ],
             "detail": "Unable to connect to registrant",
             "registrationId": "urn:R2",
+            "statusCode": 504,
+            "title": "Unable to send distributed request"
+        },
+        {
+            "attributes": [
+                "P6"
+            ],
+            "detail": "Unable to connect to registrant",
+            "registrationId": "urn:R3",
             "statusCode": 504,
             "title": "Unable to send distributed request"
         },
@@ -412,7 +411,6 @@ Location: /ngsi-ld/v1/entities/urn:E1
             "statusCode": 409,
             "title": "Error during Distributed Operation"
         }
-#SORT_END
     ],
     "updated": [
         "A1",

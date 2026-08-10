@@ -28,6 +28,7 @@ extern "C"
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjChildRemove
 #include "kjson/kjStringArraySort.h"                             // kjStringArraySort
+#include "kjson/kjArraySort.h"                                   // kjArraySort
 #include "kjson/kjChildCount.h"                                  // kjChildCount
 }
 
@@ -83,8 +84,16 @@ void responseFix(KjNode* responseBody, DistOpType operation, int okCode, const c
   }
   else
   {
+    //
+    // Both arrays are SETS - the order of their items carries no meaning, and with
+    // distributed operations it is simply the order in which the answers came back.
+    // Sorting them makes the response deterministic.
+    //
     if (successes > 1)
-      kjStringArraySort(successArray);
+      kjStringArraySort(successArray);   // "updated" - an Array of attribute names
+
+    if (failures > 1)
+      kjArraySort(failureArray);         // "notUpdated" - an Array of objects
 
     orionldState.httpStatusCode = 207;
     orionldState.responseTree   = responseBody;
