@@ -111,10 +111,40 @@ echo
 echo
 
 
+#
+# Wait for the notification backlog to drain before sampling.
+#
+# The 100 notifications went to an endpoint that never answers, so their sockets are all
+# still open when the last PATCH returns. The broker closes them when it gives up waiting
+# for a response - see the "startTime + 4" in orionldAlterationsTreat - and only then is
+# the descriptor count back to what it was. Measured: the number sits 6 above the starting
+# point for four seconds and then drops back to EXACTLY the starting point.
+#
+# Sampling right away therefore measures the backlog, not a leak, and it did so with zero
+# margin - the transient is 6 and the test fails at 7 - so it failed whenever the starting
+# sample happened to land one lower.
+#
+# A real leak never drains, so the loop below simply runs out of attempts and the
+# comparison fails, which is the whole point of the test.
+#
+typeset -i fd2
+typeset -i settle
+settle=0
+while [ $settle -lt 20 ]
+do
+  sleep 1
+  orionCurl --url /ngsi-ld/ex/v1/version > /dev/null 2>&1
+  fd2=$(grep "Next File Descriptor" /tmp/orionCurl.response | awk -F: '{ print $2 }' | tr -d ' ,')
+  if [ $fd2 -le $fd1 ]
+  then
+    break
+  fi
+  settle=$settle+1
+done
+
 echo "05. Ask broker for 'ngsi-ld version' - to see the open FDs"
 echo "=========================================================="
 orionCurl --url /ngsi-ld/ex/v1/version
-typeset -i fd2
 fd2=$(grep "Next File Descriptor" /tmp/orionCurl.response | awk -F: '{ print $2 }' | tr -d ' ,')
 echo
 echo
