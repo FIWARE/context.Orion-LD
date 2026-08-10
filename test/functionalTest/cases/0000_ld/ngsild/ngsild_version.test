@@ -91,7 +91,7 @@ Date: REGEX(.*)
   "kalloc version": "REGEX(.*)",
   "kbase version": "REGEX(.*)",
   "khash version": "REGEX(.*)",
-  "kjson version": "0.11.2",
+  "kjson version": "0.12.0",
   "kprom version": "0.1.0",
   "ktrace version": "REGEX(.*)",
   "libcurl version": REGEX(.*),
