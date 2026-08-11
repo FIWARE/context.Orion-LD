@@ -57,7 +57,8 @@ extern "C"
 
 #include "orionld/types/SubCacheItem.h"                        // SubCacheItem
 #include "orionld/types/MqttInfo.h"                            // MqttInfo
-#include "orionld/subCache/subCacheItemLookup.h"               // subCacheItemLookupByTenantName
+#include "orionld/types/OrionldTenant.h"                       // OrionldTenant
+#include "orionld/subCache/subCacheItemLookup.h"               // subCacheItemLookup
 #include "orionld/http/http.h"                                 // LINK_REL_AND_TYPE
 #include "orionld/legacyDriver/kjTreeFromNotification.h"       // kjTreeFromNotification
 #include "orionld/kjTree/kjGeojsonEntitiesTransform.h"         // kjGeojsonEntitiesTransform
@@ -91,7 +92,7 @@ void Notifier::sendNotifyContextRequest
 (
     NotifyContextRequest*            ncrP,
     const ngsiv2::HttpInfo&          httpInfo,
-    const std::string&               tenant,
+    OrionldTenant*                   tenantP,
     const char*                      xauthToken,
     const std::string&               fiwareCorrelator,
     OrionldRenderFormat              renderFormat,
@@ -104,7 +105,7 @@ void Notifier::sendNotifyContextRequest
 
   std::vector<SenderThreadParams*>* paramsV = Notifier::buildSenderParams(ncrP,
                                                                           httpInfo,
-                                                                          tenant,
+                                                                          tenantP,
                                                                           xauthToken,
                                                                           fiwareCorrelator,
                                                                           renderFormat,
@@ -144,7 +145,7 @@ static std::vector<SenderThreadParams*>* buildSenderParamsCustom
     const SubscriptionId&                subscriptionId,
     const ContextElementResponseVector&  cv,
     const ngsiv2::HttpInfo&              httpInfo,
-    const std::string&                   tenant,
+    OrionldTenant*                       tenantP,
     const char*                          xauthToken,
     const std::string&                   fiwareCorrelator,
     OrionldRenderFormat                  renderFormat,
@@ -324,7 +325,8 @@ static std::vector<SenderThreadParams*>* buildSenderParamsCustom
     params->port             = port;
     params->protocol         = protocol;
     params->verb             = method;
-    params->tenant           = tenant;
+    params->tenant           = tenantP->tenant;
+    params->tenantP          = tenantP;
     params->servicePath      = ce.entityId.servicePath;
     params->xauthToken       = xauthToken;
     params->resource         = uri;
@@ -386,7 +388,7 @@ std::vector<SenderThreadParams*>* Notifier::buildSenderParams
 (
   NotifyContextRequest*            ncrP,
   const ngsiv2::HttpInfo&          httpInfo,
-  const std::string&               tenant,
+  OrionldTenant*                   tenantP,
   const char*                      xauthToken,
   const std::string&               fiwareCorrelator,
   OrionldRenderFormat              renderFormat,
@@ -427,7 +429,7 @@ std::vector<SenderThreadParams*>* Notifier::buildSenderParams
       return buildSenderParamsCustom(ncrP->subscriptionId,
                                      ncrP->contextElementResponseVector,
                                      httpInfo,
-                                     tenant,
+                                     tenantP,
                                      xauthToken,
                                      fiwareCorrelator,
                                      renderFormat,
@@ -476,7 +478,7 @@ std::vector<SenderThreadParams*>* Notifier::buildSenderParams
       payloadString = ncrP->toJson(renderFormat, attrsOrder, metadataFilter, blackList);
     else
     {
-      subP = subCacheItemLookupByTenantName(tenant.c_str(), ncrP->subscriptionId.c_str());
+      subP = subCacheItemLookup(tenantP->subCache, ncrP->subscriptionId.c_str());
       if (subP == NULL)
       {
         KT_E("Unable to find subscription: %s", ncrP->subscriptionId.c_str());
@@ -560,7 +562,8 @@ std::vector<SenderThreadParams*>* Notifier::buildSenderParams
     params->port             = port;
     params->protocol         = protocol;
     params->verb             = verbToString(verb);
-    params->tenant           = tenant;
+    params->tenant           = tenantP->tenant;
+    params->tenantP          = tenantP;
     params->servicePath      = spathList;
     params->xauthToken       = (xauthToken == NULL)? "" : xauthToken;
     params->resource         = uriPath;
@@ -598,7 +601,7 @@ std::vector<SenderThreadParams*>* Notifier::buildSenderParams
 
     if (subP == NULL)
     {
-      subP = subCacheItemLookupByTenantName(tenant.c_str(), ncrP->subscriptionId.c_str());
+      subP = subCacheItemLookup(tenantP->subCache, ncrP->subscriptionId.c_str());
 
       if (subP != NULL)
         subContext = ((subP->contextP != NULL) && (subP->contextP->url != NULL))? subP->contextP->url : NULL;

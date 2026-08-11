@@ -39,15 +39,4 @@
 //
 extern SubCacheItem* subCacheItemLookup(SubCache* scP, const char* subId);
 
-
-
-// -----------------------------------------------------------------------------
-//
-// subCacheItemLookupByTenantName - the same, for callers that have the tenant NAME
-//
-// The NGSIv2 notification machinery carries the tenant as a string - that is what
-// SenderThreadParams holds - while the sub cache hangs off the OrionldTenant.
-//
-extern SubCacheItem* subCacheItemLookupByTenantName(const char* tenantName, const char* subId);
-
 #endif  // SRC_LIB_ORIONLD_SUBCACHE_SUBCACHEITEMLOOKUP_H_

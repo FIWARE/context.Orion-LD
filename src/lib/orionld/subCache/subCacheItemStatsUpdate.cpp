@@ -37,7 +37,6 @@ extern "C"
 #include "orionld/types/SubCacheItem.h"                          // SubCacheItem
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/traceLevels.h"                          // KTrace levels
-#include "orionld/common/orionldTenantLookup.h"                  // orionldTenantLookup
 #include "orionld/mongoc/mongocSubCountersUpdate.h"              // mongocSubCountersUpdate
 #include "orionld/subCache/subCacheItemLookup.h"                 // subCacheItemLookup
 #include "orionld/subCache/subCacheItemStatsUpdate.h"            // Own interface
@@ -49,7 +48,8 @@ extern "C"
 // subCacheItemStatsUpdate - record the outcome of a notification attempt
 //
 // The NGSIv2 notification threads (senderThread, QueueWorkers) know the outcome of
-// a notification but not the subscription it belongs to - only its tenant and id.
+// a notification but not the subscription it belongs to - only its tenant and id
+// (SenderThreadParams carries both; those threads have no request of their own).
 // So the item is looked up here, and the same three fields the NGSI-LD path sets
 // (notificationSuccess/notificationFailure) are set.
 //
@@ -57,18 +57,16 @@ extern "C"
 // is dispatched (addTriggeredSubscriptions' caller), so counting here as well would
 // count every notification twice.
 //
-void subCacheItemStatsUpdate(const char* tenantName, const char* subscriptionId, bool ngsild, bool failure)
+void subCacheItemStatsUpdate(OrionldTenant* tenantP, const char* subscriptionId, bool ngsild, bool failure)
 {
   struct timespec ts;
 
   kTimeGet(&ts);
   double now = ts.tv_sec + ts.tv_nsec / 1000000000.0;
 
-  OrionldTenant* tenantP = orionldTenantLookup(tenantName);
-
   if (tenantP == NULL)
   {
-    KT_W("no such tenant '%s' (subId: '%s') - counters/timestamps lost", tenantName, subscriptionId);
+    KT_W("no tenant (subId: '%s') - counters/timestamps lost", subscriptionId);
     return;
   }
 
@@ -88,7 +86,7 @@ void subCacheItemStatsUpdate(const char* tenantName, const char* subscriptionId,
 
   if (tenantP->subCache == NULL)
   {
-    KT_W("no sub cache for tenant '%s' (subId: '%s') - counters/timestamps lost", tenantName, subscriptionId);
+    KT_W("no sub cache for tenant '%s' (subId: '%s') - counters/timestamps lost", tenantP->tenant, subscriptionId);
     return;
   }
 

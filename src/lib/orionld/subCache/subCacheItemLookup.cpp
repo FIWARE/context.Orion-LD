@@ -27,8 +27,6 @@
 
 #include "orionld/types/SubCache.h"                              // SubCache
 #include "orionld/types/SubCacheItem.h"                          // SubCacheItem
-#include "orionld/types/OrionldTenant.h"                         // OrionldTenant
-#include "orionld/common/orionldTenantLookup.h"                  // orionldTenantLookup
 #include "orionld/subCache/subCacheItemLookup.h"                 // Own interface
 
 
@@ -49,20 +47,4 @@ SubCacheItem* subCacheItemLookup(SubCache* scP, const char* subId)
   }
 
   return NULL;
-}
-
-
-
-// -----------------------------------------------------------------------------
-//
-// subCacheItemLookupByTenantName -
-//
-SubCacheItem* subCacheItemLookupByTenantName(const char* tenantName, const char* subId)
-{
-  OrionldTenant* tenantP = orionldTenantLookup(tenantName);
-
-  if (tenantP == NULL)
-    return NULL;
-
-  return subCacheItemLookup(tenantP->subCache, subId);
 }

@@ -1922,7 +1922,7 @@ static bool processOnChangeConditionForUpdateContext
   ncr.subscriptionId.set(subId);
   getNotifier()->sendNotifyContextRequest(&ncr,
                                           httpInfo,
-                                          tenantP->tenant,
+                                          tenantP,
                                           xauthToken,
                                           fiwareCorrelator,
                                           renderFormat,

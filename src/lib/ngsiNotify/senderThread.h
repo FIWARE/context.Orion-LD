@@ -29,6 +29,8 @@
 
 #include "common/MimeType.h"
 
+#include "orionld/types/OrionldTenant.h"                            // OrionldTenant
+
 
 
 /* ****************************************************************************
@@ -50,6 +52,7 @@ typedef struct SenderThreadParams
   std::string                        protocol;
   std::string                        verb;
   std::string                        tenant;
+  OrionldTenant*                     tenantP;            // The same tenant - the notification threads have no request to take it from
   std::string                        servicePath;
   std::string                        xauthToken;
   std::string                        resource;

@@ -68,7 +68,7 @@ void QueueNotifier::sendNotifyContextRequest
 (
   NotifyContextRequest*            ncr,
   const ngsiv2::HttpInfo&          httpInfo,
-  const std::string&               tenant,
+  OrionldTenant*                   tenantP,
   const char*                      xauthToken,
   const std::string&               fiwareCorrelator,
   OrionldRenderFormat              renderFormat,
@@ -79,7 +79,7 @@ void QueueNotifier::sendNotifyContextRequest
 {
   std::vector<SenderThreadParams*>* paramsV = Notifier::buildSenderParams(ncr,
                                                                           httpInfo,
-                                                                          tenant,
+                                                                          tenantP,
                                                                           xauthToken,
                                                                           fiwareCorrelator,
                                                                           renderFormat,

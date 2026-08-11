@@ -36,7 +36,7 @@ extern "C"
 #include "common/limits.h"
 #include "alarmMgr/alarmMgr.h"
 #include "orionld/types/SubCacheItem.h"                               // SubCacheItem
-#include "orionld/subCache/subCacheItemLookup.h"                      // subCacheItemLookupByTenantName
+#include "orionld/subCache/subCacheItemLookup.h"                      // subCacheItemLookup
 #include "orionld/subCache/subCacheItemStatsUpdate.h"                 // subCacheItemStatsUpdate
 #include "ngsi10/NotifyContextRequest.h"
 #include "rest/httpRequestSend.h"
@@ -113,9 +113,9 @@ static void* workerFunc(void* pSyncQ)
       size_t               estimatedQSize;
       SenderThreadParams*  params             = (*paramsV)[ix];
       char*                subscriptionId     = (char*) params->subscriptionId.c_str();
-      const char*          tenant             = params->tenant.c_str();
       bool                 ngsildSubscription = false;
-      SubCacheItem*        subP               = subCacheItemLookupByTenantName(tenant, subscriptionId);
+      SubCache*            scP                = (params->tenantP != NULL)? params->tenantP->subCache : NULL;
+      SubCacheItem*        subP               = subCacheItemLookup(scP, subscriptionId);
 
       if ((subP != NULL) && (subP->ngsild == true))
         ngsildSubscription = true;
@@ -209,7 +209,7 @@ static void* workerFunc(void* pSyncQ)
           alarmMgr.notificationErrorReset(url);
 
           if (params->registration == false)
-            subCacheItemStatsUpdate(params->tenant.c_str(), params->subscriptionId.c_str(), ngsildSubscription, false);
+            subCacheItemStatsUpdate(params->tenantP, params->subscriptionId.c_str(), ngsildSubscription, false);
         }
         else
         {
@@ -217,7 +217,7 @@ static void* workerFunc(void* pSyncQ)
           alarmMgr.notificationError(url, "notification failure for queue worker");
 
           if (params->registration == false)
-            subCacheItemStatsUpdate(params->tenant.c_str(), params->subscriptionId.c_str(), ngsildSubscription, true);
+            subCacheItemStatsUpdate(params->tenantP, params->subscriptionId.c_str(), ngsildSubscription, true);
         }
       }
 

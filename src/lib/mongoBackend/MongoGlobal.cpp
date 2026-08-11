@@ -2246,7 +2246,7 @@ static bool processOnChangeConditionForSubscription
         /* Send notification */
         getNotifier()->sendNotifyContextRequest(&ncr,
                                                 notifyHttpInfo,
-                                                tenantP->tenant,
+                                                tenantP,
                                                 xauthToken,
                                                 fiwareCorrelator,
                                                 renderFormat,
@@ -2265,7 +2265,7 @@ static bool processOnChangeConditionForSubscription
     {
       getNotifier()->sendNotifyContextRequest(&ncr,
                                               notifyHttpInfo,
-                                              tenantP->tenant,
+                                              tenantP,
                                               xauthToken,
                                               fiwareCorrelator,
                                               renderFormat,

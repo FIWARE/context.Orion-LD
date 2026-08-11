@@ -25,6 +25,7 @@
 *
 * Author: Ken Zangelin
 */
+#include "orionld/types/OrionldTenant.h"                         // OrionldTenant
 
 
 
@@ -32,6 +33,6 @@
 //
 // subCacheItemStatsUpdate - record the outcome of a notification attempt
 //
-extern void subCacheItemStatsUpdate(const char* tenantName, const char* subscriptionId, bool ngsild, bool failure);
+extern void subCacheItemStatsUpdate(OrionldTenant* tenantP, const char* subscriptionId, bool ngsild, bool failure);
 
 #endif  // SRC_LIB_ORIONLD_SUBCACHE_SUBCACHEITEMSTATSUPDATE_H_

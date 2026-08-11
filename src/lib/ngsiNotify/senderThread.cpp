@@ -33,7 +33,7 @@ extern "C"
 #include "rest/httpRequestSend.h"
 #include "ngsiNotify/senderThread.h"
 #include "orionld/types/SubCacheItem.h"                               // SubCacheItem
-#include "orionld/subCache/subCacheItemLookup.h"                      // subCacheItemLookupByTenantName
+#include "orionld/subCache/subCacheItemLookup.h"                      // subCacheItemLookup
 #include "orionld/subCache/subCacheItemStatsUpdate.h"                 // subCacheItemStatsUpdate
 #include "orionld/common/orionldState.h"
 #include "orionld/mqtt/mqttNotification.h"
@@ -123,7 +123,8 @@ void* startSenderThread(void* p)
         params->toFree = NULL;
       }
 
-      SubCacheItem*        subP               = subCacheItemLookupByTenantName(params->tenant.c_str(), params->subscriptionId.c_str());
+      SubCache*            scP                = (params->tenantP != NULL)? params->tenantP->subCache : NULL;
+      SubCacheItem*        subP               = subCacheItemLookup(scP, params->subscriptionId.c_str());
       bool                 ngsildSubscription = ((subP != NULL) && (subP->ngsild == true))? true : false;
 
       if (r == 0)
@@ -132,12 +133,12 @@ void* startSenderThread(void* p)
         alarmMgr.notificationErrorReset(url);
 
         if (params->registration == false)
-          subCacheItemStatsUpdate(params->tenant.c_str(), params->subscriptionId.c_str(), ngsildSubscription, false);
+          subCacheItemStatsUpdate(params->tenantP, params->subscriptionId.c_str(), ngsildSubscription, false);
       }
       else
       {
         if (params->registration == false)
-          subCacheItemStatsUpdate(params->tenant.c_str(), params->subscriptionId.c_str(), ngsildSubscription, true);
+          subCacheItemStatsUpdate(params->tenantP, params->subscriptionId.c_str(), ngsildSubscription, true);
       }
     }
     else
