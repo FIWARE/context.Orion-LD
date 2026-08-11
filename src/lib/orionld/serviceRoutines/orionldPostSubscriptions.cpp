@@ -37,8 +37,6 @@ extern "C"
 #include "kjson/kjChildPrepend.h"                              // kjChildPrepend
 }
 
-#include "cache/subCache.h"                                    // subCacheItemLookup, CachedSubscription
-
 #include "orionld/types/QNode.h"                               // QNode
 #include "orionld/types/PernotSubscription.h"                  // PernotSubscription
 #include "orionld/types/PernotSubCache.h"                      // PernotSubCache
@@ -48,7 +46,6 @@ extern "C"
 #include "orionld/common/orionldError.h"                       // orionldError
 #include "orionld/common/traceLevels.h"                        // KTrace level
 #include "orionld/common/uuidGenerate.h"                       // uuidGenerate
-#include "orionld/common/subCacheApiSubscriptionInsert.h"      // subCacheApiSubscriptionInsert
 #include "orionld/types/SubCacheItem.h"                        // SubCacheItem
 #include "orionld/subCache/subCacheItemAdd.h"                  // subCacheItemAdd
 #include "orionld/subCache/subCacheItemLookup.h"               // subCacheItemLookup (the new sub cache)
@@ -415,22 +412,9 @@ bool orionldPostSubscriptions(void)
     mqttSubscription = true;
   }
 
-  // sub to cache - BEFORE we change the tree to be according to the DB Model (as the DB model might change some day ...)
-  CachedSubscription* cSubP = NULL;
   PernotSubscription* pSubP = NULL;
 
-  if (timeInterval == 0)
-  {
-    cSubP = subCacheApiSubscriptionInsert(subP,
-                                          qTree,
-                                          geoCoordinatesP,
-                                          orionldState.contextP,
-                                          orionldState.tenantP->tenant,
-                                          showChangesP,
-                                          sysAttrsP,
-                                          renderFormat);
-  }
-  else
+  if (timeInterval != 0)
   {
     // Add subscription to the pernot-cache
     KT_T(KtPernot, "qRenderedForDb: '%s'", qRenderedForDb);
@@ -519,13 +503,10 @@ bool orionldPostSubscriptions(void)
     if (mqttSubscription == true)
       mqttDisconnect(mqtts, mqttHost, mqttPort, mqttUser, mqttPassword, mqttVersion);
 
-    if (cSubP != NULL)
-      subCacheItemRemove(cSubP);
-    else
-      pernotItemRelease(pSubP);
-
     if (sciP != NULL)
       subCacheItemRemove(orionldState.tenantP->subCache, subscriptionId);
+    else if (pSubP != NULL)
+      pernotItemRelease(pSubP);
 
     if (qTree != NULL)
       qRelease(qTree);

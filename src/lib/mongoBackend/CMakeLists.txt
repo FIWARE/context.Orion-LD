@@ -37,7 +37,6 @@ SET (SOURCES
     mongoRegistrationCreate.cpp
     mongoRegistrationDelete.cpp
     connectionOperations.cpp
-    mongoSubCache.cpp
     safeMongo.cpp    
     compoundResponses.cpp
     location.cpp
@@ -65,7 +64,6 @@ SET (HEADERS
     mongoRegistrationCreate.h
     mongoRegistrationDelete.h
     connectionOperations.h
-    mongoSubCache.h
     safeMongo.h
     compoundResponses.h
     location.h

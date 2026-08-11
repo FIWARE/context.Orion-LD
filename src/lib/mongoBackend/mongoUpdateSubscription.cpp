@@ -38,7 +38,6 @@ extern "C"
 #include "apiTypesV2/SubscriptionUpdate.h"
 #include "rest/OrionError.h"
 #include "alarmMgr/alarmMgr.h"
-#include "cache/subCache.h"
 #include "orionld/common/orionldState.h"             // orionldState
 
 #include "mongoBackend/connectionOperations.h"
@@ -46,7 +45,6 @@ extern "C"
 #include "mongoBackend/MongoCommonSubscription.h"
 #include "mongoBackend/dbConstants.h"
 #include "mongoBackend/safeMongo.h"
-#include "mongoBackend/mongoSubCache.h"
 #include "orionld/subCache/subCacheItemFromDb.h"             // subCacheItemFromDb (the new sub cache)
 #include "orionld/subCache/subCacheItemLookup.h"             // subCacheItemLookup
 #include "orionld/types/SubCacheItem.h"                      // SubCacheItem
@@ -523,7 +521,7 @@ static void setCount(long long inc, const BSONObj& subOrig, BSONObjBuilder* b)
 *   of the notification and the resulting values are stored in the sub-cache only,
 *   to be added to mongo when a sub cache refresh is performed.
 */
-static void setLastNotification(const BSONObj& subOrig, CachedSubscription* subCacheP, BSONObjBuilder* b)
+static void setLastNotification(const BSONObj& subOrig, SubCacheItem* sciP, BSONObjBuilder* b)
 {
   //
   // FIXME P1: if CSUB_LASTNOTIFICATION is not in the original doc, it will also not be in the new doc.
@@ -542,9 +540,9 @@ static void setLastNotification(const BSONObj& subOrig, CachedSubscription* subC
   // Compare with 'lastNotificationTime', that might come from the sub-cache.
   // If the cached value of lastNotificationTime is higher, then use it.
   //
-  if (subCacheP != NULL && (subCacheP->lastNotificationTime > lastNotification))
+  if ((sciP != NULL) && (sciP->lastNotificationTime > lastNotification))
   {
-    lastNotification = subCacheP->lastNotificationTime;
+    lastNotification = sciP->lastNotificationTime;
   }
 
   setLastNotification(lastNotification, b);
@@ -556,7 +554,7 @@ static void setLastNotification(const BSONObj& subOrig, CachedSubscription* subC
 *
 * setLastFailure -
 */
-static double setLastFailure(const BSONObj& subOrig, CachedSubscription* subCacheP, BSONObjBuilder* b)
+static double setLastFailure(const BSONObj& subOrig, SubCacheItem* sciP, BSONObjBuilder* b)
 {
   double lastFailure = subOrig.hasField(CSUB_LASTFAILURE)? getNumberFieldAsDoubleF(&subOrig, CSUB_LASTFAILURE, true) : 0;
 
@@ -564,9 +562,9 @@ static double setLastFailure(const BSONObj& subOrig, CachedSubscription* subCach
   // Compare with 'lastFailure' from the sub-cache.
   // If the cached value of lastFailure is higher, then use it.
   //
-  if ((subCacheP != NULL) && (subCacheP->lastFailure > lastFailure))
+  if ((sciP != NULL) && (sciP->lastFailure > lastFailure))
   {
-    lastFailure = subCacheP->lastFailure;
+    lastFailure = sciP->lastFailure;
   }
 
   setLastFailure(lastFailure, b);
@@ -580,7 +578,7 @@ static double setLastFailure(const BSONObj& subOrig, CachedSubscription* subCach
 *
 * setLastSuccess -
 */
-static double setLastSuccess(const BSONObj& subOrig, CachedSubscription* subCacheP, BSONObjBuilder* b)
+static double setLastSuccess(const BSONObj& subOrig, SubCacheItem* sciP, BSONObjBuilder* b)
 {
   double lastSuccess = getNumberFieldAsDoubleF(&subOrig, CSUB_LASTSUCCESS, true);
 
@@ -588,9 +586,9 @@ static double setLastSuccess(const BSONObj& subOrig, CachedSubscription* subCach
   // Compare with 'lastSuccess' from the sub-cache.
   // If the cached value of lastSuccess is higher, then use it.
   //
-  if ((subCacheP != NULL) && (subCacheP->lastSuccess > lastSuccess))
+  if ((sciP != NULL) && (sciP->lastSuccess > lastSuccess))
   {
-    lastSuccess = subCacheP->lastSuccess;
+    lastSuccess = sciP->lastSuccess;
   }
 
   setLastSuccess(lastSuccess, b);
@@ -709,139 +707,6 @@ static void setMetadata(const SubscriptionUpdate& subUp, const BSONObj& subOrig,
 
 /* ****************************************************************************
 *
-* updateInCache -
-*/
-void updateInCache
-(
-  const BSONObj&             doc,
-  const SubscriptionUpdate&  subUp,
-  OrionldTenant*             tenantP,
-  double                     lastNotification,
-  double                     lastFailure,
-  double                     lastSuccess
-)
-{
-  //
-  // StringFilter in Scope?
-  //
-  // Any Scope of type SCOPE_TYPE_SIMPLE_QUERY in subUp.restriction.scopeVector?
-  // If so, set it as string filter to the sub-cache item
-  //
-  StringFilter*  stringFilterP   = NULL;
-  StringFilter*  mdStringFilterP = NULL;
-
-  for (unsigned int ix = 0; ix < subUp.restriction.scopeVector.size(); ++ix)
-  {
-    if (subUp.restriction.scopeVector[ix]->type == SCOPE_TYPE_SIMPLE_QUERY)
-    {
-      stringFilterP = subUp.restriction.scopeVector[ix]->stringFilterP;
-    }
-
-    if (subUp.restriction.scopeVector[ix]->type == SCOPE_TYPE_SIMPLE_QUERY_MD)
-    {
-      mdStringFilterP = subUp.restriction.scopeVector[ix]->mdStringFilterP;
-    }
-  }
-
-  //
-  // Modification of the subscription cache
-  //
-  // The subscription "before this update" is looked up in cache and referenced by 'cSubP'.
-  // The "updated subscription information" is in 'newSubObject' (mongo BSON object format).
-  //
-  // All we need to do now for the cache is to:
-  //   1. Remove 'cSubP' from sub-cache (if present)
-  //   2. Create 'newSubObject' in sub-cache (if applicable)
-  //
-  // The subscription is already updated in mongo.
-  //
-  //
-  // There are four different scenarios here:
-  //   1. Old sub was in cache, new sub enters cache
-  //   2. Old sub was NOT in cache, new sub enters cache
-  //   3. Old subwas in cache, new sub DOES NOT enter cache
-  //   4. Old sub was NOT in cache, new sub DOES NOT enter cache
-  //
-  // This is resolved by two separate functions, one that removes the old one,
-  // if found (subCacheItemLookup+subCacheItemRemove), and the other one that inserts the sub,
-  // IF it should be inserted (subCacheItemInsert).
-  // If inserted, subCacheUpdateStatisticsIncrement is called to update the statistics counter of insertions.
-  //
-
-
-  // 0. Lookup matching subscription in subscription-cache
-
-  cacheSemTake(__FUNCTION__, "Updating cached subscription");
-
-  //
-  // Second lookup for the same in the mongo update subscription process.
-  // However, we have to do it, as the item in the cache could have been changed in the meanwhile.
-  //
-  KT_T(KtLegacy, "update: %s", doc.toString().c_str());
-
-  CachedSubscription* subCacheP        = subCacheItemLookup(tenantP->tenant, subUp.id.c_str());
-  char*               servicePathCache = (char*) ((subCacheP == NULL)? "" : subCacheP->servicePath);
-  std::string         q;
-  std::string         mq;
-  std::string         geom;
-  std::string         coords;
-  std::string         georel;
-  OrionldRenderFormat renderFormat = RF_NORMALIZED;  // Default value
-
-  if (doc.hasField(CSUB_FORMAT))
-  {
-    renderFormat = stringToRenderFormat(getStringFieldF(&doc, CSUB_FORMAT));
-  }
-
-  if (doc.hasField(CSUB_EXPR))
-  {
-    BSONObj expr;
-    getObjectFieldF(&expr, &doc, CSUB_EXPR);
-
-    q      = expr.hasField(CSUB_EXPR_Q)?      getStringFieldF(&expr, CSUB_EXPR_Q)      : "";
-    mq     = expr.hasField(CSUB_EXPR_MQ)?     getStringFieldF(&expr, CSUB_EXPR_MQ)     : "";
-    geom   = expr.hasField(CSUB_EXPR_GEOM)?   getStringFieldF(&expr, CSUB_EXPR_GEOM)   : "";
-    coords = expr.hasField(CSUB_EXPR_COORDS)? getStringFieldF(&expr, CSUB_EXPR_COORDS) : "";
-    georel = expr.hasField(CSUB_EXPR_GEOREL)? getStringFieldF(&expr, CSUB_EXPR_GEOREL) : "";
-  }
-
-
-  int mscInsert = mongoSubCacheItemInsert(tenantP->tenant,
-                                          doc,
-                                          subUp.id.c_str(),
-                                          servicePathCache,
-                                          lastNotification,
-                                          lastFailure,
-                                          lastSuccess,
-                                          doc.hasField(CSUB_EXPIRATION)? getNumberFieldAsDoubleF(&doc, CSUB_EXPIRATION, true) : 0,
-                                          doc.hasField(CSUB_STATUS)? getStringFieldF(&doc, CSUB_STATUS) : STATUS_ACTIVE,
-                                          q,
-                                          mq,
-                                          geom,
-                                          coords,
-                                          georel,
-                                          stringFilterP,
-                                          mdStringFilterP,
-                                          renderFormat);
-
-  if (mscInsert == 0)  // 0: Insertion was really made
-  {
-    subCacheUpdateStatisticsIncrement();
-
-    if (subCacheP != NULL)
-    {
-      KT_T(KtLegacy, "Calling subCacheItemRemove");
-      subCacheItemRemove(subCacheP);
-    }
-  }
-
-  cacheSemGive(__FUNCTION__, "Updating cached subscription");
-}
-
-
-
-/* ****************************************************************************
-*
 * mongoUpdateSubscription -
 *
 * Returns:
@@ -914,12 +779,10 @@ std::string mongoUpdateSubscription
   double              lastNotification = 0;
   double              lastFailure      = 0;
   double              lastSuccess      = 0;
-  CachedSubscription* subCacheP        = NULL;
+  SubCacheItem*       sciP             = NULL;
 
   if (!noCache)
-  {
-    subCacheP = subCacheItemLookup(tenantP->tenant, subUp.id.c_str());
-  }
+    sciP = subCacheItemLookup(tenantP->subCache, subUp.id.c_str());
 
   setExpiration(subUp, subOrig, &b);
   setHttpInfo(subUp, subOrig, &b);
@@ -948,16 +811,20 @@ std::string mongoUpdateSubscription
     lastNotification = orionldState.requestTime;
 
     // Update sub-cache
-    if (subCacheP != NULL)
+    if (sciP != NULL)
     {
       cacheSemTake(__FUNCTION__, "Updating count and last notification in cache subscription");
 
-      subCacheP->count                 += 1;  // 'count' to be reset later if DB operation OK
-      subCacheP->lastNotificationTime  = lastNotification;
+      //
+      // 'deltas.timesSent' is what has NOT yet been written to the database, and
+      // setCount adds it to what the database holds - so it is exactly the "inc".
+      // It is zeroed once the document has been written, further down.
+      //
+      sciP->deltas.timesSent      += 1;
+      sciP->lastNotificationTime   = lastNotification;
+      countInc                     = sciP->deltas.timesSent;
 
       cacheSemGive(__FUNCTION__, "Updating count and last notification in cache subscription");
-
-      countInc = subCacheP->count;  // already inc with +1
     }
 
     setLastNotification(lastNotification, &b);
@@ -965,12 +832,12 @@ std::string mongoUpdateSubscription
   }
   else
   {
-    setLastNotification(subOrig, subCacheP, &b);
+    setLastNotification(subOrig, sciP, &b);
     setCount(0, subOrig, &b);
   }
 
-  lastFailure = setLastFailure(subOrig, subCacheP, &b);
-  lastSuccess = setLastSuccess(subOrig, subCacheP, &b);
+  lastFailure = setLastFailure(subOrig, sciP, &b);
+  lastSuccess = setLastSuccess(subOrig, sciP, &b);
 
   KT_T(KtLegacy, "lastNotificationTime: %f", lastNotification);
   KT_T(KtLegacy, "lastFailure:          %f", lastFailure);
@@ -992,11 +859,12 @@ std::string mongoUpdateSubscription
     return "";
   }
 
-  // Update in cache
-  if (!noCache)
-  {
-    updateInCache(doc, subUp, tenantP, lastNotification, lastFailure, lastSuccess);
-  }
+  //
+  // The pending sent-counter has just gone into the document - it must not be
+  // counted a second time by the next counter flush.
+  //
+  if (sciP != NULL)
+    sciP->deltas.timesSent = 0;
 
   reqSemGive(__FUNCTION__, "ngsiv2 update subscription request", reqSemTaken);
 

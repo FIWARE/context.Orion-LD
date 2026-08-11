@@ -66,7 +66,6 @@
 #include <limits.h>
 
 #include "mongoBackend/MongoGlobal.h"
-#include "cache/subCache.h"
 #include "orionld/subCache/subCachesRefresh.h"                   // subCachesRefreshStart
 
 #include "parseArgs/parseArgs.h"
@@ -526,8 +525,6 @@ void exitFunc(void)
   // Take mongo req-sem ?
   KT_T(KtSubCache, "try-taking req semaphore");
   reqSemTryToTake();
-  KT_T(KtSubCache, "calling subCacheDestroy");
-  subCacheDestroy();
 #endif
 
   metricsMgr.release();
@@ -956,11 +953,6 @@ int main(int argC, char* argV[])
 
   if (noCache == false)
   {
-    subCacheInit(mtenant);
-
-    // Populate the subscription caches from the database
-    subCacheRefresh(false);
-
     if (subCacheInterval != 0)
       subCachesRefreshStart();
   }

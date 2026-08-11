@@ -40,7 +40,6 @@ extern "C"
 #include "rest/rest.h"
 #include "rest/restReply.h"
 #include "serviceRoutines/exitTreat.h"
-#include "cache/subCache.h"
 
 
 
@@ -87,19 +86,6 @@ std::string exitTreat
   }
   else
   {
-    if (subCacheState == ScsSynchronizing)
-    {
-      //
-      // Subscription Cache is busy doing a synchronization.
-      // Two secs should be enough for it to finish.
-      //
-      // Not very important anyway. This 'hack' is just to avoid
-      // false leaks in the valgrind test suite.
-      //
-      KT_W("Subscription cache is synchronizing, wait a few seconds before dying");
-      sleep(2);
-    }
-
     compV.clear();
     return "DIE";
   }

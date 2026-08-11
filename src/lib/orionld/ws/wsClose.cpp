@@ -32,8 +32,6 @@ extern "C"
 #include "ktrace/kTrace.h"                                       // KT_*
 }
 
-#include "cache/subCache.h"                                      // subCacheItemLookup
-#include "cache/CachedSubscription.h"                            // CachedSubscription
 
 #include "orionld/common/orionldState.h"                         // orionldState, orionldStateInit
 #include "orionld/common/tenantList.h"                           // tenant0
@@ -75,39 +73,29 @@ void wsClose(WsConnection* wsP)
   //
   if (wsP->subscriptionId != NULL)
   {
-    CachedSubscription* cSubP = subCacheItemLookup(wsP->tenantName, wsP->subscriptionId);
+    //
+    // Delete from MongoDB
+    // Don't call orionldStateInit() - MHD will call requestCompleted later
+    // and we must not overwrite the thread's orionldState.
+    // Just set tenantP for mongocConnectionGet (called inside mongocSubscriptionDelete).
+    //
+    orionldState.tenantP = &tenant0;  // TODO: look up tenant by wsP->tenantName
 
-    if (cSubP != NULL)
-    {
-      //
-      // Delete from MongoDB
-      // Don't call orionldStateInit() - MHD will call requestCompleted later
-      // and we must not overwrite the thread's orionldState.
-      // Just set tenantP for mongocConnectionGet (called inside mongocSubscriptionDelete).
-      //
-      orionldState.tenantP = &tenant0;  // TODO: look up tenant by wsP->tenantName
-
-      if (mongocSubscriptionDelete(wsP->subscriptionId) == false)
-        KT_W("Failed to delete subscription '%s' from DB on WS close", wsP->subscriptionId);
-      else
-        KT_T(StWs, "Deleted subscription '%s' from DB on WS close", wsP->subscriptionId);
-
-      // Remove from both sub-caches - the legacy one still notifies, the new one is what GET renders
-      subCacheItemRemove(cSubP);
-      subCacheItemRemove(orionldState.tenantP->subCache, wsP->subscriptionId);
-
-      // Release mongoc connection back to the pool
-      if (orionldState.mongoc.subscriptionsP != NULL)
-      {
-        mongoc_collection_destroy(orionldState.mongoc.subscriptionsP);
-        orionldState.mongoc.subscriptionsP = NULL;
-      }
-      mongocConnectionRelease();
-    }
+    if (mongocSubscriptionDelete(wsP->subscriptionId) == false)
+      KT_W("Failed to delete subscription '%s' from DB on WS close", wsP->subscriptionId);
     else
-    {
+      KT_T(StWs, "Deleted subscription '%s' from DB on WS close", wsP->subscriptionId);
+
+    if (subCacheItemRemove(orionldState.tenantP->subCache, wsP->subscriptionId) == false)
       KT_W("WS close: subscription '%s' not found in cache", wsP->subscriptionId);
+
+    // Release mongoc connection back to the pool
+    if (orionldState.mongoc.subscriptionsP != NULL)
+    {
+      mongoc_collection_destroy(orionldState.mongoc.subscriptionsP);
+      orionldState.mongoc.subscriptionsP = NULL;
     }
+    mongocConnectionRelease();
   }
 
   // Free the WebSocket stream

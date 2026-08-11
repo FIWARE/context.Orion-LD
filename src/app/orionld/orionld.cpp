@@ -70,7 +70,6 @@
 #include <mongo/version.h>                                  // MONGOCLIENT_VERSION
 
 #include "mongoBackend/MongoGlobal.h"
-#include "cache/subCache.h"
 #include "orionld/subCache/subCachesRefresh.h"                   // subCachesRefreshStart
 
 extern "C"
@@ -631,7 +630,6 @@ void exitFunc(void)
 #ifdef DEBUG
   // Take mongo req-sem ?
   reqSemTryToTake();
-  subCacheDestroy();
 #endif
 
   metricsMgr.release();
@@ -1359,7 +1357,6 @@ int main(int argC, char* argV[])
   // AFTER geosInit as well - a subscription with a "geoQ" compiles its geometry
   // as it enters the cache, and that needs the GEOS handle.
   //
-  // Populated but not yet consulted - the legacy sub cache is still in use.
   //
   subCachesInit();
 
@@ -1377,24 +1374,12 @@ int main(int argC, char* argV[])
   if (curl_global_init(CURL_GLOBAL_SSL) != 0)
     KT_X(1, "Fatal Error (could not initialize libcurl)");
 
-  if (noCache == false)
-  {
-    orionldStartup = true;
-    subCacheInit(multitenancy);
-
-    // Populate the subscription caches from the database
-    subCacheRefresh(false);
-
-    //
-    // -subCacheIval: poll the database for what other broker instances have done.
-    // The refresh is the NEW one - it updates each cached subscription in place
-    // instead of wiping the cache and rebuilding it.
-    //
-    if (subCacheInterval != 0)
-      subCachesRefreshStart();
-
-    orionldStartup = false;
-  }
+  //
+  // -subCacheIval: poll the database for what other broker instances have done.
+  // The caches themselves are already populated - subCachesInit did that, above.
+  //
+  if ((noCache == false) && (subCacheInterval != 0))
+    subCachesRefreshStart();
 
   dbInit(dbHost, dbName);  // Move to be next to mongocInit ?
 

@@ -36,7 +36,6 @@ extern "C"
 #include "orionld/types/QNode.h"                                 // QNode
 #include "orionld/common/orionldState.h"                         // mongocPool
 #include "orionld/common/traceLevels.h"                          // KTrace levels
-#include "orionld/common/subCacheApiSubscriptionInsert.h"        // subCacheApiSubscriptionInsert
 #include "orionld/pernot/pernotSubCacheAdd.h"                    // pernotSubCacheAdd
 #include "orionld/dbModel/dbModelToApiSubscription.h"            // dbModelToApiSubscription
 #include "orionld/context/orionldContextFromUrl.h"               // orionldContextFromUrl
@@ -109,21 +108,7 @@ bool mongocSubCachePopulateByTenant(OrionldTenant* tenantP, bool refresh)
     //        3. After the loop:  Lookup all cached subs and remove thos "not in DB"
     //
 
-    // Loop over the entire sub-cache and mark all subscriptions with inDB == false
-    char* tenantName = (tenantP != NULL)? tenantP->tenant : NULL;
-    for (CachedSubscription* cSubP = subCacheHeadGet(); cSubP != NULL; cSubP = cSubP->next)
-    {
-      KT_T(KtSubCacheSync, "tenantName: '%s' (cSubP->tenant: '%s')", tenantName, cSubP->tenant);
-      if (tenantMatch(tenantName, cSubP->tenant) == true)
-        cSubP->inDB = false;
-    }
-
-    //
-    // The new cache keeps its OWN mark. It used to ride on the old cache's - the
-    // epilogue walked the old list and removed from both - which meant every
-    // subscription had to be in the old cache or a refresh tick emptied the new one.
-    // The cache is per tenant, so there is no tenant to match here.
-    //
+    // Mark every cached subscription of the tenant as "not in DB"
     if (tenantP->subCache != NULL)
     {
       for (SubCacheItem* sciP = tenantP->subCache->subList; sciP != NULL; sciP = sciP->next)
@@ -199,12 +184,9 @@ bool mongocSubCachePopulateByTenant(OrionldTenant* tenantP, bool refresh)
     if (timeInterval == 0)
     {
       //
-      // The NEW subscription cache first - subCacheApiSubscriptionInsert steals nodes
-      // out of 'apiSubP', and what goes into the new cache must be the whole tree.
-      //
-      // TRANSITIONAL: this is the OLD sync mechanism (the -subCacheIval refresh), and
-      // it is on its way out - but as long as it is what a second broker instance
-      // learns from, it has to keep BOTH caches current, not just the old one.
+      // TRANSITIONAL: this is the OLD sync mechanism (the -subCacheIval refresh),
+      // on its way out - mongo change streams replace it. Until then it is what a
+      // second broker instance learns from.
       //
       KjNode*       subIdNodeP = kjLookup(apiSubP, "id");
       const char*   subId      = (subIdNodeP != NULL)? subIdNodeP->value.s : NULL;
@@ -223,8 +205,7 @@ bool mongocSubCachePopulateByTenant(OrionldTenant* tenantP, bool refresh)
           // also how a subscription edited straight in the database (which is a
           // thing people do, and a thing the test suite does) reaches the cache.
           // Neither of those necessarily moves 'modifiedAt', so comparing it means
-          // quietly serving a stale subscription forever. The old cache has never
-          // taken that shortcut - it destroys and rebuilds itself on every tick.
+          // quietly serving a stale subscription forever.
           //
           // It does mean recompiling regexes, QNode trees and GEOS geometries once
           // per tick per subscription. That is the price of this mechanism, and it
@@ -237,24 +218,6 @@ bool mongocSubCachePopulateByTenant(OrionldTenant* tenantP, bool refresh)
           sciP->inDB = true;
       }
 
-      //
-      // The OLD cache is filled here only when this function is what fills it.
-      // Without -experimental that is mongoSubCacheRefresh's job and this function
-      // is called only for the new cache - inserting here as well would give the
-      // old cache two copies of every subscription.
-      //
-      if (experimental == true)
-      {
-        CachedSubscription* cSubP = subCacheApiSubscriptionInsert(apiSubP, qTree, coordinatesP, contextP, tenantP->tenant, showChangesP, sysAttrsP, renderFormat);
-        cSubP->inDB = true;
-      }
-      else if (subId != NULL)
-      {
-        CachedSubscription* cSubP = subCacheItemLookup(tenantP->tenant, subId);
-
-        if (cSubP != NULL)
-          cSubP->inDB = true;
-      }
     }
     else
       pernotSubCacheAdd(NULL, apiSubP, NULL, qTree, coordinatesP, contextP, tenantP, showChangesP, sysAttrsP, renderFormat, timeInterval);
@@ -279,20 +242,6 @@ bool mongocSubCachePopulateByTenant(OrionldTenant* tenantP, bool refresh)
 
         sciP = next;
       }
-    }
-
-    CachedSubscription* cSubP = subCacheHeadGet();
-    CachedSubscription* next;
-
-    char* tenantName = (tenantP != NULL)? tenantP->tenant : NULL;
-    while (cSubP != NULL)
-    {
-      next = cSubP->next;
-
-      if ((cSubP->inDB == false) && (tenantMatch(tenantName, cSubP->tenant) == true))
-        subCacheItemRemove(cSubP);
-
-      cSubP = next;
     }
   }
 

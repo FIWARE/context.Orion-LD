@@ -32,7 +32,6 @@
 
 #include "common/defaultValues.h"
 #include "apiTypesV2/Subscription.h"
-#include "cache/subCache.h"
 #include "rest/OrionError.h"
 #include "orionld/common/orionldState.h"             // orionldState
 
@@ -41,6 +40,8 @@
 #include "mongoBackend/MongoCommonSubscription.h"
 #include "mongoBackend/dbConstants.h"
 #include "orionld/mongoc/mongocSubCountersUpdate.h"          // mongocSubCountersUpdate
+#include "orionld/q/qBuild.h"                                // qBuild
+#include "orionld/q/qRelease.h"                              // qRelease
 #include "orionld/subCache/subCacheItemFromDb.h"             // subCacheItemFromDb (the new sub cache)
 #include "orionld/subCache/subCacheItemLookup.h"             // subCacheItemLookup
 #include "orionld/types/SubCacheItem.h"                      // SubCacheItem
@@ -65,88 +66,6 @@ using ngsiv2::Subscription;
 static void setTimestamp(const char* name, double ts, mongo::BSONObjBuilder* bobP)
 {
   bobP->append(name, ts);
-}
-
-
-
-/* ****************************************************************************
-*
-* insertInCache - insert in csub cache
-*/
-static bool insertInCache
-(
-  const Subscription&  sub,
-  const std::string&   subId,
-  const std::string&   tenant,
-  const std::string&   servicePath,
-  bool                 notificationDone,
-  double               lastNotification,
-  double               lastFailure,
-  double               lastSuccess
-)
-{
-  //
-  // StringFilter in Scope?
-  //
-  // Any Scope of type SCOPE_TYPE_SIMPLE_QUERY in sub.restriction.scopeVector?
-  // If so, set it as string filter to the sub-cache item
-  //
-  StringFilter*  stringFilterP   = NULL;
-  StringFilter*  mdStringFilterP = NULL;
-
-  for (unsigned int ix = 0; ix < sub.restriction.scopeVector.size(); ++ix)
-  {
-    if (sub.restriction.scopeVector[ix]->type == SCOPE_TYPE_SIMPLE_QUERY)
-    {
-      stringFilterP = sub.restriction.scopeVector[ix]->stringFilterP;
-    }
-
-    if (sub.restriction.scopeVector[ix]->type == SCOPE_TYPE_SIMPLE_QUERY_MD)
-    {
-      mdStringFilterP = sub.restriction.scopeVector[ix]->mdStringFilterP;
-    }
-  }
-
-  cacheSemTake(__FUNCTION__, "Inserting subscription in cache");
-  bool b = subCacheItemInsert(tenant.c_str(),
-                              servicePath.c_str(),
-                              sub.notification.httpInfo,
-                              sub.subject.entities,
-                              sub.notification.attributes,
-                              sub.notification.metadata,
-                              sub.subject.condition.attributes,
-                              subId.c_str(),
-                              sub.expires,
-                              sub.throttling,
-                              sub.attrsFormat,
-                              notificationDone,
-                              lastNotification,
-                              lastFailure,
-                              lastSuccess,
-                              stringFilterP,
-                              mdStringFilterP,
-                              sub.status,
-#ifdef ORIONLD
-                              sub.name,
-                              sub.ldContext,
-                              sub.lang,
-                              sub.notification.httpInfo.mqtt.username,
-                              sub.notification.httpInfo.mqtt.password,
-                              sub.notification.httpInfo.mqtt.version,
-                              sub.notification.httpInfo.mqtt.qos,
-#endif
-                              sub.subject.condition.expression.q,
-                              sub.subject.condition.expression.geometry,
-                              sub.subject.condition.expression.coords,
-                              sub.subject.condition.expression.georel,
-#ifdef ORIONLD
-                              sub.subject.condition.expression.geoproperty,
-#endif
-                              sub.notification.blacklist);
-
-  cacheSemGive(__FUNCTION__, "Inserting subscription in cache");
-
-  return b;
 }
 
 
@@ -222,11 +141,28 @@ std::string mongoCreateSubscription
 
   std::string status = sub.status == ""?  STATUS_ACTIVE : sub.status;
 
-  // We need to insert the csub in the cache before (potentially) sending the
-  // initial notification (have a look to issue #2974 for details)
-  if (!noCache)
+  //
+  // An NGSI-LD 'q' is parsed here, BEFORE anything is written to the database.
+  //
+  // This is the legacy create path, which does not go through pCheckSubscription,
+  // so nothing else validates the filter. It used to be validated as a side effect
+  // of filling the old subscription cache - qBuild was called while building the
+  // cached item, and a failure there aborted the whole create.
+  //
+  // qBuild reports the error itself (orionldError), so all that is needed here is
+  // to give up before the subscription reaches the database.
+  //
+  if ((orionldState.apiVersion == API_VERSION_NGSILD_V1) && (sub.subject.condition.expression.q != ""))
   {
-    if (insertInCache(sub, subId, tenantP->tenant, servicePath, false, 0, 0, 0) == false)
+    char*  qText      = NULL;
+    bool   validForV2 = true;
+    bool   isMq       = false;
+    QNode* qP         = qBuild(sub.subject.condition.expression.q.c_str(), &qText, &validForV2, &isMq, true, false);
+
+    if (qP != NULL)
+      qRelease(qP);
+
+    if (qText == NULL)
       return "";
   }
 

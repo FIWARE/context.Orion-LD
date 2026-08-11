@@ -57,7 +57,6 @@ extern "C"
 #include "alarmMgr/alarmMgr.h"
 #include "orionTypes/OrionValueType.h"
 #include "orionTypes/UpdateActionType.h"
-#include "cache/subCache.h"
 #include "rest/StringFilter.h"
 #include "ngsi/Scope.h"
 

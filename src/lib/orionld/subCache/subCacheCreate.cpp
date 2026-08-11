@@ -40,8 +40,10 @@ extern "C"
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/context/orionldContextFromUrl.h"               // orionldContextFromUrl
 #include "orionld/mongoc/mongocSubscriptionsIter.h"              // mongocSubscriptionsIter
+#include "orionld/mongoc/mongocSubscriptionDelete.h"             // mongocSubscriptionDelete
 #include "orionld/dbModel/dbModelToApiSubscription.h"            // dbModelToApiSubscription
 #include "orionld/ws/wsEndpointUri.h"                            // WS_ENDPOINT_URI_PREFIX
+#include "orionld/pernot/pernotSubCacheAdd.h"                    // pernotSubCacheAdd
 #include "orionld/subCache/subCacheItemAdd.h"                    // subCacheItemAdd
 #include "orionld/subCache/subCacheCreate.h"                     // Own interface
 
@@ -87,9 +89,8 @@ int subIterFunc(SubCache* scP, KjNode* dbSubP)
   //
   // A subscription created over a WebSocket cannot outlive the broker - its
   // endpoint URI names a connection (urn:ngsi-ld:ws:<fd>) and no connection
-  // survives a restart. One found here is leftover from a crash; the legacy
-  // loader deletes it from the database, but that runs AFTER this one, so it
-  // would be cached (and answered by GET) in the meantime.
+  // survives a restart. One found here is leftover from a crash - it is neither
+  // cached nor left in the database.
   //
   const char* uriPath[] = { "notification", "endpoint", "uri", NULL };
   KjNode*     uriNodeP  = kjNavigate(apiSubP, uriPath, NULL, NULL);
@@ -97,20 +98,14 @@ int subIterFunc(SubCache* scP, KjNode* dbSubP)
   if ((uriNodeP != NULL) && (uriNodeP->type == KjString) &&
       (strncmp(uriNodeP->value.s, WS_ENDPOINT_URI_PREFIX, WS_ENDPOINT_URI_PREFIX_LEN) == 0))
   {
-    KT_W("Not caching stale WS subscription '%s' (no WS connection can have survived a restart)",
+    KT_W("Removing stale WS subscription '%s' (no WS connection can have survived a restart)",
          (subIdNodeP != NULL)? subIdNodeP->value.s : "unknown");
+
+    if (subIdNodeP != NULL)
+      mongocSubscriptionDelete(subIdNodeP->value.s);
+
     return 0;
   }
-
-  //
-  // A Periodic Notification subscription ('timeInterval') is not driven by
-  // alterations and it has a cache of its own - it belongs there, and only there.
-  // The API-request path already makes that distinction; so does the sub-cache
-  // refresh (mongocSubCachePopulateByTenant) - this one has to as well, or a
-  // restart would put every pernot subscription in BOTH caches.
-  //
-  if (timeInterval != 0)
-    return 0;
 
   // If a jsonldContext is given for the subscription, make sure it's valid
   OrionldContext* jsonldContextP = NULL;
@@ -130,6 +125,18 @@ int subIterFunc(SubCache* scP, KjNode* dbSubP)
       KT_W("Unable to resolve a Subscription @context for a sub-cache item");
       return 0;
     }
+  }
+
+  //
+  // A Periodic Notification subscription ('timeInterval') is not driven by
+  // alterations and it has a cache of its own - it belongs there, and only there.
+  // The API-request path makes the same distinction. Sending it to the ordinary
+  // sub cache instead would put it in BOTH.
+  //
+  if (timeInterval != 0)
+  {
+    pernotSubCacheAdd(NULL, apiSubP, NULL, qNodeP, coordinatesP, jsonldContextP, scP->tenantP, showChangesP, sysAttrsP, renderFormat, timeInterval);
+    return 0;
   }
 
   char* subId = (subIdNodeP != NULL)? subIdNodeP->value.s : (char*) "no:sub:id";

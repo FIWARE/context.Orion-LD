@@ -28,7 +28,6 @@ extern "C"
 #include "kjson/kjLookup.h"                                       // KT_*
 }
 
-#include "cache/subCache.h"                                      // CachedSubscription, subCacheItemLookup, ...
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
@@ -143,11 +142,6 @@ bool orionldDeleteSubscription(void)
 
     subCacheItemRemove(orionldState.tenantP->subCache, orionldState.wildcard[0]);
   }
-
-  // Out of the legacy cache too - it still serves the NGSIv2 matching path
-  CachedSubscription* cSubP = subCacheItemLookup(orionldState.tenantP->tenant, orionldState.wildcard[0]);
-  if (cSubP != NULL)
-    subCacheItemRemove(cSubP);
 
   orionldState.httpStatusCode = 204;
 

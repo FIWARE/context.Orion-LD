@@ -243,7 +243,6 @@ SET (ORION_LIBS
                   # verbName(Verb) from setExtendedHttpInfo@MongoCommonSubscription.cpp.o
     ngsi10
     ngsi
-    cache
     mongoBackend
     ngsi
     orionld_config
@@ -423,7 +422,6 @@ if (error EQUAL 0)
   ADD_SUBDIRECTORY(src/lib/orionld/legacyDriver)
   ADD_SUBDIRECTORY(src/lib/orionld/linkedEntities)
   ADD_SUBDIRECTORY(src/lib/mongoBackend)
-  ADD_SUBDIRECTORY(src/lib/cache)
   ADD_SUBDIRECTORY(src/lib/alarmMgr)
   ADD_SUBDIRECTORY(src/lib/metricsMgr)
   ADD_SUBDIRECTORY(src/lib/logSummary)

@@ -251,7 +251,7 @@ Date: REGEX(.*)
         "kind": "ImplicitlyCreated",
         "lastUsage": "202REGEX(.*)",
         "localId": "REGEX(.*)",
-        "numberOfHits": 2
+        "numberOfHits": 1
     }
 ]
 

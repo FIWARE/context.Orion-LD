@@ -41,7 +41,6 @@ extern "C"
 #include "orionld/subCache/subCacheItemRemove.h"             // subCacheItemRemove (the new sub cache)
 #include "mongoBackend/mongoUnsubscribeContext.h"
 #include "mongoBackend/safeMongo.h"
-#include "cache/subCache.h"
 #include "ngsi10/UnsubscribeContextRequest.h"
 #include "ngsi10/UnsubscribeContextResponse.h"
 
@@ -160,13 +159,7 @@ HttpStatusCode mongoUnsubscribeContext
 
   cacheSemTake(__FUNCTION__, "Removing subscription from cache");
 
-  // Out of the new cache - unconditionally, it must not depend on the old cache having the item
   subCacheItemRemove(tenantP->subCache, requestP->subscriptionId.get().c_str());
-
-  CachedSubscription* cSubP = subCacheItemLookup(tenantP->tenant, requestP->subscriptionId.get().c_str());
-
-  if (cSubP != NULL)
-    subCacheItemRemove(cSubP);
 
   cacheSemGive(__FUNCTION__, "Removing subscription from cache");
   reqSemGive(__FUNCTION__, "ngsi10 unsubscribe request", reqSemTaken);
@@ -240,11 +233,6 @@ bool mongoDeleteLdSubscription
 
   cacheSemTake(__FUNCTION__, "Removing subscription from cache");
 
-  CachedSubscription* cSubP = subCacheItemLookup(tenantP->tenant, subId);
-  if (cSubP != NULL)
-    subCacheItemRemove(cSubP);
-
-  // Out of the new cache as well
   subCacheItemRemove(tenantP->subCache, subId);
 
   cacheSemGive(__FUNCTION__, "Removing subscription from cache");
