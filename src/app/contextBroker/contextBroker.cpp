@@ -67,6 +67,7 @@
 
 #include "mongoBackend/MongoGlobal.h"
 #include "cache/subCache.h"
+#include "orionld/subCache/subCachesRefresh.h"                   // subCachesRefreshStart
 
 #include "parseArgs/parseArgs.h"
 #include "parseArgs/paConfig.h"
@@ -957,16 +958,11 @@ int main(int argC, char* argV[])
   {
     subCacheInit(mtenant);
 
-    if (subCacheInterval == 0)
-    {
-      // Populate subscription cache from database
-      subCacheRefresh(false);
-    }
-    else
-    {
-      // Populate subscription cache AND start sub-cache-refresh-thread
-      subCacheStart();
-    }
+    // Populate the subscription caches from the database
+    subCacheRefresh(false);
+
+    if (subCacheInterval != 0)
+      subCachesRefreshStart();
   }
   else
   {

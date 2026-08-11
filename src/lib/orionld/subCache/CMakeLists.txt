@@ -32,6 +32,7 @@ SET (SOURCES
     subCacheItemCountersFlush.cpp
     subCachesCountersFlush.cpp
     subCachesStatistics.cpp
+    subCachesRefresh.cpp
     subCacheItemCompile.cpp
     subCacheItemEntitiesCompile.cpp
     subCacheItemGeoCompile.cpp

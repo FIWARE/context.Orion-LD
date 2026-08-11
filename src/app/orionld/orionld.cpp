@@ -71,6 +71,7 @@
 
 #include "mongoBackend/MongoGlobal.h"
 #include "cache/subCache.h"
+#include "orionld/subCache/subCachesRefresh.h"                   // subCachesRefreshStart
 
 extern "C"
 {
@@ -1381,16 +1382,17 @@ int main(int argC, char* argV[])
     orionldStartup = true;
     subCacheInit(multitenancy);
 
-    if (subCacheInterval == 0)
-    {
-      // Populate subscription cache from database
-      subCacheRefresh(false);
-    }
-    else
-    {
-      // Populate subscription cache AND start sub-cache-refresh-thread
-      subCacheStart();
-    }
+    // Populate the subscription caches from the database
+    subCacheRefresh(false);
+
+    //
+    // -subCacheIval: poll the database for what other broker instances have done.
+    // The refresh is the NEW one - it updates each cached subscription in place
+    // instead of wiping the cache and rebuilding it.
+    //
+    if (subCacheInterval != 0)
+      subCachesRefreshStart();
+
     orionldStartup = false;
   }
 
