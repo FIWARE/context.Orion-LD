@@ -137,7 +137,7 @@ int httpsNotify(SubCacheItem* cSubP, struct iovec* ioVec, int ioVecLen, double t
   KT_T(KtNotificationSend, "%s: Port for HTTPS notification: %d", cSubP->subId, cSubP->port);
   KT_T(KtNotificationSend, "%s: Rest for HTTPS notification: %s", cSubP->subId, cSubP->rest);
 
-  char  url[512];  // FIXME: DON'T Create the URL over and over - store it in the CachedSubscription
+  char  url[512];  // FIXME: DON'T Create the URL over and over - store it in the SubCacheItem
   char* rest = cSubP->rest;
 
   if      (rest    == NULL)  rest = (char*) "";   // If NULL, point to empty string (so that the later snprintf works)

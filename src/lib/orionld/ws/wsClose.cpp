@@ -52,12 +52,11 @@ extern "C"
 // wsClose - close a WS connection, DELETE the associated subscription, clean up
 //
 // When a WS connection closes:
-// 1. Find the associated CachedSubscription
-// 2. Delete it from MongoDB
-// 3. Remove it from the sub-cache
-// 4. Free the WS stream and close the socket via MHD
-// 5. Remove from the global WS connection list
-// 6. Free the WsConnection struct
+// 1. Delete the associated subscription from MongoDB
+// 2. Remove it from the sub cache
+// 3. Free the WS stream and close the socket via MHD
+// 4. Remove from the global WS connection list
+// 5. Free the WsConnection struct
 //
 void wsClose(WsConnection* wsP)
 {
