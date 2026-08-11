@@ -96,6 +96,8 @@ typedef struct SubCacheItem
   KjNode*               subTree;
   bool                  ngsild;             // false for an NGSIv2 subscription, whose database _id is an OID, not a string
   bool                  dirty;              // The subscription has been patched - not only counters differ from copy in DB
+  bool                  inDB;               // Used by the -subCacheIval refresh to find subscriptions deleted by another instance
+  bool                  cacheOnly;          // Never written to the database (a DDS Action's temp subscription) - the refresh must not sweep it away
   OrionldContext*       contextP;           // Set when creating/patching registration
   char*                 hostAlias;          // Broker identity - for the Via header
 

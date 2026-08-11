@@ -117,6 +117,18 @@ bool mongocSubCachePopulateByTenant(OrionldTenant* tenantP, bool refresh)
       if (tenantMatch(tenantName, cSubP->tenant) == true)
         cSubP->inDB = false;
     }
+
+    //
+    // The new cache keeps its OWN mark. It used to ride on the old cache's - the
+    // epilogue walked the old list and removed from both - which meant every
+    // subscription had to be in the old cache or a refresh tick emptied the new one.
+    // The cache is per tenant, so there is no tenant to match here.
+    //
+    if (tenantP->subCache != NULL)
+    {
+      for (SubCacheItem* sciP = tenantP->subCache->subList; sciP != NULL; sciP = sciP->next)
+        sciP->inDB = false;
+    }
   }
 
   while (mongoc_cursor_next(mongoCursorP, &mongoDocP))
@@ -134,7 +146,11 @@ bool mongocSubCachePopulateByTenant(OrionldTenant* tenantP, bool refresh)
     // whose endpoint URI names one (urn:ngsi-ld:ws:<fd>) is leftover from a previous
     // crash.  Delete it from DB and skip.
     //
-    KjNode* referenceP = kjLookup(dbSubP, "reference");
+    // ONLY on startup. This same function is the -subCacheIval refresh, and there a
+    // WS subscription naming a connection is the normal, healthy case - deleting it
+    // would take down every live WebSocket subscription within one refresh tick.
+    //
+    KjNode* referenceP = (refresh == false)? kjLookup(dbSubP, "reference") : NULL;
     if ((referenceP != NULL) && (referenceP->type == KjString) && (strncmp(referenceP->value.s, WS_ENDPOINT_URI_PREFIX, WS_ENDPOINT_URI_PREFIX_LEN) == 0))
     {
       KjNode* subIdP = kjLookup(dbSubP, "_id");
@@ -197,7 +213,7 @@ bool mongocSubCachePopulateByTenant(OrionldTenant* tenantP, bool refresh)
       if (subId != NULL)
       {
         if (sciP == NULL)
-          subCacheItemAdd(tenantP->subCache, subId, apiSubP, true, contextP);
+          sciP = subCacheItemAdd(tenantP->subCache, subId, apiSubP, true, contextP);
         else
         {
           //
@@ -216,6 +232,9 @@ bool mongocSubCachePopulateByTenant(OrionldTenant* tenantP, bool refresh)
           //
           subCacheItemUpdate(sciP, apiSubP, contextP);
         }
+
+        if (sciP != NULL)
+          sciP->inDB = true;
       }
 
       //
@@ -223,10 +242,6 @@ bool mongocSubCachePopulateByTenant(OrionldTenant* tenantP, bool refresh)
       // Without -experimental that is mongoSubCacheRefresh's job and this function
       // is called only for the new cache - inserting here as well would give the
       // old cache two copies of every subscription.
-      //
-      // The 'inDB' mark is set either way: the refresh epilogue below removes every
-      // cached subscription that is NOT marked - from BOTH caches - so leaving the
-      // mark unset would empty the new cache on every refresh tick.
       //
       if (experimental == true)
       {
@@ -247,7 +262,25 @@ bool mongocSubCachePopulateByTenant(OrionldTenant* tenantP, bool refresh)
 
   if (refresh == true)
   {
-    // Now loop over the entire sub-cache and remove those subscriptions with inDB == false;
+    //
+    // Whatever was not found in the database has been deleted - by another broker
+    // instance, or straight in mongo. Each cache is swept with its OWN mark.
+    //
+    if (tenantP->subCache != NULL)
+    {
+      SubCacheItem* sciP = tenantP->subCache->subList;
+
+      while (sciP != NULL)
+      {
+        SubCacheItem* next = sciP->next;
+
+        if ((sciP->inDB == false) && (sciP->cacheOnly == false))
+          subCacheItemRemove(tenantP->subCache, sciP->subId);
+
+        sciP = next;
+      }
+    }
+
     CachedSubscription* cSubP = subCacheHeadGet();
     CachedSubscription* next;
 
@@ -257,10 +290,7 @@ bool mongocSubCachePopulateByTenant(OrionldTenant* tenantP, bool refresh)
       next = cSubP->next;
 
       if ((cSubP->inDB == false) && (tenantMatch(tenantName, cSubP->tenant) == true))
-      {
-        subCacheItemRemove(tenantP->subCache, cSubP->subscriptionId);  // TRANSITIONAL - see above
         subCacheItemRemove(cSubP);
-      }
 
       cSubP = next;
     }

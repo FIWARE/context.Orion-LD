@@ -220,7 +220,15 @@ char* ddsActionSubscriptionCreate
   // matches an alteration. A temp subscription that only made it into the legacy
   // cache would never notify.
   //
-  subCacheItemAdd(tenant0.subCache, subId, subP, false, orionldState.contextP);
+  SubCacheItem* sciP = subCacheItemAdd(tenant0.subCache, subId, subP, false, orionldState.contextP);
+
+  //
+  // Deliberately not in the database (see above) - so the -subCacheIval refresh,
+  // which removes every cached subscription it does not find in mongo, has to be
+  // told to leave this one alone.
+  //
+  if (sciP != NULL)
+    sciP->cacheOnly = true;
 
   KT_T(StDdsAction, "Created temp action subscription '%s' on attr '%s' -> '%s'", subId, attrLongName, endpointUri);
 
