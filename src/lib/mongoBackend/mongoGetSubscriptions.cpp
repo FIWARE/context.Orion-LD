@@ -40,7 +40,6 @@ extern "C"
 #include "common/idCheck.h"
 #include "common/errorMessages.h"
 #include "rest/ConnectionInfo.h"
-#include "cache/subCache.h"
 #include "orionld/types/SubCacheItem.h"                        // SubCacheItem
 #include "orionld/subCache/subCacheItemLookup.h"              // subCacheItemLookup
 #include "apiTypesV2/Subscription.h"

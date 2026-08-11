@@ -34,6 +34,7 @@ extern "C"
 #include "orionld/types/SubCacheItem.h"                          // SubCacheItem
 #include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/subCache/subCacheItemRelease.h"                // subCacheItemRelease
+#include "orionld/subCache/subCachesStatistics.h"          // subCachesRemoves
 #include "orionld/subCache/subCacheItemRemove.h"                 // Own interface
 
 
@@ -68,6 +69,8 @@ bool subCacheItemRemove(SubCache* scP, const char* subId)
         scP->last = prev;
 
       subCacheItemRelease(sciP);
+      ++subCachesRemoves;
+
       return true;
     }
 

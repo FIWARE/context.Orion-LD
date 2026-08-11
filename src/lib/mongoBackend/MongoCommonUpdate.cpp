@@ -2326,7 +2326,7 @@ static bool processSubscriptions
       //
       // If broker running without subscription cache, put lastNotificationTime and count in DB
       //
-      if (subCacheActive == false)
+      if (noCache == true)
       {
         BSONObj query  = BSON("_id" << OID(mapSubId));
         BSONObj update = BSON("$set" <<

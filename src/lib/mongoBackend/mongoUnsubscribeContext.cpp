@@ -160,14 +160,13 @@ HttpStatusCode mongoUnsubscribeContext
 
   cacheSemTake(__FUNCTION__, "Removing subscription from cache");
 
+  // Out of the new cache - unconditionally, it must not depend on the old cache having the item
+  subCacheItemRemove(tenantP->subCache, requestP->subscriptionId.get().c_str());
+
   CachedSubscription* cSubP = subCacheItemLookup(tenantP->tenant, requestP->subscriptionId.get().c_str());
 
   if (cSubP != NULL)
-  {
     subCacheItemRemove(cSubP);
-    // Out of the new cache as well
-    subCacheItemRemove(tenantP->subCache, requestP->subscriptionId.get().c_str());
-  }
 
   cacheSemGive(__FUNCTION__, "Removing subscription from cache");
   reqSemGive(__FUNCTION__, "ngsi10 unsubscribe request", reqSemTaken);

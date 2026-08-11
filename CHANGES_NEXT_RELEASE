@@ -36,6 +36,9 @@
   #XXXX - Fixed pernot GET rendering to use actual isActive/status instead of hardcoded true/active
   #XXXX - Fixed broker abort on requests that allocate more than 1000 buffers needing delayed free (e.g. large TRoE batch operations)
 
+## Modified Behaviour
+  #XXXX - GET /cache/statistics (and /admin/cache/statistics) no longer reports "refresh". That counter counted the reloads of the sub-cache-refresh mechanism, which reloaded the whole cache from the database on a timer; the subscription cache is now maintained one item at a time, as subscriptions are created, patched and deleted, so there is nothing to count. "ids", "inserts", "removes", "updates" and "items" are unchanged, and are now reported for the new subscription cache
+
 ## New Features
   #XXXX - Native NGSI-LD temporal query support: GET/POST for temporal entities with:
           q-filter, geo-queries, aggregation, pick/omit, datasetId, and temporalValues

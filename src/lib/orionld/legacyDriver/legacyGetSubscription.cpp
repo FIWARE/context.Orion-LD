@@ -31,7 +31,6 @@ extern "C"
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/common/numberToDate.h"                         // numberToDate
-#include "cache/subCache.h"                                      // CachedSubscription, subCacheItemLookup
 #include "orionld/subCache/subCacheItemLookup.h"                 // subCacheItemLookup
 #include "orionld/legacyDriver/kjTreeFromSubscription.h"         // kjTreeFromSubscription
 #include "orionld/legacyDriver/legacyGetSubscription.h"          // Own Interface

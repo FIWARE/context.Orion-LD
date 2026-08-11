@@ -40,6 +40,7 @@ extern "C"
 #include "orionld/subCache/apiModelToCacheSubscription.h"        // apiModelToCacheSubscription
 #include "orionld/subCache/subCacheItemCompile.h"                // subCacheItemCompile
 #include "orionld/subCache/subCacheItemRelease.h"                // subCacheItemCompiledStateRelease
+#include "orionld/subCache/subCachesStatistics.h"          // subCachesUpdates
 #include "orionld/subCache/subCacheItemUpdate.h"                 // Own interface
 
 
@@ -82,4 +83,6 @@ void subCacheItemUpdate(SubCacheItem* sciP, KjNode* subP, OrionldContext* jsonld
     sciP->modifiedAt = (modifiedAtP->type == KjFloat)? modifiedAtP->value.f : modifiedAtP->value.i;
 
   subCacheItemCompile(sciP);
+
+  ++subCachesUpdates;
 }

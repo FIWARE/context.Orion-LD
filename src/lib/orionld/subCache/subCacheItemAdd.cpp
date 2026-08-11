@@ -40,6 +40,7 @@ extern "C"
 #include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/subCache/apiModelToCacheSubscription.h"        // apiModelToCacheSubscription
 #include "orionld/subCache/subCacheItemCompile.h"                // subCacheItemCompile
+#include "orionld/subCache/subCachesStatistics.h"          // subCachesInserts
 #include "orionld/subCache/subCacheItemAdd.h"                    // Own interface
 
 
@@ -147,6 +148,8 @@ SubCacheItem* subCacheItemAdd
   // to know which of the two it is.
   //
   sciP->ngsild = (strchr(subscriptionId, ':') != NULL);
+
+  ++subCachesInserts;
 
   //
   // The deltas are what keeps mongo out of the notification path: every

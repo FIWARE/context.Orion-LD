@@ -42,7 +42,7 @@ extern "C"
 #include "rest/rest.h"
 #include "serviceRoutines/statisticsTreat.h"
 #include "mongoBackend/mongoConnectionPool.h"
-#include "cache/subCache.h"
+#include "orionld/subCache/subCachesStatistics.h"
 #include "ngsiNotify/QueueStatistics.h"
 #include "common/JsonHelper.h"
 
@@ -362,31 +362,33 @@ std::string statisticsCacheTreat
 
   if (orionldState.verb == HTTP_DELETE)
   {
-    subCacheStatisticsReset("statisticsTreat::DELETE");
+    subCachesStatisticsReset("statisticsTreat::DELETE");
     js.addString("message", "All statistics counter reset");
     return js.str();
   }
 
   //
-  // mongo sub cache counters
+  // Subscription cache counters
   //
-  int   mscRefreshs = 0;
-  int   mscInserts  = 0;
-  int   mscRemoves  = 0;
-  int   mscUpdates  = 0;
-  int   cacheItems  = 0;
+  // There is no "refresh" counter any more. It counted the reloads of the old
+  // poll-the-database sync; the cache is now maintained one item at a time, as
+  // subscriptions are created, patched and deleted.
+  //
+  int   inserts    = 0;
+  int   removes    = 0;
+  int   updates    = 0;
+  int   cacheItems = 0;
   char  listBuffer[1024];
 
   cacheSemTake(__FUNCTION__, "statisticsCacheTreat");
-  subCacheStatisticsGet(&mscRefreshs, &mscInserts, &mscRemoves, &mscUpdates, &cacheItems, listBuffer, sizeof(listBuffer));
+  subCachesStatisticsGet(&inserts, &removes, &updates, &cacheItems, listBuffer, sizeof(listBuffer));
   cacheSemGive(__FUNCTION__, "statisticsCacheTreat");
 
-  js.addString("ids", listBuffer);    // FIXME P10: this seems not printing anything... is listBuffer working fine?
-  js.addNumber("refresh", (long long)mscRefreshs);
-  js.addNumber("inserts", (long long)mscInserts);
-  js.addNumber("removes", (long long)mscRemoves);
-  js.addNumber("updates", (long long)mscUpdates);
-  js.addNumber("items", (long long)cacheItems);
+  js.addString("ids", listBuffer);
+  js.addNumber("inserts", (long long) inserts);
+  js.addNumber("removes", (long long) removes);
+  js.addNumber("updates", (long long) updates);
+  js.addNumber("items",   (long long) cacheItems);
 
   orionldState.httpStatusCode = SccOk;
   return js.str();

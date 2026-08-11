@@ -48,7 +48,7 @@ extern "C"
 #include "kjson/kjSort.h"                                      // kjSort
 }
 
-#include "cache/subCache.h"                                    // subCacheItems
+#include "orionld/subCache/subCachesStatistics.h"             // subCachesItems
 
 #include "orionld/common/orionldState.h"                       // orionldState, orionldVersion, postgresServerVersion, mongocServerVersion
 #include "orionld/common/branchName.h"                         // ORIONLD_BRANCH
@@ -193,7 +193,7 @@ bool orionldGetVersion(void)
   kjChildAdd(orionldState.responseTree, nodeP);
 
   // Number of items in the subscription cache
-  nodeP = kjInteger(orionldState.kjsonP, "cached subscriptions", subCacheItems());
+  nodeP = kjInteger(orionldState.kjsonP, "cached subscriptions", subCachesItems());
   kjChildAdd(orionldState.responseTree, nodeP);
 
   // Version of the core context
