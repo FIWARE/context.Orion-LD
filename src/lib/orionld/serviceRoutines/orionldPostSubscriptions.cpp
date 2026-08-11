@@ -27,7 +27,6 @@
 
 extern "C"
 {
-#include "kbase/kMacros.h"                                     // K_FT
 #include "ktrace/kTrace.h"                                     // KT_*
 #include "kalloc/kaStrdup.h"                                   // kaStrdup
 #include "kjson/KjNode.h"                                      // KjNode
@@ -45,7 +44,6 @@ extern "C"
 #include "orionld/types/PernotSubCache.h"                      // PernotSubCache
 #include "orionld/types/RegCache.h"                            // RegCache
 #include "orionld/types/RegCacheItem.h"                        // RegCacheItem
-#include "orionld/types/SubordinateSubscription.h"             // SubordinateSubscription
 #include "orionld/common/orionldState.h"                       // orionldState, coreContextUrl
 #include "orionld/common/orionldError.h"                       // orionldError
 #include "orionld/common/traceLevels.h"                        // KTrace level
@@ -53,6 +51,7 @@ extern "C"
 #include "orionld/common/subCacheApiSubscriptionInsert.h"      // subCacheApiSubscriptionInsert
 #include "orionld/types/SubCacheItem.h"                        // SubCacheItem
 #include "orionld/subCache/subCacheItemAdd.h"                  // subCacheItemAdd
+#include "orionld/subCache/subCacheItemLookup.h"               // subCacheItemLookup (the new sub cache)
 #include "orionld/subCache/subCacheItemRemove.h"               // subCacheItemRemove (the new sub cache)
 #include "orionld/http/httpHeaderLocationAdd.h"                // httpHeaderLocationAdd
 #include "orionld/http/httpRequestHeaderAdd.h"                 // httpRequestHeaderAdd
@@ -84,7 +83,7 @@ extern "C"
 // subordinateCreate - create a subordinate subscription on another endpoint
 //
 // {
-//   "id": "cSubP->subId:000x",
+//   "id": "<subscriptionId>:000x",
 //   "type": "Subscription",
 //   "entities": [
 //     {
@@ -98,16 +97,25 @@ extern "C"
 //   }
 // }
 //
-SubordinateSubscription* subordinateCreate(CachedSubscription* cSubP, RegCacheItem* rciP, KjNode* subP)
+// On success the subordinate is appended to 'subordinateArrayP', the "subordinate"
+// array of the Subscription itself. That array is the only bookkeeping there is:
+// it goes into the database and into the sub cache, and it is what DELETE reads to
+// take the subordinates down again.
+//
+static bool subordinateCreate(const char* subscriptionId, KjNode* subordinateArrayP, RegCacheItem* rciP, KjNode* subP)
 {
   //
-  // Modify the Subscription ID for the subordinate subscription
+  // The Subscription ID of the subordinate subscription is the parent's plus a
+  // sequence number - one higher than the highest handed out so far.
   //
   int  runNo = 1;
 
-  for (SubordinateSubscription* subordinateP = cSubP->subordinateP; subordinateP != NULL; subordinateP = subordinateP->next)
+  for (KjNode* subSubP = subordinateArrayP->value.firstChildP; subSubP != NULL; subSubP = subSubP->next)
   {
-    runNo = K_MAX(runNo, subordinateP->runNo) + 1;
+    KjNode* runNoP = kjLookup(subSubP, "runNo");
+
+    if ((runNoP != NULL) && (runNoP->value.i >= runNo))
+      runNo = runNoP->value.i + 1;
   }
 
   //
@@ -125,7 +133,7 @@ SubordinateSubscription* subordinateCreate(CachedSubscription* cSubP, RegCacheIt
   // Set/Add subscription id
   //
   char subSubId[64];
-  snprintf(subSubId, sizeof(subSubId), "%s:%d", cSubP->subscriptionId, runNo);
+  snprintf(subSubId, sizeof(subSubId), "%s:%d", subscriptionId, runNo);
   KjNode* idP = kjLookup(subP, "id");
 
   if (idP != NULL)
@@ -142,15 +150,15 @@ SubordinateSubscription* subordinateCreate(CachedSubscription* cSubP, RegCacheIt
   char notificationUrl[512];
 
   if (subordinateEndpoint[0] != 0)
-    snprintf(notificationUrl, sizeof(notificationUrl), "%s/notifications/%s", subordinateEndpoint, cSubP->subscriptionId);
+    snprintf(notificationUrl, sizeof(notificationUrl), "%s/notifications/%s", subordinateEndpoint, subscriptionId);
   else
-    snprintf(notificationUrl, sizeof(notificationUrl), "http://%s/ngsi-ld/ex/v1/notifications/%s", localIpAndPort, cSubP->subscriptionId);
+    snprintf(notificationUrl, sizeof(notificationUrl), "http://%s/ngsi-ld/ex/v1/notifications/%s", localIpAndPort, subscriptionId);
 
   const char* compV[] = { "notification", "endpoint", "uri", NULL };
   KjNode*     uriP    = kjNavigate(subP, compV, NULL, NULL);
 
   if (uriP == NULL)
-    KT_RE(NULL, "No notification:endpoint:uri field in the subscription!");
+    KT_RE(false, "No notification:endpoint:uri field in the subscription!");
 
   uriP->value.s = notificationUrl;
 
@@ -189,24 +197,18 @@ SubordinateSubscription* subordinateCreate(CachedSubscription* cSubP, RegCacheIt
   httpRequestHeaderAdd(&headers[headerIx++], "Content-Type", "application/json", 0);
   int httpStatus = httpRequest(rciIp, "POST", rciUrl, subP, NULL, headers, tmo, &responseBody, &pd);
   if ((httpStatus != 201) && (httpStatus != 200))  // ftClient responds with 200 ...
-    KT_RE(NULL, "Attempt to create subordinate subscription failed with a %d", httpStatus);
+    KT_RE(false, "Attempt to create subordinate subscription failed with a %d", httpStatus);
 
-  SubordinateSubscription* subordinateP = (SubordinateSubscription*) calloc(1, sizeof(SubordinateSubscription));
-  if (subordinateP == NULL)
-    KT_X(1, "Out of memory allocating a subordinate subscription");
+  KjNode* subSubNodeP = kjObject(orionldState.kjsonP,  NULL);  // No name - part of an array
 
-  subordinateP->subscriptionId = strdup(subSubId);
-  if (subordinateP->subscriptionId == NULL)
-    KT_X(1, "Out of memory allocating the id of a subordinate subscription");
+  kjChildAdd(subSubNodeP, kjString(orionldState.kjsonP,  "subscriptionId", subSubId));
+  kjChildAdd(subSubNodeP, kjString(orionldState.kjsonP,  "registrationId", rciP->regId));
+  kjChildAdd(subSubNodeP, kjInteger(orionldState.kjsonP, "runNo",          runNo));
 
-  subordinateP->registrationId = rciP->regId;
-  subordinateP->runNo          = runNo;
-  subordinateP->next           = cSubP->subordinateP;
+  kjChildAdd(subordinateArrayP, subSubNodeP);
+  KT_T(KtSR, "Added subordinate subscription '%s' to '%s'", subSubId, subscriptionId);
 
-  cSubP->subordinateP          = subordinateP;
-  KT_T(KtSR, "***************** Added subordinate subs to '%s' at %p", cSubP->subscriptionId, subordinateP);
-
-  return subordinateP;
+  return true;
 }
 
 
@@ -283,7 +285,7 @@ bool orionldPostSubscriptions(void)
     // If the subscription already exists, a "409 Conflict" is returned
     //
     char* detail = NULL;
-    if ((subCacheItemLookup(orionldState.tenantP->tenant, subId)   != NULL) ||
+    if ((subCacheItemLookup(orionldState.tenantP->subCache, subId) != NULL) ||
         (pernotSubCacheLookup(subId, orionldState.tenantP->tenant) != NULL) ||
         (mongocSubscriptionExists(subId, &detail)                  == true))
     {
@@ -464,6 +466,12 @@ bool orionldPostSubscriptions(void)
     // Find matching regs
     // Create a subordinate subscription in brokers behind matching regs, if "subCreate" is in "operations"
     //
+    //
+    // The array is only added to the Subscription if at least one subordinate is
+    // created - an empty "subordinate" would end up in the database and the cache.
+    //
+    KjNode* subordinateArrayP = kjArray(orionldState.kjsonP, "subordinate");
+
     for (RegCacheItem* rciP = orionldState.tenantP->regCache->regList; rciP != NULL; rciP = rciP->next)
     {
       char* entityTypeP;
@@ -473,35 +481,15 @@ bool orionldPostSubscriptions(void)
       {
         KT_T(KtSubordinate, "Reg '%s' is a match - creating subordinate subscription", rciP->regId);
 
-        SubordinateSubscription* subSubP = subordinateCreate(cSubP, rciP, clonedSubP);
-        if (subSubP != NULL)
-        {
-          // Add the subordinate to subP
-          KjNode* subordinateP = kjLookup(subP, "subordinate");
-
-          if (subordinateP == NULL)
-          {
-            subordinateP = kjArray(orionldState.kjsonP, "subordinate");
-            kjChildAdd(subP, subordinateP);
-          }
-
-          KjNode* subSubNodeP = kjObject(orionldState.kjsonP,  NULL);  // No name - part of array
-          KjNode* subIdP      = kjString(orionldState.kjsonP,  "subscriptionId", subSubP->subscriptionId);
-          KjNode* regIdP      = kjString(orionldState.kjsonP,  "registrationId", subSubP->registrationId);
-          KjNode* runNoP      = kjInteger(orionldState.kjsonP, "runNo",          subSubP->runNo);
-
-          kjChildAdd(subSubNodeP, subIdP);
-          kjChildAdd(subSubNodeP, regIdP);
-          kjChildAdd(subSubNodeP, runNoP);
-
-          kjChildAdd(subordinateP, subSubNodeP);
-        }
-        else
+        if (subordinateCreate(subscriptionId, subordinateArrayP, rciP, clonedSubP) == false)
           KT_W("Unable to create subordinate subscription for '%s'", subscriptionId);
       }
       else
         KT_T(KtSubordinate, "Reg '%s' is not a match", rciP->regId);
     }
+
+    if (subordinateArrayP->value.firstChildP != NULL)
+      kjChildAdd(subP, subordinateArrayP);
   }
 
   //

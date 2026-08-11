@@ -31,9 +31,6 @@ extern "C"
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
 
-#include "cache/subCache.h"                                      // subCacheItemLookup
-
-#include "orionld/types/Protocol.h"                              // Protocol, WS
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/ws/WsConnection.h"                             // WsConnection
@@ -75,18 +72,14 @@ void wsSubscriptionWire(WsConnection* wsP)
     return;
   }
 
+  //
+  // The connection remembers its subscription, and that is the whole wiring:
+  // wsNotify looks the connection up BY SUBSCRIPTION ID, so that a closed
+  // connection can never be handed back, and the subscription's own endpoint URI
+  // ("urn:ngsi-ld:ws:<fd>") is what tells the sub cache the protocol is WS.
+  //
   free(wsP->subscriptionId);
   wsP->subscriptionId = strdup(subscriptionId);
 
-  CachedSubscription* cSubP = subCacheItemLookup(orionldState.tenantP->tenant, subscriptionId);
-  if (cSubP != NULL)
-  {
-    cSubP->protocol       = WS;
-    cSubP->wsConnectionP  = wsP;
-    cSubP->wsFd           = (int) wsP->fd;
-
-    KT_T(StWs, "Subscription '%s' wired to WS connection (fd=%d)", subscriptionId, (int) wsP->fd);
-  }
-  else
-    KT_W("Subscription '%s' not found in cache after creation", subscriptionId);
+  KT_T(StWs, "Subscription '%s' wired to WS connection (fd=%d)", subscriptionId, (int) wsP->fd);
 }
