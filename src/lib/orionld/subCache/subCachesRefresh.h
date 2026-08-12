@@ -46,8 +46,14 @@ extern void subCachesRefresh(void);
 
 // -----------------------------------------------------------------------------
 //
-// subCachesRefreshStart - start the thread that calls subCachesRefresh every -subCacheIval seconds
+// subCachesMaintenanceStart - start the sub cache maintenance thread
 //
-extern void subCachesRefreshStart(void);
+// Two independent deadlines:
+//   -subCacheFlushIval  the notification counters are pushed to the database
+//   -subCacheIval       the database is polled for what other instances have done
+//
+// The thread is not started at all if both are zero.
+//
+extern void subCachesMaintenanceStart(void);
 
 #endif  // SRC_LIB_ORIONLD_SUBCACHE_SUBCACHESREFRESH_H_

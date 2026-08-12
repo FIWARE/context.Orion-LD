@@ -37,6 +37,7 @@
   #XXXX - Fixed broker abort on requests that allocate more than 1000 buffers needing delayed free (e.g. large TRoE batch operations)
 
 ## Modified Behaviour
+  #XXXX - The notification counters and timestamps of on-change subscriptions ('timesSent', 'timesFailed', 'lastNotification', 'lastSuccess', 'lastFailure') now reach the database on a timer as well, controlled by the existing -subCacheFlushIval (default 10 seconds), which until now only flushed periodic-notification subscriptions. They were pushed only when a subscription had -cSubCounters notifications pending (default 20), so the counters of a subscription notifying less often than that stayed in the broker's memory - invisible to a second broker instance sharing the database, and lost on restart. The in-memory values, which is what GET /subscriptions renders, are unchanged
   #XXXX - GET /cache/statistics (and /admin/cache/statistics) no longer reports "refresh". That counter counted the reloads of the sub-cache-refresh mechanism, which reloaded the whole cache from the database on a timer; the subscription cache is now maintained one item at a time, as subscriptions are created, patched and deleted, so there is nothing to count. "ids", "inserts", "removes", "updates" and "items" are unchanged, and are now reported for the new subscription cache
 
 ## New Features

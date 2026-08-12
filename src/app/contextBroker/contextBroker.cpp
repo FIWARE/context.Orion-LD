@@ -66,7 +66,7 @@
 #include <limits.h>
 
 #include "mongoBackend/MongoGlobal.h"
-#include "orionld/subCache/subCachesRefresh.h"                   // subCachesRefreshStart
+#include "orionld/subCache/subCachesRefresh.h"                   // subCachesMaintenanceStart
 
 #include "parseArgs/parseArgs.h"
 #include "parseArgs/paConfig.h"
@@ -953,8 +953,7 @@ int main(int argC, char* argV[])
 
   if (noCache == false)
   {
-    if (subCacheInterval != 0)
-      subCachesRefreshStart();
+    subCachesMaintenanceStart();
   }
   else
   {

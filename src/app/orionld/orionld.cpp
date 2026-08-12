@@ -70,7 +70,7 @@
 #include <mongo/version.h>                                  // MONGOCLIENT_VERSION
 
 #include "mongoBackend/MongoGlobal.h"
-#include "orionld/subCache/subCachesRefresh.h"                   // subCachesRefreshStart
+#include "orionld/subCache/subCachesRefresh.h"                   // subCachesMaintenanceStart
 
 extern "C"
 {
@@ -1375,11 +1375,12 @@ int main(int argC, char* argV[])
     KT_X(1, "Fatal Error (could not initialize libcurl)");
 
   //
-  // -subCacheIval: poll the database for what other broker instances have done.
-  // The caches themselves are already populated - subCachesInit did that, above.
+  // The counter flush (-subCacheFlushIval) and, until change streams replace it,
+  // the database poll (-subCacheIval). The caches themselves are already
+  // populated - subCachesInit did that, above.
   //
-  if ((noCache == false) && (subCacheInterval != 0))
-    subCachesRefreshStart();
+  if (noCache == false)
+    subCachesMaintenanceStart();
 
   dbInit(dbHost, dbName);  // Move to be next to mongocInit ?
 

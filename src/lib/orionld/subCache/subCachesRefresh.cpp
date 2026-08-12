@@ -23,6 +23,9 @@
 * Author: Ken Zangelin
 */
 #include <unistd.h>                                              // sleep
+#include <sys/time.h>                                            // gettimeofday
+#include <errno.h>                                               // errno
+#include <string.h>                                              // strerror
 #include <pthread.h>                                             // pthread_create, pthread_detach
 
 extern "C"
@@ -34,7 +37,7 @@ extern "C"
 #include "common/sem.h"                                          // cacheSemTake, cacheSemGive
 
 #include "orionld/types/OrionldTenant.h"                         // OrionldTenant, tenant0
-#include "orionld/common/orionldState.h"                         // orionldState, subCacheInterval
+#include "orionld/common/orionldState.h"                         // orionldState, subCacheInterval, subCacheFlushInterval
 #include "orionld/common/tenantList.h"                           // tenantList
 #include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/mongoc/mongocSubCachePopulateByTenant.h"       // mongocSubCachePopulateByTenant
@@ -70,24 +73,68 @@ void subCachesRefresh(void)
 
 // -----------------------------------------------------------------------------
 //
-// subCachesRefreshThread -
+// now - seconds since the epoch, with a fraction
 //
-static void* subCachesRefreshThread(void* vP)
+static double now(void)
 {
-  //
-  // A thread of its own - no request, so its own orionldState (and its own kalloc
-  // buffer, which is reset after every tick).
-  //
-  orionldStateInit(NULL);
+  struct timeval tv;
+
+  if (gettimeofday(&tv, NULL) != 0)
+    KT_RE(0, "gettimeofday error: %s", strerror(errno));
+
+  return tv.tv_sec + tv.tv_usec / 1000000.0;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// subCachesMaintenanceThread - the counter flush, and (for now) the refresh
+//
+// Two independent deadlines, checked once a second:
+//
+//   -subCacheFlushIval:  push the notification counters to the database.
+//   -subCacheIval:       poll the database for what other instances have done.
+//
+// The counters are ALSO flushed by the notification path itself, as soon as a
+// subscription has -cSubCounters notifications pending (default 20). This timer
+// is what gets the counters of a quiet subscription out - without it they sit in
+// RAM until the twentieth notification, which for most subscriptions is never.
+//
+static void* subCachesMaintenanceThread(void* vP)
+{
+  double nextFlushAt   = now() + subCacheFlushInterval;
+  double nextRefreshAt = now() + subCacheInterval;
 
   while (1)
   {
-    sleep(subCacheInterval);
+    sleep(1);
 
-    subCachesRefresh();
+    double t = now();
 
-    kaBufferReset(&orionldState.kalloc, true);
-    orionldStateRelease();
+    //
+    // A thread of its own - no request, so its own orionldState, and its kalloc
+    // buffer is reset once the tick is done with it.
+    //
+    if ((subCacheFlushInterval > 0) && (t >= nextFlushAt))
+    {
+      orionldStateInit(NULL);
+      subCachesCountersFlush();
+      kaBufferReset(&orionldState.kalloc, true);
+      orionldStateRelease();
+
+      nextFlushAt = now() + subCacheFlushInterval;
+    }
+
+    if ((subCacheInterval > 0) && (t >= nextRefreshAt))
+    {
+      orionldStateInit(NULL);
+      subCachesRefresh();
+      kaBufferReset(&orionldState.kalloc, true);
+      orionldStateRelease();
+
+      nextRefreshAt = now() + subCacheInterval;
+    }
   }
 
   return NULL;
@@ -97,19 +144,26 @@ static void* subCachesRefreshThread(void* vP)
 
 // -----------------------------------------------------------------------------
 //
-// subCachesRefreshStart -
+// subCachesMaintenanceStart -
 //
-void subCachesRefreshStart(void)
+void subCachesMaintenanceStart(void)
 {
   pthread_t  tid;
   int        ret;
 
-  KT_T(KtSubCache, "Starting the subscription cache refresh thread (every %d seconds)", subCacheInterval);
+  if ((subCacheFlushInterval <= 0) && (subCacheInterval <= 0))
+  {
+    KT_T(KtSubCache, "Neither -subCacheFlushIval nor -subCacheIval is set - no sub cache maintenance thread");
+    return;
+  }
 
-  ret = pthread_create(&tid, NULL, subCachesRefreshThread, NULL);
+  KT_T(KtSubCache, "Starting the sub cache maintenance thread (flush every %ds, refresh every %ds)",
+       subCacheFlushInterval, subCacheInterval);
+
+  ret = pthread_create(&tid, NULL, subCachesMaintenanceThread, NULL);
 
   if (ret != 0)
-    KT_RVE("Runtime Error (unable to create the subscription cache refresh thread: %d)", ret);
+    KT_RVE("Runtime Error (unable to create the sub cache maintenance thread: %d)", ret);
 
   pthread_detach(tid);
 }
