@@ -1,4 +1,4 @@
-# Copyright 2022 FIWARE Foundation e.V.
+# Copyright 2026 FIWARE Foundation e.V.
 #
 # This file is part of Orion-LD Context Broker.
 #
@@ -17,29 +17,23 @@
 #
 # For those usages not covered by this license please contact with
 # orionld at fiware dot org
-
+#
+# Author: Ken Zangelin
 CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
 
 SET (SOURCES
-    regCacheItemAdd.cpp
-    regCacheItemFromDb.cpp
-    regCacheItemLookup.cpp
-    regCacheItemRemove.cpp
-    regCacheCreate.cpp
-    regCacheInit.cpp
-    regCacheRelease.cpp
-    regCacheItemContextCheck.cpp
-    regCacheIdPatternRegexCompile.cpp
-    regCacheItemRegexRelease.cpp
-    regCacheDebug.cpp
-    regCachePresent.cpp
+    haInit.cpp
+    haEventApply.cpp
+    haMongoLoop.cpp
 )
 
-# Include directories
-# -----------------------------------------------------------------
+SET (HEADERS
+    HaEvent.h
+    haInit.h
+    haEventApply.h
+    haMongoLoop.h
+)
+
 include_directories("${PROJECT_SOURCE_DIR}/src/lib")
 
-
-# Library declaration
-# -----------------------------------------------------------------
-ADD_LIBRARY(orionld_regCache STATIC ${SOURCES})
+ADD_LIBRARY(orionld_ha STATIC ${SOURCES} ${HEADERS})

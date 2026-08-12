@@ -218,9 +218,23 @@ if [[ -n "${DATABASE}" && ! "$(pidof mongod)" ]]; then
     echo "Builder: creating Mongo temp folder"
     rm -Rf /tmp/mongodb || true && mkdir -p /tmp/mongodb
 
-    echo "Builder: starting Mongo"
-    mongod --dbpath /tmp/mongodb  --nojournal --quiet > /dev/null 2>&1 &
-    sleep 3
+    echo "Builder: starting Mongo as a single-node replica set"
+
+    #
+    # A REPLICA SET, not a standalone: mongo change streams read the oplog, and a
+    # standalone mongod has none - so -ha mongo, and every test of it, needs this.
+    # One node is enough.
+    #
+    # NOTE: no --nojournal. mongod refuses to start a replica set without it:
+    # "Running wiredTiger without journaling in a replica set is not supported".
+    #
+    mongod --dbpath /tmp/mongodb --replSet rs0 --quiet > /dev/null 2>&1 &
+
+    # Wait for mongod to answer, then initiate the set and wait for it to elect itself
+    for i in $(seq 1 60); do mongo --quiet --eval 'db.adminCommand({ping:1}).ok' > /dev/null 2>&1 && break; sleep 0.5; done
+    mongo --quiet --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"localhost:27017"}]})' > /dev/null 2>&1
+    for i in $(seq 1 60); do [ "$(mongo --quiet --eval 'rs.status().myState' 2> /dev/null)" == "1" ] && break; sleep 0.5; done
+
     export MONGO_HOST=localhost
 fi
 

@@ -627,6 +627,7 @@ extern Kjson*            kjsonP;
 extern uint16_t          portNo;
 extern char              dbHost[];                 // From orionld.cpp
 extern char              dbName[];                 // From orionld.cpp
+extern char              haChannel[];              // From orionld.cpp - the -ha option
 extern int               dbNameLen;
 extern char              dbUser[];                 // From orionld.cpp
 extern char              dbPwd[];                  // From orionld.cpp

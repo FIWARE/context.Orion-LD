@@ -71,6 +71,7 @@
 
 #include "mongoBackend/MongoGlobal.h"
 #include "orionld/subCache/subCachesRefresh.h"                   // subCachesMaintenanceStart
+#include "orionld/ha/haInit.h"                                   // haInit
 
 extern "C"
 {
@@ -175,6 +176,7 @@ int             port;
 char            dbHost[1024];
 char            rplSet[64];
 char            dbName[64];
+char            haChannel[64];
 char            dbUser[64];
 char            dbPwd[512];
 char            dbAuthDb[64];
@@ -307,6 +309,7 @@ bool            kTraceInfo       = false;
 #define MUTEX_POLICY_DESC      "mutex policy (none/read/write/all)"
 #define WRITE_CONCERN_DESC     "db write concern (0:unacknowledged, 1:acknowledged)"
 #define CPR_FORWARD_LIMIT_DESC "maximum number of distributed requests to Context Providers for a single client request"
+#define HA_DESC                "High Availability: how this instance learns what other instances do. 'mongo' = mongo change streams (needs a replica set). An <ip:port> names an haaux instance (not implemented yet). Empty: no HA"
 #define SUB_CACHE_IVAL_DESC    "interval in seconds between calls to Subscription Cache refresh (0: no refresh)"
 #define SUB_CACHE_FLUSH_IVAL_DESC    "interval in seconds between calls to Pernot Subscription Cache Flush to DB (0: no flush)"
 #define NOTIFICATION_MODE_DESC "notification mode (persistent|transient|threadpool:q:n)"
@@ -433,6 +436,7 @@ PaArgument paArgs[] =
   { "-corsOrigin",            allowedOrigin,            "CORS_ALLOWED_ORIGIN",       PaString,  PaOpt,  _i "",            PaNL,   PaNL,             ALLOWED_ORIGIN_DESC      },
   { "-corsMaxAge",            &maxAge,                  "CORS_MAX_AGE",              PaInt,     PaOpt,  86400,            -1,     86400,            CORS_MAX_AGE_DESC        },
   { "-cprForwardLimit",       &cprForwardLimit,         "CPR_FORWARD_LIMIT",         PaUInt,    PaOpt,  1000,             0,      UINT_MAX,         CPR_FORWARD_LIMIT_DESC   },
+  { "-ha",                    haChannel,                "HA",                        PaString,  PaOpt,  _i "",            PaNL,   PaNL,             HA_DESC                  },
   { "-subCacheIval",          &subCacheInterval,        "SUBCACHE_IVAL",             PaInt,     PaOpt,  0,                0,      3600,             SUB_CACHE_IVAL_DESC      },
   { "-subCacheFlushIval",     &subCacheFlushInterval,   "SUBCACHE_FLUSH_IVAL",       PaInt,     PaOpt,  10,               0,      3600,             SUB_CACHE_FLUSH_IVAL_DESC },
   { "-noCache",               &noCache,                 "NOCACHE",                   PaBool,    PaOpt,  false,            false,  true,             NO_CACHE                 },
@@ -1381,6 +1385,12 @@ int main(int argC, char* argV[])
   //
   if (noCache == false)
     subCachesMaintenanceStart();
+
+  //
+  // High Availability - the channel that tells this instance what the others do.
+  // AFTER the caches exist (subCachesInit, above), as an event applies to them.
+  //
+  haInit();
 
   dbInit(dbHost, dbName);  // Move to be next to mongocInit ?
 

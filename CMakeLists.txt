@@ -255,6 +255,7 @@ SET (ORION_LIBS
     orionld_mqtt
     orionld_ws
     orionld_q
+    orionld_ha
     orionld_subCache     # repeated: orionld_notifications, further up, notifies from the subscription cache
     orionld_mongoc       # subCache needs mongoc
     orionld_entityMaps
@@ -405,6 +406,7 @@ if (error EQUAL 0)
   ADD_SUBDIRECTORY(src/lib/orionld/contextCache)
   ADD_SUBDIRECTORY(src/lib/orionld/regCache)
   ADD_SUBDIRECTORY(src/lib/orionld/subCache)
+  ADD_SUBDIRECTORY(src/lib/orionld/ha)
   ADD_SUBDIRECTORY(src/lib/orionld/kjTree)
   ADD_SUBDIRECTORY(src/lib/orionld/db)
   ADD_SUBDIRECTORY(src/lib/orionld/dbModel)
