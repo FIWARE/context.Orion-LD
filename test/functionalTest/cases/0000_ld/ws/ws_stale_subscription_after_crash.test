@@ -125,7 +125,7 @@ HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
 NGSILD-Results-Count: 1
 
 [
@@ -137,7 +137,7 @@ NGSILD-Results-Count: 1
         ],
         "id": "REGEX(urn:ngsi-ld:subscription:.*)",
         "isActive": true,
-        "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld",
+        "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld",
         "notification": {
             "endpoint": {
                 "accept": "application/json",
@@ -173,7 +173,7 @@ HTTP/1.1 200 OK
 Content-Length: 2
 Content-Type: application/json
 Date: REGEX(.*)
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
 NGSILD-Results-Count: 0
 
 []
