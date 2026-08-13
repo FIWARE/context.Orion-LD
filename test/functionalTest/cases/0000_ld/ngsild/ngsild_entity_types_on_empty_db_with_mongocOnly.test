@@ -1,0 +1,117 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# iot_support at tid dot es
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+GET /types on an empty database with -mongocOnly
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -mongocOnly
+
+--SHELL--
+
+#
+# With -mongocOnly the legacy C++ driver is never initialised - orionld.cpp skips
+# mongoInit() - so its connection pool does not exist. A call into it does not
+# fail, it BLOCKS forever. dbEntityTypesGet used to walk into exactly that: on an
+# empty database mongocEntityTypesGet returns NULL, and the NULL was read as "ask
+# the legacy driver instead".
+#
+# So this test is about a HANG, and a hang is not something a .test file can
+# express: the harness would simply wait, and the suite would stall with no diff
+# to read. Hence --max-time, and hence step 01 - an explicit, bounded request
+# whose recorded outcome is the whole point. An empty array here means the broker
+# answered; the old behaviour would print the curl timeout message instead.
+#
+# The database must be EMPTY for step 01. A single entity in the collection makes
+# mongocEntityTypesGet return non-NULL and hides the bug completely - which is why
+# it survived this long, and why step 02 creates the entity only afterwards.
+#
+# 01. GET /types on an empty database - answers, bounded, with an empty array
+# 02. Create entity urn:E1 of type T
+# 03. GET /types - now T is there
+#
+
+echo "01. GET /types on an empty database - answers, bounded, with an empty array"
+echo "==========================================================================="
+curl --max-time 10 -s -S localhost:$CB_PORT/ngsi-ld/v1/types \
+     -H 'Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
+echo
+echo
+
+
+echo "02. Create entity urn:E1 of type T"
+echo "=================================="
+payload='{
+  "id": "urn:E1",
+  "type": "T",
+  "P1": {
+    "type": "Property",
+    "value": 1
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "03. GET /types - now T is there"
+echo "==============================="
+orionCurl --url /ngsi-ld/v1/types
+echo
+echo
+
+
+--REGEXPECT--
+01. GET /types on an empty database - answers, bounded, with an empty array
+===========================================================================
+{"id":"urn:ngsi-ld:EntityTypeList:REGEX(.*)","type":"EntityTypeList","typeList":[]}
+
+02. Create entity urn:E1 of type T
+==================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E1
+
+
+
+03. GET /types - now T is there
+===============================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+{
+    "id": "urn:ngsi-ld:EntityTypeList:REGEX(.*)",
+    "type": "EntityTypeList",
+    "typeList": [
+        "T"
+    ]
+}
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
