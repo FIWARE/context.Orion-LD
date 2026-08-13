@@ -41,6 +41,7 @@ extern "C"
 #include "orionld/common/orionldTenantGet.h"                     // orionldTenantGet
 #include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/mongoc/mongocKjTreeFromBson.h"                 // mongocKjTreeFromBson
+#include "orionld/mongoc/mongocConnectionRelease.h"              // mongocConnectionRelease
 #include "orionld/ha/HaEvent.h"                                  // HaEvent
 #include "orionld/ha/haEventApply.h"                             // haEventApply
 #include "orionld/ha/haMongoLoop.h"                              // Own interface
@@ -253,6 +254,26 @@ static void* haMongoLoopThread(void* vP)
         //
         orionldStateInit(NULL);
         eventTreat(bsonP);
+
+        //
+        // ⚠️⚠️ GIVE THE MONGO CLIENT BACK. Applying an event reads the database,
+        // and mongocConnectionGet() takes a client from the pool; orionldStateRelease
+        // does NOT return it. A request thread gets away with forgetting only because
+        // rest.cpp does it for every request (requestCompleted); this thread has no
+        // request behind it, so it has to do it itself.
+        //
+        // Forgetting is not a slow leak, it is a deadlock with a fuse on it. Nothing
+        // sets mongoc_client_pool_max_size, so the default of 100 applies: the 101st
+        // event blocks forever in mongoc_client_pool_pop() - and it blocks INSIDE
+        // haEventApply, which holds the cache semaphore. Every request that needs the
+        // cache then hangs behind it and the broker stops answering, while still
+        // looking perfectly alive.
+        //
+        // Measured before the fix: 200/200 subscription creates without -ha, and a
+        // dead broker at create #110 with it.
+        //
+        mongocConnectionRelease();
+
         kaBufferReset(&orionldState.kalloc, true);
         orionldStateRelease();
         continue;
