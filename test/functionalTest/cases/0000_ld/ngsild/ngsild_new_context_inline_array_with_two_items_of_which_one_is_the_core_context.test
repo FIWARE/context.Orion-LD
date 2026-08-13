@@ -48,7 +48,7 @@ payload='{
   "type": "T1",
    "@context": [
      "https://fiware.github.io/NGSI-LD_TestSuite/ldContext/testContext.jsonld",
-     "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld"
+     "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld"
    ]
 }'
 orionCurl --url /ngsi-ld/v1/entities --payload "$payload" -H "Content-Type: application/ld+json"  --linkHeaderFix
@@ -90,13 +90,13 @@ Date: REGEX(.*)
       "type": "hash-table",
       "origin": "REGEX((Downloaded|FileCached))",
       "compactions": 0,
-      "expansions": 348,
+      "expansions": 406,
       "hash-table": {
         "instanceId": "https://uri.etsi.org/ngsi-ld/instanceId",
+        "aggrParams": "https://uri.etsi.org/ngsi-ld/aggrParams",
         "notifiedAt": "https://uri.etsi.org/ngsi-ld/notifiedAt",
         "linkedMaps": "https://uri.etsi.org/ngsi-ld/linkedMaps",
-        "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt",
-        "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList"
+        "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
       }
     }
   },

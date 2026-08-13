@@ -54,7 +54,7 @@ payload='{
     "value": 23.4
   },
   "@context": [
-    "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld",
+    "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld",
     {
       "temperature": "https://mysite.com/api/ngsi-ld-attributes/temperature"
     }
@@ -93,7 +93,7 @@ payload='{
     }
   },
   "@context": [
-    "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld",
+    "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld",
     {
       "temperature": "https://mysite.com/api/ngsi-ld-attributes/temperature"
     }
@@ -112,7 +112,7 @@ payload='{
     "value": 8.5
   },
   "@context": [
-    "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld",
+    "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld",
     {
       "temperature": "https://mysite.com/api/ngsi-ld-attributes/temperature"
     }

@@ -79,7 +79,7 @@ echo "==========================================================================
 payload='{
   "@context": [
     "'$rContextId'",
-    "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld"
+    "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld"
   ]
 }'
 orionCurl --url /ngsi-ld/v1/jsonldContexts --payload "$payload"
@@ -130,7 +130,7 @@ echo "=================================================================="
 payload='{
   "@context": [
     "'./$rContextId'",
-    "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld"
+    "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld"
   ]
 }'
 orionCurl --url /ngsi-ld/v1/jsonldContexts --payload "$payload"
@@ -167,7 +167,7 @@ echo "==========================================================================
 payload='{
   "@context": [
     "no-such-context-here",
-    "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld"
+    "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld"
   ]
 }'
 orionCurl --url /ngsi-ld/v1/jsonldContexts --payload "$payload"
@@ -268,7 +268,7 @@ HTTP/1.1 200 OK
 Content-Length: 101
 Content-Type: application/json
 Date: REGEX(.*)
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
 
 {
     "id": "urn:ngsi-ld:entities:E1",
@@ -322,7 +322,7 @@ HTTP/1.1 200 OK
 Content-Length: 101
 Content-Type: application/json
 Date: REGEX(.*)
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
 
 {
     "id": "urn:ngsi-ld:entities:E2",
@@ -386,7 +386,7 @@ HTTP/1.1 200 OK
 Content-Length: 125
 Content-Type: application/json
 Date: REGEX(.*)
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
 
 {
     "https://ngsi-ld-test-suite/context#brandName": {
