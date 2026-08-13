@@ -327,6 +327,30 @@ OrionldContext* orionldContextFromUrl(char* url, char* id)
   }
 
   //
+  // ⭐ AN HA APPLY GETS ZERO HOPS. It resolves the one item the event named, and
+  // follows nothing.
+  //
+  // The reason it can afford to is the shape of the channel itself: anything this
+  // @context references is an item somebody else has downloaded and PERSISTED, and
+  // that persist raises an event of its own. So a missing reference is not
+  // something to go and fetch - it is something that arrives, by the same road,
+  // announced separately. Chasing it here would mean an HTTP download inside the
+  // change-stream thread and then a row written back that is already in the
+  // database, which is the one thing an apply must never do.
+  //
+  // Hence a warning and not an error: a miss is an ordering observation, not a
+  // failure. It is rare - the creating instance persists the members of an array
+  // @context before the array that references them, so the events arrive in that
+  // order - and it costs nothing when it happens, because the @context is in the
+  // database and the next request that needs it resolves it from there.
+  //
+  if (orionldState.haApply == true)
+  {
+    KT_W("HA: @context '%s' is not cached and an apply takes no hops - it will arrive as an event of its own", url);
+    return NULL;
+  }
+
+  //
   // Make sure the context isn't already being downloaded
   //
   // Three possibilities:

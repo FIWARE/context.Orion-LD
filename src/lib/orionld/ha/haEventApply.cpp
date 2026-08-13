@@ -166,6 +166,38 @@ bool haEventApply(HaEvent* eventP)
   //
   orionldState.tenantP = eventP->tenantP;
 
+  //
+  // ⚠️ THE INVARIANT OF THIS WHOLE PATH: what arrives here is ALREADY IN THE
+  // DATABASE. Another instance wrote it, and the event IS the notification that
+  // it did - so an apply reads, and only reads. It must never write the change
+  // back, and it must never go to the network to complete it.
+  //
+  // Two places would otherwise break that, and neither is obvious from here:
+  //
+  //   o orionldContextCacheDelete() deletes the mongo row at all three sites of
+  //     its parent-cascade - hence the 'alsoFromDb' argument, false from here.
+  //   o an ARRAY @context resolves its members through orionldContextFromUrl(),
+  //     which on a cache miss DOWNLOADS the member and persists it. In practice
+  //     the members cannot be missing - the creating instance persists them
+  //     before the array that references them (orionldPostContexts resolves the
+  //     tree, which persists each member, and only then persists the array), and
+  //     a change stream delivers in the order the writes happened. But "in
+  //     practice" is not an invariant: an instance that missed events, or a
+  //     stream that resumed, would have this thread downloading over HTTP and
+  //     writing rows that are already there.
+  //
+  // ⭐ THE RULE, stated once: AN APPLY GETS ZERO HOPS. It resolves the one item the
+  // event named and follows nothing - because anything that item references is
+  // itself an item somebody persisted, and that persist raises its own event. A
+  // reference is not something to go and fetch; it is something that arrives.
+  //
+  // 'haApply' is what carries that rule down to the places that would otherwise
+  // reach further. It is a bool and not a hop COUNT on purpose: orionldStateInit
+  // bzeroes the whole struct, so a numeric "hops" would default to 0 and quietly
+  // forbid every @context download in every ordinary request.
+  //
+  orionldState.haApply = true;
+
   bool ok = true;
 
   cacheSemTake(__FUNCTION__, "Applying an HA event");
