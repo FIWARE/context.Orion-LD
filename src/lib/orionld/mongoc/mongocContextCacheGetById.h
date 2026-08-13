@@ -1,5 +1,5 @@
-#ifndef SRC_LIB_ORIONLD_CONTEXTCACHE_ORIONLDCONTEXTCACHEDELETE_H_
-#define SRC_LIB_ORIONLD_CONTEXTCACHE_ORIONLDCONTEXTCACHEDELETE_H_
+#ifndef SRC_LIB_ORIONLD_MONGOC_MONGOCCONTEXTCACHEGETBYID_H_
+#define SRC_LIB_ORIONLD_MONGOC_MONGOCCONTEXTCACHEGETBYID_H_
 
 /*
 *
@@ -26,13 +26,17 @@
 * Author: Ken Zangelin
 */
 
+extern "C"
+{
+#include "kjson/KjNode.h"                                        // KjNode
+}
+
 
 
 // -----------------------------------------------------------------------------
 //
-// orionldContextCacheDelete - remove an @context from the cache, and (unless it got
-//                             here over HA) from the database
+// mongocContextCacheGetById - one @context from the database, by its local id
 //
-extern bool orionldContextCacheDelete(const char* id, bool alsoFromDb);
+extern KjNode* mongocContextCacheGetById(const char* contextId);
 
-#endif  // SRC_LIB_ORIONLD_CONTEXTCACHE_ORIONLDCONTEXTCACHEDELETE_H_
+#endif  // SRC_LIB_ORIONLD_MONGOC_MONGOCCONTEXTCACHEGETBYID_H_

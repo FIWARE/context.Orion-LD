@@ -138,10 +138,32 @@ static void eventTreat(const bson_t* bsonP)
   if (kindOfCollection(collP->value.s, &kind) == false)
     return;  // Not one of ours - entities, and everybody else's collections
 
-  OrionldTenant* tenantP = tenantOfDatabase(dbP->value.s);
+  //
+  // Which tenant?
+  //
+  // Subscriptions and registrations live in the tenant's own database. @contexts
+  // do NOT: the context cache is global (a context is identified by its URL, and
+  // the document at a URL is the same whoever fetched it), and the collection sits
+  // in a database called "orionld" whatever -db says - see mongocConnectionGet.
+  // So a context event is accepted from there and from nowhere else, and the
+  // tenant it carries is only there because the apply wants one.
+  //
+  OrionldTenant* tenantP;
 
-  if (tenantP == NULL)
-    return;  // Another application's database
+  if (kind == HaContext)
+  {
+    if (strcmp(dbP->value.s, "orionld") != 0)
+      return;  // A collection called "contexts" in somebody else's database
+
+    tenantP = &tenant0;
+  }
+  else
+  {
+    tenantP = tenantOfDatabase(dbP->value.s);
+
+    if (tenantP == NULL)
+      return;  // Another application's database
+  }
 
   //
   // The id. For a Subscription or a Registration created over NGSI-LD it is the

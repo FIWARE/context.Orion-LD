@@ -21,7 +21,7 @@
 # VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
 
 --NAME--
-HA: subscriptions and registrations created, patched and deleted in one broker reach the other
+HA: subscriptions, registrations and @contexts created and deleted in one broker reach the other
 
 --SHELL-INIT--
 dbInit CB
@@ -51,6 +51,10 @@ orionldStart CB2 -experimental -ha mongo
 # 08. Wait for it, then GET urn:R1 from CB2 - it is there
 # 09. DELETE urn:R1 on CB
 # 10. Wait for it, then GET all registrations from CB2 - it is gone
+# 11. Create a hosted @context on CB
+# 12. Wait for it, then GET the served @contexts from CB2 - the new one is there
+# 13. DELETE the @context on CB
+# 14. Wait for it, then GET the served @contexts from CB2 - it is gone from there too
 #
 
 #
@@ -93,6 +97,39 @@ waitForReg()
   while [ $_i -lt 200 ]
   do
     hits=$(curl -s localhost:$1/ngsi-ld/v1/csourceRegistrations | grep -c "$2")
+
+    if [ "$3" == "gone" ]
+    then
+      [ "$hits" == "0" ] && return 0
+    else
+      [ "$hits" != "0" ] && return 0
+    fi
+
+    sleep 0.05
+    _i=$_i+1
+  done
+
+  echo "TIMEOUT waiting for $2 on port $1"
+}
+
+
+#
+# waitForContext - the same, for @contexts
+#
+# ⚠️ Matched on the GENERATED id of this run's @context, never on what the @context
+# defines. 'orionld.contexts' is a database of its own, shared by every tenant, and
+# dbInit does not drop it - so an @context created by an earlier run of this test is
+# still there, and still cached by both brokers at startup. Matching on content made
+# step 12 pass on a leftover, i.e. without the sync doing anything at all.
+#
+waitForContext()
+{
+  typeset -i _i
+  _i=0
+
+  while [ $_i -lt 200 ]
+  do
+    hits=$(curl -s localhost:$1/ngsi-ld/v1/jsonldContexts?details=true | grep -c "$2")
 
     if [ "$3" == "gone" ]
     then
@@ -212,6 +249,42 @@ echo "10. Wait for it, then GET all registrations from CB2 - it is gone"
 echo "================================================================="
 waitForReg $CB2_PORT urn:R1 gone
 orionCurl --url /ngsi-ld/v1/csourceRegistrations --port $CB2_PORT
+echo
+echo
+
+
+echo "11. Create a hosted @context on CB"
+echo "=================================="
+payload='{
+  "@context": {
+    "HA1": "urn:ngsi-ld:attributes:HA1"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/jsonldContexts --payload "$payload" --noPayloadCheck
+ctxId=$(grep -i '^Location:' /tmp/httpHeaders.out | sed 's|.*/jsonldContexts/||')
+echo
+echo
+
+
+echo "12. Wait for it, then GET the served @contexts from CB2 - the new one is there"
+echo "=============================================================================="
+waitForContext $CB2_PORT $ctxId
+echo "the new @context on CB2: $(curl -s localhost:$CB2_PORT/ngsi-ld/v1/jsonldContexts?details=true | grep -c $ctxId)"
+echo
+echo
+
+
+echo "13. DELETE the @context on CB"
+echo "============================="
+orionCurl --url /ngsi-ld/v1/jsonldContexts/$ctxId -X DELETE
+echo
+echo
+
+
+echo "14. Wait for it, then GET the served @contexts from CB2 - it is gone from there too"
+echo "==================================================================================="
+waitForContext $CB2_PORT $ctxId gone
+echo "the new @context on CB2: $(curl -s localhost:$CB2_PORT/ngsi-ld/v1/jsonldContexts?details=true | grep -c $ctxId)"
 echo
 echo
 
@@ -365,6 +438,33 @@ Content-Type: application/json
 Date: REGEX(.*)
 
 []
+
+
+11. Create a hosted @context on CB
+==================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/jsonldContexts/REGEX(.*)
+
+
+
+
+12. Wait for it, then GET the served @contexts from CB2 - the new one is there
+==============================================================================
+the new @context on CB2: 1
+
+
+13. DELETE the @context on CB
+=============================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+14. Wait for it, then GET the served @contexts from CB2 - it is gone from there too
+===================================================================================
+the new @context on CB2: 0
 
 
 --TEARDOWN--

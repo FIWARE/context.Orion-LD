@@ -257,6 +257,8 @@ SET (ORION_LIBS
     orionld_q
     orionld_ha
     orionld_subCache     # repeated: orionld_notifications, further up, notifies from the subscription cache
+    orionld_regCache     # repeated: orionld_ha applies an HA event to the registration cache
+    orionld_contextCache # repeated: ... and to the @context cache
     orionld_mongoc       # subCache needs mongoc
     orionld_entityMaps
     orionld_dbModel

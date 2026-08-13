@@ -36,6 +36,8 @@ extern "C"
 #include "orionld/subCache/subCacheItemRemove.h"                 // subCacheItemRemove
 #include "orionld/regCache/regCacheItemFromDb.h"                 // regCacheItemFromDb
 #include "orionld/regCache/regCacheItemRemove.h"                 // regCacheItemRemove
+#include "orionld/contextCache/orionldContextCacheItemFromDb.h"  // orionldContextCacheItemFromDb
+#include "orionld/contextCache/orionldContextCacheDelete.h"      // orionldContextCacheDelete
 #include "orionld/ha/haEventApply.h"                             // Own interface
 
 
@@ -108,6 +110,37 @@ static bool registrationApply(HaEvent* eventP)
 
 // -----------------------------------------------------------------------------
 //
+// contextApply -
+//
+// The @context cache is global, not per tenant: a context is identified by its URL
+// and the document at a URL is the same whoever fetched it.
+//
+// This one matters more than it looks. A Subscription carries the URL of its
+// @context, and subCacheItemFromDb resolves it in the CONTEXT CACHE and never
+// downloads - so a subscription arriving over HA with a context this instance has
+// never seen would be cached without one. The context is written before the
+// subscription that uses it, and a change stream delivers in that order.
+//
+static bool contextApply(HaEvent* eventP)
+{
+  if (eventP->op == HaOpDelete)
+  {
+    bool removed = orionldContextCacheDelete(eventP->id, false);  // false: the instance that deleted the row shares this database
+
+    KT_T(KtCoreContext, "HA: @context '%s' %s", eventP->id, removed? "removed from the cache" : "was not cached");
+    return true;
+  }
+
+  if (eventP->apiP != NULL)
+    KT_RE(false, "HA: @context '%s' came with a payload - not implemented yet (haaux)", eventP->id);
+
+  return orionldContextCacheItemFromDb(eventP->id);
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // haEventApply -
 //
 bool haEventApply(HaEvent* eventP)
@@ -148,11 +181,7 @@ bool haEventApply(HaEvent* eventP)
     break;
 
   case HaContext:
-    //
-    // TODO: the @context cache. Less urgent - a context is immutable once created
-    // and a miss is resolved by reading the database anyway.
-    //
-    KT_T(KtSubCache, "HA: @context '%s' changed in another instance - not applied (not implemented)", eventP->id);
+    ok = contextApply(eventP);
     break;
   }
 

@@ -1,5 +1,5 @@
-#ifndef SRC_LIB_ORIONLD_CONTEXTCACHE_ORIONLDCONTEXTCACHEDELETE_H_
-#define SRC_LIB_ORIONLD_CONTEXTCACHE_ORIONLDCONTEXTCACHEDELETE_H_
+#ifndef SRC_LIB_ORIONLD_CONTEXTCACHE_ORIONLDCONTEXTCACHEITEMFROMDB_H_
+#define SRC_LIB_ORIONLD_CONTEXTCACHE_ORIONLDCONTEXTCACHEITEMFROMDB_H_
 
 /*
 *
@@ -30,9 +30,8 @@
 
 // -----------------------------------------------------------------------------
 //
-// orionldContextCacheDelete - remove an @context from the cache, and (unless it got
-//                             here over HA) from the database
+// orionldContextCacheItemFromDb - cache ONE @context, read back from the database
 //
-extern bool orionldContextCacheDelete(const char* id, bool alsoFromDb);
+extern bool orionldContextCacheItemFromDb(const char* contextId);
 
-#endif  // SRC_LIB_ORIONLD_CONTEXTCACHE_ORIONLDCONTEXTCACHEDELETE_H_
+#endif  // SRC_LIB_ORIONLD_CONTEXTCACHE_ORIONLDCONTEXTCACHEITEMFROMDB_H_

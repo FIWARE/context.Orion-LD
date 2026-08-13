@@ -24,6 +24,7 @@ SET (SOURCES
     orionldContextCache.cpp
     orionldContextCacheInsert.cpp
     orionldContextCacheInit.cpp
+    orionldContextCacheItemFromDb.cpp
     orionldContextCacheLookup.cpp
     orionldContextCachePresent.cpp
     orionldContextCacheGet.cpp

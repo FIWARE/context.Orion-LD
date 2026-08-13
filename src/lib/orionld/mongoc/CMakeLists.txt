@@ -27,6 +27,7 @@ SET (SOURCES
     mongocConnectionRelease.cpp
     mongocContextCacheDelete.cpp
     mongocContextCacheGet.cpp
+    mongocContextCacheGetById.cpp
     mongocContextCachePersist.cpp
     mongocEntitiesDelete.cpp
     mongocEntitiesExist.cpp
