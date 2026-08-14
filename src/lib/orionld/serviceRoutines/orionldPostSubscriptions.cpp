@@ -129,7 +129,8 @@ static bool subordinateCreate(const char* subscriptionId, KjNode* subordinateArr
   //
   // Set/Add subscription id
   //
-  char subSubId[64];
+  // The caller's 'subscriptionId' is a char[80], and runNo is an int - so ':' + 11 digits + NUL on top
+  char subSubId[80 + 13];
   snprintf(subSubId, sizeof(subSubId), "%s:%d", subscriptionId, runNo);
   KjNode* idP = kjLookup(subP, "id");
 
