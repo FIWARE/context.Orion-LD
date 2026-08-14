@@ -45,6 +45,7 @@ extern "C"
 #include "orionld/mongoc/mongocEntityLookup.h"                  // mongocEntityLookup
 #include "orionld/payloadCheck/fieldPaths.h"                    // RegistrationInformationEntitiesPath, ...
 #include "orionld/payloadCheck/pcheckEntityInfoArray.h"         // pcheckEntityInfoArray
+#include "orionld/regCache/regCacheSem.h"                        // regCacheSemTake, regCacheSemGive
 #include "orionld/payloadCheck/pcheckInformationItem.h"         // Own interface
 
 
@@ -149,6 +150,13 @@ static bool pCheckOverlappingRegistrations
     char*   entityId         = (entityIdP        != NULL)? entityIdP->value.s        : NULL;
     char*   entityIdPattern  = (entityIdPatternP != NULL)? entityIdPatternP->value.s : NULL;
 
+    //
+    // Under the READ lock - this walk runs on every registration POST, concurrently with the
+    // creates and deletes of other requests, and it dereferences rciP->regTree as it goes.
+    // ⚠️ Every way out of the loop must give the lock back first.
+    //
+    regCacheSemTake(orionldState.tenantP->regCache, __FUNCTION__, "Checking for overlapping registrations", SemReadOp);
+
     for (RegCacheItem* rciP = orionldState.tenantP->regCache->regList; rciP != NULL; rciP = rciP->next)
     {
       // In case it's an update, don't compare the registration with itself
@@ -164,6 +172,7 @@ static bool pCheckOverlappingRegistrations
       if ((rciRegModeNodeP != NULL) && (rciRegModeNodeP->type != KjString))
       {
         // orionldError();  this 'mode is a String check' will come later
+        regCacheSemGive(orionldState.tenantP->regCache, __FUNCTION__, "Checking for overlapping registrations");
         return false;
       }
 
@@ -233,12 +242,15 @@ static bool pCheckOverlappingRegistrations
             if (attrsMatch(propertiesP, relationshipsP, rciPropertiesArray, rciRelationshipsArray) == true)
             {
               orionldError(OrionldAlreadyExists, "Conflicting Registration", rciP->regId, 409);
+              regCacheSemGive(orionldState.tenantP->regCache, __FUNCTION__, "Checking for overlapping registrations");
               return true;
             }
           }
         }
       }
     }
+
+    regCacheSemGive(orionldState.tenantP->regCache, __FUNCTION__, "Checking for overlapping registrations");
   }
 
   return false;
