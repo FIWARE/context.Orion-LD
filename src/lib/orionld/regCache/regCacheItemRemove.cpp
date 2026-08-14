@@ -38,6 +38,7 @@ extern "C"
 #include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/regCache/regCachePresent.h"                    // regCacheList
 #include "orionld/regCache/regCacheItemRegexRelease.h"           // regCacheItemRegexRelease
+#include "orionld/regCache/regCacheSem.h"                        // regCacheSemTake, regCacheSemGive
 #include "orionld/regCache/regCacheItemRemove.h"                 // Own interface
 
 
@@ -62,10 +63,21 @@ bool regCacheItemRemove(RegCache* rcP, const char* regId)
   if (rcP == NULL)
     KT_RE(false, "NULL rcP - that's a SW bug!");
 
+  KT_T(KtRegCache, "Removing the reg '%s' from the regCache for tenant '%s'", regId, rcP->tenantP->mongoDbName);
+
+  //
+  // The lock is taken BEFORE the first read of rcP->regList and given back on both ways out.
+  //
+  // ⚠️ KNOWN LIMITATION: this protects the LIST, not the lifetime of an item that a reader is
+  //    still using. A DistOp keeps a RegCacheItem* (DistOp::regP) for the duration of a forwarded
+  //    request, i.e. long after it stopped walking the list, so a registration deleted mid-forward
+  //    is still a use-after-free. Fixing that needs refcount-pinned items - a separate step.
+  //
+  regCacheSemTake(rcP, __FUNCTION__, "Removing an item from the registration cache", SemWriteOp);
+
   RegCacheItem* rciP = rcP->regList;
   RegCacheItem* prev = NULL;
 
-  KT_T(KtRegCache, "Removing the reg '%s' from the regCache for tenant '%s'", regId, rcP->tenantP->mongoDbName);
   regCacheList(rcP, "Before remove");
 
   while (rciP != NULL)
@@ -112,6 +124,7 @@ bool regCacheItemRemove(RegCache* rcP, const char* regId)
       free(rciP);
 
       regCacheList(rcP, "After successful remove");
+      regCacheSemGive(rcP, __FUNCTION__, "Removing an item from the registration cache");
       return true;
     }
 
@@ -120,6 +133,7 @@ bool regCacheItemRemove(RegCache* rcP, const char* regId)
   }
 
   regCacheList(rcP, "After failed remove");
+  regCacheSemGive(rcP, __FUNCTION__, "Removing an item from the registration cache");
 
   return false;
 }

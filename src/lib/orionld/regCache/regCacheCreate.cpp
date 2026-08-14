@@ -38,6 +38,7 @@ extern "C"
 #include "orionld/regCache/regCacheItemAdd.h"                    // regCacheItemAdd
 #include "orionld/regCache/regCacheItemContextCheck.h"           // regCacheItemContextCheck
 #include "orionld/regCache/regCacheItemFromDb.h"                 // regCacheItemFromDbTree
+#include "orionld/regCache/regCacheSem.h"                        // regCacheSemInit
 #include "orionld/regCache/regCacheCreate.h"                     // Own interface
 
 
@@ -75,6 +76,8 @@ RegCache* regCacheCreate(OrionldTenant* tenantP, bool scanRegs)
   rcP->tenantP  = tenantP;
   rcP->regList  = NULL;
   rcP->last     = NULL;
+
+  regCacheSemInit(rcP);  // BEFORE the scan below - regCacheItemAdd takes the lock
 
   if (scanRegs)
   {
