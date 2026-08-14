@@ -33,6 +33,7 @@ extern "C"
 #include "orionld/common/orionldState.h"                         // orionldState, entityMaps
 #include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/regCache/regCacheItemLookup.h"                 // regCacheItemLookup
+#include "orionld/regCache/regCacheSem.h"                        // regCacheSemTake, regCacheSemGive
 #include "orionld/distOp/distOpCreate.h"                         // distOpCreate
 #include "orionld/distOp/distOpLookupByRegId.h"                  // distOpLookupByRegId
 
@@ -58,8 +59,15 @@ DistOpListItem* distOpListItemCreate(const char* distOpId, char* idString)
     //
     KT_RE(NULL, "Internal Error (unable to find the DistOp '%s'", distOpId);
 #else
+    //
+    // Lookup AND distOpCreate under the same READ lock: distOpCreate pins the item, and the pin is
+    // only meaningful if the item cannot be freed between being found and being pinned.
+    //
+    regCacheSemTake(orionldState.tenantP->regCache, __FUNCTION__, "Looking up a registration for a DistOp", SemReadOp);
     RegCacheItem* rciP = regCacheItemLookup(orionldState.tenantP->regCache, distOpId);
     distOpP = distOpCreate(DoQueryEntity, rciP, NULL, NULL, NULL);
+    regCacheSemGive(orionldState.tenantP->regCache, __FUNCTION__, "Looking up a registration for a DistOp");
+
     // Add DistOp to the linked list of DistOps
     distOpP->next    = orionldState.distOpList;
     orionldState.distOpList = distOpP;

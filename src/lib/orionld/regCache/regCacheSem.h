@@ -44,4 +44,22 @@ extern void regCacheSemInit(RegCache* rcP);
 extern void regCacheSemTake(RegCache* rcP, const char* who, const char* what, SemOpType opType);
 extern void regCacheSemGive(RegCache* rcP, const char* who, const char* what);
 
+
+
+// -----------------------------------------------------------------------------
+//
+// regCacheItemPin / regCacheItemUnpin - keep an item alive past the walk that found it
+//
+// The lock above protects the LIST; it says nothing about how long an item lives. A DistOp keeps
+// its RegCacheItem* for the whole of a forwarded request - far beyond the walk - so a DELETE of
+// that registration in the meantime would free it under the sender's feet.
+//
+// ⚠️ regCacheItemPin MUST be called while the READ LOCK IS HELD. That is what makes the item alive
+//    at that instant; without it, the item could be freed between the walk seeing it and the pin.
+// ⚠️ regCacheItemUnpin takes the WRITE LOCK itself, so it must NOT be called with the lock held.
+//    It frees the item if it is the last holder and the registration has been deleted meanwhile.
+//
+extern void regCacheItemPin(RegCacheItem* rciP);
+extern void regCacheItemUnpin(RegCacheItem* rciP);
+
 #endif  // SRC_LIB_ORIONLD_REGCACHE_REGCACHESEM_H_

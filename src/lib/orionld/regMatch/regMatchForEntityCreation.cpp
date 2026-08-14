@@ -40,6 +40,7 @@ extern "C"
 #include "orionld/distOp/viaMatch.h"                             // viaMatch
 #include "orionld/regMatch/regMatchOperation.h"                  // regMatchOperation
 #include "orionld/regMatch/regMatchInformationArray.h"           // regMatchInformationArray
+#include "orionld/regCache/regCacheSem.h"                        // regCacheSemTake, regCacheSemGive
 #include "orionld/regMatch/regMatchForEntityCreation.h"          // Own interface
 
 
@@ -122,6 +123,11 @@ DistOp* regMatchForEntityCreation
   KT_T(KtRegMatch, "Entity ID:         %s", entityId);
   KT_T(KtRegMatch, "Entity Type:       %s", entityType);
 
+  //
+  // The walk runs under the READ lock: the list must not change under us, and the items the
+  // matching DistOps are built from must stay alive long enough to be pinned (distOpCreate).
+  //
+  regCacheSemTake(orionldState.tenantP->regCache, __FUNCTION__, "Matching registrations", SemReadOp);
   for (RegCacheItem* regP = orionldState.tenantP->regCache->regList; regP != NULL; regP = regP->next)
   {
     if ((regP->mode & regMode) == 0)
@@ -191,6 +197,7 @@ DistOp* regMatchForEntityCreation
     distOpTail       = distOpP;
     distOpTail->next = NULL;
   }
+  regCacheSemGive(orionldState.tenantP->regCache, __FUNCTION__, "Matching registrations");
 
   return distOpHead;
 }

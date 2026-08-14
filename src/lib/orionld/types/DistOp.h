@@ -49,6 +49,7 @@ typedef struct DistOp
 {
   char                id[16];            // Unique identifier for this DistOp
   RegCacheItem*       regP;              // Pointer to the registration cache item
+  bool                regPinned;         // 'regP' is pinned (kept alive) by this DistOp - see regCacheSem.h
   DistOpType          operation;         // Operation
   KjNode*             requestBody;       // For Create/Update Requests (also used for GET - tree of response)
 

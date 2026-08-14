@@ -35,6 +35,7 @@ extern "C"
 #include "orionld/types/RegCacheItem.h"                        // RegCacheItem
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/common/traceLevels.h"                        // KTrace levels
+#include "orionld/regCache/regCacheSem.h"                        // regCacheSemTake, regCacheSemGive
 #include "orionld/regMatch/regMatchSubscription.h"             // Own interface
 
 
@@ -76,8 +77,16 @@ bool regMatchSubscription
     {
       const char* entityType = subTypeP->value.s;
 
-      // We have the entity type of the subscription, now match against the registration
-      for (RegCacheItem* rciP = orionldState.tenantP->regCache->regList; rciP != NULL; rciP = rciP->next)
+      //
+      // We have the entity type of the subscription, now match against the registration.
+      // The walk runs under the READ lock, so the list cannot change under us. Note that the
+      // match below must NOT return from inside the loop - the lock has to be given back first.
+      //
+      bool matched = false;
+
+      regCacheSemTake(orionldState.tenantP->regCache, __FUNCTION__, "Matching registrations for a subscription", SemReadOp);
+
+      for (RegCacheItem* rciP = orionldState.tenantP->regCache->regList; (rciP != NULL) && (matched == false); rciP = rciP->next)
       {
         KjNode* informationP = kjLookup(rciP->regTree, "information");
         if (informationP == NULL)
@@ -107,11 +116,20 @@ bool regMatchSubscription
             {
               KT_T(KtSR, "Found a matching registration for entity type '%s': %s", entityType, rciP->regId);
               *entityTypeP = (char*) entityType;
-              return true;
+              matched = true;
+              break;
             }
           }
+
+          if (matched == true)
+            break;
         }
       }
+
+      regCacheSemGive(orionldState.tenantP->regCache, __FUNCTION__, "Matching registrations for a subscription");
+
+      if (matched == true)
+        return true;
     }
   }
 

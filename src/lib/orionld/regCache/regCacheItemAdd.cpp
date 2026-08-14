@@ -175,6 +175,7 @@ RegCacheItem* regCacheItemAdd(RegCache* rcP, const char* registrationId, KjNode*
   rciP->contextP  = fwdContextP;
   rciP->ipAndPort = regIpAndPortExtract(regP, &rciP->rest);
   rciP->next      = NULL;
+  rciP->owner     = rcP;   // So a holder can pin/unpin knowing only the item ('refs'/'removed' are calloc'ed to 0/false)
 
   // Host Alias
   KjNode* hostAliasP = kjLookup(rciP->regTree, "hostAlias");

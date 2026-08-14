@@ -31,7 +31,9 @@ extern "C"
 
 #include "common/sem.h"                                          // SemOpType
 #include "orionld/types/RegCache.h"                              // RegCache
+#include "orionld/types/RegCacheItem.h"                          // RegCacheItem
 #include "orionld/common/traceLevels.h"                          // KTrace levels
+#include "orionld/regCache/regCacheItemFree.h"                   // regCacheItemFree
 #include "orionld/regCache/regCacheSem.h"                        // Own interface
 
 
@@ -81,4 +83,60 @@ void regCacheSemGive(RegCache* rcP, const char* who, const char* what)
 
   KT_T(KtRegCache, "%s: giving back the reg-cache lock of tenant '%s' (%s)", who, rcP->tenantP->mongoDbName, what);
   pthread_rwlock_unlock(&rcP->rwlock);
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// regCacheItemPin -
+//
+// Called with the READ lock held, so the item is alive right now. Several readers may pin the same
+// item at the same time, which is why the increment is atomic - the read lock does not serialise
+// them with each other. Decrements happen under the WRITE lock, so they cannot overlap with this.
+//
+void regCacheItemPin(RegCacheItem* rciP)
+{
+  if (rciP == NULL)
+    return;
+
+  __sync_add_and_fetch(&rciP->refs, 1);
+  KT_T(KtRegCache, "Pinned reg-cache item '%s' (refs now %u)", (rciP->regId != NULL)? rciP->regId : "(no id)", rciP->refs);
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// regCacheItemUnpin -
+//
+// Takes the write lock itself - never call it with the lock already held.
+//
+// If this was the last holder of an item whose registration was deleted while it was in use, the
+// freeing that regCacheItemRemove had to skip happens here. The item is already out of the list at
+// that point, so nobody can find it any more and no new pin can appear.
+//
+void regCacheItemUnpin(RegCacheItem* rciP)
+{
+  if (rciP == NULL)
+    return;
+
+  RegCache* rcP = rciP->owner;
+
+  regCacheSemTake(rcP, __FUNCTION__, "Unpinning a registration cache item", SemWriteOp);
+
+  uint32_t refs = __sync_sub_and_fetch(&rciP->refs, 1);
+  bool     dead = (refs == 0) && (rciP->removed == true);
+
+  KT_T(KtRegCache, "Unpinned reg-cache item '%s' (refs now %u, removed: %s)",
+       (rciP->regId != NULL)? rciP->regId : "(no id)", refs, (rciP->removed == true)? "yes" : "no");
+
+  regCacheSemGive(rcP, __FUNCTION__, "Unpinning a registration cache item");
+
+  //
+  // Freed AFTER the lock is given back: the item is unlinked, so it is ours alone, and freeing a
+  // whole KjNode tree is not something to do with the cache locked.
+  //
+  if (dead == true)
+    regCacheItemFree(rciP);
 }
