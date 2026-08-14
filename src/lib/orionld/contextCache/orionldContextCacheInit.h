@@ -25,6 +25,10 @@
 *
 * Author: Ken Zangelin
 */
+extern "C"
+{
+#include "kjson/KjNode.h"                                        // KjNode
+}
 
 
 
@@ -33,5 +37,16 @@
 // orionldContextCacheInit -
 //
 extern void orionldContextCacheInit(void);
+
+
+
+// -----------------------------------------------------------------------------
+//
+// dbContextToCache - cache ONE @context, as read from the database
+//
+// Used by orionldContextCacheInit itself, for the entire collection at startup,
+// and by orionldContextCacheItemFromDb, for a single @context arriving over HA.
+//
+extern void dbContextToCache(KjNode* dbContextP, KjNode* atContextP, bool keyValues, bool coreContext);
 
 #endif  // SRC_LIB_ORIONLD_CONTEXTCACHE_ORIONLDCONTEXTCACHEINIT_H_

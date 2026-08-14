@@ -1,0 +1,279 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Subscription cache statistics
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB
+
+--SHELL--
+
+#
+# 01. GET /cache/statistics on an empty cache
+# 02. Create subscription urn:S1
+# 03. Create subscription urn:S2
+# 04. GET /cache/statistics, see 2 inserts, 2 items and both ids
+# 05. PATCH urn:S1
+# 06. GET /cache/statistics, see 1 update
+# 07. DELETE urn:S2
+# 08. GET /cache/statistics, see 1 remove, 1 item and only urn:S1 in the list
+# 09. DELETE /cache/statistics to reset the counters
+# 10. GET /cache/statistics, see the counters at zero but the item still there
+#
+
+echo "01. GET /cache/statistics on an empty cache"
+echo "==========================================="
+orionCurl --url /cache/statistics
+echo
+echo
+
+
+echo "02. Create subscription urn:S1"
+echo "=============================="
+payload='{
+  "id": "urn:S1",
+  "type": "Subscription",
+  "entities": [
+    {
+      "type": "T"
+    }
+  ],
+  "notification": {
+    "endpoint": {
+      "uri": "http://localhost:'$LISTENER_PORT'/notify"
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload"
+echo
+echo
+
+
+echo "03. Create subscription urn:S2"
+echo "=============================="
+payload='{
+  "id": "urn:S2",
+  "type": "Subscription",
+  "entities": [
+    {
+      "type": "T"
+    }
+  ],
+  "notification": {
+    "endpoint": {
+      "uri": "http://localhost:'$LISTENER_PORT'/notify"
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload"
+echo
+echo
+
+
+echo "04. GET /cache/statistics, see 2 inserts, 2 items and both ids"
+echo "=============================================================="
+orionCurl --url /cache/statistics
+echo
+echo
+
+
+echo "05. PATCH urn:S1"
+echo "================"
+payload='{
+  "description": "patched"
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions/urn:S1 --payload "$payload" -X PATCH
+echo
+echo
+
+
+echo "06. GET /cache/statistics, see 1 update"
+echo "======================================="
+orionCurl --url /cache/statistics
+echo
+echo
+
+
+echo "07. DELETE urn:S2"
+echo "================="
+orionCurl --url /ngsi-ld/v1/subscriptions/urn:S2 -X DELETE
+echo
+echo
+
+
+echo "08. GET /cache/statistics, see 1 remove, 1 item and only urn:S1 in the list"
+echo "==========================================================================="
+orionCurl --url /cache/statistics
+echo
+echo
+
+
+echo "09. DELETE /cache/statistics to reset the counters"
+echo "=================================================="
+orionCurl --url /cache/statistics -X DELETE
+echo
+echo
+
+
+echo "10. GET /cache/statistics, see the counters at zero but the item still there"
+echo "==========================================================================="
+orionCurl --url /cache/statistics
+echo
+echo
+
+
+--REGEXPECT--
+01. GET /cache/statistics on an empty cache
+===========================================
+HTTP/1.1 200 OK
+Content-Length: 56
+Content-Type: application/json
+Date: REGEX(.*)
+Fiware-Correlator: REGEX(.*)
+
+{
+    "ids": "",
+    "inserts": 0,
+    "items": 0,
+    "removes": 0,
+    "updates": 0
+}
+
+
+02. Create subscription urn:S1
+==============================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/subscriptions/urn:S1
+
+
+
+03. Create subscription urn:S2
+==============================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/subscriptions/urn:S2
+
+
+
+04. GET /cache/statistics, see 2 inserts, 2 items and both ids
+==============================================================
+HTTP/1.1 200 OK
+Content-Length: 70
+Content-Type: application/json
+Date: REGEX(.*)
+Fiware-Correlator: REGEX(.*)
+
+{
+    "ids": "urn:S1, urn:S2",
+    "inserts": 2,
+    "items": 2,
+    "removes": 0,
+    "updates": 0
+}
+
+
+05. PATCH urn:S1
+================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+06. GET /cache/statistics, see 1 update
+=======================================
+HTTP/1.1 200 OK
+Content-Length: 70
+Content-Type: application/json
+Date: REGEX(.*)
+Fiware-Correlator: REGEX(.*)
+
+{
+    "ids": "urn:S1, urn:S2",
+    "inserts": 2,
+    "items": 2,
+    "removes": 0,
+    "updates": 1
+}
+
+
+07. DELETE urn:S2
+=================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+08. GET /cache/statistics, see 1 remove, 1 item and only urn:S1 in the list
+===========================================================================
+HTTP/1.1 200 OK
+Content-Length: 62
+Content-Type: application/json
+Date: REGEX(.*)
+Fiware-Correlator: REGEX(.*)
+
+{
+    "ids": "urn:S1",
+    "inserts": 2,
+    "items": 1,
+    "removes": 1,
+    "updates": 1
+}
+
+
+09. DELETE /cache/statistics to reset the counters
+==================================================
+HTTP/1.1 200 OK
+Content-Length: 42
+Content-Type: application/json
+Date: REGEX(.*)
+Fiware-Correlator: REGEX(.*)
+
+{
+    "message": "All statistics counter reset"
+}
+
+
+10. GET /cache/statistics, see the counters at zero but the item still there
+===========================================================================
+HTTP/1.1 200 OK
+Content-Length: 62
+Content-Type: application/json
+Date: REGEX(.*)
+Fiware-Correlator: REGEX(.*)
+
+{
+    "ids": "urn:S1",
+    "inserts": 0,
+    "items": 1,
+    "removes": 0,
+    "updates": 0
+}
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB

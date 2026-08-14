@@ -49,6 +49,7 @@ payload='{
 }'
 T_0=$(TZ=GMT date +"%Y-%m-%dT%H:%M:%S")
 orionCurl --url /v2/entities --payload "$payload"
+T_0b=$(TZ=GMT date +"%Y-%m-%dT%H:%M:%S")
 echo
 echo
 
@@ -65,7 +66,7 @@ if [ "$dateCreated" != "$dateModified" ]
 then
   echo dateCreated $dateCreated differs from dateModified
 fi
-if [[ "$dateCreated" != "$T_0"* ]]
+if [[ "$dateCreated" != "$T_0"* ]] && [[ "$dateCreated" != "$T_0b"* ]]
 then
   echo "invalid dateCreated"
   echo "dateCreated: $dateCreated"
@@ -91,6 +92,7 @@ payload='{
 }'
 T_1=$(TZ=GMT date +"%Y-%m-%dT%H:%M:%S")
 orionCurl --url /v2/entities/E1/attrs --payload "$payload"
+T_1b=$(TZ=GMT date +"%Y-%m-%dT%H:%M:%S")
 echo
 echo
 
@@ -103,14 +105,14 @@ echo "================================================="
 orionCurl --url '/v2/entities/E1/attrs/A1?metadata=dateModified'
 dateModified=$(echo "$_response" | python3 -m json.tool --sort-keys | grep value | awk -F '"' '{print $4}')
 
-if [[ "$dateCreated" != "$T_0"* ]]
+if [[ "$dateCreated" != "$T_0"* ]] && [[ "$dateCreated" != "$T_0b"* ]]
 then
   echo "invalid dateCreated"
   echo "dateCreated: $dateCreated"
   echo "should be:   $T_0"
 fi
 
-if [[ "$dateModified" != "$T_1"* ]]
+if [[ "$dateModified" != "$T_1"* ]] && [[ "$dateModified" != "$T_1b"* ]]
 then
   echo "invalid dateModified"
   echo "dateModified: $dateModified"

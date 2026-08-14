@@ -80,7 +80,7 @@ echo
 --REGEXPECT--
 01. Attempt to create an entity using an @context that does not exist
 =====================================================================
-HTTP/1.1 503 Service Unavailable
+HTTP/1.1 504 Gateway Timeout
 Content-Length: 214
 Content-Type: application/json
 Date: REGEX(.*)

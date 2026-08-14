@@ -116,7 +116,7 @@ bool orionldDeleteContext(void)
   }
   else
   {
-    if (orionldContextCacheDelete(id) == false)
+    if (orionldContextCacheDelete(id, true) == false)
     {
       orionldState.httpStatusCode = 404;
       orionldError(OrionldResourceNotFound, "Context Not Found", id, 400);

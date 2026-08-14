@@ -25,7 +25,11 @@
 *
 * Author: Ken Zangelin
 */
-#include "cache/CachedSubscription.h"                            // CachedSubscription
+extern "C"
+{
+#include "kjson/KjNode.h"                                        // KjNode
+}
+
 #include "orionld/types/RegCacheItem.h"                          // RegCacheItem
 
 
@@ -34,11 +38,15 @@
 //
 // regMatchSubscription -
 //
+// 'entitiesP' is a Subscription's "entities" array, in API model. A registration
+// can only be matched by a TYPE-ONLY entity selector, so that is all this needs -
+// no cache item, and it works before the subscription has been cached.
+//
 extern bool regMatchSubscription
 (
-  RegCacheItem*       regP,
-  CachedSubscription* cSubP,
-  char**              entityTypeP
+  RegCacheItem*  regP,
+  KjNode*        entitiesP,
+  char**         entityTypeP
 );
 
 #endif  // SRC_LIB_ORIONLD_REGMATCH_REGMATCHSUBSCRIPTION_H_

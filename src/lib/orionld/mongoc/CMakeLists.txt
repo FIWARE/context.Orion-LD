@@ -27,6 +27,7 @@ SET (SOURCES
     mongocConnectionRelease.cpp
     mongocContextCacheDelete.cpp
     mongocContextCacheGet.cpp
+    mongocContextCacheGetById.cpp
     mongocContextCachePersist.cpp
     mongocEntitiesDelete.cpp
     mongocEntitiesExist.cpp
@@ -70,6 +71,7 @@ SET (SOURCES
     mongocRegistrationDelete.cpp
     mongocRegistrationReplace.cpp
     mongocRegistrationsIter.cpp
+    mongocSubscriptionsIter.cpp
     mongocAuxAttributesFilter.cpp
     mongocWriteLog.cpp
     mongocAttributeReplace.cpp

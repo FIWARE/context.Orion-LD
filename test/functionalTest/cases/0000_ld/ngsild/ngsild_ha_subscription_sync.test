@@ -1,0 +1,474 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+HA: subscriptions, registrations and @contexts created and deleted in one broker reach the other
+
+--SHELL-INIT--
+dbInit CB
+dbInit CB2
+orionldStart CB  -experimental -ha mongo
+orionldStart CB2 -experimental -ha mongo
+
+--SHELL--
+
+#
+# Two brokers on one database, both told to keep in step over mongo change streams.
+# Everything is done on CB and looked at on CB2 - and the other way round for the
+# delete, as the sync has to work in both directions.
+#
+# The waits poll instead of sleeping a fixed time. Propagation is around 70 ms here,
+# but that is this machine on this day: a fixed sleep short enough to be a real test
+# is also short enough to fail on a loaded CI runner. Polling with a deadline fails
+# just as loudly when the sync is broken, only later.
+#
+# 01. Create subscription urn:S1 on CB
+# 02. Wait for it, then GET urn:S1 from CB2 - it is there, with CB's description
+# 03. PATCH urn:S1 on CB, changing the description
+# 04. Wait for it, then GET urn:S1 from CB2 - the description followed
+# 05. DELETE urn:S1 on CB2
+# 06. Wait for it, then GET all subscriptions from CB - it is gone from there too
+# 07. Create registration urn:R1 on CB
+# 08. Wait for it, then GET urn:R1 from CB2 - it is there
+# 09. DELETE urn:R1 on CB
+# 10. Wait for it, then GET all registrations from CB2 - it is gone
+# 11. Create a hosted @context on CB
+# 12. Wait for it, then GET the served @contexts from CB2 - the new one is there
+# 13. DELETE the @context on CB
+# 14. Wait for it, then GET the served @contexts from CB2 - it is gone from there too
+#
+
+#
+# waitForSub - poll CB2 (or CB) until the subscription is (or is not) there
+#
+# $1: port,  $2: subscription id,  $3: "gone" to wait for its absence
+#
+waitForSub()
+{
+  typeset -i _i
+  _i=0
+
+  while [ $_i -lt 200 ]
+  do
+    hits=$(curl -s localhost:$1/ngsi-ld/v1/subscriptions | grep -c "$2")
+
+    if [ "$3" == "gone" ]
+    then
+      [ "$hits" == "0" ] && return 0
+    else
+      [ "$hits" != "0" ] && return 0
+    fi
+
+    sleep 0.05
+    _i=$_i+1
+  done
+
+  echo "TIMEOUT waiting for $2 on port $1"
+}
+
+
+#
+# waitForReg - the same, for registrations
+#
+waitForReg()
+{
+  typeset -i _i
+  _i=0
+
+  while [ $_i -lt 200 ]
+  do
+    hits=$(curl -s localhost:$1/ngsi-ld/v1/csourceRegistrations | grep -c "$2")
+
+    if [ "$3" == "gone" ]
+    then
+      [ "$hits" == "0" ] && return 0
+    else
+      [ "$hits" != "0" ] && return 0
+    fi
+
+    sleep 0.05
+    _i=$_i+1
+  done
+
+  echo "TIMEOUT waiting for $2 on port $1"
+}
+
+
+#
+# waitForContext - the same, for @contexts
+#
+# ⚠️ Matched on the GENERATED id of this run's @context, never on what the @context
+# defines. 'orionld.contexts' is a database of its own, shared by every tenant, and
+# dbInit does not drop it - so an @context created by an earlier run of this test is
+# still there, and still cached by both brokers at startup. Matching on content made
+# step 12 pass on a leftover, i.e. without the sync doing anything at all.
+#
+waitForContext()
+{
+  typeset -i _i
+  _i=0
+
+  while [ $_i -lt 200 ]
+  do
+    hits=$(curl -s localhost:$1/ngsi-ld/v1/jsonldContexts?details=true | grep -c "$2")
+
+    if [ "$3" == "gone" ]
+    then
+      [ "$hits" == "0" ] && return 0
+    else
+      [ "$hits" != "0" ] && return 0
+    fi
+
+    sleep 0.05
+    _i=$_i+1
+  done
+
+  echo "TIMEOUT waiting for $2 on port $1"
+}
+
+
+echo "01. Create subscription urn:S1 on CB"
+echo "===================================="
+payload='{
+  "id": "urn:S1",
+  "type": "Subscription",
+  "description": "created on CB",
+  "entities": [
+    {
+      "type": "T"
+    }
+  ],
+  "notification": {
+    "endpoint": {
+      "uri": "http://localhost:'$LISTENER_PORT'/notify"
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload"
+echo
+echo
+
+
+echo "02. Wait for it, then GET urn:S1 from CB2 - it is there, with CB's description"
+echo "=============================================================================="
+waitForSub $CB2_PORT urn:S1
+orionCurl --url /ngsi-ld/v1/subscriptions/urn:S1 --port $CB2_PORT
+echo
+echo
+
+
+echo "03. PATCH urn:S1 on CB, changing the description"
+echo "================================================"
+payload='{
+  "description": "patched on CB"
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions/urn:S1 --payload "$payload" -X PATCH
+echo
+echo
+
+
+echo "04. Wait for it, then GET urn:S1 from CB2 - the description followed"
+echo "==================================================================="
+waitForSub $CB2_PORT "patched on CB"
+orionCurl --url /ngsi-ld/v1/subscriptions/urn:S1 --port $CB2_PORT
+echo
+echo
+
+
+echo "05. DELETE urn:S1 on CB2"
+echo "========================"
+orionCurl --url /ngsi-ld/v1/subscriptions/urn:S1 --port $CB2_PORT -X DELETE
+echo
+echo
+
+
+echo "06. Wait for it, then GET all subscriptions from CB - it is gone from there too"
+echo "=============================================================================="
+waitForSub $CB_PORT urn:S1 gone
+orionCurl --url /ngsi-ld/v1/subscriptions
+echo
+echo
+
+
+echo "07. Create registration urn:R1 on CB"
+echo "===================================="
+payload='{
+  "id": "urn:R1",
+  "type": "ContextSourceRegistration",
+  "information": [
+    {
+      "entities": [
+        {
+          "type": "T"
+        }
+      ]
+    }
+  ],
+  "endpoint": "http://localhost:'$CP1_PORT'"
+}'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload"
+echo
+echo
+
+
+echo "08. Wait for it, then GET urn:R1 from CB2 - it is there"
+echo "======================================================="
+waitForReg $CB2_PORT urn:R1
+orionCurl --url /ngsi-ld/v1/csourceRegistrations/urn:R1 --port $CB2_PORT
+echo
+echo
+
+
+echo "09. DELETE urn:R1 on CB"
+echo "======================="
+orionCurl --url /ngsi-ld/v1/csourceRegistrations/urn:R1 -X DELETE
+echo
+echo
+
+
+echo "10. Wait for it, then GET all registrations from CB2 - it is gone"
+echo "================================================================="
+waitForReg $CB2_PORT urn:R1 gone
+orionCurl --url /ngsi-ld/v1/csourceRegistrations --port $CB2_PORT
+echo
+echo
+
+
+echo "11. Create a hosted @context on CB"
+echo "=================================="
+payload='{
+  "@context": {
+    "HA1": "urn:ngsi-ld:attributes:HA1"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/jsonldContexts --payload "$payload" --noPayloadCheck
+ctxId=$(grep -i '^Location:' /tmp/httpHeaders.out | sed 's|.*/jsonldContexts/||')
+echo
+echo
+
+
+echo "12. Wait for it, then GET the served @contexts from CB2 - the new one is there"
+echo "=============================================================================="
+waitForContext $CB2_PORT $ctxId
+echo "the new @context on CB2: $(curl -s localhost:$CB2_PORT/ngsi-ld/v1/jsonldContexts?details=true | grep -c $ctxId)"
+echo
+echo
+
+
+echo "13. DELETE the @context on CB"
+echo "============================="
+orionCurl --url /ngsi-ld/v1/jsonldContexts/$ctxId -X DELETE
+echo
+echo
+
+
+echo "14. Wait for it, then GET the served @contexts from CB2 - it is gone from there too"
+echo "==================================================================================="
+waitForContext $CB2_PORT $ctxId gone
+echo "the new @context on CB2: $(curl -s localhost:$CB2_PORT/ngsi-ld/v1/jsonldContexts?details=true | grep -c $ctxId)"
+echo
+echo
+
+
+--REGEXPECT--
+01. Create subscription urn:S1 on CB
+====================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/subscriptions/urn:S1
+
+
+
+02. Wait for it, then GET urn:S1 from CB2 - it is there, with CB's description
+==============================================================================
+HTTP/1.1 200 OK
+Content-Length: 358
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "description": "created on CB",
+    "entities": [
+        {
+            "type": "T"
+        }
+    ],
+    "id": "urn:S1",
+    "isActive": true,
+    "jsonldContext": "REGEX(.*)",
+    "notification": {
+        "endpoint": {
+            "accept": "application/json",
+            "uri": "http://localhost:9997/notify"
+        },
+        "format": "normalized",
+        "status": "ok"
+    },
+    "origin": "cache",
+    "status": "active",
+    "type": "Subscription"
+}
+
+
+03. PATCH urn:S1 on CB, changing the description
+================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+04. Wait for it, then GET urn:S1 from CB2 - the description followed
+===================================================================
+HTTP/1.1 200 OK
+Content-Length: 358
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "description": "patched on CB",
+    "entities": [
+        {
+            "type": "T"
+        }
+    ],
+    "id": "urn:S1",
+    "isActive": true,
+    "jsonldContext": "REGEX(.*)",
+    "notification": {
+        "endpoint": {
+            "accept": "application/json",
+            "uri": "http://localhost:9997/notify"
+        },
+        "format": "normalized",
+        "status": "ok"
+    },
+    "origin": "cache",
+    "status": "active",
+    "type": "Subscription"
+}
+
+
+05. DELETE urn:S1 on CB2
+========================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+06. Wait for it, then GET all subscriptions from CB - it is gone from there too
+==============================================================================
+HTTP/1.1 200 OK
+Content-Length: 2
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+[]
+
+
+07. Create registration urn:R1 on CB
+====================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/csourceRegistrations/urn:R1
+
+
+
+08. Wait for it, then GET urn:R1 from CB2 - it is there
+=======================================================
+HTTP/1.1 200 OK
+Content-Length: 164
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "endpoint": "REGEX(.*)",
+    "id": "urn:R1",
+    "information": [
+        {
+            "entities": [
+                {
+                    "type": "T"
+                }
+            ]
+        }
+    ],
+    "origin": "cache",
+    "status": "active",
+    "type": "ContextSourceRegistration"
+}
+
+
+09. DELETE urn:R1 on CB
+=======================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+10. Wait for it, then GET all registrations from CB2 - it is gone
+=================================================================
+HTTP/1.1 200 OK
+Content-Length: 2
+Content-Type: application/json
+Date: REGEX(.*)
+
+[]
+
+
+11. Create a hosted @context on CB
+==================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/jsonldContexts/REGEX(.*)
+
+
+
+
+12. Wait for it, then GET the served @contexts from CB2 - the new one is there
+==============================================================================
+the new @context on CB2: 1
+
+
+13. DELETE the @context on CB
+=============================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+14. Wait for it, then GET the served @contexts from CB2 - it is gone from there too
+===================================================================================
+the new @context on CB2: 0
+
+
+--TEARDOWN--
+brokerStop CB
+brokerStop CB2
+dbDrop CB
+dbDrop CB2

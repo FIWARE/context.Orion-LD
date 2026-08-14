@@ -42,7 +42,7 @@
 //
 // Must be called with orionldState initialised (it uses orionldState.kjsonP and
 // orionldState.contextP for tree allocation and name expansion). Safe to call
-// mid-PATCH: neither pCheckSubscription nor subCacheApiSubscriptionInsert writes
+// mid-PATCH: neither pCheckSubscription nor subCacheItemAdd writes
 // the request's response state (httpStatusCode / responseTree / Location).
 //
 // Returns a libc-strdup'd copy of the new subscription id (caller frees), or

@@ -196,24 +196,28 @@ bool troePatchEntity2(void)
           uuidGenerate(instanceId, sizeof(instanceId), "urn:ngsi-ld:attribute:instance:");
           pgAttributeAppend(&attributesBuffer, instanceId, attrName, "Delete", entityId, NULL, NULL, true, NULL, NULL, NULL);
         }
-        else
-        {
-          char* subAttrName = &dotP[1];
-
-          *dotP = 0;
-          dotP  = strchr(subAttrName, '.');
-
-          if (dotP == NULL)
-          {
-            if ((strcmp(subAttrName, "value")      != 0) &&
-                (strcmp(subAttrName, "unitCode")   != 0) &&
-                (strcmp(subAttrName, "observedAt") != 0) &&
-                (strcmp(subAttrName, "datasetId")  != 0))
-            {
-              pgSubAttributeAppend(&subAttributesBuffer, "urn:delete", subAttrName, entityId, "urn:attr-instance:unknown", NULL, "String", NULL, NULL, NULL, NULL);
-            }
-          }
-        }
+        //
+        // else: the PATH has a dot in it, so what was deleted is a SUB-ATTRIBUTE,
+        // and nothing is recorded for it. Deliberately.
+        //
+        // ⚠️ There used to be a pgSubAttributeAppend() call here and it SEGFAULTED:
+        // it announced the row as a "String" with a NULL valueNodeP, and
+        // pgSubAttributeAppend went looking for the value that was not there. Any
+        // PATCH deleting a sub-attribute, with TRoE enabled, killed the broker.
+        //
+        // Passing "Delete" instead is not the fix either. The attribute above has
+        // an opMode column, and the 'operationmode' enum does contain "Delete" - a
+        // sub-attribute row has only 'valueType', and that enum has no such member,
+        // so the INSERT would fail with "invalid input value for enum valuetype".
+        // The table simply cannot say "this one is gone".
+        //
+        // Recording nothing is also what actually happened before: the broker died
+        // before any INSERT was issued, so no temporal history is lost that ever
+        // existed. Giving sub-attribute deletions a record of their own needs a
+        // schema change - an opMode column on subAttributes, or a "Delete" member
+        // in the valueType enum - plus a migration. That is a decision of its own,
+        // not part of a crash fix.
+        //
       }
     }
   }

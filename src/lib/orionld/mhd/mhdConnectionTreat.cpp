@@ -1343,7 +1343,7 @@ MHD_Result mhdConnectionTreat(void)
           if (orionldState.contextP == NULL)
           {
             KT_W("Unable to resolve @context '%s'", orionldState.payloadContextNode->value.s);
-            orionldError(OrionldLdContextNotAvailable, "Unable to resolve @context", orionldState.payloadContextNode->value.s, 503);
+            orionldError(OrionldLdContextNotAvailable, "Unable to resolve @context", orionldState.payloadContextNode->value.s, 504);
             return MHD_YES;
           }
           KT_T(KtContextInBody, "All done: orionldState.contextP->url: '%s'", orionldState.contextP->url);

@@ -37,6 +37,7 @@ extern "C"
 #include "orionld/dbModel/dbModelToApiRegistration.h"            // dbModelToApiRegistration
 #include "orionld/regCache/regCacheItemAdd.h"                    // regCacheItemAdd
 #include "orionld/regCache/regCacheItemContextCheck.h"           // regCacheItemContextCheck
+#include "orionld/regCache/regCacheItemFromDb.h"                 // regCacheItemFromDbTree
 #include "orionld/regCache/regCacheCreate.h"                     // Own interface
 
 
@@ -48,33 +49,12 @@ extern void apiModelToCacheRegistration(KjNode* apiRegistrationP);
 //
 int regIterFunc(RegCache* rcP, KjNode* dbRegP)
 {
-  // Convert DB Reg to API Reg
-  if (dbModelToApiRegistration(dbRegP, true, true) == false)
-  {
-    KT_E("dbModelToApiRegistration failed");
-    return 1;
-  }
-
-  // The DB Registration 'dbRegP' is now in API Registration format (after calling dbModelToApiRegistration)
-  KjNode* apiRegP = dbRegP;
-
-  // If an @context is given for the registration, make sure it's valid
-  OrionldContext* fwdContextP = NULL;
-  if (regCacheItemContextCheck(apiRegP, NULL, &fwdContextP) == false)
-  {
-    KT_W("Unable to resolve a Registration @context for a reg-cache item");
-    return 0;
-  }
-
-  // Registration Id
-  KjNode* regIdNodeP = kjLookup(apiRegP, "id");
-  char*   regId      = (regIdNodeP != NULL)? regIdNodeP->value.s : (char*) "no:reg:id";
-
-  // Convert API Reg to Cache Reg
-  apiModelToCacheRegistration(apiRegP);
-
-  // Insert cacheRegP in tenantP->regCache (rcP)
-  regCacheItemAdd(rcP, regId, apiRegP, true, fwdContextP);
+  //
+  // The body lives in regCacheItemFromDbTree - the HA sync needs to do exactly
+  // this to one registration when another instance creates or changes it, and two
+  // copies of it would drift.
+  //
+  regCacheItemFromDbTree(rcP, dbRegP);
 
   return 0;
 }

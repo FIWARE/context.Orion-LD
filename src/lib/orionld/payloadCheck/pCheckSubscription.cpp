@@ -22,6 +22,7 @@
 *
 * Author: Ken Zangelin
 */
+#include <stdio.h>                                               // snprintf
 #include <string.h>                                              // strchr, strlen, strcpy, strcat
 
 extern "C"
@@ -100,6 +101,50 @@ extern "C"
 // * Either 'timeInterval' or 'watchedAttributes' must be present. But not both of them
 // * For now, 'timeInterval' will not be implemented. If ever ...
 //
+// -----------------------------------------------------------------------------
+//
+// jsonNullCheck - a JSON Null is not part of the NGSI-LD data model
+//
+// JSON-LD has no use for a null - it simply drops the member - so NGSI-LD says
+// "remove this" with the String "urn:ngsi-ld:null" instead (the NGSI-LD Null).
+//
+// The only places a JSON Null is legal are the value of a JsonProperty and the
+// inside of a "@type": "@json" block. A Subscription has neither, so here a JSON
+// Null is invalid wherever it turns up, at any depth.
+//
+static bool jsonNullCheck(KjNode* containerP, const char* path)
+{
+  for (KjNode* nodeP = containerP->value.firstChildP; nodeP != NULL; nodeP = nodeP->next)
+  {
+    char fullPath[256];
+
+    if (nodeP->name != NULL)
+      snprintf(fullPath, sizeof(fullPath), "%s::%s", path, nodeP->name);
+    else
+      snprintf(fullPath, sizeof(fullPath), "%s[]", path);
+
+    if (nodeP->type == KjNull)
+    {
+      orionldError(OrionldBadRequestData,
+                   "Invalid JSON type - a JSON Null is not part of the NGSI-LD data model "
+                   "(to remove a member, use the NGSI-LD Null: the String \"urn:ngsi-ld:null\")",
+                   fullPath,
+                   400);
+      return false;
+    }
+
+    if ((nodeP->type == KjObject) || (nodeP->type == KjArray))
+    {
+      if (jsonNullCheck(nodeP, fullPath) == false)
+        return false;
+    }
+  }
+
+  return true;
+}
+
+
+
 bool pCheckSubscription
 (
   KjNode*               subP,
@@ -124,6 +169,9 @@ bool pCheckSubscription
 )
 {
   PCHECK_OBJECT(subP, 0, NULL, "A Subscription must be a JSON Object", 400);
+
+  if (jsonNullCheck(subP, "Subscription") == false)
+    return false;  // jsonNullCheck calls orionldError
 
   KjNode* nameP               = NULL;
   KjNode* descriptionP        = NULL;
@@ -195,6 +243,50 @@ bool pCheckSubscription
   while (subItemP != NULL)
   {
     next = subItemP->next;
+
+    //
+    // The read-only members first. Clause 5.2.6.5.2 on the additional members of the
+    // Subscription data type: "They are read-only and shall be automatically generated
+    // by NGSI-LD implementations. They shall not be provided by Context Subscribers. In
+    // the event that they are provided (in update or create operations) NGSI-LD
+    // implementations SHALL IGNORE THEM."
+    //
+    // Ignored means ignored, whatever the value - so this has to come before the NGSI-LD
+    // Null is looked at, or asking to remove one of them would be an error instead.
+    //
+    if ((strcmp(subItemP->name, "status")     == 0) ||
+        (strcmp(subItemP->name, "createdAt")  == 0) ||
+        (strcmp(subItemP->name, "modifiedAt") == 0))
+    {
+      kjChildRemove(subP, subItemP);
+      subItemP = next;
+      continue;
+    }
+
+    //
+    // The NGSI-LD Null is the deletion marker of clause 8.4.2. It arrives as a String,
+    // so every type check below would reject it - turn it into a JSON Null here and be
+    // done with the member. dbModelFromApiSubscription gives it its database name and
+    // ngsildSubscriptionPatch is what actually removes it.
+    //
+    // Deleting only makes sense against something that exists, so on a create it is an
+    // error rather than a marker.
+    //
+    if ((subItemP->type == KjString) && (strcmp(subItemP->value.s, "urn:ngsi-ld:null") == 0))
+    {
+      if (isCreate == true)
+      {
+        orionldError(OrionldBadRequestData,
+                     "Invalid value - the NGSI-LD Null removes a member and has no meaning when creating a Subscription",
+                     subItemP->name,
+                     400);
+        return false;
+      }
+
+      subItemP->type = KjNull;
+      subItemP       = next;
+      continue;
+    }
 
     if ((strcmp(subItemP->name, "subscriptionName") == 0) || (strcmp(subItemP->name, "name") == 0))
     {
@@ -356,10 +448,7 @@ bool pCheckSubscription
       orionldError(OrionldOperationNotSupported, "Not Implemented", SubscriptionScopePath, 501);
       return false;
     }
-    else if (strcmp(subItemP->name, "status")              == 0) { kjChildRemove(subP, subItemP); }  // Silently REMOVED
-    else if (strcmp(subItemP->name, "createdAt")           == 0) { kjChildRemove(subP, subItemP); }  // Silently REMOVED
-    else if (strcmp(subItemP->name, "modifiedAt")          == 0) { kjChildRemove(subP, subItemP); }  // Silently REMOVED
-    else if (strcmp(subItemP->name, "jsonldContext") == 0)
+    else if (strcmp(subItemP->name, "jsonldContext") == 0)  // "status", "createdAt" and "modifiedAt" are dropped at the top of the loop
     {
       PCHECK_STRING(subItemP, 0, NULL, "Subscription::jsonldContext", 400);
     }

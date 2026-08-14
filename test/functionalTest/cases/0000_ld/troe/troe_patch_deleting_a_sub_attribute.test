@@ -1,0 +1,183 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+TRoE: PATCH deleting a sub-attribute
+
+--SHELL-INIT--
+export BROKER=orionld
+dbInit CB
+pgInit $CB_DB_NAME
+brokerStart CB 0 IPv4 -troe -experimental
+
+--SHELL--
+
+#
+# A deleted sub-attribute has no value and no object. troePatchEntity2 used to
+# announce it to pgSubAttributeAppend as a "String" anyway, which went looking for
+# the value that was not there, dereferenced the NULL valueNodeP, and the broker
+# SEGFAULTED. Every PATCH deleting a sub-attribute, with TRoE enabled.
+#
+# ⚠️⚠️ STEP 03's 204 PROVES NOTHING - do not "simplify" this test down to it. TRoE
+# runs from MHD's requestCompleted callback, which fires AFTER the response has
+# been delivered, so the client is told 204 and the broker dies a moment later.
+# Verified: against the unfixed binary this exact PATCH answers 204 and then
+# segfaults. Step 04, the GET, is the liveness check - it is the first thing that
+# needs a broker still to be there.
+#
+# Step 05 says what the survival is worth: the temporal database recorded the PATCH
+# correctly around the deletion. Without the fix it recorded NOTHING for this PATCH
+# - the malformed row poisoned the whole INSERT statement - so that step fails in
+# its own right, independently of the crash.
+#
+# Step 05 is the interesting half. The PATCH writes a fresh instance of attribute
+# P, so the SURVIVING sub-attribute Sub-Keep gets a second row - that is the patch
+# being recorded. The DELETED Sub-S gets none, and keeps only the row from step 01.
+# That asymmetry is deliberate: the 'subAttributes' table cannot express a deletion
+# at all. It has no opMode column - the 'attributes' table does, which is how an
+# attribute deletion is recorded - and its 'valueType' is an enum with no "Delete"
+# member, so an INSERT saying so would be rejected by postgres. Recording nothing
+# is also what happened before the fix, since the broker died before issuing any
+# INSERT, so no temporal history that ever existed is lost. If sub-attribute
+# deletions should get a record of their own, that is a schema change plus a
+# migration - and this expect block is what will fail first and say so.
+#
+# 01. Create entity urn:E1 with attribute P, with sub-attributes Sub-S and Sub-Keep
+# 02. See the sub-attributes in the temporal database
+# 03. PATCH urn:E1, deleting the sub-attribute Sub-S - the broker survives it
+# 04. GET urn:E1 - Sub-S is gone, Sub-Keep remains
+# 05. See the sub-attributes - Sub-Keep gains a row, the deleted Sub-S does not
+#
+
+echo "01. Create entity urn:E1 with attribute P, with sub-attributes Sub-S and Sub-Keep"
+echo "================================================================================="
+payload='{
+  "id": "urn:E1",
+  "type": "T",
+  "P": {
+    "type": "Property",
+    "value": 1,
+    "Sub-S": {
+      "type": "Property",
+      "value": "sub-attribute to be deleted"
+    },
+    "Sub-Keep": {
+      "type": "Property",
+      "value": "sub-attribute that stays"
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "02. See the sub-attributes in the temporal database"
+echo "==================================================="
+postgresCmd -sql "SELECT id,valueType,entityId,text FROM subAttributes ORDER BY id"
+echo
+echo
+
+
+echo "03. PATCH urn:E1, deleting the sub-attribute Sub-S - the broker survives it"
+echo "==========================================================================="
+payload='{
+  "P": {
+    "Sub-S": "urn:ngsi-ld:null"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:E1 --payload "$payload" -X PATCH
+echo
+echo
+
+
+echo "04. GET urn:E1 - Sub-S is gone, Sub-Keep remains"
+echo "================================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:E1
+echo
+echo
+
+
+echo "05. See the sub-attributes - Sub-Keep gains a row, the deleted Sub-S does not"
+echo "=============================================================================="
+postgresCmd -sql "SELECT id,valueType,entityId,text FROM subAttributes ORDER BY id"
+echo
+echo
+
+
+--REGEXPECT--
+01. Create entity urn:E1 with attribute P, with sub-attributes Sub-S and Sub-Keep
+=================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E1
+
+
+
+02. See the sub-attributes in the temporal database
+===================================================
+id,valuetype,entityid,text
+https://uri.etsi.org/ngsi-ld/default-context/Sub-Keep,String,urn:E1,sub-attribute that stays
+https://uri.etsi.org/ngsi-ld/default-context/Sub-S,String,urn:E1,sub-attribute to be deleted
+
+
+03. PATCH urn:E1, deleting the sub-attribute Sub-S - the broker survives it
+===========================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+04. GET urn:E1 - Sub-S is gone, Sub-Keep remains
+================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+{
+    "P": {
+        "Sub-Keep": {
+            "type": "Property",
+            "value": "sub-attribute that stays"
+        },
+        "type": "Property",
+        "value": 1
+    },
+    "id": "urn:E1",
+    "type": "T"
+}
+
+
+05. See the sub-attributes - Sub-Keep gains a row, the deleted Sub-S does not
+==============================================================================
+id,valuetype,entityid,text
+https://uri.etsi.org/ngsi-ld/default-context/Sub-Keep,String,urn:E1,sub-attribute that stays
+https://uri.etsi.org/ngsi-ld/default-context/Sub-Keep,String,urn:E1,sub-attribute that stays
+https://uri.etsi.org/ngsi-ld/default-context/Sub-S,String,urn:E1,sub-attribute to be deleted
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB

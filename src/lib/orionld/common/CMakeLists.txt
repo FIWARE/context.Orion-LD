@@ -58,7 +58,6 @@ SET (SOURCES
     langStringExtract.cpp
     pathComponentsSplit.cpp
     urlDecode.cpp
-    subCacheApiSubscriptionInsert.cpp
     batchEntityCountAndFirstCheck.cpp
     batchEntityStringArrayPopulate.cpp
     batchEntitiesFinalCheck.cpp

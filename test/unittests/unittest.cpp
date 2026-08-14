@@ -26,7 +26,6 @@
 #include <vector>
 #include <map>
 
-#include "cache/subCache.h"
 #include "rest/uriParamNames.h"
 
 #include "unittests/unittest.h"
@@ -153,8 +152,6 @@ void utInit(bool notifierMocked, bool timerMocked)
   servicePathVector.clear();
   servicePathVector.push_back("");
 
-  // Init subs cache (this initialization is overridden in tests that use csubs)
-  subCacheInit();
 }
 
 
@@ -182,8 +179,6 @@ void utExit(void)
 
   setTimer(NULL);
   setNotifier(NULL);
-
-  subCacheDisable();
 
 #ifdef UT_DEBUG
   printf("**************** FROM utExit (%d inits, %d exits)\n", noOfInits, noOfExits);

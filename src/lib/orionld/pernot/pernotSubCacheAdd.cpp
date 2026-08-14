@@ -164,6 +164,21 @@ PernotSubscription* pernotSubCacheAdd
   pSubP->subscriptionId = strdup(subscriptionId);
   pSubP->timeInterval   = timeInterval;
   pSubP->kjSubP         = kjClone(NULL, apiSubP);
+
+  //
+  // "v2" is the subscription CACHE's own business - the NGSIv2-only members it
+  // needs to match and notify (see dbModelToApiSubscription). A Periodic
+  // Notification subscription has its own cache and renders its tree straight
+  // out (kjTreeFromPernotSubscription), so the member would go out in the
+  // response. It has no place here.
+  //
+  KjNode* v2P = kjLookup(pSubP->kjSubP, "v2");
+
+  if (v2P != NULL)
+  {
+    kjChildRemove(pSubP->kjSubP, v2P);
+    kjFree(v2P);
+  }
   KT_T(KtLeak, "Cloned an apiSubP: %p", pSubP->kjSubP);
   KT_TREE(pSubP->kjSubP, "apiSubP", KtLeak);
   pSubP->tenantP        = tenantP;

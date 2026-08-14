@@ -336,7 +336,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld>; rel="h
 
 10. Create a compound @context referencing a localId that does not exist - see it fail
 ======================================================================================
-HTTP/1.1 503 Service Unavailable
+HTTP/1.1 504 Gateway Timeout
 Content-Length: REGEX(.*)
 Content-Type: application/json
 Date: REGEX(.*)

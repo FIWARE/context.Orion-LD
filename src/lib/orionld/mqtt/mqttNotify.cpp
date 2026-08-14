@@ -36,7 +36,7 @@ extern "C"
 #include "kjson/kjBuilder.h"                                   // kjObject, kjArray, kjString, kjChildAdd, ...
 }
 
-#include "cache/subCache.h"                                    // CachedSubscription
+#include "orionld/types/SubCacheItem.h"                        // SubCacheItem
 
 #include "orionld/types/MqttConnection.h"                      // MqttConnection
 #include "orionld/common/orionldState.h"                       // orionldState, coreContextUrl
@@ -54,7 +54,7 @@ extern "C"
 //
 // headersParse -
 //
-static KjNode* headersParse(struct iovec* ioVec, int ioVecSize, CachedSubscription* cSubP)
+static KjNode* headersParse(struct iovec* ioVec, int ioVecSize, SubCacheItem* cSubP)
 {
   KjNode* metadata = kjObject(orionldState.kjsonP, NULL);
   int     ix = 0;
@@ -79,7 +79,7 @@ static KjNode* headersParse(struct iovec* ioVec, int ioVecSize, CachedSubscripti
 
     if (strncmp(headerReadOnly, "Link:", 5) == 0)
     {
-      const char*  link      = (cSubP->ldContext == "")? coreContextUrl : cSubP->ldContext.c_str();
+      const char*  link      = ((cSubP->contextP != NULL) && (cSubP->contextP->url != NULL))? cSubP->contextP->url : coreContextUrl;
       KjNode*      linkNodeP = kjString(orionldState.kjsonP, "Link", link);
 
       kjChildAdd(metadata, linkNodeP);
@@ -126,7 +126,7 @@ static KjNode* headersParse(struct iovec* ioVec, int ioVecSize, CachedSubscripti
 //
 // mqttNotify -
 //
-int mqttNotify(CachedSubscription* cSubP, struct iovec* ioVec, int ioVecSize, double notificationTime)
+int mqttNotify(SubCacheItem* cSubP, struct iovec* ioVec, int ioVecSize, double notificationTime)
 {
   //
   // The headers and the body comes already rendered inside ioVec
@@ -164,7 +164,14 @@ int mqttNotify(CachedSubscription* cSubP, struct iovec* ioVec, int ioVecSize, do
   int bodyLen  = snprintf(&buf[dataStart], totalLen - dataStart, ",\"body\":%s}", (char*) body);
   totalLen = dataStart + bodyLen;
 
-  MqttInfo*                 mqttP             = &cSubP->httpInfo.mqtt;
+  MqttInfo*                 mqttP             = cSubP->mqttP;
+
+  if (mqttP == NULL)
+  {
+    notificationFailure(cSubP, "No MQTT endpoint for the subscription", notificationTime);
+    return -1;
+  }
+
   MqttConnection*           mqttConnectionP   = mqttConnectionLookup(mqttP->mqtts, mqttP->host, mqttP->port, mqttP->username, mqttP->password, mqttP->version);
   MQTTClient_message        mqttMsg           = MQTTClient_message_initializer;
   MQTTClient_deliveryToken  mqttToken;

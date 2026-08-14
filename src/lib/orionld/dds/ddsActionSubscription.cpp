@@ -35,7 +35,6 @@ extern "C"
 #include "kjson/kjChildPrepend.h"                                // kjChildPrepend
 }
 
-#include "cache/subCache.h"                                      // CachedSubscription, subCacheItemLookup, subCacheItemRemove
 
 #include "orionld/types/QNode.h"                                 // QNode
 #include "orionld/types/OrionldRenderFormat.h"                   // OrionldRenderFormat, RF_NORMALIZED
@@ -43,10 +42,11 @@ extern "C"
 #include "orionld/common/traceLevels.h"                          // KT_T trace levels
 #include "orionld/common/tenantList.h"                           // tenant0
 #include "orionld/common/uuidGenerate.h"                         // uuidGenerate
-#include "orionld/common/subCacheApiSubscriptionInsert.h"        // subCacheApiSubscriptionInsert
 #include "orionld/context/orionldAttributeExpand.h"              // orionldAttributeExpand
 #include "orionld/context/orionldContextItemExpand.h"            // orionldContextItemExpand
 #include "orionld/payloadCheck/pCheckSubscription.h"             // pCheckSubscription
+#include "orionld/subCache/subCacheItemAdd.h"                    // subCacheItemAdd    (the new sub cache)
+#include "orionld/subCache/subCacheItemRemove.h"                 // subCacheItemRemove (the new sub cache)
 #include "orionld/dds/ddsActionSubscription.h"                   // Own interface
 
 
@@ -199,19 +199,20 @@ char* ddsActionSubscriptionCreate
   // goal's terminal status, and goals themselves are in-memory), so we
   // deliberately skip mongocSubscriptionInsert.
   //
-  CachedSubscription* cSubP = subCacheApiSubscriptionInsert(subP,
-                                                            qTree,
-                                                            geoCoordinatesP,
-                                                            orionldState.contextP,
-                                                            tenant0.tenant,
-                                                            showChangesP,
-                                                            sysAttrsP,
-                                                            renderFormat);
-  if (cSubP == NULL)
+  SubCacheItem* sciP = subCacheItemAdd(tenant0.subCache, subId, subP, false, orionldState.contextP);
+
+  if (sciP == NULL)
   {
     KT_W("DDS action temp subscription cache insert failed for endpoint '%s'", endpointUri);
     return NULL;
   }
+
+  //
+  // Deliberately not in the database (see above) - so the -subCacheIval refresh,
+  // which removes every cached subscription it does not find in mongo, has to be
+  // told to leave this one alone.
+  //
+  sciP->cacheOnly = true;
 
   KT_T(StDdsAction, "Created temp action subscription '%s' on attr '%s' -> '%s'", subId, attrLongName, endpointUri);
 
@@ -229,13 +230,8 @@ void ddsActionSubscriptionDelete(const char* subscriptionId)
   if (subscriptionId == NULL)
     return;
 
-  CachedSubscription* cSubP = subCacheItemLookup(tenant0.tenant, subscriptionId);
-  if (cSubP == NULL)
-  {
+  if (subCacheItemRemove(tenant0.subCache, subscriptionId) == false)
     KT_T(StDdsAction, "Temp action subscription '%s' not in cache (already gone?)", subscriptionId);
-    return;
-  }
-
-  subCacheItemRemove(cSubP);
-  KT_T(StDdsAction, "Removed temp action subscription '%s'", subscriptionId);
+  else
+    KT_T(StDdsAction, "Removed temp action subscription '%s'", subscriptionId);
 }

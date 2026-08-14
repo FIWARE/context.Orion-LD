@@ -178,6 +178,19 @@ bool dbModelFromApiSubscription(KjNode* apiSubscriptionP, bool patch)
   //
   for (KjNode* fragmentP = apiSubscriptionP->value.firstChildP; fragmentP != NULL; fragmentP = fragmentP->next)
   {
+    //
+    // A KjNull is the NGSI-LD Null, turned into a JSON Null by pCheckSubscription -
+    // it means "delete this member" (clause 8.4.2) and it carries no value.
+    //
+    // It is left EXACTLY as it is, name included: nothing may touch its value
+    // ('isActive' would read value.b, 'expiresAt' would run value.s through
+    // dateTimeFromString) and the removal is driven from the API name, because one
+    // API member can map to several database members - or to none of the same name.
+    // See dbSubscriptionMemberRemove, in orionldPatchSubscription.cpp.
+    //
+    if (fragmentP->type == KjNull)
+      continue;
+
     if (strcmp(fragmentP->name, "type") == 0 || strcmp(fragmentP->name, "@type") == 0)
     {
       // Just skip it - don't want "type: Subscription" in the DB. Not needed

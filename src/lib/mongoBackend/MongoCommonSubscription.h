@@ -126,7 +126,8 @@ extern void setCondsAndInitialNotify
   const char*                      xauthToken,
   const std::string&               fiwareCorrelator,
   mongo::BSONObjBuilder*           b,
-  bool*                            notificationDone
+  bool*                            notificationDone,
+  bool                             notify
 );
 
 

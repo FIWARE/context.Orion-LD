@@ -54,8 +54,11 @@ extern "C"
 #include "ngsi10/NotifyContextRequest.h"
 #include "ngsiNotify/senderThread.h"
 #include "rest/uriParamNames.h"
-#include "cache/subCache.h"                                    // CachedSubscription
 
+#include "orionld/types/SubCacheItem.h"                        // SubCacheItem
+#include "orionld/types/MqttInfo.h"                            // MqttInfo
+#include "orionld/types/OrionldTenant.h"                       // OrionldTenant
+#include "orionld/subCache/subCacheItemLookup.h"               // subCacheItemLookup
 #include "orionld/http/http.h"                                 // LINK_REL_AND_TYPE
 #include "orionld/legacyDriver/kjTreeFromNotification.h"       // kjTreeFromNotification
 #include "orionld/kjTree/kjGeojsonEntitiesTransform.h"         // kjGeojsonEntitiesTransform
@@ -89,7 +92,7 @@ void Notifier::sendNotifyContextRequest
 (
     NotifyContextRequest*            ncrP,
     const ngsiv2::HttpInfo&          httpInfo,
-    const std::string&               tenant,
+    OrionldTenant*                   tenantP,
     const char*                      xauthToken,
     const std::string&               fiwareCorrelator,
     OrionldRenderFormat              renderFormat,
@@ -102,7 +105,7 @@ void Notifier::sendNotifyContextRequest
 
   std::vector<SenderThreadParams*>* paramsV = Notifier::buildSenderParams(ncrP,
                                                                           httpInfo,
-                                                                          tenant,
+                                                                          tenantP,
                                                                           xauthToken,
                                                                           fiwareCorrelator,
                                                                           renderFormat,
@@ -142,7 +145,7 @@ static std::vector<SenderThreadParams*>* buildSenderParamsCustom
     const SubscriptionId&                subscriptionId,
     const ContextElementResponseVector&  cv,
     const ngsiv2::HttpInfo&              httpInfo,
-    const std::string&                   tenant,
+    OrionldTenant*                       tenantP,
     const char*                          xauthToken,
     const std::string&                   fiwareCorrelator,
     OrionldRenderFormat                  renderFormat,
@@ -322,7 +325,8 @@ static std::vector<SenderThreadParams*>* buildSenderParamsCustom
     params->port             = port;
     params->protocol         = protocol;
     params->verb             = method;
-    params->tenant           = tenant;
+    params->tenant           = tenantP->tenant;
+    params->tenantP          = tenantP;
     params->servicePath      = ce.entityId.servicePath;
     params->xauthToken       = xauthToken;
     params->resource         = uri;
@@ -343,6 +347,39 @@ static std::vector<SenderThreadParams*>* buildSenderParamsCustom
 
 
 
+// -----------------------------------------------------------------------------
+//
+// subNotifierInfoValue - the value of a "notifierInfo" key, from the subTree
+//
+// The subscription tree is the source of truth for everything the notification
+// path needs but the matcher doesn't - notifierInfo among it.
+//
+static char* subNotifierInfoValue(SubCacheItem* sciP, const char* key)
+{
+  KjNode* notificationP = kjLookup(sciP->subTree, "notification");
+  KjNode* endpointP     = (notificationP != NULL)? kjLookup(notificationP, "endpoint")     : NULL;
+  KjNode* notifierInfoP = (endpointP     != NULL)? kjLookup(endpointP,     "notifierInfo") : NULL;
+
+  if (notifierInfoP == NULL)
+    return NULL;
+
+  for (KjNode* kvP = notifierInfoP->value.firstChildP; kvP != NULL; kvP = kvP->next)
+  {
+    KjNode* keyP = kjLookup(kvP, "key");
+
+    if ((keyP != NULL) && (strcmp(keyP->value.s, key) == 0))
+    {
+      KjNode* valueP = kjLookup(kvP, "value");
+
+      return (valueP != NULL)? valueP->value.s : NULL;
+    }
+  }
+
+  return NULL;
+}
+
+
+
 /* ****************************************************************************
 *
 * Notifier::buildSenderParams -
@@ -351,7 +388,7 @@ std::vector<SenderThreadParams*>* Notifier::buildSenderParams
 (
   NotifyContextRequest*            ncrP,
   const ngsiv2::HttpInfo&          httpInfo,
-  const std::string&               tenant,
+  OrionldTenant*                   tenantP,
   const char*                      xauthToken,
   const std::string&               fiwareCorrelator,
   OrionldRenderFormat              renderFormat,
@@ -360,10 +397,11 @@ std::vector<SenderThreadParams*>* Notifier::buildSenderParams
   bool                             blackList
 )
 {
-    Verb                              verb    = httpInfo.verb;
-    std::vector<SenderThreadParams*>* paramsV = NULL;
-    CachedSubscription*               subP    = NULL;
-    char*                             toFree  = NULL;
+    Verb                              verb       = httpInfo.verb;
+    std::vector<SenderThreadParams*>* paramsV    = NULL;
+    SubCacheItem*                     subP       = NULL;
+    const char*                       subContext = NULL;
+    char*                             toFree     = NULL;
 
     if ((verb == HTTP_NOVERB) || (verb == HTTP_UNKNOWNVERB) || disableCusNotif)
     {
@@ -391,7 +429,7 @@ std::vector<SenderThreadParams*>* Notifier::buildSenderParams
       return buildSenderParamsCustom(ncrP->subscriptionId,
                                      ncrP->contextElementResponseVector,
                                      httpInfo,
-                                     tenant,
+                                     tenantP,
                                      xauthToken,
                                      fiwareCorrelator,
                                      renderFormat,
@@ -440,16 +478,22 @@ std::vector<SenderThreadParams*>* Notifier::buildSenderParams
       payloadString = ncrP->toJson(renderFormat, attrsOrder, metadataFilter, blackList);
     else
     {
-      subP = subCacheItemLookup(tenant.c_str(), ncrP->subscriptionId.c_str());
+      subP = subCacheItemLookup(tenantP->subCache, ncrP->subscriptionId.c_str());
       if (subP == NULL)
       {
         KT_E("Unable to find subscription: %s", ncrP->subscriptionId.c_str());
         return paramsV;
       }
 
+      //
+      // The Subscription's own @context, for the Link header and for GeoJSON. A
+      // subscription without one uses the core context.
+      //
+      subContext = ((subP->contextP != NULL) && (subP->contextP->url != NULL))? subP->contextP->url : NULL;
+
       char*        details;
-      const char*  lang   = (subP->lang == "")? NULL : subP->lang.c_str();
-      KjNode*      kjTree = kjTreeFromNotification(ncrP, subP->ldContext.c_str(), subP->httpInfo.mimeType, subP->renderFormat, lang, &details);
+      const char*  lang   = ((subP->lang != NULL) && (subP->lang[0] != 0))? subP->lang : NULL;
+      KjNode*      kjTree = kjTreeFromNotification(ncrP, subContext, subP->mimeType, subP->renderFormat, lang, &details);
 
       if (kjTree == NULL)
       {
@@ -459,23 +503,17 @@ std::vector<SenderThreadParams*>* Notifier::buildSenderParams
 
       if (httpInfo.mimeType == MT_GEOJSON)
       {
+        KjNode*      geoqP            = kjLookup(subP->subTree, "geoQ");
+        KjNode*      geopropertyP     = (geoqP != NULL)? kjLookup(geoqP, "geoproperty") : NULL;
+        char*        geometryProperty = (geopropertyP != NULL)? geopropertyP->value.s : NULL;
         char*        attrs            = NULL;
-        char*        preferHeader     = NULL;
-        bool         concise          = subP->renderFormat == RF_CONCISE;
-        const char*  context          = subP->ldContext.c_str();
-        char*        geometryProperty = (char*) subP->expression.geoproperty.c_str();
+        char*        preferHeader     = subNotifierInfoValue(subP, "Prefer");
+        bool         concise          = (subP->renderFormat == RF_CONCISE);
 
-        if (geometryProperty[0] == 0)
+        if ((geometryProperty == NULL) || (geometryProperty[0] == 0))
           geometryProperty = (char*) "location";
 
-        for (unsigned int ix = 0; ix < subP->httpInfo.notifierInfo.size(); ix++)
-        {
-          KeyValue* kvP = subP->httpInfo.notifierInfo[ix];
-          if (strcmp(kvP->key, "Prefer") == 0)
-            preferHeader = kvP->value;
-        }
-
-        notificationDataToGeoJson(kjTree, attrs, geometryProperty, preferHeader, concise, context);  // FIXME: 
+        notificationDataToGeoJson(kjTree, attrs, geometryProperty, preferHeader, concise, subContext);  // FIXME:
       }
 
       int   bufSize = kjFastRenderSize(kjTree);
@@ -494,10 +532,16 @@ std::vector<SenderThreadParams*>* Notifier::buildSenderParams
 
     if (strncmp(httpInfo.url.c_str(), "mqtt", 4) == 0)
     {
-      host     = subP->httpInfo.mqtt.host;
-      port     = subP->httpInfo.mqtt.port;
-      uriPath  = subP->httpInfo.mqtt.topic;
-      protocol = (char*) ((subP->httpInfo.mqtt.mqtts == false)? "mqtt" : "mqtts");
+      if ((subP == NULL) || (subP->mqttP == NULL))
+      {
+        KT_E("Runtime Error (not sending NotifyContextRequest: no MQTT info for subscription '%s')", ncrP->subscriptionId.c_str());
+        return paramsV;  // empty vector
+      }
+
+      host     = subP->mqttP->host;
+      port     = subP->mqttP->port;
+      uriPath  = subP->mqttP->topic;
+      protocol = (char*) ((subP->mqttP->mqtts == false)? "mqtt" : "mqtts");
     }
     else if (!parseUrl(httpInfo.url, host, port, uriPath, protocol))
     {
@@ -518,7 +562,8 @@ std::vector<SenderThreadParams*>* Notifier::buildSenderParams
     params->port             = port;
     params->protocol         = protocol;
     params->verb             = verbToString(verb);
-    params->tenant           = tenant;
+    params->tenant           = tenantP->tenant;
+    params->tenantP          = tenantP;
     params->servicePath      = spathList;
     params->xauthToken       = (xauthToken == NULL)? "" : xauthToken;
     params->resource         = uriPath;
@@ -555,7 +600,12 @@ std::vector<SenderThreadParams*>* Notifier::buildSenderParams
     //
 
     if (subP == NULL)
-      subP = subCacheItemLookup(tenant.c_str(), ncrP->subscriptionId.c_str());
+    {
+      subP = subCacheItemLookup(tenantP->subCache, ncrP->subscriptionId.c_str());
+
+      if (subP != NULL)
+        subContext = ((subP->contextP != NULL) && (subP->contextP->url != NULL))? subP->contextP->url : NULL;
+    }
 
     //
     // This is where the Link HTTP header is added, for ngsi-ld subscriptions only
@@ -577,8 +627,8 @@ std::vector<SenderThreadParams*>* Notifier::buildSenderParams
           (renderFormat            != RF_CROSS_APIS_SIMPLIFIED)  &&
           (orionldState.apiVersion == API_VERSION_NGSILD_V1))
       {
-        if (subP->ldContext != "")
-          params->extraHeaders["Link"] = std::string("<") + subP->ldContext + ">; " + LINK_REL_AND_TYPE;
+        if (subContext != NULL)
+          params->extraHeaders["Link"] = std::string("<") + subContext + ">; " + LINK_REL_AND_TYPE;
         else
           params->extraHeaders["Link"] = std::string("<") + coreContextUrl + ">; " + LINK_REL_AND_TYPE;
       }

@@ -24,6 +24,8 @@
 */
 #include <mongoc/mongoc.h>                                       // MongoDB C Client Driver
 
+#include <string.h>                                              // strlen
+
 extern "C"
 {
 #include "ktrace/kTrace.h"                                       // trace messages - ktrace library
@@ -56,8 +58,22 @@ KjNode* mongocSubscriptionLookup(const char* subscriptionId)
   //
   // Create the filter for the query
   //
+  //
+  // An NGSI-LD subscription's _id is its URI, stored as a String. An NGSIv2 one
+  // is a mongo ObjectId, rendered as 24 hex characters - filtering on a String
+  // can never match it, so it needs a real OID in the filter.
+  //
   bson_init(&mongoFilter);
-  bson_append_utf8(&mongoFilter, "_id", 3, subscriptionId, -1);
+
+  bson_oid_t oid;
+
+  if ((strlen(subscriptionId) == 24) && (bson_oid_is_valid(subscriptionId, 24) == true))
+  {
+    bson_oid_init_from_string(&oid, subscriptionId);
+    bson_append_oid(&mongoFilter, "_id", 3, &oid);
+  }
+  else
+    bson_append_utf8(&mongoFilter, "_id", 3, subscriptionId, -1);
 
   mongocConnectionGet(orionldState.tenantP, DbSubscriptions);
 

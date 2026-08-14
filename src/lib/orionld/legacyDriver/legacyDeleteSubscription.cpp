@@ -27,7 +27,7 @@ extern "C"
 #include "ktrace/kTrace.h"                                             // KT_*
 }
 
-#include "cache/subCache.h"                                            // CachedSubscription, subCacheItemLookup, ...
+#include "orionld/subCache/subCacheItemRemove.h"                        // subCacheItemRemove (the new sub cache)
 
 #include "orionld/common/orionldState.h"                               // orionldState
 #include "orionld/common/orionldError.h"                               // orionldError
@@ -60,11 +60,12 @@ bool legacyDeleteSubscription(void)
 
   if (noCache == false)
   {
-    CachedSubscription* cSubP = subCacheItemLookup(orionldState.tenantP->tenant, orionldState.wildcard[0]);
-    if (cSubP != NULL)
-      subCacheItemRemove(cSubP);
-    else
-      KT_W("The subscription '%s' was successfully removed from DB but does not exist in sub-cache ... (sub-cache is enabled)");
+    //
+    // Out of the cache - that is what the matching runs on, so a subscription left
+    // behind there keeps notifying after its DELETE.
+    //
+    if (subCacheItemRemove(orionldState.tenantP->subCache, orionldState.wildcard[0]) == false)
+      KT_W("The subscription '%s' was successfully removed from DB but does not exist in sub-cache ... (sub-cache is enabled)", orionldState.wildcard[0]);
   }
 
   orionldState.httpStatusCode = 204;

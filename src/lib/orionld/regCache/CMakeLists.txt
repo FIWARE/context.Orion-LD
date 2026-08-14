@@ -22,6 +22,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
 
 SET (SOURCES
     regCacheItemAdd.cpp
+    regCacheItemFromDb.cpp
     regCacheItemLookup.cpp
     regCacheItemRemove.cpp
     regCacheCreate.cpp

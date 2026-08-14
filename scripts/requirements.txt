@@ -1,23 +1,12 @@
 # Requirements for the functional test suite.
 #
-# These have to install on TWO very different interpreters:
+# The suite builds its virtual environment with $PYTHON (see testHarness.sh),
+# which the CI test image sets to python3.12 and which falls back to python3 on
+# a developer machine. Both are 3.8+, so the Flask/Werkzeug lines need no
+# environment markers.
 #
-#   - the CI test image (fiware/orion-ld-base), which ships Python 3.6.8
-#   - a developer machine, which today means Python 3.12 / 3.13 / 3.14
-#
-# so the Flask/Werkzeug lines are split with environment markers rather than
-# pinned to one version. A single pin cannot satisfy both: Flask 2.0.3 calls
-# pkgutil.get_loader(), deprecated in Python 3.12 and REMOVED in 3.14, so
-# Flask(__name__) raises and accumulator-server.py cannot start at all; while
-# Flask 2.3+ requires Python 3.8+ and simply does not exist for 3.6.
-#
-# NOTE: Python 3.6 went end-of-life in December 2021. Refreshing the base image
-#       to a supported Python would let all of this collapse back to one line.
-#
-Flask==2.0.3;   python_version <  "3.8"
-Flask>=2.3;     python_version >= "3.8"
-Werkzeug<3.0;   python_version <  "3.8"
-Werkzeug>=2.3;  python_version >= "3.8"
+Flask>=2.3
+Werkzeug>=2.3
 
 # pyOpenSSL is NOT here on purpose: nothing imports it. The only reference in
 # the tree is a commented-out SSL.Context() in accumulator-server.py - the live

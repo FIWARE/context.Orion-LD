@@ -56,6 +56,15 @@ void ntonAttribute(KjNode* attrP, const char* lang, bool sysAttrs)
     return;
   }
 
+  //
+  // Anything that is not an Object has no fields to normalise, and walking one as
+  // if it had means reading value.firstChildP out of a union holding something
+  // else. Callers are supposed to hand over attributes only - this is here so that
+  // a caller that gets it wrong produces nothing instead of a crashed broker.
+  //
+  if (attrP->type != KjObject)
+    return;
+
   if (sysAttrs == false)
     kjSysAttrsRemove(attrP, 0);
 

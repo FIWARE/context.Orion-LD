@@ -145,7 +145,23 @@ void pgAttributeAppend
     snprintf(buf, bufSize, "%s('%s', '%s', 'Delete', '%s', null, null, null, '%s', null, null, null, null, null, null, null, null, null, null, null, null, '%s', %s)",
              comma, instanceId, attributeName, entityId, datasetId, orionldState.requestTimeString, correlator);
   }
-  else if (type == NULL)
+  //
+  // ⚠️ 'valueNodeP == NULL' belongs HERE, with 'no type given', and not in any of
+  // the typed branches below - every one of them reads valueNodeP without checking,
+  // so a value-less call was a SEGV in a request thread.
+  //
+  // It happens on an ordinary PATCH: pgAttributeBuild hands on whatever it found
+  // for the value, and a merge patch that changes only a sub-attribute of, say, a
+  // Relationship never restates the 'object'. NGSI-LD says it does not have to.
+  // The attribute still changed and still deserves a row - it just has no value to
+  // put in it, which is precisely what this branch already writes.
+  //
+  // Not hypothetical: this killed the broker in all three configurations (legacy,
+  // -experimental and -mongocOnly) about twenty seconds into the ETSI suite, on a
+  // Relationship named 'isParked'. A deletion cannot reach here - "Delete" is
+  // handled above.
+  //
+  else if ((type == NULL) || (valueNodeP == NULL))
   {
     bufSize = fixedLen;
     buf = pgBufAlloc(bufSize);

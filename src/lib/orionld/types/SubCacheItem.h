@@ -26,6 +26,7 @@
 * Author: Ken Zangelin
 */
 #include <stdint.h>                                              // types: uint32_t, ...
+#include <geos_c.h>                                              // GEOSGeometry, GEOSPreparedGeometry
 
 extern "C"
 {
@@ -33,19 +34,42 @@ extern "C"
 }
 
 #include "orionld/types/OrionldContext.h"                        // OrionldContext
+#include "orionld/types/OrionldGeoInfo.h"                        // OrionldGeoInfo
+#include "orionld/types/OrionldMimeType.h"                       // MimeType
+#include "orionld/types/MqttInfo.h"                              // MqttInfo
+#include "orionld/types/OrionldRenderFormat.h"                   // OrionldRenderFormat
+#include "orionld/types/Protocol.h"                              // Protocol
+#include "orionld/types/QNode.h"                                 // QNode
+#include "orionld/types/SubEntitySelector.h"                     // SubEntitySelector
 
 
 
 // -----------------------------------------------------------------------------
 //
-// SubDeltas -
+// SUB_TRIGGER - bit in SubCacheItem::triggers for an OrionldAlterationType
+//
+// The alteration types start at 1, so bit 0 is unused and SUB_TRIGGERS_ALL
+// covers bits 1 .. OrionldAlterationTypes.
+//
+#define SUB_TRIGGER(altType)  (1 << (altType))
+#define SUB_TRIGGERS_ALL      0xFFFFFFFE
+
+
+
+// -----------------------------------------------------------------------------
+//
+// SubDeltas - notification counters not yet flushed to the database
+//
+// Only the counters - they are what the flush $inc's. The timestamps that go
+// with them are absolute, not deltas, and live in the SubCacheItem itself.
+//
+// 'timesSent' counts every notification ATTEMPT, successful or not (that is what
+// the API renders), so it doubles as "counter updates since the last flush".
 //
 typedef struct SubDeltas
 {
   uint32_t timesSent;
   uint32_t timesFailed;
-  double   lastSuccess;
-  double   lastFailure;
 } SubDeltas;
 
 
@@ -54,17 +78,92 @@ typedef struct SubDeltas
 //
 // SubCacheItem -
 //
+//
+// SubV2Info - forward declared on purpose
+//
+// It is C++ (std::string, StringFilter, ngsiv2::HttpInfo), and SubCacheItem is
+// included all over the C-ish parts of the broker. By keeping it a pointer and
+// declaring it here, only the few modules that actually touch the NGSIv2 state
+// pull in orionld/types/SubV2Info.h.
+//
+struct SubV2Info;
+
+
+
 typedef struct SubCacheItem
 {
   char*                 subId;              // Set when creating subscription - points inside subTree
   KjNode*               subTree;
-  SubDeltas             deltas;
+  bool                  ngsild;             // false for an NGSIv2 subscription, whose database _id is an OID, not a string
   bool                  dirty;              // The subscription has been patched - not only counters differ from copy in DB
+  bool                  inDB;               // Used by the -subCacheIval refresh to find subscriptions deleted by another instance
+  bool                  cacheOnly;          // Never written to the database (a DDS Action's temp subscription) - the refresh must not sweep it away
   OrionldContext*       contextP;           // Set when creating/patching registration
   char*                 hostAlias;          // Broker identity - for the Via header
 
-  // "Shortcuts" and transformations
-  double                modifiedAt;         // Copied from inside the subTree
+  //
+  // Notification bookkeeping. The counters in the subTree are what the database
+  // holds; 'deltas' is what has happened since and is not yet flushed. What the
+  // API renders is the sum. The timestamps are absolute and always the latest.
+  //
+  SubDeltas             deltas;
+  double                lastNotificationTime;  // Last notification ATTEMPT - seeded from the DB, read by throttling
+  double                lastSuccess;
+  double                lastFailure;
+  int                   consecutiveErrors;     // Three in a row and the subscription is paused. Not in the DB
+  char                  lastErrorReason[128];  // Not in the DB
+
+  //
+  // "Shortcuts" and compiled state - all of it built from subTree, at cache time,
+  // so that matching an entity alteration never has to parse anything.
+  //
+  // Only what needs TRANSFORMING (a regex, a QNode tree, a GEOS geometry, an
+  // enum, a split URL) or what is read on every single alteration lives here.
+  // Everything else - name, description, watchedAttributes, notified attributes,
+  // datasetId, the counters, ... - is read from the subTree, which is the source
+  // of truth.
+  //
+  double                      modifiedAt;      // Copied from inside the subTree
+  bool                        isActive;
+  double                      expiresAt;       // 0: never expires
+  double                      throttling;      // 0: no throttling
+  char*                       lang;            // Points inside subTree
+  uint32_t                    triggers;        // Bitmask of SUB_TRIGGER(OrionldAlterationType)
+  OrionldRenderFormat         renderFormat;
+  bool                        showChanges;
+  bool                        sysAttrs;
+
+  SubEntitySelector*          entitySelectors; // The "entities" array, compiled (idPattern -> regex)
+
+  char*                       qText;           // Points inside subTree - the expanded 'q' (DB name: "ldQ")
+  QNode*                      qP;              // 'qText', parsed
+
+  KjNode*                     geoQP;           // Clone of "geoQ" - owns the memory 'geoInfo' points into
+  OrionldGeoInfo*             geoInfo;
+  GEOSGeometry*               geosGeometry;
+  const GEOSPreparedGeometry* geosPrepared;
+
+  // notification::endpoint::uri, split up
+  char*                       url;             // Own copy - urlParse destroys its input
+  char*                       protocolString;  // Points inside 'url' - or at the literal "none" if the URI has no scheme
+  char*                       ip;              // Points inside 'url'
+  uint16_t                    port;
+  char*                       rest;            // Points inside 'url'
+  Protocol                    protocol;
+  MimeType                    mimeType;        // notification::endpoint::accept
+  MqttInfo*                   mqttP;           // Only for an MQTT/MQTTS endpoint - the URI split up MQTT-style, + notifierInfo
+
+  //
+  // The NGSIv2 matching state.
+  //
+  // Allocated for EVERY subscription, not only the v2-created ones: an entity
+  // updated through the NGSIv2 API matches subscriptions through subCacheV2Match,
+  // and that has always included the NGSI-LD ones (the LD create path writes an
+  // NGSIv2 rendering of 'q'/'mq' and a servicePath of "/#" for exactly that).
+  // Dropping it for LD subscriptions would silently stop notifying them on a v2
+  // entity update.
+  //
+  struct SubV2Info*     v2P;
 
   struct SubCacheItem*  next;
 } SubCacheItem;

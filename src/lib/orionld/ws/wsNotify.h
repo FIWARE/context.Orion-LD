@@ -27,7 +27,7 @@
 */
 #include <sys/uio.h>                                  // struct iovec
 
-#include "cache/CachedSubscription.h"                 // CachedSubscription
+#include "orionld/types/SubCacheItem.h"                // SubCacheItem
 
 
 
@@ -35,6 +35,6 @@
 //
 // wsNotify - send an NGSI-LD notification over a WebSocket connection
 //
-extern int wsNotify(CachedSubscription* cSubP, struct iovec* ioVec, int ioVecSize, double notificationTime);
+extern int wsNotify(SubCacheItem* cSubP, struct iovec* ioVec, int ioVecSize, double notificationTime);
 
 #endif  // SRC_LIB_ORIONLD_WS_WSNOTIFY_H_

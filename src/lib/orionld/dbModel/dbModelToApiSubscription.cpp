@@ -239,6 +239,45 @@ KjNode* dbModelToApiSubscription
 
   KjNode* apiSubP = kjObject(orionldState.kjsonP, NULL);
 
+  //
+  // "v2" - the NGSIv2-only members, gathered in ONE place.
+  //
+  // They are not part of an NGSI-LD Subscription and never go out in a response
+  // (apiModelFromCacheSubscription drops the whole member), but the cache needs
+  // them: they are what subCacheItemV2Compile builds the NGSIv2 matching state
+  // and the custom-notification HttpInfo out of. Keeping them in one sub-object
+  // means the renderer drops one member instead of a list that grows every time
+  // the cache learns to hold something new.
+  //
+  KjNode* v2P = (forSubCache == true)? kjObject(orionldState.kjsonP, "v2") : NULL;
+
+  //
+  // Gathered HERE, at the top, and not at the end: everything below moves nodes
+  // out of 'dbSubP' into 'apiSubP' with kjChildAdd WITHOUT unlinking them first,
+  // which splices away the rest of dbSubP's child list. By the end of this
+  // function there is very little left of it to look things up in.
+  //
+  // 'headers' and 'mimeType' are deliberately NOT taken - they are already in the
+  // API model, as receiverInfo and endpoint::accept.
+  //
+  if (v2P != NULL)
+  {
+    static const char* v2MemberV[] = { "custom", "method", "payload", "qs", "blacklist", "metadata", "servicePath" };
+
+    for (unsigned int ix = 0; ix < sizeof(v2MemberV) / sizeof(v2MemberV[0]); ix++)
+    {
+      KjNode* nodeP = kjLookup(dbSubP, v2MemberV[ix]);
+
+      if (nodeP != NULL)
+      {
+        kjChildRemove(dbSubP, nodeP);
+        kjChildAdd(v2P, nodeP);
+      }
+    }
+
+    kjChildAdd(apiSubP, v2P);
+  }
+
   // id
   dbSubIdP->name = (char*) "id";
   kjChildAdd(apiSubP, dbSubIdP);
@@ -313,25 +352,51 @@ KjNode* dbModelToApiSubscription
     KjNode* typeP          = kjLookup(entityP, "type");
     KjNode* isTypePatternP = kjLookup(entityP, "isTypePattern");
 
-    // There is no "Type Pattern" in NGSI-LD
-    kjChildRemove(entityP, isTypePatternP);
+    //
+    // NONE of these four is guaranteed to be there.
+    //
+    // An NGSI-LD entity selector always has a type, and the NGSI-LD write path
+    // always stores 'isPattern'/'isTypePattern' - but an NGSIv2 one does not: a
+    // subscription created with only an "idPattern" and no "type" has neither a
+    // 'type' nor an 'isTypePattern' in the database. This function was never
+    // called for an NGSIv2 subscription until the subscription cache started
+    // being filled from the database, so all four dereferences below were
+    // latent. kjChildRemove(container, NULL) walks off the end of the list and
+    // segfaults.
+    //
 
-    // There is no "isPattern" in NGSI-LD
-    kjChildRemove(entityP, isPatternP);
-
-    if (strcmp(isPatternP->value.s, "true") == 0)
+    //
+    // There is no "Type Pattern" in NGSI-LD - but there IS in NGSIv2, and the
+    // subscription cache is matched by the NGSIv2 write path as well, so the flag
+    // is kept for the cache. Only when set: "isTypePattern": false is the default
+    // and says nothing, and leaving it out keeps the cached tree the same shape
+    // for the subscriptions (the vast majority) that don't use the feature.
+    //
+    if (isTypePatternP != NULL)
     {
-      if (strcmp(idP->value.s, ".*") == 0)
-        kjChildRemove(entityP, idP);
-      else
-        idP->name = (char*) "idPattern";
+      bool isTypePattern = (isTypePatternP->type == KjBoolean)? isTypePatternP->value.b : false;
+
+      if ((forSubCache == false) || (isTypePattern == false))
+        kjChildRemove(entityP, isTypePatternP);
     }
 
-    kjChildRemove(entityP, isPatternP);
+    // There is no "isPattern" in NGSI-LD - the id becomes "idPattern" instead
+    if (isPatternP != NULL)
+    {
+      kjChildRemove(entityP, isPatternP);
+
+      if ((idP != NULL) && (strcmp(isPatternP->value.s, "true") == 0))
+      {
+        if (strcmp(idP->value.s, ".*") == 0)
+          kjChildRemove(entityP, idP);
+        else
+          idP->name = (char*) "idPattern";
+      }
+    }
 
     // type must be compacted
     // However, for sub-cache we need the long names
-    if (forSubCache == false)
+    if ((forSubCache == false) && (typeP != NULL))
       typeP->value.s = orionldContextItemAliasLookup(orionldState.contextP, typeP->value.s, NULL, NULL);
   }
   kjChildAdd(apiSubP, dbEntitiesP);
@@ -417,13 +482,52 @@ KjNode* dbModelToApiSubscription
     if (v2mqP)
       kjChildRemove(dbExpressionP, v2mqP);
 
-    if (orionldState.apiVersion != API_VERSION_NGSILD_V1)  // FIXME: When taking from DB at startup, this won't work ...
+    //
+    // The NGSIv2 renderings of 'q'/'mq' are not part of an NGSI-LD Subscription,
+    // so an NGSI-LD request does not get them.
+    //
+    if (orionldState.apiVersion != API_VERSION_NGSILD_V1)
     {
       if ((v2qP != NULL) && (v2qP->value.s[0] != 0))
         kjChildAdd(apiSubP, v2qP);
 
       if ((v2mqP != NULL) && (v2mqP->value.s[0] != 0))
         kjChildAdd(apiSubP, v2mqP);
+    }
+    else if (forSubCache == true)
+    {
+      //
+      // ... but the CACHE needs them, whichever API asked: subCacheItemV2Compile
+      // compiles the NGSIv2 StringFilters out of them, and that is what lets an
+      // entity updated over NGSIv2 match this subscription. Without this, a PATCH
+      // would recompile the item from a tree with no 'q' and the subscription
+      // would quietly stop matching.
+      //
+      if ((v2qP  != NULL) && (v2qP->value.s[0]  != 0))  kjChildAdd(v2P, v2qP);
+      if ((v2mqP != NULL) && (v2mqP->value.s[0] != 0))  kjChildAdd(v2P, v2mqP);
+    }
+
+    //
+    // NGSIv2 wants the geo expression exactly as the database has it, and
+    // dbModelToApiGeoQ is about to rewrite all of it into NGSI-LD's spelling:
+    // the coordinates become an Array instead of the String "1,2", "point"
+    // becomes "Point", and "near;maxDistance:1" becomes "near;maxDistance==1".
+    // None of those three is what the NGSIv2 geo filter can read.
+    //
+    // So copies are taken first - copies and not moves, as the conversion needs
+    // the nodes to still be there.
+    //
+    if (forSubCache == true)
+    {
+      static const char* geoMemberV[] = { "coords", "geometry", "georel" };
+
+      for (unsigned int ix = 0; ix < sizeof(geoMemberV) / sizeof(geoMemberV[0]); ix++)
+      {
+        KjNode* dbNodeP = kjLookup(dbExpressionP, geoMemberV[ix]);
+
+        if ((dbNodeP != NULL) && (dbNodeP->type == KjString) && (dbNodeP->value.s[0] != 0))
+          kjChildAdd(v2P, kjString(orionldState.kjsonP, geoMemberV[ix], dbNodeP->value.s));
+      }
     }
 
     bool empty = false;
@@ -447,8 +551,15 @@ KjNode* dbModelToApiSubscription
     isActiveP = dbStatusP;
     isActiveP->name = (char*) "isActive";
 
-    // In NGSIv2, "status" can take 2 values: "active", "inactive"
-    if (strcmp(isActiveP->value.s, "inactive") == 0)
+    //
+    // The stored word depends on the API that wrote the subscription: NGSIv2 says
+    // "inactive", NGSI-LD says "paused" (TS 104-175 clause 5.2.6.5.2). Both mean
+    // the same thing, and the database holds whichever the creating request used -
+    // so both must be understood here. Anything else ("active", "expired", ...)
+    // leaves the subscription active; "expired" is decided by 'expiresAt', not by
+    // this flag.
+    //
+    if ((strcmp(isActiveP->value.s, "inactive") == 0) || (strcmp(isActiveP->value.s, "paused") == 0))
       isActiveP->value.b = false;
     else
       isActiveP->value.b = true;

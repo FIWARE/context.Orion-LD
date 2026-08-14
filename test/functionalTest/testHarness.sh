@@ -76,9 +76,10 @@ export -f logMsg
 #
 if [ ! -d .venv ]
 then
-    pver=$(python3 --version)
+    pyExe=${PYTHON:-python3}
+    pver=$($pyExe --version)
     echo "Creating Virtual Environment for $pver for functional tests"
-    virtualenv -p python3 .venv
+    $pyExe -m venv .venv
     source .venv/bin/activate
     pip install -r scripts/requirements.txt
 fi
@@ -917,8 +918,12 @@ fi
 #
 # Loading the context server with the @contexts found under test/functionalTest/contexts
 #
-# There's only one @context right now:
+# Every *.jsonld file in there is served as http://localhost:7080/jsonldContexts/<filename>.
+# Some of them mirror an @context that lives somewhere out on the internet - a test must never
+# depend on that somewhere being up:
 # - schema_lab_fiware_org_ld_context.jsonld (mirroring "https://schema.lab.fiware.org/ld/context")
+# - test-context-ngsi.jsonld                (mirroring the @context attached to github issue #922,
+#                                            "https://github.com/FIWARE/context.Orion-LD/files/7334895/test-context-ngsi.txt")
 #
 if [ -d test/functionalTest/contexts ] && [ "$pushContexts" == "1" ]
 then
