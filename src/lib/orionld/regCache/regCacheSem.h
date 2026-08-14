@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_TYPES_REGCACHE_H_
-#define SRC_LIB_ORIONLD_TYPES_REGCACHE_H_
+#ifndef SRC_LIB_ORIONLD_REGCACHE_REGCACHESEM_H_
+#define SRC_LIB_ORIONLD_REGCACHE_REGCACHESEM_H_
 
 /*
 *
-* Copyright 2023 FIWARE Foundation e.V.
+* Copyright 2026 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -25,28 +25,23 @@
 *
 * Author: Ken Zangelin
 */
-#include <pthread.h>                                             // pthread_rwlock_t
-
-#include "orionld/types/OrionldTenant.h"                         // OrionldTenant
-#include "orionld/types/RegCacheItem.h"                          // RegCacheItem
+#include "common/sem.h"                                          // SemOpType
+#include "orionld/types/RegCache.h"                              // RegCache
 
 
 
 // -----------------------------------------------------------------------------
 //
-// RegCache -
+// The registration cache lock
 //
-// The 'rwlock' protects 'regList' and 'last' - see regCacheSem.h.
-// It lives HERE, in the cache it protects, and not in the tenant, so that each tenant's
-// registration cache is locked independently of that tenant's OTHER caches.
-// Readers take it for reading (many at a time), the mutators for writing.
+// One lock per registration cache, i.e. per tenant, living inside the RegCache itself.
+// It protects the 'regList'/'last' linked list - NOT the contents of the items.
 //
-typedef struct RegCache
-{
-  OrionldTenant*   tenantP;
-  RegCacheItem*    regList;
-  RegCacheItem*    last;
-  pthread_rwlock_t rwlock;
-} RegCache;
+// ⚠️ NEVER hold two cache locks at the same time. A function that needs to loop over the
+//    registration caches of several tenants takes and gives the lock once per tenant.
+//
+extern void regCacheSemInit(RegCache* rcP);
+extern void regCacheSemTake(RegCache* rcP, const char* who, const char* what, SemOpType opType);
+extern void regCacheSemGive(RegCache* rcP, const char* who, const char* what);
 
-#endif  // SRC_LIB_ORIONLD_TYPES_REGCACHE_H_
+#endif  // SRC_LIB_ORIONLD_REGCACHE_REGCACHESEM_H_
