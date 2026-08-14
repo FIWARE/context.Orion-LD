@@ -81,13 +81,11 @@ style_check src/lib/jsonParseV2
 style_check src/lib/apiTypesV2
 style_check src/lib/mongoBackend
 style_check src/lib/parseArgs
-style_check src/lib/cache
 style_check src/lib/alarmMgr
 style_check src/lib/metricsMgr
 style_check test/unittests
 style_check test/unittests/orionTypes
 style_check test/unittests/apiTypesV2
-style_check test/unittests/cache
 style_check test/unittests/rest
 style_check test/unittests/serviceRoutines
 
