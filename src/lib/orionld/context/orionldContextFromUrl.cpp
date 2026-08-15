@@ -49,7 +49,9 @@ extern "C"
 //
 typedef struct StringListItem
 {
-  char                    name[256];
+  char*                   name;    // strdup'ed: a URL is not bounded by anything, and a fixed
+                                   // buffer would have two URLs with a common prefix compare
+                                   // EQUAL - each then waiting for the other's download
   pthread_t               owner;   // The thread that is downloading this URL - to detect cyclic @contexts (same-thread re-entry)
   struct StringListItem*  next;
 } StringListItem;
@@ -74,6 +76,8 @@ void contextDownloadListInit(void)
 // -----------------------------------------------------------------------------
 //
 // contextDownloadListLookup - lookup a URL in the list and report if found or not
+//
+// ⚠️ CALLED WITH contextDownloadListSem HELD - see contextDownloadListOwnedByMe.
 //
 bool contextDownloadListLookup(const char* url)
 {
@@ -108,6 +112,9 @@ bool contextDownloadListLookup(const char* url)
 // references itself (directly or via a chain) - a cyclic @context. Waiting is pointless:
 // the download that would satisfy the wait is the frame that is now blocked here, so the
 // wait burns its full timeout and then fails anyway. This lets the caller detect that case.
+//
+// ⚠️ CALLED WITH contextDownloadListSem HELD - it walks the list, and another thread
+// removing an entry frees it.
 //
 static bool contextDownloadListOwnedByMe(const char* url)
 {
@@ -151,8 +158,18 @@ void contextDownloadListAdd(const char* url)
 {
   StringListItem* itemP = (StringListItem*) malloc(sizeof(StringListItem));
 
+  if (itemP == NULL)
+    KT_RVE("out of memory adding '%s' to the context download list", url);
+
   KT_T(KtContextDownload, "Adding '%s' to contextDownloadList", url);
-  strncpy(itemP->name, url, sizeof(itemP->name) - 1);
+  itemP->name = strdup(url);
+
+  if (itemP->name == NULL)
+  {
+    free(itemP);
+    KT_RVE("out of memory adding '%s' to the context download list", url);
+  }
+
   itemP->owner = pthread_self();
   itemP->next = contextDownloadList;
   contextDownloadList = itemP;
@@ -195,18 +212,21 @@ void contextDownloadListRemove(const char* url)
   {
     KT_T(KtContextDownload, "Removing '%s' as first item in contextDownloadList", url);
     contextDownloadList = itemP->next;
+    free(itemP->name);
     free(itemP);
   }
   else if (itemP->next == NULL)  // Found as the last item of the list
   {
     KT_T(KtContextDownload, "Removing '%s' as last item in contextDownloadList", url);
     prevP->next = NULL;
+    free(itemP->name);
     free(itemP);
   }
   else  // Found in the middle of the list
   {
     KT_T(KtContextDownload, "Removing '%s' as middle item in contextDownloadList", url);
     prevP->next = itemP->next;
+    free(itemP->name);
     free(itemP);
   }
 
@@ -273,34 +293,38 @@ static OrionldContext* contextCacheWait(char* url)
 
 // -----------------------------------------------------------------------------
 //
-// contextCacheWaitOrCycleBreak -
+// cycleBreak -
 //
-// Called when 'url' is already in the download list. If ANOTHER thread is downloading it,
-// wait for that download to finish (contextCacheWait). If THIS thread put it there, we have
-// recursed back into our own in-progress download = a cyclic @context; waiting would just
-// burn the full timeout and fail, so break the cycle immediately with a clear error.
+// Called when 'url' is already in the download list AND this very thread is the one that
+// put it there: we have recursed back into our own in-progress download = a cyclic
+// @context. Waiting would just burn the full timeout and fail, so the cycle is broken
+// immediately, with an error that says what actually happened.
 //
-static OrionldContext* contextCacheWaitOrCycleBreak(char* url)
+static OrionldContext* cycleBreak(char* url)
 {
-  if (contextDownloadListOwnedByMe(url) == true)
-  {
-    // Cyclic @context - non-fatal: we reject this @context and carry on (the broker still
-    // starts / the request still gets an error response from the caller). So it's a WARNING,
-    // not an error - emitting an 'E:' here would make orionldStart consider startup failed.
-    KT_W("Cyclic @context detected - '%s' references itself (directly or via a chain) - rejecting it", url);
+  // Cyclic @context - non-fatal: we reject this @context and carry on (the broker still
+  // starts / the request still gets an error response from the caller). So it's a WARNING,
+  // not an error - emitting an 'E:' here would make orionldStart consider startup failed.
+  KT_W("Cyclic @context detected - '%s' references itself (directly or via a chain) - rejecting it", url);
 
-    // Set the problem details DIRECTLY (orionldError() would log at 'E:', which orionldStart
-    // treats as a fatal startup error). This gives a request-time cycle a proper 400 response
-    // and, with status >= 300, suppresses the generic "Unable to download context" fallback.
-    orionldState.pd.type   = OrionldBadRequestData;
-    orionldState.pd.title  = (char*) "Cyclic @context";
-    orionldState.pd.detail = url;
-    orionldState.pd.status = 400;
+  // Set the problem details DIRECTLY (orionldError() would log at 'E:', which orionldStart
+  // treats as a fatal startup error). This gives a request-time cycle a proper 400 response
+  // and, with status >= 300, suppresses the generic "Unable to download context" fallback.
+  orionldState.pd.type   = OrionldBadRequestData;
+  orionldState.pd.title  = (char*) "Cyclic @context";
+  orionldState.pd.detail = url;
+  orionldState.pd.status = 400;
 
-    return NULL;
-  }
+  //
+  // ⚠️ httpStatusCode as well, and not only pd.status. The callers that turn a NULL
+  // @context into a response ask "has somebody already set an error?" by testing
+  // httpStatusCode (linkContextGet in mhdConnectionInit, for one) - so leaving it at
+  // its default had this careful 400 replaced by a generic 500 "Unknown error", and
+  // the one thing the client could have acted on never left the broker.
+  //
+  orionldState.httpStatusCode = 400;
 
-  return contextCacheWait(url);
+  return NULL;
 }
 
 
@@ -366,48 +390,42 @@ OrionldContext* orionldContextFromUrl(char* url, char* id)
   // CASE 3. Someone was actually downloading the context when I wanted to do the same.
   //         Just like step 2 - I wait for the download to complete and then lookup the context from the cache.
   //
+  //
+  // ⚠️ THE LIST IS ONLY EVER TOUCHED UNDER THE SEMAPHORE - looking AND deciding, in
+  // one critical section. It used to be looked up unlocked first, as a shortcut past
+  // the semaphore, and that was a use-after-free waiting to happen: another thread
+  // removing an entry FREES it, so the unlocked walk could dereference a freed item
+  // and follow its 'next' into freed memory. The semaphore is uncontended and held
+  // for a strcmp or two - there is nothing to shortcut past.
+  //
+  KT_T(KtContextDownload, "Getting the downloadList semaphore for '%s'", url);
+  sem_wait(&contextDownloadListSem);
+
   bool urlDownloading = contextDownloadListLookup(url);
+  bool cyclic         = false;
+
   if (urlDownloading == false)
   {
-    //
-    // Not there, so, we'll download it
-    // First take the 'download semaphore'
-    //
-    KT_T(KtContextDownload, "The context '%s' is not downloading, getting the downloadList semaphore", url);
-    sem_wait(&contextDownloadListSem);
-    KT_T(KtContextDownload, "Got the downloadList semaphore for '%s'", url);
-
-    //
-    // OK - got the semaphore - but, did I have to wait?
-    // I must look the context up again, to be sure (in the 'contextDownloadList')
-    //
-    // If the URL is in 'contextDownloadList' then somebody else took the semaphore before me
-    // and started downloading.
-    //
-    KT_T(KtContextDownload, "Looking up '%s' again, in case I got the semaphore late", url);
-    urlDownloading = contextDownloadListLookup(url);
-    if (urlDownloading == false)
-    {
-      KT_T(KtContextDownload, "The context '%s' is not downloading by other - will be downloaded here", url);
-      contextDownloadListAdd(url);  // CASE 1: Mark the URL as being downloading
-    }
-
-    KT_T(KtContextDownload, "Giving back the downloadList semaphore for '%s'", url);
-    sem_post(&contextDownloadListSem);
-
-    if (urlDownloading == true)  // If somebody has taken the semaphore before me and is downloading the context - I'll have to wait
-    {
-      KT_T(KtContextDownload, "The context '%s' is downloading by other - I wait until it's done", url);
-      return contextCacheWaitOrCycleBreak(url);  // CASE 2 - another thread is downloading the context (or WE are - a cycle)
-    }
-
-    // CASE 1 - the context will be downloaded
+    KT_T(KtContextDownload, "The context '%s' is not downloading by other - will be downloaded here", url);
+    contextDownloadListAdd(url);  // CASE 1: Mark the URL as being downloading
   }
   else
+    cyclic = contextDownloadListOwnedByMe(url);  // Decided HERE, where the list is still held still
+
+  KT_T(KtContextDownload, "Giving back the downloadList semaphore for '%s'", url);
+  sem_post(&contextDownloadListSem);
+
+  if (urlDownloading == true)
   {
+    // CASE 2/3 - somebody is downloading it. If that somebody is US, it is a cyclic @context
+    if (cyclic == true)
+      return cycleBreak(url);
+
     KT_T(KtContextDownload, "The context '%s' is downloading by other - I wait until it's done", url);
-    return contextCacheWaitOrCycleBreak(url);  // CASE 3 - another thread is downloading the context (or WE are - a cycle)
+    return contextCacheWait(url);
   }
+
+  // CASE 1 - the context will be downloaded
 
   KT_T(KtContextDownload, "Downloading the context '%s' and adding it to the context cache", url);
   char* buffer = orionldContextDownload(url);  // orionldContextDownload fills in ProblemDetails
