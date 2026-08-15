@@ -32,6 +32,37 @@
 //
 // haInit - start the HA channel named by -ha
 //
+// Called after the mongo connection is up (which channels are possible depends
+// on it) and BEFORE the caches are loaded from the database. That order is what
+// closes the startup gap: a change made by another instance between "we read the
+// database" and "we started listening" would otherwise be missed for the
+// lifetime of the process. Listening first means the two overlap instead, and an
+// event for something the load also brings in is applied twice - which costs a
+// re-read and changes nothing.
+//
 extern bool haInit(void);
+
+
+
+// -----------------------------------------------------------------------------
+//
+// haApplyEnable - the caches are loaded; events may now be applied
+//
+extern void haApplyEnable(void);
+
+
+
+// -----------------------------------------------------------------------------
+//
+// haApplyWait - block until the caches are loaded
+//
+// ⚠️ EVERY CHANNEL CALLS THIS before it does anything with an event - before it
+// even resolves which tenant the event belongs to, because resolving one CREATES
+// it, and a tenant invented while the startup load is walking the tenant list
+// would get its caches filled with that one item and nothing else.
+//
+// It blocks only during startup, and only if an event arrives that early.
+//
+extern void haApplyWait(void);
 
 #endif  // SRC_LIB_ORIONLD_HA_HAINIT_H_

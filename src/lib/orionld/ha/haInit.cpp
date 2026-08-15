@@ -23,6 +23,7 @@
 * Author: Ken Zangelin
 */
 #include <string.h>                                              // strcmp
+#include <unistd.h>                                              // usleep
 #include <mongoc/mongoc.h>                                       // MongoDB C Client Driver
 
 extern "C"
@@ -78,6 +79,44 @@ static bool replicaSetCheck(void)
   mongoc_client_pool_push(mongocPool, clientP);
 
   return isReplicaSet;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// haApplyEnabled - are the caches loaded?
+//
+// The channel is started BEFORE the caches are loaded, on purpose (see haInit.h),
+// so an event can arrive before there is anything to apply it to. It waits here.
+//
+// A condition variable would do the same thing with more machinery: this is
+// waited on once per broker start, by one thread, for a few milliseconds at
+// most. 'volatile' is what makes the poll actually re-read it.
+//
+static volatile bool haApplyEnabled = false;
+
+
+
+// -----------------------------------------------------------------------------
+//
+// haApplyEnable -
+//
+void haApplyEnable(void)
+{
+  haApplyEnabled = true;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// haApplyWait -
+//
+void haApplyWait(void)
+{
+  while (haApplyEnabled == false)
+    usleep(10000);
 }
 
 
