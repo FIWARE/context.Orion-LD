@@ -1333,6 +1333,18 @@ int main(int argC, char* argV[])
   // mongocInit calls mongocTenantsGet => it gets total number of tenants from there and can change dbPoolSize
   mongocInit(dbURI, dbHost, dbUser, dbPwd, dbAuthDb, rplSet, dbAuthMechanism, dbSSL, dbCertFile);
 
+  //
+  // High Availability - the channel that tells this instance what the others do.
+  //
+  // BEFORE the caches are loaded, and as early as the mongo connection allows.
+  // Listening only after reading the database leaves a window - the whole cache
+  // load, @contexts included - whose changes are missed for the lifetime of the
+  // process. Starting the channel first makes the two overlap instead: nothing
+  // is applied until haApplyEnable() below, and an event for something the load
+  // also brings in is applied twice, which costs a re-read and changes nothing.
+  //
+  haInit();
+
   if (pernot == true)
     pernotSubCacheInit();
 
@@ -1372,6 +1384,13 @@ int main(int argC, char* argV[])
   //
   subCachesInit();
 
+  //
+  // Every cache is populated (@contexts in orionldServiceInit, registrations in
+  // regCacheInit, subscriptions just now) - the HA channel may start applying
+  // what it has been holding since haInit().
+  //
+  haApplyEnable();
+
 
   // Initialize libs
   alarmMgr.init(relogAlarms);
@@ -1393,12 +1412,6 @@ int main(int argC, char* argV[])
   //
   if (noCache == false)
     subCachesMaintenanceStart();
-
-  //
-  // High Availability - the channel that tells this instance what the others do.
-  // AFTER the caches exist (subCachesInit, above), as an event applies to them.
-  //
-  haInit();
 
   dbInit(dbHost, dbName);  // Move to be next to mongocInit ?
 

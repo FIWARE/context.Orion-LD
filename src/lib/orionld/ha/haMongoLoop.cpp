@@ -44,6 +44,7 @@ extern "C"
 #include "orionld/mongoc/mongocConnectionRelease.h"              // mongocConnectionRelease
 #include "orionld/ha/HaEvent.h"                                  // HaEvent
 #include "orionld/ha/haEventApply.h"                             // haEventApply
+#include "orionld/ha/haInit.h"                                   // haApplyWait
 #include "orionld/ha/haMongoLoop.h"                              // Own interface
 
 
@@ -98,6 +99,12 @@ static bool kindOfCollection(const char* coll, HaKind* kindP)
 //
 static void eventTreat(const bson_t* bsonP)
 {
+  //
+  // Before anything else, including working out whose database this is: doing
+  // that CREATES a tenant, and the caches are not loaded yet.
+  //
+  haApplyWait();
+
   char*   title;
   char*   details;
   KjNode* eventP = mongocKjTreeFromBson(bsonP, &title, &details);

@@ -1,0 +1,198 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+HA: a subscription created while the other broker is starting up is not lost
+
+--SHELL-INIT--
+dbInit CB
+dbInit CB2
+orionldStart CB -experimental -ha mongo
+
+--SHELL--
+
+#
+# A broker that opens its change stream only AFTER loading its caches has a gap:
+# whatever another instance writes in between is in neither - not in the load,
+# which had already read the database, and not in the stream, which was not yet
+# listening. Nothing re-reads afterwards, so the item stays missing for the
+# lifetime of the process.
+#
+# CB2 is therefore started with a write racing its startup: urn:S2 is created on
+# CB a fraction of a second after CB2 is launched, i.e. while CB2 is connecting,
+# initialising and loading. Whichever side of the load it lands on, CB2 must end
+# up with it - by the load if it was already stored, by the stream if not.
+#
+# ⚠️ WHAT THIS DOES AND DOES NOT PROVE. The gap it guards is a few milliseconds
+# wide, and nothing here forces the write into exactly those milliseconds, so a
+# broker WITH the gap can pass this by luck. It is a regression test, not a
+# proof: the ordering itself was proved by widening the gap on purpose (a sleep
+# before the cache load in a throwaway build), where the unfixed broker lost
+# urn:S2 every single time and the fixed one never did.
+#
+# 01. Create subscription urn:S1 on CB, before CB2 exists at all
+# 02. Launch CB2 and, while it is starting, create urn:S2 on CB
+# 03. Wait for CB2, then GET all subscriptions from CB2 - it has BOTH
+#
+
+#
+# waitForSub - poll a broker until the subscription is there
+#
+# $1: port,  $2: subscription id
+#
+waitForSub()
+{
+  typeset -i _i
+  _i=0
+
+  while [ $_i -lt 200 ]
+  do
+    hits=$(curl -s localhost:$1/ngsi-ld/v1/subscriptions | grep -c "$2")
+    [ "$hits" != "0" ] && return 0
+
+    sleep 0.05
+    _i=$_i+1
+  done
+
+  echo "TIMEOUT waiting for $2 on port $1"
+}
+
+
+echo "01. Create subscription urn:S1 on CB, before CB2 exists at all"
+echo "=============================================================="
+payload='{
+  "id": "urn:S1",
+  "type": "Subscription",
+  "entities": [ { "type": "T" } ],
+  "notification": {
+    "endpoint": {
+      "uri": "http://127.0.0.1:'$LISTENER_PORT'/notify"
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload"
+echo
+echo
+
+
+echo "02. Launch CB2 and, while it is starting, create urn:S2 on CB"
+echo "============================================================="
+payload='{
+  "id": "urn:S2",
+  "type": "Subscription",
+  "entities": [ { "type": "T" } ],
+  "notification": {
+    "endpoint": {
+      "uri": "http://127.0.0.1:'$LISTENER_PORT'/notify"
+    }
+  }
+}'
+(sleep 0.2; curl -s localhost:$CB_PORT/ngsi-ld/v1/subscriptions -H 'Content-Type: application/json' -d "$payload" -o /dev/null) &
+orionldStart CB2 -experimental -ha mongo
+wait
+echo "CB2 started"
+echo
+echo
+
+
+echo "03. Wait for CB2, then GET all subscriptions from CB2 - it has BOTH"
+echo "=================================================================="
+waitForSub $CB2_PORT urn:S2
+orionCurl --url /ngsi-ld/v1/subscriptions --port $CB2_PORT
+echo
+echo
+
+
+--REGEXPECT--
+01. Create subscription urn:S1 on CB, before CB2 exists at all
+==============================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/subscriptions/urn:S1
+
+
+
+02. Launch CB2 and, while it is starting, create urn:S2 on CB
+=============================================================
+CB2 started
+
+
+03. Wait for CB2, then GET all subscriptions from CB2 - it has BOTH
+==================================================================
+HTTP/1.1 200 OK
+Content-Length: 659
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+[
+    {
+        "entities": [
+            {
+                "type": "T"
+            }
+        ],
+        "id": "urn:S1",
+        "isActive": true,
+        "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld",
+        "notification": {
+            "endpoint": {
+                "accept": "application/json",
+                "uri": "http://127.0.0.1:9997/notify"
+            },
+            "format": "normalized",
+            "status": "ok"
+        },
+        "origin": "cache",
+        "status": "active",
+        "type": "Subscription"
+    },
+    {
+        "entities": [
+            {
+                "type": "T"
+            }
+        ],
+        "id": "urn:S2",
+        "isActive": true,
+        "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld",
+        "notification": {
+            "endpoint": {
+                "accept": "application/json",
+                "uri": "http://127.0.0.1:9997/notify"
+            },
+            "format": "normalized",
+            "status": "ok"
+        },
+        "origin": "cache",
+        "status": "active",
+        "type": "Subscription"
+    }
+]
+
+
+--TEARDOWN--
+brokerStop CB
+brokerStop CB2
+dbDrop CB
+dbDrop CB2

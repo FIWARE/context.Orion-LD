@@ -38,6 +38,7 @@ extern "C"
 #include "orionld/regCache/regCacheItemRemove.h"                 // regCacheItemRemove
 #include "orionld/contextCache/orionldContextCacheItemFromDb.h"  // orionldContextCacheItemFromDb
 #include "orionld/contextCache/orionldContextCacheDelete.h"      // orionldContextCacheDelete
+#include "orionld/ha/haInit.h"                                   // haApplyWait
 #include "orionld/ha/haEventApply.h"                             // Own interface
 
 
@@ -145,6 +146,13 @@ static bool contextApply(HaEvent* eventP)
 //
 bool haEventApply(HaEvent* eventP)
 {
+  //
+  // The channel should have waited before it even resolved the tenant - this is
+  // the backstop for one that did not, and once the caches are loaded it is a
+  // single bool read.
+  //
+  haApplyWait();
+
   if ((eventP->tenantP == NULL) || (eventP->id == NULL))
     KT_RE(false, "HA: event without a tenant or an id - ignored");
 
