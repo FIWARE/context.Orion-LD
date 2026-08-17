@@ -1,0 +1,151 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+--NAME--
+Concurrent batch upserts with an inline @context - the global kalloc arena survives
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -experimental
+
+--SHELL--
+
+#
+# An @context that comes inline with the payload is resolved once per ENTITY of a batch, and
+# everything that resolution allocates - the context, its item vector, its two hash tables and every
+# item in them - used to come out of the process-global 'kalloc' arena. A KAlloc arena has no
+# locking of its own (the sem_wait/sem_post inside kaAlloc are commented out in the kalloc library),
+# and MHD serves each connection on its own thread, so two clients allocating at the same time were
+# handed the same chunk and 'bytesLeft -= size' underflowed on a stale value - after which the
+# arena hands out pointers past the end of its buffer, into the rest of the heap.
+#
+# The broker then dies: a SIGSEGV, or one of glibc's "malloc(): invalid size (unsorted)" /
+# "corrupted size vs prev_size" aborts. It is a race, so it needs concurrency to show up at all -
+# one client, however many requests, never triggers it.
+#
+# 01. 12 clients in parallel, each upserting 20 batches of 30 entities with an inline @context
+# 02. The broker is still there - GET one of the entities, expanded with the @context it was given
+# 03. And it still serves a new request - create one more entity
+#
+
+#
+# All 12 clients send the exact same 30 entities, so whichever one wins a given id, the stored
+# result is the same and step 02 stays deterministic.
+#
+payloadFile=/tmp/ngsild_concurrent_inline_contexts.json
+context='"@context":{"T":"https://example.org/vocab/T","P1":"https://example.org/vocab/P1","P2":"https://example.org/vocab/P2","P3":"https://example.org/vocab/P3","P4":"https://example.org/vocab/P4","P5":"https://example.org/vocab/P5","P6":"https://example.org/vocab/P6","P7":"https://example.org/vocab/P7","P8":"https://example.org/vocab/P8","P9":"https://example.org/vocab/P9"}'
+
+printf '[' > $payloadFile
+ix=0
+sep=''
+while [ $ix -lt 30 ]
+do
+  printf '%s{"id":"urn:ngsi-ld:E:%s","type":"T","P1":{"type":"Property","value":%s},%s}' "$sep" "$ix" "$ix" "$context" >> $payloadFile
+  sep=','
+  ix=$((ix + 1))
+done
+printf ']' >> $payloadFile
+
+
+echo "01. 12 clients in parallel, each upserting 20 batches of 30 entities with an inline @context"
+echo "==========================================================================================="
+#
+# Raw curl, and in the background - orionCurl prints, and 240 interleaved responses have no
+# deterministic order. Whether the requests succeed is not what is being tested here; whether the
+# broker is still alive afterwards is, and that is what steps 02 and 03 ask.
+#
+client=0
+while [ $client -lt 12 ]
+do
+  (
+    round=0
+    while [ $round -lt 20 ]
+    do
+      curl -s -m 30 \
+           -H 'Content-Type: application/ld+json' \
+           --data-binary @$payloadFile \
+           http://localhost:$CB_PORT/ngsi-ld/v1/entityOperations/upsert?options=update \
+        > /dev/null 2>&1
+      round=$((round + 1))
+    done
+  ) &
+  client=$((client + 1))
+done
+wait
+echo "all clients done"
+echo
+echo
+
+
+echo "02. The broker is still there - GET one of the entities, expanded with the @context it was given"
+echo "================================================================================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:E:0
+echo
+echo
+
+
+echo "03. And it still serves a new request - create one more entity"
+echo "=============================================================="
+payload='{
+  "id": "urn:ngsi-ld:E:after",
+  "type": "T"
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+--REGEXPECT--
+01. 12 clients in parallel, each upserting 20 batches of 30 entities with an inline @context
+===========================================================================================
+all clients done
+
+
+02. The broker is still there - GET one of the entities, expanded with the @context it was given
+================================================================================================
+HTTP/1.1 200 OK
+Content-Length: 122
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+
+{
+    "https://example.org/vocab/P1": {
+        "type": "Property",
+        "value": 0
+    },
+    "id": "urn:ngsi-ld:E:0",
+    "type": "https://example.org/vocab/T"
+}
+
+
+03. And it still serves a new request - create one more entity
+==============================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:E:after
+
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
+rm -f /tmp/ngsild_concurrent_inline_contexts.json
