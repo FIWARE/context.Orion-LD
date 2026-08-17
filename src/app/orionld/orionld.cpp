@@ -105,6 +105,7 @@ extern "C"
 #include "orionld/common/pqHeader.h"                          // Postgres header
 #include "orionld/common/orionldTenantInit.h"                 // orionldTenantInit
 #include "orionld/common/orionldState.h"                      // orionldStateRelease, kalloc, ...
+#include "orionld/common/kallocGuard.h"                       // kallocGuardInit
 #include "orionld/common/tenantList.h"                        // tenantList, tenant0
 #include "orionld/common/branchName.h"                        // ORIONLD_BRANCH
 #include "orionld/common/traceLevels.h"                       // KTrace levels
@@ -1298,6 +1299,7 @@ int main(int argC, char* argV[])
   //
   kaInit(libLogFunction);
   kaBufferInit(&kalloc, kallocBuffer, sizeof(kallocBuffer), 32 * 1024, NULL, "Global KAlloc buffer");
+  kallocGuardInit();  // 'kalloc' is shared by all threads and kaAlloc() has no locking - see kallocGuard.h
 
 
   //

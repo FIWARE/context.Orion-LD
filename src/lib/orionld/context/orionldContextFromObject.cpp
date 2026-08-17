@@ -40,6 +40,7 @@ extern "C"
 #include "orionld/contextCache/orionldContextCache.h"            // ORIONLD_CONTEXT_CACHE_HASH_ARRAY_SIZE
 #include "orionld/contextCache/orionldContextCacheInsert.h"      // orionldContextCacheInsert
 #include "orionld/context/orionldContextHashTablesFill.h"        // orionldContextHashTablesFill
+#include "orionld/common/kallocGuard.h"                          // kallocGuardTake, kallocGuardGive
 #include "orionld/context/orionldContextFromObject.h"            // Own interface
 
 
@@ -103,29 +104,39 @@ OrionldContext* orionldContextFromObject
   char*                   url,
   OrionldContextOrigin    origin,
   char*                   id,
-  KjNode*                 contextObjectP
+  KjNode*                 contextObjectP,
+  bool                    ephemeral
 )
 {
   OrionldContext*  contextP;
   bool             ok = true;
 
-  contextP = orionldContextCreate(url, origin, id, contextObjectP, true);
+  contextP = orionldContextCreate(url, origin, id, contextObjectP, true, ephemeral);
   if (contextP == NULL)
     KT_RE(NULL, "orionldContextCreate failed");
 
-  contextP->context.hash.nameHashTable  = khashTableCreate(&kalloc, hashCode, nameCompareFunction,  ORIONLD_CONTEXT_CACHE_HASH_ARRAY_SIZE);
+  //
+  // The hash tables (and every item later added to them) are allocated from the context's own arena.
+  // khashTableCreate/khashItemAdd allocate internally, so the guard is taken around the calls
+  // instead of via kallocGuardedAlloc. It is a no-op for a thread-local arena.
+  //
+  kallocGuardTake(contextP->kallocP);
+
+  contextP->context.hash.nameHashTable  = khashTableCreate(contextP->kallocP, hashCode, nameCompareFunction,  ORIONLD_CONTEXT_CACHE_HASH_ARRAY_SIZE);
   if (contextP->context.hash.nameHashTable == NULL)
   {
     KT_E("khashTableCreate failed");
     ok = false;
   }
 
-  contextP->context.hash.valueHashTable = khashTableCreate(&kalloc, hashCode, valueCompareFunction, ORIONLD_CONTEXT_CACHE_HASH_ARRAY_SIZE);
+  contextP->context.hash.valueHashTable = khashTableCreate(contextP->kallocP, hashCode, valueCompareFunction, ORIONLD_CONTEXT_CACHE_HASH_ARRAY_SIZE);
   if (contextP->context.hash.valueHashTable == NULL)
   {
     KT_E("khashTableCreate failed");
     ok = false;
   }
+
+  kallocGuardGive(contextP->kallocP);
 
   if ((ok == true) && (orionldContextHashTablesFill(contextP, contextObjectP, &orionldState.pd) == false))
   {

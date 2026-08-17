@@ -155,7 +155,14 @@ int batchEntitiesFinalCheck(KjNode* requestTree, KjNode* errorsArrayP, KjNode* d
         continue;
       }
 
-      contextP = orionldContextFromTree(NULL, OrionldContextFromInline, NULL, contextNodeP);
+      //
+      // 'ephemeral': this runs once per entity of every batch - by far the hottest @context path in
+      // the broker. The resulting context has no URL, so it is never cached and never outlives this
+      // request (it is only handed to pCheckEntity, via orionldState.contextP). Allocating it in
+      // this thread's own arena keeps it off the process-global 'kalloc', which every HTTP and Kafka
+      // consumer thread writes to and which is not thread-safe.
+      //
+      contextP = orionldContextFromTree(NULL, OrionldContextFromInline, NULL, contextNodeP, true);
       if (contextP == NULL)
       {
         KT_E("orionldContextFromTree reports error: %s: %s", orionldState.pd.title, orionldState.pd.detail);

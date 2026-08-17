@@ -33,6 +33,11 @@
 //
 // orionldContextCreate -
 //
-extern OrionldContext* orionldContextCreate(const char* url, OrionldContextOrigin origin, const char* id, KjNode* tree, bool keyValues);
+// 'ephemeral' asks for the context to be allocated in the calling thread's own arena
+// (orionldState.kalloc) instead of the process-global 'kalloc'. It is only honoured for contexts
+// without a URL, as those are never put in the context cache and thus never outlive the request
+// that created them. See orionldContextCreate.cpp for the full reasoning.
+//
+extern OrionldContext* orionldContextCreate(const char* url, OrionldContextOrigin origin, const char* id, KjNode* tree, bool keyValues, bool ephemeral = false);
 
 #endif  // SRC_LIB_ORIONLD_CONTEXT_ORIONLDCONTEXTCREATE_H_
