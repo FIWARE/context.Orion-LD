@@ -231,7 +231,14 @@ int batchEntitiesFinalCheck(KjNode* requestTree, KjNode* errorsArrayP, KjNode* d
     //
     if (dbEntityP != NULL)
     {
-      if ((orionldState.uriParamOptions.replace == false) && (entityTypeCheck(dbEntityTypeNodeP->value.s, eP) == false))
+      //
+      // entityLookupBy_id_Id() leaves dbEntityTypeNodeP as NULL if the entity in the database has no
+      // '_id::type' (a typeless entity - corrupt data, but it does occur). There is then no stored
+      // type to compare against, so the alteration check is skipped rather than dereferencing NULL.
+      //
+      if ((dbEntityTypeNodeP == NULL) || (dbEntityTypeNodeP->type != KjString))
+        KT_W("Database Error? (Entity '%s' has no usable _id::type - skipping the entity type alteration check)", entityId);
+      else if ((orionldState.uriParamOptions.replace == false) && (entityTypeCheck(dbEntityTypeNodeP->value.s, eP) == false))
       {
         entityErrorPush(errorsArrayP, entityId, OrionldBadRequestData, "Invalid Entity", "the Entity Type cannot be altered", 400);
         kjChildRemove(orionldState.requestTree, eP);
