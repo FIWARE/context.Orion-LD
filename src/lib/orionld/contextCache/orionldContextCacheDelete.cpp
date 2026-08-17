@@ -52,7 +52,13 @@ static void contextCacheReleaseOne(OrionldContext* contextP)
 //
 // orionldContextCacheDelete -
 //
-bool orionldContextCacheDelete(const char* id)
+// 'alsoFromDb' is false for one single caller: the HA apply, arriving from another
+// broker instance over a mongo change stream. That instance shares this database and
+// has already deleted the row - the event IS the notification that it did. Deleting
+// it a second time would be a write from a path that must only ever read, and the
+// cascade over children would take the same trip.
+//
+bool orionldContextCacheDelete(const char* id, bool alsoFromDb)
 {
   bool found = false;
 
@@ -69,21 +75,24 @@ bool orionldContextCacheDelete(const char* id)
     //
     if ((orionldContextCache[ix]->id != NULL) && (strcmp(id, orionldContextCache[ix]->id) == 0))
     {
-      mongocContextCacheDelete(orionldContextCache[ix]->id);
+      if (alsoFromDb)
+        mongocContextCacheDelete(orionldContextCache[ix]->id);
       contextCacheReleaseOne(orionldContextCache[ix]);
       orionldContextCache[ix] = NULL;
       found = true;
     }
     else if ((orionldContextCache[ix]->url != NULL) && (strcmp(id, orionldContextCache[ix]->url) == 0))
     {
-      mongocContextCacheDelete(orionldContextCache[ix]->id);
+      if (alsoFromDb)
+        mongocContextCacheDelete(orionldContextCache[ix]->id);
       contextCacheReleaseOne(orionldContextCache[ix]);
       orionldContextCache[ix] = NULL;
       found = true;
     }
     else if ((orionldContextCache[ix]->origin != OrionldContextDownloaded) && (orionldContextCache[ix]->parent != NULL) && (strcmp(id, orionldContextCache[ix]->parent) == 0))
     {
-      mongocContextCacheDelete(orionldContextCache[ix]->id);
+      if (alsoFromDb)
+        mongocContextCacheDelete(orionldContextCache[ix]->id);
       contextCacheReleaseOne(orionldContextCache[ix]);
       orionldContextCache[ix] = NULL;
     }

@@ -130,6 +130,21 @@ void pgSubAttributeAppend
                + strlen(observedAt) + strlen(unitCode)
                + strlen(orionldState.requestTimeString) + strlen(correlator) + 512;
 
+  //
+  // ⚠️ Every branch below reads valueNodeP (or, for a Relationship, object), and
+  // none of them checks it. A caller with nothing to store is a caller with a bug,
+  // but the answer to that is a log line, not a SEGV in a request thread - which is
+  // exactly what a PATCH deleting a sub-attribute used to produce.
+  //
+  // Note that a deletion cannot be recorded here at all: 'valueType' is a postgres
+  // ENUM without a "Delete" member, and unlike 'attributes' the 'subAttributes'
+  // table has no opMode column to put one in. That is why the caller does not call
+  // us for a deletion - see troePatchEntity2.
+  //
+  if ((valueNodeP == NULL) && (object == NULL) && ((type == NULL) || (strcmp(type, "GeoProperty") != 0)))
+    KT_RVE("pgSubAttributeAppend: no value and no object for sub-attribute '%s' of entity '%s' (type '%s') - nothing to store",
+           subAttributeName, entityId, (type != NULL)? type : "None");
+
   if (type == NULL)
   {
     bufSize = fixedLen + (object != NULL ? strlen(object) : 0);

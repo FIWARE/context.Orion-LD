@@ -22,8 +22,11 @@
 *
 * Author: Ken Zangelin
 */
+#include <stdio.h>                                               // snprintf
+
 extern "C"
 {
+#include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/kjLookup.h"                                      // kjLookup
 #include "kjson/kjBuilder.h"                                     // kjObject, kjString, kjChildAdd
 #include "kjson/kjNavigate.h"                                    // kjNavigate
@@ -31,6 +34,7 @@ extern "C"
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/ws/WsConnection.h"                             // WsConnection
+#include "orionld/ws/wsEndpointUri.h"                            // WS_ENDPOINT_URI_PREFIX
 #include "orionld/ws/wsSubscriptionPrepare.h"                    // Own interface
 
 
@@ -40,7 +44,10 @@ extern "C"
 // wsSubscriptionPrepare -
 //
 // Ensure notification.endpoint.uri exists in the request tree.
-// For WS subscriptions, the URI is a placeholder - notifications go over the WS connection.
+//
+// A WS subscription has no endpoint to call back to - the notification goes out
+// over the very connection it was created on. The API demands a 'uri' all the
+// same, so it gets one that NAMES that connection: urn:ngsi-ld:ws:<fd>.
 //
 void wsSubscriptionPrepare(WsConnection* wsP)
 {
@@ -64,6 +71,9 @@ void wsSubscriptionPrepare(WsConnection* wsP)
     kjChildAdd(notifP, endpointP);
   }
 
-  uriP = kjString(orionldState.kjsonP, "uri", "ws://ws-placeholder:0");
+  char uri[64];
+  snprintf(uri, sizeof(uri), "%s%d", WS_ENDPOINT_URI_PREFIX, (int) wsP->fd);
+
+  uriP = kjString(orionldState.kjsonP, "uri", kaStrdup(&orionldState.kalloc, uri));
   kjChildAdd(endpointP, uriP);
 }

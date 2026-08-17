@@ -1,0 +1,163 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+TRoE: PATCH an attribute without restating its value
+
+--SHELL-INIT--
+export BROKER=orionld
+dbInit CB
+pgInit $CB_DB_NAME
+brokerStart CB 0 IPv4 -troe -experimental
+
+--SHELL--
+
+#
+# A merge patch does not have to restate what it is not changing, so a PATCH that
+# touches only 'observedAt' of a Relationship carries no 'object'. pgAttributeBuild
+# hands on whatever it found for the value - nothing, in that case - and every
+# typed branch of pgAttributeAppend read it without checking. The broker SEGFAULTED.
+#
+# ⚠️ Step 03's 204 is not the assertion: TRoE runs from MHD's requestCompleted
+# callback, AFTER the response has been sent, so the client is told 204 and the
+# broker dies a moment later. Step 04 is the liveness check - it is the first thing
+# that needs a broker still to be there.
+#
+# This killed the broker in ALL THREE configurations about twenty seconds into the
+# ETSI suite - legacy, -experimental and -mongocOnly - on a Relationship called
+# 'isParked'. The value-less row is now recorded the way an attribute with no type
+# given already was: an 'Update' with no value, which is exactly what happened.
+#
+# 01. Create entity urn:V1 with a Relationship 'isParked'
+# 02. See the attributes in the temporal database
+# 03. PATCH urn:V1:isParked, changing only observedAt - no 'object'
+# 04. GET urn:V1 - the broker is alive and the object is untouched
+# 05. See the attributes - the patch is recorded, with no value on the new row
+#
+
+echo "01. Create entity urn:V1 with a Relationship 'isParked'"
+echo "======================================================="
+payload='{
+  "id": "urn:V1",
+  "type": "Vehicle",
+  "isParked": {
+    "type": "Relationship",
+    "object": "urn:ngsi-ld:P1",
+    "observedAt": "2026-01-01T00:00:00.000Z"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "02. See the attributes in the temporal database"
+echo "==============================================="
+postgresCmd -sql "SELECT id,opMode,valueType,entityId,text FROM attributes ORDER BY ts"
+echo
+echo
+
+
+echo "03. PATCH urn:V1:isParked, changing only observedAt - no 'object'"
+echo "================================================================="
+#
+# ⚠️ The "type" MUST be in the payload for this to be the bug. pgAttributeAppend
+# dispatches on it: with no type it takes the value-less branch and is perfectly
+# happy, which is how a first version of this test passed against the unfixed
+# broker. With "Relationship" and no "object" it goes to the branch that reads
+# the value - and there is none.
+#
+payload='{
+  "type": "Relationship",
+  "observedAt": "2026-02-02T00:00:00.000Z"
+}'
+orionCurl --url /ngsi-ld/v1/entities/urn:V1/attrs/isParked --payload "$payload" -X PATCH
+echo
+echo
+
+
+echo "04. GET urn:V1 - the broker is alive and the object is untouched"
+echo "================================================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:V1
+echo
+echo
+
+
+echo "05. See the attributes - the patch is recorded, with no value on the new row"
+echo "==========================================================================="
+postgresCmd -sql "SELECT id,opMode,valueType,entityId,text FROM attributes ORDER BY ts"
+echo
+echo
+
+
+--REGEXPECT--
+01. Create entity urn:V1 with a Relationship 'isParked'
+=======================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:V1
+
+
+
+02. See the attributes in the temporal database
+===============================================
+id,opmode,valuetype,entityid,text
+https://uri.etsi.org/ngsi-ld/default-context/isParked,Create,Relationship,urn:V1,urn:ngsi-ld:P1
+
+
+03. PATCH urn:V1:isParked, changing only observedAt - no 'object'
+=================================================================
+HTTP/1.1 204 No Content
+Date: REGEX(.*)
+
+
+
+04. GET urn:V1 - the broker is alive and the object is untouched
+================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+{
+    "id": "urn:V1",
+    "isParked": {
+        "object": "urn:ngsi-ld:P1",
+        "observedAt": "2026-02-02T00:00:00.000Z",
+        "type": "Relationship"
+    },
+    "type": "Vehicle"
+}
+
+
+05. See the attributes - the patch is recorded, with no value on the new row
+===========================================================================
+id,opmode,valuetype,entityid,text
+https://uri.etsi.org/ngsi-ld/default-context/isParked,Create,Relationship,urn:V1,urn:ngsi-ld:P1
+https://uri.etsi.org/ngsi-ld/default-context/isParked,Update,,urn:V1,
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB

@@ -70,20 +70,20 @@ echo
 
 echo "04. Attempt to DELETE the Core Context without ?reload - see error"
 echo "=================================================================="
-orionCurl --url '/ngsi-ld/v1/jsonldContexts/https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld' -X DELETE
+orionCurl --url '/ngsi-ld/v1/jsonldContexts/https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld' -X DELETE
 echo
 echo
 
 
 echo "05. Attempt to DELETE the Core Context, with ?reload=false - see error"
 echo "======================================================================"
-orionCurl --url '/ngsi-ld/v1/jsonldContexts/https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld?reload=false' -X DELETE
+orionCurl --url '/ngsi-ld/v1/jsonldContexts/https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld?reload=false' -X DELETE
 echo
 echo
 
 echo "06. DELETE the Core Context, with ?reload=true - OK"
 echo "==================================================="
-orionCurl --url '/ngsi-ld/v1/jsonldContexts/https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld?reload=true' -X DELETE
+orionCurl --url '/ngsi-ld/v1/jsonldContexts/https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld?reload=true' -X DELETE
 echo
 echo
 

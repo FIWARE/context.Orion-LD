@@ -42,6 +42,7 @@ extern "C"
 #include "orionld/kjTree/kjTreeLog.h"                            // kjTreeLog
 #include "orionld/regCache/regCacheIdPatternRegexCompile.h"      // regCacheIdPatternRegexCompile
 #include "orionld/regCache/regCachePresent.h"                    // regCacheList
+#include "orionld/regCache/regCacheSem.h"                        // regCacheSemTake, regCacheSemGive
 #include "orionld/regCache/regCacheItemAdd.h"                    // Own interface
 
 
@@ -159,32 +160,22 @@ RegCacheItem* regCacheItemAdd(RegCache* rcP, const char* registrationId, KjNode*
     KT_X(1, "Out of memory attempting to allocate a Registration Cache Item (%d bytes)", sizeof(RegCacheItem));
 
   KT_T(KtRegCache, "Adding reg '%s' into the reg cache for tenant '%s'", registrationId, rcP->tenantP->mongoDbName);
-  regCacheList(rcP, "Before add");
 
   //
-  // Insert the new RegCacheItem LAST in rcP's linked list of registrations
-  // MUST BE INSERTED LAST. If not, pagination doesn't work with the registration cache!!!
+  // ⚠️ The item is built COMPLETELY here and only linked into the list at the very end of this
+  //    function. It must not be reachable before it is finished: the readers of the cache walk the
+  //    list without any coordination with this function, and one of them - pCheckOverlappingRegistrations,
+  //    which runs on EVERY registration POST - dereferences 'regTree' as it goes. Linking first and
+  //    filling in afterwards (as this function used to do) hands those readers an item whose regTree
+  //    is still the calloc'ed NULL => SIGSEGV, and lets a second writer's 'next = NULL' truncate the
+  //    list. That was issue #1851.
   //
-  if (rcP->last == NULL)
-    rcP->regList = rciP;
-  else
-    rcP->last->next = rciP;
-
-  rcP->last = rciP;
-
   rciP->regId     = strdup(registrationId);
   rciP->regTree   = kjClone(NULL, regP);
   rciP->contextP  = fwdContextP;
   rciP->ipAndPort = regIpAndPortExtract(regP, &rciP->rest);
   rciP->next      = NULL;
-
-  KT_T(KtRegCache, "First item in reg cache: %p", rcP->regList);
-  KT_T(KtRegCache, " Next item in reg cache: %p", rcP->regList->next);
-  if (rcP->regList->next != NULL)
-    KT_T(KtRegCache, " Next-next item in reg cache: %p", rcP->regList->next->next);
-  KT_T(KtRegCache, " Last item in reg cache: %p", rcP->last);
-
-  regCacheList(rcP, "In the middle");
+  rciP->owner     = rcP;   // So a holder can pin/unpin knowing only the item ('refs'/'removed' are calloc'ed to 0/false)
 
   // Host Alias
   KjNode* hostAliasP = kjLookup(rciP->regTree, "hostAlias");
@@ -226,7 +217,29 @@ RegCacheItem* regCacheItemAdd(RegCache* rcP, const char* registrationId, KjNode*
   if (regCacheIdPatternRegexCompile(rciP, informationP) == false)
     KT_X(1, "Internal Error (if this happens it's a SW bug of Orion-LD - the idPattern was checked in pcheckEntityInfo and all was OK");
 
+  //
+  // The item is complete - NOW it can be published.
+  //
+  // Insert the new RegCacheItem LAST in rcP's linked list of registrations
+  // MUST BE INSERTED LAST. If not, pagination doesn't work with the registration cache!!!
+  //
+  regCacheSemTake(rcP, __FUNCTION__, "Adding an item to the registration cache", SemWriteOp);
+
+  regCacheList(rcP, "Before add");
+
+  if (rcP->last == NULL)
+    rcP->regList = rciP;
+  else
+    rcP->last->next = rciP;
+
+  rcP->last = rciP;
+
+  KT_T(KtRegCache, "First item in reg cache: %p", rcP->regList);
+  KT_T(KtRegCache, " Last item in reg cache: %p", rcP->last);
+
   regCacheList(rcP, "After add");
+
+  regCacheSemGive(rcP, __FUNCTION__, "Adding an item to the registration cache");
 
   return rciP;
 }

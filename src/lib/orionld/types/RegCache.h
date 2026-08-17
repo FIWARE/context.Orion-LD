@@ -25,6 +25,8 @@
 *
 * Author: Ken Zangelin
 */
+#include <pthread.h>                                             // pthread_rwlock_t
+
 #include "orionld/types/OrionldTenant.h"                         // OrionldTenant
 #include "orionld/types/RegCacheItem.h"                          // RegCacheItem
 
@@ -34,11 +36,17 @@
 //
 // RegCache -
 //
+// The 'rwlock' protects 'regList' and 'last' - see regCacheSem.h.
+// It lives HERE, in the cache it protects, and not in the tenant, so that each tenant's
+// registration cache is locked independently of that tenant's OTHER caches.
+// Readers take it for reading (many at a time), the mutators for writing.
+//
 typedef struct RegCache
 {
-  OrionldTenant* tenantP;
-  RegCacheItem*  regList;
-  RegCacheItem*  last;
+  OrionldTenant*   tenantP;
+  RegCacheItem*    regList;
+  RegCacheItem*    last;
+  pthread_rwlock_t rwlock;
 } RegCache;
 
 #endif  // SRC_LIB_ORIONLD_TYPES_REGCACHE_H_

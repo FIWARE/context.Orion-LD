@@ -63,6 +63,18 @@ typedef struct RegCacheItem
   char*                 regId;         // Set when creating registration - points inside regTree
   RegDeltas             deltas;
 
+  //
+  // Lifetime - see regCacheSem.h
+  //
+  // A DistOp keeps its RegCacheItem* for the whole of a forwarded request, which outlives the walk
+  // of the cache that produced it. 'refs' counts those holders: while it is non-zero the item must
+  // not be freed, even when the registration it came from is deleted. A DELETE arriving mid-forward
+  // therefore unlinks the item and sets 'removed'; the last holder to unpin it does the freeing.
+  //
+  struct RegCache*      owner;         // The cache this item lives in - so a holder can pin/unpin with the item alone
+  uint32_t              refs;          // Pin count. Incremented under the read lock, decremented under the write lock
+  bool                  removed;       // Unlinked from the list, waiting for the last unpin to free it
+
   // "Shortcuts" and transformed info, all copies from the regTree - for improved performance
   RegistrationMode      mode;
   uint64_t              opMask;

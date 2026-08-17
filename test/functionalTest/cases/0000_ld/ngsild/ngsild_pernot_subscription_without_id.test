@@ -1,0 +1,164 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+A Periodic Notification Subscription can be created without an id
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -mongocOnly
+
+--SHELL--
+
+#
+# 'id' is optional when creating a Subscription - the broker generates one and
+# hands it back in the Location header. The generated id is what the pernot cache
+# is keyed on, so the subscription has to be findable by it afterwards.
+#
+# Every other pernot test supplies an explicit id, so the generated-id path was
+# never covered for a Periodic Notification Subscription. It works - this is the
+# test that says so.
+#
+# 01. Create a Periodic Notification Subscription (timeInterval), WITHOUT an id
+# 02. GET the subscription by the id from the Location header - it must be found
+# 03. GET /subscriptions - the same subscription, from the list route
+#
+
+echo "01. Create a Periodic Notification Subscription (timeInterval), WITHOUT an id"
+echo "============================================================================="
+payload='{
+  "type": "Subscription",
+  "subscriptionName": "Pernot without an id",
+  "entities": [
+    {
+      "type": "T"
+    }
+  ],
+  "timeInterval": 5,
+  "notification": {
+    "endpoint": {
+      "uri": "http://127.0.0.1:'$LISTENER_PORT'/notify"
+    }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/subscriptions --payload "$payload"
+subId=$(echo "$_responseHeaders" | grep Location: | awk -F'/ngsi-ld/v1/subscriptions/' '{ print $2 }' | tr -d "\r\n")
+echo
+echo
+
+
+echo "02. GET the subscription by the id from the Location header - it must be found"
+echo "=============================================================================="
+orionCurl --url /ngsi-ld/v1/subscriptions/$subId
+echo
+echo
+
+
+echo "03. GET /subscriptions - the same subscription, from the list route"
+echo "==================================================================="
+orionCurl --url '/ngsi-ld/v1/subscriptions?count=true'
+echo
+echo
+
+
+--REGEXPECT--
+01. Create a Periodic Notification Subscription (timeInterval), WITHOUT an id
+=============================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/subscriptions/REGEX(urn:ngsi-ld:subscription:.*)
+
+
+
+02. GET the subscription by the id from the Location header - it must be found
+==============================================================================
+HTTP/1.1 200 OK
+Content-Length: 442
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+{
+    "entities": [
+        {
+            "type": "T"
+        }
+    ],
+    "id": "REGEX(urn:ngsi-ld:subscription:.*)",
+    "isActive": true,
+    "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld",
+    "notification": {
+        "endpoint": {
+            "accept": "application/json",
+            "uri": "http://127.0.0.1:9997/notify"
+        },
+        "format": "normalized",
+        "status": "ok"
+    },
+    "origin": "cache",
+    "status": "active",
+    "subscriptionName": "Pernot without an id",
+    "timeInterval": 5,
+    "type": "Subscription"
+}
+
+
+03. GET /subscriptions - the same subscription, from the list route
+===================================================================
+HTTP/1.1 200 OK
+Content-Length: 444
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+NGSILD-Results-Count: 1
+
+[
+    {
+        "entities": [
+            {
+                "type": "T"
+            }
+        ],
+        "id": "REGEX(urn:ngsi-ld:subscription:.*)",
+        "isActive": true,
+        "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld",
+        "notification": {
+            "endpoint": {
+                "accept": "application/json",
+                "uri": "http://127.0.0.1:9997/notify"
+            },
+            "format": "normalized",
+            "status": "ok"
+        },
+        "origin": "cache",
+        "status": "active",
+        "subscriptionName": "Pernot without an id",
+        "timeInterval": 5,
+        "type": "Subscription"
+    }
+]
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB

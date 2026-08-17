@@ -35,6 +35,7 @@ extern "C"
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/distOp/distOpAttrs.h"                          // distOpAttrs
+#include "orionld/regCache/regCacheSem.h"                        // regCacheItemPin
 #include "orionld/distOp/distOpCreate.h"                         // Own interface
 
 
@@ -59,7 +60,18 @@ DistOp* distOpCreate
 
   bzero(distOpP, sizeof(DistOp));
 
+  //
+  // The DistOp keeps this registration for the whole of the forwarded request, which outlives the
+  // walk of the registration cache that produced it. Pin it: a DELETE of that registration in the
+  // meantime then unlinks the item but leaves it alive until distOpListRelease drops this reference.
+  //
+  // ⚠️ The callers walk the cache under its READ LOCK - that is what makes 'regP' alive right here.
+  //    regCacheItemPin does nothing for the local DistOp, which has no registration (regP == NULL).
+  //
   distOpP->regP       = regP;
+  regCacheItemPin(regP);
+  distOpP->regPinned  = (regP != NULL);
+
   distOpP->operation  = operation;
   distOpP->idList     = idList;
   distOpP->typeList   = typeList;

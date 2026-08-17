@@ -36,7 +36,7 @@ extern "C"
 #include "kalloc/kaAlloc.h"                                    // kaAlloc
 }
 
-#include "cache/CachedSubscription.h"                          // CachedSubscription
+#include "orionld/types/SubCacheItem.h"                         // SubCacheItem
 
 #include "orionld/common/orionldState.h"                       // orionldState, coreContextUrl
 #include "orionld/common/traceLevels.h"                        // KTrace levels
@@ -57,7 +57,7 @@ extern "C"
 // Extracts headers from the iovec array (skipping the first line which is the request line
 // and the last two which are the blank line delimiter + payload body).
 //
-static KjNode* headersParse(struct iovec* ioVec, int ioVecSize, CachedSubscription* cSubP)
+static KjNode* headersParse(struct iovec* ioVec, int ioVecSize, SubCacheItem* cSubP)
 {
   KjNode* metadata = kjObject(orionldState.kjsonP, NULL);
 
@@ -76,7 +76,7 @@ static KjNode* headersParse(struct iovec* ioVec, int ioVecSize, CachedSubscripti
 
     if (strncmp(headerReadOnly, "Link:", 5) == 0)
     {
-      const char* link = (cSubP->ldContext == "") ? coreContextUrl : cSubP->ldContext.c_str();
+      const char* link = ((cSubP->contextP != NULL) && (cSubP->contextP->url != NULL))? cSubP->contextP->url : coreContextUrl;
       KjNode* linkNodeP = kjString(orionldState.kjsonP, "Link", link);
       kjChildAdd(metadata, linkNodeP);
       continue;
@@ -123,26 +123,25 @@ static KjNode* headersParse(struct iovec* ioVec, int ioVecSize, CachedSubscripti
 //   4. Send via wsSend() using the subscription's wsConnectionP
 //   5. Call notificationSuccess()/notificationFailure() for stats
 //
-int wsNotify(CachedSubscription* cSubP, struct iovec* ioVec, int ioVecSize, double notificationTime)
+int wsNotify(SubCacheItem* cSubP, struct iovec* ioVec, int ioVecSize, double notificationTime)
 {
-  // Find the WS connection for this subscription
-  WsConnection* wsP = (WsConnection*) cSubP->wsConnectionP;
+  //
+  // Find the WS connection of the subscription. The connection is owned by the WS
+  // layer, not by the subscription cache - looking it up by subscription id is the
+  // only way that cannot hand back a connection that has since been closed.
+  //
+  WsConnection* wsP = wsConnectionLookup(cSubP->subId);
 
   if (wsP == NULL)
   {
-    // Try lookup by subscription ID
-    wsP = wsConnectionLookup(cSubP->subscriptionId);
-    if (wsP == NULL)
-    {
-      KT_W("wsNotify: no WS connection for subscription '%s'", cSubP->subscriptionId);
-      notificationFailure(cSubP, "No WebSocket connection", notificationTime);
-      return -1;
-    }
+    KT_W("wsNotify: no WS connection for subscription '%s'", cSubP->subId);
+    notificationFailure(cSubP, "No WebSocket connection", notificationTime);
+    return -1;
   }
 
   if (wsP->active == false)
   {
-    KT_W("wsNotify: WS connection not active for subscription '%s'", cSubP->subscriptionId);
+    KT_W("wsNotify: WS connection not active for subscription '%s'", cSubP->subId);
     notificationFailure(cSubP, "WebSocket connection not active", notificationTime);
     return -1;
   }
@@ -176,10 +175,10 @@ int wsNotify(CachedSubscription* cSubP, struct iovec* ioVec, int ioVecSize, doub
 
   // Send over WebSocket
   int rc = wsSend(wsP, buf);
-  KT_T(KtWsTest, "WS notification sent: sub='%s' (fd=%d, %d bytes, rc=%d)", cSubP->subscriptionId, (int) wsP->fd, (int) strlen(buf), rc);
+  KT_T(KtWsTest, "WS notification sent: sub='%s' (fd=%d, %d bytes, rc=%d)", cSubP->subId, (int) wsP->fd, (int) strlen(buf), rc);
   if (rc != 0)
   {
-    KT_E("wsNotify: wsSend failed for subscription '%s'", cSubP->subscriptionId);
+    KT_E("wsNotify: wsSend failed for subscription '%s'", cSubP->subId);
     notificationFailure(cSubP, "WebSocket send failed", notificationTime);
     return -1;
   }

@@ -30,10 +30,9 @@ extern "C"
 #include "kalloc/kaStrdup.h"                                     // kaStrdup
 #include "kjson/KjNode.h"                                        // KjNode
 #include "kjson/kjBuilder.h"                                     // kjString, kjInteger, kjChildAdd
+#include "kjson/kjClone.h"                                       // kjClone
 #include "kjson/kjLookup.h"                                      // kjLookup
 }
-
-#include "cache/subCache.h"                                      // CachedSubscription, subCacheItemLookup
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
@@ -41,7 +40,9 @@ extern "C"
 #include "orionld/common/numberToDate.h"                         // numberToDate
 #include "orionld/pernot/pernotSubCacheLookup.h"                 // pernotSubCacheLookup
 #include "orionld/legacyDriver/legacyGetSubscription.h"          // legacyGetSubscription
-#include "orionld/kjTree/kjTreeFromCachedSubscription.h"         // kjTreeFromCachedSubscription
+#include "orionld/types/SubCacheItem.h"                          // SubCacheItem
+#include "orionld/subCache/subCacheItemLookup.h"                 // subCacheItemLookup
+#include "orionld/subCache/apiModelFromCacheSubscription.h"      // apiModelFromCacheSubscription
 #include "orionld/kjTree/kjTreeFromPernotSubscription.h"         // kjTreeFromPernotSubscription
 #include "orionld/payloadCheck/PCHECK.h"                         // PCHECK_URI
 #include "orionld/dbModel/dbModelToApiSubscription.h"            // dbModelToApiSubscription
@@ -108,30 +109,46 @@ static void subCounterSet(KjNode* apiSubP, const char* fieldName, int64_t valueI
 
 // -----------------------------------------------------------------------------
 //
+// subCounterGet - a counter inside the cached subscription's "notification" object
+//
+static int subCounterGet(KjNode* notificationP, const char* name)
+{
+  if (notificationP == NULL)
+    return 0;
+
+  KjNode* counterP = kjLookup(notificationP, name);
+
+  return (counterP != NULL)? counterP->value.i : 0;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // orionldSubCounters - FIXME: Own Module
 //
 // Three options:
-//   1. cSubP given
+//   1. sciP given
 //   2. pSubP given
 //   3, None of them (look up apiSubP::subscriptionId in both cashes)
 //
-void orionldSubCounters(KjNode* apiSubP, CachedSubscription* cSubP, PernotSubscription* pSubP)
+void orionldSubCounters(KjNode* apiSubP, SubCacheItem* sciP, PernotSubscription* pSubP)
 {
   KjNode* notificationP = kjLookup(apiSubP, "notification");
 
   if (notificationP == NULL)
     KT_RVE("API Subscription without a notification field !!!");
 
-  if ((cSubP == NULL) && (pSubP == NULL))
+  if ((sciP == NULL) && (pSubP == NULL))
   {
     KjNode* subIdP = kjLookup(apiSubP, "id");
 
     if (subIdP == NULL)
       return;
 
-    cSubP = subCacheItemLookup(orionldState.tenantP->tenant, subIdP->value.s);
+    sciP = subCacheItemLookup(orionldState.tenantP->subCache, subIdP->value.s);
 
-    if (cSubP == NULL)
+    if (sciP == NULL)
     {
       pSubP = pernotSubCacheLookup(orionldState.tenantP->tenant, subIdP->value.s);
       if (pSubP == NULL)
@@ -139,17 +156,23 @@ void orionldSubCounters(KjNode* apiSubP, CachedSubscription* cSubP, PernotSubscr
     }
   }
 
-  double  lastNotificationTime = (cSubP != NULL)? cSubP->lastNotificationTime : pSubP->lastNotificationTime;
-  double  lastSuccess          = (cSubP != NULL)? cSubP->lastSuccess          : pSubP->lastSuccessTime;
-  double  lastFailure          = (cSubP != NULL)? cSubP->lastFailure          : pSubP->lastFailureTime;
+  double  lastNotificationTime = (sciP != NULL)? sciP->lastNotificationTime : pSubP->lastNotificationTime;
+  double  lastSuccess          = (sciP != NULL)? sciP->lastSuccess          : pSubP->lastSuccessTime;
+  double  lastFailure          = (sciP != NULL)? sciP->lastFailure          : pSubP->lastFailureTime;
   int     timesSent            = 0;
   int     timesFailed          = 0;
   int     noMatch              = 0;
 
-  if (cSubP != NULL)
+  if (sciP != NULL)
   {
-    timesSent   = cSubP->dbCount    + cSubP->count;
-    timesFailed = cSubP->dbFailures + cSubP->failures;
+    //
+    // What is in the tree is what the database holds, the deltas are what has
+    // happened since - the API renders the sum.
+    //
+    KjNode* cachedNotificationP = kjLookup(sciP->subTree, "notification");
+
+    timesSent   = subCounterGet(cachedNotificationP, "timesSent")   + sciP->deltas.timesSent;
+    timesFailed = subCounterGet(cachedNotificationP, "timesFailed") + sciP->deltas.timesFailed;
   }
   else
   {
@@ -213,9 +236,9 @@ static bool orionldGetSubscriptionFromDb(void)
   // Need to take counters and timestamps from sub-cache
   if (timeInterval == 0)
   {
-    CachedSubscription* cSubP = subCacheItemLookup(orionldState.tenantP->tenant, orionldState.wildcard[0]);
-    if (cSubP != NULL)
-      orionldSubCounters(apiSubP, cSubP, NULL);
+    SubCacheItem* sciP = subCacheItemLookup(orionldState.tenantP->subCache, orionldState.wildcard[0]);
+    if (sciP != NULL)
+      orionldSubCounters(apiSubP, sciP, NULL);
   }
   else
   {
@@ -255,13 +278,16 @@ bool orionldGetSubscription(void)
   char* subscriptionId = orionldState.wildcard[0];
 
   // "Normal" (onchange) subscription?
-  CachedSubscription* cSubP = subCacheItemLookup(orionldState.tenantP->tenant, subscriptionId);
-  if (cSubP != NULL)
+  SubCacheItem* sciP = subCacheItemLookup(orionldState.tenantP->subCache, subscriptionId);
+  if (sciP != NULL)
   {
     orionldState.httpStatusCode = 200;
+    orionldState.responseTree   = kjClone(orionldState.kjsonP, sciP->subTree);  // Work on a cloned copy from the sub-cache
 
-    orionldState.responseTree   = kjTreeFromCachedSubscription(cSubP, orionldState.uriParamOptions.sysAttrs, orionldState.out.contentType == MT_JSONLD);
-    orionldSubCounters(orionldState.responseTree, cSubP, NULL);
+    apiModelFromCacheSubscription(orionldState.responseTree,
+                                  sciP,
+                                  orionldState.uriParamOptions.sysAttrs,
+                                  orionldState.out.contentType == MT_JSONLD);
 
     return true;
   }

@@ -38,6 +38,8 @@ extern "C"
 #include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/regCache/regCachePresent.h"                    // regCacheList
 #include "orionld/regCache/regCacheItemRegexRelease.h"           // regCacheItemRegexRelease
+#include "orionld/regCache/regCacheItemFree.h"                   // regCacheItemFree
+#include "orionld/regCache/regCacheSem.h"                        // regCacheSemTake, regCacheSemGive
 #include "orionld/regCache/regCacheItemRemove.h"                 // Own interface
 
 
@@ -62,10 +64,19 @@ bool regCacheItemRemove(RegCache* rcP, const char* regId)
   if (rcP == NULL)
     KT_RE(false, "NULL rcP - that's a SW bug!");
 
+  KT_T(KtRegCache, "Removing the reg '%s' from the regCache for tenant '%s'", regId, rcP->tenantP->mongoDbName);
+
+  //
+  // The lock is taken BEFORE the first read of rcP->regList and given back on both ways out.
+  //
+  // An item that a DistOp is still holding (DistOp::regP, for a forwarded request in flight) is
+  // unlinked here but NOT freed - see the pin/unpin comment further down and in regCacheSem.h.
+  //
+  regCacheSemTake(rcP, __FUNCTION__, "Removing an item from the registration cache", SemWriteOp);
+
   RegCacheItem* rciP = rcP->regList;
   RegCacheItem* prev = NULL;
 
-  KT_T(KtRegCache, "Removing the reg '%s' from the regCache for tenant '%s'", regId, rcP->tenantP->mongoDbName);
   regCacheList(rcP, "Before remove");
 
   while (rciP != NULL)
@@ -89,29 +100,28 @@ bool regCacheItemRemove(RegCache* rcP, const char* regId)
       else  // In the middle
         prev->next = rciP->next;  // Just step over it
 
-      // Free the reg-cache item to be deleted (call regCacheItemRelease(rciP)?)
-      if (rciP->regId != NULL)
-        free(rciP->regId);
+      //
+      // The item is out of the list. Freeing it is another matter: a DistOp may still be holding
+      // it for a forwarded request that is in flight right now (DistOp::regP). If so, leave it to
+      // the last holder - regCacheItemUnpin does the freeing when it drops the final reference.
+      //
+      RegCacheItem* toFree = NULL;
 
-      kjFree(rciP->regTree);
-
-      // In case we have any regex's, free them
-      if (rciP->idPatternRegexList != NULL)
-        regCacheItemRegexRelease(rciP);
-
-      if (rciP->ipAndPort != NULL)
-        free(rciP->ipAndPort);
-
-      if (rciP->rest != NULL)
-        free(rciP->rest);
-
-      if ((rciP->hostAlias != NULL) && (rciP->hostAlias != rciP->ipAndPort))
-        free(rciP->hostAlias);
-
-      // And finally, free the entire struct
-      free(rciP);
+      if (rciP->refs > 0)
+      {
+        rciP->removed = true;
+        KT_T(KtRegCache, "Reg '%s' is still held by %u forwarded request(s) - freeing it on the last unpin", regId, rciP->refs);
+      }
+      else
+        toFree = rciP;
 
       regCacheList(rcP, "After successful remove");
+      regCacheSemGive(rcP, __FUNCTION__, "Removing an item from the registration cache");
+
+      // Freed outside the lock - the item is unlinked, so it is ours alone
+      if (toFree != NULL)
+        regCacheItemFree(toFree);
+
       return true;
     }
 
@@ -120,6 +130,7 @@ bool regCacheItemRemove(RegCache* rcP, const char* regId)
   }
 
   regCacheList(rcP, "After failed remove");
+  regCacheSemGive(rcP, __FUNCTION__, "Removing an item from the registration cache");
 
   return false;
 }

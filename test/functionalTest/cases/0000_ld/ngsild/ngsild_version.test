@@ -23,6 +23,19 @@
 --NAME--
 Test of orionld version service, with branch name
 
+#
+# 'kjson version' is asserted LITERALLY here, unlike its neighbours.
+#
+# The k-libs are pinned per release branch in several different places, and they
+# drifted apart once already: the docker base image sat on kjson release/0.11
+# while everything else had moved to 0.11.1, so every image built from that base
+# was missing three bug fixes - and nothing noticed, because every k-lib version
+# in the test suite was REGEX'd. This one line is what notices.
+#
+# When kjson is bumped, this test fails and the pin in
+# docker/build-ubi/04.install-k-libs.sh is what to check.
+#
+
 --SHELL-INIT--
 dbInit CB
 orionldStart CB -troe
@@ -78,7 +91,7 @@ Date: REGEX(.*)
   "kalloc version": "REGEX(.*)",
   "kbase version": "REGEX(.*)",
   "khash version": "REGEX(.*)",
-  "kjson version": "REGEX(.*)",
+  "kjson version": "0.12.0",
   "kprom version": "0.1.0",
   "ktrace version": "REGEX(.*)",
   "libcurl version": REGEX(.*),

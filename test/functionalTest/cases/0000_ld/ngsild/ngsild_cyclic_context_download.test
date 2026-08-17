@@ -1,0 +1,97 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Cyclic @context downloaded at request time - 400, and answered at once
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB
+
+--SHELL--
+
+#
+# cyclicA.jsonld is an array @context whose one member is cyclicB.jsonld, whose one
+# member is cyclicA.jsonld again (both served by the context server from
+# test/functionalTest/contexts). Resolving A therefore recurses back into A while
+# A is still being downloaded, by this very thread.
+#
+# The broker keeps a list of the URLs being downloaded, so that two threads never
+# download the same @context twice - the second waits for the first. A cycle lands
+# in that same list, but the download it would be waiting for is the call that is
+# now waiting: the wait can only end in its own deadline, three seconds later, with
+# the same failure and a misleading "not available" to show for it.
+#
+# 01. POST an entity with the cyclic @context - 400 Cyclic @context, at once
+# 02. POST an entity with an ordinary served @context - still works
+#
+
+echo "01. POST an entity with the cyclic @context - 400 Cyclic @context, at once"
+echo "=========================================================================="
+#
+# Raw curl, and not orionCurl, for the one thing orionCurl cannot express: a bound
+# on how long this may take. Detecting the cycle takes microseconds; NOT detecting
+# it takes the full three-second wait, and the two are otherwise indistinguishable
+# in the output - the request fails either way. '-m 2' turns that timing difference
+# into an output difference, with a 250x margin against a loaded host.
+#
+curl -s -m 2 \
+     -H 'Content-Type: application/json' \
+     -H 'Link: <http://localhost:7080/jsonldContexts/cyclicA.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"' \
+     -d '{"id":"urn:E1","type":"T"}' \
+     -w '\nHTTP %{http_code}\n' \
+     http://localhost:$CB_PORT/ngsi-ld/v1/entities \
+  || echo "TIMED OUT (over 2 seconds) - the cycle was not detected, the broker waited for itself"
+echo
+echo
+
+
+echo "02. POST an entity with an ordinary served @context - still works"
+echo "================================================================="
+payload='{
+  "id": "urn:E2",
+  "type": "T"
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" -H 'Link: <http://localhost:7080/jsonldContexts/test-context-ngsi.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
+echo
+echo
+
+
+--REGEXPECT--
+01. POST an entity with the cyclic @context - 400 Cyclic @context, at once
+==========================================================================
+{"type":"https://uri.etsi.org/ngsi-ld/errors/BadRequestData","title":"Cyclic @context","detail":"http://localhost:7080/jsonldContexts/cyclicA.jsonld"}
+HTTP 400
+
+
+02. POST an entity with an ordinary served @context - still works
+=================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:E2
+
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB

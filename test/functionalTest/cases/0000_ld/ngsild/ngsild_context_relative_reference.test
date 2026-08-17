@@ -1,0 +1,404 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Relative references inside an @context array resolve against the URL of the @context they appear in
+
+--SHELL-INIT--
+dbInit CB
+dbDrop orionld
+orionldStart CB
+
+--SHELL--
+
+#
+# A string inside an @context array is an IRI REFERENCE, not necessarily an absolute URL.
+# It resolves against the base IRI, which for a stored @context is the URL of that very @context
+# (RFC 3986 section 5, applied by the JSON-LD 1.1 Context Processing Algorithm).
+#
+# The broker hosts @contexts itself, at http://<host>:<port>/ngsi-ld/v1/jsonldContexts/<localId>,
+# so a compound @context hosted there can reference a sibling by its localId alone - and that is
+# what this test does. Nothing outside the broker is involved.
+#
+# 01. Create the @context R, defining the terms R1 and R2
+# 02. Create the compound @context C, referencing R RELATIVELY, by localId only
+# 03. GET C - the relative reference is stored as given
+# 04. Create an entity E1, using C, with an attribute R1
+# 05. GET E1 with the Core @context only - R1 is expanded per R, so the relative reference resolved
+# 06. GET E1 using C - R1 compacts back, via the relative reference
+# 07. Create the compound @context D, referencing R as "./<localId>"
+# 08. Create an entity E2, using D, with an attribute R2
+# 09. GET E2 with the Core @context only - R2 is expanded per R
+# 10. Create a compound @context referencing a localId that does not exist - see it fail
+#
+# 11. Create an entity E3, using the compound @context served by the Context Server - it too holds
+#     a RELATIVE reference, resolving against the Context Server URL instead of the broker's own
+# 12. GET the referenced @context by its ABSOLUTE URL - it is in the cache, under the RESOLVED URL,
+#     so the answer is 422 "not serving cached @contexts" and not 404 "not found"
+# 13. Create an entity E4, with the ABSOLUTE URL of that @context in a Link header - it is served
+#     from the cache entry that the relative reference created
+# 14. GET E4 with the Core @context only - the term is expanded per the referenced @context
+#
+
+echo "01. Create the @context R, defining the terms R1 and R2"
+echo "======================================================="
+payload='{
+  "@context": {
+    "R1": "urn:ngsi-ld:attributes:R1",
+    "R2": "urn:ngsi-ld:attributes:R2"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/jsonldContexts --payload "$payload"
+rContextUrl=$(echo "$_responseHeaders" | grep Location: | awk -F'Location: ' '{ print $2 }' | tr -d "\r\n")
+rContextId=$(basename $rContextUrl)
+echo
+echo
+
+
+echo "02. Create the compound @context C, referencing R RELATIVELY, by localId only"
+echo "============================================================================"
+payload='{
+  "@context": [
+    "'$rContextId'",
+    "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld"
+  ]
+}'
+orionCurl --url /ngsi-ld/v1/jsonldContexts --payload "$payload"
+cContextUrl=$(echo "$_responseHeaders" | grep Location: | awk -F'Location: ' '{ print $2 }' | tr -d "\r\n")
+echo
+echo
+
+
+echo "03. GET C - the relative reference is stored as given"
+echo "===================================================="
+orionCurl --url $cContextUrl
+echo
+echo
+
+
+echo "04. Create an entity E1, using C, with an attribute R1"
+echo "======================================================"
+payload='{
+  "@context": "'http://localhost:9999$cContextUrl'",
+  "id": "urn:ngsi-ld:entities:E1",
+  "type": "T",
+  "R1": {
+    "type": "Property",
+    "value": 1
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" -H "Content-Type: application/ld+json"
+echo
+echo
+
+
+echo "05. GET E1 with the Core @context only - R1 is expanded per R, so the relative reference resolved"
+echo "================================================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1
+echo
+echo
+
+
+echo "06. GET E1 using C - R1 compacts back, via the relative reference"
+echo "================================================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1 -H "Link: <http://localhost:9999$cContextUrl>; rel=\"http://www.w3.org/ns/json-ld#context\"; type=\"application/ld+json\""
+echo
+echo
+
+
+echo "07. Create the compound @context D, referencing R as \"./<localId>\""
+echo "=================================================================="
+payload='{
+  "@context": [
+    "'./$rContextId'",
+    "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld"
+  ]
+}'
+orionCurl --url /ngsi-ld/v1/jsonldContexts --payload "$payload"
+dContextUrl=$(echo "$_responseHeaders" | grep Location: | awk -F'Location: ' '{ print $2 }' | tr -d "\r\n")
+echo
+echo
+
+
+echo "08. Create an entity E2, using D, with an attribute R2"
+echo "======================================================"
+payload='{
+  "@context": "'http://localhost:9999$dContextUrl'",
+  "id": "urn:ngsi-ld:entities:E2",
+  "type": "T",
+  "R2": {
+    "type": "Property",
+    "value": 2
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" -H "Content-Type: application/ld+json"
+echo
+echo
+
+
+echo "09. GET E2 with the Core @context only - R2 is expanded per R"
+echo "============================================================"
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E2
+echo
+echo
+
+
+echo "10. Create a compound @context referencing a localId that does not exist - see it fail"
+echo "======================================================================================"
+payload='{
+  "@context": [
+    "no-such-context-here",
+    "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld"
+  ]
+}'
+orionCurl --url /ngsi-ld/v1/jsonldContexts --payload "$payload"
+echo
+echo
+
+
+echo "11. Create an entity E3, using the compound @context served by the Context Server"
+echo "================================================================================"
+payload='{
+  "@context": "http://localhost:7080/jsonldContexts/ngsi-ld-test-suite-compound.jsonld",
+  "id": "urn:ngsi-ld:entities:E3",
+  "type": "T",
+  "brandName": {
+    "type": "Property",
+    "value": "Mercedes"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" -H "Content-Type: application/ld+json"
+echo
+echo
+
+
+echo "12. GET the referenced @context by its ABSOLUTE URL - in the cache, under the RESOLVED URL"
+echo "=========================================================================================="
+orionCurl --url /ngsi-ld/v1/jsonldContexts/http%3A%2F%2Flocalhost%3A7080%2FjsonldContexts%2Fngsi-ld-test-suite.jsonld
+echo
+echo
+
+
+echo "13. Create an entity E4, with the ABSOLUTE URL of that @context in a Link header"
+echo "==============================================================================="
+payload='{
+  "id": "urn:ngsi-ld:entities:E4",
+  "type": "T",
+  "brandName": {
+    "type": "Property",
+    "value": "Audi"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" -H "Link: <http://localhost:7080/jsonldContexts/ngsi-ld-test-suite.jsonld>; rel=\"http://www.w3.org/ns/json-ld#context\"; type=\"application/ld+json\""
+echo
+echo
+
+
+echo "14. GET E4 with the Core @context only - the term is expanded per the referenced @context"
+echo "========================================================================================="
+orionCurl --url /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E4
+echo
+echo
+
+
+--REGEXPECT--
+01. Create the @context R, defining the terms R1 and R2
+=======================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/jsonldContexts/REGEX(.*)
+
+
+
+02. Create the compound @context C, referencing R RELATIVELY, by localId only
+============================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/jsonldContexts/REGEX(.*)
+
+
+
+03. GET C - the relative reference is stored as given
+====================================================
+HTTP/1.1 200 OK
+Content-Length: 53
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "@context": [
+        "REGEX(.*)"
+    ]
+}
+
+
+04. Create an entity E1, using C, with an attribute R1
+======================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1
+
+
+
+05. GET E1 with the Core @context only - R1 is expanded per R, so the relative reference resolved
+=================================================================================================
+HTTP/1.1 200 OK
+Content-Length: 101
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+{
+    "id": "urn:ngsi-ld:entities:E1",
+    "type": "T",
+    "urn:ngsi-ld:attributes:R1": {
+        "type": "Property",
+        "value": 1
+    }
+}
+
+
+06. GET E1 using C - R1 compacts back, via the relative reference
+================================================================
+HTTP/1.1 200 OK
+Content-Length: 78
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <http://localhost:9999/ngsi-ld/v1/jsonldContexts/REGEX(.*)>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld\+json"
+
+{
+    "R1": {
+        "type": "Property",
+        "value": 1
+    },
+    "id": "urn:ngsi-ld:entities:E1",
+    "type": "T"
+}
+
+
+07. Create the compound @context D, referencing R as "./<localId>"
+==================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/jsonldContexts/REGEX(.*)
+
+
+
+08. Create an entity E2, using D, with an attribute R2
+======================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E2
+
+
+
+09. GET E2 with the Core @context only - R2 is expanded per R
+============================================================
+HTTP/1.1 200 OK
+Content-Length: 101
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+{
+    "id": "urn:ngsi-ld:entities:E2",
+    "type": "T",
+    "urn:ngsi-ld:attributes:R2": {
+        "type": "Property",
+        "value": 2
+    }
+}
+
+
+10. Create a compound @context referencing a localId that does not exist - see it fail
+======================================================================================
+HTTP/1.1 504 Gateway Timeout
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "REGEX(.*)/ngsi-ld/v1/jsonldContexts/no-such-context-here",
+    "title": "Unable to download context",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/LdContextNotAvailable"
+}
+
+
+11. Create an entity E3, using the compound @context served by the Context Server
+================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E3
+
+
+
+12. GET the referenced @context by its ABSOLUTE URL - in the cache, under the RESOLVED URL
+==========================================================================================
+HTTP/1.1 422 Unprocessable Content
+Content-Length: 188
+Content-Type: application/json
+Date: REGEX(.*)
+
+{
+    "detail": "http://localhost:7080/jsonldContexts/ngsi-ld-test-suite.jsonld",
+    "title": "Not serving cached JSON-LD @context",
+    "type": "https://uri.etsi.org/ngsi-ld/errors/OperationNotSupported"
+}
+
+
+13. Create an entity E4, with the ABSOLUTE URL of that @context in a Link header
+===============================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E4
+
+
+
+14. GET E4 with the Core @context only - the term is expanded per the referenced @context
+=========================================================================================
+HTTP/1.1 200 OK
+Content-Length: 125
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+{
+    "https://ngsi-ld-test-suite/context#brandName": {
+        "type": "Property",
+        "value": "Audi"
+    },
+    "id": "urn:ngsi-ld:entities:E4",
+    "type": "T"
+}
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
+dbDrop orionld

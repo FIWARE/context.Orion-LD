@@ -26,7 +26,7 @@
 * Author: Ken Zangelin
 */
 #include "apiTypesV2/Subscription.h"                             // Subscription
-#include "cache/subCache.h"                                      // CachedSubscription
+#include "orionld/types/SubCacheItem.h"                          // SubCacheItem
 
 #include "orionld/types/OrionldContext.h"                        // OrionldContext
 
@@ -36,6 +36,6 @@
 //
 // kjTreeFromSubscription -
 //
-extern KjNode* kjTreeFromSubscription(ngsiv2::Subscription* subscriptionP, CachedSubscription*  cSubP, OrionldContext* contextP);
+extern KjNode* kjTreeFromSubscription(ngsiv2::Subscription* subscriptionP, SubCacheItem* sciP, OrionldContext* contextP);
 
 #endif  // SRC_LIB_ORIONLD_LEGACYDRIVER_KJTREEFROMSUBSCRIPTION_H_

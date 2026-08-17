@@ -696,7 +696,6 @@ Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 
 {
-#SORT_START
     "notUpdated": [
         {
             "attributes": [
@@ -710,6 +709,16 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
                 "R5"
             ],
             "detail": "overwrite is not allowed",
+            "statusCode": 400,
+            "title": "attribute already exists"
+        },
+        {
+            "attributes": [
+                "P1",
+                "R1"
+            ],
+            "detail": "overwrite is not allowed",
+            "registrationId": "urn:R1",
             "statusCode": 400,
             "title": "attribute already exists"
         },
@@ -730,18 +739,7 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
             "registrationId": "urn:R2",
             "statusCode": 400,
             "title": "attribute already exists"
-        },
-        {
-            "attributes": [
-                "P1",
-                "R1"
-            ],
-            "detail": "overwrite is not allowed",
-            "registrationId": "urn:R1",
-            "statusCode": 400,
-            "title": "attribute already exists"
         }
-#SORT_END
     ],
     "updated": [
         "P4",

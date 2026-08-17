@@ -28,7 +28,7 @@
 #include <sys/uio.h>                                             // iovec
 #include <curl/curl.h>                                           // CURL
 
-#include "cache/CachedSubscription.h"                            // CachedSubscription
+#include "orionld/types/SubCacheItem.h"                           // SubCacheItem
 
 
 
@@ -36,6 +36,6 @@
 //
 // httpsNotify -
 //
-extern int httpsNotify(CachedSubscription* cSubP, struct iovec* ioVec, int ioVecLen, double timestamp, CURL** curlHandlePP);
+extern int httpsNotify(SubCacheItem* cSubP, struct iovec* ioVec, int ioVecLen, double timestamp, CURL** curlHandlePP);
 
 #endif  // SRC_LIB_ORIONLD_NOTIFICATIONS_HTTPSNOTIFY_H_

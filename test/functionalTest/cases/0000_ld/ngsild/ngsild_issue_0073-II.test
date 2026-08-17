@@ -62,7 +62,7 @@ echo
 
 echo "03. Drop Database so that db.entities.findOne() can be used in Step 5"
 echo "====================================================================="
-dbInit CB
+dbInit CB > /dev/null   # the drop's own reply is not what this test is about, and a replica set answers it with $clusterTime+operationTime, i.e. 11 lines instead of one
 echo
 echo
 
@@ -132,7 +132,6 @@ bye
 
 03. Drop Database so that db.entities.findOne() can be used in Step 5
 =====================================================================
-REGEX(({ "dropped" : "ftest", "ok" : 1 }|{ "ok" : 1 }))
 
 
 04. Create another entity with same context, and with the attribute "owner", which is an object in the context ("owner": { "@id": "fiware:owner", "@type": "@id" })

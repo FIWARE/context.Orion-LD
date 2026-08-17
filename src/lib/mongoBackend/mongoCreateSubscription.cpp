@@ -32,7 +32,6 @@
 
 #include "common/defaultValues.h"
 #include "apiTypesV2/Subscription.h"
-#include "cache/subCache.h"
 #include "rest/OrionError.h"
 #include "orionld/common/orionldState.h"             // orionldState
 
@@ -40,6 +39,12 @@
 #include "mongoBackend/MongoGlobal.h"
 #include "mongoBackend/MongoCommonSubscription.h"
 #include "mongoBackend/dbConstants.h"
+#include "orionld/mongoc/mongocSubCountersUpdate.h"          // mongocSubCountersUpdate
+#include "orionld/q/qBuild.h"                                // qBuild
+#include "orionld/q/qRelease.h"                              // qRelease
+#include "orionld/subCache/subCacheItemFromDb.h"             // subCacheItemFromDb (the new sub cache)
+#include "orionld/subCache/subCacheItemLookup.h"             // subCacheItemLookup
+#include "orionld/types/SubCacheItem.h"                      // SubCacheItem
 #include "mongoBackend/mongoCreateSubscription.h"
 
 
@@ -61,88 +66,6 @@ using ngsiv2::Subscription;
 static void setTimestamp(const char* name, double ts, mongo::BSONObjBuilder* bobP)
 {
   bobP->append(name, ts);
-}
-
-
-
-/* ****************************************************************************
-*
-* insertInCache - insert in csub cache
-*/
-static bool insertInCache
-(
-  const Subscription&  sub,
-  const std::string&   subId,
-  const std::string&   tenant,
-  const std::string&   servicePath,
-  bool                 notificationDone,
-  double               lastNotification,
-  double               lastFailure,
-  double               lastSuccess
-)
-{
-  //
-  // StringFilter in Scope?
-  //
-  // Any Scope of type SCOPE_TYPE_SIMPLE_QUERY in sub.restriction.scopeVector?
-  // If so, set it as string filter to the sub-cache item
-  //
-  StringFilter*  stringFilterP   = NULL;
-  StringFilter*  mdStringFilterP = NULL;
-
-  for (unsigned int ix = 0; ix < sub.restriction.scopeVector.size(); ++ix)
-  {
-    if (sub.restriction.scopeVector[ix]->type == SCOPE_TYPE_SIMPLE_QUERY)
-    {
-      stringFilterP = sub.restriction.scopeVector[ix]->stringFilterP;
-    }
-
-    if (sub.restriction.scopeVector[ix]->type == SCOPE_TYPE_SIMPLE_QUERY_MD)
-    {
-      mdStringFilterP = sub.restriction.scopeVector[ix]->mdStringFilterP;
-    }
-  }
-
-  cacheSemTake(__FUNCTION__, "Inserting subscription in cache");
-  bool b = subCacheItemInsert(tenant.c_str(),
-                              servicePath.c_str(),
-                              sub.notification.httpInfo,
-                              sub.subject.entities,
-                              sub.notification.attributes,
-                              sub.notification.metadata,
-                              sub.subject.condition.attributes,
-                              subId.c_str(),
-                              sub.expires,
-                              sub.throttling,
-                              sub.attrsFormat,
-                              notificationDone,
-                              lastNotification,
-                              lastFailure,
-                              lastSuccess,
-                              stringFilterP,
-                              mdStringFilterP,
-                              sub.status,
-#ifdef ORIONLD
-                              sub.name,
-                              sub.ldContext,
-                              sub.lang,
-                              sub.notification.httpInfo.mqtt.username,
-                              sub.notification.httpInfo.mqtt.password,
-                              sub.notification.httpInfo.mqtt.version,
-                              sub.notification.httpInfo.mqtt.qos,
-#endif
-                              sub.subject.condition.expression.q,
-                              sub.subject.condition.expression.geometry,
-                              sub.subject.condition.expression.coords,
-                              sub.subject.condition.expression.georel,
-#ifdef ORIONLD
-                              sub.subject.condition.expression.geoproperty,
-#endif
-                              sub.notification.blacklist);
-
-  cacheSemGive(__FUNCTION__, "Inserting subscription in cache");
-
-  return b;
 }
 
 
@@ -218,14 +141,39 @@ std::string mongoCreateSubscription
 
   std::string status = sub.status == ""?  STATUS_ACTIVE : sub.status;
 
-  // We need to insert the csub in the cache before (potentially) sending the
-  // initial notification (have a look to issue #2974 for details)
-  if (!noCache)
+  //
+  // An NGSI-LD 'q' is parsed here, BEFORE anything is written to the database.
+  //
+  // This is the legacy create path, which does not go through pCheckSubscription,
+  // so nothing else validates the filter. It used to be validated as a side effect
+  // of filling the old subscription cache - qBuild was called while building the
+  // cached item, and a failure there aborted the whole create.
+  //
+  // qBuild reports the error itself (orionldError), so all that is needed here is
+  // to give up before the subscription reaches the database.
+  //
+  if ((orionldState.apiVersion == API_VERSION_NGSILD_V1) && (sub.subject.condition.expression.q != ""))
   {
-    if (insertInCache(sub, subId, tenantP->tenant, servicePath, false, 0, 0, 0) == false)
+    char*  qText      = NULL;
+    bool   validForV2 = true;
+    bool   isMq       = false;
+    QNode* qP         = qBuild(sub.subject.condition.expression.q.c_str(), &qText, &validForV2, &isMq, true, false);
+
+    if (qP != NULL)
+      qRelease(qP);
+
+    if (qText == NULL)
       return "";
   }
 
+  //
+  // The CONDITIONS only - no notification yet.
+  //
+  // The initial notification is sent further down, once the subscription is in the
+  // database AND in both caches. Sending it from here, as this used to, means it can
+  // finish before the subscription cache has an item to record the outcome in - and
+  // then whether that first notification succeeded or failed is simply lost.
+  //
   setCondsAndInitialNotify(sub,
                            subId,
                            status,
@@ -239,22 +187,8 @@ std::string mongoCreateSubscription
                            xauthToken,
                            fiwareCorrelator,
                            &b,
-                           &notificationDone);
-
-  if (notificationDone)
-  {
-    double lastNotification = orionldState.requestTime;
-
-    setLastNotification(lastNotification, &b);
-    setCount(1, &b);
-  }
-#if 0
-  else
-  {
-    setLastNotification(0, &b);
-    setCount(0, &b);
-  }
-#endif
+                           &notificationDone,
+                           false);  // notify
 
   setExpression(sub, &b);
   setFormat(sub, &b);
@@ -273,6 +207,59 @@ std::string mongoCreateSubscription
   }
 
   reqSemGive(__FUNCTION__, "ngsiv2 create subscription request", reqSemTaken);
+
+  //
+  // ... and into the new subscription cache, by reading the subscription back and
+  // running it through the same dbModelToApiSubscription the startup loader uses.
+  // See subCacheItemFromDb.
+  //
+  subCacheItemFromDb(tenantP, subId.c_str());
+
+  //
+  // The cross-API render formats ("x-ngsiv2-normalized", ...) do NOT survive the
+  // database - it stores plain "normalized" for all of them - so the item that
+  // was just built from the database has lost that distinction. The request still
+  // has it, and the request is the authority, so it is put back.
+  //
+  // (The old sub-cache never noticed: it was filled from the request, not from the
+  // database. It lost the distinction too, but only on a broker restart.)
+  //
+  SubCacheItem* sciP = subCacheItemLookup(tenantP->subCache, subId.c_str());
+
+  if (sciP != NULL)
+    sciP->renderFormat = sub.attrsFormat;
+
+  //
+  // ... and NOW the initial notification.
+  //
+  // Everything it needs is in place: the subscription is in the database, in the old
+  // cache and in the new one - so whatever the notification thread has to say about
+  // how it went, there is an item to say it to.
+  //
+  setCondsAndInitialNotify(sub,
+                           subId,
+                           status,
+                           sub.notification.attributes,
+                           sub.notification.metadata,
+                           sub.notification.httpInfo,
+                           sub.notification.blacklist,
+                           sub.attrsFormat,
+                           tenantP,
+                           servicePathV,
+                           xauthToken,
+                           fiwareCorrelator,
+                           NULL,  // the conditions are already stored - only notify
+                           &notificationDone,
+                           true);  // notify
+
+  //
+  // The counters of that first notification. They used to be part of the document
+  // being inserted, which is no longer possible - the document is written before the
+  // notification is sent. So they are written on top, exactly as every later
+  // notification's counters are.
+  //
+  if (notificationDone == true)
+    mongocSubCountersUpdate(tenantP, subId.c_str(), (sub.ldContext != ""), 1, 0, 0, orionldState.requestTime, -1, -1, false);
 
   return subId;
 }

@@ -32,7 +32,6 @@
 *
 * WsInfo - WebSocket connection info (parallel to MqttInfo)
 *
-* Most info lives on the CachedSubscription.
 * wsConnectionP is the opaque pointer to the live WS stream/socket.
 */
 typedef struct WsInfo

@@ -302,10 +302,16 @@ for filename in tracked_files:
     if os.path.islink(filename):
         continue
 
-    # Accept either license header (FIWARE/Orion-LD or Telefonica/Orion) for any file
+    # Accept either license header (FIWARE/Orion-LD or Telefonica/Orion) for any file.
+    # Both reasons are reported when both fail - the fallback's reason alone is misleading, as a
+    # broken Orion-LD header makes the Orion check run to EOF without ever finding its first line
     error = check_file_orionld(filename)
     if len(error) > 0:
-        error = check_file(filename)
+        errorOrion = check_file(filename)
+        if len(errorOrion) == 0:
+            error = ''
+        else:
+            error = 'as Orion-LD: ' + error + ' -- as Orion: ' + errorOrion
 
     if len(error) > 0:
         print(filename + ': ' + error)

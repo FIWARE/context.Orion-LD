@@ -31,7 +31,7 @@ extern "C"
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/orionldError.h"                         // orionldError
 #include "orionld/common/numberToDate.h"                         // numberToDate
-#include "cache/subCache.h"                                      // CachedSubscription, subCacheItemLookup
+#include "orionld/subCache/subCacheItemLookup.h"                 // subCacheItemLookup
 #include "orionld/legacyDriver/kjTreeFromSubscription.h"         // kjTreeFromSubscription
 #include "orionld/legacyDriver/legacyGetSubscription.h"          // Own Interface
 
@@ -44,7 +44,7 @@ extern "C"
 bool legacyGetSubscription(void)
 {
   char*                 subscriptionId = orionldState.wildcard[0];
-  CachedSubscription*   cSubP          = subCacheItemLookup(orionldState.tenantP->tenant, subscriptionId);
+  SubCacheItem*         sciP           = subCacheItemLookup(orionldState.tenantP->subCache, subscriptionId);
   ngsiv2::Subscription  subscription;
   char*                 details = (char*) "subscription not found";
 
@@ -62,7 +62,7 @@ bool legacyGetSubscription(void)
 
   // Transform to KjNode tree
   orionldState.httpStatusCode = 200;
-  orionldState.responseTree   = kjTreeFromSubscription(&subscription, cSubP, orionldState.contextP);
+  orionldState.responseTree   = kjTreeFromSubscription(&subscription, sciP, orionldState.contextP);
 
   return true;
 }

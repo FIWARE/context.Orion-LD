@@ -22,6 +22,8 @@
 *
 * Author: Ken Zangelin
 */
+#include <string.h>                                            // strcmp
+
 extern "C"
 {
 #include "ktrace/kTrace.h"                                     // KT_*
@@ -29,12 +31,11 @@ extern "C"
 #include "kjson/kjLookup.h"                                    // kjLookup
 }
 
-#include "cache/CachedSubscription.h"                          // CachedSubscription
-
 #include "orionld/types/RegCache.h"                            // RegCache
 #include "orionld/types/RegCacheItem.h"                        // RegCacheItem
 #include "orionld/common/orionldState.h"                       // orionldState
 #include "orionld/common/traceLevels.h"                        // KTrace levels
+#include "orionld/regCache/regCacheSem.h"                        // regCacheSemTake, regCacheSemGive
 #include "orionld/regMatch/regMatchSubscription.h"             // Own interface
 
 
@@ -45,9 +46,9 @@ extern "C"
 //
 bool regMatchSubscription
 (
-  RegCacheItem*       rciP,
-  CachedSubscription* cSubP,
-  char**              entityTypeP
+  RegCacheItem*  rciP,
+  KjNode*        entitiesP,
+  char**         entityTypeP
 )
 {
   KjNode* regInfoP = kjLookup(rciP->regTree, "information");
@@ -55,18 +56,37 @@ bool regMatchSubscription
   if (regInfoP == NULL)
     return false;
 
-  for (unsigned long ix = 0; ix < cSubP->entityIdInfos.size(); ix++)
+  if (entitiesP == NULL)
+    return false;
+
+  //
+  // Only a TYPE-ONLY entity selector can match a registration: one that names a
+  // type and selects every entity id - either by saying nothing about the id, or
+  // by an idPattern of ".*", which is the same thing said out loud.
+  //
+  for (KjNode* selectorP = entitiesP->value.firstChildP; selectorP != NULL; selectorP = selectorP->next)
   {
-    EntityInfo* eiP = cSubP->entityIdInfos[ix];
+    KjNode* subTypeP       = kjLookup(selectorP, "type");
+    KjNode* subIdP         = kjLookup(selectorP, "id");
+    KjNode* subIdPatternP  = kjLookup(selectorP, "idPattern");
+    bool    anyEntityId    = (subIdP == NULL) && ((subIdPatternP == NULL) || (strcmp(subIdPatternP->value.s, ".*") == 0));
 
-    // For now, only match subs/regs with entity type only
-    KT_T(KtSR, "entityType  : '%s', entityId: '%s'", eiP->entityType.c_str(), eiP->entityId.c_str());
-    if ((eiP->entityType != "") && (eiP->entityId == ".*"))
+    KT_T(KtSR, "entityType: '%s', anyEntityId: %s", (subTypeP != NULL)? subTypeP->value.s : "none", anyEntityId? "true" : "false");
+
+    if ((subTypeP != NULL) && (anyEntityId == true))
     {
-      const char* entityType = eiP->entityType.c_str();
+      const char* entityType = subTypeP->value.s;
 
-      // We have the entity type of the subscription, now match against the registration
-      for (RegCacheItem* rciP = orionldState.tenantP->regCache->regList; rciP != NULL; rciP = rciP->next)
+      //
+      // We have the entity type of the subscription, now match against the registration.
+      // The walk runs under the READ lock, so the list cannot change under us. Note that the
+      // match below must NOT return from inside the loop - the lock has to be given back first.
+      //
+      bool matched = false;
+
+      regCacheSemTake(orionldState.tenantP->regCache, __FUNCTION__, "Matching registrations for a subscription", SemReadOp);
+
+      for (RegCacheItem* rciP = orionldState.tenantP->regCache->regList; (rciP != NULL) && (matched == false); rciP = rciP->next)
       {
         KjNode* informationP = kjLookup(rciP->regTree, "information");
         if (informationP == NULL)
@@ -96,11 +116,20 @@ bool regMatchSubscription
             {
               KT_T(KtSR, "Found a matching registration for entity type '%s': %s", entityType, rciP->regId);
               *entityTypeP = (char*) entityType;
-              return true;
+              matched = true;
+              break;
             }
           }
+
+          if (matched == true)
+            break;
         }
       }
+
+      regCacheSemGive(orionldState.tenantP->regCache, __FUNCTION__, "Matching registrations for a subscription");
+
+      if (matched == true)
+        return true;
     }
   }
 

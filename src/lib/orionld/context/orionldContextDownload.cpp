@@ -122,7 +122,7 @@ char* orionldContextDownload(const char* url)
   if (reqOk == false)  // && (downloadFailed == true)? - could get better error handling with 'downloadFailed'
   {
     if (orionldState.pd.status < 300)  // Error not filled in
-      orionldError(OrionldLdContextNotAvailable, "Unable to download context", url, 503);
+      orionldError(OrionldLdContextNotAvailable, "Unable to download context", url, 504);
 
     return NULL;
   }

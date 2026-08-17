@@ -70,7 +70,8 @@
 #include <mongo/version.h>                                  // MONGOCLIENT_VERSION
 
 #include "mongoBackend/MongoGlobal.h"
-#include "cache/subCache.h"
+#include "orionld/subCache/subCachesRefresh.h"                   // subCachesMaintenanceStart
+#include "orionld/ha/haInit.h"                                   // haInit
 
 extern "C"
 {
@@ -119,6 +120,7 @@ extern "C"
 #include "orionld/db/dbInit.h"                                // dbInit
 #include "orionld/mqtt/mqttRelease.h"                         // mqttRelease
 #include "orionld/regCache/regCacheInit.h"                    // regCacheInit
+#include "orionld/subCache/subCachesInit.h"                // subCachesInit
 #include "orionld/regCache/regCacheCreate.h"                  // regCacheCreate
 #include "orionld/regCache/regCacheRelease.h"                 // regCacheRelease
 #include "orionld/pernot/pernotSubCacheInit.h"                // pernotSubCacheInit
@@ -174,6 +176,7 @@ int             port;
 char            dbHost[1024];
 char            rplSet[64];
 char            dbName[64];
+char            haChannel[64];
 char            dbUser[64];
 char            dbPwd[512];
 char            dbAuthDb[64];
@@ -307,6 +310,7 @@ bool            kTraceInfo       = false;
 #define MUTEX_POLICY_DESC      "mutex policy (none/read/write/all)"
 #define WRITE_CONCERN_DESC     "db write concern (0:unacknowledged, 1:acknowledged)"
 #define CPR_FORWARD_LIMIT_DESC "maximum number of distributed requests to Context Providers for a single client request"
+#define HA_DESC                "High Availability: how this instance learns what other instances do. 'mongo' = mongo change streams (needs a replica set). An <ip:port> names an haaux instance (not implemented yet). Empty: no HA"
 #define SUB_CACHE_IVAL_DESC    "interval in seconds between calls to Subscription Cache refresh (0: no refresh)"
 #define SUB_CACHE_FLUSH_IVAL_DESC    "interval in seconds between calls to Pernot Subscription Cache Flush to DB (0: no flush)"
 #define NOTIFICATION_MODE_DESC "notification mode (persistent|transient|threadpool:q:n)"
@@ -434,6 +438,7 @@ PaArgument paArgs[] =
   { "-corsOrigin",            allowedOrigin,            "CORS_ALLOWED_ORIGIN",       PaString,  PaOpt,  _i "",            PaNL,   PaNL,             ALLOWED_ORIGIN_DESC      },
   { "-corsMaxAge",            &maxAge,                  "CORS_MAX_AGE",              PaInt,     PaOpt,  86400,            -1,     86400,            CORS_MAX_AGE_DESC        },
   { "-cprForwardLimit",       &cprForwardLimit,         "CPR_FORWARD_LIMIT",         PaUInt,    PaOpt,  1000,             0,      UINT_MAX,         CPR_FORWARD_LIMIT_DESC   },
+  { "-ha",                    haChannel,                "HA",                        PaString,  PaOpt,  _i "",            PaNL,   PaNL,             HA_DESC                  },
   { "-subCacheIval",          &subCacheInterval,        "SUBCACHE_IVAL",             PaInt,     PaOpt,  0,                0,      3600,             SUB_CACHE_IVAL_DESC      },
   { "-subCacheFlushIval",     &subCacheFlushInterval,   "SUBCACHE_FLUSH_IVAL",       PaInt,     PaOpt,  10,               0,      3600,             SUB_CACHE_FLUSH_IVAL_DESC },
   { "-noCache",               &noCache,                 "NOCACHE",                   PaBool,    PaOpt,  false,            false,  true,             NO_CACHE                 },
@@ -632,7 +637,6 @@ void exitFunc(void)
 #ifdef DEBUG
   // Take mongo req-sem ?
   reqSemTryToTake();
-  subCacheDestroy();
 #endif
 
   metricsMgr.release();
@@ -992,6 +996,7 @@ static char* coreContextUrlSetup(const char* version)
   else if (strcmp(version, "v1.6") == 0)    return ORIONLD_CORE_CONTEXT_URL_V1_6;
   else if (strcmp(version, "v1.7") == 0)    return ORIONLD_CORE_CONTEXT_URL_V1_7;
   else if (strcmp(version, "v1.8") == 0)    return ORIONLD_CORE_CONTEXT_URL_V1_8;
+  else if (strcmp(version, "v1.9") == 0)    return ORIONLD_CORE_CONTEXT_URL_V1_9;
 
   return NULL;
 }
@@ -1332,15 +1337,34 @@ int main(int argC, char* argV[])
   mongocInit(dbURI, dbHost, dbUser, dbPwd, dbAuthDb, rplSet, dbAuthMechanism, dbSSL, dbCertFile);
 
   //
-  // Now that the DB is ready to be used, we can populate the regCache for the different tenants
-  // Note that regCacheInit uses the tenantList, so orionldTenantInit must be called before regCacheInit
+  // High Availability - the channel that tells this instance what the others do.
   //
-  regCacheInit();
+  // BEFORE the caches are loaded, and as early as the mongo connection allows.
+  // Listening only after reading the database leaves a window - the whole cache
+  // load, @contexts included - whose changes are missed for the lifetime of the
+  // process. Starting the channel first makes the two overlap instead: nothing
+  // is applied until haApplyEnable() below, and an event for something the load
+  // also brings in is applied twice, which costs a re-read and changes nothing.
+  //
+  haInit();
 
   if (pernot == true)
     pernotSubCacheInit();
 
   orionldServiceInit(restServiceVV, 9);
+
+  //
+  // Now that the DB is ready to be used, we can populate the regCache for the different tenants
+  // Note that regCacheInit uses the tenantList, so orionldTenantInit must be called before regCacheInit
+  //
+  // It must also come AFTER orionldServiceInit, which is where the @context cache is loaded from the
+  // database (orionldContextInit): a registration with a "jsonldContext" in its "contextSourceInfo"
+  // resolves that @context as it enters the cache, and a cache MISS makes orionldContextFromUrl()
+  // DOWNLOAD it - contextDownloadAttempts tries, contextDownloadTimeout each, all of it before the
+  // broker opens its port. A broker with no route to the @context server therefore never started
+  // listening at all (issue #1977).
+  //
+  regCacheInit();
 
   if (mongocOnly == false)
   {
@@ -1350,6 +1374,26 @@ int main(int argC, char* argV[])
 
   // Initialize GEOS for geofencing in subscription matching
   geosInit();
+
+  //
+  // The new per-tenant subscription cache.
+  //
+  // AFTER orionldServiceInit, which is where the @context cache is loaded from
+  // the database: caching a subscription resolves its @context, and a miss
+  // would DOWNLOAD, blocking startup before the port is open.
+  // AFTER geosInit as well - a subscription with a "geoQ" compiles its geometry
+  // as it enters the cache, and that needs the GEOS handle.
+  //
+  //
+  subCachesInit();
+
+  //
+  // Every cache is populated (@contexts in orionldServiceInit, registrations in
+  // regCacheInit, subscriptions just now) - the HA channel may start applying
+  // what it has been holding since haInit().
+  //
+  haApplyEnable();
+
 
   // Initialize libs
   alarmMgr.init(relogAlarms);
@@ -1364,23 +1408,13 @@ int main(int argC, char* argV[])
   if (curl_global_init(CURL_GLOBAL_SSL) != 0)
     KT_X(1, "Fatal Error (could not initialize libcurl)");
 
+  //
+  // The counter flush (-subCacheFlushIval) and, until change streams replace it,
+  // the database poll (-subCacheIval). The caches themselves are already
+  // populated - subCachesInit did that, above.
+  //
   if (noCache == false)
-  {
-    orionldStartup = true;
-    subCacheInit(multitenancy);
-
-    if (subCacheInterval == 0)
-    {
-      // Populate subscription cache from database
-      subCacheRefresh(false);
-    }
-    else
-    {
-      // Populate subscription cache AND start sub-cache-refresh-thread
-      subCacheStart();
-    }
-    orionldStartup = false;
-  }
+    subCachesMaintenanceStart();
 
   dbInit(dbHost, dbName);  // Move to be next to mongocInit ?
 

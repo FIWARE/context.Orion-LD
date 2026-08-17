@@ -32,7 +32,7 @@ orionldStart CB -experimental
 
 #
 # 01. Create an Entity
-# 02. GET all entities, see default Core Context in Link header (v1.8)
+# 02. GET all entities, see default Core Context in Link header (v1.9)
 # 03. Kill and restart the broker, now with v1.0 as Core Context
 # 04. GET all entities, see Core Context v1.0 in Link header
 # 05. Kill and restart the broker, now with v1.3 as Core Context
@@ -47,6 +47,8 @@ orionldStart CB -experimental
 # 14. GET all entities, see Core Context v1.7 in Link header
 # 15. Kill and restart the broker, now with v1.8 as Core Context
 # 16. GET all entities, see Core Context v1.8 in Link header
+# 17. Kill and restart the broker, now with v1.9 as Core Context
+# 18. GET all entities, see Core Context v1.9 in Link header
 #
 
 echo "01. Create an Entity"
@@ -186,6 +188,23 @@ echo
 echo
 
 
+echo "17. Kill and restart the broker, now with v1.9 as Core Context"
+echo "=============================================================="
+brokerStop CB
+orionldStart CB -experimental -coreContext v1.9
+sleep 0.2
+echo The broker is now running with v1.9 as Core Context
+echo
+echo
+
+
+echo "18. GET all entities, see Core Context v1.9 in Link header"
+echo "=========================================================="
+orionCurl --url /ngsi-ld/v1/entities?local=true
+echo
+echo
+
+
 --REGEXPECT--
 01. Create an Entity
 ====================
@@ -202,7 +221,7 @@ HTTP/1.1 200 OK
 Content-Length: 28
 Content-Type: application/json
 Date: REGEX(.*)
-Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
 
 [
     {
@@ -350,6 +369,27 @@ Content-Length: 28
 Content-Type: application/json
 Date: REGEX(.*)
 Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.8.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+[
+    {
+        "id": "urn:E1",
+        "type": "T"
+    }
+]
+
+
+17. Kill and restart the broker, now with v1.9 as Core Context
+==============================================================
+The broker is now running with v1.9 as Core Context
+
+
+18. GET all entities, see Core Context v1.9 in Link header
+==========================================================
+HTTP/1.1 200 OK
+Content-Length: 28
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
 
 [
     {

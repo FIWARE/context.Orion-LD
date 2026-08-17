@@ -223,10 +223,12 @@ class NotifierMock : public Notifier
      */
   }
 
+  // The signature must match Notifier::sendNotifyContextRequest exactly - a mock that merely
+  // hides the base virtual never intercepts a call, and newer gcc rejects it (-Woverloaded-virtual)
   MOCK_METHOD9(sendNotifyContextRequest, void(NotifyContextRequest*            ncr,
                                               const ngsiv2::HttpInfo&          httpInfo,
-                                              const std::string&               tenant,
-                                              const std::string&               xauthToken,
+                                              OrionldTenant*                   tenantP,
+                                              const char*                      xauthToken,
                                               const std::string&               fiwareCorrelator,
                                               OrionldRenderFormat              renderFormat,
                                               const std::vector<std::string>&  attrsFilter,
@@ -236,15 +238,15 @@ class NotifierMock : public Notifier
     /* Wrappers for parent methods (used in ON_CALL() defaults set in the constructor) */
     void parent_sendNotifyContextRequest(NotifyContextRequest*            ncr,
                                          const ngsiv2::HttpInfo&          httpInfo,
-                                         const std::string&               tenant,
-                                         const std::string&               xauthToken,
+                                         OrionldTenant*                   tenantP,
+                                         const char*                      xauthToken,
                                          const std::string&               fiwareCorrelator,
                                          OrionldRenderFormat              renderFormat,
                                          const std::vector<std::string>&  attrsFilter,
                                          const std::vector<std::string>&  metadataFilter,
                                          bool                             blacklist = false)
     {
-      Notifier::sendNotifyContextRequest(ncr, httpInfo, tenant, xauthToken.c_str(), fiwareCorrelator, renderFormat, attrsFilter, metadataFilter, blacklist);
+      Notifier::sendNotifyContextRequest(ncr, httpInfo, tenantP, xauthToken, fiwareCorrelator, renderFormat, attrsFilter, metadataFilter, blacklist);
     }
 
 };

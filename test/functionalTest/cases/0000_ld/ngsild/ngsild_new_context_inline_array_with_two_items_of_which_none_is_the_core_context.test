@@ -96,13 +96,13 @@ Date: REGEX(.*)
       "type": "hash-table",
       "origin": "REGEX((Downloaded|FileCached))",
       "compactions": 0,
-      "expansions": 348,
+      "expansions": 406,
       "hash-table": {
         "instanceId": "https://uri.etsi.org/ngsi-ld/instanceId",
+        "aggrParams": "https://uri.etsi.org/ngsi-ld/aggrParams",
         "notifiedAt": "https://uri.etsi.org/ngsi-ld/notifiedAt",
         "linkedMaps": "https://uri.etsi.org/ngsi-ld/linkedMaps",
-        "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt",
-        "objectList": "https://uri.etsi.org/ngsi-ld/hasObjectList"
+        "observedAt": "https://uri.etsi.org/ngsi-ld/observedAt"
       }
     }
   },

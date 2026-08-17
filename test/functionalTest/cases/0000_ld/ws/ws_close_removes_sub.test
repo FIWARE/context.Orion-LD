@@ -34,9 +34,15 @@ ftClientStart -v -t 200
 # 01. Connect via WebSocket and subscribe for entity type T
 # 02. Create an entity of type T to trigger a notification
 # 03. GET subscription via REST API - verify timesSent==1 and lastSuccess
-# 04. Dump WS notifications - see the entity data in the notification
-# 05. Close the WS connection
-# 06. GET subscription from broker REST API - verify it has been removed (404)
+# 04. GET /subscriptions - the WS subscription is in the list, with its statistics
+# 05. Dump WS notifications - see the entity data in the notification
+# 06. Close the WS connection
+# 07. GET subscription from broker REST API - verify it has been removed (404)
+# 08. GET /subscriptions - verify it is gone from the list too
+#
+# A WS subscription is special in that it dies with its WebSocket - but while it
+# lives it is an ordinary Subscription, and GET is how its statistics are read.
+# So it has to be gettable BOTH ways, and gone from both once the socket closes.
 #
 
 echo "01. Connect via WebSocket and subscribe for entity type T"
@@ -83,14 +89,21 @@ echo
 echo
 
 
-echo "04. Dump WS notifications - see the entity data in the notification"
+echo "04. GET /subscriptions - the WS subscription is in the list, with its statistics"
+echo "================================================================================"
+orionCurl --url '/ngsi-ld/v1/subscriptions?count=true'
+echo
+echo
+
+
+echo "05. Dump WS notifications - see the entity data in the notification"
 echo "===================================================================="
 wsDump --subId $wsSubId --port $FT_PORT
 echo
 echo
 
 
-echo "05. Close the WS connection"
+echo "06. Close the WS connection"
 echo "==========================="
 wsClose --subId $wsSubId --port $FT_PORT
 sleep 0.5
@@ -98,9 +111,16 @@ echo
 echo
 
 
-echo "06. GET subscription from broker REST API - verify it has been removed (404)"
+echo "07. GET subscription from broker REST API - verify it has been removed (404)"
 echo "============================================================================="
 orionCurl --url /ngsi-ld/v1/subscriptions/$wsSubId
+echo
+echo
+
+
+echo "08. GET /subscriptions - verify it is gone from the list too"
+echo "==========================================================="
+orionCurl --url '/ngsi-ld/v1/subscriptions?count=true'
 echo
 echo
 
@@ -154,7 +174,44 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
 }
 
 
-04. Dump WS notifications - see the entity data in the notification
+04. GET /subscriptions - the WS subscription is in the list, with its statistics
+================================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(.*)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+NGSILD-Results-Count: 1
+
+[
+    {
+        "entities": [
+            {
+                "type": "T"
+            }
+        ],
+        "id": "REGEX(urn:ngsi-ld:subscription:.*)",
+        "isActive": true,
+        "jsonldContext": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)",
+        "notification": {
+            "endpoint": {
+                "accept": "application/json",
+                "uri": "REGEX(.*)"
+            },
+            "format": "normalized",
+            "lastNotification": "REGEX(.*)",
+            "lastSuccess": "REGEX(.*)",
+            "status": "ok",
+            "timesSent": 1
+        },
+        "origin": "cache",
+        "status": "active",
+        "type": "Subscription"
+    }
+]
+
+
+05. Dump WS notifications - see the entity data in the notification
 ====================================================================
 HTTP/1.1 200 OK
 Content-Length: REGEX(.*)
@@ -165,7 +222,7 @@ Date: REGEX(.*)
     "metadata": {
       "Content-Type": "application/json",
       "User-Agent": "REGEX(.*)",
-      "Host": "ws-placeholder:0",
+      "Host": "REGEX(urn:ngsi-ld:ws:\d+)",
       "Accept": "application/json",
       "Ngsild-Attribute-Format": "Normalized",
       "Link": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)"
@@ -191,11 +248,11 @@ Date: REGEX(.*)
 
 
 
-05. Close the WS connection
+06. Close the WS connection
 ===========================
 
 
-06. GET subscription from broker REST API - verify it has been removed (404)
+07. GET subscription from broker REST API - verify it has been removed (404)
 =============================================================================
 HTTP/1.1 404 Not Found
 Content-Length: REGEX(.*)
@@ -207,6 +264,18 @@ Date: REGEX(.*)
     "title": "subscription not found",
     "type": "https://uri.etsi.org/ngsi-ld/errors/ResourceNotFound"
 }
+
+
+08. GET /subscriptions - verify it is gone from the list too
+===========================================================
+HTTP/1.1 200 OK
+Content-Length: 2
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
+NGSILD-Results-Count: 0
+
+[]
 
 
 --TEARDOWN--

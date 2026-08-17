@@ -30,7 +30,6 @@ extern "C"
 #include "ktrace/kTrace.h"                                       // trace messages - ktrace library
 }
 
-#include "cache/subCache.h"                                      // CachedSubscription
 
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/traceLevels.h"                          // KTrace levels

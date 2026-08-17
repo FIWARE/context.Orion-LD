@@ -737,7 +737,7 @@ payload='[
     }
   }
 ]'
-orionCurl --url /ngsi-ld/v1/entityOperations/create --payload "$payload" -H 'Link: <https://github.com/FIWARE/context.Orion-LD/files/7334895/test-context-ngsi.txt>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
+orionCurl --url /ngsi-ld/v1/entityOperations/create --payload "$payload" -H 'Link: <http://localhost:7080/jsonldContexts/test-context-ngsi.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
 echo
 echo
 

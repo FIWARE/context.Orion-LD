@@ -25,7 +25,7 @@
 *
 * Author: Ken Zangelin
 */
-#include "cache/CachedSubscription.h"                               // CachedSubscription
+#include "orionld/types/SubCacheItem.h"                              // SubCacheItem
 
 
 
@@ -33,6 +33,6 @@
 //
 // notificationSuccess -
 //
-extern void notificationSuccess(CachedSubscription* subP, const double timestamp);
+extern void notificationSuccess(SubCacheItem* subP, const double timestamp);
 
 #endif  // SRC_LIB_ORIONLD_NOTIFICATIONS_NOTIFICATIONSUCCESS_H_

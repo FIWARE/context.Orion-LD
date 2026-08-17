@@ -220,6 +220,7 @@ SET (ORION_LIBS
     orionld_context
     orionld_contextCache
     orionld_regCache
+    orionld_subCache
     orionld_notifications
     orionld_db
     orionld_mongoc
@@ -242,7 +243,6 @@ SET (ORION_LIBS
                   # verbName(Verb) from setExtendedHttpInfo@MongoCommonSubscription.cpp.o
     ngsi10
     ngsi
-    cache
     mongoBackend
     ngsi
     orionld_config
@@ -255,6 +255,10 @@ SET (ORION_LIBS
     orionld_mqtt
     orionld_ws
     orionld_q
+    orionld_ha
+    orionld_subCache     # repeated: orionld_notifications, further up, notifies from the subscription cache
+    orionld_regCache     # repeated: orionld_ha applies an HA event to the registration cache
+    orionld_contextCache # repeated: ... and to the @context cache
     orionld_mongoc       # subCache needs mongoc
     orionld_entityMaps
     orionld_dbModel
@@ -403,6 +407,8 @@ if (error EQUAL 0)
   ADD_SUBDIRECTORY(src/lib/orionld/context)
   ADD_SUBDIRECTORY(src/lib/orionld/contextCache)
   ADD_SUBDIRECTORY(src/lib/orionld/regCache)
+  ADD_SUBDIRECTORY(src/lib/orionld/subCache)
+  ADD_SUBDIRECTORY(src/lib/orionld/ha)
   ADD_SUBDIRECTORY(src/lib/orionld/kjTree)
   ADD_SUBDIRECTORY(src/lib/orionld/db)
   ADD_SUBDIRECTORY(src/lib/orionld/dbModel)
@@ -420,7 +426,6 @@ if (error EQUAL 0)
   ADD_SUBDIRECTORY(src/lib/orionld/legacyDriver)
   ADD_SUBDIRECTORY(src/lib/orionld/linkedEntities)
   ADD_SUBDIRECTORY(src/lib/mongoBackend)
-  ADD_SUBDIRECTORY(src/lib/cache)
   ADD_SUBDIRECTORY(src/lib/alarmMgr)
   ADD_SUBDIRECTORY(src/lib/metricsMgr)
   ADD_SUBDIRECTORY(src/lib/logSummary)

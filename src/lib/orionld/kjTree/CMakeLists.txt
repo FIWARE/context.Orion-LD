@@ -34,7 +34,6 @@ SET (SOURCES
     kjTreeLog.cpp
     kjTimestampAdd.cpp
     kjArrayAdd.cpp
-    kjTreeFromCachedSubscription.cpp
     kjTreeFromPernotSubscription.cpp
     kjAttributeNormalizedToSimplified.cpp
     kjAttributeNormalizedToConcise.cpp

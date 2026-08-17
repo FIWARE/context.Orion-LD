@@ -30,11 +30,12 @@ extern "C"
 #include "kprom/kprom.h"                                            // kpromCounterInc
 }
 
-#include "cache/CachedSubscription.h"                               // CachedSubscription
-
-#include "orionld/common/orionldState.h"                            // promNotifications, promNotificationsFailed
+#include "orionld/types/SubCacheItem.h"                             // SubCacheItem
+#include "orionld/common/orionldState.h"                            // promNotifications, promNotificationsFailed, cSubCounters
 #include "orionld/common/traceLevels.h"                             // KTrace levels
 #include "orionld/mongoc/mongocSubCountersUpdate.h"                 // mongocSubCountersUpdate
+#include "orionld/subCache/subCacheItemCountersFlush.h"             // subCacheItemCountersFlush
+#include "orionld/subCache/subCacheItemStatusSet.h"                 // subCacheItemStatusSet
 #include "orionld/notifications/notificationFailure.h"              // Own interface
 
 
@@ -43,58 +44,38 @@ extern "C"
 //
 // notificationFailure -
 //
-void notificationFailure(CachedSubscription* subP, const char* errorReason, double notificationTime)
+void notificationFailure(SubCacheItem* subP, const char* errorReason, double notificationTime)
 {
-  KT_T(KtNotificationStats, "%s: notification failure (timestamp: %f)", subP->subscriptionId, notificationTime);
+  KT_T(KtNotificationStats, "%s: notification failure (timestamp: %f)", subP->subId, notificationTime);
   bool forcedToPause = false;
 
   subP->lastNotificationTime  = notificationTime;
   subP->lastFailure           = notificationTime;
   subP->consecutiveErrors    += 1;
-  subP->count                += 1;
-  subP->failures             += 1;
-  subP->dirty                += 1;
+  subP->deltas.timesSent     += 1;
+  subP->deltas.timesFailed   += 1;
 
   strncpy(subP->lastErrorReason, errorReason, sizeof(subP->lastErrorReason) - 1);
 
   // Force the subscription into "paused" due to too many consecutive errors
   if (subP->consecutiveErrors >= 3)
   {
-    KT_T(KtNotificationStats, "%s: force the subscription into PAUSE due to 3 consecutive errors", subP->subscriptionId);
-    subP->isActive = false;
-    subP->status   = "paused";
-    forcedToPause  = true;
+    KT_T(KtNotificationStats, "%s: force the subscription into PAUSE due to 3 consecutive errors", subP->subId);
+    subCacheItemStatusSet(subP, "paused");
+    forcedToPause = true;
   }
 
   kpromCounterInc(promNotifications);
   kpromCounterInc(promNotificationsFailed);
 
-  KT_T(KtNotificationStats, "%s: dirty: %d, cSubCounters: %d", subP->subscriptionId, subP->dirty, cSubCounters);
-
   //
-  // Flush to DB?
-  // - If forcedToPause
-  // - If subP->dirty (number of counter updates since last flush) >= cSubCounters
-  //   - AND cSubCounters != 0
+  // Flush to the database? Always if the subscription was just paused - that is
+  // not a counter, it is a state change the next broker restart must see.
   //
-  if (((cSubCounters != 0) && (subP->dirty >= cSubCounters)) || (forcedToPause == true))
-  {
-    mongocSubCountersUpdate(subP->tenantP,
-                            subP->subscriptionId,
-                            (subP->ldContext != ""),
-                            subP->count,
-                            subP->failures,
-                            0,
-                            subP->lastNotificationTime,
-                            subP->lastSuccess,
-                            subP->lastFailure,
-                            forcedToPause);
-    subP->dirty       = 0;
-    subP->dbCount    += subP->count;
-    subP->count       = 0;
-    subP->dbFailures += subP->failures;
-    subP->failures    = 0;
-  }
+  if (((cSubCounters != 0) && (subP->deltas.timesSent >= cSubCounters)) || (forcedToPause == true))
+    subCacheItemCountersFlush(orionldState.tenantP, subP, forcedToPause);
+  else
+    KT_T(KtNotificationStats, "%s: no counter flush (cSubCounters: %d, timesSent: %d)", subP->subId, cSubCounters, subP->deltas.timesSent);
 }
 
 
@@ -175,7 +156,7 @@ void notificationFailure(PernotSubscription* pSubP, const char* errorReason, dou
 //
 // notificationFailure -
 //
-void notificationFailure(CachedSubscription* cSubP, PernotSubscription* pSubP, const char* errorReason, double notificationTime)
+void notificationFailure(SubCacheItem* cSubP, PernotSubscription* pSubP, const char* errorReason, double notificationTime)
 {
   if (cSubP != NULL)
     notificationFailure(cSubP, errorReason, notificationTime);

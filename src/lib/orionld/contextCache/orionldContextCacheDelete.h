@@ -30,8 +30,9 @@
 
 // -----------------------------------------------------------------------------
 //
-// orionldContextCacheDelete -
+// orionldContextCacheDelete - remove an @context from the cache, and (unless it got
+//                             here over HA) from the database
 //
-extern bool orionldContextCacheDelete(const char* id);
+extern bool orionldContextCacheDelete(const char* id, bool alsoFromDb);
 
 #endif  // SRC_LIB_ORIONLD_CONTEXTCACHE_ORIONLDCONTEXTCACHEDELETE_H_

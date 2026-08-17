@@ -33,6 +33,7 @@ extern "C"
 #include "kjson/kjRenderSize.h"                                // kjFastRenderSize
 #include "kjson/kjParse.h"                                     // kjParse
 #include "kjson/kjStringValueLookupInArray.h"                  // kjStringValueLookupInArray
+#include "kjson/kjStringArraySort.h"                           // kjStringArraySort
 }
 
 #include "orionld/types/DistOp.h"                              // DistOp
@@ -577,6 +578,14 @@ bool orionldPostBatchDelete(void)
   // o If no errors - 204
   // o if any error - 207
   //
+  //
+  // "success" is merged in the order the registrants answer (curl_multi_info_read),
+  // so a distributed batch delete hands back the same set of entity ids in a
+  // different order from one run to the next. Order carries no meaning here - sort
+  // it, exactly as responseFix() sorts "updated".
+  //
+  kjStringArraySort(responseSuccess);
+
   if (responseErrors->value.firstChildP == NULL)
     orionldState.httpStatusCode  = 204;
   else

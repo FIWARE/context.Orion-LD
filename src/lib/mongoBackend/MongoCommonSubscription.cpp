@@ -338,7 +338,8 @@ void setCondsAndInitialNotify
   const char*                      xauthToken,
   const std::string&               fiwareCorrelator,
   BSONObjBuilder*                  b,
-  bool*                            notificationDone
+  bool*                            notificationDone,
+  bool                             notify
 )
 {
   //
@@ -365,10 +366,19 @@ void setCondsAndInitialNotify
                                             status,
                                             fiwareCorrelator,
                                             notifAttributesV,
-                                            blacklist);
+                                            blacklist,
+                                            notify);
 
-  b->append(CSUB_CONDITIONS, conds);
-  KT_T(KtLegacy, "Subscription conditions: %s", conds.toString().c_str());
+  //
+  // 'b' is NULL on the pass that ONLY notifies: the conditions were built (and
+  // stored) by the earlier pass, and are rebuilt here only because they are what
+  // says which attributes an initial notification is about.
+  //
+  if (b != NULL)
+  {
+    b->append(CSUB_CONDITIONS, conds);
+    KT_T(KtLegacy, "Subscription conditions: %s", conds.toString().c_str());
+  }
 }
 
 

@@ -42,12 +42,16 @@ jobs:
           echo "Changed files:"
           echo "$CHANGED"
 
-          # Check if any src/, test/functionalTest/, workflow, or harness files changed
-          if echo "$CHANGED" | grep -qE '^(src/|test/functionalTest/|\.github/workflows/functional\.yml)'; then
+          # Run whenever anything that can change the binary or the test environment changes:
+          #   src/           - the broker itself
+          #   scripts/       - the test harness environment (requirements.txt, accumulator-server.py, testEnv.sh, ...)
+          #   CMakeLists.txt, makefile - the build
+          #   test/functionalTest/, the workflow itself
+          if echo "$CHANGED" | grep -qE '^(src/|scripts/|test/functionalTest/|CMakeLists\.txt|makefile|\.github/workflows/functional\.yml)'; then
             echo "Source, functional test, or workflow changes detected - running tests"
             echo "should_run=true" >> $GITHUB_OUTPUT
           else
-            echo "::notice::Skipping functional tests - no changes in src/, test/functionalTest/, or workflow"
+            echo "::notice::Skipping functional tests - no changes in src/, scripts/, test/functionalTest/, the build files, or the workflow"
             echo "should_run=false" >> $GITHUB_OUTPUT
           fi
 

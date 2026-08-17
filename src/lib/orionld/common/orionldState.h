@@ -352,6 +352,7 @@ typedef struct OrionldConnectionState
   OrionldPhase            phase;
   bool                    orionldErrorDone;          // Don't override error - don't call orionldError()
   bool                    distributed;               // Depends on a URI param, but can be modified (to false) via an HTTP header
+  bool                    haApply;                   // Applying a change ANOTHER instance already made: it is in the DB - never write it back, never download
   MHD_Connection*         mhdConnection;
   char                    clientIp[64];              // IP address of the requester
   char                    preallocReqBuf[4 * 1024];  // Buffer of incoming payload body - no need to call malloc for "small" requests
@@ -628,6 +629,7 @@ extern Kjson*            kjsonP;
 extern uint16_t          portNo;
 extern char              dbHost[];                 // From orionld.cpp
 extern char              dbName[];                 // From orionld.cpp
+extern char              haChannel[];              // From orionld.cpp - the -ha option
 extern int               dbNameLen;
 extern char              dbUser[];                 // From orionld.cpp
 extern char              dbPwd[];                  // From orionld.cpp

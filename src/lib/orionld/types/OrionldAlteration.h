@@ -34,9 +34,9 @@ extern "C"
 
 // -----------------------------------------------------------------------------
 //
-// CachedSubscription - can't include subCache.h as subCache.h includes this header ...
+// SubCacheItem - can't include SubCacheItem.h, it includes this header (via QNode) ...
 //
-struct CachedSubscription;
+struct SubCacheItem;
 
 
 
@@ -101,7 +101,7 @@ typedef struct OrionldAlterationMatch
 {
   OrionldAlteration*              altP;
   OrionldAttributeAlteration*     altAttrP;
-  CachedSubscription*             subP;
+  struct SubCacheItem*            subP;
   struct OrionldAlterationMatch*  next;
 } OrionldAlterationMatch;
 

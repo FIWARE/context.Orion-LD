@@ -23,6 +23,7 @@
 * Author: Ken Zangelin
 */
 #include <unistd.h>                                              // close
+#include <string.h>                                              // strerror
 #include <sys/uio.h>                                             // iovec, writev
 
 extern "C"
@@ -34,7 +35,7 @@ extern "C"
 #include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/orionldServerConnect.h"                 // orionldServerConnect
 #include "orionld/notifications/notificationFailure.h"           // notificationFailure
-#include "cache/CachedSubscription.h"                            // CachedSubscription
+#include "orionld/types/SubCacheItem.h"                           // SubCacheItem
 
 
 
@@ -44,7 +45,7 @@ extern "C"
 //
 int httpNotify
 (
-  CachedSubscription*  cSubP,
+  SubCacheItem*        cSubP,
   PernotSubscription*  pSubP,
   const char*          subscriptionId,
   const char*          ip,

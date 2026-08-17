@@ -22,11 +22,11 @@
 *
 * Author: Ken Zangelin
 */
-#include "cache/CachedSubscription.h"                        // CachedSubscription
-
 extern "C"
 {
 #include "kjson/KjNode.h"                                    // KjNode
 }
 
-extern bool geoMatch(CachedSubscription* subP, KjNode* finalApiEntityP);
+#include "orionld/types/SubCacheItem.h"                      // SubCacheItem
+
+extern bool geoMatch(SubCacheItem* sciP, KjNode* finalApiEntityP);

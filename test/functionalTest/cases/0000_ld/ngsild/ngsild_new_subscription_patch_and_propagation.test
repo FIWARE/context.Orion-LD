@@ -365,7 +365,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
     ],
     "expiresAt": "2034-06-01T10:00:00.123Z",
     "geoQ": {
-        "coordinates": "5,5",
+        "coordinates": [
+            5,
+            5
+        ],
         "geometry": "Point",
         "georel": "near;maxDistance==100"
     },

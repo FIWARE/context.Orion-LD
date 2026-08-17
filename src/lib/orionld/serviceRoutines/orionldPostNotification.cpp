@@ -22,9 +22,6 @@
 *
 * Author: Ken Zangelin
 */
-#include <string>                                              // std::string
-#include <map>                                                 // std::map
-
 extern "C"
 {
 #include "ktrace/kTrace.h"                                     // KT_*
@@ -33,9 +30,8 @@ extern "C"
 #include "kjson/kjBuilder.h"                                   // kjChildRemove
 }
 
-#include "cache/CachedSubscription.h"                          // CachedSubscription
-#include "cache/subCache.h"                                    // subCacheItemLookup
-
+#include "orionld/types/SubCacheItem.h"                        // SubCacheItem
+#include "orionld/subCache/subCacheItemLookup.h"               // subCacheItemLookup
 #include "orionld/types/HttpKeyValue.h"                        // HttpKeyValue
 #include "orionld/types/OrionLdRestService.h"                  // OrionLdRestService
 #include "orionld/common/orionldState.h"                       // orionldState
@@ -45,41 +41,6 @@ extern "C"
 #include "orionld/http/httpRequestHeaderAdd.h"                 // httpRequestHeaderAdd
 #include "orionld/kjTree/kjTreeLog.h"                          // KT_TREE
 #include "orionld/serviceRoutines/orionldPostNotification.h"   // Own interface
-
-
-#if 0
-// -----------------------------------------------------------------------------
-//
-// subParentLookup -
-//
-static CachedSubscription* subParentLookup(char* subordinateSubId)
-{
-  KT_T(KtSubordinate, "Looking for subordinate subscription '%s' in the subscription cache", subordinateSubId);
-  for (CachedSubscription* cSubP = subCacheHeadGet(); cSubP != NULL; cSubP = cSubP->next)
-  {
-    KT_T(KtSubordinate, "Checking subscription '%s' to see if it's the parent", cSubP->subscriptionId);
-    if (cSubP->subordinateP == NULL)
-    {
-      KT_T(KtSubordinate, "It's not - no subordinates for '%s'", cSubP->subscriptionId);
-      continue;
-    }
-
-    for (SubordinateSubscription* subordinateP = cSubP->subordinateP; subordinateP != NULL; subordinateP = subordinateP->next)
-    {
-      KT_T(KtSubordinate, "Comparing '%s' with '%s' of parent '%s'", subordinateP->subscriptionId, subordinateSubId, cSubP->subscriptionId);
-      if (strcmp(subordinateP->subscriptionId, subordinateSubId) == 0)
-      {
-        KT_T(KtSubordinate, "Found it!");
-        return cSubP;
-      }
-    }
-  }
-
-  KT_T(KtSubordinate, "No parent subscription found");
-  return NULL;
-}
-#endif
-
 
 
 // ----------------------------------------------------------------------------
@@ -104,8 +65,8 @@ bool orionldPostNotification(void)
 
   KT_TREE(orionldState.requestTree, "notification", KtSubordinate);
 
-  CachedSubscription* cSubP = subCacheItemLookup(orionldState.tenantP->tenant, parentSubId);
-  if (cSubP == NULL)
+  SubCacheItem* sciP = subCacheItemLookup(orionldState.tenantP->subCache, parentSubId);
+  if (sciP == NULL)
   {
     KT_W("Got a notification from a remote subscription '%s' on IP:PORT, but, its local parent subscription was not found", parentSubId);
     return false;
@@ -131,8 +92,8 @@ bool orionldPostNotification(void)
   uriParams[0].key   = (char*) "subscriptionId";
   uriParams[0].value = (char*) parentSubId;
 
-  snprintf(url, sizeof(url), "%s://%s:%d/%s", cSubP->protocolString, cSubP->ip, cSubP->port, cSubP->rest);
-  KT_T(KtSubordinate, "ip:  '%s'", cSubP->ip);
+  snprintf(url, sizeof(url), "%s://%s:%d/%s", sciP->protocolString, sciP->ip, sciP->port, sciP->rest);
+  KT_T(KtSubordinate, "ip:  '%s'", sciP->ip);
   KT_T(KtSubordinate, "url: '%s'", url);
 
 
@@ -171,11 +132,24 @@ bool orionldPostNotification(void)
     ++headerIx;
   }
 
-  // Headers from "receiverInfo" (differently stored in CachedSubscription)
-  for (std::map<std::string, std::string>::const_iterator it = cSubP->httpInfo.headers.begin(); it != cSubP->httpInfo.headers.end(); ++it)
+  //
+  // Headers from "receiverInfo" - straight out of the subscription tree, which is
+  // the source of truth for everything the notification path needs
+  //
+  KjNode* notificationP = kjLookup(sciP->subTree, "notification");
+  KjNode* endpointP     = (notificationP != NULL)? kjLookup(notificationP, "endpoint")     : NULL;
+  KjNode* receiverInfoP = (endpointP     != NULL)? kjLookup(endpointP,     "receiverInfo") : NULL;
+
+  for (KjNode* kvP = (receiverInfoP != NULL)? receiverInfoP->value.firstChildP : NULL; kvP != NULL; kvP = kvP->next)
   {
-    const char* key    = it->first.c_str();
-    char*       value  = (char*) it->second.c_str();
+    KjNode* keyP   = kjLookup(kvP, "key");
+    KjNode* valueP = kjLookup(kvP, "value");
+
+    if ((keyP == NULL) || (valueP == NULL))
+      continue;
+
+    const char* key    = keyP->value.s;
+    char*       value  = valueP->value.s;
 
     if (headerIx >= 19)
       KT_W("Too many headers (change and recompile for more than 20 headers) - skipping '%s'", key);
@@ -195,7 +169,7 @@ bool orionldPostNotification(void)
     ++headerIx;
   }
 
-  httpStatus = httpRequest(cSubP->ip, "POST", url, orionldState.requestTree, uriParams, headers, 5000, &responseTree, &pd);
+  httpStatus = httpRequest(sciP->ip, "POST", url, orionldState.requestTree, uriParams, headers, 5000, &responseTree, &pd);
   if (httpStatus != 200)
   {
     KT_W("httpRequest for a forwarded notification gave HTTP status %d", httpStatus);

@@ -50,6 +50,7 @@ typedef struct OrionldTenant
   char                   registrations[88];    // mongo registrations collection path.         E.g. "orion-openiot.registrations"
   char                   troeDbName[72];       // TRoE database name                           E.g. "orion_openiot"
   struct RegCache*       regCache;
+  struct SubCache*       subCache;
   struct OrionldTenant*  next;                 // Pointer to the next one in the linked list
 } OrionldTenant;
 

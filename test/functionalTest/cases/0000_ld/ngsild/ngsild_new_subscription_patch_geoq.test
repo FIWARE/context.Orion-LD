@@ -274,7 +274,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         }
     ],
     "geoQ": {
-        "coordinates": "3,3",
+        "coordinates": [
+            3,
+            3
+        ],
         "geometry": "Point",
         "geoproperty": "geo3",
         "georel": "near;maxDistance==3"
@@ -401,7 +404,10 @@ Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-contextREGEX(.*)
         }
     ],
     "geoQ": {
-        "coordinates": "8,8",
+        "coordinates": [
+            8,
+            8
+        ],
         "geometry": "Point",
         "geoproperty": "geo8",
         "georel": "near;maxDistance==8"

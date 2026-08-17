@@ -1,0 +1,5 @@
+{
+  "@context": [
+    "http://localhost:7080/jsonldContexts/cyclicA.jsonld"
+  ]
+}

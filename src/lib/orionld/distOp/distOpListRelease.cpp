@@ -36,6 +36,7 @@ extern "C"
 #include "orionld/types/DistOp.h"                                // DistOp
 #include "orionld/common/orionldState.h"                         // orionldState
 #include "orionld/common/traceLevels.h"                          // KTrace levels
+#include "orionld/regCache/regCacheSem.h"                        // regCacheItemUnpin
 #include "orionld/distOp/distOpListRelease.h"                    // Own interface
 
 
@@ -82,6 +83,24 @@ void distOpListRelease(DistOp* distOpList)
       }
 
       // NOTE: distOpP->qNode points into the request's kalloc pool, not malloc'd - do not free
+    }
+
+    //
+    // Drop this DistOp's hold on its registration (pinned in distOpCreate). If the registration was
+    // deleted while this request was in flight, the item is already out of the cache and the last
+    // unpin - possibly this one - is what frees it.
+    //
+    //
+    // ⚠️ 'regP' itself is left alone. distOpLookupByRegId matches DistOps BY regP->regId, and DistOps
+    //    are looked up again (entity maps, distOpListItemCreate); clearing it made those lookups miss
+    //    and a second DistOp be created for the same registration - which showed up as extra
+    //    attributes and reordered entities in the forwarding functests. 'regPinned' is what keeps
+    //    the unpin idempotent.
+    //
+    if (distOpP->regPinned == true)
+    {
+      regCacheItemUnpin(distOpP->regP);
+      distOpP->regPinned = false;
     }
 
     distOpP = distOpP->next;

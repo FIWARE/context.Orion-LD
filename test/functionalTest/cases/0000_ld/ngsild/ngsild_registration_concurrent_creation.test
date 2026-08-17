@@ -1,0 +1,105 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Concurrent creation of registrations - none of them is lost by the registration cache
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -experimental
+
+--SHELL--
+
+#
+# Issue #1851.
+#
+# Registrations created at the same time all got their 201 and all reached mongo, but some of them
+# never made it into the registration cache: the cache's linked list was mutated with no lock at
+# all, and - worse - an item was linked into the list BEFORE its fields were filled in. Two writers
+# would drop one another's item, and a reader walking the list could meet an item whose regTree was
+# still NULL.
+#
+# ⚠️ The broker MUST run with -experimental here. Without it, GET /csourceRegistrations is served
+#    from mongo, which was always correct, and this test would pass no matter how broken the cache is.
+#
+# ⚠️ A GET without an explicit ?limit returns the default page of 20 - so ALWAYS pass a limit when
+#    counting, or 20-of-anything looks like the right answer.
+#
+# 01. Create 500 registrations, in five bursts of 100 at the same time
+# 02. Count the registrations in the cache - all 500 must be there
+# 03. GET one of them by id - it is intact and the broker is alive
+#
+
+echo "01. Create 500 registrations, in five bursts of 100 at the same time"
+echo "===================================================================="
+#
+# ⚠️ xargs -P, NOT a shell loop of 'curl &'. A loop that builds a payload per iteration spreads the
+#    requests over milliseconds and they never overlap - a first version of this test did exactly
+#    that and passed 8 times out of 8 against the BROKEN broker. The requests have to be fired
+#    together to collide inside regCacheItemAdd.
+#
+# ⚠️ This is a RACE - the test detects it often, not always. Measured against the unfixed broker:
+#    3 bursts of 40 caught it in 4 runs out of 8, 5 bursts of 100 in 7 out of 8. It is the SIZE of a
+#    burst that matters, not the number of them: the collision happens while many threads contend on
+#    a short list, so later bursts add much less than a wider first one. With the fix it passed 8
+#    out of 8. If this test ever fails, it is real - it has no false-failure mode.
+#
+for burst in 0 100 200 300 400
+do
+  seq $(( burst + 1 )) $(( burst + 100 )) | xargs -P 100 -I{} curl localhost:$CB_PORT/ngsi-ld/v1/csourceRegistrations -s -S -o /dev/null -H "Content-Type: application/json" -d '{"id":"urn:ngsi-ld:Reg:{}","type":"ContextSourceRegistration","information":[{"entities":[{"id":"urn:ngsi-ld:Device:{}","type":"Device"}]}],"endpoint":"http://test.com/"}'
+done
+echo
+echo
+
+
+echo "02. Count the registrations in the cache - all 500 must be there"
+echo "================================================================"
+curl "localhost:$CB_PORT/ngsi-ld/v1/csourceRegistrations?limit=1000" -s -S | grep -o 'urn:ngsi-ld:Reg:[0-9]*' | sort -u | wc -l
+echo
+echo
+
+
+echo "03. GET one of them by id - it is intact and the broker is alive"
+echo "================================================================"
+curl localhost:$CB_PORT/ngsi-ld/v1/csourceRegistrations/urn:ngsi-ld:Reg:7 -s -S -o /dev/null -w '%{http_code}\n'
+echo
+echo
+
+
+--REGEXPECT--
+01. Create 500 registrations, in five bursts of 100 at the same time
+====================================================================
+
+
+02. Count the registrations in the cache - all 500 must be there
+================================================================
+500
+
+
+03. GET one of them by id - it is intact and the broker is alive
+================================================================
+200
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB

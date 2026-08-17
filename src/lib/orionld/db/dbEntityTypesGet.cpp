@@ -373,14 +373,23 @@ KjNode* dbEntityTypesGet(OrionldProblemDetails* pdP, bool details, bool localOnl
   DbEntitiesGet                     entitiesGet                     = mongoCppLegacyEntitiesGet;
   DbEntityTypesFromRegistrationsGet entityTypesFromRegistrationsGet = mongoCppLegacyEntityTypesFromRegistrationsGet;
 
-  if (experimental == true)
+  //
+  // ⚠️ With -mongocOnly there IS no legacy driver: orionld.cpp skips mongoInit(),
+  // so the C++ driver's connection pool is never created and a call into it does
+  // not fail - it BLOCKS, forever, waiting for a connection that can never come.
+  // Nothing below may reach for it, and the 'legacy' request header cannot ask
+  // for a driver that isn't there.
+  //
+  // This is how an empty database used to hang GET /types: mongocEntityTypesGet
+  // returns NULL when there are no entities at all, 'local' stayed NULL, and the
+  // fallback below went straight into the uninitialised legacy driver. One single
+  // entity in the collection was enough to hide it.
+  //
+  if ((experimental == true) && ((orionldState.in.legacy == NULL) || (mongocOnly == true)))
   {
-    if (orionldState.in.legacy == NULL)
-    {
-      // get local entity types from the mongo db
-      local  = mongocEntityTypesGet(details, NULL);
-      entityTypesFromRegistrationsGet = mongocEntityTypesFromRegistrationsGet;
-    }
+    // get local entity types from the mongo db
+    local  = mongocEntityTypesGet(details, NULL);
+    entityTypesFromRegistrationsGet = mongocEntityTypesFromRegistrationsGet;
   }
 
   // if we dont have local types from mongoc, the local-pointer is still NULL
@@ -388,7 +397,7 @@ KjNode* dbEntityTypesGet(OrionldProblemDetails* pdP, bool details, bool localOnl
   // we assume that if local is NULL, we need to get the types from the legacy driver because -experimental was not used or
   // the orionldState.in.legacy was set
   // cannot completly remove legacy driver yet, because of tests with the legacy driver will fail
-  if (local == NULL)
+  if ((local == NULL) && (mongocOnly == false))
   {
     if (orionldState.uriParams.limit == 20)
       orionldState.uriParams.limit = 1000;  // Default limit of 20 is changed to 1000

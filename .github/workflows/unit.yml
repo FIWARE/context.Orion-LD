@@ -32,7 +32,7 @@ jobs:
           echo "$CHANGED"
 
           # Check if any src/ or test/unittests/ files changed
-          if echo "$CHANGED" | grep -qE '^(src/|test/unittests/)'; then
+          if echo "$CHANGED" | grep -qE '^(src/|scripts/|test/unittests/|CMakeLists\.txt|makefile|\.github/workflows/unit\.yml)'; then
             echo "Source or unit test changes detected - running tests"
             echo "should_run=true" >> $GITHUB_OUTPUT
           else

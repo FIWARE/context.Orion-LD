@@ -57,7 +57,7 @@ public:
 
   void sendNotifyContextRequest(NotifyContextRequest*            ncr,
                                 const ngsiv2::HttpInfo&          httpInfo,
-                                const std::string&               tenant,
+                                OrionldTenant*                   tenantP,
                                 const char*                      xauthToken,
                                 const std::string&               fiwareCorrelator,
                                 OrionldRenderFormat              renderFormat,
