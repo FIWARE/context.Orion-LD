@@ -239,6 +239,7 @@ char            troeUser[256];
 char            troePwd[256];
 char            troeSslMode[64];
 int             troePoolSize;
+int             troeStmtTimeout;
 bool            socketService;
 unsigned short  socketServicePort;
 bool            distributed;
@@ -345,6 +346,7 @@ bool            kTraceInfo       = false;
 #define TROE_HOST_USER         "username for troe database db server"
 #define TROE_HOST_PWD          "password for troe database db server"
 #define TROE_POOL_DESC         "size of the connection pool for TRoE Postgres database connections"
+#define TROE_STMT_TIMEOUT_DESC "statement_timeout in milliseconds for TRoE Postgres connections (0: no timeout)"
 #define TROE_SSL_DESC          "disable/allow/prefer/require/verify-ca/verify-full"
 #define SOCKET_SERVICE_DESC    "enable the socket service - accept connections via a normal TCP socket"
 #define SOCKET_SERVICE_PORT_DESC  "port to receive new socket service connections"
@@ -472,6 +474,7 @@ PaArgument paArgs[] =
   { "-troePwd",               troePwd,                  "TROE_PWD",                  PaString,  PaOpt,  _i "password",    PaNL,   PaNL,             TROE_HOST_PWD            },
   { "-troeSslMode",           troeSslMode,              "TROE_SSL_MODE",             PaString,  PaOpt,  _i "prefer",      PaNL,   PaNL,             TROE_SSL_DESC            },
   { "-troePoolSize",          &troePoolSize,            "TROE_POOL_SIZE",            PaInt,     PaOpt,  10,               0,      1000,             TROE_POOL_DESC           },
+  { "-troeStmtTimeout",       &troeStmtTimeout,         "TROE_STMT_TIMEOUT",         PaInt,     PaOpt,  60000,            0,      3600000,          TROE_STMT_TIMEOUT_DESC   },
   { "-noNotifyFalseUpdate",   &noNotifyFalseUpdate,     "NO_NOTIFY_FALSE_UPDATE",    PaBool,    PaOpt,  false,            false,  true,             NO_NOTIFY_FALSE_UPDATE_DESC  },
   { "-kafka",                 &kafkaSupport,            "KAFKA",                     PaBool,    PaOpt,  false,            false,  true,             KAFKA_DESC                   },
   { "-kafkaBrokerList",       kafkaBrokerList,          "KAFKA_BROKER_LIST",         PaString,  PaOpt,  _i "localhost:9092", PaNL, PaNL,            KAFKA_BROKER_DESC            },

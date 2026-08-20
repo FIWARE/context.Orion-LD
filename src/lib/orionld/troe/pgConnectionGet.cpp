@@ -32,7 +32,21 @@ extern "C"
 #include "orionld/common/orionldState.h"                       // troeHost, pgPortString, troeUser, troePwd
 #include "orionld/troe/pgConnect.h"                            // pgConnect
 #include "orionld/troe/pgConnectionPoolGet.h"                  // pgConnectionPoolGet
+#include "orionld/troe/pgSem.h"                                // pgSemWait, pgSemTimedWait
 #include "orionld/troe/pgConnectionGet.h"                      // Own interface
+
+
+
+// -----------------------------------------------------------------------------
+//
+// POOL_FREE_SLOT_TIMEOUT - seconds to wait for a pool slot to become free
+//
+// A slot is normally borrowed only for the duration of one SQL batch/query, so under
+// healthy conditions the wait is ~zero. The timeout only expires when every slot is
+// held by a long-running or stuck operation - in that case the caller gets NULL
+// (-> "no connection to postgres") instead of blocking forever.
+//
+#define POOL_FREE_SLOT_TIMEOUT 10
 
 
 
@@ -59,7 +73,48 @@ static char* wsTrim(char* s)
 
 // -----------------------------------------------------------------------------
 //
+// poolStateLog - log the state of every slot in the pool (for pool-exhaustion analysis)
+//
+// The backend PID makes the slot findable in pg_stat_activity on the postgres side:
+//   SELECT pid, state, query_start, query FROM pg_stat_activity WHERE pid = <backendPid>;
+//
+// Must be called with poolP->poolSem taken.
+// Busy slots are in concurrent use by their borrowing thread - PQstatus/PQtransactionStatus/
+// PQbackendPID only read plain fields of the PGconn, which is acceptable for diagnostics.
+//
+static void poolStateLog(PgConnectionPool* poolP)
+{
+  for (int ix = 0; ix < poolP->items; ix++)
+  {
+    PgConnection* cP = poolP->connectionV[ix];
+
+    if (cP == NULL)
+      KT_E("  slot %02d: empty", ix);
+    else if (cP->connectionP == NULL)
+      KT_E("  slot %02d: busy=%d, uses=%d, not connected", ix, cP->busy, cP->uses);
+    else
+    {
+      KT_E("  slot %02d: busy=%d, uses=%d, pgStatus=%d, txStatus=%d, backendPid=%d",
+           ix, cP->busy, cP->uses, PQstatus(cP->connectionP), PQtransactionStatus(cP->connectionP), PQbackendPID(cP->connectionP));
+    }
+  }
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // pgConnectionGet -
+//
+// Slot accounting:
+//   poolP->queueSem counts the free slots of the pool (initialized to poolP->items).
+//   - Borrowing a connection consumes one unit (the sem_wait at the top).
+//   - The unit is given back by pgConnectionRelease - or right here, on every path
+//     that fails AFTER the wait and thus does NOT hand out a slot.
+//   poolP->poolSem is a binary semaphore protecting connectionV[] and the busy flags.
+//
+// NEVER wait on queueSem while holding poolSem - the release of queueSem units
+// (pgConnectionRelease) takes poolSem, so that order would deadlock.
 //
 PgConnection* pgConnectionGet(const char* db)
 {
@@ -77,17 +132,28 @@ PgConnection* pgConnectionGet(const char* db)
   if (_db != NULL)
     _db = wsTrim(_db);
 
-  // FIXME: Need a semaphore to protect the list of pools
   PgConnectionPool* poolP = pgConnectionPoolGet(_db);  // pgConnectionPoolGet creates the pool if it doesn't already exist
 
   if (poolP == NULL)
     KT_RE(NULL, "unable to obtain a connection pool reference");
 
-  // Await a free slot in the pool
-  sem_wait(&poolP->queueSem);
+  //
+  // Await a free slot in the pool (bounded - a wedged pool must not block callers forever)
+  //
+  if (pgSemTimedWait(&poolP->queueSem, POOL_FREE_SLOT_TIMEOUT) == false)
+  {
+    KT_E("TRoE connection pool for '%s' exhausted - all %d slots busy for more than %d seconds. Slot state:",
+         (poolP->db == NULL)? "(default)" : poolP->db, poolP->items, POOL_FREE_SLOT_TIMEOUT);
+
+    pgSemWait(&poolP->poolSem);
+    poolStateLog(poolP);
+    sem_post(&poolP->poolSem);
+
+    return NULL;
+  }
 
   // Await the right to modify the pool
-  sem_wait(&poolP->poolSem);
+  pgSemWait(&poolP->poolSem);
 
   // Search for a free but already connected PgConnection in the pool
   for (int ix = 0; ix < poolP->items; ix++)
@@ -112,7 +178,8 @@ PgConnection* pgConnectionGet(const char* db)
         // if still no connection
         if (pgStatus != CONNECTION_OK)
         {
-          // we free this pointer that it can be used in the next call of pgConnectionGet
+          // close the dead connection and free the slot, so it can be reconnected in a later call
+          PQfinish(cP->connectionP);
           free(poolP->connectionV[ix]);
           poolP->connectionV[ix] = NULL;
           KT_W("Connection failed, pointer of item %d was re-set to NULL (%p)", ix, poolP->connectionV[ix]);
@@ -125,7 +192,6 @@ PgConnection* pgConnectionGet(const char* db)
       cP->busy = true;
 
       sem_post(&poolP->poolSem);
-      sem_post(&poolP->queueSem);
 
       cP->uses += 1;
       return cP;
@@ -145,15 +211,16 @@ PgConnection* pgConnectionGet(const char* db)
       // Pity doing this with the semaphore taken ...
       // But, there's no other choice as the slot must be marked as 'busy' before the sem can be released
       //
-      poolP->connectionV[ix] = (PgConnection*)calloc(1, sizeof(PgConnection));
+      poolP->connectionV[ix] = (PgConnection*) calloc(1, sizeof(PgConnection));
       if (poolP->connectionV[ix] == NULL)
       {
         sem_post(&poolP->poolSem);
-        sem_post(&poolP->queueSem);
+        sem_post(&poolP->queueSem);  // give the consumed free-slot unit back
         KT_RE(NULL, "Out of memory (unable to allocate room for a Postgres Connection - %d bytes)", sizeof(PgConnection));
       }
 
       cP = poolP->connectionV[ix];
+      cP->poolP = poolP;
       break;
     }
     else if (poolP->connectionV[ix]->busy == false)
@@ -168,10 +235,15 @@ PgConnection* pgConnectionGet(const char* db)
     cP->busy = true;  // Now the pool item 'cP' is ours - after this we can let go of the semaphore
 
   sem_post(&poolP->poolSem);
-  sem_post(&poolP->queueSem);
 
   if (cP == NULL)
   {
+    //
+    // Can't happen: queueSem guarantees that at least one slot is free (empty or not busy).
+    // Kept as a guard - and the consumed unit is given back so the pool doesn't shrink.
+    //
+    sem_post(&poolP->queueSem);
+
     KT_W("Internal Error (bug in postgres connection pool logic?)");
     KT_W("poolP at %p", poolP);
     KT_W("poolP->items: %d", poolP->items);
@@ -185,7 +257,11 @@ PgConnection* pgConnectionGet(const char* db)
     cP->connectionP = pgConnect(_db);
     if (cP->connectionP == NULL)
     {
+      pgSemWait(&poolP->poolSem);
       cP->busy = false;  // So the slot can be used again!
+      sem_post(&poolP->poolSem);
+      sem_post(&poolP->queueSem);  // give the consumed free-slot unit back
+
       KT_RE(NULL, "Database Error (unable to connect to postgres(%s))", _db);
     }
     else
@@ -194,17 +270,17 @@ PgConnection* pgConnectionGet(const char* db)
       ConnStatusType pgStatus = PQstatus(cP->connectionP);
       if (pgStatus != CONNECTION_OK)
       {
-        // get PG error message before freeing
-        char* errMsg = PQerrorMessage(cP->connectionP);
+        // log the PG error message before closing the connection (the string lives inside the PGconn)
+        KT_E("Database Connection could not be established (%s): %s", _db, PQerrorMessage(cP->connectionP));
 
-        sem_wait(&poolP->poolSem);
-        sem_wait(&poolP->queueSem);
+        pgSemWait(&poolP->poolSem);
 
-        // find the connection pointer in the pool and free it
+        // find the connection pointer in the pool, close its connection and free it
         for (int ix = 0; ix < poolP->items; ix++)
         {
           if (poolP->connectionV[ix] == cP)
           {
+            PQfinish(cP->connectionP);
             free(poolP->connectionV[ix]);
             poolP->connectionV[ix] = NULL;
             break;
@@ -212,9 +288,9 @@ PgConnection* pgConnectionGet(const char* db)
         }
 
         sem_post(&poolP->poolSem);
-        sem_post(&poolP->queueSem);
+        sem_post(&poolP->queueSem);  // give the consumed free-slot unit back
 
-        KT_RE(NULL, "Database Connection could not be established (%s): %s", _db, errMsg);
+        return NULL;
       }
     }
   }

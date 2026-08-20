@@ -49,7 +49,12 @@ void pgCommands(char* sql[], int commands)
   PgConnection* connectionP = pgConnectionGet(orionldState.tenantP->troeDbName);
 
   if ((connectionP == NULL) || (connectionP->connectionP == NULL))
+  {
+    if (connectionP != NULL)  // half-initialized slot - still ours, don't leak it
+      pgConnectionRelease(connectionP);
+
     KT_RVE("no connection to postgres");
+  }
 
   if (pgTransactionBegin(connectionP->connectionP) != true)
   {
