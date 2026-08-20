@@ -74,6 +74,10 @@ void pgCommands(char* sql[], int commands)
   {
     orionldState.troeError = true;  // make the TRoE write failure observable to the caller
     troeErrorStringSet("no connection to Postgres");
+
+    if (connectionP != NULL)  // half-initialized slot - still ours, don't leak it
+      pgConnectionRelease(connectionP);
+
     KT_RVE("no connection to postgres");
   }
 

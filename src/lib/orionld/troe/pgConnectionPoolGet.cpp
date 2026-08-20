@@ -23,6 +23,7 @@
 * Author: Ken Zangelin
 */
 #include <string.h>                                            // strcmp
+#include <pthread.h>                                           // pthread_mutex_t
 
 extern "C"
 {
@@ -39,22 +40,40 @@ extern "C"
 
 // -----------------------------------------------------------------------------
 //
+// poolListMutex - protects the linked list of connection pools
+//
+// Without it, two threads (e.g. the Kafka consumers) that use a database for the
+// first time simultaneously would both create a pool for it - one insert gets lost,
+// and list walkers can see a torn list.
+//
+static pthread_mutex_t poolListMutex = PTHREAD_MUTEX_INITIALIZER;
+
+
+
+// -----------------------------------------------------------------------------
+//
 // pgConnectionPoolGet -
 //
 PgConnectionPool* pgConnectionPoolGet(char* db)
 {
   //
   // The default db (with name NULL) has its pool as the very first pool in the pool list
+  // (created before any threads exist - never modified after that)
   //
   if (db == NULL)
     return pgPoolMaster;
+
+  pthread_mutex_lock(&poolListMutex);
 
   PgConnectionPool* poolP = pgPoolMaster->next;
 
   while (poolP != NULL)
   {
     if (strcmp(poolP->db, db) == 0)
+    {
+      pthread_mutex_unlock(&poolListMutex);
       return poolP;
+    }
 
     poolP = poolP->next;
   }
@@ -62,8 +81,13 @@ PgConnectionPool* pgConnectionPoolGet(char* db)
   // No pool found, will have to create a new one
   poolP = pgConnectionPoolCreate(db, pgPoolMaster->items);
   if (poolP == NULL)
+  {
+    pthread_mutex_unlock(&poolListMutex);
     KT_RE(NULL, "Database Error (unable to create connection pool for db '%s')", db);
+  }
 
   pgConnectionPoolInsert(poolP);
+  pthread_mutex_unlock(&poolListMutex);
+
   return poolP;
 }

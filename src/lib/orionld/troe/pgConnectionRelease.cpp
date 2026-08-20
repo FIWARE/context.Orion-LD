@@ -22,7 +22,16 @@
 *
 * Author: Ken Zangelin
 */
+extern "C"
+{
+#include "ktrace/kTrace.h"                                     // KT_*
+}
+
+#include "orionld/common/pqHeader.h"                           // Postgres header
 #include "orionld/types/PgConnection.h"                        // PgConnection
+#include "orionld/types/PgConnectionPool.h"                    // PgConnectionPool
+#include "orionld/troe/pgSem.h"                                // pgSemWait
+#include "orionld/troe/pgConnectionRelease.h"                  // Own interface
 
 
 
@@ -30,8 +39,56 @@
 //
 // pgConnectionRelease - release a connection to a postgres database
 //
+// Cleanup is done while the slot is still ours (busy == true - no other thread touches it):
+// - A connection left inside a transaction (a failed COMMIT, a ROLLBACK that never ran)
+//   would poison the next borrower - every statement would fail with
+//   "current transaction is aborted". Roll it back here.
+// - A dead connection is closed right away, so its socket isn't leaked; the empty slot
+//   is re-connected by the next pgConnectionGet.
+//
+// Then the slot is handed back: busy=false under the pool semaphore, and one unit is
+// posted to queueSem - waking up a caller that's waiting for a free slot.
+//
 void pgConnectionRelease(PgConnection* connectionP)
 {
+  if (connectionP == NULL)
+    return;
+
+  PGconn* conn = connectionP->connectionP;
+
+  if (conn != NULL)
+  {
+    if (PQstatus(conn) != CONNECTION_OK)
+    {
+      PQfinish(conn);
+      connectionP->connectionP = NULL;
+    }
+    else
+    {
+      PGTransactionStatusType txStatus = PQtransactionStatus(conn);
+
+      if ((txStatus == PQTRANS_INTRANS) || (txStatus == PQTRANS_INERROR))
+      {
+        KT_W("connection released inside a transaction (status: %d) - rolling back", txStatus);
+
+        PGresult* res = PQexec(conn, "ROLLBACK");
+        if (res != NULL)
+          PQclear(res);
+      }
+    }
+  }
+
   // Return the connection to its pool
-  connectionP->busy = false;
+  PgConnectionPool* poolP = connectionP->poolP;
+
+  if (poolP != NULL)
+  {
+    pgSemWait(&poolP->poolSem);
+    connectionP->busy = false;
+    sem_post(&poolP->poolSem);
+
+    sem_post(&poolP->queueSem);  // one more free slot
+  }
+  else
+    connectionP->busy = false;
 }

@@ -22,13 +22,15 @@
 *
 * Author: Ken Zangelin
 */
+#include <stdio.h>                                             // snprintf
+
 extern "C"
 {
 #include "ktrace/kTrace.h"                                     // KT_*
 }
 
 #include "orionld/common/pqHeader.h"                           // Postgres header
-#include "orionld/common/orionldState.h"                       // troeHost, pgPortString, troeUser, troePwd, troeSslMode
+#include "orionld/common/orionldState.h"                       // troeHost, pgPortString, troeUser, troePwd, troeSslMode, troeStmtTimeout
 #include "orionld/troe/pgConnect.h"                            // Own interface
 
 
@@ -37,19 +39,59 @@ extern "C"
 //
 // pgConnect - connect to a postgres database
 //
+// The connection parameters guard the connection pool against slots getting stuck:
+// - connect_timeout:   a connection attempt fails after 5s instead of blocking for
+//                      the OS TCP timeout (~2 minutes) while the pool slot is busy
+// - keepalives:        a silently dead peer (network drop, backup/migration of the
+//                      DB VM) is detected after ~60s instead of the kernel default
+//                      of >2 hours - the blocked libpq call returns, the pool slot
+//                      is freed
+// - statement_timeout: a hung/runaway query is cancelled server-side after
+//                      troeStmtTimeout ms (-troeStmtTimeout, 0 = disabled), instead
+//                      of holding the pool slot forever
+//
 PGconn* pgConnect(const char* db)
 {
   PGconn*  connectionP;
   int      attemptNo   = 0;
   int      maxAttempts = 30;
-  char*    keywords[8] = { (char*) "host",   (char*) "port",       (char*) "user",   (char*) "password",  (char*) "sslmode",  NULL, NULL, NULL };
-  char*    values[8]   = { troeHost,         pgPortString,         troeUser,         troePwd,             troeSslMode,        NULL, NULL, NULL };
+  char     options[128];
+  char*    keywords[13];
+  char*    values[13];
+  int      kIx         = 0;
+
+  keywords[kIx] = (char*) "host";                values[kIx] = troeHost;       ++kIx;
+  keywords[kIx] = (char*) "port";                values[kIx] = pgPortString;   ++kIx;
+  keywords[kIx] = (char*) "user";                values[kIx] = troeUser;       ++kIx;
+  keywords[kIx] = (char*) "password";            values[kIx] = troePwd;        ++kIx;
+  keywords[kIx] = (char*) "sslmode";             values[kIx] = troeSslMode;    ++kIx;
+  keywords[kIx] = (char*) "connect_timeout";     values[kIx] = (char*) "5";    ++kIx;
+  keywords[kIx] = (char*) "keepalives";          values[kIx] = (char*) "1";    ++kIx;
+  keywords[kIx] = (char*) "keepalives_idle";     values[kIx] = (char*) "30";   ++kIx;
+  keywords[kIx] = (char*) "keepalives_interval"; values[kIx] = (char*) "10";   ++kIx;
+  keywords[kIx] = (char*) "keepalives_count";    values[kIx] = (char*) "3";    ++kIx;
+
+  if (troeStmtTimeout > 0)
+  {
+    // idle_in_transaction_session_timeout: a session that begun a transaction but went
+    // silent releases its locks (and, via pgConnectionRelease, its pool slot works again)
+    snprintf(options, sizeof(options), "-c statement_timeout=%d -c idle_in_transaction_session_timeout=%d",
+             troeStmtTimeout, troeStmtTimeout * 2);
+
+    keywords[kIx] = (char*) "options";
+    values[kIx]   = options;
+    ++kIx;
+  }
 
   if (db != NULL)
   {
-    keywords[5] = (char*) "dbname";
-    values[5]   = (char*) db;
+    keywords[kIx] = (char*) "dbname";
+    values[kIx]   = (char*) db;
+    ++kIx;
   }
+
+  keywords[kIx] = NULL;
+  values[kIx]   = NULL;
 
   while (attemptNo < maxAttempts)
   {
