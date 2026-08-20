@@ -103,6 +103,7 @@ OrionldPhase      orionldPhase             = OrionldPhaseStartup;
 bool              orionldStartup           = true;
 char              coreContextDir[512];
 bool              migrate                  = false;   // -migrate CLI option (TRoE schema migration)
+int               troeStmtTimeout          = 60000;  // -troeStmtTimeout CLI option: statement_timeout [ms] for TRoE pg connections (0: none)
 char              pgPortString[16];
 char              mongoServerVersion[32];
 char              userAgentHeaderNoLF[64];     // "User-Agent: orionld/" + ORIONLD_VERSION - initialized in orionldServiceInit()

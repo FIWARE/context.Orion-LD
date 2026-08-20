@@ -236,7 +236,6 @@ char            troeUser[256];
 char            troePwd[256];
 char            troeSslMode[64];
 int             troePoolSize;
-int             troeStmtTimeout;
 bool            socketService;
 unsigned short  socketServicePort;
 bool            distributed;
