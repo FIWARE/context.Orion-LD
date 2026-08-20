@@ -73,13 +73,22 @@ typedef struct PgMigrationStep
 //
 static const PgMigrationStep pgMigrationSteps[] =
 {
+  //
+  // NOTE: 'attributes_correlator_index' is deliberately NOT (re)created by the migration. A migration
+  // step runs inside a transaction, so the index would be a plain (non-CONCURRENT) CREATE INDEX holding
+  // a write-blocking lock on 'attributes' for the entire build - during broker startup. On a large
+  // (billions of rows), partitioned or Citus-distributed 'attributes' that means hours of blocked writes
+  // or a cluster-wide stall. The correlator column is write-only (the broker never queries it; the index
+  // only serves operator/audit lookups), so the index is optional for the broker and is left to the
+  // operator, who can build it partial + CONCURRENTLY (partition/Citus-aware) at a suitable time. Fresh
+  // databases still get it via current.sql (instant on an empty table).
+  //
   {
     2,
-    "write correlator column on entities/attributes/subAttributes (+ index)",
+    "add the correlator column to entities/attributes/subAttributes",
     "ALTER TABLE entities      ADD COLUMN IF NOT EXISTS correlator TEXT;"
     "ALTER TABLE attributes    ADD COLUMN IF NOT EXISTS correlator TEXT;"
     "ALTER TABLE subAttributes ADD COLUMN IF NOT EXISTS correlator TEXT;"
-    "CREATE INDEX IF NOT EXISTS attributes_correlator_index ON attributes (correlator);"
   }
 };
 
@@ -301,6 +310,13 @@ bool pgSchemaMigrate(PGconn* connectionP, const char* dbName, bool schemaPreExis
     currentVersion = pgMigrationSteps[ix].toVersion;
     KT_I("TRoE schema migration: now at v%d", currentVersion);
   }
+
+  // The correlator index is intentionally left out of the migration (see the pgMigrationSteps note).
+  // Reaching here means -migrate was given and a migration ran, so remind the operator to build it.
+  if (ok)
+    KT_I("TRoE: 'attributes_correlator_index' is not created by the migration (a non-concurrent build "
+         "would block writes on a large 'attributes' table). If you query TRoE by correlator, create it "
+         "manually - partial + CONCURRENTLY (partition/Citus-aware).");
 
   pgSchemaUnlock(connectionP);
   return ok;
