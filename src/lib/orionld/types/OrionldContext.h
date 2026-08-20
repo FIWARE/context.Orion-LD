@@ -27,6 +27,7 @@
 */
 extern "C"
 {
+#include "kalloc/KAlloc.h"                         // KAlloc
 #include "khash/khash.h"                           // KHashTable
 #include "kjson/KjNode.h"                          // KjNode
 }
@@ -150,6 +151,7 @@ typedef struct OrionldContext
   int                   expansions;      // Number of expansions done with this @context
   int                   lookups;         // Number of NGSI-LD requests done using this @context
   bool                  keyValues;
+  KAlloc*               kallocP;         // The arena this context (and everything hanging off it) was allocated from
   OrionldContextInfo    context;
   OrionldContextOrigin  origin;
   OrionldContextKind    kind;

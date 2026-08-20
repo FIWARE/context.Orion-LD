@@ -38,6 +38,12 @@ extern "C"
 //
 // orionldContextFromTree -
 //
-extern OrionldContext* orionldContextFromTree(char* url, OrionldContextOrigin origin, char* id, KjNode* contextTreeP);
+// 'ephemeral' is for callers that resolve an inline @context over and over (once per entity of a
+// batch) and that keep the resulting context no longer than the current request. It puts the
+// context in the calling thread's own arena instead of the process-global one - see
+// orionldContextCreate. Only contexts without a URL can be ephemeral; contexts that end up in the
+// context cache ignore the flag.
+//
+extern OrionldContext* orionldContextFromTree(char* url, OrionldContextOrigin origin, char* id, KjNode* contextTreeP, bool ephemeral = false);
 
 #endif  // SRC_LIB_ORIONLD_CONTEXT_ORIONLDCONTEXTFROMTREE_H_

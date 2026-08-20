@@ -36,6 +36,7 @@ extern "C"
 #include "orionld/common/orionldState.h"                          // kalloc
 #include "orionld/db/dbGeoIndexAdd.h"                             // dbGeoIndexAdd
 #include "orionld/common/dotForEq.h"                              // dotForEq
+#include "orionld/common/kallocGuard.h"                          // kallocGuardedAlloc, kallocGuardedStrdup
 #include "orionld/mongoCppLegacy/mongoCppLegacyGeoIndexCreate.h"  // Own interface
 
 
@@ -47,8 +48,8 @@ extern "C"
 bool mongoCppLegacyGeoIndexCreate(OrionldTenant* tenantP, const char* attrLongName)
 {
   int         len          = 6 + strlen(attrLongName) + 6 + 1;              // "attrs." == 6, ".value" == 6, 1 for string-termination
-  char*       index        = kaAlloc(&kalloc, len);
-  char*       attrNameCopy = kaStrdup(&kalloc, attrLongName);  // To not destroy the original attrName
+  char*       index        = kallocGuardedAlloc(&kalloc, len);
+  char*       attrNameCopy = kallocGuardedStrdup(&kalloc, attrLongName);  // To not destroy the original attrName
   std::string err;
 
   dotForEq(attrNameCopy);
