@@ -500,7 +500,8 @@ typedef struct OrionldConnectionState
   // TRoE
   //
   bool                    noDbUpdate;            // If nothing changed in DB - troe is not invoked
-  bool                    troeError;              // Unused - TODO: remove
+  bool                    troeError;              // Set by pgCommands() when a TRoE (Postgres) write fails
+  char                    troeErrorString[512];   // The underlying Postgres error text for that failure (surfaced in the Kafka NACK)
   bool                    noTroe;                 // Skip TRoE for this request (e.g. local insert failed in a 207 distOp)
   KjNode*                 duplicateArray;
   KjNode*                 troeIgnoreV[20];
@@ -648,6 +649,7 @@ extern bool              troe;                     // From orionld.cpp
 extern bool              migrate;                  // From orionldState.cpp
 extern char              troeHost[256];            // From orionld.cpp
 extern int               troePort;                 // From orionld.cpp
+extern char              kafkaAckTopic[256];       // From orionld.cpp - Kafka ACK/NACK feedback topic (empty = disabled)
 extern char              troeUser[256];            // From orionld.cpp
 extern char              troePwd[256];             // From orionld.cpp
 extern char              troeSslMode[64];          // From orionld.cpp

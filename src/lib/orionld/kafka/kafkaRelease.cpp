@@ -31,6 +31,7 @@ extern "C"
 #include "ktrace/kTrace.h"                                     // KT_*
 }
 
+#include "orionld/kafka/kafkaAckProducer.h"                    // kafkaAckProducerRelease
 #include "orionld/kafka/kafkaRelease.h"                        // Own interface
 
 
@@ -75,6 +76,9 @@ void kafkaRelease(void)
     free(kafkaThreadIds);
     kafkaThreadIds = NULL;
   }
+
+  // Flush + close the ACK/NACK feedback producer (no-op if it was never enabled).
+  kafkaAckProducerRelease();
 
   KT_I("Kafka consumer shut down");
 }

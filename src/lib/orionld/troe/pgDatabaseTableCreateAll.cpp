@@ -34,6 +34,8 @@ extern "C"
 #include "orionld/troe/pgTransactionCommit.h"                  // pgTransactionCommit
 #include "orionld/troe/pgDatabaseTableCreateAll.h"             // Own interface
 
+#include <string.h>                                            // strcmp
+
 
 
 // -----------------------------------------------------------------------------
@@ -54,7 +56,39 @@ bool pgDatabaseTableCreateAll(PGconn* connectionP)
   if (res == NULL)
   {
     pgTransactionRollback(connectionP);
-    KT_RE(false, "Database Error (PQexec(%s): %s)", dbCreationCommand, PQresStatus(PQresultStatus(res)));
+    KT_RE(false, "Database Error (PQexec returned NULL for the TRoE schema creation)");
+  }
+
+  // A failed statement in the multi-command schema aborts the transaction but leaves a non-NULL result,
+  // so the status must be checked here or the failure is swallowed (which left the broker running with
+  // NO TRoE tables and no error logged - e.g. a GEOGRAPHY column when postgis is not installed).
+  //
+  // Exception: a "duplicate object" error is benign - the TRoE schema is simply already there (a broker
+  // restart, or a pre-provisioned db, exactly the "already exists" case the header note anticipates). The
+  // non-idempotent CREATE TYPEs make PQexec fail with duplicate_object; tolerate that, but let every
+  // OTHER failure (missing postgis, bad DDL, ...) abort startup loudly.
+  ExecStatusType execStatus = PQresultStatus(res);
+  if ((execStatus != PGRES_COMMAND_OK) && (execStatus != PGRES_TUPLES_OK))
+  {
+    const char* sqlState     = PQresultErrorField(res, PG_DIAG_SQLSTATE);
+    bool        alreadyExists = (sqlState != NULL) &&
+                                ((strcmp(sqlState, "42710") == 0) ||   // duplicate_object   (CREATE TYPE)
+                                 (strcmp(sqlState, "42P07") == 0) ||   // duplicate_table    (CREATE TABLE / INDEX)
+                                 (strcmp(sqlState, "42P06") == 0) ||   // duplicate_schema
+                                 (strcmp(sqlState, "42723") == 0));    // duplicate_function
+
+    if (alreadyExists)
+    {
+      KT_I("TRoE schema already present - reusing it (%s)", PQresultErrorMessage(res));
+      PQclear(res);
+      pgTransactionRollback(connectionP);   // the failed CREATE aborted the transaction - roll it back
+      return true;                          // the schema is already there; not a failure
+    }
+
+    KT_E("Database Error (TRoE schema creation failed - status: %s, error: %s)", PQresStatus(execStatus), PQresultErrorMessage(res));
+    PQclear(res);
+    pgTransactionRollback(connectionP);
+    return false;
   }
   PQclear(res);
 

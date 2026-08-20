@@ -30,6 +30,7 @@ extern "C"
 }
 
 #include "orionld/kafka/kafkaConsumerLoop.h"                   // kafkaConsumerLoop
+#include "orionld/kafka/kafkaAckProducer.h"                    // kafkaAckProducerInit
 #include "orionld/kafka/kafkaInit.h"                           // Own interface
 
 
@@ -134,6 +135,14 @@ bool kafkaInit(void)
     kafkaConsumerHandle = NULL;
     return false;
   }
+
+  //
+  // Initialize the ACK/NACK feedback producer (no-op unless -kafkaAckTopic is set). Done before the
+  // consumer threads start so it is ready for the first processed batch. A failure here is not fatal:
+  // the consumer still ingests; only the feedback is unavailable.
+  //
+  if (kafkaAckProducerInit() == false)
+    KT_W("kafkaInit: ACK/NACK producer init failed - continuing without Kafka feedback");
 
   //
   // Start consumer threads

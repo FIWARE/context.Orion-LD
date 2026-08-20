@@ -42,13 +42,20 @@ PGconn* pgConnect(const char* db)
   PGconn*  connectionP;
   int      attemptNo   = 0;
   int      maxAttempts = 30;
-  char*    keywords[8] = { (char*) "host",   (char*) "port",       (char*) "user",   (char*) "password",  (char*) "sslmode",  NULL, NULL, NULL };
-  char*    values[8]   = { troeHost,         pgPortString,         troeUser,         troePwd,             troeSslMode,        NULL, NULL, NULL };
+  // connect_timeout bounds a hung connect (network-level outage) so it can't block the TRoE writer
+  // indefinitely; the keepalives let libpq notice a silently dropped connection so PQstatus/PQexec
+  // report it BAD promptly (and the pool then reconnects) instead of reusing a half-open socket.
+  char*    keywords[12] = { (char*) "host",  (char*) "port",  (char*) "user",  (char*) "password",  (char*) "sslmode",
+                            (char*) "connect_timeout",  (char*) "keepalives",  (char*) "keepalives_idle",
+                            (char*) "keepalives_interval",  (char*) "keepalives_count",  NULL, NULL };
+  char*    values[12]   = { troeHost,        pgPortString,    troeUser,        troePwd,             troeSslMode,
+                            (char*) "5",                (char*) "1",           (char*) "30",
+                            (char*) "10",                   (char*) "3",                  NULL, NULL };
 
   if (db != NULL)
   {
-    keywords[5] = (char*) "dbname";
-    values[5]   = (char*) db;
+    keywords[10] = (char*) "dbname";
+    values[10]   = (char*) db;
   }
 
   while (attemptNo < maxAttempts)
