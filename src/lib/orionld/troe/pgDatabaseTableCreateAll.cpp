@@ -92,6 +92,8 @@ bool pgDatabaseTableCreateAll(PGconn* connectionP)
   }
   PQclear(res);
 
-  pgTransactionCommit(connectionP);
+  if (pgTransactionCommit(connectionP) == false)
+    KT_RE(false, "Database Error (the TRoE schema creation could not be committed)");
+
   return true;
 }

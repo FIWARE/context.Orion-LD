@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_TYPES_PGCONNECTION_H_
-#define SRC_LIB_ORIONLD_TYPES_PGCONNECTION_H_
+#ifndef SRC_LIB_ORIONLD_TROE_PGSEM_H_
+#define SRC_LIB_ORIONLD_TROE_PGSEM_H_
 
 /*
 *
-* Copyright 2021 FIWARE Foundation e.V.
+* Copyright 2026 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -23,24 +23,28 @@
 * For those usages not covered by this license please contact with
 * orionld at fiware dot org
 *
-* Author: Ken Zangelin
+* Author: Carsten Frey
 */
-#include "orionld/common/pqHeader.h"                           // PGconn
+#include <semaphore.h>                                         // sem_t
 
 
-
-struct PgConnectionPool;
 
 // -----------------------------------------------------------------------------
 //
-// PgConnection -
+// pgSemWait - sem_wait, restarted on signal interruption (EINTR)
 //
-typedef struct PgConnection
-{
-  bool                      busy;          // In use or free
-  PGconn*                   connectionP;   // the postgres connection
-  int                       uses;          // Number of times the connection has been used
-  struct PgConnectionPool*  poolP;         // The pool the connection belongs to - pgConnectionRelease returns the slot to it
-} PgConnection;
+extern void pgSemWait(sem_t* semP);
 
-#endif  // SRC_LIB_ORIONLD_TYPES_PGCONNECTION_H_
+
+
+// -----------------------------------------------------------------------------
+//
+// pgSemTimedWait - sem_timedwait with a relative timeout, restarted on EINTR
+//
+// RETURN VALUE
+//   true   the semaphore was acquired
+//   false  the timeout expired (or sem_timedwait failed)
+//
+extern bool pgSemTimedWait(sem_t* semP, int timeoutSecs);
+
+#endif  // SRC_LIB_ORIONLD_TROE_PGSEM_H_

@@ -654,6 +654,7 @@ extern char              troeUser[256];            // From orionld.cpp
 extern char              troePwd[256];             // From orionld.cpp
 extern char              troeSslMode[64];          // From orionld.cpp
 extern int               troePoolSize;             // From orionld.cpp
+extern int               troeStmtTimeout;          // From orionld.cpp - statement_timeout [ms] for TRoE pg connections (0: none)
 extern char              coreContextDir[512];      // From orionldState.cpp
 extern char              pgPortString[16];
 extern bool              distributed;              // From orionld.cpp

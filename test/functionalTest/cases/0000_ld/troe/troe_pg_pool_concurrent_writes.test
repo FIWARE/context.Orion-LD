@@ -1,0 +1,178 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+--NAME--
+TRoE pg connection pool - concurrent writes wait for a free slot instead of failing with "no connection to postgres"
+
+--SHELL-INIT--
+export BROKER=orionld
+dbInit CB
+pgInit $CB_DB_NAME
+brokerStart CB 100 IPv4 -troe -troePoolSize 1
+
+--SHELL--
+
+#
+# The pool is started with a single connection (-troePoolSize 1), so two overlapping
+# TRoE writes contend for one slot. A psql side-session holds an exclusive lock on the
+# 'entities' table for 4 seconds; the TRoE write of the first entity created while the
+# lock is held grabs the pool's only connection and blocks on that lock. The TRoE write
+# of the second entity then finds the pool empty.
+#
+# Before the pool fix, the second write failed instantly ("no connection to postgres",
+# "Internal Error (bug in postgres connection pool logic?)") and its TRoE data was lost.
+# Now it waits for the slot (up to 10s) and lands once the first write completes.
+#
+# Note: TRoE writes run in MHD's requestCompleted callback, i.e. AFTER the HTTP response,
+# so all creates below return 201 immediately - the contention is purely on the pool.
+#
+# 01. Create entity E0 - the TRoE write warms the single-connection pool
+# 02. Lock the TRoE 'entities' table for 4 seconds (psql side-session, in the background)
+# 03. Create entity E1 - its TRoE write takes the pool's only connection, blocked on the lock
+# 04. Create entity E2 - its TRoE write must wait for the pool slot (pre-fix: instant failure, data lost)
+# 05. See E0, E1 AND E2 in the temporal database
+# 06. See the attributes of all three entities in the temporal database
+#
+
+echo "01. Create entity E0 - the TRoE write warms the single-connection pool"
+echo "======================================================================"
+payload='{
+  "id": "urn:ngsi-ld:entities:E0",
+  "type": "T",
+  "P1": {
+    "type": "Property",
+    "value": 0
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+sleep 1  # let E0's asynchronous TRoE write land, establishing the pool's connection
+echo
+echo
+
+
+echo "02. Lock the TRoE 'entities' table for 4 seconds (psql side-session, in the background)"
+echo "========================================================================================"
+psql --host $PGHOST --port $PGPORT --username $PGUSER -d $CB_DB_NAME --quiet \
+     -c "BEGIN; LOCK TABLE entities IN ACCESS EXCLUSIVE MODE; SELECT pg_sleep(4); COMMIT;" > /dev/null 2>&1 &
+sleep 0.5  # make sure the lock is taken
+echo locked
+echo
+echo
+
+
+echo "03. Create entity E1 - its TRoE write takes the pool's only connection, blocked on the lock"
+echo "============================================================================================"
+payload='{
+  "id": "urn:ngsi-ld:entities:E1",
+  "type": "T",
+  "P1": {
+    "type": "Property",
+    "value": 1
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+sleep 0.5  # make sure E1's TRoE write is holding the pool connection before E2 arrives
+echo
+echo
+
+
+echo "04. Create entity E2 - its TRoE write must wait for the pool slot (pre-fix: instant failure, data lost)"
+echo "========================================================================================================"
+payload='{
+  "id": "urn:ngsi-ld:entities:E2",
+  "type": "T",
+  "P1": {
+    "type": "Property",
+    "value": 2
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+sleep 7  # the table lock releases after ~4s - by now both TRoE writes must have landed
+echo
+echo
+
+
+echo "05. See E0, E1 AND E2 in the temporal database"
+echo "=============================================="
+postgresCmd -sql "SELECT opMode,id,type FROM entities ORDER BY id"
+echo
+echo
+
+
+echo "06. See the attributes of all three entities in the temporal database"
+echo "====================================================================="
+postgresCmd -sql "SELECT opMode,entityId,id,number FROM attributes ORDER BY entityId"
+echo
+echo
+
+
+--REGEXPECT--
+01. Create entity E0 - the TRoE write warms the single-connection pool
+======================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E0
+
+
+
+02. Lock the TRoE 'entities' table for 4 seconds (psql side-session, in the background)
+========================================================================================
+locked
+
+
+03. Create entity E1 - its TRoE write takes the pool's only connection, blocked on the lock
+============================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E1
+
+
+
+04. Create entity E2 - its TRoE write must wait for the pool slot (pre-fix: instant failure, data lost)
+========================================================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:entities:E2
+
+
+
+05. See E0, E1 AND E2 in the temporal database
+==============================================
+opmode,id,type
+Create,urn:ngsi-ld:entities:E0,https://uri.etsi.org/ngsi-ld/default-context/T
+Create,urn:ngsi-ld:entities:E1,https://uri.etsi.org/ngsi-ld/default-context/T
+Create,urn:ngsi-ld:entities:E2,https://uri.etsi.org/ngsi-ld/default-context/T
+
+
+06. See the attributes of all three entities in the temporal database
+=====================================================================
+opmode,entityid,id,number
+Create,urn:ngsi-ld:entities:E0,https://uri.etsi.org/ngsi-ld/default-context/P1,0
+Create,urn:ngsi-ld:entities:E1,https://uri.etsi.org/ngsi-ld/default-context/P1,1
+Create,urn:ngsi-ld:entities:E2,https://uri.etsi.org/ngsi-ld/default-context/P1,2
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
+pgDrop $CB_DB_NAME
