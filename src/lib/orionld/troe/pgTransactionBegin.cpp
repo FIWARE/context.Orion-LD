@@ -44,7 +44,15 @@ bool pgTransactionBegin(PGconn* connectionP)
 
   res = PQexec(connectionP, "BEGIN");
   if (res == NULL)
-    KT_RE(false, "Database Error (PQexec(BEGIN): %s)", PQresStatus(PQresultStatus(res)));
+    KT_RE(false, "Database Error (PQexec(BEGIN): %s)", PQerrorMessage(connectionP));
+
+  if (PQresultStatus(res) != PGRES_COMMAND_OK)  // NULL result is not the only failure mode
+  {
+    KT_E("Database Error (BEGIN failed: %s)", PQresultErrorMessage(res));
+    PQclear(res);
+    return false;
+  }
+
   PQclear(res);
 
   return true;

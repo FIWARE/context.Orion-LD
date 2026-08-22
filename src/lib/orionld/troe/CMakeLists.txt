@@ -37,6 +37,7 @@ SET (SOURCES
     troePatchAttribute.cpp
     troePutAttribute.cpp
     pgInit.cpp
+    pgSem.cpp
     pgConnectionGet.cpp
     pgConnectionRelease.cpp
     pgDatabaseCreate.cpp

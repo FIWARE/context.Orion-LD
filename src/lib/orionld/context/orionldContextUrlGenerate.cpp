@@ -29,6 +29,7 @@ extern "C"
 
 #include "orionld/common/uuidGenerate.h"                         // uuidGenerate
 #include "orionld/common/orionldState.h"                         // orionldHostName, orionldHostNameLen
+#include "orionld/common/kallocGuard.h"                          // kallocGuardedAlloc
 #include "orionld/context/orionldContextUrlGenerate.h"           // Own interface
 
 
@@ -48,7 +49,7 @@ extern "C"
 char* orionldContextUrlGenerate(char** contextIdP)
 {
   int   urlSize   = 78 + orionldHostNameLen;
-  char* url       = (char*) kaAlloc(&kalloc, urlSize);
+  char* url       = (char*) kallocGuardedAlloc(&kalloc, urlSize);
   int   prefixLen = snprintf(url, urlSize, "http://%s:%d/ngsi-ld/v1/jsonldContexts/", orionldHostName, portNo);
 
   *contextIdP = uuidGenerate(&url[prefixLen], urlSize - prefixLen, NULL);

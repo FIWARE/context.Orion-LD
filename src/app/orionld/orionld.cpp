@@ -105,6 +105,7 @@ extern "C"
 #include "orionld/common/pqHeader.h"                          // Postgres header
 #include "orionld/common/orionldTenantInit.h"                 // orionldTenantInit
 #include "orionld/common/orionldState.h"                      // orionldStateRelease, kalloc, ...
+#include "orionld/common/kallocGuard.h"                       // kallocGuardInit
 #include "orionld/common/tenantList.h"                        // tenantList, tenant0
 #include "orionld/common/branchName.h"                        // ORIONLD_BRANCH
 #include "orionld/common/traceLevels.h"                       // KTrace levels
@@ -263,6 +264,7 @@ bool            kafkaSupport        = false;
 char            kafkaBrokerList[512];
 char            kafkaTopic[256];
 char            kafkaGroupId[256];
+char            kafkaAckTopic[256];
 int             kafkaBatchSize       = 100;
 int             kafkaBatchLingerMs   = 50;
 int             kafkaConsumerThreads = 2;
@@ -345,6 +347,7 @@ bool            kTraceInfo       = false;
 #define TROE_HOST_USER         "username for troe database db server"
 #define TROE_HOST_PWD          "password for troe database db server"
 #define TROE_POOL_DESC         "size of the connection pool for TRoE Postgres database connections"
+#define TROE_STMT_TIMEOUT_DESC "statement_timeout in milliseconds for TRoE Postgres connections (0: no timeout)"
 #define TROE_SSL_DESC          "disable/allow/prefer/require/verify-ca/verify-full"
 #define SOCKET_SERVICE_DESC    "enable the socket service - accept connections via a normal TCP socket"
 #define SOCKET_SERVICE_PORT_DESC  "port to receive new socket service connections"
@@ -380,6 +383,7 @@ bool            kTraceInfo       = false;
 #define KAFKA_BROKER_DESC      "comma-separated list of Kafka broker addresses"
 #define KAFKA_TOPIC_DESC       "Kafka topic to consume NGSI-LD entities from"
 #define KAFKA_GROUP_DESC       "Kafka consumer group ID"
+#define KAFKA_ACK_TOPIC_DESC   "Kafka topic for TRoE ingest ACK/NACK feedback (empty = disabled)"
 #define KAFKA_BATCH_SIZE_DESC  "max entities per micro-batch before flush to database"
 #define KAFKA_LINGER_DESC      "max milliseconds to wait for a micro-batch to fill"
 #define KAFKA_THREADS_DESC     "number of Kafka consumer threads"
@@ -472,11 +476,13 @@ PaArgument paArgs[] =
   { "-troePwd",               troePwd,                  "TROE_PWD",                  PaString,  PaOpt,  _i "password",    PaNL,   PaNL,             TROE_HOST_PWD            },
   { "-troeSslMode",           troeSslMode,              "TROE_SSL_MODE",             PaString,  PaOpt,  _i "prefer",      PaNL,   PaNL,             TROE_SSL_DESC            },
   { "-troePoolSize",          &troePoolSize,            "TROE_POOL_SIZE",            PaInt,     PaOpt,  10,               0,      1000,             TROE_POOL_DESC           },
+  { "-troeStmtTimeout",       &troeStmtTimeout,         "TROE_STMT_TIMEOUT",         PaInt,     PaOpt,  60000,            0,      3600000,          TROE_STMT_TIMEOUT_DESC   },
   { "-noNotifyFalseUpdate",   &noNotifyFalseUpdate,     "NO_NOTIFY_FALSE_UPDATE",    PaBool,    PaOpt,  false,            false,  true,             NO_NOTIFY_FALSE_UPDATE_DESC  },
   { "-kafka",                 &kafkaSupport,            "KAFKA",                     PaBool,    PaOpt,  false,            false,  true,             KAFKA_DESC                   },
   { "-kafkaBrokerList",       kafkaBrokerList,          "KAFKA_BROKER_LIST",         PaString,  PaOpt,  _i "localhost:9092", PaNL, PaNL,            KAFKA_BROKER_DESC            },
   { "-kafkaTopic",            kafkaTopic,               "KAFKA_TOPIC",               PaString,  PaOpt,  _i "orionld-entities", PaNL, PaNL,          KAFKA_TOPIC_DESC             },
   { "-kafkaGroupId",          kafkaGroupId,             "KAFKA_GROUP_ID",            PaString,  PaOpt,  _i "orionld-consumer", PaNL, PaNL,           KAFKA_GROUP_DESC             },
+  { "-kafkaAckTopic",         kafkaAckTopic,            "KAFKA_ACK_TOPIC",           PaString,  PaOpt,  _i "",               PaNL, PaNL,            KAFKA_ACK_TOPIC_DESC         },
   { "-kafkaBatchSize",        &kafkaBatchSize,          "KAFKA_BATCH_SIZE",          PaInt,     PaOpt,  100,              1,      10000,            KAFKA_BATCH_SIZE_DESC        },
   { "-kafkaBatchLingerMs",    &kafkaBatchLingerMs,      "KAFKA_BATCH_LINGER_MS",     PaInt,     PaOpt,  50,               1,      5000,             KAFKA_LINGER_DESC            },
   { "-kafkaConsumerThreads",  &kafkaConsumerThreads,    "KAFKA_CONSUMER_THREADS",    PaInt,     PaOpt,  2,                1,      32,               KAFKA_THREADS_DESC           },
@@ -1298,6 +1304,7 @@ int main(int argC, char* argV[])
   //
   kaInit(libLogFunction);
   kaBufferInit(&kalloc, kallocBuffer, sizeof(kallocBuffer), 32 * 1024, NULL, "Global KAlloc buffer");
+  kallocGuardInit();  // 'kalloc' is shared by all threads and kaAlloc() has no locking - see kallocGuard.h
 
 
   //

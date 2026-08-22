@@ -36,6 +36,7 @@ extern "C"
 #include "orionld/types/OrionldContextItem.h"                    // OrionldContextItem
 #include "orionld/types/OrionldContext.h"                        // OrionldContext, OrionldContextHashTables
 #include "orionld/common/orionldState.h"                         // orionldState, kalloc
+#include "orionld/common/kallocGuard.h"                          // kallocGuardTake, kallocGuardGive
 #include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/contextCache/orionldContextCache.h"            // ORIONLD_CONTEXT_CACHE_HASH_ARRAY_SIZE
 #include "orionld/context/orionldContextPrefixExpand.h"          // orionldContextPrefixExpand
@@ -45,10 +46,15 @@ extern "C"
 
 // -----------------------------------------------------------------------------
 //
-// orionldContextHashTablesFill -
+// hashTablesFill - the body of orionldContextHashTablesFill
 //
-bool orionldContextHashTablesFill(OrionldContext* contextP, KjNode* keyValueTree, OrionldProblemDetails* pdP)
+// Everything here is allocated from contextP->kallocP - either directly, or indirectly via
+// khashItemAdd, which allocates from the arena its hash table was created with. The caller holds the
+// kalloc guard for the whole duration, so the early returns don't have to release anything.
+//
+static bool hashTablesFill(OrionldContext* contextP, KjNode* keyValueTree, OrionldProblemDetails* pdP)
 {
+  KAlloc*                   kaP             = contextP->kallocP;
   OrionldContextHashTables* hashP           = &contextP->context.hash;
   KHashTable*               nameHashTableP  = hashP->nameHashTable;
   KHashTable*               valueHashTableP = hashP->valueHashTable;
@@ -69,9 +75,9 @@ bool orionldContextHashTablesFill(OrionldContext* contextP, KjNode* keyValueTree
       continue;
     }
 
-    OrionldContextItem* hiP = (OrionldContextItem*) kaAlloc(&kalloc, sizeof(OrionldContextItem));
+    OrionldContextItem* hiP = (OrionldContextItem*) kaAlloc(kaP, sizeof(OrionldContextItem));
 
-    hiP->name = kaStrdup(&kalloc, kvP->name);
+    hiP->name = kaStrdup(kaP, kvP->name);
     hiP->type = NULL;
 
     if (kvP->type == KjString)
@@ -88,7 +94,7 @@ bool orionldContextHashTablesFill(OrionldContext* contextP, KjNode* keyValueTree
         if (strcmp(itemP->name, "@id") == 0)
           hiP->id = itemP->value.s;  // Will be allocated in pass II
         else if (strcmp(itemP->name, "@type") == 0)
-          hiP->type = kaStrdup(&kalloc, itemP->value.s);
+          hiP->type = kaStrdup(kaP, itemP->value.s);
       }
     }
     else
@@ -117,7 +123,8 @@ bool orionldContextHashTablesFill(OrionldContext* contextP, KjNode* keyValueTree
 
   //
   // Second pass, to fix prefix expansion in the values, and to create the valueHashTable
-  // In this pass, the 'id' (value) is allocated on the global kalloc instance
+  // In this pass, the 'id' (value) is copied from the request thread's arena (that's where
+  // orionldContextPrefixExpand puts it) into the context's own arena
   //
   for (int slot = 0; slot < ORIONLD_CONTEXT_CACHE_HASH_ARRAY_SIZE; ++slot)
   {
@@ -134,7 +141,7 @@ bool orionldContextHashTablesFill(OrionldContext* contextP, KjNode* keyValueTree
       if (colonP != NULL)
         hashItemP->id = orionldContextPrefixExpand(contextP, hashItemP->id, colonP);
 
-      hashItemP->id = kaStrdup(&kalloc, hashItemP->id);
+      hashItemP->id = kaStrdup(kaP, hashItemP->id);
       khashItemAdd(valueHashTableP, hashItemP->id, hashItemP);
 
       // KT_T(KtContextItem, "Fixed '%s' -> '%s' in hash table for context '%s' (step 2)", hashItemP->name, hashItemP->id, contextP->url);
@@ -144,4 +151,19 @@ bool orionldContextHashTablesFill(OrionldContext* contextP, KjNode* keyValueTree
   }
 
   return true;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// orionldContextHashTablesFill -
+//
+bool orionldContextHashTablesFill(OrionldContext* contextP, KjNode* keyValueTree, OrionldProblemDetails* pdP)
+{
+  kallocGuardTake(contextP->kallocP);
+  bool ok = hashTablesFill(contextP, keyValueTree, pdP);
+  kallocGuardGive(contextP->kallocP);
+
+  return ok;
 }

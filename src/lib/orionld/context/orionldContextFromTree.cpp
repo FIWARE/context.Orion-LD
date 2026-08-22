@@ -44,6 +44,7 @@ extern "C"
 #include "orionld/context/orionldContextCreate.h"                // orionldContextCreate
 #include "orionld/contextCache/orionldContextCacheLookup.h"      // orionldContextCacheLookup
 #include "orionld/contextCache/orionldContextCacheInsert.h"      // orionldContextCacheInsert
+#include "orionld/common/kallocGuard.h"                          // kallocGuardedAlloc
 #include "orionld/context/orionldContextFromTree.h"              // Own interface
 
 
@@ -147,7 +148,7 @@ static char* contextRefResolve(const char* base, char* ref)
 
   int   baseLen = endP - base;
   int   refLen  = strlen(ref);
-  char* urlP    = (char*) kaAlloc(&kalloc, baseLen + refLen + 2);
+  char* urlP    = (char*) kallocGuardedAlloc(&kalloc, baseLen + refLen + 2);
 
   if (urlP == NULL)
     return ref;
@@ -169,7 +170,7 @@ static char* contextRefResolve(const char* base, char* ref)
 //
 // orionldContextFromTree -
 //
-OrionldContext* orionldContextFromTree(char* url, OrionldContextOrigin origin, char* id, KjNode* contextTreeP)
+OrionldContext* orionldContextFromTree(char* url, OrionldContextOrigin origin, char* id, KjNode* contextTreeP, bool ephemeral)
 {
   int itemsInArray;
 
@@ -191,7 +192,7 @@ OrionldContext* orionldContextFromTree(char* url, OrionldContextOrigin origin, c
     // Need to clone the array and add it to the context cache
     //
     bool            arrayToCache = (url != NULL);
-    OrionldContext* contextP     = orionldContextCreate(url, origin, id, contextTreeP, false);
+    OrionldContext* contextP     = orionldContextCreate(url, origin, id, contextTreeP, false, ephemeral);
 
     //
     // Once created, the parameter 'url' needs to be "invalidated", as it's already been used - to avoid to use the same URL for children of the context
@@ -207,7 +208,7 @@ OrionldContext* orionldContextFromTree(char* url, OrionldContextOrigin origin, c
 
 
     contextP->context.array.items     = itemsInArray;
-    contextP->context.array.vector    = (OrionldContext**) kaAlloc(&kalloc, itemsInArray * sizeof(OrionldContext*));
+    contextP->context.array.vector    = (OrionldContext**) kallocGuardedAlloc(contextP->kallocP, itemsInArray * sizeof(OrionldContext*));
 
     int ix = 0;
     for (KjNode* ctxItemP = contextTreeP->value.firstChildP; ctxItemP != NULL; ctxItemP = ctxItemP->next)
@@ -253,7 +254,7 @@ OrionldContext* orionldContextFromTree(char* url, OrionldContextOrigin origin, c
         else if (origin == OrionldContextUserCreated)
           url = orionldContextUrlGenerate(&id);
 
-        contextP->context.array.vector[ix] = orionldContextFromTree(url, origin, id, ctxItemP);
+        contextP->context.array.vector[ix] = orionldContextFromTree(url, origin, id, ctxItemP, ephemeral);
         if (contextP->context.array.vector[ix] != NULL)
           contextP->context.array.vector[ix]->parent = contextP->id;
         else
@@ -291,7 +292,7 @@ OrionldContext* orionldContextFromTree(char* url, OrionldContextOrigin origin, c
         contextP = orionldContextCreate(url, origin, id, contextTreeP, false);
 
         contextP->context.array.items     = 1;
-        contextP->context.array.vector    = (OrionldContext**) kaAlloc(&kalloc, 1 * sizeof(OrionldContext*));
+        contextP->context.array.vector    = (OrionldContext**) kallocGuardedAlloc(contextP->kallocP, 1 * sizeof(OrionldContext*));
         //
         // NOT 'url' - 'url' is the URL of THIS @context, while contextTreeP->value.s is the reference
         // it points to, and for a @context that is a plain string those two are different things
@@ -325,7 +326,7 @@ OrionldContext* orionldContextFromTree(char* url, OrionldContextOrigin origin, c
   }
   else if (contextTreeP->type == KjObject)
   {
-    OrionldContext* contextP = orionldContextFromObject(url, origin, id, contextTreeP);
+    OrionldContext* contextP = orionldContextFromObject(url, origin, id, contextTreeP, ephemeral);
 
     if (contextP)
       contextP->origin = origin;

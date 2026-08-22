@@ -22,6 +22,8 @@
 *
 * Author: Ken Zangelin
 */
+#include <string.h>                                            // strcmp
+
 extern "C"
 {
 #include "ktrace/kTrace.h"                                     // KT_*
@@ -42,19 +44,40 @@ bool pgTransactionCommit(PGconn* connectionP)
 
   res = PQexec(connectionP, "COMMIT");
   if (res == NULL)
-    KT_RE(false, "Database Error (PQexec(COMMIT): %s)", PQresStatus(PQresultStatus(res)));
+    KT_RE(false, "Database Error (PQexec(COMMIT): %s)", PQerrorMessage(connectionP));
+
+  if (PQresultStatus(res) != PGRES_COMMAND_OK)  // e.g. serialization failure at commit time
+  {
+    KT_E("Database Error (COMMIT failed: %s)", PQresultErrorMessage(res));
+    PQclear(res);
+    return false;
+  }
+
+  //
+  // A COMMIT inside an aborted transaction succeeds with PGRES_COMMAND_OK, but the server
+  // actually performs a ROLLBACK (visible in the command tag) - nothing was made durable.
+  //
+  if (strcmp(PQcmdStatus(res), "ROLLBACK") == 0)
+  {
+    KT_E("Database Error (COMMIT was answered with ROLLBACK - aborted transaction, nothing is durable)");
+    PQclear(res);
+    return false;
+  }
+
   PQclear(res);
 
   if (PQstatus(connectionP) != CONNECTION_OK)
-    KT_E("Database Error (SQL: bad connection: %d)", PQstatus(connectionP));  // FIXME: string! (last error?)
+  {
+    KT_E("Database Error (bad connection after COMMIT: %d - %s)", PQstatus(connectionP), PQerrorMessage(connectionP));
+    return false;
+  }
 
   PGTransactionStatusType st;
   if ((st = PQtransactionStatus(connectionP)) != PQTRANS_IDLE)
-    KT_E("Database Error (SQL transaction error: %d)", st);  // FIXME: string! (last error?)
-
-  char* errorMsg = PQerrorMessage(connectionP);
-  if ((errorMsg != NULL) && (errorMsg[0] != 0))
-    KT_E("Database Error (SQL Commit Error: %s)", errorMsg);
+  {
+    KT_E("Database Error (transaction status %d after COMMIT - the batch may not be durable)", st);
+    return false;
+  }
 
   return true;
 }

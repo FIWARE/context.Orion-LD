@@ -1,9 +1,9 @@
-#ifndef SRC_LIB_ORIONLD_CONTEXT_ORIONLDCONTEXTCREATE_H_
-#define SRC_LIB_ORIONLD_CONTEXT_ORIONLDCONTEXTCREATE_H_
+#ifndef SRC_LIB_ORIONLD_TROE_PGSEM_H_
+#define SRC_LIB_ORIONLD_TROE_PGSEM_H_
 
 /*
 *
-* Copyright 2019 FIWARE Foundation e.V.
+* Copyright 2026 FIWARE Foundation e.V.
 *
 * This file is part of Orion-LD Context Broker.
 *
@@ -23,21 +23,28 @@
 * For those usages not covered by this license please contact with
 * orionld at fiware dot org
 *
-* Author: Ken Zangelin
+* Author: Carsten Frey
 */
-#include "orionld/types/OrionldContext.h"                        // OrionldContext
+#include <semaphore.h>                                         // sem_t
 
 
 
 // -----------------------------------------------------------------------------
 //
-// orionldContextCreate -
+// pgSemWait - sem_wait, restarted on signal interruption (EINTR)
 //
-// 'ephemeral' asks for the context to be allocated in the calling thread's own arena
-// (orionldState.kalloc) instead of the process-global 'kalloc'. It is only honoured for contexts
-// without a URL, as those are never put in the context cache and thus never outlive the request
-// that created them. See orionldContextCreate.cpp for the full reasoning.
-//
-extern OrionldContext* orionldContextCreate(const char* url, OrionldContextOrigin origin, const char* id, KjNode* tree, bool keyValues, bool ephemeral = false);
+extern void pgSemWait(sem_t* semP);
 
-#endif  // SRC_LIB_ORIONLD_CONTEXT_ORIONLDCONTEXTCREATE_H_
+
+
+// -----------------------------------------------------------------------------
+//
+// pgSemTimedWait - sem_timedwait with a relative timeout, restarted on EINTR
+//
+// RETURN VALUE
+//   true   the semaphore was acquired
+//   false  the timeout expired (or sem_timedwait failed)
+//
+extern bool pgSemTimedWait(sem_t* semP, int timeoutSecs);
+
+#endif  // SRC_LIB_ORIONLD_TROE_PGSEM_H_

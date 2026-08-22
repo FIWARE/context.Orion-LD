@@ -29,15 +29,18 @@
 
 
 
+struct PgConnectionPool;
+
 // -----------------------------------------------------------------------------
 //
 // PgConnection -
 //
 typedef struct PgConnection
 {
-  bool    busy;          // In use or free
-  PGconn* connectionP;   // the postgres connection
-  int     uses;          // Number of times the connection has been used
+  bool                      busy;          // In use or free
+  PGconn*                   connectionP;   // the postgres connection
+  int                       uses;          // Number of times the connection has been used
+  struct PgConnectionPool*  poolP;         // The pool the connection belongs to - pgConnectionRelease returns the slot to it
 } PgConnection;
 
 #endif  // SRC_LIB_ORIONLD_TYPES_PGCONNECTION_H_

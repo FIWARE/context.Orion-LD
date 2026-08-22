@@ -49,7 +49,12 @@ bool pgDatabasePrepare(const char* dbName)
   ConnStatusType  status          = ((nullConnectionP != NULL) && (nullConnectionP->connectionP != NULL))? PQstatus(nullConnectionP->connectionP) : CONNECTION_BAD;
 
   if (status != CONNECTION_OK)
-    KT_RE(false, "Database Error (unable to connect to postgres - connection/status: %p/%d)", nullConnectionP->connectionP, status);
+  {
+    if (nullConnectionP != NULL)  // don't leak the pool slot
+      pgConnectionRelease(nullConnectionP);
+
+    KT_RE(false, "Database Error (unable to connect to postgres - status: %d)", status);
+  }
 
 
   //

@@ -30,6 +30,7 @@ extern "C"
 
 #include "orionld/types/OrionldGeoIndex.h"                       // OrionldGeoIndex
 #include "orionld/common/orionldState.h"                         // kalloc, geoIndexList
+#include "orionld/common/kallocGuard.h"                          // kallocGuardedAlloc, kallocGuardedStrdup
 #include "orionld/db/dbGeoIndexAdd.h"                            // Own interface
 
 
@@ -40,10 +41,10 @@ extern "C"
 //
 void dbGeoIndexAdd(const char* tenant, const char* attrName)
 {
-  OrionldGeoIndex* geoNodeP = (OrionldGeoIndex*) kaAlloc(&kalloc, sizeof(OrionldGeoIndex));
+  OrionldGeoIndex* geoNodeP = (OrionldGeoIndex*) kallocGuardedAlloc(&kalloc, sizeof(OrionldGeoIndex));
 
-  geoNodeP->tenant   = kaStrdup(&kalloc, tenant);
-  geoNodeP->attrName = kaStrdup(&kalloc, attrName);
+  geoNodeP->tenant   = kallocGuardedStrdup(&kalloc, tenant);
+  geoNodeP->attrName = kallocGuardedStrdup(&kalloc, attrName);
 
   if (geoIndexList == NULL)
   {

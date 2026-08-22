@@ -38,6 +38,52 @@ extern "C"
 #include "orionld/troe/pgTransactionCommit.h"                  // pgTransactionCommit
 #include "orionld/troe/pgCommands.h"                           // Own interface
 
+#include <stdio.h>                                             // snprintf
+#include <string.h>                                            // strlen
+
+
+
+// -----------------------------------------------------------------------------
+//
+// troeErrorStringSet - stash the underlying Postgres error text (trimmed) so the Kafka NACK can carry it
+//
+static void troeErrorStringSet(const char* text)
+{
+  if ((text == NULL) || (text[0] == 0))
+    return;
+
+  snprintf(orionldState.troeErrorString, sizeof(orionldState.troeErrorString), "%s", text);
+
+  // libpq error strings end in a newline; trim trailing whitespace so the NACK reads cleanly
+  int last = (int) strlen(orionldState.troeErrorString) - 1;
+  while ((last >= 0) && ((orionldState.troeErrorString[last] == '\n') || (orionldState.troeErrorString[last] == '\r') || (orionldState.troeErrorString[last] == ' ')))
+    orionldState.troeErrorString[last--] = 0;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// pgConnectionInvalidate - drop a dead PGconn so the pool reconnects fresh next time
+//
+// A *connection* failure (PQexec returned NULL, or PQstatus != CONNECTION_OK) leaves a dead PGconn in
+// the pool that PQstatus may still report as CONNECTION_OK on the next borrow - so it is handed out
+// again and fails again. Finish it and NULL the slot's connection here; the next pgConnectionGet then
+// reconnects via pgConnect's retry loop. Without this a transient Postgres outage becomes a PERMANENT
+// stall (the redelivered Kafka batch keeps hitting the same dead connection) until the broker restarts.
+//
+// NOT called for a rejected SQL statement (constraint violation, aborted transaction, missing column):
+// there the connection is still healthy and must be kept.
+//
+static void pgConnectionInvalidate(PgConnection* connectionP)
+{
+  if (connectionP->connectionP != NULL)
+  {
+    PQfinish(connectionP->connectionP);
+    connectionP->connectionP = NULL;
+  }
+}
+
 
 
 // -----------------------------------------------------------------------------
@@ -49,10 +95,20 @@ void pgCommands(char* sql[], int commands)
   PgConnection* connectionP = pgConnectionGet(orionldState.tenantP->troeDbName);
 
   if ((connectionP == NULL) || (connectionP->connectionP == NULL))
+  {
+    orionldState.troeError = true;  // make the TRoE write failure observable to the caller
+    troeErrorStringSet("no connection to Postgres");
+
+    if (connectionP != NULL)  // half-initialized slot - still ours, don't leak it
+      pgConnectionRelease(connectionP);
+
     KT_RVE("no connection to postgres");
+  }
 
   if (pgTransactionBegin(connectionP->connectionP) != true)
   {
+    orionldState.troeError = true;  // make the TRoE write failure observable to the caller
+    troeErrorStringSet("could not begin the transaction");
     pgConnectionRelease(connectionP);
     KT_RVE("pgTransactionBegin failed");
   }
@@ -64,21 +120,28 @@ void pgCommands(char* sql[], int commands)
     PGresult* res = PQexec(connectionP->connectionP, sql[ix]);
     if (res == NULL)
     {
+      orionldState.troeError = true;  // no result - connection failure / OOM
+      troeErrorStringSet(PQerrorMessage(connectionP->connectionP));
       KT_E("Database Error (PQexec returned NULL for SQL: %s)", sql[ix]);
       if (pgTransactionRollback(connectionP->connectionP) == false)
         KT_E("Database Error (pgTransactionRollback failed too)");
+      pgConnectionInvalidate(connectionP);  // dead connection - drop it so the next borrow reconnects
       pgConnectionRelease(connectionP);
       return;
     }
 
     //
-    // PQexec returns a non-NULL result even when the SQL statement itself failed (e.g. a missing
-    // column because the TRoE schema has not been migrated). Check the result status explicitly,
-    // otherwise such errors are swallowed silently and the temporal write is lost without a trace.
+    // PQexec returns a non-NULL result even when the SQL statement itself failed (constraint
+    // violation, deadlock, "current transaction is aborted", or a missing column because the TRoE
+    // schema has not been migrated). Such failures leave the connection CONNECTION_OK, so they must
+    // be caught here via the result status - otherwise the batch is silently lost and (for the Kafka
+    // path) the offset committed regardless of the failure.
     //
     ExecStatusType execStatus = PQresultStatus(res);
     if ((execStatus != PGRES_COMMAND_OK) && (execStatus != PGRES_TUPLES_OK))
     {
+      orionldState.troeError = true;
+      troeErrorStringSet(PQresultErrorMessage(res));
       KT_E("Database Error (SQL command failed - status: %s, error: %s, SQL: %s)", PQresStatus(execStatus), PQresultErrorMessage(res), sql[ix]);
       PQclear(res);
       if (pgTransactionRollback(connectionP->connectionP) == false)
@@ -90,16 +153,23 @@ void pgCommands(char* sql[], int commands)
 
     if (PQstatus(connectionP->connectionP) != CONNECTION_OK)
     {
-      KT_E("SQL[%p]: bad connection: %d", connectionP->connectionP, PQstatus(connectionP->connectionP));  // FIXME: string! (last error?)
+      orionldState.troeError = true;  // connection dropped mid-batch
+      troeErrorStringSet(PQerrorMessage(connectionP->connectionP));
+      KT_E("SQL[%p]: bad connection: %d (%s)", connectionP->connectionP, PQstatus(connectionP->connectionP), PQerrorMessage(connectionP->connectionP));
       if (pgTransactionRollback(connectionP->connectionP) == false)
         KT_E("Database Error (pgTransactionRollback failed too)");
+      pgConnectionInvalidate(connectionP);  // dead connection - drop it so the next borrow reconnects
       pgConnectionRelease(connectionP);
       return;
     }
   }
 
   if (pgTransactionCommit(connectionP->connectionP) != true)
+  {
+    orionldState.troeError = true;  // the COMMIT itself failed - the batch is not durable
+    troeErrorStringSet("the transaction commit failed");
     KT_E("pgTransactionCommit failed");
+  }
 
   pgConnectionRelease(connectionP);
 }
