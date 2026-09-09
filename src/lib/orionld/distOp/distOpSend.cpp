@@ -584,6 +584,15 @@ bool distOpSend(DistOp* distOpP, const char* dateHeader, const char* xForwardedF
   {
     uriParamAdd(&urlParts, "q", orionldState.uriParams.qCopy, -1);
     KT_T(KtDistOpRequestHeaders, "%s: orionldState.uriParams.q: '%s'", distOpP->regP->regId, orionldState.uriParams.qCopy);
+
+    //
+    // 'expandValues' tells the broker to expand the right-hand side of the q-expression for the
+    // attributes it lists (needed for VocabProperty, where the value is an alias to expand).
+    // It's a modifier of 'q', so it MUST accompany 'q' in the forwarded request - without it the
+    // context source compares the non-expanded value and finds nothing.
+    //
+    if (orionldState.uriParams.expandValues != NULL)
+      uriParamAdd(&urlParts, "expandValues", orionldState.uriParams.expandValues, -1);
   }
 
   KT_T(KtDistOpRequestParams, "%s: ---- End of URL Parameters -----------------", distOpP->regP->regId);

@@ -1,0 +1,320 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Forwarding of the expandValues URI param (issue #1992)
+
+--SHELL-INIT--
+dbInit CB
+dbInit CP1
+orionldStart CB  -experimental -forwarding -wip entityMaps
+orionldStart CP1 -experimental
+accumulatorStart --pretty-print --url /ngsi-ld/v1/entities 127.0.0.1 ${LISTENER_PORT}
+
+--SHELL--
+#
+# 'expandValues' modifies the interpretation of the right hand side of a 'q' expression - the
+# value is expanded, which is what makes 'q' work on a VocabProperty.
+# It must therefore be forwarded together with 'q', or the context source compares against the
+# non-expanded value and matches nothing.  That was issue #1992.
+#
+# Test:
+# - CP1 holds the entities (with a VocabProperty 'sex')
+# - CB has an inclusive registration for entities of type Animal, pointing to CP1
+# - Querying CB with 'q' + 'expandValues' must give the same result as querying CP1 directly
+#
+# 01. Create urn:Animal:pig035 (sex=Male) on CP1
+# 02. Create urn:Animal:pig037 (sex=Female) on CP1
+# 03. Register CP1 on CB, inclusive, for entities of type Animal
+# 04. Query CP1 directly with q=sex=="Male"&expandValues=sex - see pig035
+# 05. Query CB with q=sex=="Male" (no expandValues) - see nothing (the value isn't expanded)
+# 06. Query CB with q=sex=="Male"&expandValues=sex - see pig035 (this is the bug of #1992)
+# 07. Query CB with q=sex=="Female"&expandValues=sex - see pig037
+# 08. Register the accumulator on CB as well, to inspect the forwarded request
+# 09. Query CB with q=sex=="Male"&expandValues=sex - to provoke a forwarded request
+# 10. Dump the accumulator - see both 'q' and 'expandValues' in the forwarded URL
+#
+
+echo "01. Create urn:Animal:pig035 (sex=Male) on CP1"
+echo "=============================================="
+payload='{
+  "id": "urn:ngsi-ld:Animal:pig035",
+  "type": "Animal",
+  "sex": {
+    "type": "VocabProperty",
+    "vocab": "Male"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" --port $CP1_PORT
+echo
+echo
+
+
+echo "02. Create urn:Animal:pig037 (sex=Female) on CP1"
+echo "================================================"
+payload='{
+  "id": "urn:ngsi-ld:Animal:pig037",
+  "type": "Animal",
+  "sex": {
+    "type": "VocabProperty",
+    "vocab": "Female"
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" --port $CP1_PORT
+echo
+echo
+
+
+echo "03. Register CP1 on CB, inclusive, for entities of type Animal"
+echo "=============================================================="
+payload='{
+  "id": "urn:ngsi-ld:ContextSourceRegistration:R1",
+  "type": "ContextSourceRegistration",
+  "information": [
+    {
+      "entities": [
+        {
+          "type": "Animal"
+        }
+      ]
+    }
+  ],
+  "endpoint": "http://localhost:'$CP1_PORT'",
+  "operations": [ "queryEntity" ],
+  "mode": "inclusive"
+}'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload"
+echo
+echo
+
+
+echo '04. Query CP1 directly with q=sex=="Male"&expandValues=sex - see pig035'
+echo "======================================================================="
+orionCurl --url '/ngsi-ld/v1/entities?type=Animal&q=sex==%22Male%22&expandValues=sex' --port $CP1_PORT
+echo
+echo
+
+
+echo '05. Query CB with q=sex=="Male" (no expandValues) - see nothing (the value isn'"'"'t expanded)'
+echo "============================================================================================"
+orionCurl --url '/ngsi-ld/v1/entities?type=Animal&q=sex==%22Male%22'
+echo
+echo
+
+
+echo '06. Query CB with q=sex=="Male"&expandValues=sex - see pig035 (this is the bug of #1992)'
+echo "========================================================================================"
+orionCurl --url '/ngsi-ld/v1/entities?type=Animal&q=sex==%22Male%22&expandValues=sex'
+echo
+echo
+
+
+echo '07. Query CB with q=sex=="Female"&expandValues=sex - see pig037'
+echo "==============================================================="
+orionCurl --url '/ngsi-ld/v1/entities?type=Animal&q=sex==%22Female%22&expandValues=sex'
+echo
+echo
+
+
+echo "08. Register the accumulator on CB as well, to inspect the forwarded request"
+echo "==========================================================================="
+payload='{
+  "id": "urn:ngsi-ld:ContextSourceRegistration:R2",
+  "type": "ContextSourceRegistration",
+  "information": [
+    {
+      "entities": [
+        {
+          "type": "Animal"
+        }
+      ]
+    }
+  ],
+  "endpoint": "http://localhost:'$LISTENER_PORT'",
+  "operations": [ "queryEntity" ],
+  "mode": "inclusive"
+}'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload"
+echo
+echo
+
+
+echo '09. Query CB with q=sex=="Male"&expandValues=sex - to provoke a forwarded request'
+echo "================================================================================="
+orionCurl --url '/ngsi-ld/v1/entities?type=Animal&q=sex==%22Male%22&expandValues=sex'
+echo
+echo
+
+
+echo "10. Dump the accumulator - see both 'q' and 'expandValues' in the forwarded URL"
+echo "==============================================================================="
+accumulatorDump > /tmp/dump_1992
+head -1 /tmp/dump_1992 | tr '?&' '\n\n' | grep -E '^(q|expandValues)='
+rm -f /tmp/dump_1992
+accumulatorReset
+echo
+echo
+
+
+--REGEXPECT--
+01. Create urn:Animal:pig035 (sex=Male) on CP1
+==============================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:Animal:pig035
+
+
+
+02. Create urn:Animal:pig037 (sex=Female) on CP1
+================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:Animal:pig037
+
+
+
+03. Register CP1 on CB, inclusive, for entities of type Animal
+==============================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/csourceRegistrations/urn:ngsi-ld:ContextSourceRegistration:R1
+
+
+
+04. Query CP1 directly with q=sex=="Male"&expandValues=sex - see pig035
+=======================================================================
+HTTP/1.1 200 OK
+Content-Length: 98
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+[
+    {
+        "id": "urn:ngsi-ld:Animal:pig035",
+        "sex": {
+            "type": "VocabProperty",
+            "vocab": "Male"
+        },
+        "type": "Animal"
+    }
+]
+
+
+05. Query CB with q=sex=="Male" (no expandValues) - see nothing (the value isn't expanded)
+============================================================================================
+HTTP/1.1 200 OK
+Content-Length: 2
+Content-Type: application/json
+Date: REGEX(.*)
+NGSILD-EntityMap: REGEX(.*)
+
+[]
+
+
+06. Query CB with q=sex=="Male"&expandValues=sex - see pig035 (this is the bug of #1992)
+========================================================================================
+HTTP/1.1 200 OK
+Content-Length: 98
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+NGSILD-EntityMap: REGEX(.*)
+
+[
+    {
+        "id": "urn:ngsi-ld:Animal:pig035",
+        "sex": {
+            "type": "VocabProperty",
+            "vocab": "Male"
+        },
+        "type": "Animal"
+    }
+]
+
+
+07. Query CB with q=sex=="Female"&expandValues=sex - see pig037
+===============================================================
+HTTP/1.1 200 OK
+Content-Length: 100
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+NGSILD-EntityMap: REGEX(.*)
+
+[
+    {
+        "id": "urn:ngsi-ld:Animal:pig037",
+        "sex": {
+            "type": "VocabProperty",
+            "vocab": "Female"
+        },
+        "type": "Animal"
+    }
+]
+
+
+08. Register the accumulator on CB as well, to inspect the forwarded request
+===========================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/csourceRegistrations/urn:ngsi-ld:ContextSourceRegistration:R2
+
+
+
+09. Query CB with q=sex=="Male"&expandValues=sex - to provoke a forwarded request
+=================================================================================
+HTTP/1.1 200 OK
+Content-Length: 98
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+NGSILD-EntityMap: REGEX(.*)
+
+[
+    {
+        "id": "urn:ngsi-ld:Animal:pig035",
+        "sex": {
+            "type": "VocabProperty",
+            "vocab": "Male"
+        },
+        "type": "Animal"
+    }
+]
+
+
+10. Dump the accumulator - see both 'q' and 'expandValues' in the forwarded URL
+===============================================================================
+q=sex=="Male"
+expandValues=sex
+
+
+--TEARDOWN--
+brokerStop CB
+brokerStop CP1
+dbDrop CB
+dbDrop CP1
+accumulatorStop
