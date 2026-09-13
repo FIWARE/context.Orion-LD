@@ -139,8 +139,15 @@ char* qVariableFix(char* varPathIn, bool forDb, bool* isMdP, char** detailsP)
     else if (isModifiedAt)
       attrArray[items - 1] = (char*) "modDate";
   }
-  bool inSubscription = (orionldState.serviceP->serviceRoutine == orionldPostSubscriptions) || (orionldState.serviceP->serviceRoutine == orionldPatchSubscription);
-  if (inSubscription)
+  //
+  // Subscriptions - and the API-model tree a distributed query matches assembled Entities with - want
+  // a path into the API model, and there the value sits under "value" (or "object"/"vocab", which
+  // kjTreeNavigate falls back to).
+  //
+  bool forApiMatch = (orionldState.serviceP->serviceRoutine == orionldPostSubscriptions)  ||
+                     (orionldState.serviceP->serviceRoutine == orionldPatchSubscription)  ||
+                     (orionldState.in.qApiModelParse == true);
+  if (forApiMatch)
   {
     if (isObservedAt == true)
       addValue = false;

@@ -22,11 +22,32 @@
 *
 * Author: Ken Zangelin
 */
+#include <geos_c.h>
+
 extern "C"
 {
 #include "kjson/KjNode.h"                                    // KjNode
 }
 
-#include "orionld/types/SubCacheItem.h"                      // SubCacheItem
+#include "orionld/types/OrionldGeoInfo.h"                    // OrionldGeoInfo
 
-extern bool geoMatch(SubCacheItem* sciP, KjNode* finalApiEntityP);
+
+
+// -----------------------------------------------------------------------------
+//
+// geoMatch - does the Entity match the geo-filter?
+//
+// 'geosGeometry' and 'geosPrepared' are the compiled form of 'geoInfoP' (see geoCompile), and
+// 'what' names the owner of the filter - a subscription id, or "geoQ" for a query - for the
+// trace and error messages.
+//
+// Returns true if the Entity matches, and also if there is no geo-filter at all.
+//
+extern bool geoMatch
+(
+  OrionldGeoInfo*               geoInfoP,
+  GEOSGeometry*                 geosGeometry,
+  const GEOSPreparedGeometry*   geosPrepared,
+  const char*                   what,
+  KjNode*                       apiEntityP
+);

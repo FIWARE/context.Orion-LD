@@ -113,6 +113,7 @@ size_t            hostHeaderLen;
 PernotSubCache    pernotSubCache;
 EntityMap*        entityMaps        = NULL;    // Used by GET /entities in the distributed case, for pagination
 bool              entityMapsEnabled = false;
+bool              noSplitEntities   = false;   // -noSplitEntities: no Entity is split over more than one Context Source
 bool              distSubsEnabled   = false;
 bool              wsSupport         = false;
 OrionldContext*   defaultUserContextP      = NULL;
@@ -159,6 +160,13 @@ void orionldStateInit(MHD_Connection* connection)
   bzero(&orionldState, sizeof(orionldState));   // Performance: ~5 microseconds
 
   orionldState.distributed = distributed;
+
+  //
+  // Unless a deployment states otherwise (-noSplitEntities), an Entity may be split over more than one
+  // Context Source, and then no filter can be forwarded - see TS 104-175 clause 10.4.3.
+  // The 'splitEntities' URI param overrides this default, per request.
+  //
+  orionldState.uriParams.splitEntities = (noSplitEntities == false);
 
   //
   // Creating kjson environment for KJson parse and render

@@ -24,6 +24,7 @@
 */
 extern "C"
 {
+#include "kalloc/kaStrdup.h"                                        // kaStrdup
 #include "ktrace/kTrace.h"                                          // KT_*
 }
 
@@ -60,6 +61,50 @@ static QNode* qCheck(char* qString)
     orionldError(OrionldBadRequestData, title, detail, 400);
     KT_E("Error (qParse: %s: %s) - but, the subscription will be inserted in the sub-cache without 'q'", title, detail);
   }
+
+  return qNode;
+}
+
+
+
+// ----------------------------------------------------------------------------
+//
+// qApiCheck - parse 'q' a second time, into API paths instead of database paths
+//
+// qCheck parses 'q' for the database: "A.B" comes out as "attrs.A.md.B.value".  That tree cannot be
+// matched against an Entity, and an Entity is exactly what has to be matched when the Entities may be
+// split over several Context Sources - the filter can't be pushed down, so it is applied here, on the
+// assembled Entity (see orionldGetEntitiesPage).
+//
+// Same combination the subscription cache uses for the very same purpose (see subCacheItemCompile):
+// qLex without timestamp-to-float, qParse with forDb=false.
+//
+// The lex list is request-scoped (kalloc), so - as in qCheck - it is not released.
+//
+static QNode* qApiCheck(const char* qString)
+{
+  QNode* qList;
+  char*  title;
+  char*  detail;
+
+  // qLex destroys the string it is given, and 'q' is still needed - by qCheck, right after
+  char* qForLex = kaStrdup(&orionldState.kalloc, qString);
+
+  orionldState.in.qApiModelParse = true;
+
+  qList = qLex(qForLex, false, &title, &detail);
+  if (qList == NULL)
+  {
+    orionldState.in.qApiModelParse = false;
+    KT_RE(NULL, "Error (qLex for the API model: %s: %s)", title, detail);
+  }
+
+  QNode* qNode = qParse(qList, NULL, false, true, &title, &detail);  // forDb=false (API paths), qToDbModel=true (expand the names)
+
+  orionldState.in.qApiModelParse = false;
+
+  if (qNode == NULL)
+    KT_RE(NULL, "Error (qParse for the API model: %s: %s)", title, detail);
 
   return qNode;
 }
@@ -118,6 +163,18 @@ bool pCheckQueryParams
   QNode* qNode = NULL;
   if (orionldState.uriParams.q != NULL)
   {
+    //
+    // NOTE
+    //   The API-model tree is built FIRST, and on its own copy - qCheck's qLex destroys
+    //   orionldState.uriParams.q.
+    //   Not on 'qCopy' though: that one is hyphens-encoded when the 'q' contains a double quote, as it
+    //   is what goes out on a forwarded URL, and qLex can't read it.
+    //   A failure here is not fatal: qCheck does the input validation, and without an API-model tree
+    //   the assembled-Entity filter simply has no 'q' to apply.
+    //
+    if (orionldState.uriParams.splitEntities == true)
+      orionldState.in.qNodeApi = qApiCheck(orionldState.uriParams.q);
+
     qNode = qCheck(orionldState.uriParams.q);
     if (qNode == NULL)
       return false;

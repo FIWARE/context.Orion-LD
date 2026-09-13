@@ -580,7 +580,18 @@ bool distOpSend(DistOp* distOpP, const char* dateHeader, const char* xForwardedF
   if (orionldState.uriParams.deleteAll == true)
     uriParamAdd(&urlParts, "deleteAll=true", NULL, 14);
 
-  if (orionldState.uriParams.qCopy != NULL)
+  //
+  // 'q' is forwarded only if every Entity is known to live in its entirety in one single Context Source.
+  //
+  // If Entities may be split over several Context Sources (the default - see 'splitEntities'), a Context
+  // Source only ever sees its own part of the Entity, and a 'q' on an Attribute it doesn't have makes it
+  // answer "no match" - and its part of the Entity is lost.  The Entity has to be assembled first, and
+  // only then filtered.  TS 104-175 clause 10.4.3:
+  //   "the filters ... shall be removed before forwarding the request.  These filters then have to be
+  //    applied after the Entity information from different Context Sources and local information, if
+  //    there is any, has been aggregated"
+  //
+  if ((orionldState.uriParams.qCopy != NULL) && (orionldState.uriParams.splitEntities == false))
   {
     uriParamAdd(&urlParts, "q", orionldState.uriParams.qCopy, -1);
     KT_T(KtDistOpRequestHeaders, "%s: orionldState.uriParams.q: '%s'", distOpP->regP->regId, orionldState.uriParams.qCopy);

@@ -359,6 +359,7 @@ bool            kTraceInfo       = false;
 #define NOSWAP_DESC            "no swapping - for testing only!!!"
 #define NO_NOTIFY_FALSE_UPDATE_DESC  "turn off notifications on non-updates"
 #define TRIGGER_OPERATION_DESC "include the operation that triggered the notification"
+#define NO_SPLIT_ENTITIES_DESC "no Entity is split over more than one Context Source - lets filters be forwarded and applied at the source"
 #define EXPERIMENTAL_DESC      "enable experimental implementation - use at own risk - see release notes of Orion-LD v1.1.0"
 #define MONGOCONLY_DESC        "enable experimental implementation + turn off mongo legacy driver"
 #define DBAUTHDB_DESC          "database used for authentication"
@@ -494,6 +495,7 @@ PaArgument paArgs[] =
   { "-wip",                   wip,                      "WIP",                       PaStr,     PaHid,  _i "",            PaNL,   PaNL,             WIP_DESC                 },
   { "-triggerOperation",      &triggerOperation,        "TRIGGER_OPERATION",         PaBool,    PaHid,  false,            false,  true,             TRIGGER_OPERATION_DESC   },
   { "-forwarding",            &distributed,             "FORWARDING",                PaBool,    PaHid,  false,            false,  true,             FORWARDING_DESC          },
+  { "-noSplitEntities",       &noSplitEntities,         "NO_SPLIT_ENTITIES",         PaBool,    PaOpt,  false,            false,  true,             NO_SPLIT_ENTITIES_DESC   },
   { "-socketService",         &socketService,           "SOCKET_SERVICE",            PaBool,    PaHid,  false,            false,  true,             SOCKET_SERVICE_DESC      },
   { "-ssPort",                &socketServicePort,       "SOCKET_SERVICE_PORT",       PaUShort,  PaHid,  1027,             PaNL,   PaNL,             SOCKET_SERVICE_PORT_DESC },
   { "-harakiri",              &harakiri,                "HARAKIRI",                  PaBool,    PaHid,  false,            false,  true,             HARAKIRI_DESC            },

@@ -154,7 +154,7 @@ bool orionldGetEntitiesDistributed(DistOp* distOpList, char* idPattern, QNode* q
 {
   KT_T(KtEntityMap, "orionldState.in.entityMap at %p", orionldState.in.entityMap);
   if (orionldState.in.entityMap != NULL)
-    return orionldGetEntitiesPage();
+    return orionldGetEntitiesPage(orionldState.in.qNodeApi, geoInfoP);
 
   KT_T(KtEntityMap, "--------------------------- Creating entity map");
   orionldState.in.entityMap = entityMapCreate(distOpList, idPattern, qNode, geoInfoP);
@@ -201,5 +201,5 @@ bool orionldGetEntitiesDistributed(DistOp* distOpList, char* idPattern, QNode* q
                                    orionldState.uriParams.geometryProperty,
                                    true);
 
-  return orionldGetEntitiesPage();
+  return orionldGetEntitiesPage(orionldState.in.qNodeApi, geoInfoP);
 }

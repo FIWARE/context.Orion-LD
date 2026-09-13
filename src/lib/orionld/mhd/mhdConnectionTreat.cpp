@@ -143,6 +143,7 @@ static const char* uriParamName(uint64_t bit)
   case ORIONLD_URIPARAM_PICK:                return "pick";
   case ORIONLD_URIPARAM_DATASETID_LIST:      return "datasetId (as list)";
   case ORIONLD_URIPARAM_DDSSYNC:             return "ddsSync";
+  case ORIONLD_URIPARAM_SPLITENTITIES:       return "splitEntities";
   // FIXME: Add missing constants!
   }
 
