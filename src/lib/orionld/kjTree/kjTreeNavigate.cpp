@@ -139,6 +139,17 @@ KjNode* kjTreeNavigate(KjNode* treeP, const char* pathIn, bool* isTimestampP)
     result = kjNavigate2(treeP, compV);
     if (result != NULL)
       return result;
+
+    // ... and a VocabProperty keeps its value under "vocab"
+    compV[1] = (char*) "vocab";
+    result = kjNavigate2(treeP, compV);
+    if (result != NULL)
+      return result;
+
+    eqForDot(compV[0]);
+    result = kjNavigate2(treeP, compV);
+    if (result != NULL)
+      return result;
   }
 
   return NULL;

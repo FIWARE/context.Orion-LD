@@ -34,6 +34,8 @@ extern "C"
 }
 
 #include "orionld/types/DistOp.h"                                   // DistOp
+#include "orionld/types/QNode.h"                                    // QNode
+#include "orionld/types/OrionldGeoInfo.h"                           // OrionldGeoInfo
 #include "orionld/common/orionldState.h"                            // orionldState, entityMaps
 #include "orionld/common/orionldError.h"                            // orionldError
 #include "orionld/common/pick.h"                                    // pickForEntityArray
@@ -47,6 +49,14 @@ extern "C"
 #include "orionld/distOp/distOpListItemAdd.h"                       // distOpListItemAdd
 #include "orionld/distOp/distOpResponseMergeIntoEntityArray.h"      // distOpResponseMergeIntoEntityArray
 #include "orionld/distOp/distOpsSendAndReceive.h"                   // distOpsSendAndReceive
+#include "orionld/context/orionldAttributeExpand.h"                 // orionldAttributeExpand
+#include "orionld/context/orionldContextItemExpand.h"               // orionldContextItemExpand
+#include "orionld/context/orionldSubAttributeExpand.h"              // orionldSubAttributeExpand
+#include "orionld/common/geoCompile.h"                              // geoCompile
+#include "orionld/common/geosInit.h"                                // geosHandle
+#include "orionld/types/OrionldGeometry.h"                          // orionldGeometryToString
+#include "orionld/q/qMatch.h"                                       // qMatch
+#include "orionld/notifications/geoMatch.h"                         // geoMatch
 #include "orionld/linkedEntities/eLinkRelationsRetrieve.h"          // eLinkRelationsRetrieve
 #include "orionld/linkedEntities/eLinkInlineExpand.h"               // eLinkInlineExpand
 #include "orionld/serviceRoutines/orionldGetEntitiesLocal.h"        // orionldGetEntitiesLocal
@@ -167,15 +177,151 @@ static void formatFix(KjNode* entityArray, int skip)
 
 
 
+// -----------------------------------------------------------------------------
+//
+// entityNamesExpand - expand the Attribute names of an assembled Entity, in place
+//
+// The Entities of a page carry compacted Attribute names - the local ones were compacted on their way
+// out of the database, the remote ones arrived that way.  A QNode's variable paths are expanded (see
+// qVariableFix), and so is the geoProperty of a geo-filter (see pCheckGeo), and that is what qMatch
+// and geoMatch look the Attribute up by.  So a clone of the Entity gets its names expanded - with the
+// very same two functions qVariableFix uses, so that the two forms line up by construction.
+//
+// NOTE
+//   Expanded, but NOT dot-for-eq'ed, even though qVariableFix does that to its paths: geoMatch looks
+//   its geoProperty up with a plain kjLookup and would miss an '='-form name, while for 'q' the two
+//   forms are equivalent - kjTreeNavigate tries the dot-form as a fallback.
+//
+static void entityNamesExpand(KjNode* entityP)
+{
+  for (KjNode* attrP = entityP->value.firstChildP; attrP != NULL; attrP = attrP->next)
+  {
+    if (attrP->type != KjObject)  // 'id' and 'type' - and they're never expanded
+      continue;
+
+    attrP->name = orionldAttributeExpand(orionldState.contextP, attrP->name, true, NULL);
+
+    for (KjNode* subAttrP = attrP->value.firstChildP; subAttrP != NULL; subAttrP = subAttrP->next)
+    {
+      //
+      // A VocabProperty's value is a term, and it was compacted on its way out of the database
+      // (dbModelToApiAttribute).  'q' on a VocabProperty compares against the EXPANDED value - that
+      // is what 'expandValues' is for - so the value has to go back to what it was.
+      //
+      if (strcmp(subAttrP->name, "vocab") == 0)
+      {
+        if (subAttrP->type == KjString)
+          subAttrP->value.s = orionldContextItemExpand(orionldState.contextP, subAttrP->value.s, true, NULL);
+        else if (subAttrP->type == KjArray)
+        {
+          for (KjNode* wordP = subAttrP->value.firstChildP; wordP != NULL; wordP = wordP->next)
+          {
+            if (wordP->type == KjString)
+              wordP->value.s = orionldContextItemExpand(orionldState.contextP, wordP->value.s, true, NULL);
+          }
+        }
+
+        continue;
+      }
+
+      if ((strcmp(subAttrP->name, "type")   == 0) || (strcmp(subAttrP->name, "value") == 0) ||
+          (strcmp(subAttrP->name, "object") == 0))
+        continue;
+
+      subAttrP->name = orionldSubAttributeExpand(orionldState.contextP, subAttrP->name, true, NULL);
+    }
+  }
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
+// assembledEntitiesFilter - apply 'q' and the geo-filter to Entities that have been assembled
+//
+// If Entities may be split over several Context Sources, no filter can be pushed down - neither to a
+// Context Source nor to the local database, as each of them only ever holds a part of the Entity, and
+// a filter on a part is a filter on the wrong thing.  The Entity Map then holds candidate Entities,
+// and the filtering happens here, once the Entity is whole.  TS 104-175 clause 10.4.3:
+//   "These filters then have to be applied after the Entity information from different Context
+//    Sources and local information, if there is any, has been aggregated"
+//
+// NOTE
+//   The Entities are removed from the page, not from the Entity Map, so the count of a filtered
+//   distributed query is the number of CANDIDATES.  Clause 9.6 foresees exactly that: with split
+//   Entities the map starts out holding candidates and the filters are re-checked while paginating.
+//
+static void assembledEntitiesFilter(KjNode* entityArray, QNode* qNode, OrionldGeoInfo* geoInfoP)
+{
+  bool geoFiltering = (geoInfoP != NULL) && (geoInfoP->geometry != GeoNoGeometry);
+
+  if ((qNode == NULL) && (geoFiltering == false))
+    return;
+
+  GEOSGeometry*               geosGeometry = NULL;
+  const GEOSPreparedGeometry* geosPrepared = NULL;
+
+  if (geoFiltering == true)
+    geoCompile(orionldGeometryToString(geoInfoP->geometry), geoInfoP->coordinates, geoInfoP->georel, &geosGeometry, &geosPrepared, "geoQ");
+
+  KjNode* entityP = entityArray->value.firstChildP;
+
+  while (entityP != NULL)
+  {
+    KjNode* next        = entityP->next;
+    KjNode* expandedP   = kjClone(orionldState.kjsonP, entityP);
+    bool    match       = true;
+
+    entityNamesExpand(expandedP);
+
+    if (qNode != NULL)
+      match = qMatch(qNode, expandedP, false);
+
+    if ((match == true) && (geoFiltering == true))
+      match = geoMatch(geoInfoP, geosGeometry, geosPrepared, "geoQ", expandedP);
+
+    if (match == false)
+    {
+      KjNode* idP = kjLookup(entityP, "id");
+      KT_T(KtEntityMap, "Assembled Entity '%s' does not match the filters - removed from the page", (idP != NULL)? idP->value.s : "unidentified");
+      kjChildRemove(entityArray, entityP);
+    }
+
+    entityP = next;
+  }
+
+  if (geosPrepared != NULL)
+    GEOSPreparedGeom_destroy_r(geosHandle, geosPrepared);
+  if (geosGeometry != NULL)
+    GEOSGeom_destroy_r(geosHandle, geosGeometry);
+}
+
+
+
 // ----------------------------------------------------------------------------
 //
 // orionldGetEntitiesPage -
 //
-bool orionldGetEntitiesPage(void)
+bool orionldGetEntitiesPage(QNode* qNodeApi, OrionldGeoInfo* geoInfoP)
 {
   uint32_t  offset      = orionldState.uriParams.offset;
   uint32_t  limit       = orionldState.uriParams.limit;
   KjNode*   entityArray = kjArray(orionldState.kjsonP, NULL);
+
+  //
+  // Are the filters applied here, on the assembled Entity, instead of being pushed down?
+  //
+  // If so, the Entities must still be NORMALIZED when the filter runs - 'q' navigates to
+  // "<attribute>.value", and in the simplified format there is no "value" to navigate to, just the
+  // value itself.  So the local half is fetched normalized too (the remote halves always are), the
+  // filter runs, and the format conversion is done for the whole page afterwards.
+  //
+  bool geoFiltering = (geoInfoP != NULL) && (geoInfoP->geometry != GeoNoGeometry);
+  bool postFilter   = (orionldState.uriParams.splitEntities == true) && ((qNodeApi != NULL) || (geoFiltering == true));
+
+  OrionldRenderFormat savedFormat = orionldState.out.format;
+  if (postFilter == true)
+    orionldState.out.format = RF_NORMALIZED;
 
   KT_T(KtEntityMap, "entity map:          '%s'", orionldState.in.entityMap->id);
   KT_T(KtEntityMap, "items in entity map:  %d",  orionldState.in.entityMap->count);
@@ -315,8 +461,8 @@ bool orionldGetEntitiesPage(void)
                               &orionldState.in.attrList,
                               &orionldState.in.pickList,
                               NULL,
-                              distOpP->qNode,
-                              &distOpP->geoInfo,
+                              (orionldState.uriParams.splitEntities == true)? NULL : distOpP->qNode,
+                              (orionldState.uriParams.splitEntities == true)? NULL : &distOpP->geoInfo,
                               distOpP->lang,
                               true,                        // sysAttrs needed, to help pick attributes in case more than one of the same
                               distOpP->geometryProperty,
@@ -374,7 +520,28 @@ bool orionldGetEntitiesPage(void)
     distOpItemListDebug(distOpListItem, "To Forward for GET /entities");
     distOpsSendAndReceive(distOpListItem, queryResponse, entityArray);
 
-    formatFix(entityArray, localKids);
+    if (postFilter == false)
+      formatFix(entityArray, localKids);
+  }
+
+  //
+  // The Entities are whole now - this is where the filters go, if they could not be pushed down.
+  // And only now can the page be rendered in the format the client asked for.
+  //
+  if (postFilter == true)
+  {
+    assembledEntitiesFilter(entityArray, qNodeApi, geoInfoP);
+
+    //
+    // An empty Entity array gets no Link header - the same rule orionldGetEntitiesLocal applies.
+    // Without this, filtering the page down to nothing would answer "[]" WITH a Link header, while
+    // every other way of arriving at "[]" answers without one.
+    //
+    if (entityArray->value.firstChildP == NULL)
+      orionldState.noLinkHeader = true;
+
+    orionldState.out.format = savedFormat;
+    formatFix(entityArray, 0);  // 0: every Entity of the page is normalized, the local ones included
   }
 
   orionldState.responseTree   = entityArray;

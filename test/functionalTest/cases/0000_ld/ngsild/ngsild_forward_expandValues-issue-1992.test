@@ -34,6 +34,12 @@ accumulatorStart --pretty-print --url /ngsi-ld/v1/entities 127.0.0.1 ${LISTENER_
 #
 # 'expandValues' modifies the interpretation of the right hand side of a 'q' expression - the
 # value is expanded, which is what makes 'q' work on a VocabProperty.
+#
+# NOTE
+#   The CB queries all carry 'splitEntities=false'.  Forwarding 'q' at all is only correct when every
+#   Entity lives in its entirety in one single Context Source, and that is exactly what that parameter
+#   states - see issue #1994.  Without it, 'q' is not forwarded and there is no forwarded 'expandValues'
+#   left for this test to be about.
 # It must therefore be forwarded together with 'q', or the context source compares against the
 # non-expanded value and matches nothing.  That was issue #1992.
 #
@@ -116,21 +122,21 @@ echo
 
 echo '05. Query CB with q=sex=="Male" (no expandValues) - see nothing (the value isn'"'"'t expanded)'
 echo "============================================================================================"
-orionCurl --url '/ngsi-ld/v1/entities?type=Animal&q=sex==%22Male%22'
+orionCurl --url '/ngsi-ld/v1/entities?type=Animal&q=sex==%22Male%22&splitEntities=false'
 echo
 echo
 
 
 echo '06. Query CB with q=sex=="Male"&expandValues=sex - see pig035 (this is the bug of #1992)'
 echo "========================================================================================"
-orionCurl --url '/ngsi-ld/v1/entities?type=Animal&q=sex==%22Male%22&expandValues=sex'
+orionCurl --url '/ngsi-ld/v1/entities?type=Animal&q=sex==%22Male%22&expandValues=sex&splitEntities=false'
 echo
 echo
 
 
 echo '07. Query CB with q=sex=="Female"&expandValues=sex - see pig037'
 echo "==============================================================="
-orionCurl --url '/ngsi-ld/v1/entities?type=Animal&q=sex==%22Female%22&expandValues=sex'
+orionCurl --url '/ngsi-ld/v1/entities?type=Animal&q=sex==%22Female%22&expandValues=sex&splitEntities=false'
 echo
 echo
 
@@ -160,7 +166,7 @@ echo
 
 echo '09. Query CB with q=sex=="Male"&expandValues=sex - to provoke a forwarded request'
 echo "================================================================================="
-orionCurl --url '/ngsi-ld/v1/entities?type=Animal&q=sex==%22Male%22&expandValues=sex'
+orionCurl --url '/ngsi-ld/v1/entities?type=Animal&q=sex==%22Male%22&expandValues=sex&splitEntities=false'
 echo
 echo
 

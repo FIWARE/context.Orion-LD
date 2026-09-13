@@ -216,13 +216,22 @@ EntityMap* entityMapCreate(DistOp* distOpList, char* idPattern, QNode* qNode, Or
   pickListArray[1] = NULL;
   pickList.array   = pickListArray;
 
+  //
+  // If Entities may be split over several Context Sources, the local part of an Entity is just as partial
+  // as any remote part, and filtering it here would drop Entities whose matching Attribute lives elsewhere.
+  // The Entity Map then holds "candidate Entities" and the filters are applied once the Entity has been
+  // assembled - in orionldGetEntitiesPage.  See TS 104-175 clause 9.6.
+  //
+  QNode*          localQNode    = (orionldState.uriParams.splitEntities == true)? NULL : qNode;
+  OrionldGeoInfo* localGeoInfoP = (orionldState.uriParams.splitEntities == true)? NULL : geoInfoP;
+
   KjNode* localDbMatches = mongocEntitiesQuery(&orionldState.in.typeList,
                                                &orionldState.in.idList,
                                                idPattern,
                                                &orionldState.in.attrList,
                                                &pickList,
-                                               qNode,
-                                               geoInfoP,
+                                               localQNode,
+                                               localGeoInfoP,
                                                NULL,
                                                geojsonGeometryLongName,
                                                orionldState.uriParams.orderBy);

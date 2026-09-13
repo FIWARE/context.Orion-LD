@@ -42,6 +42,7 @@ extern "C"
 #include "orionld/common/traceLevels.h"                          // KTrace levels
 #include "orionld/common/eqForDot.h"                             // eqForDot
 #include "orionld/common/geosInit.h"                             // geosHandle
+#include "orionld/common/geoCompile.h"                            // geoCompile
 #include "orionld/payloadCheck/pcheckGeoQ.h"                     // pcheckGeoQ
 #include "orionld/subCache/subCacheItemGeoCompile.h"             // Own interface
 
@@ -113,29 +114,7 @@ void subCacheItemGeoCompile(SubCacheItem* sciP, KjNode* geoqP)
   if ((geometryP == NULL) || (coordinatesP == NULL))
     return;
 
-  if (geosHandle == NULL)
-    KT_RVE("Sub '%s': GEOS is not initialized - the subscription will not geo-match", sciP->subId);
-
-  //
-  // Build the GeoJSON string GEOS wants: {"type":"<geometry>","coordinates":<coords>}
-  //
-  char geoJson[2048];
-  char coordsBuf[1536];
-
-  kjFastRender(coordinatesP, coordsBuf);
-
-  int len = snprintf(geoJson, sizeof(geoJson), "{\"type\":\"%s\",\"coordinates\":%s}", geometryP->value.s, coordsBuf);
-
-  if ((len <= 0) || (len >= (int) sizeof(geoJson)))
-    KT_RVE("Sub '%s': 'geoQ' coordinates too big for the GEOS reader (%d bytes)", sciP->subId, len);
-
-  GEOSGeoJSONReader* reader = GEOSGeoJSONReader_create_r(geosHandle);
-
-  sciP->geosGeometry = GEOSGeoJSONReader_readGeometry_r(geosHandle, reader, geoJson);
-  GEOSGeoJSONReader_destroy_r(geosHandle, reader);
-
-  if ((sciP->geosGeometry != NULL) && (sciP->geoInfo->georel != GeorelNear))
-    sciP->geosPrepared = GEOSPrepare_r(geosHandle, sciP->geosGeometry);
+  geoCompile(geometryP->value.s, coordinatesP, sciP->geoInfo->georel, &sciP->geosGeometry, &sciP->geosPrepared, sciP->subId);
 
   KT_T(KtSubCache, "Sub '%s': geoQ compiled (geosGeometry: %p, geosPrepared: %p)", sciP->subId, sciP->geosGeometry, sciP->geosPrepared);
 }

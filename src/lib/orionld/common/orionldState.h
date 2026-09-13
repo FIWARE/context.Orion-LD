@@ -187,6 +187,9 @@ typedef struct OrionldUriParams
   double    observedAtAsDouble;
   uint64_t  mask;
 
+  // Distributed operations
+  bool      splitEntities;  // Set from the broker default (noSplitEntities) and overridden by the 'splitEntities' URI param
+
   // DDS
   bool      ddsSync;    // meaningful only if (mask & ORIONLD_URIPARAM_DDSSYNC); tri-state: unset = follow broker default
 } OrionldUriParams;
@@ -294,6 +297,20 @@ typedef struct OrionldStateIn
   StringArray  omitList;
   StringArray  expandValuesList;
   StringArray  datasetIdList;
+
+  //
+  // The 'q' of the request, parsed a second time - as an API path ("A.B"), not a database path
+  // ("attrs.A.md.B.value").  Needed to match 'q' against an ASSEMBLED Entity, which is in the API
+  // model.  NULL unless there is a 'q'.
+  //
+  QNode*       qNodeApi;
+
+  //
+  // Set while the API-model 'q' tree is parsed, so that qVariableFix knows to build a path that ends
+  // in the value ("A.value"), which is what navigating an API-model Entity needs.  Subscriptions get
+  // the same treatment - they match API-model Entities too.
+  //
+  bool         qApiModelParse;
 
   // Processed URI params for Linked Entities
   bool         linkedEntities;
@@ -681,6 +698,7 @@ extern uint32_t          cSubCounters;              // Number of subscription co
 extern PernotSubCache    pernotSubCache;
 extern EntityMap*        entityMaps;               // Used by GET /entities in the distributed case, for pagination
 extern bool              entityMapsEnabled;        // Enable Entity Maps
+extern bool              noSplitEntities;          // From orionldState.cpp - no Entity is split over more than one Context Source
 extern bool              distSubsEnabled;          // Enable distributed subscriptions
 extern bool              noArrayReduction;         // Used by arrayReduce in pCheckAttribute.cpp
 extern int               pageSize;                 // Pagination limit

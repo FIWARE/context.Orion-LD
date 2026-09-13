@@ -555,7 +555,7 @@ OrionldAlterationMatch* subCacheAlterationMatch(OrionldAlteration* alterationLis
       //
       // Geo-match using GEOS (in-process, no DB query needed)
       //
-      if (geoMatch(sciP, altP->finalApiEntityP) == false)
+      if (geoMatch(sciP->geoInfo, sciP->geosGeometry, sciP->geosPrepared, sciP->subId, altP->finalApiEntityP) == false)
       {
         KT_T(KtSubCacheMatch, "Sub '%s' - no match due to geoQ", sciP->subId);
         continue;

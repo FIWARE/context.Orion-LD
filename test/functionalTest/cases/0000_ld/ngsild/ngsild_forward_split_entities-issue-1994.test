@@ -1,0 +1,567 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+# VALGRIND_READY - to mark the test ready for valgrindTestSuite.sh
+
+--NAME--
+Filters are not forwarded when Entities may be split over Context Sources (issue #1994)
+
+--SHELL-INIT--
+dbInit CB
+dbInit CP1
+orionldStart CB  -experimental -forwarding -wip entityMaps
+orionldStart CP1 -experimental
+accumulatorStart --pretty-print --url /ngsi-ld/v1/entities 127.0.0.1 ${LISTENER_PORT}
+
+--SHELL--
+#
+# An Entity that is split over two brokers: CB holds 'name' and 'sex', CP1 holds 'heartRate' and
+# 'location'.  Neither broker holds the whole Animal.
+#
+# A filter can only be pushed down to a Context Source if that Context Source holds the whole Entity.
+# If it doesn't, it is asked about a part, answers about that part, and the rest of the Entity is lost.
+# So, unless told otherwise, the filters stay home and are applied to the ASSEMBLED Entity instead.
+# TS 104-175 clause 10.4.3:
+#   "If split entities flag is explicitly set to true or, if not explicitly set, the default setting of
+#    the deployment allows split entities, the filters ... shall be removed before forwarding the
+#    request.  These filters then have to be applied after the Entity information from different
+#    Context Sources and local information, if there is any, has been aggregated"
+#
+# 'splitEntities=true' is the default, and '-noSplitEntities' on the command line turns it around for
+# a deployment that knows its Entities are never split.
+#
+# 01. Create urn:Animal:pig035 on CB  - name + sex (a VocabProperty)
+# 02. Create urn:Animal:pig035 on CP1 - heartRate + location
+# 03. Create urn:Animal:pig037 on CB  - name + sex=Female, and nothing on CP1
+# 04. Register CP1 on CB, inclusive, for entities of type Animal
+# 05. Query CB without any filter - both halves of pig035 are there
+# 06. Query CB with q on 'sex' - a CB Attribute - pig035, whole, CP1's half included
+# 07. Query CB with q on 'heartRate' - a CP1 Attribute CB doesn't have at all - pig035, whole
+# 08. Query CB with q on 'name' - a plain Property
+# 09. NEGATIVE: q=sex=="Female" gives pig037 only, and pig037 has no CP1 half
+# 10. NEGATIVE: q=heartRate<60 matches nothing
+# 11. Geoquery 'near' the pig - 'location' lives only on CP1 - pig035
+# 12. NEGATIVE: the same geoquery 1500 km away matches nothing
+# 13. Geoquery 'within' a polygon around the pig - pig035
+# 14. Register the accumulator too, to see what a forwarded request carries
+# 15. Query with q - the forwarded request must carry NO 'q'
+# 16. The same query with splitEntities=false - now the forwarded request carries 'q'
+#
+
+echo "01. Create urn:Animal:pig035 on CB - name + sex"
+echo "==============================================="
+payload='{
+  "id": "urn:ngsi-ld:Animal:pig035",
+  "type": "Animal",
+  "name": { "type": "Property", "value": "Giant" },
+  "sex":  { "type": "VocabProperty", "vocab": "Male" }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "02. Create urn:Animal:pig035 on CP1 - heartRate + location"
+echo "=========================================================="
+payload='{
+  "id": "urn:ngsi-ld:Animal:pig035",
+  "type": "Animal",
+  "heartRate": { "type": "Property", "value": 62 },
+  "location": {
+    "type": "GeoProperty",
+    "value": { "type": "Point", "coordinates": [ 13.34695, 52.51965 ] }
+  }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload" --port $CP1_PORT
+echo
+echo
+
+
+echo "03. Create urn:Animal:pig037 on CB - sex=Female, nothing on CP1"
+echo "==============================================================="
+payload='{
+  "id": "urn:ngsi-ld:Animal:pig037",
+  "type": "Animal",
+  "name": { "type": "Property", "value": "Colossus" },
+  "sex":  { "type": "VocabProperty", "vocab": "Female" }
+}'
+orionCurl --url /ngsi-ld/v1/entities --payload "$payload"
+echo
+echo
+
+
+echo "04. Register CP1 on CB, inclusive, for entities of type Animal"
+echo "=============================================================="
+payload='{
+  "id": "urn:ngsi-ld:ContextSourceRegistration:R1",
+  "type": "ContextSourceRegistration",
+  "information": [ { "entities": [ { "type": "Animal" } ] } ],
+  "endpoint": "http://localhost:'$CP1_PORT'",
+  "operations": [ "federationOps" ],
+  "mode": "inclusive"
+}'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload"
+echo
+echo
+
+
+echo "05. Query CB without a filter - pig035 is whole"
+echo "==============================================="
+orionCurl --url '/ngsi-ld/v1/entities?id=urn:ngsi-ld:Animal:pig035&type=Animal'
+echo
+echo
+
+
+echo '06. Query CB with q=sex=="Male" - an Attribute CB holds - pig035, whole'
+echo "======================================================================="
+orionCurl --url '/ngsi-ld/v1/entities?type=Animal&q=sex==%22Male%22&expandValues=sex'
+echo
+echo
+
+
+echo "07. Query CB with q=heartRate>60 - an Attribute ONLY CP1 holds - pig035, whole"
+echo "=============================================================================="
+orionCurl --url '/ngsi-ld/v1/entities?type=Animal&q=heartRate%3E60'
+echo
+echo
+
+
+echo '08. Query CB with q=name=="Giant" - a plain Property'
+echo "==================================================="
+orionCurl --url '/ngsi-ld/v1/entities?type=Animal&q=name==%22Giant%22'
+echo
+echo
+
+
+echo '09. Query CB with q=sex=="Female" - pig037, which has no CP1 half'
+echo "================================================================="
+orionCurl --url '/ngsi-ld/v1/entities?type=Animal&q=sex==%22Female%22&expandValues=sex'
+echo
+echo
+
+
+echo "10. NEGATIVE: q=heartRate<60 matches nothing"
+echo "============================================"
+orionCurl --url '/ngsi-ld/v1/entities?type=Animal&q=heartRate%3C60'
+echo
+echo
+
+
+echo "11. Geoquery near the pig - 'location' lives only on CP1"
+echo "========================================================"
+orionCurl --url '/ngsi-ld/v1/entities?type=Animal&georel=near%3BmaxDistance==1000&geometry=Point&coordinates=%5B13.34695,52.51965%5D'
+echo
+echo
+
+
+echo "12. NEGATIVE: the same geoquery, 1500 km away"
+echo "============================================="
+orionCurl --url '/ngsi-ld/v1/entities?type=Animal&georel=near%3BmaxDistance==1000&geometry=Point&coordinates=%5B2.1734,41.3851%5D'
+echo
+echo
+
+
+echo "13. Geoquery within a polygon around the pig"
+echo "============================================"
+orionCurl --url '/ngsi-ld/v1/entities?type=Animal&georel=within&geometry=Polygon&coordinates=%5B%5B%5B13.0,52.0%5D,%5B14.0,52.0%5D,%5B14.0,53.0%5D,%5B13.0,53.0%5D,%5B13.0,52.0%5D%5D%5D'
+echo
+echo
+
+
+echo "14. Register the accumulator on CB as well, to inspect the forwarded request"
+echo "==========================================================================="
+payload='{
+  "id": "urn:ngsi-ld:ContextSourceRegistration:R2",
+  "type": "ContextSourceRegistration",
+  "information": [ { "entities": [ { "type": "Animal" } ] } ],
+  "endpoint": "http://localhost:'$LISTENER_PORT'",
+  "operations": [ "queryEntity" ],
+  "mode": "inclusive"
+}'
+orionCurl --url /ngsi-ld/v1/csourceRegistrations --payload "$payload"
+echo
+echo
+
+
+echo "15. Query with q - the forwarded request carries NO q"
+echo "====================================================="
+orionCurl --url '/ngsi-ld/v1/entities?type=Animal&q=name==%22Giant%22' > /dev/null
+accumulatorDump > /tmp/dump_1994
+head -1 /tmp/dump_1994 | tr '?&' '\n\n' | grep -cE '^q=' | sed 's/^/q params in the forwarded URL: /'
+rm -f /tmp/dump_1994
+accumulatorReset
+echo
+echo
+
+
+echo "16. The same query with splitEntities=false - now the forwarded request carries q"
+echo "================================================================================="
+orionCurl --url '/ngsi-ld/v1/entities?type=Animal&q=name==%22Giant%22&splitEntities=false' > /dev/null
+accumulatorDump > /tmp/dump_1994
+head -1 /tmp/dump_1994 | tr '?&' '\n\n' | grep -E '^q='
+rm -f /tmp/dump_1994
+accumulatorReset
+echo
+echo
+
+
+--REGEXPECT--
+01. Create urn:Animal:pig035 on CB - name + sex
+===============================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:Animal:pig035
+
+
+
+02. Create urn:Animal:pig035 on CP1 - heartRate + location
+==========================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:Animal:pig035
+
+
+
+03. Create urn:Animal:pig037 on CB - sex=Female, nothing on CP1
+===============================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:ngsi-ld:Animal:pig037
+
+
+
+04. Register CP1 on CB, inclusive, for entities of type Animal
+==============================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/csourceRegistrations/urn:ngsi-ld:ContextSourceRegistration:R1
+
+
+
+05. Query CB without a filter - pig035 is whole
+===============================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+NGSILD-EntityMap: REGEX(.*)
+
+[
+    {
+        "heartRate": {
+            "type": "Property",
+            "value": 62
+        },
+        "id": "urn:ngsi-ld:Animal:pig035",
+        "location": {
+            "type": "GeoProperty",
+            "value": {
+                "coordinates": [
+                    13.34695,
+                    52.51965
+                ],
+                "type": "Point"
+            }
+        },
+        "name": {
+            "type": "Property",
+            "value": "Giant"
+        },
+        "sex": {
+            "type": "VocabProperty",
+            "vocab": "Male"
+        },
+        "type": "Animal"
+    }
+]
+
+
+06. Query CB with q=sex=="Male" - an Attribute CB holds - pig035, whole
+=======================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+NGSILD-EntityMap: REGEX(.*)
+
+[
+    {
+        "heartRate": {
+            "type": "Property",
+            "value": 62
+        },
+        "id": "urn:ngsi-ld:Animal:pig035",
+        "location": {
+            "type": "GeoProperty",
+            "value": {
+                "coordinates": [
+                    13.34695,
+                    52.51965
+                ],
+                "type": "Point"
+            }
+        },
+        "name": {
+            "type": "Property",
+            "value": "Giant"
+        },
+        "sex": {
+            "type": "VocabProperty",
+            "vocab": "Male"
+        },
+        "type": "Animal"
+    }
+]
+
+
+07. Query CB with q=heartRate>60 - an Attribute ONLY CP1 holds - pig035, whole
+==============================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+NGSILD-EntityMap: REGEX(.*)
+
+[
+    {
+        "heartRate": {
+            "type": "Property",
+            "value": 62
+        },
+        "id": "urn:ngsi-ld:Animal:pig035",
+        "location": {
+            "type": "GeoProperty",
+            "value": {
+                "coordinates": [
+                    13.34695,
+                    52.51965
+                ],
+                "type": "Point"
+            }
+        },
+        "name": {
+            "type": "Property",
+            "value": "Giant"
+        },
+        "sex": {
+            "type": "VocabProperty",
+            "vocab": "Male"
+        },
+        "type": "Animal"
+    }
+]
+
+
+08. Query CB with q=name=="Giant" - a plain Property
+===================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+NGSILD-EntityMap: REGEX(.*)
+
+[
+    {
+        "heartRate": {
+            "type": "Property",
+            "value": 62
+        },
+        "id": "urn:ngsi-ld:Animal:pig035",
+        "location": {
+            "type": "GeoProperty",
+            "value": {
+                "coordinates": [
+                    13.34695,
+                    52.51965
+                ],
+                "type": "Point"
+            }
+        },
+        "name": {
+            "type": "Property",
+            "value": "Giant"
+        },
+        "sex": {
+            "type": "VocabProperty",
+            "vocab": "Male"
+        },
+        "type": "Animal"
+    }
+]
+
+
+09. Query CB with q=sex=="Female" - pig037, which has no CP1 half
+=================================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+NGSILD-EntityMap: REGEX(.*)
+
+[
+    {
+        "id": "urn:ngsi-ld:Animal:pig037",
+        "name": {
+            "type": "Property",
+            "value": "Colossus"
+        },
+        "sex": {
+            "type": "VocabProperty",
+            "vocab": "Female"
+        },
+        "type": "Animal"
+    }
+]
+
+
+10. NEGATIVE: q=heartRate<60 matches nothing
+============================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+Date: REGEX(.*)
+NGSILD-EntityMap: REGEX(.*)
+
+[]
+
+
+11. Geoquery near the pig - 'location' lives only on CP1
+========================================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+NGSILD-EntityMap: REGEX(.*)
+
+[
+    {
+        "heartRate": {
+            "type": "Property",
+            "value": 62
+        },
+        "id": "urn:ngsi-ld:Animal:pig035",
+        "location": {
+            "type": "GeoProperty",
+            "value": {
+                "coordinates": [
+                    13.34695,
+                    52.51965
+                ],
+                "type": "Point"
+            }
+        },
+        "name": {
+            "type": "Property",
+            "value": "Giant"
+        },
+        "sex": {
+            "type": "VocabProperty",
+            "vocab": "Male"
+        },
+        "type": "Animal"
+    }
+]
+
+
+12. NEGATIVE: the same geoquery, 1500 km away
+=============================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+Date: REGEX(.*)
+NGSILD-EntityMap: REGEX(.*)
+
+[]
+
+
+13. Geoquery within a polygon around the pig
+============================================
+HTTP/1.1 200 OK
+Content-Length: REGEX(\d+)
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+NGSILD-EntityMap: REGEX(.*)
+
+[
+    {
+        "heartRate": {
+            "type": "Property",
+            "value": 62
+        },
+        "id": "urn:ngsi-ld:Animal:pig035",
+        "location": {
+            "type": "GeoProperty",
+            "value": {
+                "coordinates": [
+                    13.34695,
+                    52.51965
+                ],
+                "type": "Point"
+            }
+        },
+        "name": {
+            "type": "Property",
+            "value": "Giant"
+        },
+        "sex": {
+            "type": "VocabProperty",
+            "vocab": "Male"
+        },
+        "type": "Animal"
+    }
+]
+
+
+14. Register the accumulator on CB as well, to inspect the forwarded request
+===========================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/csourceRegistrations/urn:ngsi-ld:ContextSourceRegistration:R2
+
+
+
+15. Query with q - the forwarded request carries NO q
+=====================================================
+q params in the forwarded URL: 0
+
+
+16. The same query with splitEntities=false - now the forwarded request carries q
+=================================================================================
+q=name=="Giant"
+
+
+--TEARDOWN--
+brokerStop CB
+brokerStop CP1
+accumulatorStop
+dbDrop CB
+dbDrop CP1

@@ -32,6 +32,9 @@
 //
 // orionldGetEntitiesPage -
 //
-extern bool orionldGetEntitiesPage(void);
+#include "orionld/types/QNode.h"                              // QNode
+#include "orionld/types/OrionldGeoInfo.h"                     // OrionldGeoInfo
+
+extern bool orionldGetEntitiesPage(QNode* qNodeApi, OrionldGeoInfo* geoInfoP);
 
 #endif  // SRC_LIB_ORIONLD_SERVICEROUTINES_ORIONLDGETENTITIESPAGE_H_

@@ -22,6 +22,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
 
 SET (SOURCES
     geosInit.cpp
+    geoCompile.cpp
     kallocGuard.cpp
     orionldRequestSend.cpp
     urlParse.cpp

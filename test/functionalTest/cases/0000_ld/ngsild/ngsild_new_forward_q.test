@@ -60,8 +60,14 @@ echo
 
 echo "02. Query the CB for entities, using 'q'"
 echo "========================================"
+#
+# 'splitEntities=false' states that no Entity is split over more than one Context Source, and THAT is
+# what lets 'q' be pushed down to the Context Source - which is what this test is about.
+# Without it (the default), the filter stays home and is applied to the assembled Entity instead, so
+# no 'q' would reach the accumulator at all.  See issue #1994.
+#
 q='a>10;(b==12|c!=%221%202%22)'
-orionCurl --url "/ngsi-ld/v1/entities?q=$q"
+orionCurl --url "/ngsi-ld/v1/entities?q=$q&splitEntities=false"
 echo
 echo
 

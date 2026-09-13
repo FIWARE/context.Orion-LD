@@ -1138,7 +1138,7 @@ MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
   {
     if (strcmp(value, "true") == 0)
       orionldState.uriParams.reverse = true;
-    else if (strcmp(key, "false") != 0)
+    else if (strcmp(value, "false") != 0)
     {
       orionldError(OrionldBadRequestData, "Invalid value for uri parameter /reverse/", value, 400);
       return MHD_YES;
@@ -1148,7 +1148,7 @@ MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
   {
     if (strcmp(value, "true") == 0)
       orionldState.uriParams.collapse = true;
-    else if (strcmp(key, "false") != 0)
+    else if (strcmp(value, "false") != 0)
     {
       orionldError(OrionldBadRequestData, "Invalid value for uri parameter /collapse/", value, 400);
       return MHD_YES;
@@ -1187,7 +1187,7 @@ MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
   {
     if (strcmp(value, "true") == 0)
       orionldState.uriParams.reset = true;
-    else if (strcmp(key, "false") != 0)
+    else if (strcmp(value, "false") != 0)
     {
       orionldError(OrionldBadRequestData, "Invalid value for uri parameter /reset/", value, 400);
       return MHD_YES;
@@ -1206,7 +1206,7 @@ MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
       orionldState.uriParams.local = true;
       orionldState.distributed = false;
     }
-    else if (strcmp(key, "false") != 0)
+    else if (strcmp(value, "false") != 0)
     {
       orionldError(OrionldBadRequestData, "Invalid value for uri parameter /local/", value, 400);
       return MHD_YES;
@@ -1234,6 +1234,27 @@ MHD_Result orionldUriArgumentGet(void* cbDataP, MHD_ValueKind kind, const char* 
     }
 
     orionldState.uriParams.mask |= ORIONLD_URIPARAM_DDSSYNC;
+  }
+  else if (strcmp(key, "splitEntities") == 0)
+  {
+    //
+    // Whether Entities may be split over more than one Context Source.
+    // If so, no filter can be forwarded - the Entity has to be assembled first, and only then filtered.
+    // Overrides the broker-wide default (the -noSplitEntities CLI option).
+    // Per TS 104-176 clause 7, the parameter does not apply if 'local' is true - and with 'local' there is
+    // no forwarding at all, so nothing needs to be done about that here.
+    //
+    if (strcmp(value, "true") == 0)
+      orionldState.uriParams.splitEntities = true;
+    else if (strcmp(value, "false") == 0)
+      orionldState.uriParams.splitEntities = false;
+    else
+    {
+      orionldError(OrionldBadRequestData, "Invalid value for uri parameter /splitEntities/", value, 400);
+      return MHD_YES;
+    }
+
+    orionldState.uriParams.mask |= ORIONLD_URIPARAM_SPLITENTITIES;
   }
   else if (strcmp(key, "entity::type") == 0)  // Is NGSIv1 ?entity::type=X the same as NGSIv2 ?type=X ?
   {
