@@ -97,7 +97,7 @@ SET (STATIC_LIBS
 SET (DYNAMIC_LIBS
   fastdds
   fastcdr
-  foonathan_memory-0.7.3
+  foonathan_memory
   ddsenabler
   cpp_utils
   ddspipe_core
