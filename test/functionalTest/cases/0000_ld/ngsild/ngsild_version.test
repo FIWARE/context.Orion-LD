@@ -35,6 +35,11 @@ Test of orionld version service, with branch name
 # When kjson is bumped, this test fails and the pin in
 # docker/build-ubi/04.install-k-libs.sh is what to check.
 #
+# The DDS stack is asserted literally for the same reason, and its pin site is
+# docker/build-ubi/07.install-fastdds.sh. The values are read from the LOADED
+# library files, not the headers, so what this checks is what the broker
+# actually runs - the Enabler's own headers cannot tell 1.2.0 from 1.2.2.
+#
 
 --SHELL-INIT--
 dbInit CB
@@ -87,6 +92,9 @@ Date: REGEX(.*)
   "branch": REGEX(.*),
   "bson version": "2.2.2",
   "cached subscriptions": 0,
+  "ddsenabler version": "1.2.2",
+  "fastcdr version": "2.3.6",
+  "fastdds version": "3.6.2.0",
   "geos version": "REGEX(.*)",
   "kalloc version": "REGEX(.*)",
   "kbase version": "REGEX(.*)",

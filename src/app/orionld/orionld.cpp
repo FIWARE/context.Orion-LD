@@ -141,6 +141,7 @@ extern "C"
 #include "orionld/troe/pgConnectionPoolsFree.h"               // pgConnectionPoolsFree
 #include "orionld/troe/pgConnectionPoolsPresent.h"            // pgConnectionPoolsPresent
 #include "orionld/distOp/distOpInit.h"                        // distOpInit
+#include "orionld/dds/ddsLibVersions.h"                       // ddsFastDdsVersion, ddsFastCdrVersion, ddsEnablerVersion
 #include "orionld/dds/ddsInit.h"                              // ddsInit
 #include "orionld/dds/ddsServiceList.h"                       // ddsServiceList
 #include "orionld/kafka/kafkaInit.h"                          // kafkaInit
@@ -1517,6 +1518,7 @@ int main(int argC, char* argV[])
   KT_I("  Entity Maps:               %s", (entityMapsEnabled  == true)? "Enabled" : "Disabled");
   KT_I("  Distributed Subscriptions: %s", (distSubsEnabled    == true)? "Enabled" : "Disabled");
   KT_I("  WebSockets:                %s", (wsSupport          == true)? "Enabled" : "Disabled");
+  KT_I("  DDS:                       %s", (ddsSupport         == true)? "Enabled" : "Disabled");
 
   if (troe)
   {
@@ -1544,6 +1546,23 @@ int main(int argC, char* argV[])
   }
   else
     KT_I("  Mongo Driver:              Legacy C++ Driver (deprecated by mongodb)");
+
+  //
+  // The DDS stack, on the same terms as TRoE's Postgres versions just above:
+  // the Enabled/Disabled line is always there, the VERSIONS only when the
+  // subsystem is actually in use. Without -wip dds they would be three lines
+  // about libraries this run will never touch.
+  //
+  // ⚠ Read from the LOADED FILES, not from the headers - the Enabler's
+  // config.h stops at MAJOR.MINOR and cannot tell 1.2.0 from 1.2.2, which is
+  // exactly the distinction that matters. See ddsLibVersions.h.
+  //
+  if (ddsSupport == true)
+  {
+    KT_I("  Fast DDS Version:          %s", ddsFastDdsVersion());
+    KT_I("  Fast CDR Version:          %s", ddsFastCdrVersion());
+    KT_I("  DDS Enabler Version:       %s", ddsEnablerVersion());
+  }
 
   // ddsInit must run before kaBufferReset as it navigates configTree (allocated from kalloc)
   // and kjTreeNavigate uses kaStrdup internally
