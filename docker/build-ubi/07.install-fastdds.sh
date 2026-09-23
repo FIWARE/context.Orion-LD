@@ -31,6 +31,43 @@ tar xzf /tmp/asio-1-30-2.tar.gz -C /tmp
 cp -r /tmp/asio-asio-1-30-2/asio/include/* /usr/include/
 rm -rf /tmp/asio-1-30-2.tar.gz /tmp/asio-asio-1-30-2
 echo -e "\e[1;32m Builder: installed ASIO for DDS Libraries \e[0m"
+
+#
+# ⭐ A NEWER CMAKE, AND ON THE PATH OF THIS SCRIPT ONLY.
+#
+# The v1.2.2 stack needs CMake >= 3.20 and UBI 8 ships 3.15.7. That version
+# built the pins this replaces - Fast-CDR 2.3.0, Fast-DDS 3.3.0 - and stops
+# dead on the new ones:
+#
+#   CMake Error at CMakeLists.txt:18 (cmake_minimum_required):
+#     CMake 3.20 or higher is required.  You are running version 3.15.7
+#
+# ⛔ It is NOT installed over the system one, and that is deliberate. Every
+# other build step in this image is an older project built by the cmake it has
+# always had, and a newer cmake is not a free upgrade for them: CMake 4 dropped
+# support for cmake_minimum_required below 3.5 outright. 3.31 is the last of
+# the 3.x line, so it is new enough for eProsima and still accepts the rest -
+# but nothing else here has to find that out, because nothing else here sees
+# it.
+#
+echo -e "\e[1;32m Builder: installing CMake for the DDS Libraries \e[0m"
+CMAKE_VERSION=3.31.6
+case "$(uname -m)" in
+    aarch64|arm64) CMAKE_ARCH=linux-aarch64 ;;
+    *)             CMAKE_ARCH=linux-x86_64  ;;
+esac
+#
+# --https-only, because this URL REDIRECTS: GitHub answers a release download
+# with a 302 to its object store, so redirects cannot simply be turned off -
+# but every hop can be required to stay on https, which is the actual concern.
+#
+wget -q --https-only https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-${CMAKE_ARCH}.tar.gz -O /tmp/cmake.tar.gz
+mkdir -p /opt/cmake
+tar xzf /tmp/cmake.tar.gz -C /opt/cmake --strip-components=1
+rm -f /tmp/cmake.tar.gz
+export PATH=/opt/cmake/bin:$PATH
+cmake --version
+
 # Fast-DDS
 mkdir /opt/Fast-DDS
 
@@ -41,7 +78,7 @@ echo "04.install-fastdds.sh: foonathan_memory_vendor"
 cd /opt/Fast-DDS
 git clone https://github.com/eProsima/foonathan_memory_vendor.git
 cd foonathan_memory_vendor
-git checkout v1.3.1
+git checkout v1.4.1
 mkdir build
 cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_SHARED_LIBS=ON
@@ -55,7 +92,7 @@ echo "04.install-fastdds.sh: Fast-CDR"
 cd /opt/Fast-DDS
 git clone https://github.com/eProsima/Fast-CDR.git
 cd Fast-CDR
-git checkout v2.3.0
+git checkout v2.3.6
 mkdir build
 cd build
 cmake ..
@@ -69,7 +106,7 @@ echo "04.install-fastdds.sh: Fast-DDS"
 cd /opt/Fast-DDS
 git clone https://github.com/eProsima/Fast-DDS.git
 cd Fast-DDS
-git checkout v3.3.0
+git checkout v3.6.2
 mkdir build
 cd build
 
@@ -90,7 +127,7 @@ echo "04.install-fastdds.sh: dev-utils"
 cd /opt/Fast-DDS
 git clone https://github.com/eProsima/dev-utils.git
 cd dev-utils
-git checkout v1.3.0
+git checkout v1.5.3
 
 echo "04.install-fastdds.sh: cmake_utils"
 mkdir -p build/cmake_utils
@@ -113,7 +150,7 @@ echo "04.install-fastdds.sh: DDS-Pipe"
 cd /opt/Fast-DDS
 git clone https://github.com/eProsima/DDS-Pipe.git
 cd DDS-Pipe
-git checkout v1.3.0
+git checkout v1.5.3
 
 
 echo "04.install-fastdds.sh: ddspipe_core"
@@ -149,23 +186,26 @@ git clone https://github.com/eProsima/FIWARE-DDS-Enabler.git
 cd FIWARE-DDS-Enabler
 
 #
-# Pinned by COMMIT, not by branch: this used to check out 'append_action_infix',
-# a branch eProsima asked us to use and has since deleted -
+# A RELEASE TAG AT LAST - this is the move the previous comment here asked for.
 #
-#   error: pathspec 'append_action_infix' did not match any file(s) known to git
+# The Enabler used to be pinned by COMMIT, at ad19575 "Append action infix to
+# action topics" (#29), because the branch eProsima asked us to use
+# ('append_action_infix') had been deleted and no release contained that work
+# yet. Both v1.2.1 and v1.2.2 contain it now:
 #
-# The work was merged to main as ad19575 "Append action infix to action topics"
-# (#29), which is what this commit is - the same code the branch gave us. It is
-# NOT in any release tag: v1.2.0 (2026-05-05) predates it, and main carries only
-# it plus three cosmetic commits.
+#   git tag --contains ad19575d8b6691c9d46c53733ac040e6afeca998
 #
-# The infix is what builds the action topic names (ACTION_INFIX "/_action/" in
+# so the reason for the commit pin is gone. It mattered: the infix builds the
+# action topic names (ACTION_INFIX "/_action/" in
 # ddsenabler_participants/include/ddsenabler_participants/Constants.hpp), so a
-# tag would quietly break DDS actions rather than fail to build.
+# tag without it would quietly break DDS actions rather than fail to build.
 #
-# Move this to a release tag once eProsima cuts one that contains ad19575.
+# The versions above are not a set assembled here either. They are the whole of
+# v1.2.2's own ddsenabler.repos - Fast CDR 2.3.6, Fast DDS 3.6.2, dev-utils and
+# DDS-Pipe 1.5.3, foonathan_memory_vendor 1.4.1 - which is a combination
+# eProsima has built and tested together, rather than one we have.
 #
-git checkout ad19575
+git checkout v1.2.2
 
 # ./install_dds_module.sh
 
