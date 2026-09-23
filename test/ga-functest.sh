@@ -88,8 +88,20 @@ else
       . scripts/testEnv.sh
 
       rm -Rf /tmp/mongodb && mkdir -p /tmp/mongodb
-      mongod --dbpath /tmp/mongodb --nojournal --quiet > /dev/null 2>&1 &
-      sleep 3
+
+      # A single-node replica set, exactly as docker/build.sh starts it for the
+      # GA run this script exists to reproduce.  A standalone mongod has no
+      # oplog, so -ha mongo refuses to start and the two ngsild_ha_* tests fail
+      # HERE while passing in CI - the worst way round for a script whose whole
+      # job is to tell you in advance what CI will say.
+      #
+      # And no --nojournal: mongod refuses to start a replica set without a
+      # journal (Running wiredTiger without journaling in a replica set is not
+      # supported).
+      mongod --dbpath /tmp/mongodb --replSet rs0 --quiet > /dev/null 2>&1 &
+      for i in \$(seq 1 60); do mongo --quiet --eval 'db.adminCommand({ping:1}).ok' > /dev/null 2>&1 && break; sleep 0.5; done
+      mongo --quiet --eval 'rs.initiate({_id:\"rs0\",members:[{_id:0,host:\"localhost:27017\"}]})' > /dev/null 2>&1
+      for i in \$(seq 1 60); do [ \"\$(mongo --quiet --eval 'rs.status().myState' 2> /dev/null)\" == \"1\" ] && break; sleep 0.5; done
 
       CB_DIFF_TOOL=\"diff -u\" /opt/orion/test/functionalTest/testHarness.sh $@
     "
