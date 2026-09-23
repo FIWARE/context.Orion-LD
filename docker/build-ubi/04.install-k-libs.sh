@@ -49,16 +49,35 @@ for kproj in kbase ktrace klog kargs kalloc khash kjson kprom
 do
     cd ${ROOT_FOLDER}/$kproj
 
+    #
+    # ⭐ THE PINS, AND THEY ARE THE REASON THIS FILE IS TOUCHED AT ALL.
+    #
+    # The k-libs are ours and they move; this image is the only place that has
+    # to be told. They drifted once before - the image sat on kjson release/0.11
+    # while everything else had moved to 0.11.1, so every image built from it
+    # was missing three bug fixes and nothing noticed. That is what the literal
+    # "kjson version" assertion in ngsild_version.test exists to catch, and it
+    # is what caught this.
+    #
+    # ⚠ A BRANCH THAT IS NOT NAMED HERE FALLS THROUGH TO release/0.10, so a
+    # newly released lib needs a line, not just a new branch on gitlab.
+    #
     branch=release/0.10
     if [ $kproj = "kprom" ]
     then
-        branch=release/0.1.0
+        branch=release/0.1.1
     elif [ $kproj = "kjson" ]
     then
-        branch=release/0.12.0
+        branch=release/0.14.1
     elif [ $kproj = "kalloc" ]
     then
+        branch=release/0.10.2
+    elif [ $kproj = "kargs" ]
+    then
         branch=release/0.10.1
+    elif [ $kproj = "kbase" ]
+    then
+        branch=release/0.11
     fi
     
     echo checking out $kproj $branch
