@@ -33,6 +33,15 @@ pkg_check_modules(GNUTLS REQUIRED gnutls)
 pkg_check_modules(GEOS REQUIRED geos)
 
 #
+# foonathan_memory is found by PACKAGE, never by file name. The library carries
+# its version IN ITS NAME (libfoonathan_memory-0.7.4.so), so a hard-coded
+# '-lfoonathan_memory-0.7.3' breaks the link the moment the base image moves on -
+# which is exactly what happened with foonathan_memory_vendor 1.4.1, which also
+# moved it from lib to lib64. The package config names whichever one is installed.
+#
+find_package(foonathan_memory REQUIRED)
+
+#
 # DEBUG or RELEASE build ?
 #
 
@@ -291,7 +300,7 @@ SET (COMMON_STATIC_LIBS
 SET (DYNAMIC_LIBS
     fastdds
     fastcdr
-    foonathan_memory-0.7.3
+    foonathan_memory
     ddsenabler
     cpp_utils
     ddspipe_core
