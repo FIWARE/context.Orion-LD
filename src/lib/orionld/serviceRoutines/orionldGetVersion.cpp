@@ -56,6 +56,7 @@ extern "C"
 #include "orionld/context/orionldCoreContext.h"                // orionldCoreContextP
 #include "orionld/troe/pgVersionGet.h"                         // pgVersionToString
 #include "orionld/mqtt/mqttConnectionList.h"                   // Mqtt Connection List
+#include "orionld/dds/ddsLibVersions.h"                        // ddsFastDdsVersion, ddsFastCdrVersion, ddsEnablerVersion
 #include "orionld/serviceRoutines/orionldGetVersion.h"         // Own Interface
 
 
@@ -118,6 +119,25 @@ bool orionldGetVersion(void)
   kjChildAdd(orionldState.responseTree, nodeP);
 
   // Direct libraries
+
+  //
+  // The DDS stack.
+  //
+  // ⭐ Reported whether or not '-wip dds' was given, because the libraries are
+  // LINKED either way - the flag decides whether the broker USES them, not
+  // whether it carries them. Same reading as 'postgres libpq version', which
+  // is reported without TRoE being on.
+  //
+  // The versions come from the LOADED FILES rather than the headers: the
+  // Enabler's config.h stops at MAJOR.MINOR and cannot tell 1.2.0 from 1.2.2,
+  // which is exactly the distinction that matters. See ddsLibVersions.h.
+  //
+  nodeP = kjString(orionldState.kjsonP, "fastdds version", ddsFastDdsVersion());
+  kjChildAdd(orionldState.responseTree, nodeP);
+  nodeP = kjString(orionldState.kjsonP, "fastcdr version", ddsFastCdrVersion());
+  kjChildAdd(orionldState.responseTree, nodeP);
+  nodeP = kjString(orionldState.kjsonP, "ddsenabler version", ddsEnablerVersion());
+  kjChildAdd(orionldState.responseTree, nodeP);
 
   // microhttpd
   nodeP = kjString(orionldState.kjsonP, "microhttpd version", mhdVersion);

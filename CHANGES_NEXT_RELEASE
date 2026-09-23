@@ -126,6 +126,7 @@
   - Concurrent action goals no longer cross-talk: each goal's temporary subscription watches "<attr>@<goalDatasetId>" (datasetId-scoped watchedAttributes), so it is TRIGGERED only by its own goal's instance changes, not by sibling goals modifying the same attribute
   - Fixed HTTP 500 on a second consecutive PATCH/attr roundtrip (dotForEq nested-Property names so mongo $set doesn't fragment them across path-separator dots)
   - Renamed reply envelope field xId to instanceHandleId (matches FastDDS InstanceHandle_t terminology, requested by eProsima)
+  - The DDS stack's versions are now reported: "fastdds version", "fastcdr version" and "ddsenabler version" in GET /ngsi-ld/ex/v1/version, and a DDS line in the startup banner (with the three versions when -wip dds is set). They are read from the LOADED library files rather than the headers - the Enabler's config.h stops at MAJOR.MINOR and cannot tell 1.2.0 from 1.2.2
 
 ## Documentation
   - Added TRoE database schema and advanced optimization documentation
