@@ -1,0 +1,160 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+--NAME--
+Numbers with an exponent, and very large or very small floats, keep their value
+
+--SHELL-INIT--
+dbInit CB
+orionldStart CB -experimental
+
+--SHELL--
+
+#
+# Numbers written with an exponent, and floats at the extremes, used to be silently corrupted:
+#   - kjson (< 0.14.2) parsed an integer mantissa with a NEGATIVE exponent as if the exponent were
+#     positive: 5e-3 came back as 5000. Exponents past e18 overflowed: 1.234567890E+34 came back as
+#     4941990330274940928.
+#   - kbase (< 0.11.1) kFloatTrim cut every float of 1e30 or more at 30 characters (1.5e30 came
+#     back one digit short, i.e. as 1.5e29) and rendered non-zero values under ~5e-9 as 0.
+#
+# 01. Create urn:X1 with values written with an exponent, and extreme floats
+# 02. GET urn:X1 - every value is the number that was sent
+# 03. GET urn:X1 with options=keyValues - the same numbers on the other render path
+#
+
+echo "01. Create urn:X1 - numbers with exponents, very large and very small floats"
+echo "============================================================================"
+payload='{
+  "id": "urn:X1",
+  "type": "T",
+  "negExp":     { "type": "Property", "value": 5e-3 },
+  "negExpNeg":  { "type": "Property", "value": -5e-3 },
+  "posExp":     { "type": "Property", "value": 5e3 },
+  "twelveEm1":  { "type": "Property", "value": 12e-1 },
+  "e34":        { "type": "Property", "value": 1.234567890E+34 },
+  "big":        { "type": "Property", "value": 1.5e30 },
+  "tiny":       { "type": "Property", "value": 1e-9 },
+  "nested":     { "type": "Property", "value": { "rate": 25e-2 } }
+}'
+orionCurl --url /ngsi-ld/v1/entities -X POST --payload "$payload"
+echo
+echo
+
+
+echo "02. GET urn:X1 - normalized"
+echo "==========================="
+orionCurl --url /ngsi-ld/v1/entities/urn:X1
+echo
+echo
+
+
+echo "03. GET urn:X1 - keyValues"
+echo "=========================="
+orionCurl --url '/ngsi-ld/v1/entities/urn:X1?options=keyValues'
+echo
+echo
+
+
+--REGEXPECT--
+01. Create urn:X1 - numbers with exponents, very large and very small floats
+============================================================================
+HTTP/1.1 201 Created
+Content-Length: 0
+Date: REGEX(.*)
+Location: /ngsi-ld/v1/entities/urn:X1
+
+
+
+02. GET urn:X1 - normalized
+===========================
+HTTP/1.1 200 OK
+Content-Length: 385
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+{
+    "big": {
+        "type": "Property",
+        "value": 1.5e+30
+    },
+    "e34": {
+        "type": "Property",
+        "value": 1.23456789e+34
+    },
+    "id": "urn:X1",
+    "negExp": {
+        "type": "Property",
+        "value": 0.005
+    },
+    "negExpNeg": {
+        "type": "Property",
+        "value": -0.005
+    },
+    "nested": {
+        "type": "Property",
+        "value": {
+            "rate": 0.25
+        }
+    },
+    "posExp": {
+        "type": "Property",
+        "value": 5000
+    },
+    "tiny": {
+        "type": "Property",
+        "value": 1e-09
+    },
+    "twelveEm1": {
+        "type": "Property",
+        "value": 1.2
+    },
+    "type": "T"
+}
+
+
+03. GET urn:X1 - keyValues
+==========================
+HTTP/1.1 200 OK
+Content-Length: 161
+Content-Type: application/json
+Date: REGEX(.*)
+Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context-v1.9.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"
+
+{
+    "big": 1.5e+30,
+    "e34": 1.23456789e+34,
+    "id": "urn:X1",
+    "negExp": 0.005,
+    "negExpNeg": -0.005,
+    "nested": {
+        "rate": 0.25
+    },
+    "posExp": 5000,
+    "tiny": 1e-09,
+    "twelveEm1": 1.2,
+    "type": "T"
+}
+
+
+--TEARDOWN--
+brokerStop CB
+dbDrop CB
