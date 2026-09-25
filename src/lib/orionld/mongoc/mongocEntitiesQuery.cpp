@@ -48,6 +48,7 @@ extern "C"
 #include "orionld/mongoc/mongocKjTreeFromBson.h"                 // mongocKjTreeFromBson
 #include "orionld/mongoc/mongocAuxAttributesFilter.h"            // mongocAuxAttributesFilter
 #include "orionld/mongoc/mongocEntitiesQuery.h"                  // Own interface
+#include "orionld/mongoc/mongocIndexString.h"                    // mongocIndexString
 
 
 
@@ -74,19 +75,7 @@ static bool entityTypeFilter(bson_t* mongoFilterP, StringArray* entityTypes)
     char num[32];
     int  numLen;
 
-    if (ix < 10)
-    {
-      num[0] = '0' + ix;
-      num[1] = 0;
-      numLen = 1;
-    }
-    else
-    {
-      num[0] = '0' + ix % 10;
-      num[1] = '0' + ix / 10;
-      num[2] = 0;
-      numLen = 2;
-    }
+    numLen = mongocIndexString(ix, num);  // "0", "1", ... "10", "11" - BSON array keys are the decimal index
 
     bson_append_utf8(&entityTypeArray, num, numLen, entityTypes->array[ix], -1);
   }
@@ -124,19 +113,7 @@ static bool entityIdFilter(bson_t* mongoFilterP, StringArray* entityIds)
     char num[32];
     int  numLen;
 
-    if (ix < 10)
-    {
-      num[0] = '0' + ix;
-      num[1] = 0;
-      numLen = 1;
-    }
-    else
-    {
-      num[0] = '0' + ix % 10;
-      num[1] = '0' + ix / 10;
-      num[2] = 0;
-      numLen = 2;
-    }
+    numLen = mongocIndexString(ix, num);  // "0", "1", ... "10", "11" - BSON array keys are the decimal index
 
     bson_append_utf8(&entityIdArray, num, numLen, entityIds->array[ix], -1);
   }
