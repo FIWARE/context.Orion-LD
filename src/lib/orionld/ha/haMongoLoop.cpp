@@ -203,6 +203,54 @@ static void eventTreat(const bson_t* bsonP)
 
 // -----------------------------------------------------------------------------
 //
+// The watch - its client, its options and the stream itself
+//
+// A client of its own, not one from the pool: this one is held for the lifetime
+// of the broker, and taking a pool slot away from the request threads forever
+// would be a poor trade for a thread that spends its life blocked.
+//
+// The stream is opened by haMongoLoopStart(), on the main thread, and only then
+// handed over to haMongoLoopThread. Two reasons:
+//   o A stream mongo refuses to open is FATAL at startup - see haMongoLoopStart.
+//   o haInit() runs BEFORE the caches are loaded (the startup gap, PR #1987), and
+//     that only closes the gap if the stream is already open when haInit returns.
+//     Opened by the thread, it would be open "some time soon" - possibly after the
+//     load had read the very collection a write then went into.
+//
+static mongoc_client_t*        haClientP  = NULL;
+static mongoc_change_stream_t* haStreamP  = NULL;
+static bson_t                  haPipeline = BSON_INITIALIZER;   // Empty: everything. The filtering is done above, in C
+static bson_t*                 haOptsP    = NULL;
+
+
+
+// -----------------------------------------------------------------------------
+//
+// streamOpen - open the deployment-wide change stream
+//
+// mongoc_client_watch() runs the initial aggregate right away, so a stream mongo
+// refuses (not a replica set, not authorized, ...) is known here - it comes back
+// as a stream whose error_document() is set.
+//
+static mongoc_change_stream_t* streamOpen(bson_error_t* errorP)
+{
+  const bson_t*           reply;
+  mongoc_change_stream_t* streamP = mongoc_client_watch(haClientP, &haPipeline, haOptsP);
+
+  if (mongoc_change_stream_error_document(streamP, errorP, &reply) == true)
+  {
+    mongoc_change_stream_destroy(streamP);
+    return NULL;
+  }
+
+  KT_T(KtSubCache, "HA: watching the database for changes made by other broker instances");
+  return streamP;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // haMongoLoopThread - one thread, one watch, every tenant and all three collections
 //
 // mongoc_client_watch() watches the whole deployment, so a single cursor covers
@@ -215,34 +263,13 @@ static void eventTreat(const bson_t* bsonP)
 //
 static void* haMongoLoopThread(void* vP)
 {
-  //
-  // A client of its own, not one from the pool: this one is held for the lifetime
-  // of the broker, and taking a pool slot away from the request threads forever
-  // would be a poor trade for a thread that spends its life blocked.
-  //
-  mongoc_client_t* clientP = mongoc_client_new_from_uri(mongocUri);
-
-  if (clientP == NULL)
-    KT_X(1, "HA: unable to create a mongo client for the change stream");
-
-  bson_t pipeline = BSON_INITIALIZER;   // Empty: everything. The filtering is done above, in C
-
-  //
-  // maxAwaitTimeMS is how long the server holds the cursor open waiting for
-  // something to happen. Without it the driver's default is used and next()
-  // returns constantly - this is the difference between a blocked thread and a
-  // spinning one.
-  //
-  bson_t* optsP = BCON_NEW("maxAwaitTimeMS", BCON_INT32(1000));
+  mongoc_change_stream_t* streamP = haStreamP;  // Opened by haMongoLoopStart
+  bson_error_t            error;
 
   while (1)
   {
-    mongoc_change_stream_t* streamP = mongoc_client_watch(clientP, &pipeline, optsP);
-    const bson_t*           bsonP;
-    bson_error_t            error;
-    const bson_t*           reply;
-
-    KT_T(KtSubCache, "HA: watching the database for changes made by other broker instances");
+    const bson_t* bsonP;
+    const bson_t* reply;
 
     //
     // ⚠️ next() returning false does NOT mean the stream is finished - it means
@@ -290,15 +317,22 @@ static void* haMongoLoopThread(void* vP)
         break;  // A real error - out to have the stream recreated
     }
 
+    mongoc_change_stream_destroy(streamP);
+
     //
     // mongoc resumes by itself over a transient error, so getting here means it
-    // could not. Anything missed in the meantime is picked up by a restart, and
-    // by whatever -subCacheIval is still doing.
+    // could not. The stream is reopened from NOW - anything written in between is
+    // missed until a restart (or picked up by -subCacheIval, for subscriptions).
     //
-    KT_E("HA: change stream error (%s) - restarting the stream in 5 seconds", error.message);
-
-    mongoc_change_stream_destroy(streamP);
-    sleep(5);
+    // Not fatal, unlike at startup: this instance has been serving, and a mongo
+    // that went away for a while is expected to come back.
+    //
+    do
+    {
+      KT_E("HA: change stream error (%s) - restarting the stream in 5 seconds", error.message);
+      sleep(5);
+      streamP = streamOpen(&error);
+    } while (streamP == NULL);
   }
 
   return NULL;
@@ -308,14 +342,40 @@ static void* haMongoLoopThread(void* vP)
 
 // -----------------------------------------------------------------------------
 //
-// haMongoLoopStart -
+// haMongoLoopStart - open the change stream, then start the thread that reads it
+//
+// ⚠️ A stream that cannot be opened is FATAL. The broker was started with -ha mongo;
+// running on without the stream means running UNSYNCHRONISED while looking
+// healthy - every instance keeps only what was created on it, requests are served
+// from caches that silently disagree, and the only trace is a log line (issue #2000,
+// where the mongo user lacked the privileges for a deployment-wide watch).
 //
 bool haMongoLoopStart(void)
 {
-  pthread_t  tid;
-  int        ret;
+  bson_error_t error;
 
-  ret = pthread_create(&tid, NULL, haMongoLoopThread, NULL);
+  haClientP = mongoc_client_new_from_uri(mongocUri);
+
+  if (haClientP == NULL)
+    KT_X(1, "HA: unable to create a mongo client for the change stream");
+
+  //
+  // maxAwaitTimeMS is how long the server holds the cursor open waiting for
+  // something to happen. Without it the driver's default is used and next()
+  // returns constantly - this is the difference between a blocked thread and a
+  // spinning one.
+  //
+  haOptsP   = BCON_NEW("maxAwaitTimeMS", BCON_INT32(1000));
+  haStreamP = streamOpen(&error);
+
+  if (haStreamP == NULL)
+    KT_X(1, "-ha mongo: unable to open the change stream (%s). "
+            "The stream watches the whole deployment (a tenant is a database of its own), so, if mongo runs with authentication, "
+            "the mongo user needs the actions 'find' and 'changeStream' on ALL databases - see doc/manuals-ld/high-availability.md",
+         error.message);
+
+  pthread_t  tid;
+  int        ret = pthread_create(&tid, NULL, haMongoLoopThread, NULL);
 
   if (ret != 0)
     KT_RE(false, "HA: unable to create the change stream thread (%d)", ret);

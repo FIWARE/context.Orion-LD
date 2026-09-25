@@ -89,7 +89,7 @@ static void mongocLog
 // - dbSSL
 //
 // The URI for the connection looks like this:
-//   mongodb://[dbUser:dbPwd@]dbHost/[dbAuthDb]? [replicaSet=dbReplicaSet] [&authMechanism=dbAuthMech] [&tls=true&tlsAllowInvalidCertificates=true]
+//   mongodb://[dbUser:dbPwd@]dbHost/? [authSource=dbAuthDb&] [replicaSet=dbReplicaSet&] [authMechanism=dbAuthMech&] [tls=true&tlsAllowInvalidCertificates=true]
 //
 // Note that dbHost can be a comma-separated list of hostnames (and ports)
 //
@@ -214,8 +214,18 @@ static char* uriCompose
     if ((dbAuthDbPresent == true) || (dbReplicaSetPresent == true) || (dbAuthMechanismPresent == true)  || (dbSSL == true))
       compV[compNo++] = (char*) "?";
 
+    //
+    // ⚠️ An OPTION like the others - "authSource=" and a trailing '&'. The bare
+    // dbAuthDb this used to be glued straight onto whatever came next:
+    // "?adminreplicaSet=rs0&" - mongoc warns "Unsupported URI option", drops it,
+    // and with it BOTH the auth database and the replica set.
+    //
     if (dbAuthDbPresent == true)
+    {
+      compV[compNo++] = (char*) "authSource=";
       compV[compNo++] = dbAuthDb;
+      compV[compNo++] = (char*) "&";
+    }
 
     if (dbReplicaSetPresent == true)
     {

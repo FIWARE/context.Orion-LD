@@ -130,6 +130,7 @@ Environment variables are the recommended way to configure Orion-LD containers. 
 | ORIONLD_MONGO_POOL_SIZE           | 10                       | Size of the mongo-db connection pool.                                                                      |
 | ORIONLD_MONGO_WRITE_CONCERN       | 1                        | Write concern (0:unacknowledged, 1:acknowledged) to be used with mongo-db.                                 |
 | ORIONLD_MONGO_ID_INDEX            | `false`                  | Should an index on `_id.id` be automatically set.                                                          |
+| ORIONLD_HA                        |                          | `mongo`: sync the caches of several instances via change streams (needs a replica set) - see [HA](../doc/manuals-ld/high-availability.md). |
 | ORIONLD_USEIPV4                   | `false`                  | Use IP-V4 only.                                                                                            |
 | ORIONLD_USEIPV6                   | `false`                  | Use IP-V6 only.                                                                                            |
 | ORIONLD_HARAKIRI                  | `false`                  | Commits harakiri on request.                                                                               |
