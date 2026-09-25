@@ -97,13 +97,18 @@ db.grantRolesToUser("<the Orion-LD user>", [ { role: "orionldHaWatch", db: "admi
 
 (The built-in `readAnyDatabase` role also covers it, but grants more than is needed.)
 
-⚠️ **Without these privileges the broker still starts and serves requests - it just never
-synchronises.** Every instance keeps only what was created on it, which looks exactly like running
-with no synchronisation at all. The only sign is this line in the log of every instance, repeated
-every 5 seconds:
+⚠️ **Without these privileges an instance started with `-ha mongo` refuses to start**, with:
 
 ```
-E: ... haMongoLoop.cpp[...]: haMongoLoopThread: HA: change stream error (not authorized on admin to execute command { aggregate: 1, pipeline: [ { $changeStream: { allChangesForCluster: true } } ] ... }) - restarting the stream in 5 seconds
+X: ... -ha mongo: unable to open the change stream (not authorized on admin to execute command { aggregate: 1, pipeline: [ { $changeStream: { allChangesForCluster: true } } ] ... }). The stream watches the whole deployment ...
+```
+
+Before that check existed (images built before PR #2001), such an instance started
+anyway and ran **unsynchronised** - every instance keeping only what was created on it - with
+nothing but this line in its log, every 5 seconds:
+
+```
+E: ... HA: change stream error (not authorized on admin to execute command ...) - restarting the stream in 5 seconds
 ```
 
 ## Enabling it
@@ -122,12 +127,14 @@ ORIONLD_MONGO_REPLICA_SET=<replicaSetName>
 ORIONLD_HA=mongo
 ```
 
-If `-ha mongo` is given but the database is not a replica set, the broker refuses to start and
-says so. It does not fall back to running unsynchronised.
+If `-ha mongo` is given but the database is not a replica set, or the change stream cannot be
+opened for any other reason (typically the privileges above), the broker refuses to start and says
+why. It does not fall back to running unsynchronised.
 
 ### Checking that it works
 
-1. Grep the log of every instance for `HA: change stream error`. There must be none.
+1. Every instance started (see above). Grep their logs for `HA: change stream error` - that is a
+   stream that broke at run time, see [How it works](#how-it-works).
 2. Create a subscription through one instance, then ask **each** instance for it directly (not
    through the load balancer): `GET /ngsi-ld/v1/subscriptions/<id>`. Every instance must know it.
    This only tests the cache on a broker started with `-experimental` or `-mongocOnly`; without
