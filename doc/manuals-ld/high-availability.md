@@ -187,6 +187,33 @@ and immediately fires an entity update through the load balancer may have the up
 an instance that has not yet applied the new subscription. This is inherent to any distributed
 cache and is not specific to Orion-LD.
 
+## Troubleshooting: instances that disagree
+
+The symptom: MongoDB holds everything, but each instance only knows what was created on it. A
+subscription created through instance 1 is known to instance 1 only, one created through instance 2
+to instance 2 only, and the rest know neither. A client that lists subscriptions to "reconcile" them
+then gets a different answer depending on which instance replies - and creates duplicates.
+
+1. **Is `-ha mongo` (`ORIONLD_HA=mongo`) set on every instance?** Without it there is no
+   synchronisation at all, and this is exactly what that looks like.
+2. **Is the change stream working?** Grep every instance's log, e.g.
+   `kubectl logs <orion-ld-pod> | grep "HA: change stream error"`. A
+   `not authorized ... $changeStream ... allChangesForCluster` there means the
+   [privileges](#mongodb-privileges) are missing. Current versions refuse to start in that case
+   instead - pods in a crash loop with `unable to open the change stream`.
+3. **Grant the privileges**, then **restart the instances** - a rolling restart is fine. A running
+   instance retries the stream every 5 seconds, so once the privileges are in place it starts
+   receiving changes by itself - but changes made before that are **not** replayed. A restart makes
+   every instance load the complete state from MongoDB and watch from there.
+4. **Check** as in [Checking that it works](#checking-that-it-works): create a subscription through
+   the load balancer, then ask **each instance directly** for it.
+5. **Clean up duplicates** created while the instances disagreed. Synchronising does not remove them -
+   they are real subscriptions in MongoDB. `GET /ngsi-ld/v1/subscriptions?options=fromDb` lists what is
+   really stored; `DELETE` the extras.
+
+Until the instances are in sync, `?options=fromDb` is also the safe read for anything that
+reconciles subscriptions: it answers the same whichever instance serves it.
+
 ## What cache synchronisation does **not** solve
 
 Cache synchronisation makes every instance *see* the same subscriptions and registrations. Some
