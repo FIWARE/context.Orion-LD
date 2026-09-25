@@ -27,11 +27,9 @@ new features are being built.
 
 ## Known planned work
 
-* **New implementation of the subscription cache.** A long-standing item, worthwhile on its own,
-  and the prerequisite for the next point.
-* **Cache synchronisation between broker instances** — what a High Availability deployment
-  (several brokers behind a load balancer) needs in order to work. Orion-LD cannot do this today;
-  see [High Availability](manuals-ld/high-availability.md) for what works, what does not, and why.
+* **haaux** — a second channel for cache synchronisation between broker instances (`-ha <ip:port>`),
+  for deployments where MongoDB change streams are not an option. The MongoDB channel (`-ha mongo`)
+  is done - see [High Availability](manuals-ld/high-availability.md).
 * **An NGSI-LD-only Orion-LD**, dropping the inherited NGSIv2 layers.
 
 For older items previously listed here (distributed subscriptions, GEOS-based geolocation for the

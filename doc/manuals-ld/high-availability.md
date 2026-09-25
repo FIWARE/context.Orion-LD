@@ -2,12 +2,11 @@
 
 Running several Orion-LD instances behind a load balancer, against one shared MongoDB.
 
-> **Status: not yet available.**
-> Cache synchronisation — the piece that makes multi-instance work — is under development.
-> Until it is released, **run a single Orion-LD instance**. See
+> **Cache synchronisation is available** from `1.13.0-PRE-1870` onwards, and is **off by default**.
+> Enable it on every instance with `-ha mongo` (environment variable `ORIONLD_HA=mongo`) - see
+> [Enabling it](#enabling-it). Running several instances *without* it does not work reliably - see
 > [Running multiple instances without synchronisation](#running-multiple-instances-without-synchronisation)
-> for what goes wrong if you don't, and why it is hard to diagnose.
-> The option names below are provisional until the feature is released.
+> for what goes wrong, and why it is hard to diagnose.
 
 ## What an HA setup is
 
@@ -44,8 +43,9 @@ synchronisation closes that gap: every instance is told about every change, as i
 
 | | |
 |---|---|
-| MongoDB | A **replica set** (or sharded cluster). Configure as usual with `-rplSet` / `MONGO_REPLICA_SET`. |
-| MongoDB version | 3.6 or later. |
+| MongoDB | A **replica set**. Configure as usual with `-rplSet` / `ORIONLD_MONGO_REPLICA_SET`, or a replica-set URI with `-dbURI` / `ORIONLD_MONGO_URI`. |
+| MongoDB version | 4.0 or later (a change stream over the whole deployment). |
+| MongoDB privileges | `find` and `changeStream` on **all** databases - see [below](#mongodb-privileges). |
 | Orion-LD | The same version on every instance. |
 | Load balancer | Any. No session affinity required. |
 
@@ -63,7 +63,7 @@ mongod --replSet rs0 ...            # add to the existing command line / deploym
 mongosh --eval 'rs.initiate()'      # once, against that mongod
 ```
 
-then point the brokers at it with `-rplSet rs0` / `MONGO_REPLICA_SET=rs0`.
+then point the brokers at it with `-rplSet rs0` / `ORIONLD_MONGO_REPLICA_SET=rs0`.
 
 That single node already provides the oplog the synchronisation needs. Growing the set to three
 members is what makes the *database* highly available, and can be done later, independently — it
@@ -77,24 +77,65 @@ exists only in a replica set. A standalone `mongod` cannot offer change streams 
 This is a requirement of the synchronisation feature, not of Orion-LD in general. **Running a
 single instance against a standalone MongoDB remains fully supported and is unaffected.**
 
+### MongoDB privileges
+
+If MongoDB runs with authentication, the user Orion-LD connects as needs more than `readWrite` on
+the Orion-LD databases. Each instance watches the **whole deployment** with one change stream - a
+tenant is a database of its own, and new tenants appear at any time - and MongoDB only allows that
+to a user with the `find` and `changeStream` actions on every database. A role that grants exactly
+that:
+
+```
+use admin
+db.createRole({
+  role:       "orionldHaWatch",
+  privileges: [ { resource: { db: "", collection: "" }, actions: [ "find", "changeStream" ] } ],
+  roles:      []
+})
+db.grantRolesToUser("<the Orion-LD user>", [ { role: "orionldHaWatch", db: "admin" } ])
+```
+
+(The built-in `readAnyDatabase` role also covers it, but grants more than is needed.)
+
+⚠️ **Without these privileges the broker still starts and serves requests - it just never
+synchronises.** Every instance keeps only what was created on it, which looks exactly like running
+with no synchronisation at all. The only sign is this line in the log of every instance, repeated
+every 5 seconds:
+
+```
+E: ... haMongoLoop.cpp[...]: haMongoLoopThread: HA: change stream error (not authorized on admin to execute command { aggregate: 1, pipeline: [ { $changeStream: { allChangesForCluster: true } } ] ... }) - restarting the stream in 5 seconds
+```
+
 ## Enabling it
 
-Cache synchronisation is off by default. Enable it on **every** instance:
+Cache synchronisation is off by default. Enable it on **every** instance, either with the
+command-line option:
 
 ```
-orionld -rplSet <replicaSetName> -haSync
+orionld -rplSet <replicaSetName> -ha mongo
 ```
 
-or with the environment variable:
+or with the environment variables (the usual `ORIONLD_` + option name - they are the same setting):
 
 ```
-ORIONLD_HA_SYNC=TRUE
+ORIONLD_MONGO_REPLICA_SET=<replicaSetName>
+ORIONLD_HA=mongo
 ```
 
-If synchronisation is enabled but the database is not a replica set, the broker refuses to start
-and says so. It does not fall back to running unsynchronised — an instance that silently believes
-it is part of an HA cluster while missing every remote change is precisely the failure this
-feature exists to prevent.
+If `-ha mongo` is given but the database is not a replica set, the broker refuses to start and
+says so. It does not fall back to running unsynchronised.
+
+### Checking that it works
+
+1. Grep the log of every instance for `HA: change stream error`. There must be none.
+2. Create a subscription through one instance, then ask **each** instance for it directly (not
+   through the load balancer): `GET /ngsi-ld/v1/subscriptions/<id>`. Every instance must know it.
+   This only tests the cache on a broker started with `-experimental` or `-mongocOnly`; without
+   them, GET is served by the legacy path, which reads the database and finds it either way.
+
+`GET /ngsi-ld/v1/subscriptions?options=fromDb` reads the database instead of the instance's cache,
+so comparing it with the same request without `options=fromDb` shows whether an instance is
+missing something.
 
 ## How it works
 
@@ -108,8 +149,11 @@ interval to tune and no fixed window during which instances disagree.
   receiving instance updates the relevant tenant's cache directly rather than reloading it.
 * On startup an instance loads its caches from the database as it always has, then watches from
   that point onward. A newly started instance therefore converges by construction.
-* If the connection drops, the stream resumes from where it left off. If it cannot resume, the
-  instance reloads the affected cache in full.
+* The MongoDB driver resumes the stream by itself over a transient error (a brief network loss, a
+  primary failover). If it cannot, the error is logged and the stream is opened again 5 seconds
+  later - from that moment, not from where it left off. ⚠️ Changes made in between are **not**
+  applied until the instance is restarted. `-subCacheIval` can be kept as a safety net for
+  subscriptions (see below); there is none for registrations.
 * An instance also receives the events for its own changes; applying them again is harmless.
 
 Nothing is sent between broker instances. They never connect to each other, need no knowledge of
@@ -122,9 +166,9 @@ each other, and require no additional port, peer list or firewall rule.
 | Add an instance | It loads the caches at startup and then watches. No action needed on the others. |
 | Remove an instance | Nothing to do. No instance tracks any other. |
 | Instance restart | Same as adding one — full load, then watch. |
-| MongoDB primary failover | The change stream is resumed automatically against the new primary. |
-| Brief network loss | Resumed from where it left off; missed events are delivered. |
-| Long network loss | If the stream cannot be resumed, the cache is reloaded in full. |
+| MongoDB primary failover | The driver resumes the change stream against the new primary. |
+| Brief network loss | The driver resumes from where it left off; missed events are delivered. |
+| Stream cannot be resumed | Logged; the stream is reopened after 5 s, from then on. Changes in between are missed until a restart. |
 
 ### Consistency model
 
@@ -148,11 +192,11 @@ behaviour is still per-instance, and matters when planning an HA deployment:
 * **Throttling is per-instance state.** With N instances, the effective minimum interval between
   notifications is up to N times more permissive than configured.
 * **Subscription counters** (`timesSent`, `timesFailed`, `lastNotification`, ...) accumulate per
-  instance and are reconciled to the database per instance, so they must be added together to be
-  read globally.
+  instance and are added to the database by each instance every `-subCacheFlushIval` seconds
+  (default 10). The database holds the total, but it lags behind by up to that interval.
 
-These are known and are being addressed alongside the synchronisation work. They are listed here
-because a deployment that scales out will meet them, and it is better to meet them knowingly.
+They are listed here because a deployment that scales out will meet them, and it is better to
+meet them knowingly.
 
 ## Running multiple instances without synchronisation
 
@@ -182,6 +226,7 @@ eventually, and there is no equivalent for registrations at all.
 ## Summary
 
 * One instance + standalone MongoDB — supported, unaffected by any of this.
-* Several instances + load balancer + replica set + `-haSync` — the HA setup, once released.
+* Several instances + load balancer + replica set + `-ha mongo` on every instance — the HA setup.
+  With authentication, the Orion-LD user also needs `find` + `changeStream` on all databases.
 * Several instances without synchronisation — don't. It fails intermittently, and the failures
   are hard to attribute to their cause.
