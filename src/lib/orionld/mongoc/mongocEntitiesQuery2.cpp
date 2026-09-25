@@ -44,6 +44,7 @@ extern "C"
 #include "orionld/mongoc/mongocKjTreeToBson.h"                   // mongocKjTreeToBson
 #include "orionld/mongoc/mongocKjTreeFromBson.h"                 // mongocKjTreeFromBson
 #include "orionld/mongoc/mongocEntitiesQuery2.h"                 // Own interface
+#include "orionld/mongoc/mongocIndexString.h"                    // mongocIndexString
 
 
 
@@ -103,19 +104,7 @@ static bool entitySelectorFilter(bson_t* mongoFilterP, KjNode* entitySelectorLis
     char    num[32];
     int     numLen;
 
-    if (ix < 10)
-    {
-      num[0] = '0' + ix;
-      num[1] = 0;
-      numLen = 1;
-    }
-    else
-    {
-      num[0] = '0' + ix % 10;
-      num[1] = '0' + ix / 10;
-      num[2] = 0;
-      numLen = 2;
-    }
+    numLen = mongocIndexString(ix, num);  // "0", "1", ... "10", "11" - BSON array keys are the decimal index
 
     bson_init(&item);
 

@@ -216,6 +216,28 @@ bool orionldPostEntity(void)
     }
   }
 
+  //
+  // POST /entities/{entityId}/attrs does not implement datasetId instances. Letting one through
+  // writes an EMPTY attribute over the stored default instance (attributeToDbArray has no access
+  // to the entity's @datasets), and the emptied entity then fails to convert back to API format -
+  // the broker crashed on it. Rejected up front with 501, BEFORE anything is forwarded or written.
+  // Same stance as PATCH /entities/{entityId}/attrs.
+  //
+  if (orionldState.requestTree != NULL)
+  {
+    for (KjNode* attrP = orionldState.requestTree->value.firstChildP; attrP != NULL; attrP = attrP->next)
+    {
+      if ((attrP->type == KjArray) || ((attrP->type == KjObject) && (kjLookup(attrP, "datasetId") != NULL)))
+      {
+        orionldError(OrionldOperationNotSupported,
+                     "Not Implemented",
+                     "datasetId instances are not supported by POST /entities/{entityId}/attrs",
+                     501);
+        return false;
+      }
+    }
+  }
+
   KjNode*  treeForTroe = NULL;
   DistOp*  distOpList  = NULL;
 
@@ -328,6 +350,14 @@ bool orionldPostEntity(void)
 
         OrionldProblemDetails  pd;
         KjNode*                finalApiEntityWithSysAttrs = dbModelToApiEntity2(dbEntityP, true, RF_NORMALIZED, orionldState.uriParams.lang, false, &pd);
+
+        if (finalApiEntityWithSysAttrs == NULL)  // kjClone(NULL) crashes - and there is nothing to notify from
+        {
+          KT_E("Internal Error (unable to convert the updated entity '%s' to API format: %s: %s)", entityId, pd.title, pd.detail);
+          orionldError(OrionldInternalError, "Internal Error", "unable to convert the updated entity to API format", 500);
+          return false;
+        }
+
         KjNode*                finalApiEntity             = kjClone(orionldState.kjsonP, finalApiEntityWithSysAttrs);
         sysAttrsStrip(finalApiEntity);
 
