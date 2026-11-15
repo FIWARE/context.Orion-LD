@@ -24,6 +24,7 @@
 */
 #include <stdio.h>                    /* stderr, stdout, ...                 */
 #include <cstdlib>                    /* C++ free(.)                         */
+#include <string.h>                   /* strcmp                              */
 
 #include "parseArgs/baStd.h"          /* BA standard header file             */
 extern "C"
@@ -73,6 +74,24 @@ int paLmSdGet(void)
 
 /* ****************************************************************************
 *
+* ktLogLevel - the name ktrace has for a -logLevel value
+*
+* -logLevel takes NONE, FATAL, ERROR, WARN, INFO and DEBUG, but ktrace knows ERR, WARN, INFO, VERBOSE, TRACE
+* and DEBUG, and refuses any other name with "invalid log level" on stderr (issue #1951).
+* ktrace has nothing below ERR, so NONE, FATAL and ERROR are all ERR.
+*/
+static const char* ktLogLevel(const char* logLevel)
+{
+  if ((strcmp(logLevel, "NONE") == 0) || (strcmp(logLevel, "FATAL") == 0) || (strcmp(logLevel, "ERROR") == 0))
+    return "ERR";
+
+  return logLevel;
+}
+
+
+
+/* ****************************************************************************
+*
 * paLogSetup - initialize ktrace logging
 */
 extern char* paExtraLogSuffix;
@@ -81,14 +100,14 @@ int paLogSetup(void)
   // Initialize ktrace
   const char* logDir = (paLogToFile && paLogDir[0] != 0) ? paLogDir : NULL;
 
-  ktInit(paProgName,         // progName
-         logDir,             // logDir (NULL if not logging to file)
-         paLogToScreen,      // logToScreen
-         paLogLevel,         // logLevel
-         paTraceV,           // traceLevels
-         paVerbose,          // verbose
-         paDebug,            // debug
-         false);             // fixme
+  ktInit(paProgName,                // progName
+         logDir,                    // logDir (NULL if not logging to file)
+         paLogToScreen,             // logToScreen
+         ktLogLevel(paLogLevel),    // logLevel
+         paTraceV,                  // traceLevels
+         paVerbose,                 // verbose
+         paDebug,                   // debug
+         false);                    // fixme
 
   return 0;
 }

@@ -1,0 +1,56 @@
+# Copyright 2026 FIWARE Foundation e.V.
+#
+# This file is part of Orion-LD Context Broker.
+#
+# Orion-LD Context Broker is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Orion-LD Context Broker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Orion-LD Context Broker. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# orionld at fiware dot org
+
+--NAME--
+Every log level that -logLevel documents is accepted - none of them says 'invalid log level'
+
+--SHELL-INIT--
+
+--SHELL--
+
+#
+# -logLevel documents NONE, FATAL, ERROR, WARN, INFO and DEBUG (issue #1951: ERROR said "orionld: invalid log level 'ERROR'").
+# An unknown core context version makes the broker exit right after the logging is set up, before it opens any port or database.
+#
+# 01. Each of the six levels: the number of 'invalid log level' lines the broker prints - zero
+#
+
+echo "01. Each of the six levels: the number of 'invalid log level' lines the broker prints - zero"
+echo "==========================================================================================="
+for level in NONE FATAL ERROR WARN INFO DEBUG
+do
+  echo "$level: $($BROKER -fg -logLevel $level -coreContext v0.0 2>&1 | grep -c 'invalid log level')"
+done
+echo
+echo
+
+
+--REGEXPECT--
+01. Each of the six levels: the number of 'invalid log level' lines the broker prints - zero
+===========================================================================================
+NONE: 0
+FATAL: 0
+ERROR: 0
+WARN: 0
+INFO: 0
+DEBUG: 0
+
+
+--TEARDOWN--

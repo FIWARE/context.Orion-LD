@@ -1,5 +1,5 @@
 ## Fixed Issues
-N/A
+  #1951 - '-logLevel ERROR', '-logLevel FATAL' and '-logLevel NONE' no longer print "invalid log level" on stderr at startup: ktrace knows ERR, WARN, INFO, VERBOSE, TRACE and DEBUG, so these three names are now passed to it as ERR (ktrace has nothing below ERR)
 
 ## New Features
 N/A
