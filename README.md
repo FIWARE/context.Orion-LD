@@ -62,7 +62,9 @@ For source code contributions, please see the [Contribution guidelines](doc/manu
 Its payloads are encoded as [linked data](https://en.wikipedia.org/wiki/Linked_data) using JSON.
 
 The NGSI-LD Specification is regularly updated and published by ETSI, since 2026 by ETSI TC DATA.
-Its first release under TC DATA, V1.1.1 (2026), splits the specification into several Technical Specifications:
+Its first release under TC DATA is **NGSI-LD 2.0** (2026), the successor of 1.9.1. It splits the specification into
+several Technical Specifications, each at V1.1.1 - ETSI's number for the first release of a Technical Committee's
+deliverable:
 * [ETSI TS 104 175 - NGSI-LD Core API](https://www.etsi.org/deliver/etsi_ts/104100_104199/104175/01.01.01_60/ts_104175v010101p.pdf)
 * [ETSI TS 104 176 - NGSI-LD HTTP Binding](https://www.etsi.org/deliver/etsi_ts/104100_104199/104176/01.01.01_60/ts_104176v010101p.pdf)
 * [ETSI TS 104 178 - NGSI-LD Information Model](https://www.etsi.org/deliver/etsi_ts/104100_104199/104178/01.01.01_60/ts_104178v010101p.pdf)
@@ -70,8 +72,6 @@ Its first release under TC DATA, V1.1.1 (2026), splits the specification into se
 
 Before that, ETSI ISG CIM published it as one document, ETSI GS CIM 009 - the last one is
 [version 1.9.1](https://www.etsi.org/deliver/etsi_gs/CIM/001_099/009/01.09.01_60/gs_CIM009v010901p.pdf), published in July 2025.
-The TC DATA specifications continue from 1.9.1; their version restarts at V1.1.1 only because ETSI numbers the
-first release of every deliverable of a Technical Committee that way.
 
 A few presentations on NGSI-LD:
 * [NGSI-LD Overview](https://docs.google.com/presentation/d/1tgh6gBdcZHRPU_ehM7M5rGCI83CrYimCwJXxzRI5GDg)
