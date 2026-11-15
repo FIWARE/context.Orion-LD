@@ -1,174 +1,20 @@
 ## Fixed Issues
-  #XXXX - The docker base image now builds the CURRENT libraries. It had drifted from everything else, and in more than one place: the k-libs go to kbase 0.11, kalloc 0.10.2, kjson 0.14.1, kargs 0.10.1 and kprom 0.1.1, four of which were held back not by a decision but by the FALL-THROUGH in 04.install-k-libs.sh - a lib that is not named in its if/elif chain silently gets release/0.10. kjson 0.14.1 is the one that matters most: pushInt rendered into a 16-byte buffer and chopped any integer longer than 15 digits, silently, on every render path, and a nanosecond timestamp is 19. The DDS stack goes to eProsima's own v1.2.2 combination, taken whole from that release's ddsenabler.repos rather than assembled here (Fast DDS 3.6.2, Fast CDR 2.3.6, dev-utils and DDS-Pipe 1.5.3, foonathan_memory_vendor 1.4.1, DDS Enabler v1.2.2), which retires the commit pin on ad19575 - set because the branch eProsima asked us to use had been deleted and no release yet carried the action infix, where `git tag --contains` now answers v1.2.1 and v1.2.2. The new stack needs CMake >= 3.20 while UBI 8 ships 3.15.7, so CMake 3.31.6 is installed into /opt/cmake and put on the PATH of the DDS build step ALONE: every other step in that image is an older project built by the cmake it has always had, and CMake 4 dropped support for cmake_minimum_required below 3.5 outright. Separately, test/ga-functest.sh now starts mongod as a single-node replica set, as docker/build.sh already does for the GA run that script exists to reproduce - a standalone mongod has no oplog, so '-ha mongo' refuses to start and the two ngsild_ha_* tests failed under ga-functest.sh while passing in CI, which is the worst way round for a script whose job is to say in advance what CI will say
-  #XXXX - TRoE: fixed the postgres connection-pool wedge ("no connection to postgres" + "Internal Error (bug in postgres connection pool logic?)" for every DB operation until a broker restart). Root cause was twofold. (1) The pool had no wait mechanism: queueSem was created as a free-slot counter (init = poolSize) but pgConnectionGet posted it right back on every path and pgConnectionRelease never posted it - so with all slots borrowed, the next caller did not queue but fell through both search loops and failed instantly (reproduced against a healthy postgres: 16 threads on a 4-slot pool -> 480 of 640 gets returned NULL). (2) Nothing bounded how long a slot stays borrowed: no connect_timeout (a blackholed TCP connect blocks ~2 min x 30 attempts with the slot already busy), no TCP-keepalive tuning (kernel default: first probe after 2 h), no statement_timeout - a thread stuck inside libpq held its slot forever, and once poolSize threads were stuck the pool was wedged permanently. Now: pgConnectionGet waits (EINTR-safe sem_timedwait, 10 s) for a free slot, and on timeout logs every slot's state incl. the postgres backend PID (findable in pg_stat_activity); pgConnectionRelease posts the free-slot unit back, rolls back a transaction left open on the connection (previously it poisoned the next borrower - every statement failed with "current transaction is aborted") and PQfinishes dead connections (previously the PGconn leaked its socket - as it also did in the two places where pgConnectionGet freed a dead slot without PQfinish); connections are created with connect_timeout=5, TCP keepalives (idle 30s/interval 10s/count 3) and statement_timeout + idle_in_transaction_session_timeout (new CLI option -troeStmtTimeout / env TROE_STMT_TIMEOUT, default 60000 ms, 0 = disabled), so stuck queries and dead peers self-heal in bounded time instead of holding slots forever; the pool list is mutex-protected (two threads first using the same tenant could create duplicate pools / a torn linked list); pgTransactionBegin/Commit check the SQL result status (a COMMIT answered with ROLLBACK - aborted transaction - or a non-idle transaction status after COMMIT is now a failure, so the Kafka path NACKs instead of committing the offset for a non-durable batch); fixed a pool-slot leak plus NULL dereference in pgDatabasePrepare's error path (cfrey-de - Carsten Frey)
-  #XXXX - Fixed the heap corruption that kills the broker under concurrent requests carrying an inline @context. A KAlloc arena is a plain bump allocator with no locking of its own - every sem_wait/sem_post inside kaAlloc is commented out in the kalloc library - which is fine for the per-request arenas, as orionldState.kalloc is thread-local, but the process-global 'kalloc' is written to by every request thread. MHD runs thread-per-connection since the epoll thread pool was disabled (#1943), so those threads are genuinely concurrent, and the @context code allocates from the global arena on a per-entity basis: orionldContextCreate, the array vector and the base-URL resolution in orionldContextFromTree, and the item plus both hash tables in orionldContextFromObject/orionldContextHashTablesFill. Two threads racing there are handed the same chunk, and 'bytesLeft -= size' applied to a stale value underflows - bytesLeft is unsigned - after which the allocator hands out pointers far past the end of its buffer, into other heap chunks; the broker then dies with a SIGSEGV or one of glibc's "malloc(): invalid size (unsorted)" / "corrupted size vs prev_size" / "free(): invalid pointer" aborts. The corruption also produces spurious "Attempt to change Entity Type" rejects on the way there: a context whose memory has been handed out twice makes orionldContextItemExpand miss and fall back to the default URL, so a term expands to default-context/Term instead of what the @context defines, and no longer matches the type stored in the database. Twelve threads POSTing a batch upsert of 30 entities, each with an inline @context, kill an unpatched broker on the first round - all 12 connections drop, not one of the 720 requests completes. Two changes: the @context resolved once per entity of a batch is now marked ephemeral and allocated in the calling thread's own arena, which is the lifetime it has anyway - it has no URL, so it is never put in the context cache (orionldContextFromTree: arrayToCache = (url != NULL)) and never outlives its request, exactly as the existing "NULL URL means NOT to be saved" comment says - and this also stops it leaking into an arena that is never reset; and everything still allocating from the global arena now goes through a new kallocGuard, which serializes those allocations and is a no-op for a thread-local arena, so it costs nothing on the hot path
-  #XXXX - Fixed a SEGFAULT on a batch write to an entity whose stored '_id' has no 'type'. entityLookupBy_id_Id only sets the caller's type node if the database entity actually has one - it warns about the "Database Error?" case and leaves the pointer untouched otherwise - but batchEntitiesFinalCheck read that pointer's value unconditionally to compare the stored type against the incoming one. Typeless entities do occur in practice: an empty entity id lets unrelated entities collapse onto the same '_id', and such documents have been found in production databases, after which every batch touching that id killed the broker. There is no stored type to compare against in that case, so the entity type alteration check is now skipped with a warning instead of dereferencing NULL; a stored 'type' that is not a string is covered too
-  #XXXX - Kafka ingest: the consumer committed the Kafka offset right after the MongoDB upsert but BEFORE the TRoE (temporal/Postgres) write. A TRoE failure (Postgres down, connection drop, SQL error) therefore lost the temporal instance permanently - MongoDB kept the newer value, the history did not, and the offset was already gone so the batch was never redelivered. The offset is now committed only after BOTH the MongoDB upsert and the TRoE write succeed. pgCommands() now flags failures in orionldState.troeError (and additionally catches SQL-level command failures via PQresultStatus - previously only a dead connection or a NULL result was detected); a flagged batch is left uncommitted so Kafka redelivers it (cfrey-de - Carsten Frey)
-  #XXXX - Fixed three defects in the guard that stops the same @context being downloaded twice at once. (1) The list of URLs being downloaded was looked up WITHOUT the semaphore first, as a shortcut past it - but removing an entry frees it, so that unlocked walk could dereference a freed item and follow its 'next' into freed memory; the lookup, the ownership check and the add are now one critical section, and the semaphore was never worth shortcutting past (it is uncontended and held for a couple of strcmp). (2) The URL was strncpy'ed into a fixed 256-byte buffer of malloc'ed memory: a longer URL was left unterminated over uninitialised bytes, and two URLs sharing a 255-character prefix compared EQUAL, each then waiting for the other's download. The URL is strdup'ed now, and the malloc return is checked. (3) A cyclic @context - an array @context that references itself through its members - was detected, but the 400 'Cyclic @context' it prepared never reached the client: the callers that turn a failed @context into a response ask whether an error was set by testing orionldState.httpStatusCode, which the cycle break did not set, so the answer was a generic 500 'Unknown error'. JSON-LD 1.1 has the last word on refusing it at all: the 'remote contexts' array of the Context Processing Algorithm exists to detect cyclical context inclusions, and step 5.2.3 aborts processing with a 'context overflow' error rather than ignoring the repeat
-  #XXXX - Fixed the HA cache sync (-ha mongo) missing everything written while a broker was starting up. The change stream was opened only AFTER the caches had been loaded from the database, so a subscription, registration or @context created by another instance in between - and the load is not instant: it reads every tenant's subscriptions and registrations, and the @context cache is loaded before that - was never seen by the starting broker, and never would be: the stream only delivers what happens after it is opened, and nothing re-reads the database afterwards. The instance ran on, indefinitely, silently missing one item. The channel is now started as early as the mongo connection allows, BEFORE the caches are loaded, and the apply side waits until they are: the listening window and the loading window overlap instead of leaving a gap between them, and an event for an item the load also brings in is simply applied twice, which costs one re-read and changes nothing. With no -ha the startup is unchanged
-  #1851 - Fixed a use-after-free when a registration is DELETED while a request forwarded through it is still in flight. A DistOp keeps its registration-cache item for the whole forwarded request - it reads the registration id, the mode and the endpoint again when the response comes back - but the deletion freed that item as soon as it had unlinked it, so the response handling read freed memory and the broker died. Reproduced under AddressSanitizer with a registration pointing at an endpoint that accepts and never answers, so the forward is still open when the DELETE lands: heap-use-after-free in distOpResponses, every time, and no report at all with the fix. Registration-cache items are now reference-counted: a DistOp pins the item it forwards through and drops it again when the DistOp list is released, and a deletion that finds the item still in use unlinks it and leaves the freeing to the last holder. The readers of the cache (the regMatch family, the overlapping-registration check, the DistOp lookups) now walk the list under the cache's read lock, which is what makes a pin safe to take. Note that a plain build does not necessarily crash on this - the freed item usually remains readable - so it went unnoticed
-  #1851 - Fixed registrations created concurrently going missing from the registration cache. They all answered 201 and all reached the database, but a GET of an id the broker had just handed out in its own Location header could answer 404 - and once it had happened, every LATER registration was invisible too. regCacheItemAdd linked the new item into the cache's linked list BEFORE filling in its fields, and the list was mutated with no lock of any kind: the readers walk that list without coordinating with the writer - pCheckOverlappingRegistrations does so on every registration POST - and dereferenced a 'regTree' that on a half-published item was still the calloc'ed NULL, which crashed the broker outright under enough load; meanwhile the trailing 'next = NULL' could wipe a pointer another thread had just set, truncating the list while 'last' still pointed at an item no longer reachable from it, which is why every subsequent add was lost as well. Two writers could also both read 'last' and both assign 'last->next', silently dropping one registration. The item is now built completely before it is published, and the list mutation runs under a new per-cache rwlock that lives inside the RegCache itself, so each tenant's registration cache is locked independently of that tenant's other caches. Reported with a reproduction script by Mirkesx
-  #XXXX - Fixed a SEGFAULT on PATCH of an attribute that states its type but not its value, when TRoE is enabled - e.g. PATCH /entities/{id}/attrs/{attr} with {"type": "Relationship", "observedAt": ...} and no "object". A merge patch does not have to restate what it is not changing, so pgAttributeBuild passed no value on, and every typed branch of pgAttributeAppend read it without checking. As with the sub-attribute crash, the response was already sent - TRoE runs from MHD's requestCompleted callback - so the client saw its 204 and the broker died a moment later. Such a row is now recorded the way an attribute with no type given already was: an 'Update' with no value. Omitting the type from the same payload was always harmless, which is why this went unnoticed
-  #XXXX - Fixed a SEGFAULT on any PATCH that deletes a sub-attribute, when TRoE is enabled. troePatchEntity2 announced the deletion to pgSubAttributeAppend as a "String" while passing no value at all, and pgSubAttributeAppend dereferenced the NULL. The response was already on its way out - TRoE runs from MHD's requestCompleted callback - so the client saw its 204 and the broker died a moment later. A sub-attribute deletion is now not written to the temporal database at all, which is what already happened in practice (the broker died before issuing the INSERT, and even had it not, the row was malformed and postgres rejected the whole statement, losing the rest of the PATCH with it). Recording such a deletion is not possible in the current schema: unlike 'attributes', the 'subAttributes' table has no opMode column, and its 'valueType' enum has no "Delete" member. pgSubAttributeAppend now also refuses a value-less call with a log line instead of a crash
-  #XXXX - Fixed GET /ngsi-ld/v1/types hanging forever when the broker runs with -mongocOnly and there are no entities in the database. Not slow - no response at all, the connection simply stayed open. dbEntityTypesGet asks mongoc for the types and falls back to the legacy C++ driver when it gets NULL back, which is what an empty entities collection returns; but -mongocOnly deliberately never initialises that driver, so the call blocked on a connection pool that does not exist. A single entity in the database was enough to hide it, so it only ever showed up on a freshly created one. With -mongocOnly the legacy driver is now never called, and the 'legacy' request header cannot ask for a driver that is not there
-  #XXXX - Fixed the numbering of subordinate subscriptions (distributed subscriptions): the sequence number appended to the parent's Subscription ID was incremented once per subordinate ALREADY created, so a subscription matching three registrations created "<id>:1", "<id>:2" and "<id>:4", and a fourth got ":6". The ids are now consecutive
-  #XXXX - The 'success' array of the 207 Multi-Status response of a batch delete is now in a deterministic order. With a distributed operation it was merged in the order the registrants happened to answer, so two identical requests gave two different responses. Same reasoning as for 'notUpdated' below - the array is a set, the order of its items carries no meaning
-  #XXXX - The 'notUpdated' array of a 207 Multi-Status response is now in a deterministic order. Both arrays of that response are sets - the order of their items carries no meaning - and with a distributed operation the order was simply the order in which the registrants answered, so two identical requests gave two different responses. 'updated' was already sorted; 'notUpdated' now is too
-  #XXXX - A Subscription created over a WebSocket now names its connection in 'notification::endpoint::uri' - "urn:ngsi-ld:ws:<file descriptor>" instead of the "ws://ws-placeholder:0" it used to be given, which read like a field somebody forgot to fill in. The file descriptor is what tells two WS subscriptions apart, and it is also carried in the Host header of the notifications sent over that WebSocket
-  #XXXX - GET /subscriptions now renders 'notification::timesFailed' (NGSI-LD spec clause 5, NotificationParams). It was only rendered when the subscription was read with options=fromDb
-  #XXXX - GET /subscriptions now renders 'geoQ::coordinates' as a JSON Array in all cases. After a PATCH of the geoQ, the coordinates were rendered as a String until the next broker restart
-  #XXXX - An unreachable @context is now answered with 504 Gateway Timeout, not 503 Service Unavailable: the NGSI-LD spec maps LdContextNotAvailable to 504 (TS 104-176 clause 6, "Mapping of error types to HTTP status codes"), and 503 was the earlier value
-  #XXXX - Fixed subscription over-matching when the 'entities' array holds more than one entity selector: an entity matching one selector's id/idPattern and a DIFFERENT selector's type was taken for a match. Each selector is now evaluated as a whole - id (or idPattern) AND type - the array being an OR of the selectors, per NGSI-LD spec clause 5.2.12
-  #XXXX - Fixed relative references inside an "@context" array: per RFC 3986 clause 5 a String inside an "@context" array is an IRI *reference* and is resolved against the URL of the document that carries it. Previously such an entry was taken as-is, so a served or remote @context using relative references (e.g. "user-context.jsonld") failed to load
-  #XXXX - Fixed an @context's own URL being confused with the reference it points to, which made a later lookup of that @context resolve to the wrong document
-  #XXXX - TRoE: a failing SQL statement was silently dropped - no log entry, the transaction aborted, and COMMIT acted as ROLLBACK, so the temporal write was lost without a trace. Such errors are now logged (status, Postgres message and the offending statement) and the transaction is rolled back explicitly
-  #1943 - Fixed crash on a malformed q-filter with a missing AND/OR separator between two expressions (e.g. q=category=="office"category!="inactive" - missing ';'): qLexCheck did not validate the token following a String/Boolean/Integer/Float value, so the malformed token stream reached qParse and triggered a NULL dereference. Such input is now rejected with 400 Bad Request
-  #1899 - Fixed broker startup stall on a cyclic @context in the persisted context cache: at startup the cached @contexts are reloaded, and an array-@context re-downloads its referenced contexts recursively. A context that references itself (directly or via a chain) made the loader wait the full download timeout (3s) per cycle in contextCacheWait - which exists to let one thread wait for ANOTHER thread already downloading the same context, but during the single-threaded startup recursion the "other downloader" is the same thread, so the wait could never be satisfied (and with enough cross-referencing contexts the cumulative stall trips orchestrator startup probes -> CrashLoop). The recursion now detects same-thread re-entry and rejects the cyclic @context immediately. Such non-fatal context-load failures are now logged as warnings instead of errors, so they no longer look like a failed startup
-  #XXXX - Batch delete (non-legacy path): a duplicated Entity ID is now handled per NGSI-LD spec clause 10.3.6 - the first occurrence is deleted and each subsequent occurrence gets a ResourceNotFound (404) error in the 207 response (the duplicates were previously dropped silently)
-  #1951 - Fixed slow, half-broken batch upsert of more than 1000 entities: the legacy "which of these already exist" lookup (mongoCppLegacyEntityListLookupWithIdTypeCreDate) truncated its result at a hardcoded 1000, so on a re-upsert the surplus entities were misclassified as new and re-inserted (duplicate-key path) instead of updated. The lookup's $in query is already bounded by the batch (and thus by the max payload size), so the arbitrary 1000 cap was removed
-  #1943 - Fixed heap corruption / crash under concurrent load: the MHD request thread pool (enabled by reqPoolSize, recently turned on by default) runs MHD in epoll mode, multiplexing several connections onto each pool thread - but the in-progress request state (payload buffer, kalloc, requestTree) lives in the thread-local orionldState, so concurrent (large, multi-chunk) requests corrupted each other (heap use-after-free / "free(): invalid size"). The MHD thread pool is now disabled: the broker always runs thread-per-connection. The -reqPoolSize/TRQ_POOL_SIZE option is still accepted (so existing deployments start) but is ignored and logs a warning
-  #XXXX - Fixed entity corruption from PATCH /entities/{id}/attrs carrying a body datasetId: the datasetId instance was moved aside but never written, and the emptied attribute clobbered the stored default instance (the next read 500'd). PATCH /attrs does not implement datasetId instances - it is now rejected with 501 and the entity is left untouched
-  #XXXX - Fixed stale value in notifications when PATCH /entities/{id} (merge) updates an EXISTING datasetId instance: the notification render only folded the patched dataset instances in when the attribute had no instances in the DB yet, so an update notified the old DB value (and a DDS action's terminal notification dropped its ddsActionResult entirely). The patched instances are now merged into the render entity in all cases
-  #1905 - TRoE: segfault (exit 139) connecting to TimescaleDB Cloud - added SSL support and fixed NULL pointer crash
-  #XXXX - Fixed crash under concurrent notification delivery by replacing thread-unsafe gethostbyname with getaddrinfo in orionldServerConnect
-  #XXXX - Fixed query of many large entities (cfreyfh - Carsten Freyh at Fraunhofer IKTS)
-  #XXXX - Wait for postgres instead of exiting after the first try - just like for mongo (1 try per second during 30 secs)
-  #XXXX - Fixed crash in relationship endpoint when no relations found (cfreyfh)
-  #XXXX - Fixed crash in GET /types when entity has empty attrNames (NULL attr name from MongoDB aggregation)
-  #XXXX - Fixed crash in POST /entityOperations/query when entities array contains non-object items
-  #XXXX - Fixed crash in batch update when entity payload contains "scope" field
-  #XXXX - Fixed crash in PATCH entity when entity doesn't exist locally but distOps are active
-  #XXXX - Fixed crash in TRoE for POST /entities with distOps returning 207 (requestTree was NULL)
-  #XXXX - Fixed TRoE crash on POST /temporal/entities with NULL requestTree
-  #XXXX - Fixed hang on POST /temporal/entities when using -mongocOnly (legacy mongoEntityExists blocked on semaphore)
-  #XXXX - Fixed duplicate key error log for context cache persistence (ignore already-persisted contexts)
-  #XXXX - Fixed default MQTT port not set when URI has no explicit port (now defaults to 1883/8883)
-  #XXXX - Fixed "scope" not skipped in distOpResponses success attribute list
-  #XXXX - Fixed Location header for POST /jsonldContexts to use relative path (per ETSI API spec)
-  #XXXX - Fixed crash in pernot notification with simplified format (NULL serviceP dereference)
-  #XXXX - Fixed Ngsild-Attribute-Format header in pernot notifications (was hardcoded to Normalized)
-  #XXXX - Fixed Link header scoping bug in pernot notifications (linkHeader buffer out of scope)
-  #XXXX - Fixed pernot GET rendering to use actual isActive/status instead of hardcoded true/active
-  #XXXX - Fixed broker abort on requests that allocate more than 1000 buffers needing delayed free (e.g. large TRoE batch operations)
-
-## Modified Behaviour
-  #XXXX - The notification counters and timestamps of on-change subscriptions ('timesSent', 'timesFailed', 'lastNotification', 'lastSuccess', 'lastFailure') now reach the database on a timer as well, controlled by the existing -subCacheFlushIval (default 10 seconds), which until now only flushed periodic-notification subscriptions. They were pushed only when a subscription had -cSubCounters notifications pending (default 20), so the counters of a subscription notifying less often than that stayed in the broker's memory - invisible to a second broker instance sharing the database, and lost on restart. The in-memory values, which is what GET /subscriptions renders, are unchanged
-  #XXXX - GET /cache/statistics (and /admin/cache/statistics) no longer reports "refresh". That counter counted the reloads of the sub-cache-refresh mechanism, which reloaded the whole cache from the database on a timer; the subscription cache is now maintained one item at a time, as subscriptions are created, patched and deleted, so there is nothing to count. "ids", "inserts", "removes", "updates" and "items" are unchanged, and are now reported for the new subscription cache
+N/A
 
 ## New Features
-  #XXXX - High Availability: several broker instances sharing one MongoDB now keep their subscription, registration and @context caches in step with each other, over mongo change streams. New CLI option -ha (env: HA): '-ha mongo' uses change streams and needs the database to be a REPLICA SET (a single node is enough) - a standalone mongod has no oplog and the broker refuses to start rather than run a sync that never fires. An '-ha <ip:port>' names an haaux instance, the channel meant for deployments not backed by mongo; it is parsed but not implemented yet. Without -ha nothing changes: no thread is started and no watch is opened. Until now a second instance never learned of the first one's subscriptions at all unless -subCacheIval was set, and then only by re-reading the whole collection on a timer
-  #XXXX - The default core @context is now v1.9 (was v1.8), which is what the current ETSI TTF targets. Both versions remain selectable with -coreContext (v1.9 could not be selected at all before). Two terms are affected by the version change: "geometryProperty" is gone from the core @context (it is a URL parameter, never a payload member, and URL parameters are not @context-expanded), and "objectsLists" was renamed to "objectLists" - a breaking change only for the simplified temporal representation of a ListRelationship. The everyday singular "objectList" is unchanged
-  #XXXX - New CLI option -migrate for the TRoE Postgres schema. The broker no longer migrates an existing database silently: at startup it checks the schema version, and an outdated database makes it log "back up your DB and restart with -migrate" and exit. A brand-new database is stamped at the current version and starts normally (Carsten Frey, Fraunhofer IKTS)
-  #XXXX - Write correlator: every write now carries a correlator identifying the operation, taken from the new "NGSILD-Correlator" request header (falling back to "Fiware-Correlator"), or generated as "urn:ngsi-ld:correlator:<uuid>" if neither is present. It is stored on every TRoE row (entities, attributes, subAttributes) in a new "correlator" column, linking all attributes written by one operation - something instanceId, observedAt and ts cannot provide. The entity's "lastCorrelator" in MongoDB is only set when the client actually supplied a correlator, so behaviour without the header is unchanged (Carsten Frey, Fraunhofer IKTS)
-  #XXXX - Native NGSI-LD temporal query support: GET/POST for temporal entities with:
-          q-filter, geo-queries, aggregation, pick/omit, datasetId, and temporalValues
-          — replacing previous Mintaka-based stubs
-  #XXXX - Implemented PATCH for periodic notification (pernot) subscriptions
-  #XXXX - Subscriptions support a top-level 'datasetId' (String or Array of String) that projects each
-          notification body to the matching dataset instance(s) of every attribute, per NGSI-LD spec
-          clause 8.5 (non-matching attributes are dropped; '@none' selects the default instance).
-          Persisted, survives broker restart, and rendered back on GET
-  #XXXX - Subscriptions support datasetId-scoped 'watchedAttributes' via the syntax "<attr>@<datasetId>"
-          (Orion-LD extension, proposed to ETSI): the subscription is TRIGGERED only when an instance with
-          that datasetId changes. The datasetId must be a URI; the token '@none' (i.e. "<attr>@@none") scopes
-          to the default no-datasetId instance; a plain "<attr>" still matches any instance. Persisted and
-          rendered back on GET
-  #1905 - New CLI option -troeSslMode (env: ORIONLD_TROE_SSL_MODE) for TRoE Postgres SSL connections
-  #XXXX - New CLI option -coreContextDir (env: ORIONLD_CORE_CONTEXT_DIR, default: /opt/orion/ldcontexts)
-  #XXXX - Replaced prometheus-client-c with KPROM library for Prometheus metrics
-  #XXXX - Default user @context served from local files, not only URLs
-  #XXXX - MQTTS support - MQTT notifications over TLS (mqtts:// endpoint URIs)
-  #XXXX - New CLI option -distOpTimeout (env: DIST_OP_TIMEOUT, default: 5000ms) for distributed operation timeout
-  #XXXX - Experimental support for WebSockets (wip - Work In Progress)
-  #XXXX - In-memory geo-fencing for subscriptions using GEOS (no DB round-trip for geo-matching)
-
-### Pre-downloaded Core Context Files
-  At startup the broker needs the NGSI-LD core context. Previously it was either found in
-  the MongoDB context cache (from a previous run) or downloaded from https://uri.etsi.org.
-  If both failed, a built-in hardcoded copy was used as last resort.
-
-  A new step has been added between the MongoDB lookup and the network download:
-  loading the core context from a local file on disk. The lookup order is now:
-
-    1. MongoDB context cache (persisted from a previous run)
-    2. Local file in -coreContextDir (new)
-    3. Download from https://uri.etsi.org
-    4. Built-in hardcoded copy (airgapped fallback)
-
-  Each context file has the context URL on the first line, followed by the JSON-LD content.
-  The filename is derived from the URL (e.g. ngsi-ld-core-context-v1.8.jsonld).
-  Pre-downloaded files for all core context versions (v1.0 through v1.9) are shipped in
-  the ldcontexts/ directory and copied to /opt/orion/ldcontexts/ in the Docker image.
-
-  This eliminates startup failures caused by network timeouts when downloading the core
-  context, which was particularly problematic in CI environments and cloud deployments.
-
-## WebSockets (WIP - ETSI TC DATA has not yet finalized the WebSocket API)
-  - WebSocket support is enabled via -wip ws
-  - WS upgrade on /ws endpoint, with per-connection receive loop
-  - Supported operations over WebSocket:
-    - createEntity (POST /ngsi-ld/v1/entities)
-    - createSubscription (POST /ngsi-ld/v1/subscriptions)
-    - putEntity (PUT /ngsi-ld/v1/entities/{entityId})
-    - patchEntity (PATCH /ngsi-ld/v1/entities/{entityId})
-    - patchSubscription (PATCH /ngsi-ld/v1/subscriptions/{subscriptionId})
-  - Notifications are sent over the WS connection for subscriptions created via WS
-  - Message envelope format (same as MQTT): {"metadata": {...}, "body": {...}}
-
-## DDS
-  - Broker can now act as a client in DDS Actions
-  - DDS Service Reply: ddsServiceReplyNotification support
-  - DDS publish for already existing attributes in BATCH Update operations
-  - Graceful DDS shutdown
-  - Synchronous DDS semantics for PATCH /entities/{id} (when -wip dds is set); opt out with ?ddsSync=false
-  - DDS Action goal lifecycle: an 'endpoint' sub-attribute spawns a temporary per-goal subscription that streams the goal's feedback/result/status to the initiator, torn down (instance + subscription) on goal completion
-  - datasetId-aware notifications: a subscription's top-level 'datasetId' projects each notification body to the matching dataset instance(s) (NGSI-LD spec clause 8.5; '@none' selects the default instance) - so a goal's temp subscription delivers only that goal's instance
-  - Concurrent action goals no longer cross-talk: each goal's temporary subscription watches "<attr>@<goalDatasetId>" (datasetId-scoped watchedAttributes), so it is TRIGGERED only by its own goal's instance changes, not by sibling goals modifying the same attribute
-  - Fixed HTTP 500 on a second consecutive PATCH/attr roundtrip (dotForEq nested-Property names so mongo $set doesn't fragment them across path-separator dots)
-  - Renamed reply envelope field xId to instanceHandleId (matches FastDDS InstanceHandle_t terminology, requested by eProsima)
-  - The DDS stack's versions are now reported: "fastdds version", "fastcdr version" and "ddsenabler version" in GET /ngsi-ld/ex/v1/version, and a DDS line in the startup banner (with the three versions when -wip dds is set). They are read from the LOADED library files rather than the headers - the Enabler's config.h stops at MAJOR.MINOR and cannot tell 1.2.0 from 1.2.2
+N/A
 
 ## Documentation
-  - Added TRoE database schema and advanced optimization documentation
-  - Added Carsten's TRoE optimization script to documentation
-  - Documented MongoDB 4.2+ requirement
-  - Fixed all README.md for the k-libs
-  - Documented geo-fencing for subscriptions (georel types, geometry combinations, custom geoproperty, lifecycle)
-  - Added GEOS to external-libraries.md and installation guide dependency list
-  - Added a High Availability guide, and a roadmap that reflects reality
+N/A
 
-## Temporal API (TRoE) - replacing Mintaka
-  - Native temporal query implementation, no longer delegating to Mintaka (cfreyfh)
-  - GET /temporal/entities/{entityId} - single entity temporal query
-  - GET /temporal/entities - multi-entity temporal query
-  - POST /temporal/entityOperations/query - batch temporal query
-  - Support for q-filter, geo-queries, aggregation (aggrMethods/aggrPeriodDuration),
-    pick/omit, datasetId, temporalValues, and timeproperty (createdAt/modifiedAt)
-
-## Kafka
-  - Support for Kafka as a fast entity injection channel, treating incoming messages as Batch Upsert
-
-
-## NGSIv1
-  - Removed all NGSIv1 routes (/ngsi9, /ngsi10, /v1) from the REST service tables
-  - Converted /v1/admin/* routes to /admin/* (dropped the v1 prefix)
+## DDS
+N/A
 
 ## Library version updates
-  - Bumped kjson from 0.11.2 to 0.12.0 (new function kjArraySort, to order the elements of a JSON Array)
-  - Replaced prometheus-client-c with kprom
-  - Bumped PostgreSQL client packages from v13 to v17
-  - Bumped PostgreSQL in installation guides from v12 to v17
-  - Added GEOS 3.10.2 (Geometry Engine - Open Source) for in-memory geo-spatial matching
+N/A
+
+## Multi-Attributes (datasetId)
+N/A
 
 ## Notes
-### CI / GitHub Actions
-  - Updated all GitHub Actions to latest versions
-  - Fixed GDB (debug) image build pipeline (buildah/quay.io fixes)
-  - Improved Mintaka compatibility workflow (Testcontainers 1.21.3, Docker 29+, local context serving)
-  - Skip unit tests / functional tests when no relevant code changes
-  - Enabled all previously disabled functional tests
-  - Trigger functional tests on workflow and harness changes
-  - Removed SonarCloud workflow
-  - Removed PR template
-  - Fixed deploy workflow for external contributors
-  - Postgres server is now v17 (bumped from v12)
+N/A

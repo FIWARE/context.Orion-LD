@@ -4,7 +4,7 @@
 [![License badge](https://img.shields.io/github/license/FIWARE/context.Orion-LD.svg)](https://opensource.org/licenses/AGPL-3.0)
 [![Docker badge](https://img.shields.io/badge/quay.io-fiware%2Forion--ld-grey?logo=red%20hat&labelColor=EE0000)](https://quay.io/repository/fiware/orion-ld)
 [![Support badge](https://img.shields.io/badge/support-sof-yellowgreen.svg)](http://stackoverflow.com/questions/tagged/fiware-orion)
-[![NGSI-LD badge](https://img.shields.io/badge/NGSI-LD-red.svg)](https://www.etsi.org/deliver/etsi_gs/CIM/001_099/009/01.08.01_60/gs_cim009v010801p.pdf)
+[![NGSI-LD badge](https://img.shields.io/badge/NGSI-LD-red.svg)](https://www.etsi.org/deliver/etsi_ts/104100_104199/104175/01.01.01_60/ts_104175v010101p.pdf)
 <br>
 [![Documentation badge](https://readthedocs.org/projects/fiware-orion/badge/?version=latest)](http://fiware-orion.readthedocs.io/en/latest/?badge=latest)
 ![Status](https://nexus.lab.fiware.org/static/badges/statuses/full.svg)
@@ -17,7 +17,7 @@ This project is part of [FIWARE](https://www.fiware.org/). For more information 
 Issues on this projects can be reported as [github issues](https://github.com/FIWARE/context.Orion-LD/issues),
 while questions are preferred on [Stack Overflow](http://stackoverflow.com/questions/tagged/fiware-orion), using the tag `fiware-orion`.
 
-> The latest release of Orion-LD is [1.12.0](https://github.com/FIWARE/context.Orion-LD/releases/tag/1.12.0) from January 2026
+> The latest release of Orion-LD is [1.13.0](https://github.com/FIWARE/context.Orion-LD/releases/tag/1.13.0) from November 2026
 
 Orion-LD is a Context Broker and [CEF](https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/About+us)
 [building block](https://joinup.ec.europa.eu/collection/egovernment/solution/cef-context-broker) for context data
@@ -61,8 +61,17 @@ For source code contributions, please see the [Contribution guidelines](doc/manu
 **NGSI-LD** is an an extended subset of [JSON-LD](https://en.wikipedia.org/wiki/JSON-LD) for use with context management systems.
 Its payloads are encoded as [linked data](https://en.wikipedia.org/wiki/Linked_data) using JSON.
 
-The NGSI-LD Specification is regularly updated and published by ETSI.
-The latest specification is [version 1.9.1](https://www.etsi.org/deliver/etsi_gs/CIM/001_099/009/01.09.01_60/gs_CIM009v010901p.pdf), published in July 2025.
+The NGSI-LD Specification is regularly updated and published by ETSI, since 2026 by ETSI TC DATA.
+Its first release under TC DATA is **NGSI-LD 2.0** (2026), the successor of 1.9.1. It splits the specification into
+several Technical Specifications, each at V1.1.1 - ETSI's number for the first release of a Technical Committee's
+deliverable:
+* [ETSI TS 104 175 - NGSI-LD Core API](https://www.etsi.org/deliver/etsi_ts/104100_104199/104175/01.01.01_60/ts_104175v010101p.pdf)
+* [ETSI TS 104 176 - NGSI-LD HTTP Binding](https://www.etsi.org/deliver/etsi_ts/104100_104199/104176/01.01.01_60/ts_104176v010101p.pdf)
+* [ETSI TS 104 178 - NGSI-LD Information Model](https://www.etsi.org/deliver/etsi_ts/104100_104199/104178/01.01.01_60/ts_104178v010101p.pdf)
+* [ETSI TS 104 179 - NGSI-LD Provenance and Integrity](https://www.etsi.org/deliver/etsi_ts/104100_104199/104179/01.01.01_60/ts_104179v010101p.pdf)
+
+Before that, ETSI ISG CIM published it as one document, ETSI GS CIM 009 - the last one is
+[version 1.9.1](https://www.etsi.org/deliver/etsi_gs/CIM/001_099/009/01.09.01_60/gs_CIM009v010901p.pdf), published in July 2025.
 
 A few presentations on NGSI-LD:
 * [NGSI-LD Overview](https://docs.google.com/presentation/d/1tgh6gBdcZHRPU_ehM7M5rGCI83CrYimCwJXxzRI5GDg)
@@ -104,11 +113,11 @@ Every merged pull request results in a new fixed tag in dockerhub/quay.io.
 
 Please note that for production and/or performance implementations, there is a thorough guide for that right [here](https://github.com/FIWARE/load-tests)
 
-If you want to use a more stable image, the latest release (as of January 2026) is
-[1.12.0](https://github.com/FIWARE/context.Orion-LD/releases/tag/1.12.0)
+If you want to use a more stable image, the latest release (as of November 2026) is
+[1.13.0](https://github.com/FIWARE/context.Orion-LD/releases/tag/1.13.0)
 
 ```console
-docker run quay.io/fiware/orion-ld:1.12.0
+docker run quay.io/fiware/orion-ld:1.13.0
 ```
 
 Please check [quay.io](https://quay.io/repository/fiware/orion-ld?tab=tags) or [dockerhub](https://hub.docker.com/r/fiware/orion-ld/tags) for other releases.
